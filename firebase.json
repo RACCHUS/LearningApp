@@ -8,6 +8,18 @@
     ],
     "rewrites": [
       {
+        "source": "/service-worker.js",
+        "destination": "/flutter_service_worker.js"
+      },
+      {
+        "source": "/manifest.json",
+        "destination": "/manifest.json"
+      },
+      {
+        "source": "/firebase-messaging-sw.js",
+        "destination": "/firebase-messaging-sw.js"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

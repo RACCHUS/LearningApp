@@ -1,0 +1,14 @@
+# Firebase credentials
+.env.firebase
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub/
+build/
+# VS Code
+.vscode/
+# Others
+.idea/
+*.iml
+# Node.js dependencies
+node_modules/

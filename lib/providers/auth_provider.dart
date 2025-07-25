@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,9 +11,10 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthInitial()) {
     _authStateSubscription =
-        _supabase.auth.onAuthStateChange.listen((authState) {
-      if (authState.session != null) {
-        state = AuthSuccess(authState.session!.user);
+        _supabase.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null) {
+        state = AuthSuccess(session.user);
       } else {
         state = AuthInitial();
       }
@@ -20,16 +22,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   final _supabase = Supabase.instance.client;
-  late final StreamSubscription<AuthState> _authStateSubscription;
+  late final StreamSubscription _authStateSubscription;
 
   Future<void> signInWithGoogle() async {
     try {
       state = AuthLoading();
+      // Dynamically use current window origin for redirect URL on web (no /auth/callback)
+      String redirectUrl = 'https://xzvkdwebtbxlrxagtzlv.supabase.co/auth/v1/callback';
+      if (kIsWeb) {
+        final origin = Uri.base.origin;
+        redirectUrl = origin; // Use the app root as the redirect URL
+      }
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'http://localhost:3000/auth/callback',
+        redirectTo: redirectUrl,
       );
+      // After login, upsert user into public.users table
+      final user = _supabase.auth.currentUser;
+      if (user != null) {
+        await _supabase.from('users').upsert({
+          'id': user.id,
+          'email': user.email,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
     } catch (e) {
+      print('Google sign-in error: $e');
       state = AuthError(e.toString());
     }
   }

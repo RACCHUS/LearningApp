@@ -11,11 +11,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       if (authState is AuthSuccess) {
-        if (state.location == '/login') {
+        if (state.uri.toString() == '/login') {
           return '/home';
         }
       } else if (authState is AuthInitial) {
-        if (state.location != '/login') {
+        if (state.uri.toString() != '/login') {
           return '/login';
         }
       }

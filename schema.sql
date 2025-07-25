@@ -1,13 +1,11 @@
--- Users (UUID primary keys)
-users(
+CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   display_name TEXT
 );
 
--- Lessons
-lessons(
+CREATE TABLE lessons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -18,8 +16,7 @@ lessons(
 CREATE INDEX idx_lessons_tags ON lessons USING GIN(tags);
 CREATE INDEX idx_lessons_created_by ON lessons(created_by);
 
--- Terms
-terms(
+CREATE TABLE terms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   term TEXT NOT NULL,
   definition TEXT NOT NULL,
@@ -27,16 +24,14 @@ terms(
   created_by UUID REFERENCES users(id)
 );
 
--- Concepts
-concepts(
+CREATE TABLE concepts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   concept_text TEXT NOT NULL,
   example_text TEXT,
   created_by UUID REFERENCES users(id)
 );
 
--- Questions
-questions(
+CREATE TABLE questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question_text TEXT NOT NULL,
   options JSONB NOT NULL, -- ["option1", "option2", "option3", "option4"]
@@ -46,28 +41,26 @@ questions(
   created_by UUID REFERENCES users(id)
 );
 
--- Join Tables
-lesson_terms(
+CREATE TABLE lesson_terms (
   lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
   term_id UUID REFERENCES terms(id) ON DELETE CASCADE,
   PRIMARY KEY (lesson_id, term_id)
 );
 
-lesson_questions(
+CREATE TABLE lesson_questions (
   lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
   question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
   order_index INTEGER DEFAULT 0,
   PRIMARY KEY (lesson_id, question_id)
 );
 
-lesson_concepts(
+CREATE TABLE lesson_concepts (
   lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
   concept_id UUID REFERENCES concepts(id) ON DELETE CASCADE,
   PRIMARY KEY (lesson_id, concept_id)
 );
 
--- User Progress
-user_progress(
+CREATE TABLE user_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
@@ -81,8 +74,7 @@ user_progress(
 CREATE INDEX idx_user_progress_user_date ON user_progress(user_id, date);
 CREATE INDEX idx_user_progress_lesson ON user_progress(lesson_id);
 
--- Reminders
-reminders(
+CREATE TABLE reminders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   time_of_day TIME NOT NULL, -- e.g., '14:30:00'
@@ -92,8 +84,7 @@ reminders(
   is_active BOOLEAN DEFAULT TRUE
 );
 
--- Offline Content Cache
-offline_content(
+CREATE TABLE offline_content (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,

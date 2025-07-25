@@ -55,9 +55,37 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
     final offlineProgress = await _hiveService.getProgress();
     if (offlineProgress.isNotEmpty) {
       try {
-        await _supabase.from('user_progress').upsert(
-              offlineProgress.map((e) => e.toJson()).toList(),
+        // Group by userId, lessonId, date
+        final Map<String, UserProgress> merged = {};
+        for (final p in offlineProgress) {
+          final key = '${p.userId}_${p.lessonId}_${p.date.toIso8601String().split('T')[0]}';
+          if (!merged.containsKey(key)) {
+            merged[key] = p;
+          } else {
+            final existing = merged[key]!;
+            merged[key] = UserProgress(
+              id: p.id.isNotEmpty ? p.id : existing.id,
+              userId: p.userId,
+              lessonId: p.lessonId,
+              date: p.date,
+              questionsAnswered: existing.questionsAnswered + p.questionsAnswered,
+              correctCount: existing.correctCount + p.correctCount,
+              lessonCompleted: existing.lessonCompleted || p.lessonCompleted,
+              studyTimeMinutes: existing.studyTimeMinutes + p.studyTimeMinutes,
             );
+          }
+        }
+        await _supabase.from('user_progress').upsert(
+          merged.values.map((e) => {
+            'user_id': e.userId,
+            'lesson_id': e.lessonId,
+            'date': e.date.toIso8601String().split('T')[0],
+            'questions_answered': e.questionsAnswered,
+            'correct_count': e.correctCount,
+            'lesson_completed': e.lessonCompleted,
+            'study_time_minutes': e.studyTimeMinutes,
+          }).toList(),
+        );
         await _hiveService.clearProgress();
       } catch (e) {
         // Handle error

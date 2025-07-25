@@ -32,7 +32,7 @@ class ReminderNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
       final response = await _supabase.from('reminders').insert(reminder.toJson()).select();
       final newReminder = Reminder.fromJson(response[0]);
       state.whenData((reminders) => state = AsyncValue.data([...reminders, newReminder]));
-    } catch (e, st) {
+    } catch (e) {
       // handle error
     }
   }
@@ -49,7 +49,7 @@ class ReminderNotifier extends StateNotifier<AsyncValue<List<Reminder>>> {
         newReminders[index] = newReminders[index].copyWith(isActive: isActive);
         state = AsyncValue.data(newReminders);
       });
-    } catch (e, st) {
+    } catch (e) {
       // handle error
     }
   }

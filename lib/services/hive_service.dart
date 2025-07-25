@@ -1,12 +1,10 @@
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/user_progress.dart';
-import 'package:path_provider/path_provider.dart';
 
 class HiveService {
   Future<void> init() async {
-    final appDocumentDir = await getApplicationDocumentsDirectory();
-    Hive.init(appDocumentDir.path);
+    await Hive.initFlutter();
     Hive.registerAdapter(LessonAdapter());
     Hive.registerAdapter(UserProgressAdapter());
   }

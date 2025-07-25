@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/progress_provider.dart';
+import 'package:learning_pwa/models/user_progress.dart';
 
 class ProgressDashboardScreen extends ConsumerWidget {
+  static const int dailyGoal = 10;
   const ProgressDashboardScreen({super.key});
 
   @override
@@ -16,9 +18,38 @@ class ProgressDashboardScreen extends ConsumerWidget {
       body: progressHistoryAsync.when(
         data: (progressHistory) {
           final streak = _calculateStreak(progressHistory.map((e) => e.date).toList());
+          final today = DateTime.now();
+          UserProgress? todayProgress;
+          try {
+            todayProgress = progressHistory.firstWhere(
+              (p) => p.date.year == today.year && p.date.month == today.month && p.date.day == today.day,
+            );
+          } catch (_) {
+            todayProgress = null;
+          }
+          final todayCount = todayProgress != null ? todayProgress.questionsAnswered : 0;
           return Column(
             children: [
               Text('Current Streak: $streak days'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Daily Goal: '),
+                    Text('$todayCount/$dailyGoal',
+                        style: TextStyle(
+                          color: todayCount >= dailyGoal ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        )),
+                    if (todayCount >= dailyGoal)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8.0),
+                        child: Icon(Icons.check_circle, color: Colors.green),
+                      ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: ListView.builder(
                   itemCount: progressHistory.length,
