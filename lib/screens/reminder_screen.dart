@@ -1,49 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/reminder_provider.dart';
 
-class ReminderScreen extends ConsumerStatefulWidget {
+class ReminderScreen extends ConsumerWidget {
   const ReminderScreen({super.key});
 
   @override
-  _ReminderScreenState createState() => _ReminderScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reminders = ref.watch(reminderProvider);
 
-class _ReminderScreenState extends ConsumerState<ReminderScreen> {
-  TimeOfDay? _selectedTime;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Set Reminder'),
+        title: const Text('Reminders'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              // TODO: Show a dialog to add a new reminder
+            },
+          ),
+        ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _selectedTime == null
-                  ? 'No reminder set'
-                  : 'Reminder set for ${_selectedTime!.format(context)}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time != null) {
-                  setState(() {
-                    _selectedTime = time;
-                  });
-                }
-              },
-              child: const Text('Set Reminder Time'),
-            ),
-          ],
-        ),
+      body: reminders.when(
+        data: (reminders) {
+          return ListView.builder(
+            itemCount: reminders.length,
+            itemBuilder: (context, index) {
+              final reminder = reminders[index];
+              return ListTile(
+                title: Text(
+                    '${reminder.mode} reminder at ${reminder.timeOfDay.format(context)}'),
+                subtitle: Text(
+                    'Goal: ${reminder.goalCount}, Frequency: ${reminder.frequency}'),
+                trailing: Switch(
+                  value: reminder.isActive,
+                  onChanged: (value) {
+                    ref.read(reminderProvider.notifier).toggleReminder(reminder.id, value);
+                  },
+                ),
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
       ),
     );
   }

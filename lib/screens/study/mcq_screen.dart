@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/models/question.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/models/lesson_content.dart';
 
 class McqScreen extends StatefulWidget {
-  final Question question;
+  final QuestionContent question;
 
   const McqScreen({super.key, required this.question});
 

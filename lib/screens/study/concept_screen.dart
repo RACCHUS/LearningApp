@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/models/concept.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/models/lesson_content.dart';
 
 class ConceptScreen extends StatelessWidget {
-  final Concept concept;
+  final ConceptContent concept;
 
   const ConceptScreen({super.key, required this.concept});
 

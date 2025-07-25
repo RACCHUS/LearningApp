@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
-import 'package:learning_pwa/providers/offline_provider.dart';
 import 'package:learning_pwa/screens/study/concept_screen.dart';
 import 'package:learning_pwa/screens/study/flashcard_screen.dart';
 import 'package:learning_pwa/screens/study/mcq_screen.dart';
 
-class LessonScreen extends ConsumerWidget {
+class LessonModeScreen extends ConsumerWidget {
   final String lessonId;
 
-  const LessonScreen({super.key, required this.lessonId});
+  const LessonModeScreen({super.key, required this.lessonId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,19 +20,6 @@ class LessonScreen extends ConsumerWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.download),
-                onPressed: () {
-                  ref
-                      .read(offlineProvider.notifier)
-                      .cacheLesson(lessonData.lesson);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Lesson downloaded')),
-                  );
-                },
-              ),
-            ],
           ),
           body: PageView.builder(
             itemCount: lessonData.lessonContent.length,

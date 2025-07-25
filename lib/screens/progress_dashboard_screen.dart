@@ -7,53 +7,57 @@ class ProgressDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final progressHistory = ref.watch(progressHistoryProvider);
+    final progressHistoryAsync = ref.watch(progressHistoryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Progress'),
+        title: const Text('Progress Dashboard'),
       ),
-      body: progressHistory.when(
-        data: (history) {
-          final streak = _calculateStreak(history);
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Daily Streak: $streak days',
-                  style: Theme.of(context).textTheme.headlineMedium,
+      body: progressHistoryAsync.when(
+        data: (progressHistory) {
+          final streak = _calculateStreak(progressHistory.map((e) => e.date).toList());
+          return Column(
+            children: [
+              Text('Current Streak: $streak days'),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: progressHistory.length,
+                  itemBuilder: (context, index) {
+                    final progress = progressHistory[index];
+                    return ListTile(
+                      title: Text('Lesson ID: ${progress.lessonId}'),
+                      subtitle: Text(
+                          '${progress.questionsAnswered} questions answered, ${progress.correctCount} correct'),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
       ),
     );
   }
 
-  int _calculateStreak(List<dynamic> history) {
-    if (history.isEmpty) {
+  int _calculateStreak(List<DateTime> dates) {
+    if (dates.isEmpty) {
       return 0;
     }
-
     int streak = 0;
-    DateTime today = DateTime.now();
-    DateTime lastDate = DateTime(today.year, today.month, today.day);
-
-    for (var progress in history) {
-      DateTime progressDate = DateTime(progress.date.year, progress.date.month, progress.date.day);
-      if (progressDate == lastDate) {
-        streak++;
-        lastDate = lastDate.subtract(const Duration(days: 1));
-      } else if (progressDate.isBefore(lastDate)) {
-        break;
+    if(dates.isNotEmpty){
+      streak = 1;
+      DateTime lastDate = dates[0];
+      for (int i = 1; i < dates.length; i++) {
+        if (lastDate.difference(dates[i]).inDays == 1) {
+          streak++;
+          lastDate = dates[i];
+        } else if (lastDate.difference(dates[i]).inDays > 1) {
+          break;
+        }
       }
     }
-
     return streak;
   }
 }

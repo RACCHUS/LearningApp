@@ -31,4 +31,36 @@ class Reminder {
       isActive: json['is_active'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'time_of_day': '${timeOfDay.hour}:${timeOfDay.minute}',
+      'frequency': frequency,
+      'mode': mode,
+      'goal_count': goalCount,
+      'is_active': isActive,
+    };
+  }
+
+  Reminder copyWith({
+    String? id,
+    String? userId,
+    TimeOfDay? timeOfDay,
+    String? frequency,
+    String? mode,
+    int? goalCount,
+    bool? isActive,
+  }) {
+    return Reminder(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
+      frequency: frequency ?? this.frequency,
+      mode: mode ?? this.mode,
+      goalCount: goalCount ?? this.goalCount,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }
