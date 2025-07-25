@@ -14,6 +14,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _supabase.auth.onAuthStateChange.listen((data) {
       final session = data.session;
       if (session != null) {
+        _upsertUser(session.user);
         state = AuthSuccess(session.user);
       } else {
         state = AuthInitial();
@@ -27,28 +28,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signInWithGoogle() async {
     try {
       state = AuthLoading();
-      // Dynamically use current window origin for redirect URL on web (no /auth/callback)
-      String redirectUrl = 'https://xzvkdwebtbxlrxagtzlv.supabase.co/auth/v1/callback';
-      if (kIsWeb) {
-        final origin = Uri.base.origin;
-        redirectUrl = origin; // Use the app root as the redirect URL
-      }
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: redirectUrl,
+        redirectTo: kIsWeb ? Uri.base.origin : null,
       );
-      // After login, upsert user into public.users table
-      final user = _supabase.auth.currentUser;
-      if (user != null) {
-        await _supabase.from('users').upsert({
-          'id': user.id,
-          'email': user.email,
-          'created_at': DateTime.now().toIso8601String(),
-        });
-      }
     } catch (e) {
       print('Google sign-in error: $e');
       state = AuthError(e.toString());
+    }
+  }
+
+  Future<void> _upsertUser(User user) async {
+    try {
+      await _supabase.from('users').upsert({
+        'id': user.id,
+        'email': user.email,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error upserting user: $e');
+      // Optionally, handle the error in the UI
     }
   }
 
