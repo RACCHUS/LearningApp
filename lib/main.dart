@@ -52,12 +52,30 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    
+    // Define the light theme
+    final lightTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.blue,
+        brightness: Brightness.light,
+      ),
+      useMaterial3: true,
+    );
+
+    // Define the dark theme
+    final darkTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.blue,
+        brightness: Brightness.dark,
+      ),
+      useMaterial3: true,
+    );
+
     return MaterialApp.router(
       title: 'Learning PWA',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.dark, // Set dark mode as default
       routerConfig: router,
       builder: (context, child) {
         return ConnectivityAware(

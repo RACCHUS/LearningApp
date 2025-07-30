@@ -24,6 +24,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_fonts: ^6.2.1
   json_annotation: ^4.8.1
+  image_picker: ^1.0.7
+  uuid: ^4.3.3
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +38,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # The following section is specific to Flutter.
+  assets:
+    - assets/images/
+    
+  # To add assets from your dependencies, use the following syntax:
+  #   - package:package_name/
+  #     - package:package_name/file.png

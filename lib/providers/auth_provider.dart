@@ -16,10 +16,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (session != null) {
         _upsertUser(session.user);
         state = AuthSuccess(session.user);
-      } else {
+      } else if (state is! GuestMode) {
         state = AuthInitial();
       }
     });
+  }
+  
+  /// Sign in as a guest
+  void signInAsGuest() {
+    state = GuestMode();
   }
 
   final _supabase = Supabase.instance.client;
@@ -73,6 +78,8 @@ class AuthSuccess extends AuthState {
   final User user;
   AuthSuccess(this.user);
 }
+
+class GuestMode extends AuthState {}
 
 class AuthError extends AuthState {
   final String message;

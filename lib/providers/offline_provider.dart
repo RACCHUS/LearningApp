@@ -67,11 +67,15 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
               id: p.id.isNotEmpty ? p.id : existing.id,
               userId: p.userId,
               lessonId: p.lessonId,
+              contentId: p.contentId,
+              studyMode: p.studyMode,
               date: p.date,
               questionsAnswered: existing.questionsAnswered + p.questionsAnswered,
               correctCount: existing.correctCount + p.correctCount,
               lessonCompleted: existing.lessonCompleted || p.lessonCompleted,
               studyTimeSeconds: existing.studyTimeSeconds + p.studyTimeSeconds,
+              isSynced: existing.isSynced && p.isSynced,
+              metadata: p.metadata ?? existing.metadata,
             );
           }
         }

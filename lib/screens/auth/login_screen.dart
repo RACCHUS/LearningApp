@@ -30,6 +30,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleGuestSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      ref.read(authProvider.notifier).signInAsGuest();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -84,10 +104,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     side: BorderSide(color: Colors.grey[300]!),
                   ),
                 ),
-                icon: Image.asset(
-                  'assets/images/google_logo.png',
-                  height: 24,
-                  width: 24,
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                  ),
+                  child: const Text(
+                    'G',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
                 label: _isLoading
                     ? const SizedBox(
@@ -103,9 +133,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const SizedBox(height: 24),
               
+              // Guest Login Button
+              OutlinedButton(
+                onPressed: _isLoading ? null : _handleGuestSignIn,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: theme.primaryColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: _isLoading 
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Continue as Guest'),
+              ),
+              
+              const SizedBox(height: 24),
+              
               // Terms and Privacy Notice
               Text(
-                'By continuing, you agree to our Terms of Service and Privacy Policy',
+                'By signing in, you agree to our Terms of Service and Privacy Policy',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),

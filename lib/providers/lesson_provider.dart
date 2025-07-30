@@ -29,7 +29,6 @@ final lessonProvider =
             questionText: e['questions']['question_text'],
             options: List<String>.from(e['questions']['options']),
             correctAnswer: e['questions']['correct_answer'],
-            type: e['questions']['type'],
             explanation: e['questions']['explanation'],
             createdBy: e['questions']['created_by'],
             orderIndex: e['order_index'],
