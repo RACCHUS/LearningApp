@@ -71,7 +71,7 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
               questionsAnswered: existing.questionsAnswered + p.questionsAnswered,
               correctCount: existing.correctCount + p.correctCount,
               lessonCompleted: existing.lessonCompleted || p.lessonCompleted,
-              studyTimeMinutes: existing.studyTimeMinutes + p.studyTimeMinutes,
+              studyTimeSeconds: existing.studyTimeSeconds + p.studyTimeSeconds,
             );
           }
         }
@@ -83,7 +83,7 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
             'questions_answered': e.questionsAnswered,
             'correct_count': e.correctCount,
             'lesson_completed': e.lessonCompleted,
-            'study_time_minutes': e.studyTimeMinutes,
+            'study_time_seconds': e.studyTimeSeconds,
           }).toList(),
         );
         await _hiveService.clearProgress();

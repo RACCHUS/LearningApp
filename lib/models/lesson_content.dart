@@ -42,12 +42,14 @@ class ConceptContent extends LessonContent {
   final String id;
   final String conceptText;
   final String? exampleText;
+  final List<String>? keyPoints;
   final String createdBy;
 
   ConceptContent({
     required this.id,
     required this.conceptText,
     this.exampleText,
+    this.keyPoints,
     required this.createdBy,
   });
 }

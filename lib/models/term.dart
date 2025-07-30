@@ -1,3 +1,5 @@
+import 'lesson_content.dart';
+
 class Term {
   final String id;
   final String term;
@@ -20,6 +22,16 @@ class Term {
       definition: json['definition'],
       example: json['example'],
       createdBy: json['created_by'],
+    );
+  }
+  
+  factory Term.fromTermContent(TermContent content) {
+    return Term(
+      id: content.id,
+      term: content.term,
+      definition: content.definition,
+      example: content.example,
+      createdBy: content.createdBy,
     );
   }
 }

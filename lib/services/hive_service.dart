@@ -1,37 +1,222 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:learning_pwa/models/concept.dart';
+import 'package:learning_pwa/models/concept_adapter.dart';
 import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/models/mcq.dart';
+import 'package:learning_pwa/models/mcq_adapter.dart';
 import 'package:learning_pwa/models/user_progress.dart';
 
+// Register Hive adapters for all models
+void registerHiveAdapters() {
+  Hive.registerAdapter(LessonAdapter());
+  Hive.registerAdapter(ConceptAdapter());
+  Hive.registerAdapter(McqAdapter());
+  Hive.registerAdapter(UserProgressAdapter());
+}
+
+final hiveServiceProvider = Provider<HiveService>((ref) {
+  final service = HiveService();
+  service.init();
+  return service;
+});
+
 class HiveService {
+  static const String _lessonsBox = 'lessons';
+  static const String _conceptsBox = 'concepts';
+  static const String _mcqsBox = 'mcqs';
+  static const String _progressBox = 'progress';
+  
+  late final Box<Lesson> _lessonBox;
+  late final Box<Concept> _conceptBox;
+  late final Box<Mcq> _mcqBox;
+  late final Box<UserProgress> _progressBoxInstance;
+  
   Future<void> init() async {
     await Hive.initFlutter();
-    Hive.registerAdapter(LessonAdapter());
-    Hive.registerAdapter(UserProgressAdapter());
+    
+    // Register all adapters
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(LessonAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(UserProgressAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(ConceptAdapter());
+    }
+    if (!Hive.isAdapterRegistered(3)) {
+      Hive.registerAdapter(McqAdapter());
+    }
+    
+    // Open all boxes
+    _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);
+    _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
+    _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
+    _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
   }
 
+  // Lesson methods
   Future<void> cacheLesson(Lesson lesson) async {
-    final box = await Hive.openBox<Lesson>('lessons');
-    await box.put(lesson.id, lesson);
+    await _lessonBox.put(lesson.id, lesson);
   }
-
+  
+  Future<void> cacheLessons(List<Lesson> lessons) async {
+    await _lessonBox.putAll(Map.fromEntries(
+      lessons.map((lesson) => MapEntry(lesson.id, lesson)),
+    ));
+  }
+  
   Future<Lesson?> getLesson(String lessonId) async {
-    final box = await Hive.openBox<Lesson>('lessons');
-    return box.get(lessonId);
+    return _lessonBox.get(lessonId);
+  }
+  
+  Future<List<Lesson>> getAllLessons() async {
+    return _lessonBox.values.toList();
+  }
+  
+  Future<List<Lesson>> searchLessons(String query) async {
+    final normalizedQuery = query.toLowerCase();
+    return _lessonBox.values
+        .where((lesson) => 
+          lesson.title.toLowerCase().contains(normalizedQuery) ||
+          (lesson.description?.toLowerCase().contains(normalizedQuery) ?? false) ||
+          lesson.tags.any((tag) => tag.toLowerCase().contains(normalizedQuery)))
+        .toList();
   }
 
+  // Concept methods
+  Future<void> cacheConcept(Concept concept) async {
+    await _conceptBox.put(concept.id, concept);
+  }
+  
+  Future<void> cacheConcepts(List<Concept> concepts) async {
+    await _conceptBox.putAll(Map.fromEntries(
+      concepts.map((concept) => MapEntry(concept.id, concept)),
+    ));
+  }
+  
+  Future<Concept?> getConcept(String conceptId) async {
+    return _conceptBox.get(conceptId);
+  }
+  
+  Future<List<Concept>> getConceptsByLesson(String lessonId) async {
+    final concepts = _conceptBox.values.toList();
+    return concepts.where((concept) => concept.lessonId == lessonId).toList();
+  }
+  
+  // MCQ methods
+  Future<void> cacheMcq(Mcq mcq) async {
+    await _mcqBox.put(mcq.id, mcq);
+  }
+  
+  Future<void> cacheMcqs(List<Mcq> mcqs) async {
+    await _mcqBox.putAll(Map.fromEntries(
+      mcqs.map((mcq) => MapEntry(mcq.id, mcq)),
+    ));
+  }
+  
+  Future<Mcq?> getMcq(String mcqId) async {
+    return _mcqBox.get(mcqId);
+  }
+  
+  Future<List<Mcq>> getMcqsByLesson(String lessonId) async {
+    final mcqs = _mcqBox.values.toList();
+    return mcqs.where((mcq) => mcq.lessonId == lessonId).toList();
+  }
+  
+  // Progress methods
   Future<void> cacheProgress(UserProgress progress) async {
-    final box = await Hive.openBox<UserProgress>('progress');
-    await box.put(progress.id, progress);
+    final existing = _progressBoxInstance.get(progress.id);
+    
+    // If progress exists, merge with existing data
+    if (existing != null) {
+      final merged = _mergeProgress(existing, progress);
+      await _progressBoxInstance.put(progress.id, merged);
+    } else {
+      await _progressBoxInstance.put(progress.id, progress);
+    }
   }
 
+  // Progress methods
   Future<List<UserProgress>> getProgress() async {
-    final box = await Hive.openBox<UserProgress>('progress');
-    return box.values.toList();
+    return _progressBoxInstance.values.toList();
   }
 
-  Future<void> clearProgress() async {
-    final box = await Hive.openBox<UserProgress>('progress');
-    await box.clear();
+  Future<List<UserProgress>> getUnsyncedProgress() async {
+    final progress = _progressBoxInstance.values.toList();
+    return progress.where((p) => !p.isSynced).toList();
+  }
+
+  Future<void> markProgressAsSynced(List<String> progressIds) async {
+    if (progressIds.isEmpty) return;
+    
+    await _progressBoxInstance.putAll(
+      Map.fromEntries(
+        await Future.wait(
+          progressIds.map((id) async {
+            final progress = _progressBoxInstance.get(id);
+            if (progress != null) {
+              return MapEntry(id, progress.copyWith(isSynced: true));
+            }
+            return MapEntry(id, null);
+          }),
+        ).then((entries) => entries.where((e) => e.value != null).cast<MapEntry<String, UserProgress>>()),
+      ),
+    );
+  }
+
+  // Clear methods
+  Future<void> clearAllData() async {
+    await Future.wait([
+      _lessonBox.clear(),
+      _conceptBox.clear(),
+      _mcqBox.clear(),
+      _progressBoxInstance.clear(),
+    ]);
+  }
+  
+  Future<void> clearProgress() => _progressBoxInstance.clear();
+  
+  // Close all boxes when done
+  Future<void> close() async {
+    await Future.wait([
+      _lessonBox.close(),
+      _conceptBox.close(),
+      _mcqBox.close(),
+      _progressBoxInstance.close(),
+    ]);
+  }
+  
+  /// Merge two progress objects, keeping the most recent data
+  UserProgress _mergeProgress(UserProgress existing, UserProgress newProgress) {
+    return UserProgress(
+      id: existing.id,
+      userId: existing.userId,
+      lessonId: existing.lessonId,
+      contentId: newProgress.contentId ?? existing.contentId,
+      studyMode: newProgress.studyMode,
+      date: newProgress.date.isAfter(existing.date) ? newProgress.date : existing.date,
+      questionsAnswered: existing.questionsAnswered + newProgress.questionsAnswered,
+      correctCount: existing.correctCount + newProgress.correctCount,
+      lessonCompleted: existing.lessonCompleted || newProgress.lessonCompleted,
+      studyTimeSeconds: existing.studyTimeSeconds + newProgress.studyTimeSeconds,
+      metadata: _mergeMetadata(existing.metadata, newProgress.metadata),
+      isSynced: existing.isSynced && newProgress.isSynced,
+    );
+  }
+  
+  /// Merge metadata from two progress objects
+  Map<String, dynamic>? _mergeMetadata(
+    Map<String, dynamic>? existing,
+    Map<String, dynamic>? newData,
+  ) {
+    if (existing == null) return newData;
+    if (newData == null) return existing;
+    
+    return {...existing, ...newData};
   }
 }
 
@@ -88,18 +273,27 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       id: fields[0] as String,
       userId: fields[1] as String,
       lessonId: fields[2] as String,
-      date: fields[3] as DateTime,
-      questionsAnswered: fields[4] as int,
-      correctCount: fields[5] as int,
-      lessonCompleted: fields[6] as bool,
-      studyTimeMinutes: fields[7] as int,
+      contentId: fields[3] as String?,
+      studyMode: fields[4] != null 
+          ? StudyMode.values.firstWhere(
+              (e) => e.toString() == 'StudyMode.${fields[4]}',
+              orElse: () => StudyMode.lesson,
+            )
+          : StudyMode.lesson,
+      date: fields[5] as DateTime,
+      questionsAnswered: fields[6] as int? ?? 0,
+      correctCount: fields[7] as int? ?? 0,
+      lessonCompleted: fields[8] as bool? ?? false,
+      studyTimeSeconds: fields[9] as int? ?? 0,
+      isSynced: fields[10] as bool? ?? false,
+      metadata: fields[11] as Map<String, dynamic>?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(12) // Number of fields
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -107,14 +301,22 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       ..writeByte(2)
       ..write(obj.lessonId)
       ..writeByte(3)
-      ..write(obj.date)
+      ..write(obj.contentId)
       ..writeByte(4)
-      ..write(obj.questionsAnswered)
+      ..write(obj.studyMode.toString().split('.').last)
       ..writeByte(5)
-      ..write(obj.correctCount)
+      ..write(obj.date)
       ..writeByte(6)
-      ..write(obj.lessonCompleted)
+      ..write(obj.questionsAnswered)
       ..writeByte(7)
-      ..write(obj.studyTimeMinutes);
+      ..write(obj.correctCount)
+      ..writeByte(8)
+      ..write(obj.lessonCompleted)
+      ..writeByte(9)
+      ..write(obj.studyTimeSeconds)
+      ..writeByte(10)
+      ..write(obj.isSynced)
+      ..writeByte(11)
+      ..write(obj.metadata);
   }
 }

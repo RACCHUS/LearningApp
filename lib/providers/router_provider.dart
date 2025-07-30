@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/screens/auth/login_screen.dart';
 import 'package:learning_pwa/screens/home_screen.dart';
+import 'package:learning_pwa/screens/test/notification_test_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -29,6 +30,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      // Development-only routes
+      GoRoute(
+        path: '/test/notifications',
+        builder: (context, state) => const NotificationTestScreen(),
       ),
     ],
   );

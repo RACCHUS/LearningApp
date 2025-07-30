@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+            - lint:always_declare_return_types
+            - lint:avoid_relative_lib_imports
+            - lint:avoid_renaming_method_parameters
+            - lint:lines_longer_than_80_chars
+            - public_member_api_docs
