@@ -259,7 +259,7 @@ class _ReminderScreenState extends ConsumerState<ReminderScreen> {
               itemCount: reminders.length,
               itemBuilder: (context, index) {
                 final reminder = reminders[index];
-                return _ReminderCard(reminder: reminder);
+                return ReminderCard(reminder: reminder);
               },
             );
           },
@@ -288,7 +288,7 @@ class _ReminderScreenState extends ConsumerState<ReminderScreen> {
                   icon: const Icon(Icons.refresh_rounded, size: 16),
                   label: const Text('Retry'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surfaceVariant,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     foregroundColor: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -304,3 +304,4 @@ class _ReminderScreenState extends ConsumerState<ReminderScreen> {
       ),
     );
   }
+}

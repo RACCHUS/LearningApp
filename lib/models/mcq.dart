@@ -1,51 +1,58 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'lesson_content.dart';
 
 part 'mcq.g.dart';
 
-@HiveType(typeId: 3)
+@HiveType(typeId: 4)
 @JsonSerializable()
-class Mcq {
-  @HiveField(0)
-  final String id;
-  
-  @HiveField(1)
-  final String lessonId;
-  
-  @HiveField(2)
-  final String question;
-  
-  @HiveField(3)
-  final List<String> options;
-  
-  @HiveField(4)
-  final int correctOptionIndex;
-  
-  @HiveField(5)
-  final String? explanation;
-  
+class Mcq extends LessonContent {
   @HiveField(6)
-  final String createdBy;
-  
+  final String question;
+
   @HiveField(7)
-  final DateTime createdAt;
+  final List<String> options;
+
+  @HiveField(8)
+  final int correctOption;
+
+  @HiveField(9)
+  final String? explanation;
 
   Mcq({
-    required this.id,
-    required this.lessonId,
+    required super.id,
+    required super.lessonId,
+    required super.order,
     required this.question,
     required this.options,
-    required this.correctOptionIndex,
+    required this.correctOption,
     this.explanation,
-    required this.createdBy,
-    DateTime? createdAt,
-  })  : assert(correctOptionIndex >= 0 && correctOptionIndex < options.length,
-            'correctOptionIndex must be a valid index in options'),
-        createdAt = createdAt ?? DateTime.now();
+    required super.createdAt,
+    required super.updatedAt,
+  }) : super(type: 'mcq');
 
   factory Mcq.fromJson(Map<String, dynamic> json) => _$McqFromJson(json);
-  
+
+  @override
   Map<String, dynamic> toJson() => _$McqToJson(this);
-  
-  bool isCorrect(int selectedIndex) => selectedIndex == correctOptionIndex;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is Mcq &&
+          runtimeType == other.runtimeType &&
+          question == other.question &&
+          listEquals(options, other.options) &&
+          correctOption == other.correctOption &&
+          explanation == other.explanation;
+
+  @override
+  int get hashCode =>
+      super.hashCode ^
+      question.hashCode ^
+      options.hashCode ^
+      correctOption.hashCode ^
+      explanation.hashCode;
 }

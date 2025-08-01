@@ -12,11 +12,19 @@ class SupabaseService {
   
   // Auth methods
   Future<AuthResponse> signInWithGoogle() async {
-    return await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      authScreenRoute: '/auth',
-      redirectTo: 'https://your-app-url.com/callback', // Update with your app URL
-    );
+    try {
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'https://your-app-url.com/callback', // Update with your app URL
+      );
+      // Return a successful response with current auth state
+      return AuthResponse(
+        user: _client.auth.currentUser,
+        session: _client.auth.currentSession,
+      );
+    } catch (e) {
+      throw Exception('Google sign-in failed: $e');
+    }
   }
   
   Future<void> signOut() async {
@@ -35,6 +43,6 @@ class SupabaseService {
   SupabaseStorageClient get storage => _client.storage;
   
   // Realtime subscriptions
-  RealtimeChannel channel(String name, {String? key}) => 
-      _client.channel(name, key: key);
+  RealtimeChannel channel(String name) => 
+      _client.channel(name);
 }

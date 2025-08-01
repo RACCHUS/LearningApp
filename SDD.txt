@@ -1,0 +1,279 @@
+📘 Software Design Document (SDD)
+**App Name:** [Your App Name Here]  
+**Type:** Learning PWA (Web, Android, iOS via browser install)  
+**Frontend:** Flutter Web  
+**Backend:** Supabase (Auth, Postgres, Storage)  
+**Hosting:** Firebase Hosting  
+**Target Users:** Busy adults and students who want customizable, mobile-first learning experiences.
+
+🧩 1. Features Overview
+**Core Learning Modes**
+- **Flashcards:** Term → tap → definition (from terms)
+- **Multiple Choice Questions:** 1 question → 4 options → feedback (from questions)
+- **Concepts with Examples:** Short paragraph + 1 example (from concepts)
+- **Lesson Mode:** Combines above types into one flow (from lessons via join tables)
+
+**User Features**
+- Google Login via Supabase Auth
+- Study Plan (daily goal: lessons or questions)
+- Progress Tracker (per day, per lesson)
+- Reminders (custom time/frequency)
+- Lesson Categories/Tags (filterable)
+- Offline Mode (downloaded lessons stored locally)
+- Math Support (render equations using KaTeX or MathJax)
+- Quiz Types: MCQ, true/false, short answer
+- Score tracking + feedback
+
+🧱 2. Data Schema (Postgres via Supabase)
+
+```sql
+-- Users (UUID primary keys)
+users(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  display_name TEXT
+);
+
+-- Lessons
+lessons(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  tags TEXT[] DEFAULT '{}',
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_lessons_tags ON lessons USING GIN(tags);
+CREATE INDEX idx_lessons_created_by ON lessons(created_by);
+
+-- Terms
+terms(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  term TEXT NOT NULL,
+  definition TEXT NOT NULL,
+  example TEXT,
+  created_by UUID REFERENCES users(id)
+);
+
+-- Concepts
+concepts(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  concept_text TEXT NOT NULL,
+  example_text TEXT,
+  created_by UUID REFERENCES users(id)
+);
+
+-- Questions
+questions(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question_text TEXT NOT NULL,
+  options JSONB NOT NULL, -- ["option1", "option2", "option3", "option4"]
+  correct_answer INTEGER NOT NULL, -- 0-based index
+  type TEXT DEFAULT 'mcq' CHECK (type IN ('mcq', 'true_false', 'short_answer')),
+  explanation TEXT,
+  created_by UUID REFERENCES users(id)
+);
+
+-- Join Tables
+lesson_terms(
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  term_id UUID REFERENCES terms(id) ON DELETE CASCADE,
+  PRIMARY KEY (lesson_id, term_id)
+);
+
+lesson_questions(
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+  order_index INTEGER DEFAULT 0,
+  PRIMARY KEY (lesson_id, question_id)
+);
+
+lesson_concepts(
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  concept_id UUID REFERENCES concepts(id) ON DELETE CASCADE,
+  PRIMARY KEY (lesson_id, concept_id)
+);
+
+-- User Progress
+user_progress(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  date DATE DEFAULT CURRENT_DATE,
+  questions_answered INTEGER DEFAULT 0,
+  correct_count INTEGER DEFAULT 0,
+  lesson_completed BOOLEAN DEFAULT FALSE,
+  study_time_minutes INTEGER DEFAULT 0,
+  UNIQUE(user_id, lesson_id, date)
+);
+CREATE INDEX idx_user_progress_user_date ON user_progress(user_id, date);
+CREATE INDEX idx_user_progress_lesson ON user_progress(lesson_id);
+
+-- Reminders
+reminders(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  time_of_day TIME NOT NULL, -- e.g., '14:30:00'
+  frequency TEXT DEFAULT 'daily' CHECK (frequency IN ('daily', 'weekdays', 'custom')),
+  mode TEXT DEFAULT 'lesson' CHECK (mode IN ('lesson', 'flashcard', 'quiz')),
+  goal_count INTEGER DEFAULT 5,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Offline Content Cache
+offline_content(
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+  cached_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, lesson_id)
+);
+```
+
+**Row Level Security (RLS) Policies:**
+```sql
+-- Enable RLS on all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lessons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE terms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE concepts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE offline_content ENABLE ROW LEVEL SECURITY;
+
+-- Users can only see/edit their own data
+CREATE POLICY user_own_data ON users FOR ALL USING (auth.uid() = id);
+CREATE POLICY user_progress_own ON user_progress FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY reminders_own ON reminders FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY offline_content_own ON offline_content FOR ALL USING (auth.uid() = user_id);
+
+-- Public read access to lessons, terms, concepts, questions
+CREATE POLICY lessons_public_read ON lessons FOR SELECT USING (true);
+CREATE POLICY terms_public_read ON terms FOR SELECT USING (true);
+CREATE POLICY concepts_public_read ON concepts FOR SELECT USING (true);
+CREATE POLICY questions_public_read ON questions FOR SELECT USING (true);
+
+-- Join tables inherit parent permissions
+CREATE POLICY lesson_terms_public_read ON lesson_terms FOR SELECT USING (true);
+CREATE POLICY lesson_questions_public_read ON lesson_questions FOR SELECT USING (true);
+CREATE POLICY lesson_concepts_public_read ON lesson_concepts FOR SELECT USING (true);
+```
+
+🧰 3. Tech Stack Details
+
+| Component | Tool | Specific Implementation |
+|-----------|------|------------------------|
+| **UI Framework** | Flutter Web | flutter create --platform web |
+| **State Management** | Riverpod | For reactive state + async data |
+| **Authentication** | Supabase Auth | Google OAuth + JWT handling |
+| **Database** | Supabase Postgres | Real-time subscriptions for progress |
+| **Local Storage** | Hive | For offline lesson content caching |
+| **HTTP Client** | Supabase Dart Client | Built-in real-time + REST |
+| **Notifications** | flutter_local_notifications | PWA local notifications |
+| **Math Rendering** | flutter_math_fork | KaTeX rendering in Flutter |
+| **Hosting** | Firebase Hosting | PWA with service worker |
+
+📱 4. App Architecture
+
+**State Management Structure (Riverpod):**
+```dart
+// Providers
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>
+final lessonsProvider = FutureProvider<List<Lesson>>
+final userProgressProvider = StateNotifierProvider<ProgressNotifier, ProgressState>
+final offlineProvider = StateNotifierProvider<OfflineNotifier, OfflineState>
+```
+
+**Folder Structure:**
+```
+lib/
+├── main.dart
+├── providers/          # Riverpod providers & notifiers
+├── models/            # Data models (Lesson, Question, etc.)
+├── services/          # Supabase, Hive, Notification services
+├── screens/           # UI pages
+├── widgets/           # Reusable components
+└── utils/             # Helpers, constants
+```
+
+🔄 5. Core Logic Implementation
+
+**Study Mode Algorithm:**
+1. **Flashcards:** Show terms in random order, track attempts
+2. **MCQ:** Show questions by `order_index`, record answer + time
+3. **Concepts:** Show concept → example → next
+4. **Lesson Mode:** Mix all types based on join table relationships
+
+**Progress Tracking Logic:**
+- **Per Question:** Increment `questions_answered`, `correct_count` on each answer
+- **Per Lesson:** Set `lesson_completed = true` when all content viewed/answered
+- **Daily Streaks:** Count consecutive days with `questions_answered > 0`
+- **Sync:** Update `user_progress` after each question, batch offline changes
+
+**Offline Sync Strategy:**
+1. **Cache:** Store lesson content in Hive when "Download" tapped
+2. **Offline Mode:** Read from Hive, store progress locally
+3. **Sync:** When online, batch upload cached progress to Supabase
+4. **Conflict Resolution:** Last-write-wins for progress (sum daily totals)
+
+**Notification System:**
+```dart
+// Check daily at reminder time
+if (DateTime.now().hour == reminderHour) {
+  final todayProgress = await getTodayProgress();
+  if (todayProgress.questionsAnswered < reminder.goalCount) {
+    showLocalNotification("Study reminder: ${reminder.goalCount - todayProgress.questionsAnswered} questions left!");
+  }
+}
+```
+
+🚀 6. Implementation Phases
+
+**Phase 1: Core MVP (Week 1-2)**
+1. Set up Supabase project, create tables with RLS
+2. Flutter web project with Riverpod + Supabase client
+3. Google Auth login flow
+4. Basic study modes: Flashcard, MCQ, Concept viewers
+5. Progress tracking (local state only)
+
+**Phase 2: Full Features (Week 3-4)**
+1. Offline mode with Hive caching
+2. Lesson mode (combined flow)
+3. Progress dashboard with streaks
+4. Reminder system with local notifications
+5. Deploy to Firebase Hosting
+
+**Essential Environment Variables:**
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+FIREBASE_CONFIG=your_firebase_config
+```
+
+**Ready-to-Build Queries:**
+```dart
+// Get lesson with all content
+final lesson = await supabase
+  .from('lessons')
+  .select('''
+    *, 
+    lesson_terms(terms(*)),
+    lesson_questions(questions(*)),
+    lesson_concepts(concepts(*))
+  ''')
+  .eq('id', lessonId)
+  .single();
+
+// Update progress
+await supabase.from('user_progress').upsert({
+  'user_id': userId,
+  'lesson_id': lessonId,
+  'date': DateTime.now().toIso8601String().split('T')[0],
+  'questions_answered': currentCount + 1,
+  'correct_count': isCorrect ? currentCorrect + 1 : currentCorrect,
+});
+```
+
+This SDD now contains all implementation details needed for an AI to build the complete app without making assumptions.

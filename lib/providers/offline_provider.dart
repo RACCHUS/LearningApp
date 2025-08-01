@@ -10,10 +10,6 @@ final offlineProvider =
   return OfflineNotifier(ref.read(hiveServiceProvider));
 });
 
-final hiveServiceProvider = Provider<HiveService>((ref) {
-  return HiveService();
-});
-
 class OfflineNotifier extends StateNotifier<OfflineState> {
   final HiveService _hiveService;
   final _supabase = Supabase.instance.client;

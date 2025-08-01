@@ -85,7 +85,7 @@ class HomeNavBar extends StatelessWidget {
               Icon(
                 isActive ? activeIcon : icon,
                 color: isActive
-                    ? Theme.of(context).primaryColor
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
                 size: 24,
               ),
@@ -94,7 +94,7 @@ class HomeNavBar extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: isActive
-                          ? Theme.of(context).primaryColor
+                          ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
                       fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     ),

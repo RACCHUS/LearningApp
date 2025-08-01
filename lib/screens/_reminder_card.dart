@@ -3,10 +3,10 @@ import 'package:learning_pwa/models/reminder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/reminder_provider.dart';
 
-class _ReminderCard extends ConsumerWidget {
+class ReminderCard extends ConsumerWidget {
   final Reminder reminder;
   
-  const _ReminderCard({
+  const ReminderCard({
     required this.reminder,
   });
 
@@ -105,7 +105,6 @@ class _ReminderCard extends ConsumerWidget {
       case ReminderType.custom:
         return Icons.notifications_active_rounded;
       case ReminderType.study:
-      default:
         return Icons.school_rounded;
     }
   }

@@ -142,7 +142,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
         centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
-        foregroundColor: theme.colorScheme.onBackground,
+        foregroundColor: theme.colorScheme.onSurface,
       ),
       body: Column(
         children: [

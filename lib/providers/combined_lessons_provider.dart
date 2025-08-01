@@ -1,42 +1,42 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/lesson.dart';
-import '../services/local_lesson_service.dart';
-import '../models/base_lesson.dart';
+import 'package:learning_pwa/models/base_lesson.dart';
+import 'package:learning_pwa/services/lesson_service.dart';
+import 'package:learning_pwa/services/hive_service.dart';
 
-final combinedLessonsProvider = FutureProvider.family<List<BaseLesson>, String>((ref, userId) async {
-  final supabase = Supabase.instance.client;
-  final List<BaseLesson> allLessons = [];
-  
-  try {
-    // Get cloud lessons if user is authenticated
-    if (userId.isNotEmpty) {
-      final cloudLessons = await _fetchCloudLessons(supabase);
-      allLessons.addAll(cloudLessons);
+final combinedLessonsProvider = FutureProvider.family<List<BaseLesson>, String>(
+  (ref, userId) async {
+    final lessonService = LessonService();
+    final hiveServiceRef = hiveService;
+    
+    try {
+      // Try to get online lessons first
+      List<BaseLesson> onlineLessons = [];
+      try {
+        onlineLessons = await lessonService.getLessonsForUser(userId);
+      } catch (e) {
+        debugPrint('Failed to get online lessons: $e');
+        // Continue with offline lessons only
+      }
+      
+      // Get offline lessons
+      List<BaseLesson> offlineLessons = [];
+      try {
+        offlineLessons = await hiveServiceRef.getOfflineLessons(userId);
+      } catch (e) {
+        debugPrint('Failed to get offline lessons: $e');
+        // Continue with empty list
+      }
+      
+      // Combine and sort by most recent
+      final allLessons = [...onlineLessons, ...offlineLessons];
+      allLessons.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      return allLessons;
+    } catch (e) {
+      debugPrint('Error in combinedLessonsProvider: $e');
+      // Return empty list as fallback
+      return <BaseLesson>[];
     }
-
-    // Get local lessons
-    final localLessons = await LocalLessonService.getLessons();
-    allLessons.addAll(localLessons);
-
-    // Sort by creation date (newest first)
-    allLessons.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  } catch (e) {
-    print('Error combining lessons: $e');
-    // Continue with whatever lessons we have
-  }
-
-  return allLessons;
-});
-
-Future<List<Lesson>> _fetchCloudLessons(SupabaseClient supabase) async {
-  try {
-    final response = await supabase.from('lessons').select();
-    return (response as List)
-        .map((json) => Lesson.fromJson(json))
-        .toList();
-  } catch (e) {
-    print('Error fetching cloud lessons: $e');
-    return [];
-  }
-}
+  },
+);

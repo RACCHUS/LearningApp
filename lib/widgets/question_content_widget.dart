@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 
 class QuestionContentWidget extends StatefulWidget {
   final QuestionContent? initialContent;
@@ -99,15 +99,17 @@ class _QuestionContentWidgetState extends State<QuestionContentWidget> {
 
       widget.onSave(
         QuestionContent(
-          id: widget.initialContent?.id ?? '',
+          id: widget.initialContent?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          lessonId: '', // Will be set by parent
+          order: 0, // Will be set by parent
           questionText: _questionController.text,
           options: options,
           correctAnswer: _correctAnswerIndex,
           explanation: _explanationController.text.isNotEmpty
               ? _explanationController.text
               : null,
-          createdBy: widget.initialContent?.createdBy ?? '',
-          orderIndex: widget.initialContent?.orderIndex ?? 0,
+          createdAt: widget.initialContent?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
     }

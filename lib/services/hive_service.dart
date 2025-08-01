@@ -3,24 +3,45 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:learning_pwa/models/concept.dart';
-import 'package:learning_pwa/models/concept_adapter.dart';
+import 'package:learning_pwa/models/concept_adapter.dart' as concept_adapter;
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/mcq.dart';
-import 'package:learning_pwa/models/mcq_adapter.dart';
+import 'package:learning_pwa/models/mcq_adapter.dart' as mcq_adapter;
+import 'package:learning_pwa/models/term_adapter.dart' as term_adapter;
+import 'package:learning_pwa/models/question_content_adapter.dart';
+import 'package:learning_pwa/models/concept_content_adapter.dart';
 import 'package:learning_pwa/models/user_progress.dart';
 
 // Register Hive adapters for all models
 void registerHiveAdapters() {
-  Hive.registerAdapter(LessonAdapter());
-  Hive.registerAdapter(ConceptAdapter());
-  Hive.registerAdapter(McqAdapter());
-  Hive.registerAdapter(UserProgressAdapter());
+  // Register adapters if not already registered
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(LessonAdapter());
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(concept_adapter.ConceptAdapter());
+  }
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(mcq_adapter.McqAdapter());
+  }
+  if (!Hive.isAdapterRegistered(4)) {
+    Hive.registerAdapter(term_adapter.TermAdapter());
+  }
+  if (!Hive.isAdapterRegistered(5)) {
+    Hive.registerAdapter(QuestionContentAdapter());
+  }
+  if (!Hive.isAdapterRegistered(6)) {
+    Hive.registerAdapter(ConceptContentAdapter());
+  }
+  // UserProgress adapter should be registered if it exists
+  // Add other adapters as needed
 }
 
+// Global instance to be initialized in main.dart
+late final HiveService hiveService;
+
 final hiveServiceProvider = Provider<HiveService>((ref) {
-  final service = HiveService();
-  service.init();
-  return service;
+  return hiveService;
 });
 
 class HiveService {
@@ -37,20 +58,6 @@ class HiveService {
   Future<void> init() async {
     await Hive.initFlutter();
     
-    // Register all adapters
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(LessonAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(UserProgressAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(ConceptAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(McqAdapter());
-    }
-    
     // Open all boxes
     _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);
     _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
@@ -61,6 +68,24 @@ class HiveService {
   // Lesson methods
   Future<void> cacheLesson(Lesson lesson) async {
     await _lessonBox.put(lesson.id, lesson);
+  }
+
+  Future<List<Lesson>> getOfflineLessons(String userId) async {
+    return _lessonBox.values
+        .where((lesson) => lesson.userId == userId)
+        .toList();
+  }
+
+  Future<bool> isLessonOffline(String lessonId) async {
+    return _lessonBox.containsKey(lessonId);
+  }
+
+  Future<void> deleteLessonOffline(String lessonId) async {
+    await _lessonBox.delete(lessonId);
+  }
+
+  Future<void> clearOfflineLessons() async {
+    await _lessonBox.clear();
   }
   
   Future<void> cacheLessons(List<Lesson> lessons) async {
@@ -85,6 +110,14 @@ class HiveService {
           (lesson.description?.toLowerCase().contains(normalizedQuery) ?? false) ||
           lesson.tags.any((tag) => tag.toLowerCase().contains(normalizedQuery)))
         .toList();
+  }
+
+  Future<void> saveLesson(Lesson lesson) async {
+    await _lessonBox.put(lesson.id, lesson);
+  }
+
+  Future<void> saveProgress(UserProgress progress) async {
+    await _progressBoxInstance.put(progress.id, progress);
   }
 
   // Concept methods
@@ -235,15 +268,19 @@ class LessonAdapter extends TypeAdapter<Lesson> {
       title: fields[1] as String,
       description: fields[2] as String?,
       tags: (fields[3] as List).cast<String>(),
-      createdBy: fields[4] as String,
-      createdAt: fields[5] as DateTime,
+      createdAt: fields[4] as DateTime,
+      updatedAt: fields[5] as DateTime,
+      userId: fields[6] as String,
+      terms: [],
+      questions: [],
+      concepts: [],
     );
   }
 
   @override
   void write(BinaryWriter writer, Lesson obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -253,9 +290,11 @@ class LessonAdapter extends TypeAdapter<Lesson> {
       ..writeByte(3)
       ..write(obj.tags)
       ..writeByte(4)
-      ..write(obj.createdBy)
+      ..write(obj.createdAt)
       ..writeByte(5)
-      ..write(obj.createdAt);
+      ..write(obj.updatedAt)
+      ..writeByte(6)
+      ..write(obj.userId);
   }
 }
 

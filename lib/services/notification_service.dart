@@ -5,7 +5,6 @@ import 'package:learning_pwa/models/reminder.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter/foundation.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -88,8 +87,8 @@ class NotificationService {
           break;
         case ReminderType.study:
         case ReminderType.custom:
-        default:
           title = 'Time to Study!';
+          break;
       }
       
       await flutterLocalNotificationsPlugin.zonedSchedule(

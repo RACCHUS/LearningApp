@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/utils/math_utils.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';

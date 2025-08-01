@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learning_app/models/concept.dart';
-import 'package:learning_app/models/mcq.dart';
+import 'package:learning_pwa/models/concept.dart';
+import 'package:learning_pwa/models/mcq.dart';
 
 void main() {
   group('Concept Model Tests', () {
@@ -64,9 +64,8 @@ void main() {
       expect(mcq.lessonId, '101');
       expect(mcq.question, 'Test Question');
       expect(mcq.options, ['Option 1', 'Option 2', 'Option 3']);
-      expect(mcq.correctOptionIndex, 0);
+      expect(mcq.correctOption, 0);
       expect(mcq.explanation, 'Test Explanation');
-      expect(mcq.createdBy, 'test_user');
       expect(mcq.createdAt, DateTime.utc(2023, 1, 1));
     });
 
@@ -74,12 +73,13 @@ void main() {
       final mcq = Mcq(
         id: '1',
         lessonId: '101',
+        order: 0,
         question: 'Test Question',
         options: ['Option 1', 'Option 2', 'Option 3'],
-        correctOptionIndex: 0,
+        correctOption: 0,
         explanation: 'Test Explanation',
-        createdBy: 'test_user',
         createdAt: DateTime.utc(2023, 1, 1),
+        updatedAt: DateTime.utc(2023, 1, 1),
       );
 
       final json = mcq.toJson();

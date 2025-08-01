@@ -1,4 +1,4 @@
-import 'lesson_content.dart';
+import 'package:learning_pwa/models/term_content.dart';
 
 class Term {
   final String id;
@@ -31,7 +31,15 @@ class Term {
       term: content.term,
       definition: content.definition,
       example: content.example,
-      createdBy: content.createdBy,
+      createdBy: 'system', // Default value since TermContent doesn't have createdBy
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'term': term,
+    'definition': definition,
+    'example': example,
+    'created_by': createdBy,
+  };
 }

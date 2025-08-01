@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
@@ -113,7 +113,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               preferredSize: const Size.fromHeight(4.0),
               child: LinearProgressIndicator(
                 value: contentList.isEmpty ? 0 : (_currentPageIndex + 1) / contentList.length,
-                backgroundColor: theme.colorScheme.surfaceVariant,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 color: theme.colorScheme.primary,
                 minHeight: 2,
               ),
@@ -172,7 +172,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                         correctAnswer: content.correctAnswer,
                         type: 'multiple_choice', // Default type
                         explanation: content.explanation,
-                        createdBy: content.createdBy,
+                        createdBy: 'system', // Default value since content classes don't have createdBy
                       );
                       contentWidget = McqScreen(
                         questions: [question],

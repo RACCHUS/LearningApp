@@ -3,7 +3,6 @@ import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/mcq.dart';
 import 'package:learning_pwa/models/user_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
-import 'package:learning_pwa/services/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DataSyncService {
@@ -47,15 +46,13 @@ class DataSyncService {
           .select()
           .order('created_at', ascending: false);
       
-      if (response != null) {
-        final lessons = (response as List)
-            .map((json) => Lesson.fromJson(json))
-            .toList();
-        
-        // Cache lessons locally
-        await _hiveService.cacheLessons(lessons);
-      }
-    } catch (e) {
+      final lessons = (response as List)
+          .map((json) => Lesson.fromJson(json))
+          .toList();
+      
+      // Cache lessons locally
+      await _hiveService.cacheLessons(lessons);
+        } catch (e) {
       throw Exception('Failed to sync lessons: $e');
     }
   }
@@ -69,15 +66,13 @@ class DataSyncService {
           .select()
           .order('created_at', ascending: false);
       
-      if (response != null) {
-        final concepts = (response as List)
-            .map((json) => Concept.fromJson(json))
-            .toList();
-        
-        // Cache concepts locally
-        await _hiveService.cacheConcepts(concepts);
-      }
-    } catch (e) {
+      final concepts = (response as List)
+          .map((json) => Concept.fromJson(json))
+          .toList();
+      
+      // Cache concepts locally
+      await _hiveService.cacheConcepts(concepts);
+        } catch (e) {
       throw Exception('Failed to sync concepts: $e');
     }
   }
@@ -91,15 +86,13 @@ class DataSyncService {
           .select()
           .order('created_at', ascending: false);
       
-      if (response != null) {
-        final mcqs = (response as List)
-            .map((json) => Mcq.fromJson(json))
-            .toList();
-        
-        // Cache MCQs locally
-        await _hiveService.cacheMcqs(mcqs);
-      }
-    } catch (e) {
+      final mcqs = (response as List)
+          .map((json) => Mcq.fromJson(json))
+          .toList();
+      
+      // Cache MCQs locally
+      await _hiveService.cacheMcqs(mcqs);
+        } catch (e) {
       throw Exception('Failed to sync MCQs: $e');
     }
   }
@@ -128,17 +121,15 @@ class DataSyncService {
           .eq('user_id', _userId)
           .order('date', ascending: false);
       
-      if (response != null) {
-        final serverProgress = (response as List)
-            .map((json) => UserProgress.fromJson(json))
-            .toList();
-        
-        // Cache server progress locally
-        for (final progress in serverProgress) {
-          await _hiveService.cacheProgress(progress);
-        }
+      final serverProgress = (response as List)
+          .map((json) => UserProgress.fromJson(json))
+          .toList();
+      
+      // Cache server progress locally
+      for (final progress in serverProgress) {
+        await _hiveService.cacheProgress(progress);
       }
-    } catch (e) {
+        } catch (e) {
       throw Exception('Failed to sync progress: $e');
     }
   }

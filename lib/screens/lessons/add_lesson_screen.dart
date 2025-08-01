@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/lesson_creation_provider.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
@@ -31,25 +30,11 @@ class _AddLessonScreenState extends ConsumerState<AddLessonScreen> {
   }
 
   Future<void> _pickJsonFile() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-
-    if (pickedFile != null) {
-      setState(() {
-        _jsonFile = File(pickedFile.path);
-      });
-    }
-  }
-
-  void _addTag() {
-    final tag = _tagController.text.trim();
-    if (tag.isNotEmpty) {
-      ref.read(lessonCreationProvider.notifier).addTag(tag);
-      _tagController.clear();
+    // TODO: Implement file picker functionality
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('File picker not implemented yet')),
+      );
     }
   }
 
@@ -90,16 +75,11 @@ class _AddLessonScreenState extends ConsumerState<AddLessonScreen> {
       } else {
         // Create lesson manually
         final lesson = await lessonService.addLesson(
-          Lesson(
-            id: '',
-            title: _titleController.text,
-            description: _descriptionController.text.isNotEmpty
-                ? _descriptionController.text
-                : null,
-            tags: state.tags,
-            createdBy: userId,
-            createdAt: DateTime.now(),
-          ),
+          _titleController.text,
+          _descriptionController.text.isNotEmpty
+              ? _descriptionController.text
+              : null,
+          userId,
         );
         
         // Add lesson content

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/lesson_creation_provider.dart';
 import 'package:learning_pwa/widgets/concept_content_widget.dart';
 import 'package:learning_pwa/widgets/content_list_item.dart';
@@ -159,8 +159,8 @@ class _ContentManagementPanelState extends ConsumerState<ContentManagementPanel>
 
   Widget _buildEditForm(LessonContent content) {
     return switch (content) {
-      TermContent() => TermContentWidget(
-          initialContent: content,
+      TermContent termContent => TermContentWidget(
+          initialContent: termContent,
           onSave: (updated) {
             _updateContent(content.id, updated);
             if (mounted) Navigator.pop(context);
@@ -171,8 +171,8 @@ class _ContentManagementPanelState extends ConsumerState<ContentManagementPanel>
             if (mounted) Navigator.pop(context);
           },
         ),
-      QuestionContent() => QuestionContentWidget(
-          initialContent: content,
+      QuestionContent questionContent => QuestionContentWidget(
+          initialContent: questionContent,
           onSave: (updated) {
             _updateContent(content.id, updated);
             if (mounted) Navigator.pop(context);
@@ -183,8 +183,8 @@ class _ContentManagementPanelState extends ConsumerState<ContentManagementPanel>
             if (mounted) Navigator.pop(context);
           },
         ),
-      ConceptContent() => ConceptContentWidget(
-          initialContent: content,
+      ConceptContent conceptContent => ConceptContentWidget(
+          initialContent: conceptContent,
           onSave: (updated) {
             _updateContent(content.id, updated);
             if (mounted) Navigator.pop(context);

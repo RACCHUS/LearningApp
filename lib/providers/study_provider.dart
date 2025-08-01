@@ -1,9 +1,16 @@
-import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/reminder.dart';
+import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/services/notification_service.dart';
+import 'package:learning_pwa/services/lesson_service.dart';
+
+enum StudyMode {
+  flashcard,
+  mcq,
+  concept,
+  lesson
+}
 
 final studyProvider = StateNotifierProvider<StudyNotifier, StudyState>((ref) {
   return StudyNotifier();
@@ -11,22 +18,66 @@ final studyProvider = StateNotifierProvider<StudyNotifier, StudyState>((ref) {
 
 class StudyNotifier extends StateNotifier<StudyState> {
   final NotificationService _notificationService = NotificationService();
+  final LessonService _lessonService = LessonService();
   
   StudyNotifier() : super(StudyState.initial()) {
     // Initialize notification service
     _notificationService.init();
   }
 
+  Future<void> startStudySession(String lessonId, StudyMode mode) async {
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      currentLessonId: lessonId,
+      currentMode: mode,
+      currentIndex: 0,
+    );
+
+    try {
+      final lesson = await _lessonService.getLesson(lessonId);
+      final content = _getContentForMode(lesson, mode);
+      state = state.copyWith(
+        currentContent: content,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+        isLoading: false,
+      );
+    }
+  }
+
+  List<dynamic> _getContentForMode(Lesson lesson, StudyMode mode) {
+    switch (mode) {
+      case StudyMode.flashcard:
+        return lesson.terms;
+      case StudyMode.mcq:
+        return lesson.questions;
+      case StudyMode.concept:
+        return lesson.concepts;
+      case StudyMode.lesson:
+        final content = [
+          ...lesson.terms,
+          ...lesson.questions,
+          ...lesson.concepts,
+        ];
+        content.shuffle();
+        return content;
+    }
+  }
+
   void markTermAsKnown(String termId) {
-    // TODO: Implement marking term as known
-    // This will update the term's status in the database
-    // and adjust the spaced repetition schedule
+    state = state.copyWith(
+      termStatus: {...state.termStatus, termId: true}
+    );
   }
 
   void markTermAsDifficult(String termId) {
-    // TODO: Implement marking term as difficult
-    // This will update the term's status in the database
-    // and adjust the spaced repetition schedule
+    state = state.copyWith(
+      termStatus: {...state.termStatus, termId: false}
+    );
   }
 
   void markAnswerCorrect() {
@@ -34,6 +85,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
       correctAnswers: state.correctAnswers + 1,
       cardsStudied: state.cardsStudied + 1,
     );
+    next();
   }
 
   void markAnswerIncorrect() {
@@ -41,6 +93,24 @@ class StudyNotifier extends StateNotifier<StudyState> {
       incorrectAnswers: state.incorrectAnswers + 1,
       cardsStudied: state.cardsStudied + 1,
     );
+    next();
+  }
+  
+  void next() {
+    if (state.currentContent != null && 
+        state.currentIndex < state.currentContent!.length - 1) {
+      state = state.copyWith(
+        currentIndex: state.currentIndex + 1,
+      );
+    }
+  }
+
+  void previous() {
+    if (state.currentIndex > 0) {
+      state = state.copyWith(
+        currentIndex: state.currentIndex - 1,
+      );
+    }
   }
 
   Future<void> markLessonAsCompleted(String lessonId, {String? lessonTitle, int? durationMinutes}) async {
@@ -105,6 +175,10 @@ class StudyState {
   final Map<String, bool> termStatus; // termId -> isKnown
   final Map<String, DateTime> completedLessons; // lessonId -> completionTime
   final DateTime? lastStudied;
+  final String? currentLessonId;
+  final StudyMode? currentMode;
+  final int currentIndex;
+  final List<dynamic>? currentContent;
 
   StudyState({
     this.isLoading = false,
@@ -115,6 +189,10 @@ class StudyState {
     Map<String, bool>? termStatus,
     Map<String, DateTime>? completedLessons,
     this.lastStudied,
+    this.currentLessonId,
+    this.currentMode,
+    this.currentIndex = 0,
+    this.currentContent,
   }) : 
     termStatus = termStatus ?? {},
     completedLessons = completedLessons ?? {};
@@ -130,6 +208,10 @@ class StudyState {
     Map<String, bool>? termStatus,
     Map<String, DateTime>? completedLessons,
     DateTime? lastStudied,
+    String? currentLessonId,
+    StudyMode? currentMode,
+    int? currentIndex,
+    List<dynamic>? currentContent,
   }) {
     return StudyState(
       isLoading: isLoading ?? this.isLoading,
@@ -140,6 +222,10 @@ class StudyState {
       termStatus: termStatus ?? this.termStatus,
       completedLessons: completedLessons ?? this.completedLessons,
       lastStudied: lastStudied ?? this.lastStudied,
+      currentLessonId: currentLessonId ?? this.currentLessonId,
+      currentMode: currentMode ?? this.currentMode,
+      currentIndex: currentIndex ?? this.currentIndex,
+      currentContent: currentContent ?? this.currentContent,
     );
   }
 
@@ -163,7 +249,7 @@ class StudyState {
         isRepeating: true,
       );
       
-      await _notificationService.scheduleStudyReminder(reminder);
+      await NotificationService().scheduleStudyReminder(reminder);
     } catch (e) {
       debugPrint('Error scheduling term reminder: $e');
       rethrow;

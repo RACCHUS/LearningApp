@@ -1,143 +1,55 @@
+import 'package:hive/hive.dart';
+
+/// Base class for all types of lesson content
+@HiveType(typeId: 2)
 abstract class LessonContent {
-  String get id;
-  String get type;
-  String get createdBy;
-  
+  @HiveField(0)
+  final String id;
+
+  @HiveField(1)
+  final String lessonId;
+
+  @HiveField(2)
+  final int order;
+
+  @HiveField(3)
+  final String type;
+
+  @HiveField(4)
+  final DateTime createdAt;
+
+  @HiveField(5)
+  final DateTime updatedAt;
+
+  const LessonContent({
+    required this.id,
+    required this.lessonId,
+    required this.order,
+    required this.type,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
   Map<String, dynamic> toJson();
-}
 
-class TermContent extends LessonContent {
   @override
-  final String id;
-  @override
-  final String type = 'term';
-  final String term;
-  final String definition;
-  final String? example;
-  @override
-  final String createdBy;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LessonContent &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          lessonId == other.lessonId &&
+          order == other.order &&
+          type == type &&
+          createdAt == other.createdAt &&
+          updatedAt == other.updatedAt;
 
-  TermContent({
-    required this.id,
-    required this.term,
-    required this.definition,
-    this.example,
-    required this.createdBy,
-  });
-  
   @override
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'term': term,
-      'definition': definition,
-      'example': example,
-      'created_by': createdBy,
-    };
-  }
-  
-  factory TermContent.fromJson(Map<String, dynamic> json) {
-    return TermContent(
-      id: json['id'] as String,
-      term: json['term'] as String,
-      definition: json['definition'] as String,
-      example: json['example'] as String?,
-      createdBy: json['created_by'] as String,
-    );
-  }
-}
-
-class QuestionContent extends LessonContent {
-  @override
-  final String id;
-  @override
-  final String type = 'question';
-  final String questionText;
-  final List<String> options;
-  final int correctAnswer;
-  final String? explanation;
-  @override
-  final String createdBy;
-  final int orderIndex;
-
-  QuestionContent({
-    required this.id,
-    required this.questionText,
-    required this.options,
-    required this.correctAnswer,
-    this.explanation,
-    required this.createdBy,
-    this.orderIndex = 0,
-  });
-  
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'question_text': questionText,
-      'options': options,
-      'correct_answer': correctAnswer,
-      'explanation': explanation,
-      'created_by': createdBy,
-      'order_index': orderIndex,
-    };
-  }
-  
-  factory QuestionContent.fromJson(Map<String, dynamic> json) {
-    return QuestionContent(
-      id: json['id'] as String,
-      questionText: json['question_text'] as String,
-      options: List<String>.from(json['options'] as List),
-      correctAnswer: json['correct_answer'] as int,
-      explanation: json['explanation'] as String?,
-      createdBy: json['created_by'] as String,
-      orderIndex: json['order_index'] as int? ?? 0,
-    );
-  }
-}
-
-class ConceptContent extends LessonContent {
-  @override
-  final String id;
-  @override
-  final String type = 'concept';
-  final String conceptText;
-  final String? exampleText;
-  final List<String>? keyPoints;
-  @override
-  final String createdBy;
-
-  ConceptContent({
-    required this.id,
-    required this.conceptText,
-    this.exampleText,
-    this.keyPoints,
-    required this.createdBy,
-  });
-  
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'concept_text': conceptText,
-      'example_text': exampleText,
-      'key_points': keyPoints,
-      'created_by': createdBy,
-    };
-  }
-  
-  factory ConceptContent.fromJson(Map<String, dynamic> json) {
-    return ConceptContent(
-      id: json['id'] as String,
-      conceptText: json['concept_text'] as String,
-      exampleText: json['example_text'] as String?,
-      keyPoints: json['key_points'] != null 
-          ? List<String>.from(json['key_points'] as List) 
-          : null,
-      createdBy: json['created_by'] as String,
-    );
-  }
+  int get hashCode =>
+      id.hashCode ^
+      lessonId.hashCode ^
+      order.hashCode ^
+      type.hashCode ^
+      createdAt.hashCode ^
+      updatedAt.hashCode;
 }

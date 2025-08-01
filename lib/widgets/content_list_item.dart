@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 
 class ContentListItem extends StatelessWidget {
   final LessonContent content;
@@ -16,48 +16,52 @@ class ContentListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        leading: CircleAvatar(
+          child: Icon(_getIconForContentType()),
+        ),
         title: _buildTitle(),
         subtitle: _buildSubtitle(),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, size: 20),
-              onPressed: onEdit,
-              tooltip: 'Edit',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'edit':
+                onEdit();
+                break;
+              case 'delete':
+                onDelete();
+                break;
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: Text('Edit'),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-              onPressed: onDelete,
-              tooltip: 'Delete',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+            const PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Delete'),
             ),
           ],
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }
 
   Widget _buildTitle() {
     return switch (content) {
-      TermContent() => Text(
-          content.term,
+      TermContent termContent => Text(
+          termContent.term,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-      QuestionContent() => Text(
-          content.questionText,
+      QuestionContent questionContent => Text(
+          questionContent.questionText,
           style: const TextStyle(fontWeight: FontWeight.bold),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-      ConceptContent() => Text(
-          content.conceptText.split('\n').first,
+      ConceptContent conceptContent => Text(
+          conceptContent.conceptText.split('\n').first,
           style: const TextStyle(fontWeight: FontWeight.bold),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -68,22 +72,31 @@ class ContentListItem extends StatelessWidget {
 
   Widget _buildSubtitle() {
     return switch (content) {
-      TermContent() => Text(
-          content.definition,
+      TermContent termContent => Text(
+          termContent.definition,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-      QuestionContent() => Text(
-          '${content.options.length} options',
+      QuestionContent questionContent => Text(
+          '${questionContent.options.length} options',
           style: const TextStyle(fontSize: 12),
         ),
-      ConceptContent() => Text(
-          content.keyPoints?.join(', ') ?? 'No key points',
+      ConceptContent conceptContent => Text(
+          conceptContent.keyPoints?.join(', ') ?? 'No key points',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12),
         ),
-      _ => const SizedBox.shrink(),
+      _ => const Text('Unknown content type'),
+    };
+  }
+
+  IconData _getIconForContentType() {
+    return switch (content) {
+      TermContent() => Icons.library_books,
+      QuestionContent() => Icons.quiz,
+      ConceptContent() => Icons.lightbulb,
+      _ => Icons.help,
     };
   }
 }

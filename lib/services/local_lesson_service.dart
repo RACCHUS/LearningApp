@@ -1,61 +1,50 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:learning_pwa/models/local_lesson.dart';
+import 'package:learning_pwa/services/hive_service.dart';
+import 'package:uuid/uuid.dart';
 
 class LocalLessonService {
-  static const String _lessonsKey = 'local_lessons';
+  final HiveService _hiveService;
 
-  // Save a lesson locally
-  static Future<void> saveLesson(LocalLesson lesson) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String> lessons = prefs.getStringList(_lessonsKey) ?? [];
-      
-      // Convert lesson to JSON and add to the list
-      lessons.add(jsonEncode(lesson.toJson()));
-      
-      // Save back to shared preferences
-      await prefs.setStringList(_lessonsKey, lessons);
-    } catch (e) {
-      print('Error saving lesson locally: $e');
-      rethrow;
-    }
+  LocalLessonService(this._hiveService);
+
+  Future<LocalLesson> createLesson({
+    required String title,
+    required String description,
+    required String userId,
+    List<String> tags = const [],
+  }) async {
+    final lesson = LocalLesson(
+      id: const Uuid().v4(),
+      title: title,
+      description: description,
+      tags: tags,
+      userId: userId,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    // Note: For now, we'll store this as a regular lesson since HiveService expects Lesson type
+    // TODO: Update HiveService to handle LocalLesson or create a separate storage method
+    
+    return lesson;
   }
 
-  // Get all locally saved lessons
-  static Future<List<LocalLesson>> getLessons() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String>? lessonsJson = prefs.getStringList(_lessonsKey);
-      
-      if (lessonsJson == null) return [];
-      
-      return lessonsJson
-          .map((lesson) => LocalLesson.fromJson(jsonDecode(lesson)))
-          .toList();
-    } catch (e) {
-      print('Error getting local lessons: $e');
-      return [];
-    }
+  Future<void> updateLesson(LocalLesson lesson) async {
+    // TODO: Implement update logic with timestamp
+    // final updatedLesson = lesson.copyWith(updatedAt: DateTime.now());
   }
 
-  // Delete a locally saved lesson by ID
-  static Future<void> deleteLesson(String lessonId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String>? lessonsJson = prefs.getStringList(_lessonsKey);
-      
-      if (lessonsJson == null) return;
-      
-      final updatedLessons = lessonsJson.where((lesson) {
-        final lessonMap = jsonDecode(lesson) as Map<String, dynamic>;
-        return lessonMap['id'] != lessonId;
-      }).toList();
-      
-      await prefs.setStringList(_lessonsKey, updatedLessons);
-    } catch (e) {
-      print('Error deleting local lesson: $e');
-      rethrow;
-    }
+  Future<void> deleteLesson(String lessonId) async {
+    await _hiveService.deleteLessonOffline(lessonId);
+  }
+
+  Future<List<LocalLesson>> getUserLessons(String userId) async {
+    // TODO: Implement proper filtering for local lessons
+    return [];
+  }
+
+  Future<LocalLesson?> getLesson(String lessonId) async {
+    // TODO: Implement proper local lesson retrieval
+    return null;
   }
 }

@@ -3,7 +3,7 @@ import 'package:learning_pwa/models/lesson_content.dart';
 
 class LessonCreationState {
   final String title;
-  final String? description;
+  final String description;
   final List<String> tags;
   final List<LessonContent> content;
   final bool isLoading;
@@ -11,7 +11,7 @@ class LessonCreationState {
 
   const LessonCreationState({
     this.title = '',
-    this.description,
+    this.description = '',
     this.tags = const [],
     this.content = const [],
     this.isLoading = false,
@@ -32,7 +32,7 @@ class LessonCreationState {
       tags: tags ?? this.tags,
       content: content ?? this.content,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: error ?? this.error,
     );
   }
 }
@@ -44,20 +44,18 @@ class LessonCreationNotifier extends StateNotifier<LessonCreationState> {
     state = state.copyWith(title: title);
   }
 
-  void updateDescription(String? description) {
+  void updateDescription(String description) {
     state = state.copyWith(description: description);
   }
 
   void addTag(String tag) {
-    if (tag.isNotEmpty && !state.tags.contains(tag)) {
+    if (!state.tags.contains(tag)) {
       state = state.copyWith(tags: [...state.tags, tag]);
     }
   }
 
   void removeTag(String tag) {
-    state = state.copyWith(
-      tags: state.tags.where((t) => t != tag).toList(),
-    );
+    state = state.copyWith(tags: state.tags.where((t) => t != tag).toList());
   }
 
   void addContent(LessonContent content) {
@@ -66,8 +64,21 @@ class LessonCreationNotifier extends StateNotifier<LessonCreationState> {
 
   void removeContent(String contentId) {
     state = state.copyWith(
-      content: state.content.where((c) => _getContentId(c) != contentId).toList(),
+      content: state.content.where((c) => c.id != contentId).toList(),
     );
+  }
+
+  void updateContent(String contentId, LessonContent newContent) {
+    final index = state.content.indexWhere((c) => c.id == contentId);
+    if (index != -1) {
+      final updatedContent = [...state.content];
+      updatedContent[index] = newContent;
+      state = state.copyWith(content: updatedContent);
+    }
+  }
+
+  void reset() {
+    state = const LessonCreationState();
   }
 
   void setLoading(bool isLoading) {
@@ -77,22 +88,8 @@ class LessonCreationNotifier extends StateNotifier<LessonCreationState> {
   void setError(String? error) {
     state = state.copyWith(error: error);
   }
-
-  void reset() {
-    state = const LessonCreationState();
-  }
-
-  String _getContentId(LessonContent content) {
-    return switch (content) {
-      TermContent() => content.id,
-      QuestionContent() => content.id,
-      ConceptContent() => content.id,
-      _ => throw UnimplementedError('Unknown content type'),
-    };
-  }
 }
 
-final lessonCreationProvider =
-    StateNotifierProvider<LessonCreationNotifier, LessonCreationState>(
+final lessonCreationProvider = StateNotifierProvider<LessonCreationNotifier, LessonCreationState>(
   (ref) => LessonCreationNotifier(),
 );

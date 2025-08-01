@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 
 class ConceptContentWidget extends StatefulWidget {
   final ConceptContent? initialContent;
@@ -84,13 +84,16 @@ class _ConceptContentWidgetState extends State<ConceptContentWidget> {
 
       widget.onSave(
         ConceptContent(
-          id: widget.initialContent?.id ?? '',
+          id: widget.initialContent?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          lessonId: '', // Will be set by parent
+          order: 0, // Will be set by parent
           conceptText: _conceptController.text,
           exampleText: _exampleController.text.isNotEmpty
               ? _exampleController.text
               : null,
           keyPoints: keyPoints.isNotEmpty ? keyPoints : null,
-          createdBy: widget.initialContent?.createdBy ?? '',
+          createdAt: widget.initialContent?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
     }

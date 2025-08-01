@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/models/content_types.dart';
 
 class ConceptScreen extends ConsumerStatefulWidget {
   final List<ConceptContent> concepts;
@@ -75,7 +75,7 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
           // Progress indicator
           LinearProgressIndicator(
             value: (_currentIndex + 1) / widget.concepts.length,
-            backgroundColor: theme.colorScheme.surfaceVariant,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
             color: theme.colorScheme.primary,
             minHeight: 4,
           ),
@@ -130,7 +130,7 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: theme.colorScheme.outlineVariant,
