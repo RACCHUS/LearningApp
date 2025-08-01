@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
-import 'package:learning_pwa/providers/lesson_list_provider.dart';
-import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/providers/combined_lessons_provider.dart';
+import 'package:learning_pwa/models/base_lesson.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -14,9 +14,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProviderStateMixin {
+  // State variables
   String? selectedTag;
   late AnimationController _animationController;
-
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -25,18 +25,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
+      duration: const Duration(milliseconds: 300),
+    );
+    
+    // Initialize any necessary state here
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
     _animationController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+  
+  // Helper method to filter lessons based on search query and selected tag
+  List<dynamic> _filterLessons(List<dynamic> lessons) {
+    return lessons.where((lesson) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          (lesson['title']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+          (lesson['description']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      final matchesTag = selectedTag == null ||
+          ((lesson['tags'] as List<dynamic>?)?.contains(selectedTag) ?? false);
+      return matchesSearch && matchesTag;
+    }).toList();
+  }
+
+  Future<void> _refreshLessons() async {
+    // Implement refresh logic here
+    final authState = ref.read(authProvider);
+    final userId = authState is AuthSuccess ? authState.user.id : '';
+    if (userId.isNotEmpty) {
+      ref.refresh(combinedLessonsProvider(userId));
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+  
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+    });
+  }
+  
+  void _onTagSelected(String tag) {
+    setState(() {
+      selectedTag = tag;
+    });
   }
 
   // Helper method to build category chips
+  // Custom bottom navigation bar item widget
+  Widget _buildNavBarItem({
+    required BuildContext context,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final color = isActive 
+        ? theme.colorScheme.primary 
+        : isDark 
+            ? Colors.white70 
+            : Colors.black54;
+    
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: kBottomNavigationBarHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isActive ? activeIcon : icon,
+                color: color,
+                size: 22,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoryChip(String label, IconData icon, {VoidCallback? onTap, bool isSelected = false}) {
     return GestureDetector(
       onTap: onTap,
@@ -71,18 +166,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       ),
     );
   }
+  }
 
   // Helper method to build lesson cards
-  Widget _buildLessonCard(BuildContext context, Lesson lesson) {
+  Widget _buildLessonCard(BuildContext context, BaseLesson lesson) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isLocalLesson = lesson.isLocal;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: isLocalLesson 
+            ? BorderSide(color: Colors.orange.withOpacity(0.5), width: 1)
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to lesson detail
+          // Navigate to lesson detail
+          final route = isLocalLesson 
+              ? '/local-lesson/${lesson.id}'
+              : '/lesson/${lesson.id}';
+          context.go(route);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -91,48 +198,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.menu_book, color: Colors.blue),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      lesson.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lesson.title,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isLocalLesson) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Local',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (lesson.tags.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        lesson.tags.first,
+                        style: TextStyle(
+                          color: theme.primaryColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (lesson.description != null && lesson.description!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  lesson.description!,
+                  style: GoogleFonts.poppins(
+                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${lesson.tags.length} ${lesson.tags.length == 1 ? 'tag' : 'tags'}' +
+                    (isLocalLesson ? ' • Local Only' : ''),
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    'Created ${_formatDate(lesson.createdAt)}',
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[500] : Colors.grey[500],
+                      fontSize: 12,
                     ),
                   ),
                 ],
               ),
-              if (lesson.tags.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: lesson.tags
-                      .map((tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              tag,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ],
             ],
           ),
         ),
@@ -140,15 +299,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     );
   }
 
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays >= 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays >= 1) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours >= 1) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes >= 1) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'just now';
+    }
+  }
+
+  // Function to refresh lessons
+  Future<void> _refreshLessons() async {
+    final authState = ref.read(authProvider);
+    final userId = authState is AuthSuccess ? authState.user.id : '';
+    ref.invalidate(combinedLessonsProvider(userId));
+  }
+
+  // Helper method to build category chips
+  Widget _buildCategoryChip({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey[600],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[800],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final lessonAsync = ref.watch(lessonListProvider);
-    final theme = Theme.of(context);
-    
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+    return Consumer(
+      builder: (context, ref, child) {
+        final theme = Theme.of(context);
+        final isDarkMode = theme.brightness == Brightness.dark;
+        final authState = ref.watch(authProvider);
+        final userId = authState is AuthSuccess ? authState.user.id : '';
+        final lessonsAsync = ref.watch(combinedLessonsProvider(userId));
+        
+        return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => context.push('/create-lesson'),
+            icon: const Icon(Icons.add),
+            label: const Text('Create Lesson'),
+            elevation: 2.0,
+          ),
+          body: RefreshIndicator(
+            onRefresh: _refreshLessons,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           // App Bar with user greeting and actions
           SliverAppBar(
             expandedHeight: 120,
@@ -356,11 +598,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
             ),
           ),
           
-          // Lessons List
-          lessonAsync.when(
+          // Combined Lessons List
+          lessonsAsync.when(
             data: (lessons) {
               // Filter lessons based on tag and search query
-              Iterable<Lesson> filteredLessons = lessons;
+              Iterable<BaseLesson> filteredLessons = lessons;
               
               // Apply tag filter
               if (selectedTag != null) {
@@ -444,9 +686,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                     ElevatedButton(
                       onPressed: () {
                         // Refresh the lesson list
-                        ref.invalidate(lessonListProvider);
+                        ref.invalidate(combinedLessonsProvider(userId));
                       },
-                      child: const Text('Retry'),
+                      child: Container(
+                        child: const Text('Retry'),
+                      ),
                     ),
                   ],
                 ),
@@ -457,74 +701,108 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       ),
       // Bottom Navigation Bar
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.brightness == Brightness.dark
-              ? theme.colorScheme.surface
-              : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+        child: BottomAppBar(
+          color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+          elevation: 8,
+          padding: EdgeInsets.zero,
+          surfaceTintColor: Colors.transparent,
+          child: SizedBox(
+            height: kBottomNavigationBarHeight,
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                _buildNavBarItem(
+                  context: context,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home,
+                  label: 'Home',
+                  isActive: true,
+                  onTap: () {
+                    if (ModalRoute.of(context)?.settings.name != '/home') {
+                      context.go('/home');
+                    }
+                  },
+                ),
+                _buildNavBarItem(
+                  context: context,
+                  icon: Icons.explore_outlined,
+                  activeIcon: Icons.explore,
+                  label: 'Explore',
+                  isActive: false,
+                  onTap: () {
+                    context.go('/explore');
+                  },
+                ),
+                _buildNavBarItem(
+                  context: context,
+                  icon: Icons.bookmark_border,
+                  activeIcon: Icons.bookmark,
+                  label: 'Saved',
+                  isActive: false,
+                  onTap: () {
+                    context.go('/saved');
+                  },
+                ),
+                _buildNavBarItem(
+                  context: context,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  isActive: false,
+                  onTap: () {
+                    context.go('/profile');
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 0, // Home is selected
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: theme.primaryColor,
-          unselectedItemColor: theme.brightness == Brightness.dark
-              ? Colors.grey[400]
-              : Colors.grey[600],
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          showUnselectedLabels: true,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: 'Home',
-              backgroundColor: Colors.transparent,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.explore_outlined),
-              activeIcon: const Icon(Icons.explore),
-              label: 'Explore',
-              backgroundColor: Colors.transparent,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.bookmark_border),
-              activeIcon: const Icon(Icons.bookmark),
-              label: 'Saved',
-              backgroundColor: Colors.transparent,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: 'Profile',
-              backgroundColor: Colors.transparent,
-            ),
-          ],
-          onTap: (index) {
-            // Handle navigation
-            switch (index) {
-              case 0:
-                // Already on home
-                if (ModalRoute.of(context)?.settings.name != '/home') {
-                  context.go('/home');
-                }
-                break;
-              case 1:
-                context.go('/explore');
-                break;
-              case 2:
-                context.go('/saved');
-                break;
-              case 3:
-                context.go('/profile');
-                break;
-            }
-          },
+          height: kBottomNavigationBarHeight,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              _buildNavBarItem(
+                context: context,
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: 'Home',
+                isActive: true,
+                onTap: () {
+                  if (ModalRoute.of(context)?.settings.name != '/home') {
+                    context.go('/home');
+                  }
+                },
+              ),
+              _buildNavBarItem(
+                context: context,
+                icon: Icons.explore_outlined,
+                activeIcon: Icons.explore,
+                label: 'Explore',
+                isActive: false,
+                onTap: () {
+                  context.go('/explore');
+                },
+              ),
+              _buildNavBarItem(
+                context: context,
+                icon: Icons.bookmark_border,
+                activeIcon: Icons.bookmark,
+                label: 'Saved',
+                isActive: false,
+                onTap: () {
+                  context.go('/saved');
+                },
+              ),
+              _buildNavBarItem(
+                context: context,
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: 'Profile',
+                isActive: false,
+                onTap: () {
+                  context.go('/profile');
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

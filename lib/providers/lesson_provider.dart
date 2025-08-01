@@ -1,7 +1,93 @@
+import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
+// Provider for creating and managing lessons
+final lessonCreationProvider = Provider<LessonRepository>((ref) {
+  return LessonRepository();
+});
+
+class LessonRepository {
+  final _supabase = Supabase.instance.client;
+  final _uuid = const Uuid();
+
+  // Create a new lesson with its content
+  Future<String> createLesson({
+    required String title,
+    required String createdBy,
+    String? description,
+    List<String> tags = const [],
+    List<Map<String, dynamic>> content = const [],
+  }) async {
+    try {
+      // Create the lesson
+      final lessonId = _uuid.v4();
+      
+      // First, insert the lesson
+      await _supabase.from('lessons').insert({
+        'id': lessonId,
+        'title': title,
+        'description': description,
+        'tags': tags,
+        'created_by': createdBy,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Process and save content
+      for (var item in content) {
+        final type = item['type'] as String;
+        final contentId = _uuid.v4();
+        
+        try {
+          switch (type) {
+            case 'text':
+              await _supabase.from('lesson_texts').insert({
+                'id': contentId,
+                'lesson_id': lessonId,
+                'text': item['text'],
+                'created_by': createdBy,
+                'created_at': DateTime.now().toIso8601String(),
+              });
+              break;
+              
+            case 'term':
+              // First insert the term
+              await _supabase.from('terms').insert({
+                'id': contentId,
+                'term': item['term'],
+                'definition': item['definition'],
+                'example': item['example'],
+                'created_by': createdBy,
+                'created_at': DateTime.now().toIso8601String(),
+              });
+              
+              // Then create the relationship
+              await _supabase.from('lesson_terms').insert({
+                'lesson_id': lessonId,
+                'term_id': contentId,
+              });
+              break;
+              
+            // Add cases for other content types (concept, mcq) as needed
+          }
+        } catch (e) {
+          // Log the error but continue with other content items
+          log('Error saving content item: $e', name: 'LessonRepository');
+          // You might want to collect these errors and show them to the user
+        }
+      }
+      
+      return lessonId;
+      
+    } catch (e) {
+      log('Error creating lesson: $e', name: 'LessonRepository');
+      rethrow;
+    }
+  }
+}
 
 final lessonProvider =
     FutureProvider.family<FullLesson, String>((ref, lessonId) async {

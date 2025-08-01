@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/screens/auth/login_screen.dart';
-import 'package:learning_pwa/screens/home_screen.dart';
+import 'package:learning_pwa/screens/refactored_home_screen.dart';
 import 'package:learning_pwa/screens/test/notification_test_screen.dart';
 import 'package:learning_pwa/screens/explore_screen.dart';
+import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 import 'package:learning_pwa/screens/saved_screen.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
 
@@ -23,7 +24,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const RefactoredHomeScreen(),
       ),
       // App feature routes
       GoRoute(
@@ -37,6 +38,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/create-lesson',
+        builder: (context, state) => const CreateLessonScreen(),
       ),
       // Development-only routes
       GoRoute(

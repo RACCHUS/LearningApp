@@ -1,10 +1,16 @@
-class Lesson {
+import 'base_lesson.dart';
+
+class Lesson implements BaseLesson {
   final String id;
   final String title;
   final String? description;
   final List<String> tags;
   final String createdBy;
+  @override
   final DateTime createdAt;
+  
+  @override
+  bool get isLocal => false;
 
   Lesson({
     required this.id,
