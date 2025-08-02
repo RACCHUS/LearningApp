@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/screens/home_screen.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/config/supabase_config.dart';
+import 'package:learning_pwa/providers/router_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +30,9 @@ class LearningApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    final router = ref.watch(routerProvider);
+    
+    return MaterialApp.router(
       title: 'Learning PWA',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -46,7 +48,7 @@ class LearningApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      routerConfig: router,
     );
   }
 }

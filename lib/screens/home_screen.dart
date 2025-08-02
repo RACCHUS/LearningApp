@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/combined_lessons_provider.dart';
 import 'package:learning_pwa/screens/home/lesson_list.dart';
 import 'package:learning_pwa/screens/home/search_bar.dart';
 import 'package:learning_pwa/screens/home/category_filters.dart';
-import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -87,16 +87,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const CreateLessonScreen(),
-            ),
-          );
-          
-          if (result != null) {
-            // Refresh lessons after creation
-            ref.invalidate(combinedLessonsProvider);
-          }
+          await context.push('/create-lesson');
+          // Refresh lessons after potential creation
+          ref.invalidate(combinedLessonsProvider);
         },
         label: const Text('New Lesson'),
         icon: const Icon(Icons.add),
