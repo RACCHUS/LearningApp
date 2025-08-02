@@ -35,7 +35,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     
     try {
       final authState = ref.read(authProvider);
-      final userId = authState is AuthSuccess ? authState.user.id : 'guest';
+      final userId = authState is AuthSuccess ? authState.user.id : '00000000-0000-0000-0000-000000000000';
       
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
@@ -73,7 +73,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     
     try {
       final authState = ref.read(authProvider);
-      final userId = authState is AuthSuccess ? authState.user.id : 'guest';
+      final userId = authState is AuthSuccess ? authState.user.id : '00000000-0000-0000-0000-000000000000';
       
       final lessonService = LessonService();
       

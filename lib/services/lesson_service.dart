@@ -18,18 +18,33 @@ class LessonService {
   // Get all lessons for a user
   Future<List<Lesson>> getLessonsForUser(String userId) async {
     try {
+      debugPrint('🔍 DEBUG: Getting lessons for user: $userId');
+      debugPrint('🔍 DEBUG: Supabase client: ${_supabase.toString()}');
+      
+      // Validate userId format
+      if (userId.trim().isEmpty) {
+        debugPrint('🔍 DEBUG: Empty userId, using guest UUID');
+        userId = '00000000-0000-0000-0000-000000000000';
+      }
+      
+      // Get user's own lessons + public lessons (where user_id is null)
       final response = await _supabase
           .from('lessons')
           .select('*')
-          .eq('user_id', userId)
+          .or('user_id.eq.$userId,user_id.is.null')
           .order('updated_at', ascending: false);
+
+      debugPrint('🔍 DEBUG: Query response type: ${response.runtimeType}');
+      debugPrint('🔍 DEBUG: Response data: $response');
 
       // Handle empty response
       if (response.isEmpty) {
+        debugPrint('🔍 DEBUG: Empty response received');
         return [];
       }
 
-      return response.map<Lesson>((data) => Lesson(
+      debugPrint('🔍 DEBUG: Processing ${response.length} lessons');
+      return (response as List).map<Lesson>((data) => Lesson(
         id: data['id']?.toString() ?? '',
         title: data['title']?.toString() ?? 'Untitled',
         description: data['description']?.toString(),
@@ -46,7 +61,11 @@ class LessonService {
         concepts: <Concept>[], // Load separately if needed
       )).toList();
     } catch (e) {
-      debugPrint('Error getting lessons for user: $e');
+      debugPrint('❌ ERROR: Error getting lessons for user: $e');
+      debugPrint('❌ ERROR: Error type: ${e.runtimeType}');
+      if (e is PostgrestException) {
+        debugPrint('❌ ERROR: Postgrest details - Message: ${e.message}, Code: ${e.code}, Details: ${e.details}, Hint: ${e.hint}');
+      }
       return []; // Return empty list instead of rethrowing
     }
   }
@@ -101,7 +120,7 @@ class LessonService {
               term: t['term']['term'],
               definition: t['term']['definition'],
               example: t['term']['example'],
-              createdBy: t['term']['created_by'],
+              createdBy: t['term']['user_id'] ?? '', // Updated to use user_id, with fallback
             ))
         .toList();
   }
@@ -118,7 +137,7 @@ class LessonService {
               options: List<String>.from(q['question']['options']),
               type: q['question']['type'],
               explanation: q['question']['explanation'],
-              createdBy: q['question']['created_by'],
+              createdBy: q['question']['user_id'] ?? '', // Updated to use user_id, with fallback
             ))
         .toList();
   }
@@ -133,7 +152,7 @@ class LessonService {
               lessonId: c['concept']['lesson_id'],
               conceptText: c['concept']['concept_text'],
               exampleText: c['concept']['example_text'],
-              createdBy: c['concept']['created_by'],
+              createdBy: c['concept']['user_id'] ?? '', // Updated to use user_id, with fallback
               createdAt: DateTime.parse(c['concept']['created_at']),
             ))
         .toList();
@@ -142,19 +161,33 @@ class LessonService {
   // Add a new lesson
   Future<Lesson> addLesson(String title, String? description, String userId) async {
     try {
+      debugPrint('🔍 DEBUG: Attempting to add lesson with title: $title');
+      debugPrint('🔍 DEBUG: User ID: $userId');
+      debugPrint('🔍 DEBUG: Description: $description');
+      
       final now = DateTime.now();
+      final lessonData = {
+        'id': const Uuid().v4(),
+        'title': title.trim().isEmpty ? 'Untitled Lesson' : title.trim(),
+        'description': description?.trim().isEmpty == true ? null : description?.trim(),
+        'user_id': userId.trim().isEmpty ? null : userId.trim(),
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+      
+      debugPrint('🔍 DEBUG: Inserting lesson data: $lessonData');
+      
+      // Add connection test
+      debugPrint('🔍 DEBUG: Testing Supabase connection...');
+      debugPrint('🔍 DEBUG: Client ready for operations');
+      
       final response = await _supabase
           .from('lessons')
-          .insert({
-            'id': const Uuid().v4(),
-            'title': title,
-            'description': description,
-            'user_id': userId,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          })
+          .insert(lessonData)
           .select()
           .single();
+      
+      debugPrint('🔍 DEBUG: Lesson created successfully: ${response['id']}');
       
       return Lesson(
         id: response['id'],
@@ -169,7 +202,11 @@ class LessonService {
         concepts: [],
       );
     } catch (e) {
-      debugPrint('Error adding lesson: $e');
+      debugPrint('❌ ERROR: Failed to add lesson: $e');
+      debugPrint('❌ ERROR: Error type: ${e.runtimeType}');
+      if (e is PostgrestException) {
+        debugPrint('❌ ERROR: Postgrest details - Message: ${e.message}, Code: ${e.code}, Details: ${e.details}, Hint: ${e.hint}');
+      }
       rethrow;
     }
   }
@@ -186,8 +223,9 @@ class LessonService {
               'term': term.term,
               'definition': term.definition,
               'example': term.example,
-              'created_by': term.createdBy,
+              'user_id': _supabase.auth.currentUser?.id, // Updated to use user_id
               'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(), // Add updated_at
             });
       }
     } catch (e) {
@@ -210,8 +248,9 @@ class LessonService {
               'correct_answer': question.correctAnswer,
               'type': question.type,
               'explanation': question.explanation,
-              'created_by': question.createdBy,
+              'user_id': _supabase.auth.currentUser?.id, // Updated to use user_id
               'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(), // Add updated_at
             });
       }
     } catch (e) {
@@ -231,8 +270,9 @@ class LessonService {
               'lesson_id': lessonId,
               'concept_text': concept.conceptText,
               'example_text': concept.exampleText,
-              'created_by': concept.createdBy,
+              'user_id': _supabase.auth.currentUser?.id, // Updated to use user_id
               'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(), // Add updated_at
             });
       }
     } catch (e) {
@@ -321,7 +361,7 @@ class LessonService {
       }
 
       // Add all content to the lesson
-      await addLessonContent(lesson.id, content);
+      await addLessonContent(lesson.id, content, userId);
       
       return lesson;
     } catch (e) {
@@ -331,15 +371,15 @@ class LessonService {
   }
 
   // Add lesson content
-  Future<void> addLessonContent(String lessonId, List<LessonContent> content) async {
+  Future<void> addLessonContent(String lessonId, List<LessonContent> content, String userId) async {
     try {
       for (var item in content) {
         if (item is TermContent) {
-          await _addTermContent(lessonId, item);
+          await _addTermContent(lessonId, item, userId);
         } else if (item is QuestionContent) {
-          await _addQuestionContent(lessonId, item);
+          await _addQuestionContent(lessonId, item, userId);
         } else if (item is ConceptContent) {
-          await _addConceptContent(lessonId, item);
+          await _addConceptContent(lessonId, item, userId);
         }
       }
     } catch (e) {
@@ -348,38 +388,67 @@ class LessonService {
     }
   }
 
-  Future<void> _addTermContent(String lessonId, TermContent content) async {
-    await _supabase.from('terms').insert({
-      'id': content.id,
-      'lesson_id': lessonId,
-      'term': content.term,
-      'definition': content.definition,
-      'example': content.example,
-      'created_at': content.createdAt.toIso8601String(),
-      'updated_at': content.updatedAt.toIso8601String(),
-    });
+  Future<void> _addTermContent(String lessonId, TermContent content, String userId) async {
+    try {
+      debugPrint('🔍 DEBUG: Adding term content to lesson $lessonId');
+      final termData = {
+        'id': content.id,
+        'lesson_id': lessonId,
+        'term': content.term.trim().isEmpty ? 'Untitled Term' : content.term.trim(),
+        'definition': content.definition.trim().isEmpty ? 'No definition provided' : content.definition.trim(),
+        'example': content.example?.trim().isEmpty == true ? null : content.example?.trim(),
+        'user_id': userId, // Use the passed userId instead of auth.currentUser
+        'created_at': content.createdAt.toIso8601String(),
+        'updated_at': content.updatedAt.toIso8601String(),
+      };
+      debugPrint('🔍 DEBUG: Term data: $termData');
+      
+      await _supabase.from('terms').insert(termData);
+      debugPrint('🔍 DEBUG: Term added successfully');
+    } catch (e) {
+      debugPrint('❌ ERROR: Failed to add term content: $e');
+      if (e is PostgrestException) {
+        debugPrint('❌ ERROR: Postgrest details - Message: ${e.message}, Code: ${e.code}, Details: ${e.details}, Hint: ${e.hint}');
+      }
+      rethrow;
+    }
   }
 
-  Future<void> _addQuestionContent(String lessonId, QuestionContent content) async {
-    await _supabase.from('questions').insert({
-      'id': content.id,
-      'lesson_id': lessonId,
-      'question_text': content.questionText,
-      'options': content.options,
-      'correct_answer': content.correctAnswer,
-      'explanation': content.explanation,
-      'created_at': content.createdAt.toIso8601String(),
-      'updated_at': content.updatedAt.toIso8601String(),
-    });
+  Future<void> _addQuestionContent(String lessonId, QuestionContent content, String userId) async {
+    try {
+      debugPrint('🔍 DEBUG: Adding question content to lesson $lessonId');
+      final questionData = {
+        'id': content.id,
+        'lesson_id': lessonId,
+        'question_text': content.questionText.trim().isEmpty ? 'No question provided' : content.questionText.trim(),
+        'options': content.options.isEmpty ? ['Option 1', 'Option 2'] : content.options,
+        'correct_answer': content.correctAnswer,
+        'explanation': content.explanation?.trim().isEmpty == true ? null : content.explanation?.trim(),
+        'user_id': userId, // Use the passed userId instead of auth.currentUser
+        'created_at': content.createdAt.toIso8601String(),
+        'updated_at': content.updatedAt.toIso8601String(),
+      };
+      debugPrint('🔍 DEBUG: Question data: $questionData');
+      
+      await _supabase.from('questions').insert(questionData);
+      debugPrint('🔍 DEBUG: Question added successfully');
+    } catch (e) {
+      debugPrint('❌ ERROR: Failed to add question content: $e');
+      if (e is PostgrestException) {
+        debugPrint('❌ ERROR: Postgrest details - Message: ${e.message}, Code: ${e.code}, Details: ${e.details}, Hint: ${e.hint}');
+      }
+      rethrow;
+    }
   }
 
-  Future<void> _addConceptContent(String lessonId, ConceptContent content) async {
+  Future<void> _addConceptContent(String lessonId, ConceptContent content, String userId) async {
     await _supabase.from('concepts').insert({
       'id': content.id,
       'lesson_id': lessonId,
-      'concept_text': content.conceptText,
-      'example_text': content.exampleText,
-      'key_points': content.keyPoints,
+      'concept_text': content.conceptText.trim().isEmpty ? 'No concept provided' : content.conceptText.trim(),
+      'example_text': content.exampleText?.trim().isEmpty == true ? null : content.exampleText?.trim(),
+      'key_points': content.keyPoints?.isEmpty == true ? <String>[] : (content.keyPoints ?? <String>[]),
+      'user_id': userId, // Use the passed userId instead of auth.currentUser
       'created_at': content.createdAt.toIso8601String(),
       'updated_at': content.updatedAt.toIso8601String(),
     });

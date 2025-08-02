@@ -236,7 +236,7 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
@@ -337,7 +337,8 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
             const SizedBox(height: 16),
 
             // Content creation section
-            Expanded(
+            SizedBox(
+              height: 500, // Fixed height instead of Expanded since we use SingleChildScrollView
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),

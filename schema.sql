@@ -25,7 +25,7 @@ CREATE TABLE terms (
   example TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES users(id) NULL -- Optional
+  user_id UUID REFERENCES users(id) NULL -- Optional
 );
 CREATE INDEX idx_terms_lesson_id ON terms(lesson_id);
 
@@ -37,7 +37,7 @@ CREATE TABLE concepts (
   key_points TEXT[],
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES users(id) NULL -- Optional
+  user_id UUID REFERENCES users(id) NULL -- Optional
 );
 CREATE INDEX idx_concepts_lesson_id ON concepts(lesson_id);
 
@@ -51,7 +51,7 @@ CREATE TABLE questions (
   explanation TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES users(id) NULL -- Optional
+  user_id UUID REFERENCES users(id) NULL -- Optional
 );
 CREATE INDEX idx_questions_lesson_id ON questions(lesson_id);
 

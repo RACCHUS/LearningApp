@@ -60,7 +60,7 @@ class _AddLessonScreenState extends ConsumerState<AddLessonScreen> {
       final lessonService = LessonService();
       final userId = ref.read(authProvider) is AuthSuccess 
           ? (ref.read(authProvider) as AuthSuccess).user.id 
-          : 'guest';
+          : '00000000-0000-0000-0000-000000000000';
       
       if (_jsonFile != null) {
         // Import from JSON file
@@ -83,7 +83,7 @@ class _AddLessonScreenState extends ConsumerState<AddLessonScreen> {
         );
         
         // Add lesson content
-        await lessonService.addLessonContent(lesson.id, state.content);
+        await lessonService.addLessonContent(lesson.id, state.content, userId);
         
         if (mounted) {
           Navigator.of(context).pop(lesson);

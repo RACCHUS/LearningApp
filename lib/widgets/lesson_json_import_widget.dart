@@ -89,7 +89,7 @@ class _LessonJsonImportWidgetState extends State<LessonJsonImportWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -142,7 +142,8 @@ class _LessonJsonImportWidgetState extends State<LessonJsonImportWidget> {
           const SizedBox(height: 16),
 
           // JSON input area
-          Expanded(
+          SizedBox(
+            height: 400, // Fixed height instead of Expanded
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -205,6 +206,7 @@ class _LessonJsonImportWidgetState extends State<LessonJsonImportWidget> {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min, // Added to prevent overflow
                           children: [
                             const Row(
                               children: [
@@ -220,15 +222,24 @@ class _LessonJsonImportWidgetState extends State<LessonJsonImportWidget> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            ..._validationWarnings!.map((warning) => 
+                            ...(_validationWarnings!.take(3).map((warning) => // Limit to 3 warnings to prevent overflow
                               Padding(
                                 padding: const EdgeInsets.only(left: 32, bottom: 4),
                                 child: Text(
                                   '• $warning',
                                   style: const TextStyle(color: Colors.orange),
+                                  overflow: TextOverflow.ellipsis, // Handle long text
                                 ),
                               ),
-                            ),
+                            )),
+                            if (_validationWarnings!.length > 3)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 32),
+                                child: Text(
+                                  '... and ${_validationWarnings!.length - 3} more warnings',
+                                  style: const TextStyle(color: Colors.orange, fontStyle: FontStyle.italic),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -236,7 +247,8 @@ class _LessonJsonImportWidgetState extends State<LessonJsonImportWidget> {
                     const SizedBox(height: 8),
                     
                     // JSON text field
-                    Expanded(
+                    SizedBox(
+                      height: 280, // Fixed height instead of Expanded
                       child: TextField(
                         controller: _jsonController,
                         onChanged: (_) => _validateJson(),

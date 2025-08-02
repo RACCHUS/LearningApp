@@ -31,7 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return state.user.id;
     }
     if (state is GuestMode) {
-      return 'guest';
+      return '00000000-0000-0000-0000-000000000000';
     }
     return null;
   }
@@ -39,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userId = _getUserId(authState) ?? '';
+    final userId = _getUserId(authState) ?? '00000000-0000-0000-0000-000000000000';
     final userLessons = ref.watch(combinedLessonsProvider(userId));
 
     return Scaffold(
