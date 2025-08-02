@@ -62,17 +62,41 @@ class Question {
   }
 
   factory Question.fromJson(Map<String, dynamic> json) {
+    print('DEBUG: Question.fromJson input: ' + json.toString());
+    final id = json['id']?.toString();
+    final questionText = json['question_text']?.toString();
+    final optionsRaw = json['options'];
+    final correctAnswer = json['correct_answer'];
+    final type = json['type']?.toString();
+    final explanation = json['explanation']?.toString();
+    // Accept both 'created_by' and 'user_id' for compatibility
+    final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
+    final createdAtRaw = json['created_at']?.toString();
+    if (id == null || questionText == null || optionsRaw == null || correctAnswer == null || type == null || createdBy == null || createdAtRaw == null) {
+      print('ERROR: Null value in Question.fromJson fields. id: $id, questionText: $questionText, options: $optionsRaw, correctAnswer: $correctAnswer, type: $type, createdBy: $createdBy, createdAt: $createdAtRaw');
+      throw Exception('Null value in required Question field');
+    }
+    List<String> options;
+    try {
+      options = List<String>.from(optionsRaw as List);
+    } catch (e) {
+      print('ERROR: Failed to parse options in Question.fromJson: $optionsRaw');
+      throw Exception('Invalid options format in Question.fromJson');
+    }
+    final createdAt = DateTime.tryParse(createdAtRaw);
+    if (createdAt == null) {
+      print('ERROR: Invalid date format in Question.fromJson: $createdAtRaw');
+      throw Exception('Invalid date format in Question.fromJson');
+    }
     return Question(
-      id: json['id'] as String,
-      questionText: json['question_text'] as String,
-      options: List<String>.from(json['options'] as List),
-      correctAnswer: json['correct_answer'] as int,
-      type: json['type'] as String,
-      explanation: json['explanation'] as String?,
-      createdBy: json['created_by'] as String,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
+      id: id,
+      questionText: questionText,
+      options: options,
+      correctAnswer: correctAnswer is int ? correctAnswer : int.tryParse(correctAnswer.toString()) ?? 0,
+      type: type,
+      explanation: explanation,
+      createdBy: createdBy,
+      createdAt: createdAt,
     );
   }
 

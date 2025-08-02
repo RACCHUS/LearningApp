@@ -30,13 +30,30 @@ class Concept {
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory Concept.fromJson(Map<String, dynamic> json) {
+    print('DEBUG: Concept.fromJson input: ' + json.toString());
+    final id = json['id']?.toString();
+    final lessonId = json['lesson_id']?.toString();
+    final conceptText = json['concept_text']?.toString();
+    final exampleText = json['example_text']?.toString();
+    // Accept both 'created_by' and 'user_id' for compatibility
+    final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
+    final createdAtRaw = json['created_at']?.toString();
+    if (id == null || lessonId == null || conceptText == null || createdBy == null || createdAtRaw == null) {
+      print('ERROR: Null value in Concept.fromJson fields. id: $id, lessonId: $lessonId, conceptText: $conceptText, createdBy: $createdBy, createdAt: $createdAtRaw');
+      throw Exception('Null value in required Concept field');
+    }
+    final createdAt = DateTime.tryParse(createdAtRaw);
+    if (createdAt == null) {
+      print('ERROR: Invalid date format in Concept.fromJson: $createdAtRaw');
+      throw Exception('Invalid date format in Concept.fromJson');
+    }
     return Concept(
-      id: json['id'] as String,
-      lessonId: json['lesson_id'] as String,
-      conceptText: json['concept_text'] as String,
-      exampleText: json['example_text'] as String?,
-      createdBy: json['created_by'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: id,
+      lessonId: lessonId,
+      conceptText: conceptText,
+      exampleText: exampleText,
+      createdBy: createdBy,
+      createdAt: createdAt,
     );
   }
   

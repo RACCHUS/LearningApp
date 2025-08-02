@@ -16,12 +16,23 @@ class Term {
   });
 
   factory Term.fromJson(Map<String, dynamic> json) {
+    print('DEBUG: Term.fromJson input: ' + json.toString());
+    final id = json['id']?.toString();
+    final term = json['term']?.toString();
+    final definition = json['definition']?.toString();
+    final example = json['example']?.toString();
+    // Accept both 'created_by' and 'user_id' for compatibility
+    final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
+    if (id == null || term == null || definition == null || createdBy == null) {
+      print('ERROR: Null value in Term.fromJson fields. id: $id, term: $term, definition: $definition, createdBy: $createdBy');
+      throw Exception('Null value in required Term field');
+    }
     return Term(
-      id: json['id'],
-      term: json['term'],
-      definition: json['definition'],
-      example: json['example'],
-      createdBy: json['created_by'],
+      id: id,
+      term: term,
+      definition: definition,
+      example: example,
+      createdBy: createdBy,
     );
   }
   

@@ -76,6 +76,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               });
             },
           ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.playlist_add_check),
+              label: const Text('Create Study Set'),
+              onPressed: () {
+                // Navigate to lesson selection screen
+                context.push('/lesson-selection');
+              },
+              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
+            ),
+          ),
           Expanded(
             child: LessonList(
               lessonsStream: userLessons,

@@ -29,8 +29,53 @@
 ## Critical Fix Reference
 **Lesson Loading Error Fix**: Never use Lesson.fromJson() with Supabase responses - create Lesson objects manually since Supabase doesn't return embedded content arrays.
 
-## Next Step
-- **Combine Lessons for Study Sets**: Implement feature to allow users to select and combine multiple lessons into a custom study set. Requires UI for selection/combination and backend support for grouped lesson queries.
+
+
+## Development Log
+**Backend:**
+- StudySetService implemented: fetches all terms, concepts, and questions for a list of lesson IDs using individual Supabase queries. Combines results into a StudySet model.
+
+**UI/UX:**
+- Lesson selection screen implemented (Checkboxes, Riverpod state, Create Study Set button).
+- Study Set screen implemented (displays combined content).
+
+
+
+**What Was Tried:**
+- Added a "Create Study Set" button to the Home page to navigate to the lesson selection screen using `/lesson-selection` route.
+- When clicking the button, received error: `Page not found: GoException: no routes for location: /lesson-selection`.
+- Confirmed that the route for lesson selection was not yet registered in GoRouter.
+- Registered the lesson selection screen route in GoRouter.
+- Able to reach the lesson selection screen from Home.
+- When selecting lessons and clicking "Create Study Set", received error:
+
+  > Navigator.onGenerateRoute was null, but the route named "/study-set?..." was referenced. To use the Navigator API with named routes (pushNamed, ...), the Navigator must be provided with an onGenerateRoute handler.
+- Updated navigation to use GoRouter's context.push for study set screen.
+- After selecting two lessons and creating the set, landed on a screen that showed the error message and lesson IDs:
+  > snapshot.error.toString() and Lesson IDs: [b9..., 23...]
+
+## In Progress
+- Null safety and debug output added to Term.fromJson, Concept.fromJson, and Question.fromJson to prevent null assignment to non-nullable fields and diagnose issues.
+- User is now testing the flow again after these model fixes.
+
+### Previous Debug Output (for reference)
+```
+DEBUG: fetchStudySet called with lessonIds: [b9475fcb-6d78-44a8-b999-e99dd96d56db, 2343d6b6-fa98-485d-952b-2a3f9a1bd3df]
+DEBUG: termsResponse: [{id: fda07434-62ff-4820-9cbf-7ccd6f1658e6, lesson_id: 2343d6b6-fa98-485d-952b-2a3f9a1bd3df, term: Widget, definition: The basic building block of Flutter UIs, example: Text, Container, and Row are all widgets, created_at: 2025-08-01T20:23:00.245+00:00, updated_at: 2025-08-01T20:23:00.245+00:00, user_id: 00000000-0000-0000-0000-000000000000}]
+DEBUG: conceptsResponse: [{id: 365d44d3-a782-4b47-a443-e359c42bffaa, lesson_id: 2343d6b6-fa98-485d-952b-2a3f9a1bd3df, concept_text: State Management, example_text: How to manage state in Flutter apps, key_points: [], created_at: 2025-08-01T20:23:00.245+00:00, updated_at: 2025-08-01T20:23:00.245+00:00, user_id: 00000000-0000-0000-0000-000000000000}]
+DEBUG: questionsResponse: [{id: 5a8c3fc8-0151-4a66-9a5c-a5ce49584f31, lesson_id: 2343d6b6-fa98-485d-952b-2a3f9a1bd3df, question_text: What is Flutter?, options: [A programming language, A UI toolkit, A database, A design pattern], correct_answer: 1, type: mcq, explanation: Flutter is Google's UI toolkit for building natively compiled applications., created_at: 2025-08-01T20:23:00.245+00:00, updated_at: 2025-08-01T20:23:00.245+00:00, user_id: 00000000-0000-0000-0000-000000000000}]
+ERROR in StudySetService parsing: TypeError: null: type 'Null' is not a subtype of type 'String'
+package:learning_pwa/models/term.dart 23:21 fromJson
+package:learning_pwa/services/study_set_service.dart 33:61 <fn>
+... (see console for full stack trace)
+```
+
+### Current Focus
+- Await new debug output or error after user test to confirm if the parsing issue is resolved or if further model or data fixes are needed.
+
+## Next Steps
+- Analyze the new error message and stack trace (if any) shown on the Study Set screen to determine the root cause (query, data, or model issue).
+- Use the lesson IDs and error details to further debug and fix the data loading problem in StudySetService or model parsing.
 
 ## Quick Debug
 - **Compilation**: `flutter clean && flutter pub get`

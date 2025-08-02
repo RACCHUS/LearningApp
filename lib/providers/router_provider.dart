@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/screens/home_screen.dart';
 import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 import 'package:learning_pwa/screens/study/lesson_screen.dart';
+import 'package:learning_pwa/screens/study/study_set_screen.dart';
+import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -41,6 +43,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           final lessonId = state.pathParameters['lessonId']!;
           return LessonScreen(lessonId: lessonId);
         },
+      ),
+      GoRoute(
+        path: '/study-set',
+        name: 'study-set',
+        builder: (context, state) {
+          final idsParam = state.uri.queryParameters['ids'] ?? '';
+          final lessonIds = idsParam.isNotEmpty ? idsParam.split(',') : <String>[];
+          return StudySetScreen(lessonIds: lessonIds);
+        },
+      ),
+      GoRoute(
+        path: '/lesson-selection',
+        name: 'lesson-selection',
+        builder: (context, state) => const LessonSelectionScreen(),
       ),
     ],
     
