@@ -21,6 +21,7 @@ class MixedModeScreen extends StatefulWidget {
 }
 
 class _MixedModeScreenState extends State<MixedModeScreen> {
+  bool _isComplete = false;
   bool _isFlipped = false; // For flashcard
   int? _selectedOption; // For MCQ
   bool _showFeedback = false;
@@ -47,6 +48,10 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
         _showFeedback = false;
         _isCorrect = false;
       });
+    } else {
+      setState(() {
+        _isComplete = true;
+      });
     }
   }
 
@@ -65,40 +70,68 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
   @override
   Widget build(BuildContext context) {
     final item = _items[_currentIndex];
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mixed Study Session'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            LinearProgressIndicator(
-              value: (_currentIndex + 1) / _items.length,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Center(
-                child: _buildItemWidget(item),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _currentIndex > 0 ? _prev : null,
+                LinearProgressIndicator(
+                  value: (_currentIndex + 1) / _items.length,
                 ),
-                Text('${_currentIndex + 1} / ${_items.length}'),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: _currentIndex < _items.length - 1 ? _next : null,
+                const SizedBox(height: 24),
+                Expanded(
+                  child: Center(
+                    child: _buildItemWidget(item),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: _currentIndex > 0 ? _prev : null,
+                    ),
+                    Text('${_currentIndex + 1} / ${_items.length}'),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed: _currentIndex < _items.length - 1 ? _next : null,
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          if (_isComplete)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.exit_to_app),
+                    label: const Text('Exit or Review'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

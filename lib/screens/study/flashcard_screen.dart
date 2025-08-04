@@ -25,6 +25,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
   late PageController _pageController;
   late AnimationController _flipController;
   bool _isFlipped = false;
+  bool _isComplete = false;
 
   @override
   void initState() {
@@ -80,6 +81,9 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
       );
     } else {
       // Reached the end of the deck
+      setState(() {
+        _isComplete = true;
+      });
       if (widget.onComplete != null) {
         widget.onComplete!();
       }
@@ -144,57 +148,84 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: widget.terms.length,
-              itemBuilder: (context, index) {
-                final term = widget.terms[index];
-                return GestureDetector(
-                  onTap: _onFlip,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: child,
-                      );
-                    },
-                    child: _isFlipped
-                        ? _buildFlashcard(term.definition, isFront: false)
-                        : _buildFlashcard(term.term, isFront: true),
+          Column(
+            children: [
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: widget.terms.length,
+                  itemBuilder: (context, index) {
+                    final term = widget.terms[index];
+                    return GestureDetector(
+                      onTap: _onFlip,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                        child: _isFlipped
+                            ? _buildFlashcard(term.definition, isFront: false)
+                            : _buildFlashcard(term.term, isFront: true),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (_isFlipped) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildActionButton(
+                        icon: Icons.thumb_down,
+                        label: 'Need Practice',
+                        color: theme.colorScheme.error,
+                        onPressed: _onDontKnow,
+                      ),
+                      const SizedBox(width: 16),
+                      _buildActionButton(
+                        icon: Icons.thumb_up,
+                        label: 'I Know This',
+                        color: theme.colorScheme.primary,
+                        onPressed: _onKnowIt,
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
           ),
-          if (_isFlipped) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton(
-                    icon: Icons.thumb_down,
-                    label: 'Need Practice',
-                    color: theme.colorScheme.error,
-                    onPressed: _onDontKnow,
+          if (_isComplete)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.exit_to_app),
+                    label: const Text('Exit or Review'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
                   ),
-                  const SizedBox(width: 16),
-                  _buildActionButton(
-                    icon: Icons.thumb_up,
-                    label: 'I Know This',
-                    color: theme.colorScheme.primary,
-                    onPressed: _onKnowIt,
-                  ),
-                ],
+                ),
               ),
             ),
-          ],
-          const SizedBox(height: 16),
         ],
       ),
     );

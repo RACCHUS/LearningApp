@@ -44,19 +44,29 @@
 ### Current Focus
 
 **Redesign Study Set experience for real studying:**
-- StudySetScreen now launches a study session for the selected content type(s) instead of showing all content at once.
-- Each content type (flashcards, MCQ, concepts) uses its own interactive study flow:
+- StudySetScreen now shows a dialog/modal to choose a study mode (mixed, MCQ, concepts, or flashcards).
+- All study modes (mixed, MCQ, concepts, flashcards) now launch their interactive flows.
+- If there is no content for a selected mode, a user-friendly dialog is shown.
+- Mixed mode is fully complete and interactive.
+- MCQ, concepts, and flashcards modes are implemented and functional, pending further polish and UX improvements.
+- After finishing all MCQ, flashcards, concepts, or mixed mode, a persistent button will appear, allowing the user to exit or review at any time. No dialogs will interrupt the flow.
+- Each content type will use its own interactive study flow:
   - Flashcards: one card at a time, flip for answer, next/prev, progress bar.
   - MCQ: one question at a time, show options, select/check answer, feedback, next/prev, progress.
   - Concepts: one concept at a time, next/prev, progress.
-- Navigation (next/previous) and progress indicators included for all study modes.
-- User can focus on one content type at a time, or choose a mixed session (coming next).
+- Navigation (next/previous) and progress indicators will be included for all study modes.
+- User can focus on one content type at a time, or choose a mixed session.
 
 ## Next Steps
 
-- Complete StudySetScreen refactor: mode selection UI and navigation to interactive study flows.
-- Implement and polish interactive flows for each mode (flashcards, MCQ, concepts).
-- Implement and polish "mixed" mode: present a shuffled sequence of flashcards, MCQs, and concepts, one at a time, with navigation and progress.
+- Polish and refine interactive flows for each mode:
+  - Flashcards (polish/UX improvements)
+  - MCQ (polish/UX improvements)
+  - Concepts (polish/UX improvements)
+- Add a persistent exit/review button after completing each study mode (MCQ, flashcards, concepts, mixed) so the user can choose to exit or review, rather than being forced to leave. No dialogs will be used for this action.
+- Ensure all study modes are fully interactive, polished, and user-friendly.
+- Refactor large files (e.g., lesson_screen.dart) into more manageable widgets and parts for maintainability.
+- Polish and fix the individual lesson screen (UI/UX, navigation, and study experience).
 - Add and refine navigation and progress indicators for all study modes.
 - Ensure user can choose and launch desired study mode before starting session.
 

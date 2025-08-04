@@ -186,7 +186,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
               LinearProgressIndicator(
                 value: studyState.currentIndex / 
                        (studyState.currentContent?.length ?? 1),
-                backgroundColor: colorScheme.surfaceVariant,
+                backgroundColor: colorScheme.surfaceContainerHighest,
               ),
               
               // Main content area

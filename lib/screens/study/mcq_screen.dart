@@ -27,6 +27,7 @@ class _McqScreenState extends ConsumerState<McqScreen> with SingleTickerProvider
   bool _showFeedback = false;
   bool _isCorrect = false;
   bool _isLastQuestion = false;
+  bool _isComplete = false;
 
   @override
   void initState() {
@@ -88,10 +89,13 @@ class _McqScreenState extends ConsumerState<McqScreen> with SingleTickerProvider
       );
     } else {
       // End of quiz
+      setState(() {
+        _isComplete = true;
+      });
       if (widget.onComplete != null) {
         widget.onComplete!();
       }
-      Navigator.pop(context);
+      // Do not pop automatically; show persistent button instead
     }
   }
 
@@ -257,7 +261,6 @@ class _McqScreenState extends ConsumerState<McqScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = widget.questions[_currentIndex];
     final progress = (_currentIndex + 1) / widget.questions.length;
     
     return Scaffold(
@@ -276,70 +279,93 @@ class _McqScreenState extends ConsumerState<McqScreen> with SingleTickerProvider
           ),
         ),
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: widget.questions.length,
-        itemBuilder: (context, index) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Question
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      currentQuestion.questionText,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Options
-                ...currentQuestion.options.asMap().entries.map(
-                  (entry) => _buildOption(entry.key, entry.value, currentQuestion),
-                ),
-                
-                // Feedback and next button
-                _buildFeedback(),
-                
-                // Submit button (only shows when an option is selected and feedback isn't shown)
-                if (!_showFeedback) ...[
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _selectedOption == null ? null : _checkAnswer,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.questions.length,
+            itemBuilder: (context, index) {
+              final currentQuestion = widget.questions[index];
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Question
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          currentQuestion.questionText,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
-                      child: const Text(
-                        'Check Answer',
-                        style: TextStyle(fontSize: 16),
-                      ),
                     ),
+                    const SizedBox(height: 24),
+                    // Options
+                    ...currentQuestion.options.asMap().entries.map(
+                      (entry) => _buildOption(entry.key, entry.value, currentQuestion),
+                    ),
+                    // Feedback and next button
+                    _buildFeedback(),
+                    // Submit button (only shows when an option is selected and feedback isn't shown)
+                    if (!_showFeedback) ...[
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _selectedOption == null ? null : _checkAnswer,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Check Answer',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              );
+            },
+          ),
+          if (_isComplete)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.exit_to_app),
+                    label: const Text('Exit or Review'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
                   ),
-                ],
-                
-                const SizedBox(height: 24),
-              ],
+                ),
+              ),
             ),
-          );
-        },
+        ],
       ),
     );
   }

@@ -33,6 +33,10 @@ class _StudySetScreenState extends State<StudySetScreen> {
 
   void _launchStudyMode(BuildContext context, StudySet studySet, String mode) {
     if (mode == 'flashcards') {
+      if (studySet.terms.isEmpty) {
+        _showNoContentDialog(context, 'No flashcards available for this lesson.');
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -40,6 +44,10 @@ class _StudySetScreenState extends State<StudySetScreen> {
         ),
       );
     } else if (mode == 'mcq') {
+      if (studySet.questions.isEmpty) {
+        _showNoContentDialog(context, 'No MCQs available for this lesson.');
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -47,13 +55,22 @@ class _StudySetScreenState extends State<StudySetScreen> {
         ),
       );
     } else if (mode == 'concepts') {
+      final conceptsContent = _conceptsToContent(studySet.concepts);
+      if (conceptsContent.isEmpty) {
+        _showNoContentDialog(context, 'No concepts available for this lesson.');
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ConceptScreen(concepts: _conceptsToContent(studySet.concepts)),
+          builder: (_) => ConceptScreen(concepts: conceptsContent),
         ),
       );
     } else if (mode == 'mixed') {
+      if (studySet.terms.isEmpty && studySet.questions.isEmpty && studySet.concepts.isEmpty) {
+        _showNoContentDialog(context, 'No study content available for this lesson.');
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -65,6 +82,22 @@ class _StudySetScreenState extends State<StudySetScreen> {
         ),
       );
     }
+  }
+
+  void _showNoContentDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No Content'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
