@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       ref.read(authProvider.notifier).signInAsGuest();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        GoRouter.of(context).go('/');
       }
     } catch (e) {
       if (mounted) {

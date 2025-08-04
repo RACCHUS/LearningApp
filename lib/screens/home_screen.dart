@@ -55,6 +55,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
           ),
+          if (authState is GuestMode) ...[
+            TextButton.icon(
+              icon: const Icon(Icons.login, color: Colors.blue),
+              label: const Text('Sign In', style: TextStyle(color: Colors.blue)),
+              onPressed: () {
+                context.push('/login');
+              },
+            ),
+          ] else if (authState is AuthSuccess) ...[
+            IconButton(
+              icon: const Icon(Icons.account_circle, color: Colors.blue),
+              tooltip: 'Profile',
+              onPressed: () {
+                context.push('/profile');
+              },
+            ),
+          ]
         ],
       ),
       body: Column(

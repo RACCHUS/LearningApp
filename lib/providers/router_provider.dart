@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,11 +7,25 @@ import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 import 'package:learning_pwa/screens/study/lesson_screen.dart';
 import 'package:learning_pwa/screens/study/study_set_screen.dart';
 import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/providers/auth_provider.dart' show AuthSuccess, GuestMode;
+import 'package:learning_pwa/screens/auth/login_screen.dart';
+import 'package:learning_pwa/screens/profile_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
       // Home route
       GoRoute(
         path: '/',
@@ -60,6 +75,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
     
+
     // Error handling
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(title: const Text('Page Not Found')),
@@ -69,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            Text('Page not found: ${state.error}'),
+              Text('Page not found: ${state.error}'),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.go('/'),

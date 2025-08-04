@@ -10,6 +10,13 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthInitial()) {
+    final session = _supabase.auth.currentSession;
+    if (session != null) {
+      _upsertUser(session.user);
+      state = AuthSuccess(session.user);
+    } else {
+      state = GuestMode();
+    }
     _authStateSubscription =
         _supabase.auth.onAuthStateChange.listen((data) {
       final session = data.session;
@@ -17,7 +24,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _upsertUser(session.user);
         state = AuthSuccess(session.user);
       } else if (state is! GuestMode) {
-        state = AuthInitial();
+        state = GuestMode();
       }
     });
   }
