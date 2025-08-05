@@ -17,13 +17,17 @@ class CategoryFilters extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: FilterChip(
-        label: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16),
-            const SizedBox(width: 8),
-            Text(label),
-          ],
+        label: Text.rich(
+          TextSpan(
+            children: [
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Icon(icon, size: 16),
+              ),
+              const WidgetSpan(child: SizedBox(width: 8)),
+              TextSpan(text: label),
+            ],
+          ),
         ),
         selected: isSelected,
         onSelected: (_) => onTap?.call(),
@@ -36,7 +40,8 @@ class CategoryFilters extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
+      child: Wrap(
+        spacing: 0.0,
         children: [
           _buildCategoryChip(
             'All',
