@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

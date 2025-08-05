@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ...existing code...
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
 import 'package:learning_pwa/screens/study/lesson_mode_dialog.dart';
+import 'package:learning_pwa/widgets/timer_widget.dart';
+import 'package:learning_pwa/providers/timer_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -44,6 +47,20 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
             actions: [
+              Consumer(
+                builder: (context, ref, _) {
+                  final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
+                  final timerNotifier = ref.read(timerProvider.notifier);
+                  return IconButton(
+                    icon: Icon(
+                      Icons.timer,
+                      color: timerEnabled ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                    tooltip: timerEnabled ? 'Disable Timer' : 'Enable Timer',
+                    onPressed: () => timerNotifier.toggleEnabled(!timerEnabled),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.download),
                 tooltip: 'Download for offline',
@@ -61,36 +78,48 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               ),
             ],
           ),
-          body: contentList.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.auto_stories_outlined,
-                        size: 64,
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No content available',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This lesson does not contain any study materials yet.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+          body: Consumer(
+            builder: (context, ref, _) {
+              final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
+              return Column(
+                children: [
+                  if (timerEnabled) const TimerWidget(),
+                  Expanded(
+                    child: contentList.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.auto_stories_outlined,
+                                  size: 64,
+                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No content available',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'This lesson does not contain any study materials yet.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        : LessonContentPager(
+                            contentList: contentList,
+                            onLessonComplete: _onLessonComplete,
+                          ),
                   ),
-                )
-              : LessonContentPager(
-                  contentList: contentList,
-                  onLessonComplete: _onLessonComplete,
-                ),
+                ],
+              );
+            },
+          ),
         );
       },
       loading: () => Scaffold(

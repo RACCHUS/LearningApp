@@ -8,6 +8,10 @@ import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/concept_content.dart';
 import 'mixed_mode_screen.dart';
 
+import 'package:learning_pwa/widgets/timer_widget.dart';
+import 'package:learning_pwa/providers/timer_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 class StudySetScreen extends StatefulWidget {
   final List<String> lessonIds;
   const StudySetScreen({Key? key, required this.lessonIds}) : super(key: key);
@@ -103,59 +107,89 @@ class _StudySetScreenState extends State<StudySetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Study Set')),
-      body: FutureBuilder(
-        future: StudySetService().fetchStudySet(widget.lessonIds),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: \n'+ snapshot.error.toString() + '\nLesson IDs: ${widget.lessonIds}'),
-            );
-          }
-          if (!snapshot.hasData) {
-            return Center(
-              child: Text('No study set data found.\nLesson IDs: ${widget.lessonIds}'),
-            );
-          }
-          final studySet = snapshot.data as StudySet;
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Choose Study Mode:', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.style),
-                      label: const Text('Flashcards'),
-                      onPressed: () => _launchStudyMode(context, studySet, 'flashcards'),
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.quiz),
-                      label: const Text('MCQ'),
-                      onPressed: () => _launchStudyMode(context, studySet, 'mcq'),
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.lightbulb),
-                      label: const Text('Concepts'),
-                      onPressed: () => _launchStudyMode(context, studySet, 'concepts'),
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.shuffle),
-                      label: const Text('Mixed'),
-                      onPressed: () => _launchStudyMode(context, studySet, 'mixed'),
-                    ),
-                  ],
+       appBar: AppBar(
+         title: const Text('Study Set'),
+         actions: [
+           Consumer(
+             builder: (context, ref, _) {
+               final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
+               final timerNotifier = ref.read(timerProvider.notifier);
+               return IconButton(
+                 icon: Icon(
+                   Icons.timer,
+                   color: timerEnabled ? Theme.of(context).colorScheme.primary : null,
+                 ),
+                 tooltip: timerEnabled ? 'Disable Timer' : 'Enable Timer',
+                 onPressed: () => timerNotifier.toggleEnabled(!timerEnabled),
+               );
+             },
+           ),
+         ],
+       ),
+      body: Consumer(
+        builder: (context, ref, _) {
+          final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
+          return Column(
+            children: [
+              if (timerEnabled) const TimerWidget(),
+              Expanded(
+                child: FutureBuilder(
+                  future: StudySetService().fetchStudySet(widget.lessonIds),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('Error: \n'+ snapshot.error.toString() + '\nLesson IDs: \\${widget.lessonIds}'),
+                      );
+                    }
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: Text('No study set data found.\nLesson IDs: \\${widget.lessonIds}'),
+                      );
+                    }
+                    final studySet = snapshot.data as StudySet;
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Choose Study Mode:', style: Theme.of(context).textTheme.headlineSmall),
+                          const SizedBox(height: 24),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 16,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.style),
+                                label: const Text('Flashcards'),
+                                onPressed: () => _launchStudyMode(context, studySet, 'flashcards'),
+                              ),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.quiz),
+                                label: const Text('MCQ'),
+                                onPressed: () => _launchStudyMode(context, studySet, 'mcq'),
+                              ),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.lightbulb),
+                                label: const Text('Concepts'),
+                                onPressed: () => _launchStudyMode(context, studySet, 'concepts'),
+                              ),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.shuffle),
+                                label: const Text('Mixed'),
+                                onPressed: () => _launchStudyMode(context, studySet, 'mixed'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),

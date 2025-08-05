@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
-import 'package:learning_pwa/providers/combined_lessons_provider.dart';
+
+import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/screens/home/lesson_list.dart';
 import 'package:learning_pwa/screens/home/search_bar.dart';
 import 'package:learning_pwa/screens/home/category_filters.dart';
@@ -26,21 +27,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  String? _getUserId(AuthState state) {
-    if (state is AuthSuccess) {
-      return state.user.id;
-    }
-    if (state is GuestMode) {
-      return '00000000-0000-0000-0000-000000000000';
-    }
-    return null;
-  }
+
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userId = _getUserId(authState) ?? '00000000-0000-0000-0000-000000000000';
-    final userLessons = ref.watch(combinedLessonsProvider(userId));
+    final allLessons = ref.watch(allLessonsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,10 +41,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // TODO: Navigate to settings screen when available
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon!')),
-              );
+              // Navigate to settings screen using GoRouter
+              context.push('/settings');
             },
           ),
           if (authState is GuestMode) ...[
@@ -107,7 +97,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           Expanded(
             child: LessonList(
-              lessonsStream: userLessons,
+              lessonsStream: allLessons,
               searchQuery: _searchQuery,
               selectedTag: selectedTag,
             ),
@@ -118,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onPressed: () async {
           await context.push('/create-lesson');
           // Refresh lessons after potential creation
-          ref.invalidate(combinedLessonsProvider);
+          ref.invalidate(allLessonsProvider);
         },
         label: const Text('New Lesson'),
         icon: const Icon(Icons.add),

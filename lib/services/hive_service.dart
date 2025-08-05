@@ -10,7 +10,7 @@ import 'package:learning_pwa/models/mcq_adapter.dart' as mcq_adapter;
 import 'package:learning_pwa/models/term_adapter.dart' as term_adapter;
 import 'package:learning_pwa/models/question_content_adapter.dart';
 import 'package:learning_pwa/models/concept_content_adapter.dart';
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 
 // Register Hive adapters for all models
 void registerHiveAdapters() {

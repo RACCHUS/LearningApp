@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/progress_provider.dart';
 import 'package:learning_pwa/providers/sync_provider.dart';
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:collection/collection.dart';
 
 // Date formatting utility

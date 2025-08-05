@@ -49,12 +49,47 @@
 - Study Set screen refactor in progress: launching interactive study sessions for selected content type(s) instead of displaying all at once.
 
 
+
+
 ## Current Focus
-- Add notification feature (push or in-app notifications) and settings screen; test both features.
+- Add an optional timer for the user (e.g., for lessons or study sessions).
+
 
 ## Next Steps
-- Add notification feature and settings screen, and test them.
-- Refactor large files first if more features are to be added.
+1. Design the timer UI/UX:
+   - Add a toggle or button to enable/disable the timer on lesson/study set screens.
+   - Display the timer (countdown or stopwatch) when enabled.
+2. Implement timer state management:
+   - Use Riverpod to manage timer state (enabled, running, time left, etc.).
+   - Store timer settings (duration, enabled state) in Hive for persistence.
+3. Add timer logic:
+   - Use Dart's Timer class for countdown/stopwatch functionality.
+   - Provide controls to start, pause, resume, and reset the timer.
+4. Integrate timer with lesson/study set screens:
+   - Add the timer widget and controls to the relevant screens.
+   - Optionally, save timer state/progress in lesson progress for restoration.
+5. Test across browsers and devices:
+   - Ensure timer works and persists as expected.
+   - Verify user experience and settings persistence.
+
+## Testing Plan
+- For push notifications:
+  - Firebase and FCM are integrated and initialized at startup.
+  - Use test devices/browsers (Chrome, Edge) to verify push notification delivery at scheduled times.
+  - Use Firebase Console to send test notifications.
+- For in-app reminders:
+  - Open the app in Safari/iOS and verify in-app reminders appear at scheduled times when the app is open.
+- For settings:
+  - Change notification times and theme, reload the app, and verify settings persist.
+  - Disable notifications and verify no notifications are received.
+- For Edge Functions:
+  - Deploy a test function and trigger it manually to verify push notification delivery.
+
+## Notes
+- Push notifications are not supported on Safari/iOS via FCM; fallback to in-app reminders for those users.
+- Supabase Edge Functions have a free tier suitable for most development and small production use cases.
+- All notification and theme settings are stored per device/browser for simplicity.
+- Notification delivery (push and in-app) remains untested as of now; testing will be performed after settings screen implementation.
 
 ## Quick Debug
 - **Compilation**: `flutter clean && flutter pub get`

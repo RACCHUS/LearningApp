@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
 import 'package:mockito/mockito.dart';

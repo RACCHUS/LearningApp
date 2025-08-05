@@ -1,0 +1,137 @@
+import 'package:flutter/material.dart';
+import 'package:learning_pwa/models/settings_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/theme_provider.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late SettingsModel _settings;
+  bool _loading = true;
+  final _timeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('settings');
+    setState(() {
+      _settings = raw != null ? SettingsModel.fromRawJson(raw) : SettingsModel.defaultSettings();
+      _loading = false;
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('settings', _settings.toRawJson());
+  }
+
+  void _addTime(String time) {
+    if (!_settings.notificationTimes.contains(time)) {
+      setState(() {
+        _settings.notificationTimes.add(time);
+      });
+      _saveSettings();
+    }
+  }
+
+  void _removeTime(String time) {
+    setState(() {
+      _settings.notificationTimes.remove(time);
+    });
+    _saveSettings();
+  }
+
+  void _toggleNotifications(bool value) {
+    setState(() {
+      _settings.notificationsEnabled = value;
+    });
+    _saveSettings();
+  }
+
+  void _toggleTheme(bool value) {
+    setState(() {
+      _settings.darkMode = value;
+    });
+    // Update app-wide theme
+    ref.read(themeModeProvider.notifier).setTheme(value ? ThemeMode.dark : ThemeMode.light);
+    _saveSettings();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              title: const Text('Enable Notifications'),
+              value: _settings.notificationsEnabled,
+              onChanged: _toggleNotifications,
+            ),
+            if (_settings.notificationsEnabled) ...[
+              const SizedBox(height: 8),
+              const Text('Notification Times:'),
+              Wrap(
+                spacing: 8,
+                children: _settings.notificationTimes.map((t) => Chip(
+                  label: Text(t),
+                  onDeleted: () => _removeTime(t),
+                )).toList(),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _timeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Add Time (e.g. 10:00)',
+                      ),
+                      keyboardType: TextInputType.datetime,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      final time = _timeController.text.trim();
+                      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(time)) {
+                        _addTime(time);
+                        _timeController.clear();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Enter time as HH:MM')),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+            const Divider(height: 32),
+            SwitchListTile(
+              title: const Text('Dark Mode'),
+              value: _settings.darkMode,
+              onChanged: _toggleTheme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

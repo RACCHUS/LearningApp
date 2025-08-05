@@ -1,5 +1,5 @@
 import 'package:learning_pwa/models/lesson.dart';
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/supabase_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 

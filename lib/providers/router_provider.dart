@@ -1,3 +1,4 @@
+import 'package:learning_pwa/screens/settings_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +73,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/lesson-selection',
         name: 'lesson-selection',
         builder: (context, state) => const LessonSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
     

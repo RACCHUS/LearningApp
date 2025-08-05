@@ -1,4 +1,4 @@
-import 'package:learning_pwa/models/user_progress.dart';
+import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

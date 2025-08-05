@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:learning_pwa/models/base_lesson.dart';
-import 'package:learning_pwa/models/local_lesson.dart';
+
+import 'package:learning_pwa/models/lesson.dart';
+
 
 class LessonList extends StatelessWidget {
-  final AsyncValue<List<BaseLesson>> lessonsStream;
+  final AsyncValue<List<Lesson>> lessonsStream;
   final String searchQuery;
   final String? selectedTag;
 
@@ -37,8 +38,9 @@ class LessonList extends StatelessWidget {
     }
   }
 
-  Widget _buildLessonCard(BuildContext context, BaseLesson lesson) {
-    final isLocalLesson = lesson is LocalLesson;
+  Widget _buildLessonCard(BuildContext context, Lesson lesson) {
+    // If you want to show local lessons, you can add logic here
+    // No local lessons in this list, so always false
     
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -92,8 +94,6 @@ class LessonList extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isLocalLesson)
-              const Icon(Icons.offline_pin, color: Colors.orange),
             const Icon(Icons.chevron_right),
           ],
         ),

@@ -8,10 +8,33 @@ import 'package:learning_pwa/models/concept.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+// Provider to fetch all lessons (for home screen, not filtered by user_id)
+final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+      .from('lessons')
+      .select('*')
+      .order('created_at', ascending: false);
+  // Defensive: ensure response is a List (Supabase returns List)
+  return (response as List).map((e) => Lesson(
+    id: e['id'] as String,
+    title: e['title'] as String,
+    description: e['description'] as String?,
+    tags: e['tags'] != null ? List<String>.from(e['tags']) : <String>[],
+    createdAt: DateTime.parse(e['created_at'] as String),
+    updatedAt: DateTime.parse(e['updated_at'] as String),
+    userId: e['user_id'] as String? ?? '00000000-0000-0000-0000-000000000000',
+    terms: <Term>[],
+    questions: <Question>[],
+    concepts: <Concept>[],
+  )).toList();
+});
+
 // Provider for creating and managing lessons
 final lessonCreationProvider = Provider<LessonRepository>((ref) {
   return LessonRepository();
 });
+
 
 class LessonRepository {
   final _supabase = Supabase.instance.client;
