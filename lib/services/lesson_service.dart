@@ -159,7 +159,7 @@ class LessonService {
   }
 
   // Add a new lesson
-  Future<Lesson> addLesson(String title, String? description, String userId) async {
+  Future<Lesson> addLesson(String title, String? description, String userId, {List<String>? tags}) async {
     try {
       debugPrint('🔍 DEBUG: Attempting to add lesson with title: $title');
       debugPrint('🔍 DEBUG: User ID: $userId');
@@ -173,6 +173,7 @@ class LessonService {
         'user_id': userId.trim().isEmpty ? null : userId.trim(),
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
+        if (tags != null) 'tags': tags,
       };
       
       debugPrint('🔍 DEBUG: Inserting lesson data: $lessonData');
@@ -285,25 +286,24 @@ class LessonService {
   Future<Lesson> importLessonFromJson(String jsonString, String userId) async {
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      
       // Extract lesson data
       final lessonData = json['lesson'] as Map<String, dynamic>;
       final contentData = json['content'] as List;
-      
-      // Create lesson
+      // Extract tags if present
+      final tags = lessonData['tags'] is List ? List<String>.from(lessonData['tags']) : <String>[];
+      // Create lesson with tags
       final lesson = await addLesson(
         lessonData['title'] as String,
         lessonData['description'] as String?,
         userId,
+        tags: tags,
       );
 
       // Process content
       final List<LessonContent> content = [];
-      
       for (var (index, item) in contentData.indexed) {
         final itemMap = item as Map<String, dynamic>;
         final type = itemMap['type'] as String;
-        
         switch (type) {
           case 'term':
             content.add(TermContent(
@@ -317,7 +317,6 @@ class LessonService {
               updatedAt: DateTime.now(),
             ));
             break;
-            
           case 'mcq':
             content.add(QuestionContent(
               id: itemMap['id'] ?? const Uuid().v4(),
@@ -331,7 +330,6 @@ class LessonService {
               updatedAt: DateTime.now(),
             ));
             break;
-            
           case 'concept':
             content.add(ConceptContent(
               id: itemMap['id'] ?? const Uuid().v4(),
@@ -346,7 +344,6 @@ class LessonService {
               updatedAt: DateTime.now(),
             ));
             break;
-            
           case 'text':
             content.add(TextContent(
               id: itemMap['id'] ?? const Uuid().v4(),
@@ -359,10 +356,8 @@ class LessonService {
             break;
         }
       }
-
       // Add all content to the lesson
       await addLessonContent(lesson.id, content, userId);
-      
       return lesson;
     } catch (e) {
       debugPrint('Error importing lesson from JSON: $e');

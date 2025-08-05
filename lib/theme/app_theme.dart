@@ -61,6 +61,13 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.blue,
         brightness: Brightness.dark,
+        background: const Color(0xFF111217), // deep black
+        surface: const Color(0xFF181A20), // card/section backgrounds
+        primary: const Color(0xFF2196F3), // blue accent
+        secondary: const Color(0xFF00BFAE), // teal accent
+        onPrimary: Colors.white,
+        onBackground: Colors.white,
+        onSurface: Colors.white,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       appBarTheme: const AppBarTheme(
@@ -68,17 +75,20 @@ class AppTheme {
         elevation: 0,
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 2,
+        color: const Color(0xFF181A20),
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(Radius.circular(16)),
           side: BorderSide(
-            color: Colors.grey.shade800,
+            color: Colors.grey.shade900,
           ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: 0,
+          elevation: 1,
+          backgroundColor: const Color(0xFF23242B), // less bright for dark mode
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: 24,
             vertical: 12,

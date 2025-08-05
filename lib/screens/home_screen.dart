@@ -36,22 +36,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Learning App', style: GoogleFonts.poppins()),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        title: Text('Learning App', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 28, color: Theme.of(context).colorScheme.primary)),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // Navigate to settings screen using GoRouter
               context.push('/settings');
             },
+            tooltip: 'Settings',
           ),
           if (authState is GuestMode) ...[
             TextButton.icon(
               icon: const Icon(Icons.login, color: Colors.blue),
-              label: const Text('Sign In', style: TextStyle(color: Colors.blue)),
+              label: const Text('Sign In', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
               onPressed: () {
                 context.push('/login');
               },
+              style: TextButton.styleFrom(foregroundColor: Colors.blue.shade700),
             ),
           ] else if (authState is AuthSuccess) ...[
             IconButton(
@@ -64,54 +67,75 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ]
         ],
       ),
-      body: Column(
-        children: [
-          HomeSearchBar(
-            controller: _searchController,
-            searchQuery: _searchQuery,
-            onSearchChanged: (value) {
-              setState(() {
-                _searchQuery = value.trim();
-              });
-            },
-          ),
-          CategoryFilters(
-            selectedTag: selectedTag,
-            onTagSelected: (tag) {
-              setState(() {
-                selectedTag = tag;
-              });
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.playlist_add_check),
-              label: const Text('Create Study Set'),
-              onPressed: () {
-                // Navigate to lesson selection screen
-                context.push('/lesson-selection');
-              },
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
+      body: Container(
+        color: Theme.of(context).colorScheme.background,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
+                HomeSearchBar(
+                  controller: _searchController,
+                  searchQuery: _searchQuery,
+                  onSearchChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.trim();
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+                CategoryFilters(
+                  selectedTag: selectedTag,
+                  onTagSelected: (tag) {
+                    setState(() {
+                      selectedTag = tag;
+                    });
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 0),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.playlist_add_check),
+                    label: const Text('Create Study Set'),
+                    onPressed: () {
+                      context.push('/lesson-selection');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: LessonList(
+                    lessonsStream: allLessons,
+                    searchQuery: _searchQuery,
+                    selectedTag: selectedTag,
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: LessonList(
-              lessonsStream: allLessons,
-              searchQuery: _searchQuery,
-              selectedTag: selectedTag,
-            ),
-          ),
-        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await context.push('/create-lesson');
-          // Refresh lessons after potential creation
           ref.invalidate(allLessonsProvider);
         },
         label: const Text('New Lesson'),
         icon: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

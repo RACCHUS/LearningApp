@@ -49,28 +49,20 @@
 - Study Set screen refactor in progress: launching interactive study sessions for selected content type(s) instead of displaying all at once.
 
 
-
-
 ## Current Focus
-- Add an optional timer for the user (e.g., for lessons or study sessions).
+UI/UX update: Improve the visual appearance of the app across all screens, making it look much better while maintaining or improving performance.
 
+## Design Audit Findings
+- Home Screen: Needs more whitespace, card elevation, consistent color palette, improved typography, and hover/focus effects for web.
+- Lesson Page: Pager navigation is good, but should add transitions, bolder text, and better spacing. Use illustrations/icons for empty states.
+- Set Creator UI: Missing search bar, needs better layout, tags as chips, and improved button styling.
+- General: Use Material 3, Google Fonts, consistent spacing, and optimize for performance and responsiveness.
 
 ## Next Steps
-1. Design the timer UI/UX:
-   - Add a toggle or button to enable/disable the timer on lesson/study set screens.
-   - Display the timer (countdown or stopwatch) when enabled.
-2. Implement timer state management:
-   - Use Riverpod to manage timer state (enabled, running, time left, etc.).
-   - Store timer settings (duration, enabled state) in Hive for persistence.
-3. Add timer logic:
-   - Use Dart's Timer class for countdown/stopwatch functionality.
-   - Provide controls to start, pause, resume, and reset the timer.
-4. Integrate timer with lesson/study set screens:
-   - Add the timer widget and controls to the relevant screens.
-   - Optionally, save timer state/progress in lesson progress for restoration.
-5. Test across browsers and devices:
-   - Ensure timer works and persists as expected.
-   - Verify user experience and settings persistence.
+1. Redesign the Home Page for a modern, beautiful, and performant look (colors, cards, typography, spacing, hover effects).
+2. Redesign the Lesson Page for better readability, transitions, and visual hierarchy.
+3. Redesign the Set Creator UI, add a search bar, and improve tag/filter UI.
+4. Test all UI/UX improvements across browsers and devices for responsiveness and speed.
 
 ## Testing Plan
 - For push notifications:

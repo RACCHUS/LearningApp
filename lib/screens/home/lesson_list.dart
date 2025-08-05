@@ -38,69 +38,6 @@ class LessonList extends StatelessWidget {
     }
   }
 
-  Widget _buildLessonCard(BuildContext context, Lesson lesson) {
-    // If you want to show local lessons, you can add logic here
-    // No local lessons in this list, so always false
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        title: Text(lesson.title),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (lesson.description != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                lesson.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  _formatDate(lesson.createdAt),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                if (lesson.tags.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      lesson.tags.first,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        onTap: () => context.push('/lesson/${lesson.id}'),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,15 +45,16 @@ class LessonList extends StatelessWidget {
       data: (lessons) {
         if (lessons.isEmpty) {
           return const Center(
-            child: Text('No lessons available'),
+            child: Text('No lessons available', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
           );
         }
 
         final filteredLessons = lessons.where((lesson) {
-          final matchesSearch = searchQuery.isEmpty ||
-              lesson.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              (lesson.description?.toLowerCase() ?? '')
-                  .contains(searchQuery.toLowerCase());
+          final query = searchQuery.toLowerCase();
+          final matchesSearch = query.isEmpty ||
+              lesson.title.toLowerCase().contains(query) ||
+              (lesson.description?.toLowerCase() ?? '').contains(query) ||
+              lesson.tags.any((tag) => tag.toLowerCase().contains(query));
           final matchesTag =
               selectedTag == null || lesson.tags.contains(selectedTag);
           return matchesSearch && matchesTag;
@@ -124,16 +62,75 @@ class LessonList extends StatelessWidget {
 
         if (filteredLessons.isEmpty) {
           return const Center(
-            child: Text('No lessons match your filters'),
+            child: Text('No lessons match your filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
           );
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
           itemCount: filteredLessons.length,
           itemBuilder: (context, index) {
             final lesson = filteredLessons[index];
-            return _buildLessonCard(context, lesson);
+            return MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 0),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                    onTap: () => context.push('/lesson/${lesson.id}'),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      title: Text(
+                        lesson.title,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (lesson.description != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              lesson.description!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                _formatDate(lesson.createdAt),
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                              if (lesson.tags.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Wrap(
+                                  spacing: 6,
+                                  children: lesson.tags.map((tag) => Chip(
+                                    label: Text(tag, style: const TextStyle(fontSize: 12)),
+                                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                                    labelStyle: const TextStyle(color: Colors.blue),
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  )).toList(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 28),
+                    ),
+                  ),
+                ),
+              ),
+            );
           },
         );
       },

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:learning_pwa/utils/web_utils.dart';
 // ...existing code...
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
@@ -42,7 +44,13 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
 
     return lessonAsync.when(
       data: (lessonData) {
-        final contentList = lessonData.lessonContent;
+        // Sort content: concepts first, then terms (flashcards), then questions (MCQ), then others
+        final contentList = [
+          ...lessonData.lessonContent.where((c) => c.type == 'concept'),
+          ...lessonData.lessonContent.where((c) => c.type == 'term'),
+          ...lessonData.lessonContent.where((c) => c.type == 'question' || c.type == 'mcq'),
+          ...lessonData.lessonContent.where((c) => c.type != 'concept' && c.type != 'term' && c.type != 'question' && c.type != 'mcq'),
+        ];
         return Scaffold(
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
@@ -59,6 +67,25 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     tooltip: timerEnabled ? 'Disable Timer' : 'Enable Timer',
                     onPressed: () => timerNotifier.toggleEnabled(!timerEnabled),
                   );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.share),
+                tooltip: 'Share lesson link',
+                onPressed: () async {
+                  final url = Uri.base.removeFragment().replace(path: '/lesson/${widget.lessonId}').toString();
+                  final didShare = await shareText(url, title: 'Lesson Link');
+                  if (!didShare) {
+                    await Clipboard.setData(ClipboardData(text: url));
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Lesson link copied!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
                 },
               ),
               IconButton(
