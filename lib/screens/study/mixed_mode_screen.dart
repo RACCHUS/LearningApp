@@ -11,10 +11,22 @@ class MixedStudyItem {
 }
 
 class MixedModeScreen extends StatefulWidget {
-  final List<Term> terms;
-  final List<Question> questions;
-  final List<ConceptContent> concepts;
-  const MixedModeScreen({super.key, required this.terms, required this.questions, required this.concepts});
+  final List<Term>? terms;
+  final List<Question>? questions;
+  final List<ConceptContent>? concepts;
+  final List<MixedStudyItem>? preSortedItems; // New option for pre-sorted items
+  
+  const MixedModeScreen({
+    super.key, 
+    this.terms, 
+    this.questions, 
+    this.concepts,
+    this.preSortedItems,
+  }) : assert(
+    (terms != null && questions != null && concepts != null && preSortedItems == null) ||
+    (terms == null && questions == null && concepts == null && preSortedItems != null),
+    'Either provide terms/questions/concepts OR preSortedItems, not both'
+  );
 
   @override
   State<MixedModeScreen> createState() => _MixedModeScreenState();
@@ -32,11 +44,24 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
   @override
   void initState() {
     super.initState();
-    _items = [
-      ...widget.terms.map((t) => MixedStudyItem(type: 'flashcard', data: t)),
-      ...widget.questions.map((q) => MixedStudyItem(type: 'mcq', data: q)),
-      ...widget.concepts.map((c) => MixedStudyItem(type: 'concept', data: c)),
-    ]..shuffle();
+    
+    if (widget.preSortedItems != null) {
+      // Use pre-sorted items (already ordered)
+      _items = widget.preSortedItems!;
+    } else {
+      // Create items from individual lists and sort by order field
+      _items = [
+        ...widget.terms!.map((t) => MixedStudyItem(type: 'flashcard', data: t)),
+        ...widget.questions!.map((q) => MixedStudyItem(type: 'mcq', data: q)),
+        ...widget.concepts!.map((c) => MixedStudyItem(type: 'concept', data: c)),
+      ];
+      
+      // Sort by order field (default behavior)
+      _items.sort((a, b) => a.data.order.compareTo(b.data.order));
+      
+      // Alternative: Group by type (uncomment to use old behavior)
+      // _items..shuffle();
+    }
   }
 
   void _next() {
@@ -222,6 +247,25 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
                   const SizedBox(height: 12),
                   Text(concept.exampleText!, style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic)),
                 ],
+              ],
+            ),
+          ),
+        );
+      case 'text':
+        final textContent = item.data as dynamic;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.article, size: 32, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 16),
+                Text(
+                  textContent.text,
+                  style: const TextStyle(fontSize: 18, height: 1.5),
+                ),
               ],
             ),
           ),

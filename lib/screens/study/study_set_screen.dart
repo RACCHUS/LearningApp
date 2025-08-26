@@ -10,6 +10,7 @@ import 'mixed_mode_screen.dart';
 
 import 'package:learning_pwa/widgets/timer_widget.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
+import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class StudySetScreen extends StatefulWidget {
@@ -75,16 +76,69 @@ class _StudySetScreenState extends State<StudySetScreen> {
         _showNoContentDialog(context, 'No study content available for this lesson.');
         return;
       }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MixedModeScreen(
-            terms: studySet.terms,
-            questions: studySet.questions,
-            concepts: _conceptsToContent(studySet.concepts),
+      
+      // For mixed mode, use lesson provider to get properly ordered content
+      final lessonId = studySet.lessonIds.isNotEmpty ? studySet.lessonIds.first : null;
+      if (lessonId != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Consumer(
+              builder: (context, ref, __) {
+                final lessonAsync = ref.watch(lessonProvider(lessonId));
+                return lessonAsync.when(
+                  data: (data) {
+                    if (data.lessonContent.isEmpty) {
+                      return const Scaffold(
+                        body: Center(
+                          child: Text('No study content available for this lesson.'),
+                        ),
+                      );
+                    }
+                    
+                    // Convert lesson content to MixedStudyItem with proper ordering
+                    List<MixedStudyItem> orderedItems = [];
+                    for (final content in data.lessonContent) {
+                      if (content.runtimeType.toString() == 'Term') {
+                        orderedItems.add(MixedStudyItem(type: 'flashcard', data: content));
+                      } else if (content.runtimeType.toString() == 'Question') {
+                        orderedItems.add(MixedStudyItem(type: 'mcq', data: content));
+                      } else if (content.runtimeType.toString() == 'ConceptContent') {
+                        orderedItems.add(MixedStudyItem(type: 'concept', data: content));
+                      } else if (content.runtimeType.toString() == 'TextContent') {
+                        orderedItems.add(MixedStudyItem(type: 'text', data: content));
+                      }
+                      // Content is already ordered by the lesson provider
+                    }
+                    
+                    return MixedModeScreen(preSortedItems: orderedItems);
+                  },
+                  loading: () => const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (e, st) => Scaffold(
+                    body: Center(
+                      child: Text('Error loading lesson: $e'),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        // Fallback to old behavior if no lesson ID
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MixedModeScreen(
+              terms: studySet.terms,
+              questions: studySet.questions,
+              concepts: _conceptsToContent(studySet.concepts),
+            ),
+          ),
+        );
+      }
     }
   }
 

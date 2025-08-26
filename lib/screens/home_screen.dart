@@ -68,7 +68,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: Container(
-        color: Theme.of(context).colorScheme.background,
+        color: Theme.of(context).colorScheme.surface,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 700),

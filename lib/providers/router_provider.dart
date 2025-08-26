@@ -8,8 +8,6 @@ import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 import 'package:learning_pwa/screens/study/lesson_screen.dart';
 import 'package:learning_pwa/screens/study/study_set_screen.dart';
 import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
-import 'package:learning_pwa/providers/auth_provider.dart';
-import 'package:learning_pwa/providers/auth_provider.dart' show AuthSuccess, GuestMode;
 import 'package:learning_pwa/screens/auth/login_screen.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
 

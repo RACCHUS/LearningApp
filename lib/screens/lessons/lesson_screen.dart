@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/progress_provider.dart';
-import 'package:learning_pwa/models/lesson_progress.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;

@@ -13,6 +13,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class LessonService {
+  /// Delete a lesson and all its content from Supabase
+  Future<void> deleteLessonFromSupabase(String lessonId) async {
+    try {
+      debugPrint('🔍 DEBUG: Deleting lesson and all related content for lessonId: $lessonId');
+      // Delete from child tables first if ON DELETE CASCADE is not set in Supabase
+      // If ON DELETE CASCADE is set, deleting from lessons will remove all related content
+      await _supabase.from('lessons').delete().eq('id', lessonId);
+      debugPrint('✅ Lesson and related content deleted from Supabase');
+    } catch (e) {
+      debugPrint('❌ ERROR: Failed to delete lesson from Supabase: $e');
+      if (e is PostgrestException) {
+        debugPrint('❌ ERROR: Postgrest details - Message: [33m${e.message}[0m, Code: ${e.code}, Details: ${e.details}, Hint: ${e.hint}');
+      }
+      rethrow;
+    }
+  }
   final _supabase = Supabase.instance.client;
 
   // Get all lessons for a user
@@ -304,12 +320,14 @@ class LessonService {
       for (var (index, item) in contentData.indexed) {
         final itemMap = item as Map<String, dynamic>;
         final type = itemMap['type'] as String;
+        // Use the order field from JSON, fallback to index if not present
+        final order = itemMap['order'] as int? ?? index;
         switch (type) {
           case 'term':
             content.add(TermContent(
               id: itemMap['id'] ?? const Uuid().v4(),
               lessonId: lesson.id,
-              order: index,
+              order: order,
               term: itemMap['term'] as String,
               definition: itemMap['definition'] as String,
               example: itemMap['example'] as String?,
@@ -321,7 +339,7 @@ class LessonService {
             content.add(QuestionContent(
               id: itemMap['id'] ?? const Uuid().v4(),
               lessonId: lesson.id,
-              order: index,
+              order: order,
               questionText: itemMap['question'] as String,
               options: List<String>.from(itemMap['options'] as List),
               correctAnswer: itemMap['correctIndex'] as int,
@@ -334,7 +352,7 @@ class LessonService {
             content.add(ConceptContent(
               id: itemMap['id'] ?? const Uuid().v4(),
               lessonId: lesson.id,
-              order: index,
+              order: order,
               conceptText: itemMap['title'] as String,
               exampleText: itemMap['description'] as String?,
               keyPoints: itemMap['keyPoints'] != null 
@@ -348,7 +366,7 @@ class LessonService {
             content.add(TextContent(
               id: itemMap['id'] ?? const Uuid().v4(),
               lessonId: lesson.id,
-              order: index,
+              order: order,
               text: itemMap['text'] as String,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
@@ -375,6 +393,8 @@ class LessonService {
           await _addQuestionContent(lessonId, item, userId);
         } else if (item is ConceptContent) {
           await _addConceptContent(lessonId, item, userId);
+        } else if (item is TextContent) {
+          await _addTextContent(lessonId, item, userId);
         }
       }
     } catch (e) {
@@ -392,6 +412,7 @@ class LessonService {
         'term': content.term.trim().isEmpty ? 'Untitled Term' : content.term.trim(),
         'definition': content.definition.trim().isEmpty ? 'No definition provided' : content.definition.trim(),
         'example': content.example?.trim().isEmpty == true ? null : content.example?.trim(),
+        'order_index': content.order, // Add order_index field
         'user_id': userId, // Use the passed userId instead of auth.currentUser
         'created_at': content.createdAt.toIso8601String(),
         'updated_at': content.updatedAt.toIso8601String(),
@@ -419,6 +440,7 @@ class LessonService {
         'options': content.options.isEmpty ? ['Option 1', 'Option 2'] : content.options,
         'correct_answer': content.correctAnswer,
         'explanation': content.explanation?.trim().isEmpty == true ? null : content.explanation?.trim(),
+        'order_index': content.order, // Add order_index field
         'user_id': userId, // Use the passed userId instead of auth.currentUser
         'created_at': content.createdAt.toIso8601String(),
         'updated_at': content.updatedAt.toIso8601String(),
@@ -443,7 +465,20 @@ class LessonService {
       'concept_text': content.conceptText.trim().isEmpty ? 'No concept provided' : content.conceptText.trim(),
       'example_text': content.exampleText?.trim().isEmpty == true ? null : content.exampleText?.trim(),
       'key_points': content.keyPoints?.isEmpty == true ? <String>[] : (content.keyPoints ?? <String>[]),
+      'order_index': content.order, // Add order_index field
       'user_id': userId, // Use the passed userId instead of auth.currentUser
+      'created_at': content.createdAt.toIso8601String(),
+      'updated_at': content.updatedAt.toIso8601String(),
+    });
+  }
+
+  Future<void> _addTextContent(String lessonId, TextContent content, String userId) async {
+    await _supabase.from('lesson_texts').insert({
+      'id': content.id,
+      'lesson_id': lessonId,
+      'text': content.text.trim().isEmpty ? 'No text provided' : content.text.trim(),
+      'order_index': content.order, // Add order_index field
+      'user_id': userId,
       'created_at': content.createdAt.toIso8601String(),
       'updated_at': content.updatedAt.toIso8601String(),
     });

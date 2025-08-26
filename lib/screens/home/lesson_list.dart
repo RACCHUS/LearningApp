@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/services/lesson_service.dart';
 
 
 class LessonList extends StatelessWidget {
@@ -125,7 +126,45 @@ class LessonList extends StatelessWidget {
                           ),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right, size: 28),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            tooltip: 'Delete Lesson',
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Lesson'),
+                                  content: const Text('Are you sure you want to delete this lesson and all its content? This cannot be undone.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                // Import the service here to avoid breaking statelessness
+                                final lessonService = LessonService();
+                                await lessonService.deleteLessonFromSupabase(lesson.id);
+                                // Refresh the page/lessons list
+                                (context as Element).markNeedsBuild();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Lesson deleted.')),
+                                );
+                              }
+                            },
+                          ),
+                          const Icon(Icons.chevron_right, size: 28),
+                        ],
+                      ),
                     ),
                   ),
                 ),

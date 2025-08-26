@@ -50,19 +50,10 @@
 
 
 ## Current Focus
-UI/UX update: Improve the visual appearance of the app across all screens, making it look much better while maintaining or improving performance.
 
-## Design Audit Findings
-- Home Screen: Needs more whitespace, card elevation, consistent color palette, improved typography, and hover/focus effects for web.
-- Lesson Page: Pager navigation is good, but should add transitions, bolder text, and better spacing. Use illustrations/icons for empty states.
-- Set Creator UI: Missing search bar, needs better layout, tags as chips, and improved button styling.
-- General: Use Material 3, Google Fonts, consistent spacing, and optimize for performance and responsiveness.
 
 ## Next Steps
-1. Redesign the Home Page for a modern, beautiful, and performant look (colors, cards, typography, spacing, hover effects).
-2. Redesign the Lesson Page for better readability, transitions, and visual hierarchy.
-3. Redesign the Set Creator UI, add a search bar, and improve tag/filter UI.
-4. Test all UI/UX improvements across browsers and devices for responsiveness and speed.
+
 
 ## Testing Plan
 - For push notifications:
