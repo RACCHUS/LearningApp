@@ -10,7 +10,7 @@ part of 'term_content.dart';
 
 class TermContentAdapter extends TypeAdapter<TermContent> {
   @override
-  final int typeId = 4;
+  final int typeId = 8;
 
   @override
   TermContent read(BinaryReader reader) {
@@ -71,22 +71,22 @@ class TermContentAdapter extends TypeAdapter<TermContent> {
 
 TermContent _$TermContentFromJson(Map<String, dynamic> json) => TermContent(
       id: json['id'] as String,
-      lessonId: json['lessonId'] as String,
+      lessonId: json['lesson_id'] as String,
       order: (json['order'] as num).toInt(),
       term: json['term'] as String,
       definition: json['definition'] as String,
       example: json['example'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$TermContentToJson(TermContent instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'lessonId': instance.lessonId,
+      'lesson_id': instance.lessonId,
       'order': instance.order,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
       'term': instance.term,
       'definition': instance.definition,
       'example': instance.example,

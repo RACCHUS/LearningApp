@@ -34,7 +34,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.grey.withOpacity(0.1),
+        fillColor: Colors.grey.withValues(alpha: 0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -61,12 +61,11 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.blue,
         brightness: Brightness.dark,
-        background: const Color(0xFF111217), // deep black
-        surface: const Color(0xFF181A20), // card/section backgrounds
+        surface: const Color(0xFF111217), // deep black
+        surfaceContainerHighest: const Color(0xFF181A20), // card/section backgrounds
         primary: const Color(0xFF2196F3), // blue accent
         secondary: const Color(0xFF00BFAE), // teal accent
         onPrimary: Colors.white,
-        onBackground: Colors.white,
         onSurface: Colors.white,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),

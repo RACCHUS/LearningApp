@@ -50,23 +50,26 @@ void main() {
       final json = {
         'id': '1',
         'lesson_id': '101',
+        'order': 0,
         'question': 'Test Question',
         'options': ['Option 1', 'Option 2', 'Option 3'],
         'correct_option_index': 0,
         'explanation': 'Test Explanation',
-        'created_by': 'test_user',
         'created_at': '2023-01-01T00:00:00.000Z',
+        'updated_at': '2023-01-01T00:00:00.000Z',
       };
 
       final mcq = Mcq.fromJson(json);
 
       expect(mcq.id, '1');
       expect(mcq.lessonId, '101');
+      expect(mcq.order, 0);
       expect(mcq.question, 'Test Question');
       expect(mcq.options, ['Option 1', 'Option 2', 'Option 3']);
       expect(mcq.correctOption, 0);
       expect(mcq.explanation, 'Test Explanation');
       expect(mcq.createdAt, DateTime.utc(2023, 1, 1));
+      expect(mcq.updatedAt, DateTime.utc(2023, 1, 1));
     });
 
     test('toJson returns correct map', () {
@@ -86,12 +89,13 @@ void main() {
 
       expect(json['id'], '1');
       expect(json['lesson_id'], '101');
+      expect(json['order'], 0);
       expect(json['question'], 'Test Question');
       expect(json['options'], ['Option 1', 'Option 2', 'Option 3']);
       expect(json['correct_option_index'], 0);
       expect(json['explanation'], 'Test Explanation');
-      expect(json['created_by'], 'test_user');
       expect(json['created_at'], '2023-01-01T00:00:00.000Z');
+      expect(json['updated_at'], '2023-01-01T00:00:00.000Z');
     });
   });
 }

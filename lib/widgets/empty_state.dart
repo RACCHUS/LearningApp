@@ -34,13 +34,13 @@ class EmptyState extends StatelessWidget {
               Icon(
                 icon,
                 size: iconSize,
-                color: colorScheme.primary.withOpacity(0.5),
+                color: colorScheme.primary.withValues(alpha: 0.5),
               ),
               SizedBox(height: spacing),
               Text(
                 title,
                 style: textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.8),
+                  color: colorScheme.onSurface.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
@@ -50,7 +50,7 @@ class EmptyState extends StatelessWidget {
                 Text(
                   message,
                   style: textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/content_types.dart';
+import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 class ConceptScreen extends ConsumerStatefulWidget {
   final List<ConceptContent> concepts;
@@ -23,7 +25,6 @@ class ConceptScreen extends ConsumerStatefulWidget {
 class _ConceptScreenState extends ConsumerState<ConceptScreen> {
   late PageController _pageController;
   late int _currentIndex;
-  bool _showExample = false;
   bool _isComplete = false;
 
   @override
@@ -53,26 +54,23 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
     }
   }
 
-  void _toggleExample() {
+  void _onPageChanged(int index) {
     setState(() {
-      _showExample = !_showExample;
+      _currentIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Concept ${_currentIndex + 1} of ${widget.concepts.length}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.lightbulb_outline),
-            onPressed: _toggleExample,
-            tooltip: _showExample ? 'Hide Example' : 'Show Example',
-          ),
-        ],
+        title: Text('Concepts (${_currentIndex + 1}/${widget.concepts.length})'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.colorScheme.onSurface,
       ),
       body: Stack(
         children: [
@@ -82,155 +80,123 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
               LinearProgressIndicator(
                 value: (_currentIndex + 1) / widget.concepts.length,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                color: theme.colorScheme.primary,
-                minHeight: 4,
               ),
-              // Main content area
+              
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
+                  onPageChanged: _onPageChanged,
                   itemCount: widget.concepts.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                      _showExample = false;
-                    });
-                  },
                   itemBuilder: (context, index) {
                     final concept = widget.concepts[index];
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Concept title
-                          Text(
-                            'Concept',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Concept content
-                          Text(
-                            concept.conceptText,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          // Example section (initially hidden)
-                          if (_showExample && concept.exampleText != null) ...[
-                            Text(
-                              'Example',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: AudioConceptWidget(
+                                conceptText: concept.conceptText,
+                                exampleText: concept.exampleText,
+                                keyPoints: concept.keyPoints,
+                                customTextBuilder: (text) {
+                                  // Check if text contains LaTeX
+                                  if (text.contains(r'\(') || text.contains(r'\[') || 
+                                      text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                                    return Math.tex(
+                                      text,
+                                      textStyle: Theme.of(context).textTheme.titleLarge,
+                                    );
+                                  }
+                                  return Text(
+                                    text,
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  );
+                                },
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: theme.colorScheme.outlineVariant,
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // Next button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _nextConcept,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: Text(
-                                concept.exampleText!,
-                                style: theme.textTheme.bodyLarge,
+                                _currentIndex < widget.concepts.length - 1 
+                                  ? 'Next Concept' 
+                                  : 'Complete',
+                                style: const TextStyle(fontSize: 16),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                          ],
-                          // Key points
-                          if (concept.keyPoints != null && concept.keyPoints!.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              'Key Points',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ...concept.keyPoints!.map((point) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 4.0, right: 8.0),
-                                    child: Icon(Icons.circle, size: 8),
-                                  ),
-                                  Expanded(child: Text(point)),
-                                ],
-                              ),
-                            )),
-                          ],
-                          const SizedBox(height: 32),
+                          ),
                         ],
                       ),
                     );
                   },
                 ),
               ),
-              // Bottom action buttons
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Previous button (only show if not first concept)
-                    if (_currentIndex > 0)
-                      TextButton.icon(
-                        icon: const Icon(Icons.arrow_back),
-                        label: const Text('Previous'),
-                        onPressed: () {
-                          _pageController.previousPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        },
-                      )
-                    else
-                      const SizedBox(width: 100),
-                    // Next/Complete button
-                    ElevatedButton(
-                      onPressed: _nextConcept,
-                      child: Text(
-                        _currentIndex < widget.concepts.length - 1 
-                            ? 'Next Concept' 
-                            : widget.isLastInLesson ? 'Complete Lesson' : 'Continue',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
+          
+          // Completion overlay
           if (_isComplete)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.exit_to_app),
-                    label: const Text('Exit or Review'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lightbulb,
+                          size: 64,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Concepts Complete!',
+                          style: theme.textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _currentIndex = 0;
+                                  _isComplete = false;
+                                });
+                                _pageController.animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: const Text('Review Again'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Done'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
                   ),
                 ),
               ),

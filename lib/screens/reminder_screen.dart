@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/reminder.dart';
 import 'package:learning_pwa/providers/reminder_provider.dart';
 import 'package:learning_pwa/widgets/empty_state.dart';
-import 'package:learning_pwa/screens/_reminder_card.dart';
+import 'package:learning_pwa/components/reminders/reminder_card.dart';
 
 class ReminderScreen extends ConsumerStatefulWidget {
   const ReminderScreen({super.key});

@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/widgets/audio_control_widget.dart';
+import 'package:learning_pwa/widgets/study/study_mode_selector.dart';
+import 'package:learning_pwa/widgets/study/study_content_router.dart';
+import 'package:learning_pwa/widgets/study/study_navigation_controls.dart';
 
+/// Refactored study screen with extracted components
+/// 
+/// This screen now uses focused components for mode selection,
+/// content display, and navigation instead of being monolithic.
 class StudyScreen extends ConsumerStatefulWidget {
   final Lesson lesson;
 
@@ -26,138 +33,6 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     selectedMode = StudyMode.lesson;
   }
 
-  Widget _buildModeSelection() {
-    return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Choose Study Mode',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacing24),
-          _buildModeCard(
-            title: 'Flashcards',
-            description: 'Study with interactive flashcards',
-            icon: Icons.style,
-            mode: StudyMode.flashcard,
-          ),
-          const SizedBox(height: AppTheme.spacing16),
-          _buildModeCard(
-            title: 'Multiple Choice',
-            description: 'Test your knowledge with questions',
-            icon: Icons.question_answer,
-            mode: StudyMode.mcq,
-          ),
-          const SizedBox(height: AppTheme.spacing16),
-          _buildModeCard(
-            title: 'Concepts',
-            description: 'Review key concepts and examples',
-            icon: Icons.book,
-            mode: StudyMode.concept,
-          ),
-          const SizedBox(height: AppTheme.spacing16),
-          _buildModeCard(
-            title: 'Mixed Mode',
-            description: 'Combine all types for comprehensive learning',
-            icon: Icons.shuffle,
-            mode: StudyMode.lesson,
-          ),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: () {
-              ref.read(studyProvider.notifier).startStudySession(
-                widget.lesson.id, 
-                selectedMode,
-              );
-              setState(() {
-                showModeSelection = false;
-              });
-            },
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('Start Studying'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModeCard({
-    required String title,
-    required String description,
-    required IconData icon,
-    required StudyMode mode,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isSelected = selectedMode == mode;
-
-    return Card(
-      color: isSelected 
-        ? colorScheme.primaryContainer
-        : colorScheme.surface,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            selectedMode = mode;
-          });
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 32,
-                color: isSelected
-                  ? colorScheme.onPrimaryContainer
-                  : colorScheme.onSurface,
-              ),
-              const SizedBox(width: AppTheme.spacing16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected) ...[
-                const SizedBox(width: AppTheme.spacing16),
-                Icon(
-                  Icons.check_circle,
-                  color: colorScheme.primary,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final studyState = ref.watch(studyProvider);
@@ -167,6 +42,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
       appBar: AppBar(
         title: Text(widget.lesson.title),
         actions: [
+          const AudioPlaybackIndicator(),
+          const SizedBox(width: 8),
+          const AudioSpeedControl(),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -180,214 +58,102 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
       body: SafeArea(
         child: showModeSelection 
           ? _buildModeSelection()
-          : Column(
-            children: [
-              // Progress indicator
-              LinearProgressIndicator(
-                value: studyState.currentIndex / 
-                       (studyState.currentContent?.length ?? 1),
-                backgroundColor: colorScheme.surfaceContainerHighest,
-              ),
-              
-              // Main content area
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacing16),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppTheme.spacing24),
-                      child: studyState.isLoading || studyState.currentContent == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : _StudyContent(
-                            content: studyState.currentContent![studyState.currentIndex],
-                            mode: studyState.currentMode!,
-                          ),
-                  ),
-                ),
-              ),
-            ),
-            
-            // Bottom controls
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.spacing16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  FilledButton.tonal(
-                    onPressed: studyState.currentIndex > 0
-                        ? () {
-                            ref.read(studyProvider.notifier).previous();
-                          }
-                        : null,
-                    child: const Text('Previous'),
-                  ),
-                  FilledButton(
-                    onPressed: studyState.currentIndex < 
-                              (studyState.currentContent?.length ?? 0) - 1
-                        ? () {
-                            ref.read(studyProvider.notifier).next();
-                          }
-                        : null,
-                    child: const Text('Next'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          : _buildStudyInterface(studyState, colorScheme),
       ),
     );
   }
-}
 
-class _StudyContent extends StatelessWidget {
-  final dynamic content;
-  final StudyMode mode;
-
-  const _StudyContent({
-    required this.content,
-    required this.mode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    switch (mode) {
-      case StudyMode.flashcard:
-        return _FlashcardContent(
-          term: content,
-          textTheme: textTheme,
-        );
-      case StudyMode.mcq:
-        return _MCQContent(
-          question: content,
-          textTheme: textTheme,
-        );
-      case StudyMode.concept:
-        return _ConceptContent(
-          concept: content,
-          textTheme: textTheme,
-        );
-      default:
-        return const Center(
-          child: Text('Unsupported study mode'),
-        );
-    }
-  }
-}
-
-class _FlashcardContent extends StatefulWidget {
-  final dynamic term;
-  final TextTheme textTheme;
-
-  const _FlashcardContent({
-    required this.term,
-    required this.textTheme,
-  });
-
-  @override
-  State<_FlashcardContent> createState() => _FlashcardContentState();
-}
-
-class _FlashcardContentState extends State<_FlashcardContent> {
-  bool showDefinition = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+  Widget _buildModeSelection() {
+    return StudyModeSelector(
+      selectedMode: selectedMode,
+      onModeChanged: (mode) {
         setState(() {
-          showDefinition = !showDefinition;
+          selectedMode = mode;
         });
       },
-      child: Center(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: Text(
-            showDefinition ? widget.term.definition : widget.term.term,
-            key: ValueKey(showDefinition),
-            style: widget.textTheme.headlineMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
+      onStartStudy: () {
+        ref.read(studyProvider.notifier).startStudySession(
+          widget.lesson.id, 
+          selectedMode,
+        );
+        setState(() {
+          showModeSelection = false;
+        });
+      },
     );
   }
-}
 
-class _MCQContent extends StatelessWidget {
-  final dynamic question;
-  final TextTheme textTheme;
-
-  const _MCQContent({
-    required this.question,
-    required this.textTheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStudyInterface(dynamic studyState, ColorScheme colorScheme) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          question.questionText,
-          style: textTheme.titleLarge,
+        // Progress indicator
+        LinearProgressIndicator(
+          value: studyState.currentIndex / 
+                 (studyState.currentContent?.length ?? 1),
+          backgroundColor: colorScheme.surfaceContainerHighest,
         ),
-        const SizedBox(height: AppTheme.spacing24),
-        ...question.options.asMap().entries.map((entry) {
-          final index = entry.key;
-          final option = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppTheme.spacing16),
-            child: RadioListTile(
-              title: Text(option),
-              value: index,
-              groupValue: null, // TODO: Connect to provider
-              onChanged: (value) {
-                // TODO: Handle answer selection
-              },
+        
+        // Main content area
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: studyState.isLoading || studyState.currentContent == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : StudyContentRouter(
+                      content: studyState.currentContent![studyState.currentIndex],
+                      mode: studyState.currentMode!,
+                    ),
+              ),
             ),
-          );
-        }),
+          ),
+        ),
+        
+        // Bottom navigation controls
+        StudyNavigationControls(
+          currentIndex: studyState.currentIndex,
+          totalItems: studyState.currentContent?.length ?? 0,
+          onPrevious: studyState.currentIndex > 0
+              ? () => ref.read(studyProvider.notifier).previous()
+              : null,
+          onNext: studyState.currentIndex < 
+                  (studyState.currentContent?.length ?? 0) - 1
+              ? () => ref.read(studyProvider.notifier).next()
+              : null,
+          onFinish: () {
+            _finishStudySession();
+          },
+        ),
       ],
     );
   }
-}
 
-class _ConceptContent extends StatelessWidget {
-  final dynamic concept;
-  final TextTheme textTheme;
-
-  const _ConceptContent({
-    required this.concept,
-    required this.textTheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            concept.conceptText,
-            style: textTheme.bodyLarge,
+  void _finishStudySession() {
+    // Show completion dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Study Session Complete!'),
+        content: const Text('Great job! You\'ve completed this study session.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                showModeSelection = true;
+              });
+            },
+            child: const Text('Study Again'),
           ),
-          if (concept.exampleText != null) ...[
-            const SizedBox(height: AppTheme.spacing24),
-            const Divider(),
-            const SizedBox(height: AppTheme.spacing16),
-            Text(
-              'Example:',
-              style: textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppTheme.spacing8),
-            Text(
-              concept.exampleText!,
-              style: textTheme.bodyMedium,
-            ),
-          ],
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Return to previous screen
+            },
+            child: const Text('Finish'),
+          ),
         ],
       ),
     );

@@ -97,7 +97,7 @@ class NotificationService {
         reminder.message ?? 'Your scheduled study time is here!',
         _nextInstanceOfTime(time),
         _buildNotificationDetails(reminder),
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -141,7 +141,7 @@ class NotificationService {
         message,
         tz.TZDateTime.from(scheduledTime, tz.local),
         _buildNotificationDetails(reminder, sound: 'notification_sound'),
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: jsonEncode({

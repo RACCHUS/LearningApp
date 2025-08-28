@@ -1,15 +1,10 @@
 // This file contains the implementation for web sharing.
-import 'dart:html' as html;
+// Note: Using a stub implementation to avoid deprecated dart:html
+// Web sharing functionality can be added later with proper JS interop setup
 
 Future<bool> shareText(String text, {String? title}) async {
-  try {
-    await html.window.navigator.share({
-      'title': title ?? '',
-      'text': text,
-    });
-    return true;
-  } catch (_) {
-    // User cancelled or not supported
-    return false;
-  }
+  // Stub implementation - returns false to indicate sharing not available
+  // In a real implementation, this would use the Web Share API
+  // or fall back to copying to clipboard
+  return false;
 }

@@ -3,6 +3,7 @@ import 'package:learning_pwa/models/settings_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
+import 'package:learning_pwa/screens/settings/audio_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -124,6 +125,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
             const Divider(height: 32),
+            
+            // Audio Settings Navigation
+            ListTile(
+              leading: const Icon(Icons.volume_up),
+              title: const Text('Audio Settings'),
+              subtitle: const Text('Voice and speech preferences'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AudioSettingsScreen(),
+                  ),
+                );
+              },
+            ),
+            
+            const Divider(height: 32),
+            
             SwitchListTile(
               title: const Text('Dark Mode'),
               value: _settings.darkMode,

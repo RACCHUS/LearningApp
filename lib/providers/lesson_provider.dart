@@ -6,7 +6,6 @@ import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/concept.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 // Provider to fetch all lessons (for home screen, not filtered by user_id)
 final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
@@ -30,113 +29,6 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
   )).toList();
 });
 
-// Provider for creating and managing lessons
-final lessonCreationProvider = Provider<LessonRepository>((ref) {
-  return LessonRepository();
-});
-
-
-class LessonRepository {
-  final _supabase = Supabase.instance.client;
-  final _uuid = const Uuid();
-
-  // Create a new lesson with its content
-  Future<String> createLesson({
-    required String title,
-    required String createdBy,
-    String? description,
-    List<String> tags = const [],
-    List<Map<String, dynamic>> content = const [],
-  }) async {
-    try {
-      // Create the lesson
-      final lessonId = _uuid.v4();
-      
-      // First, insert the lesson
-      await _supabase.from('lessons').insert({
-        'id': lessonId,
-        'title': title,
-        'description': description,
-        'tags': tags,
-        'user_id': createdBy,  // Use user_id as per schema
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      // Process and save content
-      for (var item in content) {
-        final type = item['type'] as String;
-        final contentId = _uuid.v4();
-        
-        try {
-          switch (type) {
-            case 'text':
-              await _supabase.from('lesson_texts').insert({
-                'id': contentId,
-                'lesson_id': lessonId,
-                'text': item['text'],
-                'created_by': createdBy,
-                'created_at': DateTime.now().toIso8601String(),
-              });
-              break;
-              
-            case 'term':
-              // Insert term with direct lesson_id foreign key
-              await _supabase.from('terms').insert({
-                'id': contentId,
-                'lesson_id': lessonId,  // Direct foreign key
-                'term': item['term'],
-                'definition': item['definition'],
-                'example': item['example'],
-                'user_id': createdBy,
-                'created_at': DateTime.now().toIso8601String(),
-              });
-              break;
-              
-            case 'question':
-              // Insert question with direct lesson_id foreign key
-              await _supabase.from('questions').insert({
-                'id': contentId,
-                'lesson_id': lessonId,  // Direct foreign key
-                'question_text': item['question_text'],
-                'options': item['options'],
-                'correct_answer': item['correct_answer'],
-                'explanation': item['explanation'],
-                'user_id': createdBy,
-                'created_at': DateTime.now().toIso8601String(),
-              });
-              break;
-              
-            case 'concept':
-              // Insert concept with direct lesson_id foreign key
-              await _supabase.from('concepts').insert({
-                'id': contentId,
-                'lesson_id': lessonId,  // Direct foreign key
-                'concept_text': item['concept_text'],
-                'example_text': item['example_text'],
-                'key_points': item['key_points'],
-                'user_id': createdBy,
-                'created_at': DateTime.now().toIso8601String(),
-              });
-              break;
-              
-            // Add cases for other content types as needed
-          }
-        } catch (e) {
-          // Log the error but continue with other content items
-          log('Error saving content item: $e', name: 'LessonRepository');
-          // You might want to collect these errors and show them to the user
-        }
-      }
-      
-      return lessonId;
-      
-    } catch (e) {
-      log('Error creating lesson: $e', name: 'LessonRepository');
-      rethrow;
-    }
-  }
-}
-
 final lessonProvider =
     FutureProvider.family<FullLesson, String>((ref, lessonId) async {
   final supabase = Supabase.instance.client;
@@ -154,9 +46,9 @@ final lessonProvider =
     log('✅ Lesson data loaded successfully', name: 'LessonProvider');
 
     // Get related content separately using direct foreign keys with individual error handling
-    dynamic termsData;
-    dynamic questionsData;
-    dynamic conceptsData;
+    List<dynamic> termsData;
+    List<dynamic> questionsData;
+    List<dynamic> conceptsData;
     
     try {
       termsData = await supabase
@@ -223,10 +115,10 @@ final lessonProvider =
     );
     
     // Process the responses as Lists with explicit null checks
-    final List<dynamic> termsResponse = (termsData is List) ? termsData : [];
-    final List<dynamic> questionsResponse = (questionsData is List) ? questionsData : [];
-    final List<dynamic> conceptsResponse = (conceptsData is List) ? conceptsData : [];
-    final List<dynamic> textsResponse = (textsData is List) ? textsData : [];
+    final List<dynamic> termsResponse = termsData;
+    final List<dynamic> questionsResponse = questionsData;
+    final List<dynamic> conceptsResponse = conceptsData;
+    final List<dynamic> textsResponse = textsData;
     
     log('📊 Processing ${termsResponse.length} terms', name: 'LessonProvider');
     log('📊 Processing ${questionsResponse.length} questions', name: 'LessonProvider');

@@ -1,19 +1,20 @@
-# Environment variables
+# Environment variables (CRITICAL: Never commit real credentials)
 .env
 .env.*
 !.env.example
 
-# Firebase credentials
-.env.firebase
 # Flutter/Dart
 .dart_tool/
 .packages
 .pub/
 build/
+
 # VS Code
 .vscode/
+
+# Firebase
+.firebase/
+
 # Others
 .idea/
 *.iml
-# Node.js dependencies
-node_modules/

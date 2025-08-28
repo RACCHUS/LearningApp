@@ -34,7 +34,7 @@ class McqOptions extends StatelessWidget {
             groupValue: selectedIndex,
             onChanged: (v) => onChanged(idx),
           ),
-          tileColor: color?.withOpacity(0.1),
+          tileColor: color?.withValues(alpha: 0.1),
         );
       }).toList(),
     );

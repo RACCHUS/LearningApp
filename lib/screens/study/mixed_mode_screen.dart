@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/concept_content.dart';
+import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
+import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
+import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 /// Represents a single study item in mixed mode.
 class MixedStudyItem {
@@ -34,16 +38,14 @@ class MixedModeScreen extends StatefulWidget {
 
 class _MixedModeScreenState extends State<MixedModeScreen> {
   bool _isComplete = false;
-  bool _isFlipped = false; // For flashcard
-  int? _selectedOption; // For MCQ
-  bool _showFeedback = false;
-  bool _isCorrect = false;
   late List<MixedStudyItem> _items;
   int _currentIndex = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     
     if (widget.preSortedItems != null) {
       // Use pre-sorted items (already ordered)
@@ -64,15 +66,18 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _next() {
     if (_currentIndex < _items.length - 1) {
-      setState(() {
-        _currentIndex++;
-        _isFlipped = false;
-        _selectedOption = null;
-        _showFeedback = false;
-        _isCorrect = false;
-      });
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       setState(() {
         _isComplete = true;
@@ -82,76 +87,207 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
 
   void _prev() {
     if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-        _isFlipped = false;
-        _selectedOption = null;
-        _showFeedback = false;
-        _isCorrect = false;
-      });
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  Widget _buildItemWidget(MixedStudyItem item) {
+    switch (item.type) {
+      case 'flashcard':
+        final term = item.data as Term;
+        return AudioFlashcardWidget(
+          frontText: term.term,
+          backText: term.definition,
+          example: term.example,
+          customTextBuilder: (text) {
+            if (text.contains(r'\(') || text.contains(r'\[') || 
+                text.contains(r'\frac') || text.contains(r'\sqrt')) {
+              return Math.tex(text, textStyle: const TextStyle(fontSize: 20));
+            }
+            return Text(text, style: const TextStyle(fontSize: 20), textAlign: TextAlign.center);
+          },
+        );
+      
+      case 'mcq':
+        final question = item.data as Question;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: AudioMCQWidget(
+              questionText: question.questionText,
+              options: question.options,
+              correctAnswer: question.correctAnswer,
+              explanation: question.explanation,
+              customTextBuilder: (text) {
+                if (text.contains(r'\(') || text.contains(r'\[') || 
+                    text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                  return Math.tex(text, textStyle: const TextStyle(fontSize: 18));
+                }
+                return Text(text, style: const TextStyle(fontSize: 18));
+              },
+            ),
+          ),
+        );
+      
+      case 'concept':
+        final concept = item.data as ConceptContent;
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: AudioConceptWidget(
+              conceptText: concept.conceptText,
+              exampleText: concept.exampleText,
+              keyPoints: concept.keyPoints,
+              customTextBuilder: (text) {
+                if (text.contains(r'\(') || text.contains(r'\[') || 
+                    text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                  return Math.tex(text, textStyle: const TextStyle(fontSize: 18));
+                }
+                return Text(text, style: const TextStyle(fontSize: 18));
+              },
+            ),
+          ),
+        );
+      
+      default:
+        return const Card(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text('Unsupported content type'),
+          ),
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final item = _items[_currentIndex];
+    if (_items.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Mixed Study Session')),
+        body: const Center(
+          child: Text('No study content available.'),
+        ),
+      );
+    }
+
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mixed Study Session'),
+        title: Text('Mixed Study (${_currentIndex + 1}/${_items.length})'),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                LinearProgressIndicator(
-                  value: (_currentIndex + 1) / _items.length,
+          Column(
+            children: [
+              // Progress indicator
+              LinearProgressIndicator(
+                value: (_currentIndex + 1) / _items.length,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+              
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _items.length,
+                  itemBuilder: (context, index) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _buildItemWidget(_items[index]),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // Navigation buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: _currentIndex > 0 ? _prev : null,
+                                icon: const Icon(Icons.arrow_back),
+                                label: const Text('Previous'),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _currentIndex < _items.length - 1 ? _next : () {
+                                  setState(() {
+                                    _isComplete = true;
+                                  });
+                                },
+                                icon: Icon(_currentIndex < _items.length - 1 ? Icons.arrow_forward : Icons.check),
+                                label: Text(_currentIndex < _items.length - 1 ? 'Next' : 'Complete'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: Center(
-                    child: _buildItemWidget(item),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: _currentIndex > 0 ? _prev : null,
-                    ),
-                    Text('${_currentIndex + 1} / ${_items.length}'),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward),
-                      onPressed: _currentIndex < _items.length - 1 ? _next : null,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          
+          // Completion overlay
           if (_isComplete)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.exit_to_app),
-                    label: const Text('Exit or Review'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.celebration,
+                          size: 64,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Study Session Complete!',
+                          style: theme.textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _currentIndex = 0;
+                                  _isComplete = false;
+                                });
+                                _pageController.animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: const Text('Study Again'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Done'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
                   ),
                 ),
               ),
@@ -159,119 +295,5 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildItemWidget(MixedStudyItem item) {
-    switch (item.type) {
-      case 'flashcard':
-        final term = item.data as Term;
-        final theme = Theme.of(context);
-        final cardColor = theme.cardColor;
-        final flippedColor = theme.colorScheme.secondaryContainer;
-        final textColor = theme.textTheme.bodyLarge?.color;
-        return GestureDetector(
-          onTap: () => setState(() => _isFlipped = !_isFlipped),
-          child: Card(
-            color: _isFlipped ? flippedColor : cardColor,
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(term.term, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
-                  const SizedBox(height: 16),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _isFlipped
-                        ? Text(term.definition, key: const ValueKey('def'), style: TextStyle(fontSize: 20, color: textColor))
-                        : Text('Tap to flip', key: const ValueKey('prompt'), style: TextStyle(fontSize: 18, color: theme.hintColor)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      case 'mcq':
-        final question = item.data as Question;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(question.questionText, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                ...List.generate(question.options.length, (i) => RadioListTile<int>(
-                      value: i,
-                      groupValue: _selectedOption,
-                      onChanged: _showFeedback ? null : (val) => setState(() => _selectedOption = val),
-                      title: Text('${String.fromCharCode(65 + i)}. ${question.options[i]}'),
-                    )),
-                const SizedBox(height: 12),
-                if (!_showFeedback)
-                  ElevatedButton(
-                    onPressed: _selectedOption == null
-                        ? null
-                        : () {
-                            setState(() {
-                              _showFeedback = true;
-                              _isCorrect = _selectedOption == question.correctAnswer;
-                            });
-                          },
-                    child: const Text('Check Answer'),
-                  ),
-                if (_showFeedback)
-                  Text(
-                    _isCorrect ? 'Correct!' : 'Incorrect',
-                    style: TextStyle(
-                      color: _isCorrect ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      case 'concept':
-        final concept = item.data as ConceptContent;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(concept.conceptText, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                if (concept.exampleText != null) ...[
-                  const SizedBox(height: 12),
-                  Text(concept.exampleText!, style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic)),
-                ],
-              ],
-            ),
-          ),
-        );
-      case 'text':
-        final textContent = item.data as dynamic;
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.article, size: 32, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 16),
-                Text(
-                  textContent.text,
-                  style: const TextStyle(fontSize: 18, height: 1.5),
-                ),
-              ],
-            ),
-          ),
-        );
-      default:
-        return const SizedBox.shrink();
-    }
   }
 }

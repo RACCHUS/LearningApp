@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
-
 import 'package:learning_pwa/providers/lesson_provider.dart';
-import 'package:learning_pwa/screens/home/lesson_list.dart';
-import 'package:learning_pwa/screens/home/search_bar.dart';
-import 'package:learning_pwa/screens/home/category_filters.dart';
+import 'package:learning_pwa/screens/home/home_search_bar.dart';
+import 'package:learning_pwa/screens/home/home_category_filters.dart';
+import 'package:learning_pwa/screens/home/home_lessons_list.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,8 +26,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -38,7 +35,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        title: Text('Learning App', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 28, color: Theme.of(context).colorScheme.primary)),
+        title: Text(
+          'Learning App',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 28,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -50,7 +54,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (authState is GuestMode) ...[
             TextButton.icon(
               icon: const Icon(Icons.login, color: Colors.blue),
-              label: const Text('Sign In', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+              label: const Text(
+                'Sign In',
+                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+              ),
               onPressed: () {
                 context.push('/login');
               },
@@ -72,21 +79,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 700),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 16),
-                HomeSearchBar(
-                  controller: _searchController,
-                  searchQuery: _searchQuery,
-                  onSearchChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.trim();
-                    });
-                  },
+            child: CustomScrollView(
+              slivers: [
+                // Search Bar
+                SliverToBoxAdapter(
+                  child: HomeSearchBar(
+                    controller: _searchController,
+                    searchQuery: _searchQuery,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.trim();
+                      });
+                    },
+                    onClear: () {
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  ),
                 ),
-                const SizedBox(height: 8),
-                CategoryFilters(
+                
+                // Category Filters
+                HomeCategoryFilters(
                   selectedTag: selectedTag,
                   onTagSelected: (tag) {
                     setState(() {
@@ -94,31 +108,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     });
                   },
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.playlist_add_check),
-                    label: const Text('Create Study Set'),
-                    onPressed: () {
-                      context.push('/lesson-selection');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      elevation: 2,
+                
+                // Create Study Set Button
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.playlist_add_check),
+                      label: const Text('Create Study Set'),
+                      onPressed: () {
+                        context.push('/lesson-selection');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        elevation: 2,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: LessonList(
-                    lessonsStream: allLessons,
-                    searchQuery: _searchQuery,
-                    selectedTag: selectedTag,
-                  ),
+                
+                // Lessons List
+                HomeLessonsList(
+                  lessonsStream: allLessons,
+                  searchQuery: _searchQuery,
+                  selectedTag: selectedTag,
                 ),
               ],
             ),

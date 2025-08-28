@@ -15,6 +15,7 @@ class Mcq extends LessonContent {
   final List<String> options;
 
   @HiveField(8)
+  @JsonKey(name: 'correct_option_index')
   final int correctOption;
 
   @HiveField(9)

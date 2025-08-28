@@ -161,6 +161,11 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       rethrow;
     }
   }
+
+  /// Public method to update progress - delegates to private _upsertProgress
+  Future<void> updateProgress(UserProgress progress) async {
+    await _upsertProgress(progress);
+  }
   
   // Track study time in the background
   void trackStudyTime(Duration duration) {

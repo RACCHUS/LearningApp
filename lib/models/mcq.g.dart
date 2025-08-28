@@ -74,25 +74,25 @@ class McqAdapter extends TypeAdapter<Mcq> {
 
 Mcq _$McqFromJson(Map<String, dynamic> json) => Mcq(
       id: json['id'] as String,
-      lessonId: json['lessonId'] as String,
+      lessonId: json['lesson_id'] as String,
       order: (json['order'] as num).toInt(),
       question: json['question'] as String,
       options:
           (json['options'] as List<dynamic>).map((e) => e as String).toList(),
-      correctOption: (json['correctOption'] as num).toInt(),
+      correctOption: (json['correct_option_index'] as num).toInt(),
       explanation: json['explanation'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$McqToJson(Mcq instance) => <String, dynamic>{
       'id': instance.id,
-      'lessonId': instance.lessonId,
+      'lesson_id': instance.lessonId,
       'order': instance.order,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
       'question': instance.question,
       'options': instance.options,
-      'correctOption': instance.correctOption,
+      'correct_option_index': instance.correctOption,
       'explanation': instance.explanation,
     };

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -9,6 +10,7 @@ import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/screens/study/flashcard_screen.dart';
 import 'package:learning_pwa/screens/study/mcq_screen.dart';
 import 'package:learning_pwa/screens/study/concept_screen.dart';
+import 'package:learning_pwa/screens/study/lesson_mode_screen.dart';
 
 class LessonModeDialog extends ConsumerWidget {
   final String lessonId;
@@ -21,7 +23,33 @@ class LessonModeDialog extends ConsumerWidget {
       title: const Text('Choose Study Mode'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Text(
+            'How would you like to study this lesson?',
+            style: TextStyle(fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.school),
+            label: const Text('Lesson Mode'),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LessonModeScreen(lessonId: lessonId),
+                ),
+              );
+            },
+          ),
+          const Text(
+            'Study the lesson as designed with all content types',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.style),
             label: const Text('Flashcards'),
@@ -36,6 +64,11 @@ class LessonModeDialog extends ConsumerWidget {
                 ),
               );
             },
+          ),
+          const Text(
+            'Practice with flashcard-style terms and definitions',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
@@ -61,6 +94,11 @@ class LessonModeDialog extends ConsumerWidget {
               );
             },
           ),
+          const Text(
+            'Answer multiple choice questions only',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.lightbulb),
@@ -77,18 +115,24 @@ class LessonModeDialog extends ConsumerWidget {
               );
             },
           ),
+          const Text(
+            'Review concepts and key ideas only',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.shuffle),
             label: const Text('Mixed (All)'),
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(
-                context,
-                '/studyset',
-                arguments: [lessonId],
-              );
+              context.go('/study-set?ids=$lessonId');
             },
+          ),
+          const Text(
+            'Mix all content types in random order',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

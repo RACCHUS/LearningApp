@@ -1,5 +1,4 @@
 import 'package:hive/hive.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:learning_pwa/models/base_lesson.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -8,7 +7,6 @@ import 'package:learning_pwa/models/concept.dart';
 part 'lesson.g.dart';
 
 @HiveType(typeId: 0)
-@JsonSerializable()
 class Lesson extends BaseLesson {
   @HiveField(0)
   final List<Term> terms;

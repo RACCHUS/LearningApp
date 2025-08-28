@@ -6,11 +6,11 @@ import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/concept_adapter.dart' as concept_adapter;
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/mcq.dart';
-import 'package:learning_pwa/models/mcq_adapter.dart' as mcq_adapter;
-import 'package:learning_pwa/models/term_adapter.dart' as term_adapter;
-import 'package:learning_pwa/models/question_content_adapter.dart';
-import 'package:learning_pwa/models/concept_content_adapter.dart';
+import 'package:learning_pwa/models/term_content.dart';
+import 'package:learning_pwa/models/question_content.dart';
+import 'package:learning_pwa/models/concept_content.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
+import 'package:learning_pwa/models/audio_settings.dart';
 
 // Register Hive adapters for all models
 void registerHiveAdapters() {
@@ -22,16 +22,19 @@ void registerHiveAdapters() {
     Hive.registerAdapter(concept_adapter.ConceptAdapter());
   }
   if (!Hive.isAdapterRegistered(2)) {
-    Hive.registerAdapter(mcq_adapter.McqAdapter());
+    Hive.registerAdapter(McqAdapter());
   }
   if (!Hive.isAdapterRegistered(4)) {
-    Hive.registerAdapter(term_adapter.TermAdapter());
+    Hive.registerAdapter(TermContentAdapter());
   }
   if (!Hive.isAdapterRegistered(5)) {
     Hive.registerAdapter(QuestionContentAdapter());
   }
   if (!Hive.isAdapterRegistered(6)) {
     Hive.registerAdapter(ConceptContentAdapter());
+  }
+  if (!Hive.isAdapterRegistered(20)) {
+    Hive.registerAdapter(AudioSettingsAdapter());
   }
   // UserProgress adapter should be registered if it exists
   // Add other adapters as needed

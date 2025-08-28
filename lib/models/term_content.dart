@@ -4,7 +4,7 @@ import 'package:learning_pwa/models/lesson_content.dart';
 
 part 'term_content.g.dart';
 
-@HiveType(typeId: 4)
+@HiveType(typeId: 8)
 @JsonSerializable()
 class TermContent extends LessonContent {
   @HiveField(6)

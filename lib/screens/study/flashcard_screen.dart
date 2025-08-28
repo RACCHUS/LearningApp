@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
+import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
   final List<Term> terms;
@@ -19,12 +21,9 @@ class FlashcardScreen extends ConsumerStatefulWidget {
   ConsumerState<FlashcardScreen> createState() => _FlashcardScreenState();
 }
 
-class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
-    with SingleTickerProviderStateMixin {
+class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   late int _currentIndex;
   late PageController _pageController;
-  late AnimationController _flipController;
-  bool _isFlipped = false;
   bool _isComplete = false;
 
   @override
@@ -32,34 +31,17 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
-    _flipController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _flipController.dispose();
     super.dispose();
   }
 
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
-      _isFlipped = false;
-    });
-  }
-
-  void _onFlip() {
-    if (_flipController.isCompleted) {
-      _flipController.reverse();
-    } else {
-      _flipController.forward();
-    }
-    setState(() {
-      _isFlipped = !_isFlipped;
     });
   }
 
@@ -90,47 +72,21 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
     }
   }
 
-  Widget _buildFlashcard(String text, {required bool isFront}) {
-    return Card(
-      elevation: 8,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isFront ? 'Term' : 'Definition',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: isFront
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            if (isFront) ...[
-              const Spacer(),
-              Text(
-                'Tap to reveal definition',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            ],
-          ],
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Expanded(
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),
     );
@@ -159,98 +115,120 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen>
                   itemCount: widget.terms.length,
                   itemBuilder: (context, index) {
                     final term = widget.terms[index];
-                    return GestureDetector(
-                      onTap: _onFlip,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: child,
+                    return Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: AudioFlashcardWidget(
+                        frontText: term.term,
+                        backText: term.definition,
+                        example: term.example,
+                        frontStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        backStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        customTextBuilder: (text) {
+                          // Check if text contains LaTeX
+                          if (text.contains(r'\(') || text.contains(r'\[') || 
+                              text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                            return Math.tex(
+                              text,
+                              textStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          }
+                          return Text(
+                            text,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           );
                         },
-                        child: _isFlipped
-                            ? _buildFlashcard(term.definition, isFront: false)
-                            : _buildFlashcard(term.term, isFront: true),
                       ),
                     );
                   },
                 ),
               ),
-              if (_isFlipped) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.thumb_down,
-                        label: 'Need Practice',
-                        color: theme.colorScheme.error,
-                        onPressed: _onDontKnow,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildActionButton(
-                        icon: Icons.thumb_up,
-                        label: 'I Know This',
-                        color: theme.colorScheme.primary,
-                        onPressed: _onKnowIt,
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(
+                      icon: Icons.thumb_down,
+                      label: 'Need Practice',
+                      color: theme.colorScheme.error,
+                      onPressed: _onDontKnow,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildActionButton(
+                      icon: Icons.thumb_up,
+                      label: 'I Know This',
+                      color: theme.colorScheme.primary,
+                      onPressed: _onKnowIt,
+                    ),
+                  ],
                 ),
-              ],
-              const SizedBox(height: 16),
+              ),
             ],
           ),
           if (_isComplete)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.exit_to_app),
-                    label: const Text('Exit or Review'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 64,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Flashcards Complete!',
+                          style: theme.textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _currentIndex = 0;
+                                  _isComplete = false;
+                                });
+                                _pageController.animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: const Text('Study Again'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Done'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
                   ),
                 ),
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Expanded(
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.1),
-          foregroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: color.withOpacity(0.3)),
-          ),
-        ),
       ),
     );
   }

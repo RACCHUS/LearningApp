@@ -1,6 +1,8 @@
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,10 +11,25 @@ import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/services/push_notification_service.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:learning_pwa/firebase_options.dart';
+import 'package:learning_pwa/config/firebase_options.dart';
+import 'package:learning_pwa/services/audio_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+    if (kDebugMode) {
+      print('✅ Environment variables loaded successfully');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ Warning: Could not load .env file: $e');
+      print('📝 Make sure to copy .env.example to .env and configure it');
+    }
+  }
 
   // Initialize Hive
   registerHiveAdapters();
@@ -31,10 +48,34 @@ Future<void> main() async {
     // If FCM is not supported, ignore
   }
 
+  // Initialize Audio Services
+  try {
+    await AudioService().initialize();
+    await VoiceInputService().initialize();
+  } catch (e) {
+    // If audio services fail to initialize, continue without them
+    if (kDebugMode) {
+      print('Audio services initialization failed: $e');
+    }
+  }
+
+  // Validate Supabase configuration
+  if (!SupabaseConfig.isConfigured) {
+    if (kDebugMode) {
+      print('❌ ERROR: Supabase configuration missing!');
+      print('📝 Please copy .env.example to .env and configure your Supabase credentials');
+    }
+    throw Exception('Supabase configuration missing. Please configure .env file.');
+  }
+
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  if (kDebugMode) {
+    print('✅ Supabase initialized successfully');
+  }
 
   runApp(
     const ProviderScope(

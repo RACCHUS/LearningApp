@@ -72,24 +72,24 @@ class ConceptContentAdapter extends TypeAdapter<ConceptContent> {
 ConceptContent _$ConceptContentFromJson(Map<String, dynamic> json) =>
     ConceptContent(
       id: json['id'] as String,
-      lessonId: json['lessonId'] as String,
+      lessonId: json['lesson_id'] as String,
       order: (json['order'] as num).toInt(),
       conceptText: json['conceptText'] as String,
       exampleText: json['exampleText'] as String?,
       keyPoints: (json['keyPoints'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$ConceptContentToJson(ConceptContent instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'lessonId': instance.lessonId,
+      'lesson_id': instance.lessonId,
       'order': instance.order,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
       'conceptText': instance.conceptText,
       'exampleText': instance.exampleText,
       'keyPoints': instance.keyPoints,

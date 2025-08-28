@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 /// Base class for all types of lesson content
 @HiveType(typeId: 2)
@@ -7,6 +8,7 @@ abstract class LessonContent {
   final String id;
 
   @HiveField(1)
+  @JsonKey(name: 'lesson_id')
   final String lessonId;
 
   @HiveField(2)
@@ -16,9 +18,11 @@ abstract class LessonContent {
   final String type;
 
   @HiveField(4)
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   @HiveField(5)
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const LessonContent({

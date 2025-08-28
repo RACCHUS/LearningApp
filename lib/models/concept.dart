@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 7)
 class Concept {
   @HiveField(0)
   final String id;
