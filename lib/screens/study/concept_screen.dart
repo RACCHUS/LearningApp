@@ -9,6 +9,7 @@ class ConceptScreen extends ConsumerStatefulWidget {
   final int initialIndex;
   final VoidCallback? onComplete;
   final bool isLastInLesson;
+  final bool isEmbeddedInLesson; // New parameter for lesson mode
 
   const ConceptScreen({
     super.key,
@@ -16,6 +17,7 @@ class ConceptScreen extends ConsumerStatefulWidget {
     this.initialIndex = 0,
     this.onComplete,
     this.isLastInLesson = false,
+    this.isEmbeddedInLesson = false, // Default to false for standalone mode
   });
 
   @override
@@ -47,10 +49,15 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      setState(() {
-        _isComplete = true;
-      });
-      widget.onComplete?.call();
+      // If embedded in lesson, directly call onComplete without showing overlay
+      if (widget.isEmbeddedInLesson) {
+        widget.onComplete?.call();
+      } else {
+        setState(() {
+          _isComplete = true;
+        });
+        widget.onComplete?.call();
+      }
     }
   }
 
@@ -65,7 +72,8 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      appBar: AppBar(
+      // Only show AppBar when not embedded in lesson mode
+      appBar: widget.isEmbeddedInLesson ? null : AppBar(
         title: Text('Concepts (${_currentIndex + 1}/${widget.concepts.length})'),
         centerTitle: true,
         elevation: 0,
@@ -134,11 +142,54 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
                               child: Text(
                                 _currentIndex < widget.concepts.length - 1 
                                   ? 'Next Concept' 
-                                  : 'Complete',
+                                  : widget.isEmbeddedInLesson ? 'Continue Lesson' : 'Complete',
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ),
                           ),
+                          
+                          // Navigation controls for concept within lesson
+                          if (widget.concepts.length > 1) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (_currentIndex > 0)
+                                  TextButton.icon(
+                                    icon: const Icon(Icons.chevron_left),
+                                    label: const Text('Previous'),
+                                    onPressed: () {
+                                      _pageController.previousPage(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                  )
+                                else
+                                  const SizedBox.shrink(),
+                                
+                                // Show concept progress for multiple concepts
+                                Text(
+                                  '${_currentIndex + 1} of ${widget.concepts.length}',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                
+                                if (_currentIndex < widget.concepts.length - 1)
+                                  TextButton.icon(
+                                    label: const Text('Next'),
+                                    icon: const Icon(Icons.chevron_right),
+                                    onPressed: () {
+                                      _pageController.nextPage(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                  )
+                                else
+                                  const SizedBox.shrink(),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     );
@@ -148,8 +199,8 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
             ],
           ),
           
-          // Completion overlay
-          if (_isComplete)
+          // Completion overlay (only show when not embedded in lesson)
+          if (_isComplete && !widget.isEmbeddedInLesson)
             Container(
               color: Colors.black54,
               child: Center(

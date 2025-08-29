@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/web_utils.dart';
+import 'package:learning_pwa/models/lesson_content.dart';
 // ...existing code...
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
@@ -22,6 +23,9 @@ class LessonScreen extends ConsumerStatefulWidget {
 
 class _LessonScreenState extends ConsumerState<LessonScreen> {
   bool _modeDialogShown = false;
+  bool _isLessonMode = false; // Track lesson mode state
+  int _restartCounter = 0; // Track restarts to force rebuild
+  
   // ...existing code...
 
 
@@ -37,20 +41,26 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => LessonModeDialog(lessonId: widget.lessonId),
+          builder: (context) => LessonModeDialog(
+            lessonId: widget.lessonId,
+            onLessonModeSelected: () {
+              setState(() {
+                _isLessonMode = true;
+              });
+            },
+          ),
         );
       }
     });
 
     return lessonAsync.when(
       data: (lessonData) {
-        // Sort content: concepts first, then terms (flashcards), then questions (MCQ), then others
-        final contentList = [
-          ...lessonData.lessonContent.where((c) => c.type == 'concept'),
-          ...lessonData.lessonContent.where((c) => c.type == 'term'),
-          ...lessonData.lessonContent.where((c) => c.type == 'question' || c.type == 'mcq'),
-          ...lessonData.lessonContent.where((c) => c.type != 'concept' && c.type != 'term' && c.type != 'question' && c.type != 'mcq'),
-        ];
+        // Sort content ONLY by order field (respecting lesson design), ignoring content types
+        final contentList = <LessonContent>[...lessonData.lessonContent];
+        contentList.sort((a, b) {
+          // Sort ONLY by order field - this should give us the correct sequence from JSON
+          return a.order.compareTo(b.order);
+        });
         return Scaffold(
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
@@ -138,10 +148,37 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                               ],
                             ),
                           )
-                        : LessonContentPager(
-                            contentList: contentList,
-                            onLessonComplete: _onLessonComplete,
-                          ),
+                        : _isLessonMode
+                            ? LessonContentPager(
+                                key: ValueKey(_restartCounter), // Force rebuild on restart
+                                contentList: contentList,
+                                onLessonComplete: _onLessonComplete,
+                              )
+                            : Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.school,
+                                      size: 64,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Select a Study Mode',
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Choose how you want to study this lesson from the dialog.',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
                   ),
                 ],
               );
@@ -204,15 +241,25 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
         content: const Text('Great job! You have completed this lesson.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Review Again'),
+            onPressed: () => Navigator.pop(context), // Just close dialog to review
+            child: const Text('Review'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              setState(() {
+                _restartCounter++; // Increment to force rebuild
+                _isLessonMode = true; // Ensure lesson mode is active
+              });
+            },
+            child: const Text('Restart'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to previous screen
+              Navigator.pop(context); // Go back to home page
             },
-            child: const Text('Back to Lessons'),
+            child: const Text('Close'),
           ),
         ],
       ),

@@ -90,9 +90,17 @@ class _LessonContentPagerState extends State<LessonContentPager> {
               Widget contentWidget;
               if (content is TermContent) {
                 final term = Term.fromTermContent(content);
+                final finish = () {
+                  if (isLastItem) {
+                    widget.onLessonComplete?.call();
+                  } else {
+                    _navigateToPage(index + 1);
+                  }
+                };
                 contentWidget = FlashcardScreen(
                   terms: [term],
-                  onComplete: isLastItem ? widget.onLessonComplete : null,
+                  onComplete: finish,
+                  isEmbeddedInLesson: true, // Embedded in lesson mode
                 );
               } else if (content is QuestionContent) {
                 final question = Question(
@@ -104,15 +112,31 @@ class _LessonContentPagerState extends State<LessonContentPager> {
                   explanation: content.explanation,
                   createdBy: 'system',
                 );
+                final finish = () {
+                  if (isLastItem) {
+                    widget.onLessonComplete?.call();
+                  } else {
+                    _navigateToPage(index + 1);
+                  }
+                };
                 contentWidget = McqScreen(
                   questions: [question],
-                  onComplete: isLastItem ? widget.onLessonComplete : null,
+                  onComplete: finish,
+                  isEmbeddedInLesson: true, // Embedded in lesson mode
                 );
               } else if (content is ConceptContent) {
+                final finish = () {
+                  if (isLastItem) {
+                    widget.onLessonComplete?.call();
+                  } else {
+                    _navigateToPage(index + 1);
+                  }
+                };
                 contentWidget = ConceptScreen(
                   concepts: [content],
                   isLastInLesson: isLastItem,
-                  onComplete: isLastItem ? widget.onLessonComplete : null,
+                  onComplete: finish,
+                  isEmbeddedInLesson: true, // New parameter to indicate lesson mode
                 );
               } else {
                 contentWidget = const Center(child: Text('Unsupported content type'));

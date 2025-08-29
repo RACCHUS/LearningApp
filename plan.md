@@ -1,7 +1,7 @@
 # Learning PWA - Project Reference
 
 ## **Current Status: Major Refactoring Complete ✅**
-- **Next Steps**: Cleanup complete → Fix lint errors → Testing
+- **Next Steps**: 
 
 ## **Tech Stack**
 - **Framework**: Flutter Web + Supabase + Riverpod

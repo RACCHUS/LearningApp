@@ -10,11 +10,16 @@ import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/screens/study/flashcard_screen.dart';
 import 'package:learning_pwa/screens/study/mcq_screen.dart';
 import 'package:learning_pwa/screens/study/concept_screen.dart';
-import 'package:learning_pwa/screens/study/lesson_mode_screen.dart';
 
 class LessonModeDialog extends ConsumerWidget {
   final String lessonId;
-  const LessonModeDialog({super.key, required this.lessonId});
+  final VoidCallback? onLessonModeSelected;
+  
+  const LessonModeDialog({
+    super.key, 
+    required this.lessonId,
+    this.onLessonModeSelected,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,12 +41,7 @@ class LessonModeDialog extends ConsumerWidget {
             label: const Text('Lesson Mode'),
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => LessonModeScreen(lessonId: lessonId),
-                ),
-              );
+              onLessonModeSelected?.call();
             },
           ),
           const Text(

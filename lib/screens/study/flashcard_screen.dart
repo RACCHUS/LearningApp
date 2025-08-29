@@ -9,12 +9,14 @@ class FlashcardScreen extends ConsumerStatefulWidget {
   final List<Term> terms;
   final int initialIndex;
   final VoidCallback? onComplete;
+  final bool isEmbeddedInLesson; // New parameter for lesson mode
 
   const FlashcardScreen({
     super.key,
     required this.terms,
     this.initialIndex = 0,
     this.onComplete,
+    this.isEmbeddedInLesson = false, // Default to false for standalone mode
   });
 
   @override
@@ -97,7 +99,8 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      appBar: AppBar(
+      // Only show AppBar when not embedded in lesson mode
+      appBar: widget.isEmbeddedInLesson ? null : AppBar(
         title: Text('Flashcards (${_currentIndex + 1}/${widget.terms.length})'),
         centerTitle: true,
         elevation: 0,

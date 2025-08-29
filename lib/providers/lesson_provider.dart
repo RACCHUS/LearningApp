@@ -127,13 +127,16 @@ final lessonProvider =
     
     // Map terms directly from response with defensive programming
     final terms = <TermContent>[];
-    for (var e in termsResponse) {
+    for (int i = 0; i < termsResponse.length; i++) {
+      var e = termsResponse[i];
       try {
         if (e != null && e is Map<String, dynamic>) {
+          // Safe fallback: if order_index is missing, use index + 1 (terms typically start at 1)
+          int orderValue = e['order_index'] as int? ?? (i + 1);
           terms.add(TermContent(
             id: e['id']?.toString() ?? '',
             lessonId: lesson.id,
-            order: 0, // Default order
+            order: orderValue,
             term: e['term']?.toString() ?? '',
             definition: e['definition']?.toString() ?? '',
             example: e['example']?.toString() ?? '',
@@ -152,13 +155,16 @@ final lessonProvider =
         
     // Map questions directly from response with defensive programming
     final questions = <QuestionContent>[];
-    for (var e in questionsResponse) {
+    for (int i = 0; i < questionsResponse.length; i++) {
+      var e = questionsResponse[i];
       try {
         if (e != null && e is Map<String, dynamic>) {
+          // Safe fallback: if order_index is missing, use 1000 + index (questions typically come last)
+          int orderValue = e['order_index'] as int? ?? (1000 + i);
           questions.add(QuestionContent(
             id: e['id']?.toString() ?? '',
             lessonId: lesson.id,
-            order: 0, // Default order
+            order: orderValue,
             questionText: e['question_text']?.toString() ?? '',
             options: e['options'] is List 
                 ? List<String>.from(e['options'].map((o) => o?.toString() ?? ''))
@@ -180,13 +186,16 @@ final lessonProvider =
     
     // Map concepts directly from response with defensive programming
     final concepts = <ConceptContent>[];
-    for (var e in conceptsResponse) {
+    for (int i = 0; i < conceptsResponse.length; i++) {
+      var e = conceptsResponse[i];
       try {
         if (e != null && e is Map<String, dynamic>) {
+          // Safe fallback: if order_index is missing, use 500 + index (concepts typically in middle)
+          int orderValue = e['order_index'] as int? ?? (500 + i);
           concepts.add(ConceptContent(
             id: e['id']?.toString() ?? '',
             lessonId: lesson.id,
-            order: 0, // Default order
+            order: orderValue,
             conceptText: e['concept_text']?.toString() ?? '',
             exampleText: e['example_text']?.toString() ?? '',
             keyPoints: e['key_points'] is List 
@@ -207,13 +216,16 @@ final lessonProvider =
 
     // Map texts directly from response with defensive programming
     final texts = <TextContent>[];
-    for (var e in textsResponse) {
+    for (int i = 0; i < textsResponse.length; i++) {
+      var e = textsResponse[i];
       try {
         if (e != null && e is Map<String, dynamic>) {
+          // Safe fallback: if order_index is missing, use 100 + index (texts typically after terms)
+          int orderValue = e['order_index'] as int? ?? (100 + i);
           texts.add(TextContent(
             id: e['id']?.toString() ?? '',
             lessonId: lesson.id,
-            order: 0, // Default order
+            order: orderValue,
             text: e['text']?.toString() ?? '',
             createdAt: e['created_at'] != null 
                 ? DateTime.tryParse(e['created_at']) ?? DateTime.now()
@@ -231,9 +243,12 @@ final lessonProvider =
 
 // --- BEGIN: Preserve JSON order if available, else fallback to type order ---
 List<LessonContent> lessonContent;
-if (response['content'] is List) {
+
+// Check if lesson has the full JSON structure stored in content field
+if (response['content'] is Map && response['content']['content'] is List) {
   // If the lesson JSON has a 'content' array, use its order
-  final List<dynamic> contentJson = response['content'];
+  log('✅ Using JSON content order from stored lesson structure', name: 'LessonProvider');
+  final List<dynamic> contentJson = response['content']['content'];
   lessonContent = [];
   for (final item in contentJson) {
     final type = item['type']?.toString();
@@ -266,9 +281,19 @@ if (response['content'] is List) {
     if (!lessonContent.contains(t)) lessonContent.add(t);
   }
 } else {
-  // Fallback: current logic (concepts, terms, questions, texts)
-  lessonContent = [...concepts, ...terms, ...questions, ...texts];
+  // Fallback: Sort ALL content by order field only (ignore content type grouping)
+  log('⚠️ Using fallback ordering (no JSON content array found)', name: 'LessonProvider');
+  lessonContent = [...terms, ...questions, ...concepts, ...texts];
+  
+  // Debug: Log order values before sorting
+  log('Before sorting - Terms orders: ${terms.map((t) => '${t.term}(${t.order})').join(', ')}', name: 'LessonProvider');
+  log('Before sorting - Questions orders: ${questions.map((q) => 'Q${q.order}').join(', ')}', name: 'LessonProvider');
+  log('Before sorting - Concepts orders: ${concepts.map((c) => 'C${c.order}').join(', ')}', name: 'LessonProvider');
+  
   lessonContent.sort((a, b) => a.order.compareTo(b.order));
+  
+  // Debug: Log final order
+  log('Final sorted order: ${lessonContent.map((item) => '${item.type}(${item.order})').join(', ')}', name: 'LessonProvider');
 }
 
 log('Lesson content loaded: ${lessonContent.length} items', name: 'LessonProvider');
