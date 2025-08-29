@@ -10,6 +10,7 @@ class AudioMCQWidget extends ConsumerStatefulWidget {
   final String questionText;
   final List<String> options;
   final int? correctAnswer;
+  final int? selectedAnswer; // Previously selected answer index
   final String? explanation;
   final Function(int)? onAnswerSelected;
   final bool showResults;
@@ -20,6 +21,7 @@ class AudioMCQWidget extends ConsumerStatefulWidget {
     required this.questionText,
     required this.options,
     this.correctAnswer,
+    this.selectedAnswer,
     this.explanation,
     this.onAnswerSelected,
     this.showResults = false,
@@ -32,6 +34,12 @@ class AudioMCQWidget extends ConsumerStatefulWidget {
 
 class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
   int? _selectedAnswer;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAnswer = widget.selectedAnswer;
+  }
 
   @override
   Widget build(BuildContext context) {

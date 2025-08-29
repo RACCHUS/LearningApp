@@ -95,6 +95,12 @@ class StudyNotifier extends StateNotifier<StudyState> {
     );
     next();
   }
+
+  void recordQuestionAnswer(String questionId, int selectedAnswer) {
+    state = state.copyWith(
+      questionAnswers: {...state.questionAnswers, questionId: selectedAnswer},
+    );
+  }
   
   void next() {
     if (state.currentContent != null && 
@@ -173,6 +179,7 @@ class StudyState {
   final int correctAnswers;
   final int incorrectAnswers;
   final Map<String, bool> termStatus; // termId -> isKnown
+  final Map<String, int> questionAnswers; // questionId -> selectedAnswerIndex
   final Map<String, DateTime> completedLessons; // lessonId -> completionTime
   final DateTime? lastStudied;
   final String? currentLessonId;
@@ -187,6 +194,7 @@ class StudyState {
     this.correctAnswers = 0,
     this.incorrectAnswers = 0,
     Map<String, bool>? termStatus,
+    Map<String, int>? questionAnswers,
     Map<String, DateTime>? completedLessons,
     this.lastStudied,
     this.currentLessonId,
@@ -195,6 +203,7 @@ class StudyState {
     this.currentContent,
   }) : 
     termStatus = termStatus ?? {},
+    questionAnswers = questionAnswers ?? {},
     completedLessons = completedLessons ?? {};
 
   factory StudyState.initial() => StudyState(lastStudied: DateTime.now());
@@ -206,6 +215,7 @@ class StudyState {
     int? correctAnswers,
     int? incorrectAnswers,
     Map<String, bool>? termStatus,
+    Map<String, int>? questionAnswers,
     Map<String, DateTime>? completedLessons,
     DateTime? lastStudied,
     String? currentLessonId,
@@ -220,6 +230,7 @@ class StudyState {
       correctAnswers: correctAnswers ?? this.correctAnswers,
       incorrectAnswers: incorrectAnswers ?? this.incorrectAnswers,
       termStatus: termStatus ?? this.termStatus,
+      questionAnswers: questionAnswers ?? this.questionAnswers,
       completedLessons: completedLessons ?? this.completedLessons,
       lastStudied: lastStudied ?? this.lastStudied,
       currentLessonId: currentLessonId ?? this.currentLessonId,

@@ -30,12 +30,16 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   bool _isCorrect = false;
   bool _isComplete = false;
   int _correctAnswers = 0;
+  int? _selectedAnswerIndex; // Track selected answer for state persistence
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    
+    // Check if this question was already answered
+    _checkForExistingAnswer();
   }
 
   @override
@@ -44,22 +48,52 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     super.dispose();
   }
 
+  void _checkForExistingAnswer() {
+    if (widget.isEmbeddedInLesson) {
+      final studyState = ref.read(studyProvider);
+      final currentQuestion = widget.questions[_currentIndex];
+      final savedAnswer = studyState.questionAnswers[currentQuestion.id];
+      
+      if (savedAnswer != null) {
+        setState(() {
+          _selectedAnswerIndex = savedAnswer;
+          _showFeedback = true;
+          _isCorrect = savedAnswer == currentQuestion.correctAnswer;
+        });
+      }
+    }
+  }
+
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
       _showFeedback = false;
       _isCorrect = false;
+      _selectedAnswerIndex = null;
     });
+    // Check for existing answer on the new page
+    _checkForExistingAnswer();
   }
 
   void _onAnswerSelected(int selectedIndex) {
+    final currentQuestion = widget.questions[_currentIndex];
+    
     setState(() {
+      _selectedAnswerIndex = selectedIndex;
       _showFeedback = true;
-      _isCorrect = selectedIndex == widget.questions[_currentIndex].correctAnswer;
+      _isCorrect = selectedIndex == currentQuestion.correctAnswer;
       if (_isCorrect) {
         _correctAnswers++;
       }
     });
+
+    // Record answer in study provider for lesson mode
+    if (widget.isEmbeddedInLesson) {
+      ref.read(studyProvider.notifier).recordQuestionAnswer(
+        currentQuestion.id, 
+        selectedIndex
+      );
+    }
 
     // Track answer in study provider
     if (_isCorrect) {
@@ -76,10 +110,15 @@ class _McqScreenState extends ConsumerState<McqScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      setState(() {
-        _isComplete = true;
-      });
-      widget.onComplete?.call();
+      // If embedded in lesson, directly call onComplete without showing overlay
+      if (widget.isEmbeddedInLesson) {
+        widget.onComplete?.call();
+      } else {
+        setState(() {
+          _isComplete = true;
+        });
+        widget.onComplete?.call();
+      }
     }
   }
 
@@ -122,6 +161,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             questionText: currentQuestion.questionText,
                             options: currentQuestion.options,
                             correctAnswer: currentQuestion.correctAnswer,
+                            selectedAnswer: _selectedAnswerIndex,
                             explanation: currentQuestion.explanation,
                             showResults: _showFeedback,
                             onAnswerSelected: _onAnswerSelected,
@@ -145,8 +185,8 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             },
                           ),
                           
-                          // Next button (only shows when feedback is shown)
-                          if (_showFeedback) ...[
+                          // Next button (only shows when feedback is shown and not in lesson mode)
+                          if (_showFeedback && !widget.isEmbeddedInLesson) ...[
                             const SizedBox(height: 32),
                             SizedBox(
                               width: double.infinity,

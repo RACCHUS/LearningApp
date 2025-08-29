@@ -44,6 +44,8 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           builder: (context) => LessonModeDialog(
             lessonId: widget.lessonId,
             onLessonModeSelected: () {
+              // Reset study session scores for fresh lesson tracking
+              ref.read(studyProvider.notifier).resetStudySession();
               setState(() {
                 _isLessonMode = true;
               });
@@ -232,13 +234,40 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     // Update study progress
     ref.read(studyProvider.notifier).markLessonAsCompleted(widget.lessonId);
     
+    // Get study state for score information
+    final studyState = ref.read(studyProvider);
+    final totalMCQs = studyState.correctAnswers + studyState.incorrectAnswers;
+    final hasQuestions = totalMCQs > 0;
+    
     // Show completion dialog
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Lesson Complete!'),
-        content: const Text('Great job! You have completed this lesson.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Great job! You have completed this lesson.'),
+            if (hasQuestions) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                'Quiz Performance:',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Score: ${studyState.correctAnswers}/$totalMCQs (${((studyState.correctAnswers / totalMCQs) * 100).round()}%)',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context), // Just close dialog to review
@@ -247,6 +276,8 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
+              // Reset study session scores for fresh lesson tracking
+              ref.read(studyProvider.notifier).resetStudySession();
               setState(() {
                 _restartCounter++; // Increment to force rebuild
                 _isLessonMode = true; // Ensure lesson mode is active
