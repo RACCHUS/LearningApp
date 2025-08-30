@@ -124,6 +124,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                         frontText: term.term,
                         backText: term.definition,
                         example: term.example,
+                        autoPlayOverride: widget.isEmbeddedInLesson ? false : null, // Disable autoplay when embedded
                         frontStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w500,

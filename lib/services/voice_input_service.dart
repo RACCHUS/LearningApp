@@ -13,6 +13,7 @@ class VoiceInputService {
   SpeechToText? _speechToText;
   bool _isInitialized = false;
   bool _isAvailable = false;
+  bool _hasPermissions = false; // Track permission state
   
   VoiceInputState _state = VoiceInputState.idle;
   String? _recognizedText;
@@ -24,6 +25,8 @@ class VoiceInputService {
 
   bool get isInitialized => _isInitialized;
   bool get isAvailable => _isAvailable;
+  bool get hasPermissions => _hasPermissions;
+  bool get canListen => _isAvailable && _hasPermissions; // New combined check
   VoiceInputState get currentState => _state;
   String? get recognizedText => _recognizedText;
 
@@ -64,9 +67,36 @@ class VoiceInputService {
 
   Future<bool> checkPermissions() async {
     try {
+      // On web, the best way to check microphone permission is to try to use it
+      // The permission_handler package doesn't work reliably on web
+      if (kIsWeb) {
+        if (!_isInitialized || !_isAvailable || _speechToText == null) {
+          return false;
+        }
+        
+        // Try a very brief listen test to check permissions
+        try {
+          final testResult = await _speechToText!.listen(
+            onResult: (_) {}, // Empty result handler for test
+            listenFor: const Duration(milliseconds: 100), // Very short test
+            pauseFor: const Duration(milliseconds: 50),
+          );
+          
+          // Stop immediately after test
+          await _speechToText!.stop();
+          
+          return testResult == true;
+        } catch (e) {
+          if (kDebugMode) {
+            print('Permission test failed: $e');
+          }
+          return false;
+        }
+      }
+      
+      // For non-web platforms, use permission_handler
       final status = await Permission.microphone.status;
       
-      // More explicit null checking to avoid null boolean expressions
       if (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied) {
         final result = await Permission.microphone.request();
         return result == PermissionStatus.granted;
@@ -87,14 +117,9 @@ class VoiceInputService {
     Duration? pauseFor,
   }) async {
     if (!_isInitialized || !_isAvailable || _speechToText == null) {
-      return false;
-    }
-
-    // Check microphone permissions first
-    final hasPermission = await checkPermissions();
-    if (!hasPermission) {
-      _errorMessage = 'Microphone permission denied';
-      _updateState(VoiceInputState.error);
+      if (kDebugMode) {
+        print('Voice service not ready: initialized=$_isInitialized, available=$_isAvailable');
+      }
       return false;
     }
 
@@ -107,6 +132,8 @@ class VoiceInputService {
             print('Already listening, stopping first');
           }
           await _speechToText!.stop();
+          // Wait a moment for the stop to complete
+          await Future.delayed(const Duration(milliseconds: 100));
         }
       } catch (e) {
         if (kDebugMode) {
@@ -119,17 +146,25 @@ class VoiceInputService {
       _recognizedText = null;
       _confidence = 0.0;
       _errorMessage = null;
-      _updateState(VoiceInputState.listening);
-
+      
       if (kDebugMode) {
         print('Attempting to start listening...');
       }
+
+      // Set state to listening before actually starting
+      _updateState(VoiceInputState.listening);
 
       final success = await _speechToText!.listen(
         onResult: _onSpeechResult,
         localeId: localeId ?? 'en_US',
         listenFor: listenFor ?? const Duration(seconds: 5),
         pauseFor: pauseFor ?? const Duration(seconds: 2),
+        // Important: Web requires explicit user gesture, so set this
+        onSoundLevelChange: (level) {
+          if (kDebugMode && level > 0) {
+            print('Sound detected: $level');
+          }
+        },
       );
 
       if (kDebugMode) {
@@ -137,7 +172,7 @@ class VoiceInputService {
       }
 
       if (success != true) {
-        _errorMessage = 'Failed to start listening';
+        _errorMessage = 'Failed to start listening - check microphone permissions';
         _updateState(VoiceInputState.error);
         return false;
       }
@@ -175,14 +210,23 @@ class VoiceInputService {
     if (_speechToText != null) {
       try {
         await _speechToText!.cancel();
-        _recognizedText = null;
-        _confidence = 0.0;
-        _updateState(VoiceInputState.idle);
+        // Wait a moment for cancellation to complete
+        await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
         if (kDebugMode) {
           print('Cancel error: $e');
         }
       }
+    }
+    
+    // Reset all state variables
+    _recognizedText = null;
+    _confidence = 0.0;
+    _errorMessage = null;
+    _updateState(VoiceInputState.idle);
+    
+    if (kDebugMode) {
+      print('Voice service cancelled and reset to idle state');
     }
   }
 
@@ -227,12 +271,27 @@ class VoiceInputService {
         _updateState(VoiceInputState.listening);
         break;
       case 'notListening':
-        if (_state != VoiceInputState.completed && _state != VoiceInputState.error) {
-          _updateState(VoiceInputState.idle);
+        // Only go to idle if we haven't completed or errored
+        if (_state == VoiceInputState.listening || _state == VoiceInputState.processing) {
+          // If we were listening but now not listening without a result, 
+          // it might be a timeout or permission issue
+          if (_recognizedText == null || _recognizedText!.isEmpty) {
+            _errorMessage = 'No speech detected - try speaking louder or check microphone';
+            _updateState(VoiceInputState.error);
+          } else {
+            _updateState(VoiceInputState.idle);
+          }
         }
         break;
       case 'done':
-        _updateState(VoiceInputState.completed);
+        // Speech recognition session completed
+        if (_recognizedText != null && _recognizedText!.isNotEmpty) {
+          _updateState(VoiceInputState.completed);
+        } else {
+          // No results captured
+          _errorMessage = 'No speech detected - ensure microphone access is granted';
+          _updateState(VoiceInputState.error);
+        }
         break;
     }
   }
@@ -250,23 +309,59 @@ class VoiceInputService {
     Duration? timeout,
     String? localeId,
   }) async {
+    // Ensure clean state before starting
+    if (_speechToText != null) {
+      try {
+        if (_speechToText!.isListening) {
+          await _speechToText!.stop();
+          await Future.delayed(const Duration(milliseconds: 100)); // Wait for stop to complete
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error stopping previous listen: $e');
+        }
+      }
+    }
+    
+    // Reset state variables
+    _recognizedText = null;
+    _confidence = 0.0;
+    _errorMessage = null;
+    _updateState(VoiceInputState.idle);
+    
     final success = await startListening(
       localeId: localeId,
       listenFor: timeout ?? const Duration(seconds: 3),
     );
     
-    if (!success) return null;
+    if (!success) {
+      if (kDebugMode) {
+        print('listenForCommand: Failed to start listening');
+      }
+      return null;
+    }
 
     // Wait for completion or timeout
     final completer = Completer<VoiceCommand?>();
     late StreamSubscription subscription;
     
     subscription = stateStream.listen((audioState) {
+      if (kDebugMode) {
+        print('listenForCommand: State changed to ${audioState.voiceInputState}');
+      }
+      
       if (audioState.voiceInputState == VoiceInputState.completed) {
         subscription.cancel();
-        completer.complete(parseLastCommand());
+        final command = parseLastCommand();
+        if (kDebugMode) {
+          print('listenForCommand: Completed with command: $command');
+        }
+        completer.complete(command);
       } else if (audioState.voiceInputState == VoiceInputState.error) {
         subscription.cancel();
+        if (kDebugMode) {
+          print('listenForCommand: Error state - ${audioState.errorMessage}');
+        }
         completer.complete(null);
       }
     });
@@ -274,6 +369,9 @@ class VoiceInputService {
     // Timeout fallback
     Timer(timeout ?? const Duration(seconds: 5), () {
       if (!completer.isCompleted) {
+        if (kDebugMode) {
+          print('listenForCommand: Timeout reached');
+        }
         subscription.cancel();
         stopListening();
         completer.complete(null);
@@ -306,6 +404,20 @@ class VoiceInputService {
       errorMessage: _errorMessage,
       isAvailable: _isAvailable,
     ));
+  }
+
+  // Testing method to manually set recognized text for debugging
+  void setRecognizedTextForTesting(String text) {
+    _recognizedText = text;
+    _updateState(VoiceInputState.processing);
+  }
+
+  // Method to manually set permission state when we know permissions are granted
+  void setPermissionGranted(bool granted) {
+    _hasPermissions = granted;
+    if (kDebugMode) {
+      print('🎙️ Permission state manually set to: $granted');
+    }
   }
 
   void dispose() {

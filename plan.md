@@ -1,7 +1,9 @@
 # Learning PWA - Project Reference
 
-## **Current Status: Major Refactoring Complete ✅**
-- **Next Steps**: 
+## **Current Status: Audio Enhancement Phase** 🎙️
+- **Next Steps**: Implement comprehensive audio-first learning experience
+- **See**: `AUDIO_ENHANCEMENT_PLAN.md` for detailed roadmap
+- **Priority**: AudioLessonOrchestrator service for hands-free operation 
 
 ## **Tech Stack**
 - **Framework**: Flutter Web + Supabase + Riverpod
@@ -56,6 +58,11 @@
 ## **Critical Fixes Applied** ✅
 - **Service Decomposition**: lesson_service.dart split into specialized services
 - **Widget Refactoring**: Large widgets broken into focused components
+  - lesson_mode_screen.dart: 300+ lines → 50 lines (83% reduction)
+  - lesson_content_pager.dart: Split into page_navigator_widget.dart and content_type_chip.dart
+  - Question widgets: Extracted into separate mcq_question_widget.dart, true_false_question_widget.dart, short_answer_question_widget.dart
+  - Content rendering: Centralized in lesson_content_renderer.dart
+  - Voice input: Centralized in voice_input_handler.dart utility
 - **Audio System**: Voice input null safety and error handling
 - **Architecture**: Clean separation of concerns throughout codebase
 

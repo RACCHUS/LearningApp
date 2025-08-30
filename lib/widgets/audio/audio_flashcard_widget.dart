@@ -11,6 +11,7 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
   final TextStyle? frontStyle;
   final TextStyle? backStyle;
   final Widget Function(String)? customTextBuilder;
+  final bool? autoPlayOverride; // Override autoplay setting
 
   const AudioFlashcardWidget({
     super.key,
@@ -20,6 +21,7 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
     this.frontStyle,
     this.backStyle,
     this.customTextBuilder,
+    this.autoPlayOverride,
   });
 
   @override
@@ -54,7 +56,7 @@ class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
                   AudioControlWidget(
                     text: currentText,
                     contentType: 'content',
-                    autoPlay: !_showBack, // Auto-play front side
+                    autoPlay: widget.autoPlayOverride ?? (!_showBack), // Respect override or auto-play front side
                     tooltip: _showBack ? 'Listen to definition' : 'Listen to term',
                   ),
                 ],

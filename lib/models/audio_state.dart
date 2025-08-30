@@ -22,6 +22,7 @@ class AudioState {
   final double progress;
   final String? errorMessage;
   final bool isAvailable;
+  final bool hasPermissions; // Add permission state
   final List<String> availableVoices;
   final String? recognizedText;
   final double confidence;
@@ -33,6 +34,7 @@ class AudioState {
     this.progress = 0.0,
     this.errorMessage,
     this.isAvailable = true,
+    this.hasPermissions = false, // Default to false
     this.availableVoices = const [],
     this.recognizedText,
     this.confidence = 0.0,
@@ -45,6 +47,7 @@ class AudioState {
     double? progress,
     String? errorMessage,
     bool? isAvailable,
+    bool? hasPermissions,
     List<String>? availableVoices,
     String? recognizedText,
     double? confidence,
@@ -56,6 +59,7 @@ class AudioState {
       progress: progress ?? this.progress,
       errorMessage: errorMessage ?? this.errorMessage,
       isAvailable: isAvailable ?? this.isAvailable,
+      hasPermissions: hasPermissions ?? this.hasPermissions,
       availableVoices: availableVoices ?? this.availableVoices,
       recognizedText: recognizedText ?? this.recognizedText,
       confidence: confidence ?? this.confidence,
@@ -80,6 +84,7 @@ class AudioState {
           progress == other.progress &&
           errorMessage == other.errorMessage &&
           isAvailable == other.isAvailable &&
+          hasPermissions == other.hasPermissions &&
           availableVoices == other.availableVoices &&
           recognizedText == other.recognizedText &&
           confidence == other.confidence;
@@ -92,6 +97,7 @@ class AudioState {
       progress.hashCode ^
       errorMessage.hashCode ^
       isAvailable.hashCode ^
+      hasPermissions.hashCode ^
       availableVoices.hashCode ^
       recognizedText.hashCode ^
       confidence.hashCode;

@@ -122,6 +122,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
         voiceInputState: voiceState.voiceInputState,
         recognizedText: voiceState.recognizedText,
         confidence: voiceState.confidence,
+        hasPermissions: voiceState.hasPermissions,
       );
     });
   }
@@ -200,9 +201,19 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
     return _voiceService.parseLastCommand();
   }
 
+  // Permission checking method
+  Future<bool> checkMicrophonePermissions() async {
+    return await _voiceService.checkPermissions();
+  }
+
+  // Method to manually mark permissions as granted (when we know they are)
+  void setMicrophonePermissionGranted(bool granted) {
+    _voiceService.setPermissionGranted(granted);
+  }
+
   // Utility methods
   bool get canSpeak => state.isAvailable && _settingsNotifier.state.isEnabled;
-  bool get canListen => _voiceService.isAvailable;
+  bool get canListen => _voiceService.canListen; // Use the service's combined check
   
   List<String> get availableVoices => state.availableVoices;
   List<String> get availableLocales => _voiceService.getAvailableLocales();
@@ -216,8 +227,8 @@ final canSpeakProvider = Provider<bool>((ref) {
 });
 
 final canListenProvider = Provider<bool>((ref) {
-  final audioNotifier = ref.read(audioStateProvider.notifier);
-  return audioNotifier.canListen;
+  final state = ref.watch(audioStateProvider); // Watch the state, not just read notifier
+  return state.isAvailable && state.hasPermissions;
 });
 
 final isPlayingProvider = Provider<bool>((ref) {
