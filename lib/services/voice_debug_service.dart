@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/models/voice_command.dart';
-import 'package:learning_pwa/services/voice/voice_command_parser.dart';
+import 'package:learning_pwa/services/voice_command_parser.dart';
 
 /// Debug service for voice command testing and logging
 /// Provides manual testing capabilities and detailed logging

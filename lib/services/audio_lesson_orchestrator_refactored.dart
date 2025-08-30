@@ -1,29 +1,8 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/audio_lesson/content_processor.dart';
-
-enum AudioLessonState {
-  idle,
-  reading,
-  waitingForVoice,
-  processing,
-  paused,
-  error,
-  completed,
-}
-
-enum LessonFlowAction {
-  next,
-  previous,
-  repeat,
-  pause,
-  resume,
-  restart,
-  complete,
-}
 
 /// Refactored AudioLessonOrchestrator with dramatically reduced complexity
 /// Reduced from 666 lines to ~120 lines by using the ContentProcessor service
@@ -40,19 +19,6 @@ class AudioLessonOrchestrator {
   // State management (simplified)
   AudioLessonSettings _settings = const AudioLessonSettings();
   AudioLessonState _state = AudioLessonState.idle;
-  
-  // Stream controllers for compatibility with providers
-  final StreamController<AudioLessonState> _stateController = 
-      StreamController<AudioLessonState>.broadcast();
-  final StreamController<LessonFlowAction> _actionController = 
-      StreamController<LessonFlowAction>.broadcast();
-  final StreamController<int> _progressController = 
-      StreamController<int>.broadcast();
-
-  // Stream getters for compatibility
-  Stream<AudioLessonState> get stateStream => _stateController.stream;
-  Stream<LessonFlowAction> get actionStream => _actionController.stream;
-  Stream<int> get progressStream => _progressController.stream;
   List<LessonContent> _contentList = [];
   int _currentIndex = 0;
   bool _isActive = false;
@@ -330,8 +296,26 @@ class AudioLessonOrchestrator {
 
   void dispose() {
     _audioService.dispose();
-    _stateController.close();
-    _actionController.close();
-    _progressController.close();
   }
+}
+
+// Keep backward compatibility enums
+enum AudioLessonState {
+  idle,
+  reading,
+  waitingForVoice,
+  processing,
+  paused,
+  error,
+  completed,
+}
+
+enum LessonFlowAction {
+  next,
+  previous,
+  repeat,
+  pause,
+  resume,
+  restart,
+  complete,
 }

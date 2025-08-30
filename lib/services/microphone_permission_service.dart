@@ -102,9 +102,6 @@ class MicrophonePermissionService {
         onResult: (_) {}, // Empty callback for permission test
         listenFor: const Duration(milliseconds: 100),
         pauseFor: const Duration(milliseconds: 100),
-        partialResults: false,
-        cancelOnError: true,
-        listenMode: ListenMode.confirmation,
       );
       
       if (result) {
@@ -149,9 +146,6 @@ class MicrophonePermissionService {
         onResult: (_) {}, // Empty callback for test
         listenFor: const Duration(seconds: 2),
         pauseFor: const Duration(milliseconds: 500),
-        partialResults: true,
-        cancelOnError: false,
-        listenMode: ListenMode.confirmation,
       );
 
       if (kDebugMode) {
