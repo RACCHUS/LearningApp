@@ -6,6 +6,7 @@
   "background_color": "#ffffff",
   "theme_color": "#1976d2",
   "description": "A mobile-first learning app for busy adults and students.",
+  "permissions": ["microphone"],
   "icons": [
     {
       "src": "icons/icon-192.png",

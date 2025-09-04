@@ -4,8 +4,28 @@
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1976d2">
+  <meta name="permissions" content="microphone">
   <title>Learning PWA</title>
   <script>
+    // Feature detection for speech recognition capabilities
+    window.speechSupport = {
+      hasWebSpeech: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
+      hasGetUserMedia: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
+      browserType: (function() {
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('edg/') || ua.includes('edge/')) return 'edge';
+        if (ua.includes('chrome/') && !ua.includes('edg/')) return 'chrome';
+        if (ua.includes('firefox/')) return 'firefox';
+        if (ua.includes('safari/') && !ua.includes('chrome/')) return 'safari';
+        return 'other';
+      })(),
+      isPWA: window.matchMedia('(display-mode: standalone)').matches,
+      timestamp: Date.now()
+    };
+    
+    // Log feature detection results
+    console.log('🌐 Browser Speech Support:', window.speechSupport);
+    
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('/flutter_service_worker.js');

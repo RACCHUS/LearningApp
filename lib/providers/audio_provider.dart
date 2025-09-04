@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/audio_service.dart';
-import 'package:learning_pwa/services/voice_input_service.dart';
+import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -98,7 +98,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
 
   final AudioSettingsNotifier _settingsNotifier;
   final AudioService _audioService = AudioService();
-  final VoiceInputService _voiceService = VoiceInputService();
+  final EnhancedVoiceInputService _voiceService = EnhancedVoiceInputService();
 
   Future<void> _initialize() async {
     await _audioService.initialize();
@@ -204,6 +204,11 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
   // Permission checking method
   Future<bool> checkMicrophonePermissions() async {
     return await _voiceService.checkPermissions();
+  }
+
+  // Request microphone permissions from the browser
+  Future<bool> requestMicrophonePermissions() async {
+    return await _voiceService.requestPermissions();
   }
 
   // Method to manually mark permissions as granted (when we know they are)

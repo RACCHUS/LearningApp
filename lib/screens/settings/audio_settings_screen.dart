@@ -5,7 +5,6 @@ import 'package:learning_pwa/services/audio_testing/audio_test_service.dart';
 import 'package:learning_pwa/widgets/audio_settings/audio_status_card.dart';
 import 'package:learning_pwa/widgets/audio_settings/voice_settings_section.dart';
 import 'package:learning_pwa/widgets/audio_settings/audio_quality_section.dart';
-import 'package:learning_pwa/widgets/audio_settings/testing_section.dart';
 import 'package:learning_pwa/widgets/audio_settings/troubleshooting_section.dart';
 
 class AudioSettingsScreen extends ConsumerStatefulWidget {
@@ -55,14 +54,6 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
             onTestVoiceCommands: _testVoiceCommands,
             onShowPermissionHelp: () => TroubleshootingSection.showPermissionHelp(context),
             onShowVoiceCommandHelp: () => TroubleshootingSection.showVoiceCommandHelp(context),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Testing section for voice commands
-          TestingSection(
-            canListen: canListen,
-            canSpeak: canSpeak,
           ),
           
           const SizedBox(height: 16),
@@ -140,6 +131,12 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
             const Icon(Icons.mic, size: 48, color: Colors.blue),
             const SizedBox(height: 16),
             const Text('Preparing voice recognition...'),
+            const SizedBox(height: 8),
+            const Text('Try saying one of these commands:', 
+              style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('"next", "A", "B", "C", "D", "true", "false"', 
+              style: TextStyle(fontSize: 14, color: Colors.green)),
             const SizedBox(height: 8),
             const Text('If prompted, click "Allow" for microphone access.', 
               style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),

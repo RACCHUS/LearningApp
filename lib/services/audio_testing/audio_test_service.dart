@@ -24,6 +24,20 @@ class AudioTestService {
         print('🎙️ Starting microphone test...');
       }
       
+      // Explicitly request microphone permissions - this will trigger the browser prompt
+      final hasPermissions = await audioNotifier.requestMicrophonePermissions();
+      
+      if (!hasPermissions) {
+        if (kDebugMode) {
+          print('🎙️ Microphone permissions denied');
+        }
+        return false;
+      }
+      
+      if (kDebugMode) {
+        print('🎙️ Microphone permissions granted, testing access...');
+      }
+      
       // Try to start listening - just check if we can start, not if we get speech
       final success = await audioNotifier.startListening(
         timeout: const Duration(seconds: 2), // Short test
@@ -74,17 +88,37 @@ class AudioTestService {
     final audioNotifier = _ref.read(audioStateProvider.notifier);
     
     try {
-      // First do a quick permission test
-      await audioNotifier.cancelListening(); // Ensure clean state
+      // First ensure clean state
+      await audioNotifier.cancelListening();
+      
+      if (kDebugMode) {
+        print('🎙️ Starting voice command test...');
+      }
+      
+      // Explicitly request microphone permissions first - this triggers the browser prompt
+      final hasPermissions = await audioNotifier.requestMicrophonePermissions();
+      
+      if (!hasPermissions) {
+        if (kDebugMode) {
+          print('🎙️ Microphone permissions denied or failed');
+        }
+        return null;
+      }
+      
+      if (kDebugMode) {
+        print('🎙️ Microphone permissions granted, starting to listen...');
+      }
+      
+      // Now test if we can actually start listening with extended timeout
       final canListen = await audioNotifier.startListening(
-        timeout: const Duration(milliseconds: 500)
+        timeout: const Duration(seconds: 5) // Increased from 500ms to 5 seconds for user to respond to permission prompt
       );
       await audioNotifier.cancelListening(); // Stop the test listen
       
-      // Update permission state
-      await audioNotifier.checkMicrophonePermissions();
-      
       if (!canListen) {
+        if (kDebugMode) {
+          print('🎙️ Failed to start listening even with permissions');
+        }
         return null;
       }
       
@@ -93,8 +127,12 @@ class AudioTestService {
       
       // Listen for actual command
       final command = await audioNotifier.listenForCommand(
-        timeout: const Duration(seconds: 5),
+        timeout: const Duration(seconds: 15), // Increased to 15 seconds to give enough time to speak
       );
+      
+      if (kDebugMode) {
+        print('🎙️ Voice command test completed. Command: $command');
+      }
       
       return command;
     } catch (e) {
