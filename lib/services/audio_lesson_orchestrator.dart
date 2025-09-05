@@ -415,27 +415,19 @@ class AudioLessonOrchestrator {
       return;
     }
 
-    // Request permissions if not already granted
+    // Skip permission request if already granted (should be handled by UI)
     if (!_voiceService!.hasPermissions) {
       if (kDebugMode) {
-        print('🎙️ Requesting microphone permissions for hands-free mode...');
+        print('🎙️ Permissions not yet granted - waiting longer before retry');
+        print('   - Permissions should be requested when hands-free mode is enabled');
       }
       
-      final permissionsGranted = await _voiceService!.requestPermissions();
-      if (!permissionsGranted) {
-        if (kDebugMode) {
-          print('🎙️ Microphone permissions denied - cannot use voice commands');
-        }
-        return;
+      // Wait longer when permissions are missing to avoid rapid retries during permission dialog
+      if (_isActive && _settings.handsFreeModeEnabled) {
+        await Future.delayed(const Duration(seconds: 2));
+        await _listenForVoiceCommands();
       }
-      
-      if (kDebugMode) {
-        print('🎙️ Microphone permissions granted for hands-free mode');
-        print('🎙️ Voice service state after permission grant:');
-        print('   - isAvailable: ${_voiceService!.isAvailable}');
-        print('   - hasPermissions: ${_voiceService!.hasPermissions}');
-        print('   - canListen: ${_voiceService!.canListen}');
-      }
+      return;
     }
 
     if (!_voiceService!.canListen) {
@@ -499,8 +491,9 @@ class AudioLessonOrchestrator {
       _isListeningForCommands = false; // Reset flag on error
       
       // On error, wait longer before trying again to avoid rapid retries
+      // Especially important during permission dialogs or speech recognition failures
       if (_isActive && _settings.handsFreeModeEnabled) {
-        await Future.delayed(const Duration(seconds: 3));
+        await Future.delayed(const Duration(seconds: 5)); // Increased delay
         await _listenForVoiceCommands();
       }
     }

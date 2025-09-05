@@ -84,17 +84,57 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
         print('🎙️ Native provider requesting microphone permissions...');
       }
 
-      // For web, if the speech service is available and initialized, 
-      // assume permissions are available. The real permission check 
-      // happens when we actually start listening for voice commands.
+      // For web browsers, we need to actually start listening to trigger the permission dialog
+      // The browser will show the microphone permission prompt on the first listen() call
+      if (_speechToText!.isAvailable && !_hasPermissions) {
+        if (kDebugMode) {
+          print('🎙️ Triggering permission request by starting brief listening session...');
+        }
+        
+        try {
+          // Start a very brief listening session just to trigger the permission dialog
+          await _speechToText!.listen(
+            onResult: (result) {
+              // We don't care about the result, just the permission
+            },
+            listenFor: const Duration(milliseconds: 100), // Very brief
+            pauseFor: const Duration(milliseconds: 100),
+            partialResults: false,
+            onSoundLevelChange: (level) {
+              // Ignore sound levels during permission request
+            },
+            cancelOnError: true,
+          );
+          
+          // Wait a bit for the permission dialog to be handled
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Stop the listening session
+          await _speechToText!.stop();
+          
+          // If we got here without exception, permission was granted
+          _hasPermissions = true;
+          
+          if (kDebugMode) {
+            print('🎙️ Permission request completed - microphone access granted');
+          }
+          
+          return true;
+          
+        } catch (e) {
+          if (kDebugMode) {
+            print('🎙️ Permission request failed: $e');
+          }
+          _hasPermissions = false;
+          return false;
+        }
+      }
+
+      // If already has permissions or speech not available
       if (_speechToText!.isAvailable) {
         _hasPermissions = true;
         if (kDebugMode) {
-          print('🎙️ Native provider: Speech service is available, assuming permissions granted');
-          
-          // Additional debug info about the speech service
-          print('🎙️ Debug - Speech locales available: ${_speechToText!.locales}');
-          print('🎙️ Debug - Speech is not listening: ${!_speechToText!.isListening}');
+          print('🎙️ Native provider: Speech service available, permissions already granted');
         }
         return true;
       }
@@ -148,26 +188,26 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
       }
     }
 
-    // Stop any existing listening session - check both our flag and the actual API state
-    if (_isListening || (_speechToText != null && _speechToText!.isListening)) {
+    // Comprehensive state cleanup before starting
+    if (_speechToText != null && (_speechToText!.isListening || _isListening)) {
       if (kDebugMode) {
-        print('🎙️ Stopping existing listening session before starting new one');
-        print('   - _isListening: $_isListening');
-        print('   - speechToText.isListening: ${_speechToText?.isListening}');
+        print('🎙️ Cleaning up existing listening session...');
+        print('   - API isListening: ${_speechToText!.isListening}');
+        print('   - Internal _isListening: $_isListening');
       }
       
-      await stopListening();
+      await _forceStopListening();
       
-      // Wait longer to ensure the previous session is fully stopped
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Extra wait to ensure cleanup completes
+      await Future.delayed(const Duration(milliseconds: 500));
       
-      // Double-check that it's actually stopped
+      // Final state check
       if (_speechToText != null && _speechToText!.isListening) {
         if (kDebugMode) {
-          print('🎙️ Speech recognition still listening after stop attempt, forcing cancel');
+          print('🎙️ WARNING: Speech API still reports listening after cleanup - forcing reset');
         }
-        await cancel();
-        await Future.delayed(const Duration(milliseconds: 200));
+        // Force reset internal flag
+        _isListening = false;
       }
     }
 
@@ -175,6 +215,15 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
       _lastRecognizedText = null;
       _confidence = 0.0;
       _errorMessage = null;
+
+      // Final safety check before attempting to start
+      if (_speechToText!.isListening) {
+        if (kDebugMode) {
+          print('🎙️ ERROR: Speech API still reports listening - aborting start attempt');
+        }
+        _isListening = false;
+        return false;
+      }
 
       // Start listening - the listen method returns void, not bool
       if (kDebugMode) {
@@ -306,6 +355,38 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
 
   @override
   String? get errorMessage => _errorMessage;
+
+  /// Force stop listening with proper cleanup
+  Future<void> _forceStopListening() async {
+    try {
+      // Multiple cleanup attempts to ensure we're truly stopped
+      if (_speechToText != null) {
+        if (_speechToText!.isListening) {
+          await _speechToText!.stop();
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+        
+        // Force cancel if still active
+        if (_speechToText!.isListening) {
+          _speechToText!.cancel();
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+      }
+      
+      // Reset our internal state
+      _isListening = false;
+      
+      if (kDebugMode) {
+        print('🎙️ Force stop completed - state reset');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Error during force stop: $e');
+      }
+      // Reset flags anyway
+      _isListening = false;
+    }
+  }
 
   @override
   void dispose() {

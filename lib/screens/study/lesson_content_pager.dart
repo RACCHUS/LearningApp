@@ -12,6 +12,7 @@ import 'package:learning_pwa/screens/study/mcq_screen.dart';
 import 'package:learning_pwa/screens/study/concept_screen.dart';
 import 'package:learning_pwa/widgets/page_navigator_widget.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
+import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 
@@ -87,23 +88,60 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
   }
 
   void _toggleOrchestratorMode() async {
+    print('🔘 HANDS-FREE BUTTON PRESSED! Current mode: $_isOrchestratorMode'); // Always print
+    
     setState(() {
       _isOrchestratorMode = !_isOrchestratorMode;
     });
 
     if (_isOrchestratorMode) {
+      print('🔘 Enabling hands-free mode - calling _initializeOrchestrator()'); // Always print
       await _initializeOrchestrator();
     } else {
+      print('🔘 Disabling hands-free mode'); // Always print
       final orchestrator = ref.read(audioLessonOrchestratorProvider);
       await orchestrator.stopLesson();
     }
   }
 
   Future<void> _initializeOrchestrator() async {
+    print('🔘 _initializeOrchestrator() called'); // Always print
+    
     final orchestrator = ref.read(audioLessonOrchestratorProvider);
     final settingsNotifier = ref.read(audioLessonSettingsProvider.notifier);
     
-    // Enable hands-free mode
+    // Request microphone permissions FIRST, before enabling hands-free mode
+    final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+    print('🎙️ About to request microphone permissions for hands-free mode...'); // Always print
+    print('🎙️ Audio notifier: $audioNotifier'); // Always print
+    
+    final permissionsGranted = await audioNotifier.requestMicrophonePermissions();
+    print('🎙️ Permission request completed. Result: $permissionsGranted'); // Always print
+    if (!permissionsGranted) {
+      if (kDebugMode) {
+        print('❌ Microphone permissions denied - hands-free mode not enabled');
+      }
+      // Show user feedback about permission requirement
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone permission required for hands-free mode'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      // Reset orchestrator mode since permissions were denied
+      setState(() {
+        _isOrchestratorMode = false;
+      });
+      return;
+    }
+    
+    if (kDebugMode) {
+      print('✅ Microphone permissions granted for hands-free mode');
+    }
+    
+    // Enable hands-free mode AFTER permissions are granted
     settingsNotifier.toggleHandsFreeMode();
     
     // Give a moment for settings to update

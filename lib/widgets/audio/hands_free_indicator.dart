@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
+import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 
 class HandsFreeIndicator extends ConsumerWidget {
@@ -191,7 +193,41 @@ class HandsFreeModeToggle extends ConsumerWidget {
       ),
       trailing: Switch(
         value: isEnabled,
-        onChanged: (_) => settingsNotifier.toggleHandsFreeMode(),
+        onChanged: (_) async {
+          // If enabling hands-free mode, request permissions first
+          if (!isEnabled) {
+            final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+            
+            if (kDebugMode) {
+              print('🎙️ Requesting microphone permissions for hands-free mode...');
+            }
+            
+            final permissionsGranted = await audioNotifier.requestMicrophonePermissions();
+            
+            if (!permissionsGranted) {
+              if (kDebugMode) {
+                print('❌ Microphone permissions denied - hands-free mode not enabled');
+              }
+              // Show user feedback about permission requirement
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Microphone permission required for hands-free mode'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+              return;
+            }
+            
+            if (kDebugMode) {
+              print('✅ Microphone permissions granted for hands-free mode');
+            }
+          }
+          
+          // Toggle hands-free mode
+          settingsNotifier.toggleHandsFreeMode();
+        },
       ),
     );
   }
