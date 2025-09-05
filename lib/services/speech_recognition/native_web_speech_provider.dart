@@ -44,7 +44,14 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
         },
         onStatus: (status) {
           if (kDebugMode) {
-            print('🎙️ Native provider status: $status');
+            print('🎙️ Native provider status change: $status');
+          }
+          
+          // Track status changes
+          if (status == 'listening') {
+            _isListening = true;
+          } else if (status == 'notListening' || status == 'done') {
+            _isListening = false;
           }
         },
         debugLogging: kDebugMode,
@@ -84,6 +91,10 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
         _hasPermissions = true;
         if (kDebugMode) {
           print('🎙️ Native provider: Speech service is available, assuming permissions granted');
+          
+          // Additional debug info about the speech service
+          print('🎙️ Debug - Speech locales available: ${_speechToText!.locales}');
+          print('🎙️ Debug - Speech is not listening: ${!_speechToText!.isListening}');
         }
         return true;
       }
@@ -148,30 +159,43 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
       _confidence = 0.0;
       _errorMessage = null;
 
-      final success = await _speechToText!.listen(
+      // Start listening - the listen method returns void, not bool
+      if (kDebugMode) {
+        print('🎙️ About to start listening with language: ${language ?? 'en_US'}');
+        print('🎙️ Timeout: ${timeout ?? const Duration(seconds: 30)}');
+        print('🎙️ Speech service available: ${_speechToText!.isAvailable}');
+        print('🎙️ Speech service not listening: ${!_speechToText!.isListening}');
+      }
+
+      await _speechToText!.listen(
         onResult: _onSpeechResult,
         localeId: language ?? 'en_US',
         listenFor: timeout ?? const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 1),
+        pauseFor: const Duration(seconds: 3), // Increased pause time
         onSoundLevelChange: (level) {
-          // Optional: handle sound level changes
-          if (kDebugMode && level > 0.1) {
+          // Always log sound levels for debugging
+          if (kDebugMode) {
             print('🎙️ Sound level: $level');
           }
         },
+        cancelOnError: false,
+        partialResults: true,
       );
 
-      _isListening = success;
+      // Check if we're actually listening after the call
+      await Future.delayed(const Duration(milliseconds: 100));
+      final isActuallyListening = _speechToText!.isListening;
+      _isListening = isActuallyListening;
 
       if (kDebugMode) {
-        print('🎙️ Native provider start listening result: $success');
+        print('🎙️ Native provider start listening completed, isListening: $isActuallyListening');
       }
 
-      if (!success) {
-        _errorMessage = 'Failed to start listening';
+      if (!isActuallyListening) {
+        _errorMessage = 'Failed to start listening - not in listening state';
       }
 
-      return success;
+      return isActuallyListening;
     } catch (e) {
       if (kDebugMode) {
         print('🎙️ Native provider start listening error: $e');
@@ -222,19 +246,34 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
 
   void _onSpeechResult(result) {
     try {
+      if (kDebugMode) {
+        print('🎙️ _onSpeechResult called with: $result');
+        print('🎙️ Result type: ${result.runtimeType}');
+      }
+      
       _lastRecognizedText = result.recognizedWords;
       _confidence = result.confidence;
       
-      if (result.finalResult) {
-        _isListening = false;
+      if (kDebugMode) {
+        print('🎙️ Speech result received: "${result.recognizedWords}"');
+        print('🎙️ Confidence: ${result.confidence}');
+        print('🎙️ Final result: ${result.finalResult}');
+        print('🎙️ Has confidence: ${result.hasConfidenceRating}');
+        if (result.alternates != null && result.alternates.isNotEmpty) {
+          print('🎙️ Alternates: ${result.alternates.map((a) => a.recognizedWords).join(", ")}');
+        }
       }
       
-      if (kDebugMode) {
-        print('🎙️ Native provider result: "$_lastRecognizedText" (confidence: $_confidence, final: ${result.finalResult})');
+      if (result.finalResult) {
+        _isListening = false;
+        if (kDebugMode) {
+          print('🎙️ Final result received - stopped listening');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('🎙️ Native provider result processing error: $e');
+        print('🎙️ Error processing speech result: $e');
+        print('🎙️ Result object: $result');
       }
     }
   }
