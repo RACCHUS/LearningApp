@@ -113,6 +113,19 @@ class EnhancedVoiceInputService {
       
       if (kDebugMode) {
         print('🎙️ Permission request result: $result');
+        print('🎙️ _hasPermissions before update: $_hasPermissions');
+      }
+
+      // Update the local permissions flag
+      _hasPermissions = result;
+      
+      if (kDebugMode) {
+        print('🎙️ _hasPermissions after update: $_hasPermissions');
+      }
+      
+      // Update state if permissions changed
+      if (result) {
+        _updateState(VoiceInputState.idle);
       }
 
       return result;

@@ -2,10 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 import 'package:learning_pwa/models/content_types.dart';
+import 'package:learning_pwa/providers/audio_provider.dart';
 
 // Audio Lesson Orchestrator Provider
 final audioLessonOrchestratorProvider = Provider<AudioLessonOrchestrator>((ref) {
-  return AudioLessonOrchestrator();
+  final orchestrator = AudioLessonOrchestrator();
+  
+  // Inject the voice service from the audio provider
+  final audioNotifier = ref.read(audioStateProvider.notifier);
+  orchestrator.setVoiceService(audioNotifier.voiceService);
+  
+  return orchestrator;
 });
 
 // Audio Lesson Settings Provider

@@ -148,10 +148,27 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
       }
     }
 
-    // Stop any existing listening session
-    if (_isListening) {
+    // Stop any existing listening session - check both our flag and the actual API state
+    if (_isListening || (_speechToText != null && _speechToText!.isListening)) {
+      if (kDebugMode) {
+        print('🎙️ Stopping existing listening session before starting new one');
+        print('   - _isListening: $_isListening');
+        print('   - speechToText.isListening: ${_speechToText?.isListening}');
+      }
+      
       await stopListening();
-      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Wait longer to ensure the previous session is fully stopped
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Double-check that it's actually stopped
+      if (_speechToText != null && _speechToText!.isListening) {
+        if (kDebugMode) {
+          print('🎙️ Speech recognition still listening after stop attempt, forcing cancel');
+        }
+        await cancel();
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
     }
 
     try {

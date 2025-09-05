@@ -4,6 +4,8 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/audio_lesson/content_processor.dart';
+import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/models/voice_command.dart';
 
 enum AudioLessonState {
   idle,
@@ -36,6 +38,7 @@ class AudioLessonOrchestrator {
   // Core services
   final AudioService _audioService = AudioService();
   final ContentProcessor _contentProcessor = ContentProcessor();
+  EnhancedVoiceInputService? _voiceService; // Make nullable and injectable
 
   // State management (simplified)
   AudioLessonSettings _settings = const AudioLessonSettings();
@@ -56,6 +59,7 @@ class AudioLessonOrchestrator {
   List<LessonContent> _contentList = [];
   int _currentIndex = 0;
   bool _isActive = false;
+  bool _isListeningForCommands = false; // Prevent overlapping voice listening
 
   // Getters
   AudioLessonState get currentState => _state;
@@ -68,8 +72,23 @@ class AudioLessonOrchestrator {
 
   Future<void> initialize() async {
     await _audioService.initialize();
+    await _voiceService?.initialize();
     if (kDebugMode) {
       print('🎓 AudioLessonOrchestrator initialized (refactored version)');
+      print('🎙️ Voice service available: ${_voiceService?.canListen ?? false}');
+    }
+  }
+
+  /// Set the voice service to use (allows injection from audio provider)
+  void setVoiceService(EnhancedVoiceInputService voiceService) {
+    _voiceService = voiceService;
+    if (kDebugMode) {
+      print('🎙️ Voice service injected into orchestrator');
+      print('🎙️ Voice service details:');
+      print('   - isAvailable: ${voiceService.isAvailable}');
+      print('   - hasPermissions: ${voiceService.hasPermissions}');
+      print('   - canListen: ${voiceService.canListen}');
+      print('   - currentState: ${voiceService.currentState}');
     }
   }
 
@@ -123,7 +142,14 @@ class AudioLessonOrchestrator {
     }
 
     _isActive = false;
+    _isListeningForCommands = false; // Reset listening flag
     await _audioService.stop();
+    
+    // Cancel any active voice listening
+    if (_voiceService != null) {
+      await _voiceService!.cancel();
+    }
+    
     _updateState(AudioLessonState.idle);
 
     if (_settings.confirmationsEnabled) {
@@ -175,6 +201,13 @@ class AudioLessonOrchestrator {
 
     await _audioService.stop();
     _currentIndex++;
+    
+    // Emit progress change for UI update
+    if (kDebugMode) {
+      print('🎓 Emitting progress change: $_currentIndex');
+    }
+    _progressController.add(_currentIndex);
+    
     await _readCurrentContent();
   }
 
@@ -187,6 +220,10 @@ class AudioLessonOrchestrator {
 
     await _audioService.stop();
     _currentIndex--;
+    
+    // Emit progress change for UI update
+    _progressController.add(_currentIndex);
+    
     await _readCurrentContent();
   }
 
@@ -220,10 +257,31 @@ class AudioLessonOrchestrator {
     }
 
     // Handle auto-progression or wait for user action
+    if (kDebugMode) {
+      print('🎓 Content reading completed. Checking next action...');
+      print('   - autoProgressAfterReading: ${_settings.autoProgressAfterReading}');
+      print('   - handsFreeModeEnabled: ${_settings.handsFreeModeEnabled}');
+      print('   - voiceNavigationEnabled: ${_settings.voiceNavigationEnabled}');
+      print('   - current state: $_state');
+    }
+    
     if (_settings.autoProgressAfterReading && _state == AudioLessonState.reading) {
+      if (kDebugMode) {
+        print('🎓 Auto-progressing after delay...');
+      }
       await Future.delayed(_settings.autoProgressDelay);
       if (_isActive && _state == AudioLessonState.reading) {
         await nextContent();
+      }
+    } else if (_settings.handsFreeModeEnabled && _settings.voiceNavigationEnabled) {
+      if (kDebugMode) {
+        print('🎙️ Starting voice command listening after content reading...');
+      }
+      // Listen for voice commands when hands-free mode is enabled
+      await _listenForVoiceCommands();
+    } else {
+      if (kDebugMode) {
+        print('🎓 Waiting for manual user action (no auto-progress or voice commands)');
       }
     }
   }
@@ -328,8 +386,244 @@ class AudioLessonOrchestrator {
     }
   }
 
+  /// Listen for voice commands in hands-free mode
+  Future<void> _listenForVoiceCommands() async {
+    if (!_settings.handsFreeModeEnabled || !_settings.voiceNavigationEnabled) {
+      return;
+    }
+
+    // Prevent overlapping listening sessions
+    if (_isListeningForCommands) {
+      if (kDebugMode) {
+        print('🎙️ Already listening for commands, skipping new request');
+      }
+      return;
+    }
+
+    if (_voiceService == null) {
+      if (kDebugMode) {
+        print('🎙️ Voice service not available - no service injected');
+      }
+      return;
+    }
+
+    // Check if voice service is available and request permissions if needed
+    if (!_voiceService!.isAvailable) {
+      if (kDebugMode) {
+        print('🎙️ Voice service not available - no speech providers ready');
+      }
+      return;
+    }
+
+    // Request permissions if not already granted
+    if (!_voiceService!.hasPermissions) {
+      if (kDebugMode) {
+        print('🎙️ Requesting microphone permissions for hands-free mode...');
+      }
+      
+      final permissionsGranted = await _voiceService!.requestPermissions();
+      if (!permissionsGranted) {
+        if (kDebugMode) {
+          print('🎙️ Microphone permissions denied - cannot use voice commands');
+        }
+        return;
+      }
+      
+      if (kDebugMode) {
+        print('🎙️ Microphone permissions granted for hands-free mode');
+        print('🎙️ Voice service state after permission grant:');
+        print('   - isAvailable: ${_voiceService!.isAvailable}');
+        print('   - hasPermissions: ${_voiceService!.hasPermissions}');
+        print('   - canListen: ${_voiceService!.canListen}');
+      }
+    }
+
+    if (!_voiceService!.canListen) {
+      if (kDebugMode) {
+        print('🎙️ Voice service still not ready for listening after permission check');
+        print('   - isAvailable: ${_voiceService!.isAvailable}');
+        print('   - hasPermissions: ${_voiceService!.hasPermissions}');
+      }
+      return;
+    }
+
+    _updateState(AudioLessonState.waitingForVoice);
+    _isListeningForCommands = true; // Set flag to prevent overlapping
+    
+    if (kDebugMode) {
+      print('🎙️ Listening for voice commands...');
+    }
+
+    try {
+      // Listen for voice commands with configurable timeout
+      final command = await _voiceService!.listenForCommand(
+        timeout: _settings.voiceInputTimeout,
+      );
+
+      if (command != null) {
+        if (kDebugMode) {
+          print('🎙️ Voice command received: ${command.phrase} (${command.type})');
+        }
+        
+        await _handleVoiceCommand(command);
+        
+        // Continue listening in hands-free mode if still active
+        if (_isActive && _settings.handsFreeModeEnabled && _state != AudioLessonState.reading) {
+          // Small delay before next listening session
+          await Future.delayed(const Duration(milliseconds: 500));
+          _isListeningForCommands = false; // Reset flag
+          await _listenForVoiceCommands();
+        } else {
+          _isListeningForCommands = false; // Reset flag
+        }
+      } else {
+        if (kDebugMode) {
+          print('🎙️ No voice command detected, timeout reached');
+        }
+        
+        // If in hands-free mode and no command detected, continue listening
+        if (_isActive && _settings.handsFreeModeEnabled) {
+          // Small delay before retrying
+          await Future.delayed(const Duration(milliseconds: 500));
+          _isListeningForCommands = false; // Reset flag
+          await _listenForVoiceCommands();
+        } else {
+          _isListeningForCommands = false; // Reset flag
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Voice command error: $e');
+      }
+      
+      _isListeningForCommands = false; // Reset flag on error
+      
+      // On error, wait longer before trying again to avoid rapid retries
+      if (_isActive && _settings.handsFreeModeEnabled) {
+        await Future.delayed(const Duration(seconds: 3));
+        await _listenForVoiceCommands();
+      }
+    }
+  }
+
+  /// Handle a received voice command
+  Future<void> _handleVoiceCommand(VoiceCommand command) async {
+    if (!_isActive) return;
+
+    // Interrupt current audio if setting is enabled
+    if (_settings.interruptOnNextCommand && command.type == VoiceCommandType.navigation) {
+      await _audioService.stop();
+    }
+
+    switch (command.type) {
+      case VoiceCommandType.navigation:
+        await _handleNavigationCommand(command.value as NavigationCommand);
+        break;
+      case VoiceCommandType.answer:
+        await _handleAnswerCommand(command.value); // String or bool value
+        break;
+      case VoiceCommandType.control:
+        await _handleControlCommand(command.value as ControlCommand);
+        break;
+      case VoiceCommandType.mode:
+        await _handleModeCommand(command.value as ModeCommand);
+        break;
+    }
+  }
+
+  /// Handle navigation voice commands
+  Future<void> _handleNavigationCommand(NavigationCommand command) async {
+    switch (command) {
+      case NavigationCommand.next:
+        await nextContent();
+        break;
+      case NavigationCommand.previous:
+      case NavigationCommand.back:
+        await previousContent();
+        break;
+      case NavigationCommand.first:
+        // Go to first content
+        if (_currentIndex > 0) {
+          await _audioService.stop();
+          _currentIndex = 0;
+          _progressController.add(_currentIndex); // Emit progress change
+          await _readCurrentContent();
+        }
+        break;
+      case NavigationCommand.last:
+        // Go to last content
+        if (_currentIndex < _contentList.length - 1) {
+          await _audioService.stop();
+          _currentIndex = _contentList.length - 1;
+          _progressController.add(_currentIndex); // Emit progress change
+          await _readCurrentContent();
+        }
+        break;
+    }
+    
+    // Navigation commands automatically trigger content reading, 
+    // which will handle voice listening continuation
+  }
+
+  /// Handle answer voice commands (for MCQ questions)
+  Future<void> _handleAnswerCommand(dynamic answerValue) async {
+    // Emit action for the UI to handle (since answer handling is context-specific)
+    _actionController.add(LessonFlowAction.next); // Move to next after answer
+    
+    if (kDebugMode) {
+      print('🎙️ Answer command: $answerValue');
+    }
+    
+    // Continue listening in hands-free mode
+    if (_settings.handsFreeModeEnabled && _settings.immediateAnswerProgression) {
+      await nextContent();
+    } else if (_settings.handsFreeModeEnabled) {
+      await _listenForVoiceCommands();
+    }
+  }
+
+  /// Handle control voice commands
+  Future<void> _handleControlCommand(ControlCommand command) async {
+    switch (command) {
+      case ControlCommand.play:
+        await resumeLesson();
+        break;
+      case ControlCommand.pause:
+        await pauseLesson();
+        break;
+      case ControlCommand.stop:
+        await stopLesson();
+        break;
+      case ControlCommand.repeat:
+        await repeatContent();
+        break;
+      case ControlCommand.faster:
+        // Increase speech rate - this would need audio service support
+        if (kDebugMode) {
+          print('🎙️ Speed up command received');
+        }
+        break;
+      case ControlCommand.slower:
+        // Decrease speech rate - this would need audio service support
+        if (kDebugMode) {
+          print('🎙️ Slow down command received');
+        }
+        break;
+    }
+  }
+
+  /// Handle mode voice commands
+  Future<void> _handleModeCommand(ModeCommand command) async {
+    // Mode changes are typically handled at a higher level
+    // For now, just log the command
+    if (kDebugMode) {
+      print('🎙️ Mode command: $command');
+    }
+  }
+
   void dispose() {
     _audioService.dispose();
+    _voiceService?.dispose();
     _stateController.close();
     _actionController.close();
     _progressController.close();

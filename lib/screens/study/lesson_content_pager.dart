@@ -106,6 +106,9 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
     // Enable hands-free mode
     settingsNotifier.toggleHandsFreeMode();
     
+    // Give a moment for settings to update
+    await Future.delayed(const Duration(milliseconds: 100));
+    
     // Initialize orchestrator with lesson content
     await orchestrator.initialize();
     await orchestrator.startLesson(widget.contentList, startIndex: _currentPageIndex);
@@ -118,8 +121,20 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
     // Listen to orchestrator progress changes
     if (_isOrchestratorMode) {
       ref.listen<int>(audioLessonProgressProvider, (previous, next) {
+        if (kDebugMode) {
+          print('🎓 Lesson pager received progress change: $previous -> $next');
+          print('🎓 Current page index: $_currentPageIndex');
+        }
+        
         if (next != _currentPageIndex) {
+          if (kDebugMode) {
+            print('🎓 Navigating to page: $next');
+          }
           _navigateToPage(next);
+        } else {
+          if (kDebugMode) {
+            print('🎓 Progress matches current page, no navigation needed');
+          }
         }
       });
     }

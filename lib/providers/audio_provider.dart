@@ -220,6 +220,9 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
   bool get canSpeak => state.isAvailable && _settingsNotifier.state.isEnabled;
   bool get canListen => _voiceService.canListen; // Use the service's combined check
   
+  // Expose voice service for orchestrator injection
+  EnhancedVoiceInputService get voiceService => _voiceService;
+  
   List<String> get availableVoices => state.availableVoices;
   List<String> get availableLocales => _voiceService.getAvailableLocales();
 }
