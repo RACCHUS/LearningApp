@@ -99,10 +99,12 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
             },
             listenFor: const Duration(milliseconds: 100), // Very brief
             pauseFor: const Duration(milliseconds: 100),
-            partialResults: false,
             onSoundLevelChange: (level) {
               // Ignore sound levels during permission request
             },
+            // ignore: deprecated_member_use
+            partialResults: false,
+            // ignore: deprecated_member_use
             cancelOnError: true,
           );
           
@@ -244,7 +246,9 @@ class NativeWebSpeechProvider extends SpeechRecognitionProvider {
             print('🎙️ Sound level: $level');
           }
         },
+        // ignore: deprecated_member_use
         cancelOnError: false,
+        // ignore: deprecated_member_use
         partialResults: true,
       );
 
