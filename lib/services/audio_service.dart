@@ -16,6 +16,7 @@ class AudioService {
   final StreamController<AudioState> _stateController = StreamController<AudioState>.broadcast();
   Stream<AudioState> get stateStream => _stateController.stream;
   AudioState get currentState => _state;
+  AudioSettings get currentSettings => _settings;
 
   bool _isInitialized = false;
 

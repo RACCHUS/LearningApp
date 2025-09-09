@@ -156,6 +156,9 @@ class EnhancedAudioNotifier extends StateNotifier<AudioState> {
   bool get canListen => _voiceService.canListen;
   String? get lastRecognizedText => state.recognizedText;
   double get recognitionConfidence => state.confidence;
+  
+  // Service access for global voice service
+  EnhancedVoiceInputService get voiceService => _voiceService;
 
   // Manual state setters for testing
   void setMicrophonePermissionGranted(bool granted) {

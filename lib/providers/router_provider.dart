@@ -10,6 +10,7 @@ import 'package:learning_pwa/screens/study/study_set_screen.dart';
 import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
 import 'package:learning_pwa/screens/auth/login_screen.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
+import 'package:learning_pwa/screens/test/hands_free_test_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -29,7 +30,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) {
+          final searchQuery = state.uri.queryParameters['search'];
+          final filter = state.uri.queryParameters['filter'];
+          return HomeScreen(initialSearchQuery: searchQuery, initialFilter: filter);
+        },
       ),
       
       // Create lesson route
@@ -76,6 +81,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/test/hands-free',
+        name: 'hands-free-test',
+        builder: (context, state) => const HandsFreeTestScreen(),
       ),
     ],
     

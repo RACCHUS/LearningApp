@@ -11,6 +11,7 @@ enum NavigationCommand {
   first,
   last,
   back,
+  jumpToPage,
 }
 
 enum ControlCommand {
@@ -20,6 +21,11 @@ enum ControlCommand {
   repeat,
   faster,
   slower,
+  skip,
+  endLesson,
+  volumeUp,
+  volumeDown,
+  showProgress,
 }
 
 enum ModeCommand {
@@ -73,6 +79,23 @@ class VoiceCommand {
     'speed up': ControlCommand.faster,
     'slower': ControlCommand.slower,
     'slow down': ControlCommand.slower,
+    'skip': ControlCommand.skip,
+    'skip this': ControlCommand.skip,
+    'next item': ControlCommand.skip,
+    'end lesson': ControlCommand.endLesson,
+    'stop lesson': ControlCommand.endLesson,
+    'finish lesson': ControlCommand.endLesson,
+    'exit lesson': ControlCommand.endLesson,
+    'volume up': ControlCommand.volumeUp,
+    'louder': ControlCommand.volumeUp,
+    'increase volume': ControlCommand.volumeUp,
+    'volume down': ControlCommand.volumeDown,
+    'quieter': ControlCommand.volumeDown,
+    'decrease volume': ControlCommand.volumeDown,
+    'show progress': ControlCommand.showProgress,
+    'my progress': ControlCommand.showProgress,
+    'progress report': ControlCommand.showProgress,
+    'where am i': ControlCommand.showProgress,
   };
 
   static const Map<String, ModeCommand> modeCommands = {
@@ -122,6 +145,21 @@ class VoiceCommand {
 
   static VoiceCommand? parseCommand(String text) {
     final normalizedText = text.toLowerCase().trim();
+    
+    // Check for "go to page [number]" command
+    final pagePattern = RegExp(r'go to page (\d+)|page (\d+)|jump to page (\d+)');
+    final pageMatch = pagePattern.firstMatch(normalizedText);
+    if (pageMatch != null) {
+      final pageNumber = int.tryParse(pageMatch.group(1) ?? pageMatch.group(2) ?? pageMatch.group(3) ?? '');
+      if (pageNumber != null) {
+        return VoiceCommand(
+          type: VoiceCommandType.navigation,
+          phrase: 'go to page $pageNumber',
+          value: NavigationCommand.jumpToPage,
+          alternatives: [pageNumber.toString()], // Store page number in alternatives
+        );
+      }
+    }
     
     // Check navigation commands
     for (final entry in navigationCommands.entries) {

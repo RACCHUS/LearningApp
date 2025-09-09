@@ -59,8 +59,26 @@ Navigation:
 • "next" or "forward" - Go to next content
 • "previous" or "back" - Go to previous content  
 • "repeat" or "again" - Repeat current content
+• "first" or "beginning" - Go to first content
+• "last" or "end" - Go to last content
+• "go to page [number]" - Jump to specific page
+
+Lesson Control:
 • "pause" - Pause the lesson
 • "resume" or "play" - Resume the lesson
+• "stop" - Stop the lesson
+• "skip" - Skip current content
+• "end lesson" - Complete and exit lesson
+
+Audio Control:
+• "faster" or "speed up" - Increase speech speed
+• "slower" or "slow down" - Decrease speech speed
+• "volume up" or "louder" - Increase volume
+• "volume down" or "quieter" - Decrease volume
+
+Information:
+• "show progress" - Hear current progress
+• "where am I" - Get current position
 
 MCQ Answers:
 • "A", "B", "C", "D" - Select answer option
@@ -72,7 +90,6 @@ True/False:
 
 Control:
 • "help" - Show available commands
-• "stop" - End the lesson
     ''';
   }
 

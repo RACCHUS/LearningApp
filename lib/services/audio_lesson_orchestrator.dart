@@ -510,7 +510,15 @@ class AudioLessonOrchestrator {
 
     switch (command.type) {
       case VoiceCommandType.navigation:
-        await _handleNavigationCommand(command.value as NavigationCommand);
+        if (command.value == NavigationCommand.jumpToPage && command.alternatives.isNotEmpty) {
+          // Handle jump to page command with page number
+          final pageNumber = int.tryParse(command.alternatives.first);
+          if (pageNumber != null) {
+            await _jumpToPage(pageNumber);
+          }
+        } else {
+          await _handleNavigationCommand(command.value as NavigationCommand);
+        }
         break;
       case VoiceCommandType.answer:
         await _handleAnswerCommand(command.value); // String or bool value
@@ -552,6 +560,10 @@ class AudioLessonOrchestrator {
           await _readCurrentContent();
         }
         break;
+      case NavigationCommand.jumpToPage:
+        // This will be handled differently as it requires a page number
+        // The page number is stored in the command's alternatives list
+        break;
     }
     
     // Navigation commands automatically trigger content reading, 
@@ -591,16 +603,54 @@ class AudioLessonOrchestrator {
         await repeatContent();
         break;
       case ControlCommand.faster:
-        // Increase speech rate - this would need audio service support
+        // Increase speech rate
         if (kDebugMode) {
           print('🎙️ Speed up command received');
         }
+        await _adjustSpeechRate(increase: true);
         break;
       case ControlCommand.slower:
-        // Decrease speech rate - this would need audio service support
+        // Decrease speech rate
         if (kDebugMode) {
           print('🎙️ Slow down command received');
         }
+        await _adjustSpeechRate(increase: false);
+        break;
+      case ControlCommand.skip:
+        // Skip current content (same as next)
+        if (kDebugMode) {
+          print('🎙️ Skip command received');
+        }
+        await nextContent();
+        break;
+      case ControlCommand.endLesson:
+        // End the lesson completely
+        if (kDebugMode) {
+          print('🎙️ End lesson command received');
+        }
+        await stopLesson();
+        _actionController.add(LessonFlowAction.complete);
+        break;
+      case ControlCommand.volumeUp:
+        // Increase volume
+        if (kDebugMode) {
+          print('🎙️ Volume up command received');
+        }
+        await _adjustVolume(increase: true);
+        break;
+      case ControlCommand.volumeDown:
+        // Decrease volume
+        if (kDebugMode) {
+          print('🎙️ Volume down command received');
+        }
+        await _adjustVolume(increase: false);
+        break;
+      case ControlCommand.showProgress:
+        // Show progress information
+        if (kDebugMode) {
+          print('🎙️ Show progress command received');
+        }
+        await _announceProgress();
         break;
     }
   }
@@ -611,6 +661,85 @@ class AudioLessonOrchestrator {
     // For now, just log the command
     if (kDebugMode) {
       print('🎙️ Mode command: $command');
+    }
+  }
+
+  /// Jump to a specific page/content index
+  Future<void> _jumpToPage(int pageNumber) async {
+    // Convert 1-based page number to 0-based index
+    final targetIndex = pageNumber - 1;
+    
+    if (targetIndex >= 0 && targetIndex < _contentList.length) {
+      await _audioService.stop();
+      _currentIndex = targetIndex;
+      _progressController.add(_currentIndex);
+      await _readCurrentContent();
+      
+      if (kDebugMode) {
+        print('🎙️ Jumped to page $pageNumber (index $targetIndex)');
+      }
+    } else {
+      if (kDebugMode) {
+        print('🎙️ Invalid page number: $pageNumber (total pages: ${_contentList.length})');
+      }
+      // Could announce this error to the user
+      await _audioService.speak('Invalid page number. This lesson has ${_contentList.length} pages.');
+    }
+  }
+
+  /// Announce current progress to the user
+  Future<void> _announceProgress() async {
+    final currentPage = _currentIndex + 1;
+    final totalPages = _contentList.length;
+    final progressPercent = ((currentPage / totalPages) * 100).round();
+    
+    final progressMessage = 'You are on page $currentPage of $totalPages. '
+        'That is $progressPercent percent complete.';
+    
+    await _audioService.speak(progressMessage);
+    
+    if (kDebugMode) {
+      print('🎙️ Progress announced: $progressMessage');
+    }
+  }
+
+  /// Adjust speech rate by voice command
+  Future<void> _adjustSpeechRate({required bool increase}) async {
+    // Get current rate
+    double currentRate = _audioService.currentSettings.speechRate;
+    
+    // Adjust by 0.1 increments, keep within reasonable bounds (0.3 - 2.0)
+    double newRate = increase ? currentRate + 0.1 : currentRate - 0.1;
+    newRate = newRate.clamp(0.3, 2.0);
+    
+    await _audioService.setRate(newRate);
+    
+    // Announce the change
+    String message = increase ? 'Speech speed increased' : 'Speech speed decreased';
+    await _audioService.speak(message, interrupt: false);
+    
+    if (kDebugMode) {
+      print('🎙️ Speech rate adjusted to: $newRate');
+    }
+  }
+
+  /// Adjust volume by voice command
+  Future<void> _adjustVolume({required bool increase}) async {
+    // Get current volume
+    double currentVolume = _audioService.currentSettings.volume;
+    
+    // Adjust by 0.1 increments, keep within bounds (0.1 - 1.0)
+    double newVolume = increase ? currentVolume + 0.1 : currentVolume - 0.1;
+    newVolume = newVolume.clamp(0.1, 1.0);
+    
+    await _audioService.setVolume(newVolume);
+    
+    // Announce the change
+    String message = increase ? 'Volume increased' : 'Volume decreased';
+    await _audioService.speak(message, interrupt: false);
+    
+    if (kDebugMode) {
+      print('🎙️ Volume adjusted to: $newVolume');
     }
   }
 

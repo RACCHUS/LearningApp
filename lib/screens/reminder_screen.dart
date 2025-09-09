@@ -298,6 +298,7 @@ class _ReminderScreenState extends ConsumerState<ReminderScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: "reminderAddFAB", // Add unique hero tag
         onPressed: () => _showAddReminderDialog(context, null),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Reminder'),

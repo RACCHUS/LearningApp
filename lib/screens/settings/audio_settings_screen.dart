@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
+import 'package:learning_pwa/providers/global_voice_provider.dart';
 import 'package:learning_pwa/services/audio_testing/audio_test_service.dart';
 import 'package:learning_pwa/widgets/audio_settings/audio_status_card.dart';
 import 'package:learning_pwa/widgets/audio_settings/voice_settings_section.dart';
@@ -55,6 +56,11 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
             onShowPermissionHelp: () => TroubleshootingSection.showPermissionHelp(context),
             onShowVoiceCommandHelp: () => TroubleshootingSection.showVoiceCommandHelp(context),
           ),
+          
+          const SizedBox(height: 16),
+          
+          // Hands-Free Settings Section
+          _buildHandsFreeSection(ref),
           
           const SizedBox(height: 16),
           
@@ -185,6 +191,110 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build hands-free settings section
+  Widget _buildHandsFreeSection(WidgetRef ref) {
+    final globalVoiceState = ref.watch(globalVoiceProvider);
+    final globalVoiceNotifier = ref.read(globalVoiceProvider.notifier);
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.voice_chat,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Hands-Free Mode',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Global voice toggle
+            SwitchListTile(
+              title: const Text('Enable Global Voice Commands'),
+              subtitle: Text(
+                globalVoiceState.isEnabled 
+                  ? 'Voice commands work anywhere in the app'
+                  : 'Tap to enable "go home", "settings", etc.'
+              ),
+              value: globalVoiceState.isEnabled,
+              onChanged: globalVoiceState.isAvailable 
+                ? (value) async {
+                    if (value) {
+                      await globalVoiceNotifier.enable();
+                    } else {
+                      await globalVoiceNotifier.disable();
+                    }
+                  }
+                : null,
+            ),
+            
+            // Status info
+            if (globalVoiceState.isEnabled) ...[
+              const Divider(),
+              ListTile(
+                leading: Icon(
+                  globalVoiceState.isListening ? Icons.mic : Icons.mic_off,
+                  color: globalVoiceState.isListening ? Colors.red : Colors.grey,
+                ),
+                title: Text(globalVoiceState.statusMessage),
+                subtitle: const Text('Say "go home", "settings", "help"'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  onPressed: () => _showVoiceCommandHelp(ref),
+                ),
+              ),
+            ],
+            
+            // Setup button if not available
+            if (!globalVoiceState.isAvailable) ...[
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.warning, color: Colors.orange),
+                title: const Text('Voice commands not available'),
+                subtitle: const Text('Check microphone permissions'),
+                trailing: ElevatedButton(
+                  onPressed: () => globalVoiceNotifier.enable(),
+                  child: const Text('Setup'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show voice command help dialog
+  void _showVoiceCommandHelp(WidgetRef ref) {
+    final globalVoiceNotifier = ref.read(globalVoiceProvider.notifier);
+    final helpText = globalVoiceNotifier.getContextualHelp();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Voice Commands'),
+        content: SingleChildScrollView(
+          child: Text(helpText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
           ),
         ],
       ),

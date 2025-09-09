@@ -4,12 +4,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
+import 'package:learning_pwa/providers/global_voice_provider.dart';
 import 'package:learning_pwa/screens/home/home_search_bar.dart';
 import 'package:learning_pwa/screens/home/home_category_filters.dart';
 import 'package:learning_pwa/screens/home/home_lessons_list.dart';
+import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final String? initialSearchQuery;
+  final String? initialFilter;
+  
+  const HomeScreen({
+    super.key,
+    this.initialSearchQuery,
+    this.initialFilter,
+  });
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -19,6 +28,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? selectedTag;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize search query from widget parameters
+    if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
+      _searchQuery = widget.initialSearchQuery!;
+      _searchController.text = _searchQuery;
+    }
+    
+    // Handle initial filter if provided
+    if (widget.initialFilter != null) {
+      // Filter logic could be implemented here
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +69,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         actions: [
+          // Voice Control Indicator
+          const GlobalVoiceIndicator(compact: true),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.psychology),
+            onPressed: () {
+              context.push('/test/hands-free');
+            },
+            tooltip: 'Test Hands-Free',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -142,18 +177,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await context.push('/create-lesson');
-          ref.invalidate(allLessonsProvider);
-        },
-        label: const Text('New Lesson'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+      floatingActionButton: _buildFloatingActionButtons(context, ref),
+    );
+  }
+
+  Widget _buildFloatingActionButtons(BuildContext context, WidgetRef ref) {
+    final globalVoiceState = ref.watch(globalVoiceProvider);
+    
+    // Show voice FAB if voice is available, otherwise show create lesson FAB
+    if (globalVoiceState.isAvailable) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Voice Control FAB
+          const GlobalVoiceFAB(heroTag: "homeVoiceFAB"),
+          const SizedBox(height: 16),
+          // Create Lesson FAB (smaller)
+          FloatingActionButton(
+            heroTag: "homeCreateLessonFAB", // Add unique hero tag
+            onPressed: () async {
+              await context.push('/create-lesson');
+              ref.invalidate(allLessonsProvider);
+            },
+            tooltip: 'New Lesson',
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.add),
+          ),
+        ],
+      );
+    }
+
+    // Default FAB when voice is not available
+    return FloatingActionButton.extended(
+      heroTag: "homeCreateLessonExtendedFAB", // Add unique hero tag
+      onPressed: () async {
+        await context.push('/create-lesson');
+        ref.invalidate(allLessonsProvider);
+      },
+      label: const Text('New Lesson'),
+      icon: const Icon(Icons.add),
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 }

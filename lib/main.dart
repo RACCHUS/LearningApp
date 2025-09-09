@@ -14,6 +14,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:learning_pwa/config/firebase_options.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/voice_input_service.dart';
+import 'package:learning_pwa/services/hands_free_settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,11 +78,35 @@ Future<void> main() async {
     print('✅ Supabase initialized successfully');
   }
 
+  // Initialize hands-free settings and check for auto-enable
+  await _initializeHandsFreeMode();
+
   runApp(
     const ProviderScope(
       child: LearningApp(),
     ),
   );
+}
+
+/// Initialize hands-free mode based on user settings
+Future<void> _initializeHandsFreeMode() async {
+  try {
+    final settingsService = HandsFreeSettingsService();
+    await settingsService.initialize();
+    final settings = settingsService.settings;
+    
+    if (settings.defaultHandsFreeMode || settingsService.isHandsFreeEnabled) {
+      if (kDebugMode) {
+        print('🎙️ Auto-enabling hands-free mode based on user settings');
+      }
+      // Note: Actual global voice enabling will be handled by the app after provider initialization
+      // This just loads the setting that indicates hands-free should be enabled
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ Failed to check hands-free settings: $e');
+    }
+  }
 }
 
 class LearningApp extends ConsumerWidget {
