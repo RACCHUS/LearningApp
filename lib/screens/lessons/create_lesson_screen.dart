@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
-import 'package:learning_pwa/widgets/lesson_json_import_widget.dart';
+import 'package:learning_pwa/services/ai_prompt_service.dart';
+import 'package:learning_pwa/widgets/enhanced_json_import_widget.dart';
 import 'package:learning_pwa/widgets/lesson_builder_widget.dart';
+import 'package:learning_pwa/widgets/prompt_display_widget.dart';
+import 'package:learning_pwa/widgets/template_selection_widget.dart';
+import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
   const CreateLessonScreen({super.key});
@@ -18,15 +23,23 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   late TabController _tabController;
   bool _isLoading = false;
 
+  // AI Assistant form data
+  final _subjectController = TextEditingController();
+  String _targetAudience = 'beginner';
+  int _durationMinutes = 30;
+  String _difficulty = 'beginner';
+  String _contentFocus = 'balanced';
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // Changed to 3 tabs
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _subjectController.dispose();
     super.dispose();
   }
 
@@ -121,16 +134,31 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create New Lesson'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const LessonCreationGuideScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Lesson Creation Guide',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
+            Tab(
+              icon: Icon(Icons.auto_awesome),
+              text: 'AI Assistant',
+            ),
             Tab(
               icon: Icon(Icons.code),
               text: 'JSON Import',
             ),
             Tab(
               icon: Icon(Icons.build),
-              text: 'Lesson Builder',
+              text: 'Manual Builder',
             ),
           ],
         ),
@@ -149,7 +177,8 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                LessonJsonImportWidget(
+                _buildAiAssistantTab(),
+                EnhancedJsonImportWidget(
                   onImport: _createLessonFromJson,
                 ),
                 LessonBuilderWidget(
@@ -157,6 +186,376 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildAiAssistantTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'AI-Assisted Lesson Creation',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.blue[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '1. Fill in your lesson parameters below\n'
+                      '2. Generate a customized AI prompt\n'
+                      '3. Copy the prompt and use it with ChatGPT, Claude, or any AI tool\n'
+                      '4. Import the generated JSON back using the "JSON Import" tab',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Subject Input
+            Text(
+              'Lesson Subject',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _subjectController,
+              decoration: const InputDecoration(
+                hintText: 'e.g., Python Variable Types, HTTP Status Codes, CSS Flexbox',
+                border: OutlineInputBorder(),
+                helperText: 'Be specific - avoid overly broad topics like "Programming" or "Science"',
+              ),
+              maxLines: 2,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Target Audience
+            Text(
+              'Target Audience',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'beginner', label: Text('Beginner')),
+                ButtonSegment(value: 'intermediate', label: Text('Intermediate')),
+                ButtonSegment(value: 'advanced', label: Text('Advanced')),
+              ],
+              selected: {_targetAudience},
+              onSelectionChanged: (selection) {
+                setState(() => _targetAudience = selection.first);
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Duration Slider
+            Text(
+              'Estimated Duration: $_durationMinutes minutes',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Slider(
+              value: _durationMinutes.toDouble(),
+              min: 15,
+              max: 120,
+              divisions: 21,
+              label: '$_durationMinutes min',
+              onChanged: (value) {
+                setState(() => _durationMinutes = value.round());
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Difficulty Level
+            Text(
+              'Difficulty Level',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _difficulty,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              items: const [
+                DropdownMenuItem(value: 'beginner', child: Text('Beginner - Basic concepts and definitions')),
+                DropdownMenuItem(value: 'intermediate', child: Text('Intermediate - Applied knowledge')),
+                DropdownMenuItem(value: 'advanced', child: Text('Advanced - Complex applications')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _difficulty = value);
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Content Focus
+            Text(
+              'Content Focus',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _contentFocus,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              items: const [
+                DropdownMenuItem(value: 'conceptual', child: Text('Conceptual - Theory and understanding')),
+                DropdownMenuItem(value: 'practical', child: Text('Practical - Hands-on applications')),
+                DropdownMenuItem(value: 'balanced', child: Text('Balanced - Mix of theory and practice')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _contentFocus = value);
+              },
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Template Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.library_books, color: Colors.orange[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Or Start with a Template',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Browse pre-made templates for common lesson types. Templates include placeholder content that you can customize.',
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showTemplateDialog(),
+                        icon: const Icon(Icons.library_books),
+                        label: const Text('Browse Templates'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.all(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Generate Prompt Button
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _subjectController.text.trim().isEmpty ? null : _generateAndShowPrompt,
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text('Generate AI Prompt'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Quick Templates
+            const PromptTemplatesWidget(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _generateAndShowPrompt() {
+    final prompt = AiPromptService.generateLessonCreationPrompt(
+      subject: _subjectController.text.trim(),
+      targetAudience: _targetAudience,
+      durationMinutes: _durationMinutes,
+      difficulty: _difficulty,
+      contentFocus: _contentFocus,
+    );
+
+    Clipboard.setData(ClipboardData(text: prompt));
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.purple),
+            SizedBox(width: 8),
+            Text('AI Prompt Generated'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Prompt copied to clipboard! Use it with ChatGPT, Claude, or any AI tool.',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Next steps:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  '1. Paste this prompt into your AI tool\n'
+                  '2. Wait for the JSON response\n'
+                  '3. Copy the JSON response\n'
+                  '4. Switch to the "JSON Import" tab\n'
+                  '5. Paste and import the JSON',
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      prompt,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: prompt));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Prompt copied again!')),
+              );
+            },
+            child: const Text('Copy Again'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Switch to JSON Import tab
+              _tabController.animateTo(1);
+            },
+            child: const Text('Go to JSON Import'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTemplateDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.library_books, color: Colors.orange[700]),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Lesson Templates',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Template selection widget
+              Expanded(
+                child: TemplateSelectionWidget(
+                  onTemplateGenerated: (templateJson) {
+                    Navigator.of(context).pop();
+                    // Convert to JSON string and import
+                    final jsonString = const JsonEncoder.withIndent('  ').convert(templateJson);
+                    _createLessonFromJson(jsonString);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

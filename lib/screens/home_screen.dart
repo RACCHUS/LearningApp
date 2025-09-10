@@ -73,6 +73,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const GlobalVoiceIndicator(compact: true),
           const SizedBox(width: 8),
           IconButton(
+            icon: const Icon(Icons.school),
+            onPressed: () {
+              context.push('/course-management');
+            },
+            tooltip: 'Course Management',
+          ),
+          IconButton(
             icon: const Icon(Icons.psychology),
             onPressed: () {
               context.push('/test/hands-free');

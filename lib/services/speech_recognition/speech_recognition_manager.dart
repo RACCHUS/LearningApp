@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/services/browser_compatibility_service.dart';
+import 'package:learning_pwa/services/safari_compatibility_service.dart';
 import 'package:learning_pwa/services/speech_recognition/speech_recognition_provider.dart';
 import 'package:learning_pwa/services/speech_recognition/native_web_speech_provider.dart';
+import 'package:learning_pwa/services/speech_recognition/safari_speech_provider.dart';
 import 'package:learning_pwa/services/speech_recognition/manual_input_provider.dart';
 
 /// Speech recognition status
@@ -66,7 +68,13 @@ class SpeechRecognitionManager {
     final browserInfo = await BrowserCompatibilityService.getBrowserInfo();
     
     // Add providers based on browser capabilities
-    if (browserInfo.speechSupport == SpeechApiSupport.native) {
+    if (SafariCompatibilityService.isSafari) {
+      // Use Safari-specific provider for Safari browsers
+      if (SafariCompatibilityService.supportsSpeechRecognition) {
+        _availableProviders.add(SafariSpeechProvider());
+      }
+    } else if (browserInfo.speechSupport == SpeechApiSupport.native) {
+      // Use native provider for other browsers with good speech support
       _availableProviders.add(NativeWebSpeechProvider());
     }
     

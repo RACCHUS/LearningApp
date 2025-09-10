@@ -5,9 +5,24 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1976d2">
   <meta name="permissions" content="microphone">
+  
+  <!-- Safari-specific PWA meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Learning PWA">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-192.png">
+  
+  <!-- Safari-specific viewport and compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  
   <title>Learning PWA</title>
   <script>
-    // Feature detection for speech recognition capabilities
+    // Enhanced feature detection for speech recognition capabilities with Safari support
     window.speechSupport = {
       hasWebSpeech: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
       hasGetUserMedia: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
@@ -19,17 +34,83 @@
         if (ua.includes('safari/') && !ua.includes('chrome/')) return 'safari';
         return 'other';
       })(),
+      // Safari-specific detection
+      isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+      safariVersion: (function() {
+        const match = navigator.userAgent.match(/Version\/(\d+\.\d+)/);
+        return match ? match[1] : '';
+      })(),
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+      isPrivateBrowsing: (function() {
+        try {
+          localStorage.setItem('__safari_test__', 'test');
+          localStorage.removeItem('__safari_test__');
+          return false;
+        } catch (e) {
+          return true; // Likely private browsing mode
+        }
+      })(),
       isPWA: window.matchMedia('(display-mode: standalone)').matches,
       timestamp: Date.now()
     };
     
+    // Safari-specific optimizations
+    if (window.speechSupport.isSafari) {
+      console.log('🍎 Safari detected - version:', window.speechSupport.safariVersion);
+      console.log('🍎 Safari mobile:', window.speechSupport.isMobile);
+      console.log('🍎 Safari private browsing:', window.speechSupport.isPrivateBrowsing);
+      
+      // Safari-specific speech recognition check
+      window.speechSupport.safariSpeechSupported = (function() {
+        const version = parseFloat(window.speechSupport.safariVersion);
+        return version >= 16.4; // Safari 16.4+ has improved speech recognition
+      })();
+      
+      console.log('🍎 Safari speech recognition supported:', window.speechSupport.safariSpeechSupported);
+    }
+    
     // Log feature detection results
     console.log('🌐 Browser Speech Support:', window.speechSupport);
     
+    // Safari-compatible service worker registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/flutter_service_worker.js');
+        navigator.serviceWorker.register('/flutter_service_worker.js')
+          .then(function(registration) {
+            console.log('🔧 Service Worker registered successfully');
+          })
+          .catch(function(error) {
+            console.log('🔧 Service Worker registration failed:', error);
+            if (window.speechSupport.isSafari) {
+              console.log('🍎 Safari may have service worker restrictions');
+            }
+          });
       });
+    }
+    
+    // Safari-specific audio context handling
+    if (window.speechSupport.isSafari) {
+      window.safariAudioContextReady = false;
+      
+      // Function to initialize audio context with user gesture
+      window.initSafariAudioContext = function() {
+        if (!window.safariAudioContextReady) {
+          try {
+            // Create a dummy audio context to trigger permission
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+              audioContext.resume().then(() => {
+                window.safariAudioContextReady = true;
+                console.log('🍎 Safari audio context initialized');
+              });
+            } else {
+              window.safariAudioContextReady = true;
+            }
+          } catch (e) {
+            console.log('🍎 Safari audio context initialization failed:', e);
+          }
+        }
+      };
     }
   </script>
 </head>

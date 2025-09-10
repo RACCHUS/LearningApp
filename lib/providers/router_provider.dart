@@ -11,6 +11,7 @@ import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
 import 'package:learning_pwa/screens/auth/login_screen.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
 import 'package:learning_pwa/screens/test/hands_free_test_screen.dart';
+import 'package:learning_pwa/screens/course_management_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -42,6 +43,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/create-lesson',
         name: 'create-lesson',
         builder: (context, state) => const CreateLessonScreen(),
+      ),
+      
+      // Course management route
+      GoRoute(
+        path: '/course-management',
+        name: 'course-management',
+        builder: (context, state) => const CourseManagementScreen(),
       ),
       
       // Study lesson route - this will show lesson content

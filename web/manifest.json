@@ -7,16 +7,31 @@
   "theme_color": "#1976d2",
   "description": "A mobile-first learning app for busy adults and students.",
   "permissions": ["microphone"],
+  "categories": ["education", "productivity"],
+  "lang": "en",
+  "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "Learning PWA main interface"
+    }
+  ],
+  "prefer_related_applications": false
 }
