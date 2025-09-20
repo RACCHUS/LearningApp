@@ -133,7 +133,7 @@ class _ContentQualityWidgetState extends State<ContentQualityWidget>
               height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: scoreColor.withOpacity(0.1),
+                color: scoreColor.withValues(alpha: 0.1),
                 border: Border.all(color: scoreColor, width: 3),
               ),
               child: Center(
@@ -437,7 +437,7 @@ class _ContentQualityWidgetState extends State<ContentQualityWidget>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getComplianceColor(accessibility.complianceLevel).withOpacity(0.1),
+                          color: _getComplianceColor(accessibility.complianceLevel).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: _getComplianceColor(accessibility.complianceLevel)),
                         ),
@@ -575,9 +575,9 @@ class _ContentQualityWidgetState extends State<ContentQualityWidget>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: severityColor.withOpacity(0.3)),
+          border: Border.all(color: severityColor.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(8),
-          color: severityColor.withOpacity(0.05),
+          color: severityColor.withValues(alpha: 0.05),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -850,9 +850,9 @@ class _ContentQualityWidgetState extends State<ContentQualityWidget>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: priorityColor.withOpacity(0.1),
+                    color: priorityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: priorityColor.withOpacity(0.3)),
+                    border: Border.all(color: priorityColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     suggestion.priority.name.toUpperCase(),

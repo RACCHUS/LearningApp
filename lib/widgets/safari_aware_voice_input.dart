@@ -425,8 +425,8 @@ class _SafariAwareVoiceInputState extends State<SafariAwareVoiceInput> {
               boxShadow: [
                 BoxShadow(
                   color: _isListening 
-                      ? Colors.red.withOpacity(0.3)
-                      : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      ? Colors.red.withValues(alpha: 0.3)
+                      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   spreadRadius: _isListening ? 4 : 2,
                 ),

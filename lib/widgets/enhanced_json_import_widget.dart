@@ -359,7 +359,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _getStatusColor().withOpacity(0.1),
+            color: _getStatusColor().withValues(alpha: 0.1),
             border: Border(
               bottom: BorderSide(color: Colors.grey[300]!),
             ),
@@ -433,9 +433,9 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.red.withOpacity(0.3)),
+            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
           ),
           child: Text(
             _validationError!,
@@ -525,9 +525,9 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.withOpacity(0.3)),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
           ),
           child: const Text(
             '✅ JSON is valid and ready for import!',
@@ -626,11 +626,11 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
                     children: [
                       Chip(
                         label: Text('${_lessonPreview!['difficulty']}'),
-                        backgroundColor: Colors.blue.withOpacity(0.1),
+                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
                       ),
                       Chip(
                         label: Text('${_lessonPreview!['duration']} min'),
-                        backgroundColor: Colors.green.withOpacity(0.1),
+                        backgroundColor: Colors.green.withValues(alpha: 0.1),
                       ),
                     ],
                   ),
