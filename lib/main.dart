@@ -19,73 +19,132 @@ import 'package:learning_pwa/services/hands_free_settings_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
   try {
-    await dotenv.load(fileName: ".env");
-    if (kDebugMode) {
-      print('✅ Environment variables loaded successfully');
+    // Load environment variables
+    try {
+      await dotenv.load(fileName: ".env");
+      if (kDebugMode) {
+        print('✅ Environment variables loaded successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Warning: Could not load .env file: $e');
+        print('📝 Make sure to copy .env.example to .env and configure it');
+      }
+      
+      // For web deployment, we might need to hardcode or use different approach
+      if (kIsWeb) {
+        print('🌐 Running on web - using fallback configuration');
+        // You can set environment variables here for web deployment if needed
+      }
     }
-  } catch (e) {
-    if (kDebugMode) {
-      print('⚠️ Warning: Could not load .env file: $e');
-      print('📝 Make sure to copy .env.example to .env and configure it');
+
+    // Initialize Hive
+    print('🔄 Initializing Hive...');
+    registerHiveAdapters();
+    hiveService = HiveService();
+    await hiveService.init();
+    print('✅ Hive initialized successfully');
+
+    // Initialize Firebase
+    print('🔄 Initializing Firebase...');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.web,
+    );
+    print('✅ Firebase initialized successfully');
+
+    // Initialize Push Notification Service (FCM)
+    try {
+      print('🔄 Initializing Push Notifications...');
+      await PushNotificationService().init();
+      print('✅ Push Notifications initialized successfully');
+    } catch (e) {
+      // If FCM is not supported, ignore
+      if (kDebugMode) {
+        print('⚠️ FCM initialization failed: $e');
+      }
     }
-  }
 
-  // Initialize Hive
-  registerHiveAdapters();
-  hiveService = HiveService();
-  await hiveService.init();
-
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.web,
-  );
-
-  // Initialize Push Notification Service (FCM)
-  try {
-    await PushNotificationService().init();
-  } catch (e) {
-    // If FCM is not supported, ignore
-  }
-
-  // Initialize Audio Services
-  try {
-    await AudioService().initialize();
-    await VoiceInputService().initialize();
-  } catch (e) {
-    // If audio services fail to initialize, continue without them
-    if (kDebugMode) {
-      print('Audio services initialization failed: $e');
+    // Initialize Audio Services
+    try {
+      print('🔄 Initializing Audio Services...');
+      await AudioService().initialize();
+      await VoiceInputService().initialize();
+      print('✅ Audio Services initialized successfully');
+    } catch (e) {
+      // If audio services fail to initialize, continue without them
+      if (kDebugMode) {
+        print('⚠️ Audio services initialization failed: $e');
+      }
     }
-  }
 
-  // Validate Supabase configuration
-  if (!SupabaseConfig.isConfigured) {
-    if (kDebugMode) {
-      print('❌ ERROR: Supabase configuration missing!');
-      print('📝 Please copy .env.example to .env and configure your Supabase credentials');
+    // Validate Supabase configuration
+    print('🔄 Checking Supabase configuration...');
+    if (!SupabaseConfig.isConfigured) {
+      if (kDebugMode) {
+        print('❌ ERROR: Supabase configuration missing!');
+        print('📝 Please copy .env.example to .env and configure your Supabase credentials');
+        print('SUPABASE_URL: ${SupabaseConfig.url.isEmpty ? 'MISSING' : 'SET'}');
+        print('SUPABASE_ANON_KEY: ${SupabaseConfig.anonKey.isEmpty ? 'MISSING' : 'SET'}');
+      }
+      throw Exception('Supabase configuration missing. Please configure .env file.');
     }
-    throw Exception('Supabase configuration missing. Please configure .env file.');
-  }
 
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.anonKey,
-  );
-
-  if (kDebugMode) {
+    print('🔄 Initializing Supabase...');
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
     print('✅ Supabase initialized successfully');
+
+    // Initialize hands-free settings and check for auto-enable
+    print('🔄 Initializing Hands-Free Mode...');
+    await _initializeHandsFreeMode();
+    print('✅ Hands-Free Mode initialized successfully');
+
+    print('🚀 All services initialized - launching app...');
+    runApp(
+      const ProviderScope(
+        child: LearningApp(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    if (kDebugMode) {
+      print('❌ App initialization failed: $e');
+      print('Stack trace: $stackTrace');
+    }
+    
+    // Show error app instead of crashing
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: Colors.red),
+                SizedBox(height: 16),
+                Text('App failed to initialize'),
+                SizedBox(height: 8),
+                Text('Please check console for details'),
+                if (kDebugMode) ...[
+                  SizedBox(height: 16),
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Error: $e',
+                      style: TextStyle(fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  // Initialize hands-free settings and check for auto-enable
-  await _initializeHandsFreeMode();
-
-  runApp(
-    const ProviderScope(
-      child: LearningApp(),
-    ),
-  );
 }
 
 /// Initialize hands-free mode based on user settings

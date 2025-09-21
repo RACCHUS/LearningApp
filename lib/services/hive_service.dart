@@ -11,6 +11,7 @@ import 'package:learning_pwa/models/question_content.dart';
 import 'package:learning_pwa/models/concept_content.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
+import 'package:learning_pwa/models/local_lesson.dart';
 
 // Register Hive adapters for all models
 void registerHiveAdapters() {
@@ -33,6 +34,9 @@ void registerHiveAdapters() {
   if (!Hive.isAdapterRegistered(6)) {
     Hive.registerAdapter(ConceptContentAdapter());
   }
+  if (!Hive.isAdapterRegistered(9)) {
+    Hive.registerAdapter(LocalLessonAdapter());
+  }
   if (!Hive.isAdapterRegistered(20)) {
     Hive.registerAdapter(AudioSettingsAdapter());
   }
@@ -49,11 +53,13 @@ final hiveServiceProvider = Provider<HiveService>((ref) {
 
 class HiveService {
   static const String _lessonsBox = 'lessons';
+  static const String _localLessonsBox = 'local_lessons';
   static const String _conceptsBox = 'concepts';
   static const String _mcqsBox = 'mcqs';
   static const String _progressBox = 'progress';
   
   late final Box<Lesson> _lessonBox;
+  late final Box<LocalLesson> _localLessonBox;
   late final Box<Concept> _conceptBox;
   late final Box<Mcq> _mcqBox;
   late final Box<UserProgress> _progressBoxInstance;
@@ -63,6 +69,7 @@ class HiveService {
     
     // Open all boxes
     _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);
+    _localLessonBox = await Hive.openBox<LocalLesson>(_localLessonsBox);
     _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
     _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
     _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
@@ -117,6 +124,25 @@ class HiveService {
 
   Future<void> saveLesson(Lesson lesson) async {
     await _lessonBox.put(lesson.id, lesson);
+  }
+
+  // LocalLesson methods
+  Future<void> cacheLocalLesson(LocalLesson lesson) async {
+    await _localLessonBox.put(lesson.id, lesson);
+  }
+
+  Future<List<LocalLesson>> getLocalLessons(String userId) async {
+    return _localLessonBox.values
+        .where((lesson) => lesson.userId == userId)
+        .toList();
+  }
+
+  Future<LocalLesson?> getLocalLesson(String lessonId) async {
+    return _localLessonBox.get(lessonId);
+  }
+
+  Future<void> deleteLocalLesson(String lessonId) async {
+    await _localLessonBox.delete(lessonId);
   }
 
   Future<void> saveProgress(UserProgress progress) async {
@@ -208,6 +234,7 @@ class HiveService {
   Future<void> clearAllData() async {
     await Future.wait([
       _lessonBox.clear(),
+      _localLessonBox.clear(),
       _conceptBox.clear(),
       _mcqBox.clear(),
       _progressBoxInstance.clear(),
@@ -220,6 +247,7 @@ class HiveService {
   Future<void> close() async {
     await Future.wait([
       _lessonBox.close(),
+      _localLessonBox.close(),
       _conceptBox.close(),
       _mcqBox.close(),
       _progressBoxInstance.close(),

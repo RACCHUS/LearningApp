@@ -4,7 +4,7 @@ import 'base_lesson.dart';
 
 part 'local_lesson.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 9)
 class LocalLesson extends BaseLesson {
   @HiveField(0)
   final String id;

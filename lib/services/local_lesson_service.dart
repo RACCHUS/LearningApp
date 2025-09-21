@@ -23,28 +23,26 @@ class LocalLessonService {
       updatedAt: DateTime.now(),
     );
 
-    // Note: For now, we'll store this as a regular lesson since HiveService expects Lesson type
-    // TODO: Update HiveService to handle LocalLesson or create a separate storage method
+    // Store the lesson in Hive
+    await _hiveService.cacheLocalLesson(lesson);
     
     return lesson;
   }
 
   Future<void> updateLesson(LocalLesson lesson) async {
-    // TODO: Implement update logic with timestamp
-    // final updatedLesson = lesson.copyWith(updatedAt: DateTime.now());
+    final updatedLesson = lesson.copyWith(updatedAt: DateTime.now());
+    await _hiveService.cacheLocalLesson(updatedLesson);
   }
 
   Future<void> deleteLesson(String lessonId) async {
-    await _hiveService.deleteLessonOffline(lessonId);
+    await _hiveService.deleteLocalLesson(lessonId);
   }
 
   Future<List<LocalLesson>> getUserLessons(String userId) async {
-    // TODO: Implement proper filtering for local lessons
-    return [];
+    return await _hiveService.getLocalLessons(userId);
   }
 
   Future<LocalLesson?> getLesson(String lessonId) async {
-    // TODO: Implement proper local lesson retrieval
-    return null;
+    return await _hiveService.getLocalLesson(lessonId);
   }
 }

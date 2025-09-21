@@ -10,7 +10,7 @@ part of 'local_lesson.dart';
 
 class LocalLessonAdapter extends TypeAdapter<LocalLesson> {
   @override
-  final int typeId = 1;
+  final int typeId = 9;
 
   @override
   LocalLesson read(BinaryReader reader) {
