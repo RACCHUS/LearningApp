@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/reminder.dart';
 import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/models/lesson_progress.dart' as progress_model;
 import 'package:learning_pwa/services/notification_service.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
+import 'package:learning_pwa/services/hive_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum StudyMode {
   flashcard,
@@ -19,6 +22,7 @@ final studyProvider = StateNotifierProvider<StudyNotifier, StudyState>((ref) {
 class StudyNotifier extends StateNotifier<StudyState> {
   final NotificationService _notificationService = NotificationService();
   final LessonService _lessonService = LessonService();
+  final _supabase = Supabase.instance.client;
   
   StudyNotifier() : super(StudyState.initial()) {
     // Initialize notification service
@@ -121,21 +125,93 @@ class StudyNotifier extends StateNotifier<StudyState> {
 
   Future<void> markLessonAsCompleted(String lessonId, {String? lessonTitle, int? durationMinutes}) async {
     try {
+      final userId = _supabase.auth.currentUser?.id;
+      
       // Update local state
       state = state.copyWith(
         completedLessons: {...state.completedLessons, lessonId: DateTime.now()},
       );
       
+      // Sync with backend if user is authenticated
+      if (userId != null) {
+        try {
+          // Create or update progress record in Supabase
+          final progressData = {
+            'user_id': userId,
+            'lesson_id': lessonId,
+            'study_mode': state.currentMode?.toString().split('.').last ?? 'lesson',
+            'lesson_completed': true,
+            'cards_studied': state.cardsStudied,
+            'correct_count': state.correctAnswers,
+            'incorrect_count': state.incorrectAnswers,
+            'study_time_seconds': durationMinutes != null ? durationMinutes * 60 : 0,
+            'date': DateTime.now().toIso8601String(),
+            'is_synced': true,
+          };
+
+          await _supabase
+              .from('user_progress')
+              .upsert(progressData);
+          
+          debugPrint('✅ Lesson completion synced to backend');
+        } catch (syncError) {
+          debugPrint('⚠️ Failed to sync lesson completion to backend: $syncError');
+          // Cache for later sync (offline support)
+          await _cacheProgressLocally(userId, lessonId, durationMinutes);
+        }
+      }
+      
       // Schedule next study session reminder if this was a significant study session
       if (durationMinutes != null && durationMinutes >= 15) {
         await _scheduleNextStudyReminder(lessonTitle);
       }
-      
-      // TODO: Sync with backend
-      // await _supabaseService.updateLessonProgress(lessonId, true);
     } catch (e) {
       debugPrint('Error marking lesson as completed: $e');
       rethrow;
+    }
+  }
+
+  /// Cache progress locally for later sync when offline
+  Future<void> _cacheProgressLocally(String userId, String lessonId, int? durationMinutes) async {
+    try {
+      final hiveService = HiveService();
+      await hiveService.init();
+      
+      // Map local StudyMode to progress_model.StudyMode
+      progress_model.StudyMode progressStudyMode;
+      switch (state.currentMode) {
+        case StudyMode.flashcard:
+          progressStudyMode = progress_model.StudyMode.flashcard;
+          break;
+        case StudyMode.mcq:
+          progressStudyMode = progress_model.StudyMode.mcq;
+          break;
+        case StudyMode.concept:
+          progressStudyMode = progress_model.StudyMode.concept;
+          break;
+        case StudyMode.lesson:
+        case null:
+          progressStudyMode = progress_model.StudyMode.lesson;
+          break;
+      }
+      
+      final progress = progress_model.UserProgress(
+        id: '${userId}_${lessonId}_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        lessonId: lessonId,
+        studyMode: progressStudyMode,
+        date: DateTime.now(),
+        questionsAnswered: state.cardsStudied,
+        correctCount: state.correctAnswers,
+        lessonCompleted: true,
+        studyTimeSeconds: durationMinutes != null ? durationMinutes * 60 : 0,
+        isSynced: false, // Mark as not synced for later upload
+      );
+      
+      await hiveService.cacheProgress(progress);
+      debugPrint('📦 Progress cached locally for later sync');
+    } catch (e) {
+      debugPrint('⚠️ Failed to cache progress locally: $e');
     }
   }
   

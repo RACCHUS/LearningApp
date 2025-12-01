@@ -147,17 +147,29 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       // If online, try to sync immediately
       try {
         await _syncService.syncProgress();
-      } catch (e) {
+      } catch (e, stackTrace) {
         debugPrint('Background sync failed, will retry later: $e');
+        debugPrint('Stack trace: $stackTrace');
         // Sync will be retried on next operation or periodic sync
+        // Don't fail the save operation if sync fails
       }
       
-      // Update state with the latest progress
+      // Update state with the latest progress (clear any previous errors)
+      state = ProgressLoaded(progress);
+    } catch (e, stackTrace) {
+      final errorMsg = 'Failed to save progress for lesson: ${progress.lessonId}';
+      debugPrint('$errorMsg - $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      // Update state with error but keep the progress
       if (state is ProgressLoaded) {
-        state = ProgressLoaded(progress);
+        state = (state as ProgressLoaded).copyWith(
+          progress: progress,
+          error: errorMsg,
+        );
+      } else {
+        state = ProgressError(errorMsg);
       }
-    } catch (e) {
-      debugPrint('Error saving progress: $e');
       rethrow;
     }
   }
@@ -185,8 +197,21 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   Future<void> syncProgress() async {
     try {
       await _syncService.syncProgress();
-    } catch (e) {
-      debugPrint('Error during manual sync: $e');
+      // Clear any sync errors on successful sync
+      if (state is ProgressLoaded) {
+        state = (state as ProgressLoaded).copyWith(error: null);
+      }
+    } catch (e, stackTrace) {
+      final errorMsg = 'Failed to sync progress data';
+      debugPrint('$errorMsg - $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      // Update state with error if we have loaded progress
+      if (state is ProgressLoaded) {
+        state = (state as ProgressLoaded).copyWith(error: errorMsg);
+      } else {
+        state = ProgressError(errorMsg);
+      }
       rethrow;
     }
   }
@@ -211,11 +236,34 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   }
 }
 
-abstract class ProgressState {}
+abstract class ProgressState {
+  const ProgressState();
+}
 
-class ProgressInitial extends ProgressState {}
+class ProgressInitial extends ProgressState {
+  const ProgressInitial();
+}
 
 class ProgressLoaded extends ProgressState {
   final UserProgress progress;
-  ProgressLoaded(this.progress);
+  final String? error;
+  
+  const ProgressLoaded(this.progress, {this.error});
+  
+  bool get hasError => error != null;
+  
+  ProgressLoaded copyWith({
+    UserProgress? progress,
+    String? error,
+  }) {
+    return ProgressLoaded(
+      progress ?? this.progress,
+      error: error,
+    );
+  }
+}
+
+class ProgressError extends ProgressState {
+  final String message;
+  const ProgressError(this.message);
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/services/supabase_service.dart';
@@ -50,9 +51,14 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       ''');
       
       final lessons = response.map((json) => Lesson.fromJson(json)).toList();
-      state = state.copyWith(lessons: lessons, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      state = state.copyWith(lessons: lessons, isLoading: false, error: null);
+      
+      debugPrint('✅ Successfully loaded ${lessons.length} lessons');
+    } catch (e, stackTrace) {
+      final errorMsg = 'Failed to load lessons from database';
+      debugPrint('$errorMsg - $e');
+      debugPrint('Stack trace: $stackTrace');
+      state = state.copyWith(error: errorMsg, isLoading: false);
     }
   }
 

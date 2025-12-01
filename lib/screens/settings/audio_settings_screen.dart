@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
+import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/services/audio_testing/audio_test_service.dart';
 import 'package:learning_pwa/widgets/audio_settings/audio_status_card.dart';
 import 'package:learning_pwa/widgets/audio_settings/voice_settings_section.dart';
@@ -201,6 +202,8 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
   Widget _buildHandsFreeSection(WidgetRef ref) {
     final globalVoiceState = ref.watch(globalVoiceProvider);
     final globalVoiceNotifier = ref.read(globalVoiceProvider.notifier);
+    final handsFreeSettings = ref.watch(handsFreeSettingsProvider);
+    final handsFreeNotifier = ref.read(handsFreeSettingsProvider.notifier);
     
     return Card(
       child: Padding(
@@ -241,6 +244,32 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
                     }
                   }
                 : null,
+            ),
+            
+            const Divider(),
+            
+            // Auto-enable setting
+            SwitchListTile(
+              title: const Text('Enable hands-free by default'),
+              subtitle: const Text(
+                'Automatically enable voice commands when the app starts'
+              ),
+              value: handsFreeSettings.defaultHandsFreeMode,
+              onChanged: (value) async {
+                await handsFreeNotifier.toggleDefaultHandsFreeMode();
+              },
+            ),
+            
+            // Auto lesson hands-free setting
+            SwitchListTile(
+              title: const Text('Auto hands-free for lessons'),
+              subtitle: const Text(
+                'Automatically enable voice commands when starting lessons'
+              ),
+              value: handsFreeSettings.autoLessonHandsFree,
+              onChanged: (value) async {
+                await handsFreeNotifier.toggleAutoLessonHandsFree();
+              },
             ),
             
             // Status info

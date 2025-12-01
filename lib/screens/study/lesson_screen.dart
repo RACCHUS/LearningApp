@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/web_utils.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
@@ -11,6 +12,8 @@ import 'package:learning_pwa/screens/study/lesson_mode_dialog.dart';
 import 'package:learning_pwa/widgets/timer_widget.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/widgets/global_voice_indicator.dart';
+import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -27,6 +30,34 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   int _restartCounter = 0; // Track restarts to force rebuild
   
   // ...existing code...
+
+  /// Check if auto hands-free for lessons is enabled and enable global voice
+  Future<void> _checkAutoEnableLessonHandsFree() async {
+    if (kDebugMode) {
+      print('🎓 _checkAutoEnableLessonHandsFree() method called');
+    }
+    try {
+      final handsFreeSettings = ref.read(handsFreeSettingsProvider);
+      
+      if (kDebugMode) {
+        print('🎓 Settings check - autoLessonHandsFree: ${handsFreeSettings.autoLessonHandsFree}');
+      }
+      
+      if (handsFreeSettings.autoLessonHandsFree) {
+        if (kDebugMode) {
+          print('🎓 Auto lesson hands-free enabled - LessonContentPager will handle orchestrator');
+        }
+      } else {
+        if (kDebugMode) {
+          print('ℹ️ Auto lesson hands-free disabled in settings');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error checking auto-enable lesson hands-free: $e');
+      }
+    }
+  }
 
 
   @override
@@ -49,6 +80,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               setState(() {
                 _isLessonMode = true;
               });
+              
+              // Check if auto hands-free for lessons is enabled
+              _checkAutoEnableLessonHandsFree();
             },
           ),
         );
@@ -186,6 +220,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               );
             },
           ),
+          floatingActionButton: const GlobalVoiceFAB(heroTag: "lessonVoiceFAB"),
         );
       },
       loading: () => Scaffold(
@@ -282,6 +317,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                 _restartCounter++; // Increment to force rebuild
                 _isLessonMode = true; // Ensure lesson mode is active
               });
+              
+              // Check if auto hands-free for lessons is enabled on restart
+              _checkAutoEnableLessonHandsFree();
             },
             child: const Text('Restart'),
           ),

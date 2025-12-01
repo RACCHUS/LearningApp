@@ -4,6 +4,7 @@ import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
   final List<Term> terms;
@@ -234,6 +235,10 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
             ),
         ],
       ),
+      // Only show GlobalVoiceFAB when not embedded in lesson to avoid conflicts
+      floatingActionButton: widget.isEmbeddedInLesson 
+          ? null 
+          : const GlobalVoiceFAB(heroTag: "flashcardVoiceFAB"),
     );
   }
 }

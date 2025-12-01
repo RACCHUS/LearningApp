@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/lesson_json_validator.dart';
 import 'package:learning_pwa/widgets/content_quality_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Enhanced JSON import widget with live preview, better validation, and improved UX
 class EnhancedJsonImportWidget extends StatefulWidget {
@@ -30,6 +31,10 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
   Map<String, dynamic>? _lessonPreview;
   bool _isValidating = false;
   bool _showLineNumbers = true;
+  List<Map<String, String>> _recentImports = [];
+  
+  static const String _prefsKey = 'recent_json_imports';
+  static const int _maxRecentImports = 5;
   
   @override
   void initState() {
@@ -47,9 +52,58 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     super.dispose();
   }
 
-  void _loadRecentImports() {
-    // TODO: Load from shared preferences or local storage
-    // For now, this could be implemented later
+  void _loadRecentImports() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final recentJsonString = prefs.getString(_prefsKey);
+      
+      if (recentJsonString != null) {
+        final List<dynamic> recentList = jsonDecode(recentJsonString);
+        setState(() {
+          _recentImports = recentList
+              .cast<Map<String, dynamic>>()
+              .map((item) => Map<String, String>.from(item))
+              .toList();
+        });
+      }
+    } catch (e) {
+      // Silently fail - recent imports is a nice-to-have feature
+      debugPrint('Failed to load recent imports: $e');
+    }
+  }
+  
+  Future<void> _saveRecentImport(Map<String, dynamic> lessonData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Extract lesson title and timestamp
+      final lesson = lessonData['lesson'] as Map<String, dynamic>? ?? {};
+      final title = lesson['title']?.toString() ?? 'Untitled Lesson';
+      final timestamp = DateTime.now().toIso8601String();
+      
+      // Create import record
+      final importRecord = {
+        'title': title,
+        'timestamp': timestamp,
+        'json': jsonEncode(lessonData),
+      };
+      
+      // Add to recent imports list (avoid duplicates by title)
+      _recentImports.removeWhere((item) => item['title'] == title);
+      _recentImports.insert(0, importRecord);
+      
+      // Keep only the most recent imports
+      if (_recentImports.length > _maxRecentImports) {
+        _recentImports = _recentImports.sublist(0, _maxRecentImports);
+      }
+      
+      // Save to SharedPreferences
+      await prefs.setString(_prefsKey, jsonEncode(_recentImports));
+      
+      setState(() {});
+    } catch (e) {
+      debugPrint('Failed to save recent import: $e');
+    }
   }
 
   void _onJsonChanged() {
@@ -267,6 +321,43 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
                       onPressed: _clearEditor,
                       tooltip: 'Clear editor',
                     ),
+                    if (_recentImports.isNotEmpty)
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.history),
+                        tooltip: 'Load recent import',
+                        onSelected: _loadRecentImport,
+                        itemBuilder: (context) => _recentImports.map((import) {
+                          final title = import['title'] ?? 'Untitled';
+                          final timestamp = import['timestamp'];
+                          final timeAgo = timestamp != null
+                              ? _formatTimeAgo(DateTime.parse(timestamp))
+                              : '';
+                          
+                          return PopupMenuItem<String>(
+                            value: import['json'],
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (timeAgo.isNotEmpty)
+                                  Text(
+                                    timeAgo,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     const Spacer(),
                     IconButton(
                       icon: Icon(_showLineNumbers ? Icons.format_list_numbered : Icons.format_list_numbered_rtl),
@@ -842,7 +933,33 @@ Common Issues:
 
   void _importLesson() {
     if (_parsedJson != null) {
+      // Save to recent imports before calling onImport
+      _saveRecentImport(_parsedJson!);
       widget.onImport(jsonEncode(_parsedJson));
+    }
+  }
+  
+  void _loadRecentImport(String? jsonString) {
+    if (jsonString != null && jsonString.isNotEmpty) {
+      _jsonController.text = jsonString;
+      _validateJson();
+    }
+  }
+  
+  String _formatTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 7) {
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
     }
   }
 

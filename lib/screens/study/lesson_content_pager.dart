@@ -15,6 +15,8 @@ import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
+import 'package:learning_pwa/providers/global_voice_provider.dart';
+import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 
 class LessonContentPager extends ConsumerStatefulWidget {
   final List<LessonContent> contentList;
@@ -36,18 +38,65 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    
+    if (kDebugMode) {
+      print('🎓 LessonContentPager initialized');
+    }
+    
+    // Check if auto lesson hands-free is enabled after initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAutoEnableLessonHandsFree();
+    });
+  }
+  
+  /// Check and auto-enable hands-free mode for lessons if setting is enabled
+  Future<void> _checkAutoEnableLessonHandsFree() async {
+    try {
+      final handsFreeSettings = ref.read(handsFreeSettingsProvider);
+      
+      if (handsFreeSettings.autoLessonHandsFree && !_isOrchestratorMode) {
+        if (kDebugMode) {
+          print('🎓 Auto-enabling hands-free mode for lesson content pager');
+        }
+        
+        // Trigger hands-free mode automatically
+        _toggleOrchestratorMode();
+        
+        if (kDebugMode) {
+          print('✅ Lesson hands-free mode auto-enabled in content pager');
+        }
+      } else if (kDebugMode) {
+        print('ℹ️ Auto lesson hands-free disabled or already in orchestrator mode');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error auto-enabling lesson hands-free: $e');
+      }
+    }
   }
 
   @override
   void dispose() {
+    if (kDebugMode) {
+      print('🎓 LessonContentPager disposing...');
+      final globalVoiceState = ref.read(globalVoiceProvider);
+      print('🎙️ Global voice state at dispose: enabled=${globalVoiceState.isEnabled}, listening=${globalVoiceState.isListening}');
+    }
+    
     _pageController.dispose();
     // Stop orchestrator if active (check if mounted to avoid ref access after disposal)
     if (_isOrchestratorMode && mounted) {
       try {
         final orchestrator = ref.read(audioLessonOrchestratorProvider);
         orchestrator.stopLesson();
+        if (kDebugMode) {
+          print('🎓 Stopped audio lesson orchestrator');
+        }
       } catch (e) {
         // Ignore errors during disposal
+        if (kDebugMode) {
+          print('🎓 Error stopping orchestrator during disposal: $e');
+        }
       }
     }
     super.dispose();
@@ -62,11 +111,26 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
   }
 
   void _navigateToPage(int pageIndex) {
+    if (kDebugMode) {
+      print('🎓 Navigating to page: $pageIndex (from ${_currentPageIndex})');
+      // Log global voice state before navigation
+      final globalVoiceState = ref.read(globalVoiceProvider);
+      print('🎙️ Global voice state before navigation: enabled=${globalVoiceState.isEnabled}, listening=${globalVoiceState.isListening}');
+    }
+    
     _pageController.animateToPage(
       pageIndex,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+    
+    // Log voice state after navigation (with slight delay to let animation complete)
+    if (kDebugMode) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        final globalVoiceState = ref.read(globalVoiceProvider);
+        print('🎙️ Global voice state after navigation: enabled=${globalVoiceState.isEnabled}, listening=${globalVoiceState.isListening}');
+      });
+    }
   }
 
   void _showPageNavigator(BuildContext context, List<LessonContent> contentList) {
@@ -173,6 +237,21 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
           if (kDebugMode) {
             print('🎓 Progress matches current page, no navigation needed');
           }
+        }
+      });
+    }
+    
+    // Listen to global voice state changes to debug connectivity issues
+    if (kDebugMode) {
+      ref.listen(globalVoiceProvider, (previous, current) {
+        if (previous?.isEnabled != current.isEnabled) {
+          print('🎙️ Global voice enabled changed: ${previous?.isEnabled} -> ${current.isEnabled}');
+        }
+        if (previous?.isListening != current.isListening) {
+          print('🎙️ Global voice listening changed: ${previous?.isListening} -> ${current.isListening}');
+        }
+        if (previous?.statusMessage != current.statusMessage) {
+          print('🎙️ Global voice status changed: "${previous?.statusMessage}" -> "${current.statusMessage}"');
         }
       });
     }

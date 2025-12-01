@@ -15,6 +15,7 @@ import 'package:learning_pwa/config/firebase_options.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
+import 'package:learning_pwa/providers/app_initialization_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -168,15 +169,34 @@ Future<void> _initializeHandsFreeMode() async {
   }
 }
 
-class LearningApp extends ConsumerWidget {
+class LearningApp extends ConsumerStatefulWidget {
   const LearningApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LearningApp> createState() => _LearningAppState();
+}
+
+class _LearningAppState extends ConsumerState<LearningApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Trigger app initialization after providers are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appInitNotifier = ref.read(appInitializationProvider.notifier);
+      appInitNotifier.initialize();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
-    
     final themeMode = ref.watch(themeModeProvider);
+    
+    // Set global scaffoldMessengerKey for push notifications
+    PushNotificationService.scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+    
     return MaterialApp.router(
+      scaffoldMessengerKey: PushNotificationService.scaffoldMessengerKey,
       title: 'Learning PWA',
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
