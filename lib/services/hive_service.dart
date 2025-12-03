@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:learning_pwa/models/concept.dart';
@@ -65,19 +66,33 @@ class HiveService {
   late final Box<UserProgress> _progressBoxInstance;
   
   Future<void> init() async {
-    await Hive.initFlutter();
-    
-    // Open all boxes
-    _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);
-    _localLessonBox = await Hive.openBox<LocalLesson>(_localLessonsBox);
-    _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
-    _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
-    _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
+    try {
+      await Hive.initFlutter();
+      
+      // Open all boxes
+      _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);
+      _localLessonBox = await Hive.openBox<LocalLesson>(_localLessonsBox);
+      _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
+      _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
+      _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
+      
+      debugPrint('✅ HiveService initialized successfully');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Failed to initialize HiveService - $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   // Lesson methods
   Future<void> cacheLesson(Lesson lesson) async {
-    await _lessonBox.put(lesson.id, lesson);
+    try {
+      await _lessonBox.put(lesson.id, lesson);
+    } catch (e, stackTrace) {
+      debugPrint('Failed to cache lesson: ${lesson.title} - $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   Future<List<Lesson>> getOfflineLessons(String userId) async {
@@ -105,7 +120,13 @@ class HiveService {
   }
   
   Future<Lesson?> getLesson(String lessonId) async {
-    return _lessonBox.get(lessonId);
+    try {
+      return _lessonBox.get(lessonId);
+    } catch (e, stackTrace) {
+      debugPrint('Failed to get lesson: $lessonId - $e');
+      debugPrint('Stack trace: $stackTrace');
+      return null;
+    }
   }
   
   Future<List<Lesson>> getAllLessons() async {
@@ -191,43 +212,69 @@ class HiveService {
   
   // Progress methods
   Future<void> cacheProgress(UserProgress progress) async {
-    final existing = _progressBoxInstance.get(progress.id);
-    
-    // If progress exists, merge with existing data
-    if (existing != null) {
-      final merged = _mergeProgress(existing, progress);
-      await _progressBoxInstance.put(progress.id, merged);
-    } else {
-      await _progressBoxInstance.put(progress.id, progress);
+    try {
+      final existing = _progressBoxInstance.get(progress.id);
+      
+      // If progress exists, merge with existing data
+      if (existing != null) {
+        final merged = _mergeProgress(existing, progress);
+        await _progressBoxInstance.put(progress.id, merged);
+      } else {
+        await _progressBoxInstance.put(progress.id, progress);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Failed to cache progress for lesson: ${progress.lessonId} - $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
   // Progress methods
   Future<List<UserProgress>> getProgress() async {
-    return _progressBoxInstance.values.toList();
+    try {
+      return _progressBoxInstance.values.toList();
+    } catch (e, stackTrace) {
+      debugPrint('Failed to get progress - $e');
+      debugPrint('Stack trace: $stackTrace');
+      return [];
+    }
   }
 
   Future<List<UserProgress>> getUnsyncedProgress() async {
-    final progress = _progressBoxInstance.values.toList();
-    return progress.where((p) => !p.isSynced).toList();
+    try {
+      final progress = _progressBoxInstance.values.toList();
+      return progress.where((p) => !p.isSynced).toList();
+    } catch (e, stackTrace) {
+      debugPrint('Failed to get unsynced progress - $e');
+      debugPrint('Stack trace: $stackTrace');
+      return [];
+    }
   }
 
   Future<void> markProgressAsSynced(List<String> progressIds) async {
     if (progressIds.isEmpty) return;
     
-    await _progressBoxInstance.putAll(
-      Map.fromEntries(
-        await Future.wait(
-          progressIds.map((id) async {
-            final progress = _progressBoxInstance.get(id);
-            if (progress != null) {
-              return MapEntry(id, progress.copyWith(isSynced: true));
-            }
-            return MapEntry(id, null);
-          }),
-        ).then((entries) => entries.where((e) => e.value != null).cast<MapEntry<String, UserProgress>>()),
-      ),
-    );
+    try {
+      await _progressBoxInstance.putAll(
+        Map.fromEntries(
+          await Future.wait(
+            progressIds.map((id) async {
+              final progress = _progressBoxInstance.get(id);
+              if (progress != null) {
+                return MapEntry(id, progress.copyWith(isSynced: true));
+              }
+              return MapEntry(id, null);
+            }),
+          ).then((entries) => entries.where((e) => e.value != null).cast<MapEntry<String, UserProgress>>()),
+        ),
+      );
+      
+      debugPrint('✅ Marked ${progressIds.length} progress records as synced');
+    } catch (e, stackTrace) {
+      debugPrint('Failed to mark progress as synced - $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   // Clear methods

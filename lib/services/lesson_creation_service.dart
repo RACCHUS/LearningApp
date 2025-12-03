@@ -1,5 +1,4 @@
 import 'package:learning_pwa/models/local_lesson.dart';
-import 'package:learning_pwa/models/lesson_content.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/services/local_lesson_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
