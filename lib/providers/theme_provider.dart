@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) => ThemeModeNotifier());
 
-class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark) {
-    _loadTheme();
+class ThemeModeNotifier extends BaseSettingsNotifier<ThemeMode> {
+  ThemeModeNotifier() : super(
+    ThemeMode.dark,
+    storageKey: 'themeMode',
+    storage: SettingsStorage.sharedPreferences,
+  );
+
+  @override
+  String serialize(ThemeMode settings) {
+    return settings == ThemeMode.light ? 'light' : 'dark';
   }
 
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final mode = prefs.getString('themeMode');
-    if (mode == 'light') {
-      state = ThemeMode.light;
-    } else if (mode == 'dark') {
-      state = ThemeMode.dark;
-    } else {
-      state = ThemeMode.dark;
-    }
+  @override
+  ThemeMode? deserialize(String data) {
+    if (data == 'light') return ThemeMode.light;
+    if (data == 'dark') return ThemeMode.dark;
+    return null;
   }
+
+  @override
+  ThemeMode getDefaultSettings() => ThemeMode.dark;
 
   Future<void> setTheme(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    state = mode;
-    await prefs.setString('themeMode', mode == ThemeMode.light ? 'light' : 'dark');
+    await updateSettings(mode);
   }
 }

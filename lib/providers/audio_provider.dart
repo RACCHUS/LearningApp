@@ -4,49 +4,36 @@ import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
 // Audio Settings Provider
 final audioSettingsProvider = StateNotifierProvider<AudioSettingsNotifier, AudioSettings>((ref) {
   return AudioSettingsNotifier();
 });
 
-class AudioSettingsNotifier extends StateNotifier<AudioSettings> {
-  AudioSettingsNotifier() : super(const AudioSettings()) {
-    _initialize();
+class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
+  AudioSettingsNotifier() : super(
+    const AudioSettings(),
+    storageKey: 'audioSettings',
+    storage: SettingsStorage.hive,
+  ) {
+    _initializeAudioService();
   }
 
   final AudioService _audioService = AudioService();
-  Box<AudioSettings>? _settingsBox;
 
-  Future<void> _initialize() async {
+  Future<void> _initializeAudioService() async {
     await _audioService.initialize();
-    
-    // Load settings from Hive
-    try {
-      _settingsBox = await Hive.openBox<AudioSettings>('audioSettings');
-      final savedSettings = _settingsBox?.get('settings');
-      if (savedSettings != null) {
-        state = savedSettings;
-      }
-    } catch (e) {
-      // If Hive fails, use default settings
-      print('Failed to load audio settings: $e');
-    }
-    
     await _audioService.updateSettings(state);
   }
 
+  @override
+  AudioSettings getDefaultSettings() => const AudioSettings();
+
+  @override
   Future<void> updateSettings(AudioSettings newSettings) async {
-    state = newSettings;
+    await super.updateSettings(newSettings);
     await _audioService.updateSettings(newSettings);
-    
-    // Save to Hive
-    try {
-      await _settingsBox?.put('settings', newSettings);
-    } catch (e) {
-      print('Failed to save audio settings: $e');
-    }
   }
 
   Future<void> toggleEnabled() async {
