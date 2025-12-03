@@ -221,8 +221,11 @@ This plan addresses technical debt, duplicate code, and incomplete implementatio
 - [x] LessonsProvider state tests (lessons_provider_test.dart - 7 skipped tests due to Supabase dependency)
 - [x] ProgressProvider state tests (progress_provider_state_test.dart - 3 passing tests)
 - [x] OfflineProvider state tests (offline_provider_test.dart - 7 skipped tests pending HiveService mock)
-- [x] ProgressSyncService basic tests (progress_sync_service_test.dart - 7 skipped tests pending mockito generation)
-- [ ] Add proper mocking infrastructure (build_runner for mockito mocks)
+- [x] ProgressSyncService tests (progress_sync_service_test.dart - 7 skipped, mocks generated)
+- [x] Mock generation infrastructure (build_runner generates .mocks.dart files)
+- [ ] Unskip and implement LessonsProvider tests with mocks
+- [ ] Unskip and implement OfflineProvider tests with mocks
+- [ ] Unskip and implement ProgressSyncService tests with mocks
 - [ ] AudioProvider (playback, voice, settings)
 
 ### 5.2 Service Layer Tests
@@ -309,33 +312,36 @@ This plan addresses technical debt, duplicate code, and incomplete implementatio
 ---
 
 **Last Updated**: December 3, 2025  
-**Completed**: 24/28 tasks (86%)
+**Completed**: 25/28 tasks (89%)
 **In Progress**: 0/28 tasks
 **Blocked**: 0/28 tasks
 
 ### Recent Completions:
-- ✅ All Priority 1-3 tasks complete (Duplicates, TODOs, Error Handling)
-- ✅ Priority 4.1: BaseSettingsNotifier created and applied to all applicable providers
-- ✅ Refactored ThemeProvider, AudioSettingsNotifier, and AudioLessonSettingsNotifier
-- ✅ All 170 tests still passing after all refactoring
+- ✅ All Priority 1-4 tasks complete
+- ✅ Mock generation infrastructure set up (build_runner)
+- ✅ Generated progress_sync_service_test.mocks.dart
+- ✅ All syntax errors fixed in test files
+- ✅ All 170 tests passing
 
 ### Test Suite Status:
 - **170 passing tests** ✅
+- **Mock infrastructure**: Ready (build_runner configured)
 - **Test coverage**: ~37%
-- **Quality**: Zero compilation errors, all tests passing after complete settings refactoring
+- **Quality**: Zero compilation errors, mock generation working
 
 ### Priority Status:
 - **Priority 1 (Duplicates)**: ✅ COMPLETE (1/1 = 100%)
 - **Priority 2 (Critical TODOs)**: ✅ COMPLETE (5/5 = 100%)
 - **Priority 3 (Error Handling)**: ✅ COMPLETE (8/8 = 100%)
 - **Priority 4 (Code Quality)**: ✅ COMPLETE (2/2 = 100%)
-- **Priority 5 (Tests)**: ✅ STRUCTURE COMPLETE (4/6 = 67%, 21 tests skipped pending mocks)
+- **Priority 5 (Tests)**: 🔄 IN PROGRESS (5/9 = 56%)
 
 **Phase 1-4 Refactoring**: ✅ **COMPLETE**
 
 **Next Steps**: 
-- Priority 5: Add mockito code generation to unskip provider tests (optional)
-- Consider adding more comprehensive integration tests
-- All core refactoring objectives achieved!
+- Unskip and implement provider tests with proper mocking
+- Add AudioProvider comprehensive tests
+- Add service layer tests (AudioService, LessonService, NotificationService)
+- Add widget tests for complex components
 - 🔄 Adding tests for SyncProvider and StudyProvider sync logic
 - 🔄 Implementing Lesson Creation Service content handling
