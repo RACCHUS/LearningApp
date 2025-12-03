@@ -3,6 +3,7 @@ import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
+import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
 // Audio Lesson Orchestrator Provider
 final audioLessonOrchestratorProvider = Provider<AudioLessonOrchestrator>((ref) {
@@ -16,11 +17,19 @@ final audioLessonOrchestratorProvider = Provider<AudioLessonOrchestrator>((ref) 
 });
 
 // Audio Lesson Settings Provider
-class AudioLessonSettingsNotifier extends StateNotifier<AudioLessonSettings> {
-  AudioLessonSettingsNotifier() : super(const AudioLessonSettings());
+class AudioLessonSettingsNotifier extends BaseSettingsNotifier<AudioLessonSettings> {
+  AudioLessonSettingsNotifier() : super(
+    const AudioLessonSettings(),
+    storageKey: 'audioLessonSettings',
+    storage: SettingsStorage.hive,
+  );
 
-  void updateSettings(AudioLessonSettings newSettings) {
-    state = newSettings;
+  @override
+  AudioLessonSettings getDefaultSettings() => const AudioLessonSettings();
+
+  @override
+  Future<void> updateSettings(AudioLessonSettings newSettings) async {
+    await super.updateSettings(newSettings);
     
     // Update the orchestrator with new settings
     final orchestrator = AudioLessonOrchestrator();
