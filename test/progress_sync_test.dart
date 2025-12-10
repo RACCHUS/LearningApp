@@ -3,20 +3,20 @@ import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
 import 'package:mockito/annotations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'progress_sync_test.mocks.dart';
 
-@GenerateMocks([HiveService])
+@GenerateMocks([HiveService, SupabaseClient])
 void main() {
   late MockHiveService mockHiveService;
+  late MockSupabaseClient mockSupabase;
   late ProgressSyncService progressSyncService;
-  
-  // Note: setUpAll removed - Supabase initialization requires shared_preferences plugin
-  // Tests that need Supabase should be moved to integration tests
   
   setUp(() {
     mockHiveService = MockHiveService();
-    progressSyncService = ProgressSyncService(mockHiveService);
+    mockSupabase = MockSupabaseClient();
+    progressSyncService = ProgressSyncService(mockHiveService, mockSupabase);
   });
   
   group('ProgressSyncService Tests', () {
@@ -67,7 +67,7 @@ void main() {
       // Assert
       expect(merged2.questionsAnswered, 8);
       expect(merged2.correctCount, 7);
-    }, skip: 'Requires Supabase initialization (shared_preferences plugin) - move to integration tests');
+    });
     
     test('mergeProgress should handle same date correctly', () {
       // Arrange
@@ -106,6 +106,6 @@ void main() {
       expect(merged.questionsAnswered, 10);
       expect(merged.correctCount, 8);
       expect(merged.studyTimeSeconds, 600);
-    }, skip: 'Requires Supabase initialization (shared_preferences plugin) - move to integration tests');
+    });
   });
 }

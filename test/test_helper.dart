@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/services/hive_service.dart';
 
 /// Test helper to initialize required services for testing
 class TestHelper {
@@ -12,8 +13,8 @@ class TestHelper {
       // Initialize Hive for testing
       Hive.init('test_db');
       
-      // Register adapters if needed
-      // TODO: Register your model adapters here when they exist
+      // Register all model adapters
+      registerHiveAdapters();
       
       _initialized = true;
     }

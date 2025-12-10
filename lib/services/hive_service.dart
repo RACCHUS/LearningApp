@@ -67,7 +67,13 @@ class HiveService {
   
   Future<void> init() async {
     try {
-      await Hive.initFlutter();
+      // Try to initialize Hive if not already initialized (e.g., in tests)
+      try {
+        await Hive.initFlutter();
+      } catch (e) {
+        // Hive already initialized, continue
+        debugPrint('ℹ️ Hive already initialized, skipping initFlutter');
+      }
       
       // Open all boxes
       _lessonBox = await Hive.openBox<Lesson>(_lessonsBox);

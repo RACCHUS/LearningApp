@@ -3,15 +3,17 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i3;
+import 'dart:async' as _i4;
 
-import 'package:learning_pwa/models/concept.dart' as _i7;
-import 'package:learning_pwa/models/lesson.dart' as _i4;
-import 'package:learning_pwa/models/lesson_progress.dart' as _i6;
-import 'package:learning_pwa/models/local_lesson.dart' as _i5;
-import 'package:learning_pwa/models/mcq.dart' as _i8;
-import 'package:learning_pwa/services/hive_service.dart' as _i2;
+import 'package:learning_pwa/models/concept.dart' as _i8;
+import 'package:learning_pwa/models/lesson.dart' as _i5;
+import 'package:learning_pwa/models/lesson_progress.dart' as _i7;
+import 'package:learning_pwa/models/local_lesson.dart' as _i6;
+import 'package:learning_pwa/models/mcq.dart' as _i9;
+import 'package:learning_pwa/services/hive_service.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i10;
+import 'package:supabase/supabase.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -27,324 +29,650 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
+class _FakeFunctionsClient_0 extends _i1.SmartFake
+    implements _i2.FunctionsClient {
+  _FakeFunctionsClient_0(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeSupabaseStorageClient_1 extends _i1.SmartFake
+    implements _i2.SupabaseStorageClient {
+  _FakeSupabaseStorageClient_1(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeRealtimeClient_2 extends _i1.SmartFake
+    implements _i2.RealtimeClient {
+  _FakeRealtimeClient_2(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakePostgrestClient_3 extends _i1.SmartFake
+    implements _i2.PostgrestClient {
+  _FakePostgrestClient_3(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeGoTrueClient_4 extends _i1.SmartFake implements _i2.GoTrueClient {
+  _FakeGoTrueClient_4(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeSupabaseQueryBuilder_5 extends _i1.SmartFake
+    implements _i2.SupabaseQueryBuilder {
+  _FakeSupabaseQueryBuilder_5(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeSupabaseQuerySchema_6 extends _i1.SmartFake
+    implements _i2.SupabaseQuerySchema {
+  _FakeSupabaseQuerySchema_6(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakePostgrestFilterBuilder_7<T1> extends _i1.SmartFake
+    implements _i2.PostgrestFilterBuilder<T1> {
+  _FakePostgrestFilterBuilder_7(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeRealtimeChannel_8 extends _i1.SmartFake
+    implements _i2.RealtimeChannel {
+  _FakeRealtimeChannel_8(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [HiveService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockHiveService extends _i1.Mock implements _i2.HiveService {
+class MockHiveService extends _i1.Mock implements _i3.HiveService {
   MockHiveService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<void> init() => (super.noSuchMethod(
+  _i4.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheLesson(_i4.Lesson? lesson) => (super.noSuchMethod(
+  _i4.Future<void> cacheLesson(_i5.Lesson? lesson) => (super.noSuchMethod(
         Invocation.method(
           #cacheLesson,
           [lesson],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<List<_i4.Lesson>> getOfflineLessons(String? userId) =>
+  _i4.Future<List<_i5.Lesson>> getOfflineLessons(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getOfflineLessons,
           [userId],
         ),
-        returnValue: _i3.Future<List<_i4.Lesson>>.value(<_i4.Lesson>[]),
-      ) as _i3.Future<List<_i4.Lesson>>);
+        returnValue: _i4.Future<List<_i5.Lesson>>.value(<_i5.Lesson>[]),
+      ) as _i4.Future<List<_i5.Lesson>>);
 
   @override
-  _i3.Future<bool> isLessonOffline(String? lessonId) => (super.noSuchMethod(
+  _i4.Future<bool> isLessonOffline(String? lessonId) => (super.noSuchMethod(
         Invocation.method(
           #isLessonOffline,
           [lessonId],
         ),
-        returnValue: _i3.Future<bool>.value(false),
-      ) as _i3.Future<bool>);
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
 
   @override
-  _i3.Future<void> deleteLessonOffline(String? lessonId) => (super.noSuchMethod(
+  _i4.Future<void> deleteLessonOffline(String? lessonId) => (super.noSuchMethod(
         Invocation.method(
           #deleteLessonOffline,
           [lessonId],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> clearOfflineLessons() => (super.noSuchMethod(
+  _i4.Future<void> clearOfflineLessons() => (super.noSuchMethod(
         Invocation.method(
           #clearOfflineLessons,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheLessons(List<_i4.Lesson>? lessons) =>
+  _i4.Future<void> cacheLessons(List<_i5.Lesson>? lessons) =>
       (super.noSuchMethod(
         Invocation.method(
           #cacheLessons,
           [lessons],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<_i4.Lesson?> getLesson(String? lessonId) => (super.noSuchMethod(
+  _i4.Future<_i5.Lesson?> getLesson(String? lessonId) => (super.noSuchMethod(
         Invocation.method(
           #getLesson,
           [lessonId],
         ),
-        returnValue: _i3.Future<_i4.Lesson?>.value(),
-      ) as _i3.Future<_i4.Lesson?>);
+        returnValue: _i4.Future<_i5.Lesson?>.value(),
+      ) as _i4.Future<_i5.Lesson?>);
 
   @override
-  _i3.Future<List<_i4.Lesson>> getAllLessons() => (super.noSuchMethod(
+  _i4.Future<List<_i5.Lesson>> getAllLessons() => (super.noSuchMethod(
         Invocation.method(
           #getAllLessons,
           [],
         ),
-        returnValue: _i3.Future<List<_i4.Lesson>>.value(<_i4.Lesson>[]),
-      ) as _i3.Future<List<_i4.Lesson>>);
+        returnValue: _i4.Future<List<_i5.Lesson>>.value(<_i5.Lesson>[]),
+      ) as _i4.Future<List<_i5.Lesson>>);
 
   @override
-  _i3.Future<List<_i4.Lesson>> searchLessons(String? query) =>
+  _i4.Future<List<_i5.Lesson>> searchLessons(String? query) =>
       (super.noSuchMethod(
         Invocation.method(
           #searchLessons,
           [query],
         ),
-        returnValue: _i3.Future<List<_i4.Lesson>>.value(<_i4.Lesson>[]),
-      ) as _i3.Future<List<_i4.Lesson>>);
+        returnValue: _i4.Future<List<_i5.Lesson>>.value(<_i5.Lesson>[]),
+      ) as _i4.Future<List<_i5.Lesson>>);
 
   @override
-  _i3.Future<void> saveLesson(_i4.Lesson? lesson) => (super.noSuchMethod(
+  _i4.Future<void> saveLesson(_i5.Lesson? lesson) => (super.noSuchMethod(
         Invocation.method(
           #saveLesson,
           [lesson],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheLocalLesson(_i5.LocalLesson? lesson) =>
+  _i4.Future<void> cacheLocalLesson(_i6.LocalLesson? lesson) =>
       (super.noSuchMethod(
         Invocation.method(
           #cacheLocalLesson,
           [lesson],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<List<_i5.LocalLesson>> getLocalLessons(String? userId) =>
+  _i4.Future<List<_i6.LocalLesson>> getLocalLessons(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getLocalLessons,
           [userId],
         ),
         returnValue:
-            _i3.Future<List<_i5.LocalLesson>>.value(<_i5.LocalLesson>[]),
-      ) as _i3.Future<List<_i5.LocalLesson>>);
+            _i4.Future<List<_i6.LocalLesson>>.value(<_i6.LocalLesson>[]),
+      ) as _i4.Future<List<_i6.LocalLesson>>);
 
   @override
-  _i3.Future<_i5.LocalLesson?> getLocalLesson(String? lessonId) =>
+  _i4.Future<_i6.LocalLesson?> getLocalLesson(String? lessonId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getLocalLesson,
           [lessonId],
         ),
-        returnValue: _i3.Future<_i5.LocalLesson?>.value(),
-      ) as _i3.Future<_i5.LocalLesson?>);
+        returnValue: _i4.Future<_i6.LocalLesson?>.value(),
+      ) as _i4.Future<_i6.LocalLesson?>);
 
   @override
-  _i3.Future<void> deleteLocalLesson(String? lessonId) => (super.noSuchMethod(
+  _i4.Future<void> deleteLocalLesson(String? lessonId) => (super.noSuchMethod(
         Invocation.method(
           #deleteLocalLesson,
           [lessonId],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> saveProgress(_i6.UserProgress? progress) =>
+  _i4.Future<void> saveProgress(_i7.UserProgress? progress) =>
       (super.noSuchMethod(
         Invocation.method(
           #saveProgress,
           [progress],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheConcept(_i7.Concept? concept) => (super.noSuchMethod(
+  _i4.Future<void> cacheConcept(_i8.Concept? concept) => (super.noSuchMethod(
         Invocation.method(
           #cacheConcept,
           [concept],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheConcepts(List<_i7.Concept>? concepts) =>
+  _i4.Future<void> cacheConcepts(List<_i8.Concept>? concepts) =>
       (super.noSuchMethod(
         Invocation.method(
           #cacheConcepts,
           [concepts],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<_i7.Concept?> getConcept(String? conceptId) => (super.noSuchMethod(
+  _i4.Future<_i8.Concept?> getConcept(String? conceptId) => (super.noSuchMethod(
         Invocation.method(
           #getConcept,
           [conceptId],
         ),
-        returnValue: _i3.Future<_i7.Concept?>.value(),
-      ) as _i3.Future<_i7.Concept?>);
+        returnValue: _i4.Future<_i8.Concept?>.value(),
+      ) as _i4.Future<_i8.Concept?>);
 
   @override
-  _i3.Future<List<_i7.Concept>> getConceptsByLesson(String? lessonId) =>
+  _i4.Future<List<_i8.Concept>> getConceptsByLesson(String? lessonId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getConceptsByLesson,
           [lessonId],
         ),
-        returnValue: _i3.Future<List<_i7.Concept>>.value(<_i7.Concept>[]),
-      ) as _i3.Future<List<_i7.Concept>>);
+        returnValue: _i4.Future<List<_i8.Concept>>.value(<_i8.Concept>[]),
+      ) as _i4.Future<List<_i8.Concept>>);
 
   @override
-  _i3.Future<void> cacheMcq(_i8.Mcq? mcq) => (super.noSuchMethod(
+  _i4.Future<void> cacheMcq(_i9.Mcq? mcq) => (super.noSuchMethod(
         Invocation.method(
           #cacheMcq,
           [mcq],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> cacheMcqs(List<_i8.Mcq>? mcqs) => (super.noSuchMethod(
+  _i4.Future<void> cacheMcqs(List<_i9.Mcq>? mcqs) => (super.noSuchMethod(
         Invocation.method(
           #cacheMcqs,
           [mcqs],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<_i8.Mcq?> getMcq(String? mcqId) => (super.noSuchMethod(
+  _i4.Future<_i9.Mcq?> getMcq(String? mcqId) => (super.noSuchMethod(
         Invocation.method(
           #getMcq,
           [mcqId],
         ),
-        returnValue: _i3.Future<_i8.Mcq?>.value(),
-      ) as _i3.Future<_i8.Mcq?>);
+        returnValue: _i4.Future<_i9.Mcq?>.value(),
+      ) as _i4.Future<_i9.Mcq?>);
 
   @override
-  _i3.Future<List<_i8.Mcq>> getMcqsByLesson(String? lessonId) =>
+  _i4.Future<List<_i9.Mcq>> getMcqsByLesson(String? lessonId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getMcqsByLesson,
           [lessonId],
         ),
-        returnValue: _i3.Future<List<_i8.Mcq>>.value(<_i8.Mcq>[]),
-      ) as _i3.Future<List<_i8.Mcq>>);
+        returnValue: _i4.Future<List<_i9.Mcq>>.value(<_i9.Mcq>[]),
+      ) as _i4.Future<List<_i9.Mcq>>);
 
   @override
-  _i3.Future<void> cacheProgress(_i6.UserProgress? progress) =>
+  _i4.Future<void> cacheProgress(_i7.UserProgress? progress) =>
       (super.noSuchMethod(
         Invocation.method(
           #cacheProgress,
           [progress],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<List<_i6.UserProgress>> getProgress() => (super.noSuchMethod(
+  _i4.Future<List<_i7.UserProgress>> getProgress() => (super.noSuchMethod(
         Invocation.method(
           #getProgress,
           [],
         ),
         returnValue:
-            _i3.Future<List<_i6.UserProgress>>.value(<_i6.UserProgress>[]),
-      ) as _i3.Future<List<_i6.UserProgress>>);
+            _i4.Future<List<_i7.UserProgress>>.value(<_i7.UserProgress>[]),
+      ) as _i4.Future<List<_i7.UserProgress>>);
 
   @override
-  _i3.Future<List<_i6.UserProgress>> getUnsyncedProgress() =>
+  _i4.Future<List<_i7.UserProgress>> getUnsyncedProgress() =>
       (super.noSuchMethod(
         Invocation.method(
           #getUnsyncedProgress,
           [],
         ),
         returnValue:
-            _i3.Future<List<_i6.UserProgress>>.value(<_i6.UserProgress>[]),
-      ) as _i3.Future<List<_i6.UserProgress>>);
+            _i4.Future<List<_i7.UserProgress>>.value(<_i7.UserProgress>[]),
+      ) as _i4.Future<List<_i7.UserProgress>>);
 
   @override
-  _i3.Future<void> markProgressAsSynced(List<String>? progressIds) =>
+  _i4.Future<void> markProgressAsSynced(List<String>? progressIds) =>
       (super.noSuchMethod(
         Invocation.method(
           #markProgressAsSynced,
           [progressIds],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> clearAllData() => (super.noSuchMethod(
+  _i4.Future<void> clearAllData() => (super.noSuchMethod(
         Invocation.method(
           #clearAllData,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> clearProgress() => (super.noSuchMethod(
+  _i4.Future<void> clearProgress() => (super.noSuchMethod(
         Invocation.method(
           #clearProgress,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<void> close() => (super.noSuchMethod(
+  _i4.Future<void> close() => (super.noSuchMethod(
         Invocation.method(
           #close,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+}
+
+/// A class which mocks [SupabaseClient].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSupabaseClient extends _i1.Mock implements _i2.SupabaseClient {
+  MockSupabaseClient() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i2.FunctionsClient get functions => (super.noSuchMethod(
+        Invocation.getter(#functions),
+        returnValue: _FakeFunctionsClient_0(
+          this,
+          Invocation.getter(#functions),
+        ),
+      ) as _i2.FunctionsClient);
+
+  @override
+  set functions(_i2.FunctionsClient? _functions) => super.noSuchMethod(
+        Invocation.setter(
+          #functions,
+          _functions,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i2.SupabaseStorageClient get storage => (super.noSuchMethod(
+        Invocation.getter(#storage),
+        returnValue: _FakeSupabaseStorageClient_1(
+          this,
+          Invocation.getter(#storage),
+        ),
+      ) as _i2.SupabaseStorageClient);
+
+  @override
+  set storage(_i2.SupabaseStorageClient? _storage) => super.noSuchMethod(
+        Invocation.setter(
+          #storage,
+          _storage,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i2.RealtimeClient get realtime => (super.noSuchMethod(
+        Invocation.getter(#realtime),
+        returnValue: _FakeRealtimeClient_2(
+          this,
+          Invocation.getter(#realtime),
+        ),
+      ) as _i2.RealtimeClient);
+
+  @override
+  set realtime(_i2.RealtimeClient? _realtime) => super.noSuchMethod(
+        Invocation.setter(
+          #realtime,
+          _realtime,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i2.PostgrestClient get rest => (super.noSuchMethod(
+        Invocation.getter(#rest),
+        returnValue: _FakePostgrestClient_3(
+          this,
+          Invocation.getter(#rest),
+        ),
+      ) as _i2.PostgrestClient);
+
+  @override
+  set rest(_i2.PostgrestClient? _rest) => super.noSuchMethod(
+        Invocation.setter(
+          #rest,
+          _rest,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  Map<String, String> get headers => (super.noSuchMethod(
+        Invocation.getter(#headers),
+        returnValue: <String, String>{},
+      ) as Map<String, String>);
+
+  @override
+  set headers(Map<String, String>? headers) => super.noSuchMethod(
+        Invocation.setter(
+          #headers,
+          headers,
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  _i2.GoTrueClient get auth => (super.noSuchMethod(
+        Invocation.getter(#auth),
+        returnValue: _FakeGoTrueClient_4(
+          this,
+          Invocation.getter(#auth),
+        ),
+      ) as _i2.GoTrueClient);
+
+  @override
+  _i2.SupabaseQueryBuilder from(String? table) => (super.noSuchMethod(
+        Invocation.method(
+          #from,
+          [table],
+        ),
+        returnValue: _FakeSupabaseQueryBuilder_5(
+          this,
+          Invocation.method(
+            #from,
+            [table],
+          ),
+        ),
+      ) as _i2.SupabaseQueryBuilder);
+
+  @override
+  _i2.SupabaseQuerySchema schema(String? schema) => (super.noSuchMethod(
+        Invocation.method(
+          #schema,
+          [schema],
+        ),
+        returnValue: _FakeSupabaseQuerySchema_6(
+          this,
+          Invocation.method(
+            #schema,
+            [schema],
+          ),
+        ),
+      ) as _i2.SupabaseQuerySchema);
+
+  @override
+  _i2.PostgrestFilterBuilder<T> rpc<T>(
+    String? fn, {
+    Map<String, dynamic>? params,
+    dynamic get = false,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #rpc,
+          [fn],
+          {
+            #params: params,
+            #get: get,
+          },
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<T>(
+          this,
+          Invocation.method(
+            #rpc,
+            [fn],
+            {
+              #params: params,
+              #get: get,
+            },
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<T>);
+
+  @override
+  _i2.RealtimeChannel channel(
+    String? name, {
+    _i2.RealtimeChannelConfig? opts = const _i2.RealtimeChannelConfig(),
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #channel,
+          [name],
+          {#opts: opts},
+        ),
+        returnValue: _FakeRealtimeChannel_8(
+          this,
+          Invocation.method(
+            #channel,
+            [name],
+            {#opts: opts},
+          ),
+        ),
+      ) as _i2.RealtimeChannel);
+
+  @override
+  List<_i2.RealtimeChannel> getChannels() => (super.noSuchMethod(
+        Invocation.method(
+          #getChannels,
+          [],
+        ),
+        returnValue: <_i2.RealtimeChannel>[],
+      ) as List<_i2.RealtimeChannel>);
+
+  @override
+  _i4.Future<String> removeChannel(_i2.RealtimeChannel? channel) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #removeChannel,
+          [channel],
+        ),
+        returnValue: _i4.Future<String>.value(_i10.dummyValue<String>(
+          this,
+          Invocation.method(
+            #removeChannel,
+            [channel],
+          ),
+        )),
+      ) as _i4.Future<String>);
+
+  @override
+  _i4.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
+        Invocation.method(
+          #removeAllChannels,
+          [],
+        ),
+        returnValue: _i4.Future<List<String>>.value(<String>[]),
+      ) as _i4.Future<List<String>>);
+
+  @override
+  _i4.Future<void> dispose() => (super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 }

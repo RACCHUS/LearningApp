@@ -110,23 +110,5 @@ void main() {
         expect(clearedState.error, null);
       });
     });
-
-    group('Integration Tests', () {
-      test('OfflineNotifier should require HiveService', () {
-        // Note: This test is skipped because OfflineNotifier requires HiveService setup
-      }, skip: 'Requires HiveService mock setup');
-
-      test('should cache lesson successfully', () {
-        // Note: This test is skipped because it requires HiveService setup
-      }, skip: 'Requires HiveService mock setup');
-
-      test('should handle cache errors gracefully', () {
-        // Note: This test is skipped because it requires HiveService setup
-      }, skip: 'Requires HiveService mock setup');
-
-      test('should sync progress on connectivity change', () {
-        // Note: This test is skipped because it requires connectivity monitoring
-      }, skip: 'Requires connectivity monitoring setup');
-    });
   });
 }

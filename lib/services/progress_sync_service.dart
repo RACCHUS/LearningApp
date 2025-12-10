@@ -5,9 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProgressSyncService {
   final HiveService _hiveService;
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
 
-  ProgressSyncService(this._hiveService);
+  ProgressSyncService(this._hiveService, [SupabaseClient? supabaseClient])
+      : _supabase = supabaseClient ?? Supabase.instance.client;
 
   Future<void> syncProgress() async {
     try {

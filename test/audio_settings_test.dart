@@ -1,8 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/audio_state.dart';
+import 'package:learning_pwa/providers/audio_provider.dart';
+import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
+  // Setup Hive for tests
+  setUpAll(() async {
+    // Use in-memory directory for tests
+    Hive.init('test_hive');
+    Hive.registerAdapter(AudioSettingsAdapter());
+  });
+
+  tearDownAll(() async {
+    await Hive.close();
+  });
+
   group('AudioSettings Model', () {
     test('should have correct default values', () {
       const settings = AudioSettings();
@@ -82,51 +98,144 @@ void main() {
   });
 
   group('AudioSettingsNotifier', () {
-    // All tests in this group require Hive initialization in test environment
+    late ProviderContainer container;
+    late AudioSettingsNotifier notifier;
+
+    setUp(() async {
+      // Delete any existing box before each test
+      if (await Hive.boxExists('audioSettings')) {
+        await Hive.deleteBoxFromDisk('audioSettings');
+      }
+      
+      container = ProviderContainer();
+      notifier = container.read(audioSettingsProvider.notifier);
+      
+      // Wait for initialization
+      await Future.delayed(const Duration(milliseconds: 100));
+    });
+
+    tearDown(() async {
+      container.dispose();
+      // Wait for file operations to complete
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Try to close the box first
+      try {
+        final box = await Hive.openBox<AudioSettings>('audioSettings');
+        await box.close();
+      } catch (_) {}
+      
+      // Then delete
+      try {
+        await Hive.deleteBoxFromDisk('audioSettings');
+      } catch (_) {
+        // Ignore errors - box might not exist or be locked
+      }
+    });
     
     test('should initialize with default settings', () {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      final settings = container.read(audioSettingsProvider);
+      
+      expect(settings.isEnabled, true);
+      expect(settings.speechRate, 1.0);
+      expect(settings.volume, 1.0);
+      expect(settings.pitch, 1.0);
+    });
 
     test('should toggle enabled state', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.toggleEnabled();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.isEnabled, false);
+      
+      await notifier.toggleEnabled();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final updatedSettings = container.read(audioSettingsProvider);
+      expect(updatedSettings.isEnabled, true);
+    });
 
     test('should update speech rate', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.setSpeechRate(1.5);
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.speechRate, 1.5);
+    });
 
     test('should update volume', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.setVolume(0.7);
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.volume, 0.7);
+    });
 
     test('should update pitch', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.setPitch(1.2);
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.pitch, 1.2);
+    });
 
     test('should toggle auto play', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.toggleAutoPlay();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.autoPlay, true);
+    });
 
     test('should toggle auto read questions', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.toggleAutoReadQuestions();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.autoReadQuestions, true);
+    });
 
     test('should toggle auto read answers', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.toggleAutoReadAnswers();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.autoReadAnswers, true);
+    });
 
     test('should update language', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.setLanguage('es-ES');
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.language, 'es-ES');
+    });
 
     test('should set preferred voice', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      await notifier.setPreferredVoice('voice-123');
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.preferredVoice, 'voice-123');
+    });
 
     test('should reset to defaults', () async {
-      // Note: Requires Hive initialization
-    }, skip: 'Requires Hive initialization in test environment');
+      // Make some changes
+      await notifier.setSpeechRate(1.5);
+      await notifier.setVolume(0.5);
+      await notifier.toggleAutoPlay();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      // Reset
+      await notifier.resetToDefaults();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final settings = container.read(audioSettingsProvider);
+      expect(settings.speechRate, 1.0);
+      expect(settings.volume, 1.0);
+      expect(settings.autoPlay, false);
+    });
   });
 
   group('Audio State', () {

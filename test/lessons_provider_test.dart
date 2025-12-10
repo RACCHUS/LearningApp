@@ -4,9 +4,6 @@ import 'package:learning_pwa/models/lesson.dart';
 
 void main() {
   group('LessonsProvider', () {
-    // Note: LessonsNotifier tests are skipped because they require Supabase initialization
-    // Testing the notifier would require mocking SupabaseService
-    
     group('LessonsState', () {
       test('should have correct initial state', () {
         // Arrange
@@ -60,34 +57,99 @@ void main() {
         // Assert
         expect(newState.error, null);
       });
-    });
 
-    group('filterByTags', () {
-      test('should update selected tags', () {
-        // Note: Requires Supabase mock
-      }, skip: 'Requires Supabase initialization');
+      test('copyWith should preserve lessons when not specified', () {
+        // Arrange
+        final lessons = [
+          Lesson(
+            id: '1',
+            title: 'Test Lesson',
+            userId: 'user-1',
+            tags: const ['tag1'],
+            terms: const [],
+            questions: const [],
+            concepts: const [],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ];
+        final state = LessonsState(lessons: lessons);
 
-      test('should clear tags when empty list provided', () {
-        // Note: Requires Supabase mock
-      }, skip: 'Requires Supabase initialization');
-    });
+        // Act
+        final newState = state.copyWith(isLoading: true);
 
-    group('filteredLessons', () {
-      test('should return all lessons when no tags selected', () {
-        // Note: Requires Supabase mock for notifier creation
-      }, skip: 'Requires Supabase initialization');
+        // Assert
+        expect(newState.lessons, lessons);
+        expect(newState.isLoading, true);
+      });
 
-      test('should filter lessons by single tag', () {
-        // Note: Requires Supabase mock for notifier creation  
-      }, skip: 'Requires Supabase initialization');
+      test('should handle multiple lessons', () {
+        // Arrange
+        final lessons = List.generate(
+          5,
+          (i) => Lesson(
+            id: '$i',
+            title: 'Lesson $i',
+            userId: 'user-1',
+            tags: ['tag$i'],
+            terms: const [],
+            questions: const [],
+            concepts: const [],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
 
-      test('should filter lessons by multiple tags (OR logic)', () {
-        // Note: Requires Supabase mock for notifier creation
-      }, skip: 'Requires Supabase initialization');
+        // Act
+        const initialState = LessonsState();
+        final newState = initialState.copyWith(lessons: lessons);
 
-      test('should return empty list when no lessons match tags', () {
-        // Note: Requires Supabase mock for notifier creation
-      }, skip: 'Requires Supabase initialization');
+        // Assert
+        expect(newState.lessons.length, 5);
+        expect(newState.lessons[0].title, 'Lesson 0');
+        expect(newState.lessons[4].title, 'Lesson 4');
+      });
+
+      test('should handle tag selection', () {
+        // Arrange
+        const state = LessonsState();
+        final tags = ['flutter', 'dart', 'mobile'];
+
+        // Act
+        final newState = state.copyWith(selectedTags: tags);
+
+        // Assert
+        expect(newState.selectedTags, tags);
+        expect(newState.selectedTags.length, 3);
+      });
+
+      test('should handle loading states', () {
+        // Arrange
+        const state = LessonsState();
+
+        // Act
+        final loadingState = state.copyWith(isLoading: true);
+        final loadedState = loadingState.copyWith(isLoading: false);
+
+        // Assert
+        expect(state.isLoading, false);
+        expect(loadingState.isLoading, true);
+        expect(loadedState.isLoading, false);
+      });
+
+      test('should handle error states', () {
+        // Arrange
+        const state = LessonsState();
+
+        // Act
+        final errorState = state.copyWith(error: 'Network error');
+        final clearedState = errorState.copyWith(error: null);
+
+        // Assert
+        expect(state.error, null);
+        expect(errorState.error, 'Network error');
+        expect(clearedState.error, null);
+      });
     });
   });
 }

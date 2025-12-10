@@ -56,6 +56,7 @@ class VoiceInputService {
       
     } catch (e) {
       _isAvailable = false;
+      _isInitialized = true; // Mark as initialized even if failed
       _errorMessage = 'Failed to initialize speech recognition: $e';
       _updateState(VoiceInputState.error);
       

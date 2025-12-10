@@ -104,6 +104,7 @@ class AudioLessonOrchestrator {
       if (kDebugMode) {
         print('❌ Cannot start lesson: content list is empty');
       }
+      _isActive = false;
       return;
     }
 
@@ -150,6 +151,10 @@ class AudioLessonOrchestrator {
       await _voiceService!.cancel();
     }
     
+    // Reset content list and index
+    _contentList = [];
+    _currentIndex = 0;
+    
     _updateState(AudioLessonState.idle);
 
     if (_settings.confirmationsEnabled) {
@@ -191,6 +196,7 @@ class AudioLessonOrchestrator {
     if (!_isActive) return;
 
     if (isLastContent) {
+      _actionController.add(LessonFlowAction.complete);
       await _completeLesson();
       return;
     }
@@ -198,6 +204,7 @@ class AudioLessonOrchestrator {
     if (kDebugMode) {
       print('⏭️ Moving to next content');
     }
+    _actionController.add(LessonFlowAction.next);
 
     await _audioService.stop();
     _currentIndex++;
@@ -351,6 +358,7 @@ class AudioLessonOrchestrator {
   void _updateState(AudioLessonState newState) {
     if (_state != newState) {
       _state = newState;
+      _stateController.add(newState); // Emit state change to stream
       if (kDebugMode) {
         print('🎓 State changed: $newState');
       }

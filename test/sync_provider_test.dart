@@ -180,25 +180,4 @@ void main() {
       expect(state.hasError, isTrue);
     });
   });
-
-  group('SyncNotifier Tests (State Logic)', () {
-    // Note: SyncNotifier requires ProgressSyncService which needs Supabase
-    // These tests focus on state logic only
-    // Full integration tests should be in test/integration/
-
-    test('needsSync should return true when lastSync is null', () {
-      // This test would require mocking ProgressSyncService
-      // Skipping for unit test - should be in integration tests
-    }, skip: 'Requires ProgressSyncService with Supabase - move to integration tests');
-
-    test('needsSync should return true when threshold exceeded', () {
-      // This test would require mocking ProgressSyncService
-      // Skipping for unit test - should be in integration tests
-    }, skip: 'Requires ProgressSyncService with Supabase - move to integration tests');
-
-    test('reset should return to initial state', () {
-      // This test would require mocking ProgressSyncService
-      // Skipping for unit test - should be in integration tests
-    }, skip: 'Requires ProgressSyncService with Supabase - move to integration tests');
-  });
 }

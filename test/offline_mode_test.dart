@@ -61,7 +61,7 @@ void main() {
       final storedLesson = await hiveService.getLesson('1');
       expect(storedLesson, isNotNull);
       expect(storedLesson!.title, 'Test Lesson');
-    }, skip: 'Requires path_provider plugin - move to integration tests');
+    });
 
     test('cacheConcept should store concept in Hive', () async {
       // Arrange
@@ -82,7 +82,7 @@ void main() {
       final storedConcept = await hiveService.getConcept('1');
       expect(storedConcept, isNotNull);
       expect(storedConcept!.conceptText, 'Test Concept');
-    }, skip: 'Requires path_provider plugin - move to integration tests');
+    });
 
     test('cacheMcq should store MCQ in Hive', () async {
       // Arrange
@@ -106,7 +106,7 @@ void main() {
       final storedMcq = await hiveService.getMcq('1');
       expect(storedMcq, isNotNull);
       expect(storedMcq!.question, 'Test Question');
-    }, skip: 'Requires path_provider plugin - move to integration tests');
+    });
 
     test('getConceptsByLesson should return concepts for a lesson', () async {
       // Arrange
@@ -135,7 +135,7 @@ void main() {
       expect(concepts.length, 2);
       expect(concepts[0].conceptText, 'Concept 1');
       expect(concepts[1].conceptText, 'Concept 2');
-    }, skip: 'Requires path_provider plugin - move to integration tests');
+    });
 
     test('getMcqsByLesson should return MCQs for a lesson', () async {
       // Arrange
@@ -170,6 +170,6 @@ void main() {
       expect(mcqs.length, 2);
       expect(mcqs[0].question, 'Question 1');
       expect(mcqs[1].question, 'Question 2');
-    }, skip: 'Requires path_provider plugin - move to integration tests');
+    });
   });
 }
