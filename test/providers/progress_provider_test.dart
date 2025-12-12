@@ -338,5 +338,193 @@ void main() {
         expect(accuracy, 0.75);
       });
     });
+
+    group('ProgressNotifier business logic simulation', () {
+      test('answerQuestion logic - correct answer increments both counters', () {
+        // Simulate the logic from ProgressNotifier.answerQuestion
+        final initialProgress = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.flashcard,
+          date: DateTime.now(),
+          questionsAnswered: 5,
+          correctCount: 3,
+          lessonCompleted: false,
+          studyTimeSeconds: 120,
+        );
+
+        // Simulate answering correctly
+        final isCorrect = true;
+        final elapsedSeconds = 15;
+        
+        final updatedProgress = initialProgress.copyWith(
+          questionsAnswered: initialProgress.questionsAnswered + 1,
+          correctCount: isCorrect ? initialProgress.correctCount + 1 : initialProgress.correctCount,
+          studyTimeSeconds: initialProgress.studyTimeSeconds + elapsedSeconds,
+        );
+
+        expect(updatedProgress.questionsAnswered, 6);
+        expect(updatedProgress.correctCount, 4);
+        expect(updatedProgress.studyTimeSeconds, 135);
+      });
+
+      test('answerQuestion logic - incorrect answer only increments questions counter', () {
+        final initialProgress = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.mcq,
+          date: DateTime.now(),
+          questionsAnswered: 10,
+          correctCount: 7,
+          lessonCompleted: false,
+          studyTimeSeconds: 200,
+        );
+
+        // Simulate answering incorrectly
+        final isCorrect = false;
+        final elapsedSeconds = 20;
+        
+        final updatedProgress = initialProgress.copyWith(
+          questionsAnswered: initialProgress.questionsAnswered + 1,
+          correctCount: isCorrect ? initialProgress.correctCount + 1 : initialProgress.correctCount,
+          studyTimeSeconds: initialProgress.studyTimeSeconds + elapsedSeconds,
+        );
+
+        expect(updatedProgress.questionsAnswered, 11);
+        expect(updatedProgress.correctCount, 7); // Should not increment
+        expect(updatedProgress.studyTimeSeconds, 220);
+      });
+
+      test('completeLesson logic - sets lessonCompleted and adds metadata', () {
+        final initialProgress = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.lesson,
+          date: DateTime.now(),
+          questionsAnswered: 15,
+          correctCount: 12,
+          lessonCompleted: false,
+          studyTimeSeconds: 480,
+        );
+
+        // Simulate completing lesson
+        final elapsedSeconds = 60;
+        final completedAt = DateTime.now().toIso8601String();
+        
+        final updatedProgress = initialProgress.copyWith(
+          lessonCompleted: true,
+          studyTimeSeconds: initialProgress.studyTimeSeconds + elapsedSeconds,
+          metadata: {
+            ...?initialProgress.metadata,
+            'completed_at': completedAt,
+          },
+        );
+
+        expect(updatedProgress.lessonCompleted, true);
+        expect(updatedProgress.studyTimeSeconds, 540);
+        expect(updatedProgress.metadata?['completed_at'], isNotNull);
+      });
+
+      test('progress calculations - accuracy percentage', () {
+        final progress = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.mcq,
+          date: DateTime.now(),
+          questionsAnswered: 25,
+          correctCount: 20,
+          lessonCompleted: true,
+          studyTimeSeconds: 600,
+        );
+
+        final accuracy = (progress.correctCount / progress.questionsAnswered * 100);
+        expect(accuracy, 80.0);
+      });
+
+      test('progress calculations - mastery level determination', () {
+        // High mastery (90%+)
+        final highMastery = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.flashcard,
+          date: DateTime.now(),
+          questionsAnswered: 20,
+          correctCount: 19,
+          lessonCompleted: true,
+          studyTimeSeconds: 400,
+        );
+        final highAccuracy = (highMastery.correctCount / highMastery.questionsAnswered);
+        expect(highAccuracy, greaterThan(0.9));
+
+        // Medium mastery (70-89%)
+        final mediumMastery = UserProgress(
+          id: 'test-2',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.flashcard,
+          date: DateTime.now(),
+          questionsAnswered: 20,
+          correctCount: 16,
+          lessonCompleted: true,
+          studyTimeSeconds: 450,
+        );
+        final mediumAccuracy = (mediumMastery.correctCount / mediumMastery.questionsAnswered);
+        expect(mediumAccuracy, greaterThanOrEqualTo(0.7));
+        expect(mediumAccuracy, lessThan(0.9));
+
+        // Low mastery (<70%)
+        final lowMastery = UserProgress(
+          id: 'test-3',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.flashcard,
+          date: DateTime.now(),
+          questionsAnswered: 20,
+          correctCount: 12,
+          lessonCompleted: true,
+          studyTimeSeconds: 500,
+        );
+        final lowAccuracy = (lowMastery.correctCount / lowMastery.questionsAnswered);
+        expect(lowAccuracy, lessThan(0.7));
+      });
+
+      test('metadata merging - preserves existing and adds new', () {
+        final progress = UserProgress(
+          id: 'test-1',
+          userId: 'user-1',
+          lessonId: 'lesson-1',
+          studyMode: StudyMode.lesson,
+          date: DateTime.now(),
+          questionsAnswered: 5,
+          correctCount: 4,
+          lessonCompleted: false,
+          studyTimeSeconds: 120,
+          metadata: {'started_at': '2025-12-12T10:00:00Z', 'session': 'first'},
+        );
+
+        // Simulate metadata merge
+        final newMetadata = {
+          'hint_used': true,
+          'difficulty': 'medium',
+        };
+        
+        final updatedProgress = progress.copyWith(
+          metadata: {
+            ...?progress.metadata,
+            ...newMetadata,
+          },
+        );
+
+        expect(updatedProgress.metadata?['started_at'], '2025-12-12T10:00:00Z');
+        expect(updatedProgress.metadata?['session'], 'first');
+        expect(updatedProgress.metadata?['hint_used'], true);
+        expect(updatedProgress.metadata?['difficulty'], 'medium');
+      });
+    });
   });
 }

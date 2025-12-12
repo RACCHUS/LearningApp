@@ -10,7 +10,10 @@ import 'package:uuid/uuid.dart';
 /// Handles adding terms, questions, and concepts to lessons
 /// in the Supabase database.
 class LessonContentService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  LessonContentService({SupabaseClient? supabase})
+      : _supabase = supabase ?? Supabase.instance.client;
 
   /// Add terms to a lesson
   Future<void> addTerms(String lessonId, List<Term> terms) async {

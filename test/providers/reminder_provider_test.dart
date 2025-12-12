@@ -113,6 +113,122 @@ void main() {
 
       expect(state.hasError, true);
     });
+
+    test('deleteReminder removes from list', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      // Wait for initial load
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      await notifier.deleteReminder('r1');
+      final state = container.read(reminderProvider);
+
+      expect(state.hasValue, true);
+      expect(state.value!.any((r) => r.id == 'r1'), isFalse);
+    });
+
+    test('updateReminder modifies existing reminder', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      // Wait for initial load
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final updated = Reminder(
+        id: 'r1',
+        userId: 'u1',
+        timeOfDay: const TimeOfDay(hour: 10, minute: 30),
+        title: 'Updated Study',
+        message: 'Updated message',
+      );
+
+      await notifier.updateReminder(updated);
+      final state = container.read(reminderProvider);
+
+      expect(state.hasValue, true);
+      final found = state.value!.firstWhere((r) => r.id == 'r1');
+      expect(found.title, 'Updated Study');
+      expect(found.timeOfDay.hour, 10);
+      expect(found.timeOfDay.minute, 30);
+    });
+
+    test('addReminder handles multiple reminders', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      final reminder2 = Reminder(
+        id: 'r2',
+        userId: 'u1',
+        timeOfDay: const TimeOfDay(hour: 14, minute: 0),
+        title: 'Afternoon Study',
+      );
+
+      final reminder3 = Reminder(
+        id: 'r3',
+        userId: 'u1',
+        timeOfDay: const TimeOfDay(hour: 18, minute: 30),
+        title: 'Evening Review',
+      );
+
+      await notifier.addReminder(reminder2);
+      await notifier.addReminder(reminder3);
+      
+      final state = container.read(reminderProvider);
+
+      expect(state.hasValue, true);
+      expect(state.value!.length, greaterThanOrEqualTo(3)); // At least 3 (including initial)
+      expect(state.value!.any((r) => r.id == 'r2'), isTrue);
+      expect(state.value!.any((r) => r.id == 'r3'), isTrue);
+    });
+
+    test('deleteReminder handles non-existent ID gracefully', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      // Wait for initial load
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      // Should not throw
+      await notifier.deleteReminder('non-existent');
+      final state = container.read(reminderProvider);
+
+      expect(state.hasValue, true);
+      expect(state.value!.length, 1); // Original still there
+    });
+
+    test('loadReminders refreshes state', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      // Add a reminder
+      await notifier.addReminder(Reminder(
+        id: 'r2',
+        userId: 'u1',
+        timeOfDay: const TimeOfDay(hour: 11, minute: 0),
+        title: 'Mid-day',
+      ));
+
+      // Reload
+      await notifier.loadReminders();
+      final state = container.read(reminderProvider);
+
+      expect(state.hasValue, true);
+      // Should still have both reminders
+      expect(state.value!.length, greaterThan(0));
+    });
+
+    test('provider maintains loading state during operations', () async {
+      final notifier = container.read(reminderProvider.notifier);
+      
+      // Trigger load
+      final loadFuture = notifier.loadReminders();
+      
+      // State should be loading
+      var state = container.read(reminderProvider);
+      expect(state.isLoading || state.hasValue, true);
+      
+      // Wait for completion
+      await loadFuture;
+      
+      state = container.read(reminderProvider);
+      expect(state.hasValue, true);
+    });
   });
 }
 

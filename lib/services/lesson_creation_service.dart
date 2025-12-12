@@ -6,10 +6,13 @@ import 'package:uuid/uuid.dart';
 
 class LessonCreationService {
   final LocalLessonService _localLessonService;
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
   final _uuid = const Uuid();
 
-  LessonCreationService(this._localLessonService);
+  LessonCreationService(
+    this._localLessonService, {
+    SupabaseClient? supabase,
+  }) : _supabase = supabase ?? Supabase.instance.client;
 
   Future<LocalLesson> createLessonWithContent({
     required String title,

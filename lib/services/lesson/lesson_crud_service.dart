@@ -11,7 +11,10 @@ import 'package:uuid/uuid.dart';
 /// Handles basic create, read, update, delete operations
 /// for lessons in Supabase database.
 class LessonCrudService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  LessonCrudService({SupabaseClient? supabase})
+      : _supabase = supabase ?? Supabase.instance.client;
 
   /// Get all lessons for a user
   Future<List<Lesson>> getLessonsForUser(String userId) async {

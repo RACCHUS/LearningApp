@@ -37,8 +37,11 @@ class LessonsState {
 }
 
 class LessonsNotifier extends StateNotifier<LessonsState> {
-  LessonsNotifier() : super(const LessonsState());
-  final _supabase = SupabaseService();
+  final SupabaseService _supabase;
+
+  LessonsNotifier({SupabaseService? supabaseService})
+      : _supabase = supabaseService ?? SupabaseService(),
+        super(const LessonsState());
 
   Future<void> loadLessons() async {
     state = state.copyWith(isLoading: true, error: null);
