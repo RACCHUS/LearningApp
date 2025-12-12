@@ -38,5 +38,9 @@ class ConceptContent extends LessonContent {
     _$ConceptContentFromJson(json);
 
   @override
-  Map<String, dynamic> toJson() => _$ConceptContentToJson(this);
+  Map<String, dynamic> toJson() {
+    final json = _$ConceptContentToJson(this);
+    json['type'] = type;
+    return json;
+  }
 }

@@ -112,14 +112,15 @@ class LocalLesson extends BaseLesson {
           updatedAt == other.updatedAt &&
           userId == other.userId;
 
-  @override
-  int get hashCode =>
-      id.hashCode ^
-      title.hashCode ^
-      description.hashCode ^
-      tags.hashCode ^
-      isLocal.hashCode ^
-      createdAt.hashCode ^
-      updatedAt.hashCode ^
-      userId.hashCode;
+    @override
+    int get hashCode => Object.hash(
+      id,
+      title,
+      description,
+      Object.hashAll(tags),
+      isLocal,
+      createdAt,
+      updatedAt,
+      userId,
+    );
 }

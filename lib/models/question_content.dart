@@ -42,5 +42,9 @@ class QuestionContent extends LessonContent {
     _$QuestionContentFromJson(json);
 
   @override
-  Map<String, dynamic> toJson() => _$QuestionContentToJson(this);
+  Map<String, dynamic> toJson() {
+    final json = _$QuestionContentToJson(this);
+    json['type'] = type;
+    return json;
+  }
 }

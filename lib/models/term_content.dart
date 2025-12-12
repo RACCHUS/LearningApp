@@ -38,5 +38,9 @@ class TermContent extends LessonContent {
     _$TermContentFromJson(json);
 
   @override
-  Map<String, dynamic> toJson() => _$TermContentToJson(this);
+  Map<String, dynamic> toJson() {
+    final json = _$TermContentToJson(this);
+    json['type'] = type;
+    return json;
+  }
 }

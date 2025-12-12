@@ -8,12 +8,16 @@ import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
-  factory NotificationService() => _instance;
+  factory NotificationService({FlutterLocalNotificationsPlugin? plugin}) =>
+    plugin == null ? _instance : NotificationService._withPlugin(plugin);
 
-  NotificationService._internal();
+  NotificationService._internal()
+    : flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  NotificationService._withPlugin(FlutterLocalNotificationsPlugin? plugin)
+    : flutterLocalNotificationsPlugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const String _channelId = 'study_reminder_channel';
   static const String _channelName = 'Study Reminders';
