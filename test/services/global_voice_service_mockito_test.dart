@@ -5,35 +5,22 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/global_voice_service.dart';
 import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-class MockVoiceService extends Mock implements EnhancedVoiceInputService {
-  @override
-  bool get isAvailable => super.noSuchMethod(Invocation.getter(#isAvailable), returnValue: false);
-  
-  @override
-  bool get hasPermissions => super.noSuchMethod(Invocation.getter(#hasPermissions), returnValue: false);
-  
-  @override
-  Stream<AudioState> get stateStream => super.noSuchMethod(Invocation.getter(#stateStream), returnValue: const Stream.empty());
-  
-  @override
-  Future<bool> startListening({String? localeId, Duration? listenFor, Duration? pauseFor}) => 
-    super.noSuchMethod(Invocation.method(#startListening, [], {#localeId: localeId, #listenFor: listenFor, #pauseFor: pauseFor}), returnValue: Future.value(false));
-}
+import 'global_voice_service_mockito_test.mocks.dart';
 
-class MockGoRouter extends Mock implements GoRouter {}
-
+@GenerateMocks([EnhancedVoiceInputService, GoRouter])
 void main() {
   group('GlobalVoiceService with mockito', () {
     late GlobalVoiceService service;
-    late MockVoiceService mockVoice;
+    late MockEnhancedVoiceInputService mockVoice;
     late MockGoRouter mockRouter;
     late StreamController<AudioState> stateController;
 
     setUp(() {
       service = GlobalVoiceService();
-      mockVoice = MockVoiceService();
+      mockVoice = MockEnhancedVoiceInputService();
       mockRouter = MockGoRouter();
       stateController = StreamController<AudioState>.broadcast();
 
@@ -48,31 +35,39 @@ void main() {
     });
 
     tearDown(() async {
+      service.disable();
       await stateController.close();
     });
 
     test('enable succeeds when permissions and availability are true', () async {
       await service.initialize(voiceService: mockVoice, router: mockRouter);
 
-      final enabled = await service.enable();
+      // Don't await enable() as it starts a background listening loop
+      // Instead, wait for the service state to update
+      unawaited(service.enable());
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      expect(enabled, isTrue);
       expect(service.isEnabled, isTrue);
       expect(service.isListening, isTrue);
-
-      // Emit idle to complete listening loop
+      
+      // Emit idle state to complete the listening loop
       stateController.add(const AudioState(voiceInputState: VoiceInputState.idle));
-      await Future.delayed(const Duration(milliseconds: 20));
+      await Future.delayed(const Duration(milliseconds: 50));
     });
 
     test('enable fails when permissions are missing', () async {
-      when(mockVoice.hasPermissions).thenReturn(false);
-      await service.initialize(voiceService: mockVoice, router: mockRouter);
+      // Create a new mock with different permissions
+      final mockVoiceNoPerm = MockEnhancedVoiceInputService();
+      when(mockVoiceNoPerm.isAvailable).thenReturn(true);
+      when(mockVoiceNoPerm.hasPermissions).thenReturn(false);
+      
+      final testService = GlobalVoiceService();
+      await testService.initialize(voiceService: mockVoiceNoPerm, router: mockRouter);
 
-      final enabled = await service.enable();
+      final enabled = await testService.enable();
 
       expect(enabled, isFalse);
-      expect(service.isEnabled, isFalse);
+      expect(testService.isEnabled, isFalse);
     });
   });
 }

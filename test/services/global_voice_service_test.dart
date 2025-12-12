@@ -3,36 +3,23 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/global_voice_service.dart';
+import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
-class _FakeVoiceService {
-  bool isAvailable;
-  bool hasPermissions;
-  bool isListening = false;
+import 'global_voice_service_test.mocks.dart';
 
-  _FakeVoiceService({
-    required this.isAvailable,
-    required this.hasPermissions,
-  });
-
-  Stream<AudioState> get stateStream => const Stream.empty();
-
-  Future<bool> startListening({
-    String? localeId,
-    Duration? listenFor,
-    Duration? pauseFor,
-  }) async {
-    isListening = true;
-    return false;
-  }
-}
-
+@GenerateMocks([EnhancedVoiceInputService])
 void main() {
   group('GlobalVoiceService', () {
     test('enable returns false when permissions are missing', () async {
-      final fakeVoice = _FakeVoiceService(isAvailable: true, hasPermissions: false);
+      final mockVoice = MockEnhancedVoiceInputService();
+      when(mockVoice.isAvailable).thenReturn(true);
+      when(mockVoice.hasPermissions).thenReturn(false);
+      
       final service = GlobalVoiceService();
 
-      await service.initialize(voiceService: fakeVoice as dynamic);
+      await service.initialize(voiceService: mockVoice);
       final enabled = await service.enable();
 
       expect(enabled, isFalse);

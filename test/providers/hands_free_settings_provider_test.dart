@@ -5,11 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/hands_free_settings.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-class MockHandsFreeSettingsService extends Mock
-    implements HandsFreeSettingsService {}
+import 'hands_free_settings_provider_test.mocks.dart';
 
+@GenerateMocks([HandsFreeSettingsService])
 void main() {
   group('HandsFreeSettingsProvider with mockito', () {
     late ProviderContainer container;
@@ -22,19 +23,13 @@ void main() {
       settingsController = StreamController<HandsFreeSettings>.broadcast();
       stateController = StreamController<bool>.broadcast();
 
-      when(mockService.initialize()).thenAnswer((_) => Future.value());
+      when(mockService.initialize()).thenAnswer((_) async {});
       when(mockService.settings).thenReturn(const HandsFreeSettings());
       when(mockService.isHandsFreeEnabled).thenReturn(false);
       when(mockService.settingsStream).thenAnswer((_) => settingsController.stream);
       when(mockService.stateStream).thenAnswer((_) => stateController.stream);
-      when(mockService.updateSetting(any, any)).thenAnswer((invocation) {
-        final key = invocation.positionalArguments[0];
-        return Future.value(key ?? '');
-      });
-      when(mockService.saveSettings(any)).thenAnswer((invocation) {
-        final settings = invocation.positionalArguments[0];
-        return Future.value(settings ?? const HandsFreeSettings());
-      });
+      when(mockService.updateSetting(any, any)).thenAnswer((_) async {});
+      when(mockService.saveSettings(any)).thenAnswer((_) async {});
 
       container = ProviderContainer(overrides: [
         handsFreeSettingsServiceProvider.overrideWithValue(mockService),
@@ -62,10 +57,13 @@ void main() {
     });
 
     test('settings stream updates provider state', () async {
+      // First read the provider to initialize it
+      container.read(handsFreeSettingsProvider);
+      await Future.delayed(const Duration(milliseconds: 50));
+      
       const updated = HandsFreeSettings(defaultHandsFreeMode: true);
-
       settingsController.add(updated);
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       final settings = container.read(handsFreeSettingsProvider);
       expect(settings.defaultHandsFreeMode, true);
