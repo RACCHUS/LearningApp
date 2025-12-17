@@ -31,7 +31,8 @@ enum LessonFlowAction {
 /// Reduced from 666 lines to ~120 lines by using the ContentProcessor service
 /// and simplifying the architecture
 class AudioLessonOrchestrator {
-  static final AudioLessonOrchestrator _instance = AudioLessonOrchestrator._internal();
+  static final AudioLessonOrchestrator _instance =
+      AudioLessonOrchestrator._internal();
   factory AudioLessonOrchestrator() => _instance;
   AudioLessonOrchestrator._internal();
 
@@ -43,13 +44,13 @@ class AudioLessonOrchestrator {
   // State management (simplified)
   AudioLessonSettings _settings = const AudioLessonSettings();
   AudioLessonState _state = AudioLessonState.idle;
-  
+
   // Stream controllers for compatibility with providers
-  final StreamController<AudioLessonState> _stateController = 
+  final StreamController<AudioLessonState> _stateController =
       StreamController<AudioLessonState>.broadcast();
-  final StreamController<LessonFlowAction> _actionController = 
+  final StreamController<LessonFlowAction> _actionController =
       StreamController<LessonFlowAction>.broadcast();
-  final StreamController<int> _progressController = 
+  final StreamController<int> _progressController =
       StreamController<int>.broadcast();
 
   // Stream getters for compatibility
@@ -75,7 +76,8 @@ class AudioLessonOrchestrator {
     await _voiceService?.initialize();
     if (kDebugMode) {
       print('🎓 AudioLessonOrchestrator initialized (refactored version)');
-      print('🎙️ Voice service available: ${_voiceService?.canListen ?? false}');
+      print(
+          '🎙️ Voice service available: ${_voiceService?.canListen ?? false}');
     }
   }
 
@@ -99,7 +101,8 @@ class AudioLessonOrchestrator {
     }
   }
 
-  Future<void> startLesson(List<LessonContent> contentList, {int startIndex = 0}) async {
+  Future<void> startLesson(List<LessonContent> contentList,
+      {int startIndex = 0}) async {
     if (contentList.isEmpty) {
       if (kDebugMode) {
         print('❌ Cannot start lesson: content list is empty');
@@ -119,7 +122,8 @@ class AudioLessonOrchestrator {
       _updateState(AudioLessonState.idle);
 
       if (_settings.confirmationsEnabled) {
-        await _speakConfirmation("Starting lesson with ${contentList.length} items");
+        await _speakConfirmation(
+            "Starting lesson with ${contentList.length} items");
       }
 
       // Begin reading the first content
@@ -128,7 +132,6 @@ class AudioLessonOrchestrator {
       if (kDebugMode) {
         print('✅ Lesson started successfully');
       }
-
     } catch (e) {
       if (kDebugMode) {
         print('❌ Error starting lesson: $e');
@@ -145,16 +148,16 @@ class AudioLessonOrchestrator {
     _isActive = false;
     _isListeningForCommands = false; // Reset listening flag
     await _audioService.stop();
-    
+
     // Cancel any active voice listening
     if (_voiceService != null) {
       await _voiceService!.cancel();
     }
-    
+
     // Reset content list and index
     _contentList = [];
     _currentIndex = 0;
-    
+
     _updateState(AudioLessonState.idle);
 
     if (_settings.confirmationsEnabled) {
@@ -208,13 +211,13 @@ class AudioLessonOrchestrator {
 
     await _audioService.stop();
     _currentIndex++;
-    
+
     // Emit progress change for UI update
     if (kDebugMode) {
       print('🎓 Emitting progress change: $_currentIndex');
     }
     _progressController.add(_currentIndex);
-    
+
     await _readCurrentContent();
   }
 
@@ -227,10 +230,10 @@ class AudioLessonOrchestrator {
 
     await _audioService.stop();
     _currentIndex--;
-    
+
     // Emit progress change for UI update
     _progressController.add(_currentIndex);
-    
+
     await _readCurrentContent();
   }
 
@@ -251,28 +254,68 @@ class AudioLessonOrchestrator {
     final content = _contentList[_currentIndex];
     _updateState(AudioLessonState.reading);
 
-    // Use ContentProcessor to extract and clean text
-    final audioTexts = _extractContentTexts(content);
-    
-    // Speak each text in sequence
-    for (final text in audioTexts) {
-      if (!_isActive || _state == AudioLessonState.paused) break;
-      
-      final cleanText = _contentProcessor.cleanTextForTTS(text);
-      await _audioService.speak(cleanText, interrupt: false);
-      await _waitForAudioCompletion();
+    try {
+      // Use ContentProcessor to extract and clean text
+      final audioTexts = _extractContentTexts(content);
+
+      // Speak each text in sequence with error handling
+      for (int i = 0; i < audioTexts.length; i++) {
+        if (!_isActive || _state == AudioLessonState.paused) break;
+
+        final text = audioTexts[i];
+        try {
+          final cleanText = _contentProcessor.cleanTextForTTS(text);
+          final success =
+              await _audioService.speak(cleanText, interrupt: false);
+
+          if (!success) {
+            // TTS failed for this segment
+            if (kDebugMode) {
+              print('⚠️ TTS failed for text segment $i: "$text"');
+            }
+
+            // Continue with next segment instead of failing entire content
+            continue;
+          }
+
+          await _waitForAudioCompletion();
+        } on Exception catch (e, stackTrace) {
+          if (kDebugMode) {
+            print('❌ Error speaking text segment $i: $e');
+            print('Stack trace: $stackTrace');
+          }
+
+          // Log error but continue with next segment
+          // This prevents single problematic text from breaking entire lesson
+          continue;
+        }
+      }
+    } on Exception catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ Critical error in _readCurrentContent: $e');
+        print('Stack trace: $stackTrace');
+      }
+
+      // Update state to error
+      _updateState(AudioLessonState.error);
+
+      // Optionally, notify user of content read failure
+      // Could trigger a callback or event here
+      return;
     }
 
     // Handle auto-progression or wait for user action
     if (kDebugMode) {
       print('🎓 Content reading completed. Checking next action...');
-      print('   - autoProgressAfterReading: ${_settings.autoProgressAfterReading}');
+      print(
+          '   - autoProgressAfterReading: ${_settings.autoProgressAfterReading}');
       print('   - handsFreeModeEnabled: ${_settings.handsFreeModeEnabled}');
       print('   - voiceNavigationEnabled: ${_settings.voiceNavigationEnabled}');
       print('   - current state: $_state');
     }
-    
-    if (_settings.autoProgressAfterReading && _state == AudioLessonState.reading) {
+
+    if (_settings.autoProgressAfterReading &&
+        _state == AudioLessonState.reading) {
       if (kDebugMode) {
         print('🎓 Auto-progressing after delay...');
       }
@@ -280,7 +323,8 @@ class AudioLessonOrchestrator {
       if (_isActive && _state == AudioLessonState.reading) {
         await nextContent();
       }
-    } else if (_settings.handsFreeModeEnabled && _settings.voiceNavigationEnabled) {
+    } else if (_settings.handsFreeModeEnabled &&
+        _settings.voiceNavigationEnabled) {
       if (kDebugMode) {
         print('🎙️ Starting voice command listening after content reading...');
       }
@@ -288,7 +332,8 @@ class AudioLessonOrchestrator {
       await _listenForVoiceCommands();
     } else {
       if (kDebugMode) {
-        print('🎓 Waiting for manual user action (no auto-progress or voice commands)');
+        print(
+            '🎓 Waiting for manual user action (no auto-progress or voice commands)');
       }
     }
   }
@@ -315,13 +360,14 @@ class AudioLessonOrchestrator {
       }
     } else if (content is QuestionContent) {
       texts.add(_contentProcessor.processQuestionText(content.questionText));
-      
+
       if (content.type == 'mcq') {
         texts.add(_contentProcessor.formatOptions(content.options));
       }
-      
+
       if (content.explanation?.isNotEmpty == true) {
-        texts.add(_contentProcessor.processExplanationText(content.explanation!));
+        texts.add(
+            _contentProcessor.processExplanationText(content.explanation!));
       }
     }
 
@@ -329,7 +375,8 @@ class AudioLessonOrchestrator {
   }
 
   Future<void> _waitForAudioCompletion() async {
-    while (_audioService.currentState.isPlaying || _audioService.currentState.isLoading) {
+    while (_audioService.currentState.isPlaying ||
+        _audioService.currentState.isLoading) {
       await Future.delayed(const Duration(milliseconds: 100));
       if (!_isActive || _state == AudioLessonState.paused) break;
     }
@@ -342,7 +389,7 @@ class AudioLessonOrchestrator {
 
     _isActive = false;
     _updateState(AudioLessonState.completed);
-    
+
     if (_settings.confirmationsEnabled) {
       await _speakConfirmation("Lesson completed! Well done.");
     }
@@ -370,7 +417,7 @@ class AudioLessonOrchestrator {
     if (kDebugMode) {
       print('🎙️ Simulating voice command: "$commandText"');
     }
-    
+
     // Simple command handling
     switch (commandText.toLowerCase()) {
       case 'next':
@@ -427,9 +474,10 @@ class AudioLessonOrchestrator {
     if (!_voiceService!.hasPermissions) {
       if (kDebugMode) {
         print('🎙️ Permissions not yet granted - waiting longer before retry');
-        print('   - Permissions should be requested when hands-free mode is enabled');
+        print(
+            '   - Permissions should be requested when hands-free mode is enabled');
       }
-      
+
       // Wait longer when permissions are missing to avoid rapid retries during permission dialog
       if (_isActive && _settings.handsFreeModeEnabled) {
         await Future.delayed(const Duration(seconds: 2));
@@ -440,7 +488,8 @@ class AudioLessonOrchestrator {
 
     if (!_voiceService!.canListen) {
       if (kDebugMode) {
-        print('🎙️ Voice service still not ready for listening after permission check');
+        print(
+            '🎙️ Voice service still not ready for listening after permission check');
         print('   - isAvailable: ${_voiceService!.isAvailable}');
         print('   - hasPermissions: ${_voiceService!.hasPermissions}');
       }
@@ -449,61 +498,87 @@ class AudioLessonOrchestrator {
 
     _updateState(AudioLessonState.waitingForVoice);
     _isListeningForCommands = true; // Set flag to prevent overlapping
-    
+
     if (kDebugMode) {
       print('🎙️ Listening for voice commands...');
     }
 
     try {
-      // Listen for voice commands with configurable timeout
-      final command = await _voiceService!.listenForCommand(
-        timeout: _settings.voiceInputTimeout,
+      // Listen for voice commands with configurable timeout AND manual timeout wrapper
+      final timeoutDuration = _settings.voiceInputTimeout;
+      final maxTimeout = const Duration(seconds: 30); // Hard limit
+      final actualTimeout = timeoutDuration.compareTo(maxTimeout) > 0
+          ? maxTimeout
+          : timeoutDuration;
+
+      final command = await _voiceService!
+          .listenForCommand(
+        timeout: actualTimeout,
+      )
+          .timeout(
+        actualTimeout,
+        onTimeout: () {
+          if (kDebugMode) {
+            print(
+                '🎙️ Voice listening timed out after ${actualTimeout.inSeconds} seconds');
+          }
+          return null;
+        },
       );
 
       if (command != null) {
         if (kDebugMode) {
-          print('🎙️ Voice command received: ${command.phrase} (${command.type})');
+          print(
+              '🎙️ Voice command received: ${command.phrase} (${command.type})');
         }
-        
+
         await _handleVoiceCommand(command);
-        
+
         // Continue listening in hands-free mode if still active
-        if (_isActive && _settings.handsFreeModeEnabled && _state != AudioLessonState.reading) {
+        if (_isActive &&
+            _settings.handsFreeModeEnabled &&
+            _state != AudioLessonState.reading) {
           // Small delay before next listening session
           await Future.delayed(const Duration(milliseconds: 500));
-          _isListeningForCommands = false; // Reset flag
           await _listenForVoiceCommands();
-        } else {
-          _isListeningForCommands = false; // Reset flag
         }
       } else {
         if (kDebugMode) {
           print('🎙️ No voice command detected, timeout reached');
         }
-        
+
         // If in hands-free mode and no command detected, continue listening
         if (_isActive && _settings.handsFreeModeEnabled) {
           // Small delay before retrying
           await Future.delayed(const Duration(milliseconds: 500));
-          _isListeningForCommands = false; // Reset flag
           await _listenForVoiceCommands();
-        } else {
-          _isListeningForCommands = false; // Reset flag
         }
       }
-    } catch (e) {
+    } on Exception catch (e, stackTrace) {
       if (kDebugMode) {
-        print('🎙️ Voice command error: $e');
+        print('❌ Voice command exception: $e');
+        print('Stack trace: $stackTrace');
       }
-      
-      _isListeningForCommands = false; // Reset flag on error
-      
+
       // On error, wait longer before trying again to avoid rapid retries
       // Especially important during permission dialogs or speech recognition failures
       if (_isActive && _settings.handsFreeModeEnabled) {
         await Future.delayed(const Duration(seconds: 5)); // Increased delay
         await _listenForVoiceCommands();
       }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ Unexpected voice listening error: $e');
+        print('Stack trace: $stackTrace');
+      }
+
+      if (_isActive && _settings.handsFreeModeEnabled) {
+        await Future.delayed(const Duration(seconds: 5));
+        await _listenForVoiceCommands();
+      }
+    } finally {
+      // CRITICAL: Always reset flag in finally block
+      _isListeningForCommands = false;
     }
   }
 
@@ -512,13 +587,15 @@ class AudioLessonOrchestrator {
     if (!_isActive) return;
 
     // Interrupt current audio if setting is enabled
-    if (_settings.interruptOnNextCommand && command.type == VoiceCommandType.navigation) {
+    if (_settings.interruptOnNextCommand &&
+        command.type == VoiceCommandType.navigation) {
       await _audioService.stop();
     }
 
     switch (command.type) {
       case VoiceCommandType.navigation:
-        if (command.value == NavigationCommand.jumpToPage && command.alternatives.isNotEmpty) {
+        if (command.value == NavigationCommand.jumpToPage &&
+            command.alternatives.isNotEmpty) {
           // Handle jump to page command with page number
           final pageNumber = int.tryParse(command.alternatives.first);
           if (pageNumber != null) {
@@ -573,8 +650,8 @@ class AudioLessonOrchestrator {
         // The page number is stored in the command's alternatives list
         break;
     }
-    
-    // Navigation commands automatically trigger content reading, 
+
+    // Navigation commands automatically trigger content reading,
     // which will handle voice listening continuation
   }
 
@@ -582,13 +659,14 @@ class AudioLessonOrchestrator {
   Future<void> _handleAnswerCommand(dynamic answerValue) async {
     // Emit action for the UI to handle (since answer handling is context-specific)
     _actionController.add(LessonFlowAction.next); // Move to next after answer
-    
+
     if (kDebugMode) {
       print('🎙️ Answer command: $answerValue');
     }
-    
+
     // Continue listening in hands-free mode
-    if (_settings.handsFreeModeEnabled && _settings.immediateAnswerProgression) {
+    if (_settings.handsFreeModeEnabled &&
+        _settings.immediateAnswerProgression) {
       await nextContent();
     } else if (_settings.handsFreeModeEnabled) {
       await _listenForVoiceCommands();
@@ -676,22 +754,24 @@ class AudioLessonOrchestrator {
   Future<void> _jumpToPage(int pageNumber) async {
     // Convert 1-based page number to 0-based index
     final targetIndex = pageNumber - 1;
-    
+
     if (targetIndex >= 0 && targetIndex < _contentList.length) {
       await _audioService.stop();
       _currentIndex = targetIndex;
       _progressController.add(_currentIndex);
       await _readCurrentContent();
-      
+
       if (kDebugMode) {
         print('🎙️ Jumped to page $pageNumber (index $targetIndex)');
       }
     } else {
       if (kDebugMode) {
-        print('🎙️ Invalid page number: $pageNumber (total pages: ${_contentList.length})');
+        print(
+            '🎙️ Invalid page number: $pageNumber (total pages: ${_contentList.length})');
       }
       // Could announce this error to the user
-      await _audioService.speak('Invalid page number. This lesson has ${_contentList.length} pages.');
+      await _audioService.speak(
+          'Invalid page number. This lesson has ${_contentList.length} pages.');
     }
   }
 
@@ -700,12 +780,12 @@ class AudioLessonOrchestrator {
     final currentPage = _currentIndex + 1;
     final totalPages = _contentList.length;
     final progressPercent = ((currentPage / totalPages) * 100).round();
-    
+
     final progressMessage = 'You are on page $currentPage of $totalPages. '
         'That is $progressPercent percent complete.';
-    
+
     await _audioService.speak(progressMessage);
-    
+
     if (kDebugMode) {
       print('🎙️ Progress announced: $progressMessage');
     }
@@ -715,17 +795,18 @@ class AudioLessonOrchestrator {
   Future<void> _adjustSpeechRate({required bool increase}) async {
     // Get current rate
     double currentRate = _audioService.currentSettings.speechRate;
-    
+
     // Adjust by 0.1 increments, keep within reasonable bounds (0.3 - 2.0)
     double newRate = increase ? currentRate + 0.1 : currentRate - 0.1;
     newRate = newRate.clamp(0.3, 2.0);
-    
+
     await _audioService.setRate(newRate);
-    
+
     // Announce the change
-    String message = increase ? 'Speech speed increased' : 'Speech speed decreased';
+    String message =
+        increase ? 'Speech speed increased' : 'Speech speed decreased';
     await _audioService.speak(message, interrupt: false);
-    
+
     if (kDebugMode) {
       print('🎙️ Speech rate adjusted to: $newRate');
     }
@@ -735,17 +816,17 @@ class AudioLessonOrchestrator {
   Future<void> _adjustVolume({required bool increase}) async {
     // Get current volume
     double currentVolume = _audioService.currentSettings.volume;
-    
+
     // Adjust by 0.1 increments, keep within bounds (0.1 - 1.0)
     double newVolume = increase ? currentVolume + 0.1 : currentVolume - 0.1;
     newVolume = newVolume.clamp(0.1, 1.0);
-    
+
     await _audioService.setVolume(newVolume);
-    
+
     // Announce the change
     String message = increase ? 'Volume increased' : 'Volume decreased';
     await _audioService.speak(message, interrupt: false);
-    
+
     if (kDebugMode) {
       print('🎙️ Volume adjusted to: $newVolume');
     }

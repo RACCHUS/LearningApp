@@ -31,6 +31,15 @@ class AudioService {
           isAvailable: false,
           errorMessage: 'Text-to-Speech not available on this platform',
         ));
+        
+        // Log TTS unavailability for diagnostics
+        if (kDebugMode) {
+          print('❌ CRITICAL: TTS not available on this platform');
+          print('Platform: ${defaultTargetPlatform.toString()}');
+        }
+        
+        // Mark as "initialized" even though TTS unavailable (graceful degradation)
+        _isInitialized = true;
         return;
       }
 
@@ -74,6 +83,9 @@ class AudioService {
           playbackState: AudioPlaybackState.error,
           errorMessage: msg,
         ));
+        if (kDebugMode) {
+          print('❌ TTS error: $msg');
+        }
       });
 
       // Get available voices
@@ -89,14 +101,22 @@ class AudioService {
       // Apply default settings
       await updateSettings(_settings);
       
+      if (kDebugMode) {
+        print('✅ AudioService initialized successfully');
+        print('Available voices: ${voices.length}');
+      }
+      
     } catch (e) {
       _updateState(_state.copyWith(
         isAvailable: false,
         errorMessage: 'Failed to initialize Text-to-Speech: $e',
       ));
       if (kDebugMode) {
-        print('AudioService initialization error: $e');
+        print('❌ AudioService initialization error: $e');
       }
+      
+      // Still mark as initialized (graceful degradation)
+      _isInitialized = true;
     }
   }
 

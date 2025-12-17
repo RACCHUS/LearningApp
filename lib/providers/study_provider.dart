@@ -7,23 +7,21 @@ import 'package:learning_pwa/services/notification_service.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/core/errors/app_exceptions.dart';
+import 'package:learning_pwa/core/logging/app_logger.dart';
 
-enum StudyMode {
-  flashcard,
-  mcq,
-  concept,
-  lesson
-}
+enum StudyMode { flashcard, mcq, concept, lesson }
 
 final studyProvider = StateNotifierProvider<StudyNotifier, StudyState>((ref) {
   return StudyNotifier();
 });
 
 class StudyNotifier extends StateNotifier<StudyState> {
+  final _logger = AppLogger('StudyNotifier');
   final NotificationService _notificationService = NotificationService();
   final LessonService _lessonService = LessonService();
   final _supabase = Supabase.instance.client;
-  
+
   StudyNotifier() : super(StudyState.initial()) {
     // Initialize notification service
     _notificationService.init();
@@ -40,17 +38,68 @@ class StudyNotifier extends StateNotifier<StudyState> {
 
     try {
       final lesson = await _lessonService.getLesson(lessonId);
+
+      // Validate lesson has content
+      if (lesson.terms.isEmpty &&
+          lesson.questions.isEmpty &&
+          lesson.concepts.isEmpty) {
+        throw LessonLoadException(
+          lessonId,
+          'Lesson has no content to study',
+        );
+      }
+
       final content = _getContentForMode(lesson, mode);
+
+      if (content.isEmpty) {
+        throw StudySessionException(
+          'No content available for selected study mode',
+          code: 'EMPTY_CONTENT',
+        );
+      }
+
       state = state.copyWith(
         currentContent: content,
         isLoading: false,
+        error: null,
       );
-    } catch (e) {
+
+      _logger.info(
+        'Study session started',
+        metadata: {
+          'lessonId': lessonId,
+          'mode': mode.toString(),
+          'contentCount': content.length,
+        },
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to start study session',
+        error: e,
+        stackTrace: stackTrace,
+        metadata: {'lessonId': lessonId, 'mode': mode.toString()},
+      );
+
+      final userMessage = e is AppException
+          ? e.getUserMessage()
+          : 'Failed to load lesson. Please try again.';
+
       state = state.copyWith(
-        error: e.toString(),
+        error: userMessage,
         isLoading: false,
       );
     }
+  }
+
+  /// Retry failed study session start
+  Future<void> retryStudySession() async {
+    if (state.currentLessonId == null || state.currentMode == null) {
+      _logger.warn('Cannot retry: no previous session context');
+      return;
+    }
+
+    _logger.info('Retrying study session');
+    await startStudySession(state.currentLessonId!, state.currentMode!);
   }
 
   List<dynamic> _getContentForMode(Lesson lesson, StudyMode mode) {
@@ -73,15 +122,11 @@ class StudyNotifier extends StateNotifier<StudyState> {
   }
 
   void markTermAsKnown(String termId) {
-    state = state.copyWith(
-      termStatus: {...state.termStatus, termId: true}
-    );
+    state = state.copyWith(termStatus: {...state.termStatus, termId: true});
   }
 
   void markTermAsDifficult(String termId) {
-    state = state.copyWith(
-      termStatus: {...state.termStatus, termId: false}
-    );
+    state = state.copyWith(termStatus: {...state.termStatus, termId: false});
   }
 
   void markAnswerCorrect() {
@@ -101,13 +146,38 @@ class StudyNotifier extends StateNotifier<StudyState> {
   }
 
   void recordQuestionAnswer(String questionId, int selectedAnswer) {
+    // Validate answer index (prevent invalid data)
+    final currentItem = state.currentContent?[state.currentIndex];
+    if (currentItem != null) {
+      // Check if it's a question with options
+      final hasOptions =
+          currentItem is Map && currentItem.containsKey('options');
+      if (hasOptions) {
+        final options = currentItem['options'] as List?;
+        if (options != null &&
+            (selectedAnswer < 0 || selectedAnswer >= options.length)) {
+          _logger.error(
+            'Invalid answer index',
+            metadata: {
+              'questionId': questionId,
+              'selectedAnswer': selectedAnswer,
+              'optionsCount': options.length,
+            },
+          );
+          throw InvalidInputException(
+            'Invalid answer selection (index out of range)',
+          );
+        }
+      }
+    }
+
     state = state.copyWith(
       questionAnswers: {...state.questionAnswers, questionId: selectedAnswer},
     );
   }
-  
+
   void next() {
-    if (state.currentContent != null && 
+    if (state.currentContent != null &&
         state.currentIndex < state.currentContent!.length - 1) {
       state = state.copyWith(
         currentIndex: state.currentIndex + 1,
@@ -116,67 +186,117 @@ class StudyNotifier extends StateNotifier<StudyState> {
   }
 
   void previous() {
-    if (state.currentIndex > 0) {
+    if (state.currentContent != null && state.currentIndex > 0) {
       state = state.copyWith(
         currentIndex: state.currentIndex - 1,
       );
     }
   }
 
-  Future<void> markLessonAsCompleted(String lessonId, {String? lessonTitle, int? durationMinutes}) async {
+  /// Mark lesson as completed and save progress
+  Future<void> markLessonAsCompleted(String lessonId,
+      {String? lessonTitle, int? durationMinutes}) async {
     try {
+      // CRITICAL: Must cache progress locally BEFORE claiming success
+      bool localCacheSuccess = false;
       final userId = _supabase.auth.currentUser?.id;
-      
-      // Update local state
-      state = state.copyWith(
-        completedLessons: {...state.completedLessons, lessonId: DateTime.now()},
-      );
-      
-      // Sync with backend if user is authenticated
+
+      // Cache locally first (most important - user's device)
       if (userId != null) {
+        try {
+          await _cacheProgressLocally(userId, lessonId, durationMinutes);
+          localCacheSuccess = true;
+          _logger.info('Progress cached locally');
+        } catch (cacheError, stackTrace) {
+          _logger.fatal(
+            'CRITICAL: Local progress cache failed',
+            error: cacheError,
+            stackTrace: stackTrace,
+            metadata: {'lessonId': lessonId, 'userId': userId},
+          );
+
+          // Local cache failure is CRITICAL - don't claim success
+          state = state.copyWith(
+            error: 'Failed to save progress. Please try again.',
+          );
+
+          throw CacheException(
+            'Failed to save lesson progress locally',
+            originalError: cacheError,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+
+      // Sync with backend if user is authenticated
+      if (userId != null && localCacheSuccess) {
         try {
           // Create or update progress record in Supabase
           final progressData = {
             'user_id': userId,
             'lesson_id': lessonId,
-            'study_mode': state.currentMode?.toString().split('.').last ?? 'lesson',
+            'study_mode':
+                state.currentMode?.toString().split('.').last ?? 'lesson',
             'lesson_completed': true,
             'cards_studied': state.cardsStudied,
             'correct_count': state.correctAnswers,
             'incorrect_count': state.incorrectAnswers,
-            'study_time_seconds': durationMinutes != null ? durationMinutes * 60 : 0,
+            'study_time_seconds':
+                durationMinutes != null ? durationMinutes * 60 : 0,
             'date': DateTime.now().toIso8601String(),
             'is_synced': true,
           };
 
-          await _supabase
-              .from('user_progress')
-              .upsert(progressData);
-          
-          debugPrint('✅ Lesson completion synced to backend');
-        } catch (syncError) {
-          debugPrint('⚠️ Failed to sync lesson completion to backend: $syncError');
-          // Cache for later sync (offline support)
-          await _cacheProgressLocally(userId, lessonId, durationMinutes);
+          await _supabase.from('user_progress').upsert(progressData);
+
+          _logger.info('Lesson completion synced to backend');
+        } catch (syncError, stackTrace) {
+          // Sync error is acceptable since we have local cache
+          _logger.warn(
+            'Backend sync failed but local cache successful',
+            error: syncError,
+            stackTrace: stackTrace,
+          );
+          // Progress will sync later - this is OK
         }
       }
-      
+
       // Schedule next study session reminder if this was a significant study session
       if (durationMinutes != null && durationMinutes >= 15) {
-        await _scheduleNextStudyReminder(lessonTitle);
+        try {
+          await _scheduleNextStudyReminder(lessonTitle);
+        } catch (reminderError) {
+          // Reminder failure shouldn't block completion
+          _logger.warn('Failed to schedule reminder', error: reminderError);
+        }
       }
-    } catch (e) {
-      debugPrint('Error marking lesson as completed: $e');
+
+      // Update state to mark lesson as completed
+      state = state.copyWith(
+        completedLessons: {...state.completedLessons, lessonId: DateTime.now()},
+      );
+    } catch (e, stackTrace) {
+      if (e is CacheException) rethrow;
+
+      _logger.error(
+        'Error marking lesson as completed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      state = state.copyWith(
+        error: 'Failed to complete lesson. Please try again.',
+      );
       rethrow;
     }
   }
 
   /// Cache progress locally for later sync when offline
-  Future<void> _cacheProgressLocally(String userId, String lessonId, int? durationMinutes) async {
+  Future<void> _cacheProgressLocally(
+      String userId, String lessonId, int? durationMinutes) async {
     try {
       final hiveService = HiveService();
       await hiveService.init();
-      
+
       // Map local StudyMode to progress_model.StudyMode
       progress_model.StudyMode progressStudyMode;
       switch (state.currentMode) {
@@ -194,7 +314,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
           progressStudyMode = progress_model.StudyMode.lesson;
           break;
       }
-      
+
       final progress = progress_model.UserProgress(
         id: '${userId}_${lessonId}_${DateTime.now().millisecondsSinceEpoch}',
         userId: userId,
@@ -207,27 +327,28 @@ class StudyNotifier extends StateNotifier<StudyState> {
         studyTimeSeconds: durationMinutes != null ? durationMinutes * 60 : 0,
         isSynced: false, // Mark as not synced for later upload
       );
-      
+
       await hiveService.cacheProgress(progress);
       debugPrint('📦 Progress cached locally for later sync');
     } catch (e) {
       debugPrint('⚠️ Failed to cache progress locally: $e');
     }
   }
-  
+
   /// Schedule a reminder for the next study session
   Future<void> _scheduleNextStudyReminder(String? lessonTitle) async {
     try {
       // Default to 24 hours from now
       final nextDay = DateTime.now().add(const Duration(hours: 24));
-      final nextStudyTime = TimeOfDay(hour: nextDay.hour, minute: nextDay.minute);
-      
+      final nextStudyTime =
+          TimeOfDay(hour: nextDay.hour, minute: nextDay.minute);
+
       final reminder = Reminder(
         id: 'next_study_${DateTime.now().millisecondsSinceEpoch}',
         userId: 'current_user', // This should be replaced with actual user ID
         title: 'Continue Learning',
-        message: lessonTitle != null 
-            ? 'Time to continue with "$lessonTitle"' 
+        message: lessonTitle != null
+            ? 'Time to continue with "$lessonTitle"'
             : 'Time for your next study session!',
         timeOfDay: nextStudyTime,
         frequency: ReminderFrequency.daily,
@@ -235,7 +356,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
         isActive: true,
         isRepeating: false,
       );
-      
+
       await _notificationService.scheduleStudyReminder(reminder);
     } catch (e) {
       debugPrint('Error scheduling next study reminder: $e');
@@ -277,10 +398,9 @@ class StudyState {
     this.currentMode,
     this.currentIndex = 0,
     this.currentContent,
-  }) : 
-    termStatus = termStatus ?? {},
-    questionAnswers = questionAnswers ?? {},
-    completedLessons = completedLessons ?? {};
+  })  : termStatus = termStatus ?? {},
+        questionAnswers = questionAnswers ?? {},
+        completedLessons = completedLessons ?? {};
 
   factory StudyState.initial() => StudyState(lastStudied: DateTime.now());
 
@@ -318,7 +438,7 @@ class StudyState {
 
   // Helper methods
   bool isTermKnown(String termId) => termStatus[termId] ?? false;
-  
+
   /// Schedule a reminder for a specific term
   Future<void> scheduleTermReminder(String term, String definition) async {
     try {
@@ -335,14 +455,14 @@ class StudyState {
         isActive: true,
         isRepeating: true,
       );
-      
+
       await NotificationService().scheduleStudyReminder(reminder);
     } catch (e) {
       debugPrint('Error scheduling term reminder: $e');
       rethrow;
     }
   }
-  
+
   double get accuracy {
     final total = correctAnswers + incorrectAnswers;
     return total > 0 ? correctAnswers / total : 0.0;

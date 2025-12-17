@@ -355,12 +355,11 @@ void main() {
         );
 
         // Simulate answering correctly
-        final isCorrect = true;
         final elapsedSeconds = 15;
         
         final updatedProgress = initialProgress.copyWith(
           questionsAnswered: initialProgress.questionsAnswered + 1,
-          correctCount: isCorrect ? initialProgress.correctCount + 1 : initialProgress.correctCount,
+          correctCount: initialProgress.correctCount + 1,
           studyTimeSeconds: initialProgress.studyTimeSeconds + elapsedSeconds,
         );
 
@@ -383,12 +382,11 @@ void main() {
         );
 
         // Simulate answering incorrectly
-        final isCorrect = false;
         final elapsedSeconds = 20;
         
         final updatedProgress = initialProgress.copyWith(
           questionsAnswered: initialProgress.questionsAnswered + 1,
-          correctCount: isCorrect ? initialProgress.correctCount + 1 : initialProgress.correctCount,
+          correctCount: initialProgress.correctCount,
           studyTimeSeconds: initialProgress.studyTimeSeconds + elapsedSeconds,
         );
 

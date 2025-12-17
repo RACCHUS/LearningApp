@@ -16,9 +16,13 @@ import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
 import 'package:learning_pwa/providers/app_initialization_provider.dart';
+import 'package:learning_pwa/core/errors/global_error_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize global error handling FIRST
+  GlobalErrorHandler.initialize();
 
   try {
     // Load environment variables

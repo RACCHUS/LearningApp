@@ -59,13 +59,30 @@ class HiveService {
   static const String _mcqsBox = 'mcqs';
   static const String _progressBox = 'progress';
   
+  bool _isInitialized = false;
+  
   late final Box<Lesson> _lessonBox;
   late final Box<LocalLesson> _localLessonBox;
   late final Box<Concept> _conceptBox;
   late final Box<Mcq> _mcqBox;
   late final Box<UserProgress> _progressBoxInstance;
   
+  /// Check if HiveService is initialized
+  bool get isInitialized => _isInitialized;
+  
+  /// Guard to ensure initialization before operations
+  void _ensureInitialized() {
+    if (!_isInitialized) {
+      throw StateError('HiveService not initialized. Call init() first.');
+    }
+  }
+  
   Future<void> init() async {
+    if (_isInitialized) {
+      debugPrint('ℹ️ HiveService already initialized');
+      return;
+    }
+    
     try {
       // Try to initialize Hive if not already initialized (e.g., in tests)
       try {
@@ -82,16 +99,19 @@ class HiveService {
       _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
       _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
       
+      _isInitialized = true;
       debugPrint('✅ HiveService initialized successfully');
     } catch (e, stackTrace) {
-      debugPrint('❌ Failed to initialize HiveService - $e');
+      debugPrint('❌ CRITICAL: Failed to initialize HiveService - $e');
       debugPrint('Stack trace: $stackTrace');
+      _isInitialized = false;
       rethrow;
     }
   }
 
   // Lesson methods
   Future<void> cacheLesson(Lesson lesson) async {
+    _ensureInitialized();
     try {
       await _lessonBox.put(lesson.id, lesson);
     } catch (e, stackTrace) {
@@ -102,30 +122,36 @@ class HiveService {
   }
 
   Future<List<Lesson>> getOfflineLessons(String userId) async {
+    _ensureInitialized();
     return _lessonBox.values
         .where((lesson) => lesson.userId == userId)
         .toList();
   }
 
   Future<bool> isLessonOffline(String lessonId) async {
+    _ensureInitialized();
     return _lessonBox.containsKey(lessonId);
   }
 
   Future<void> deleteLessonOffline(String lessonId) async {
+    _ensureInitialized();
     await _lessonBox.delete(lessonId);
   }
 
   Future<void> clearOfflineLessons() async {
+    _ensureInitialized();
     await _lessonBox.clear();
   }
   
   Future<void> cacheLessons(List<Lesson> lessons) async {
+    _ensureInitialized();
     await _lessonBox.putAll(Map.fromEntries(
       lessons.map((lesson) => MapEntry(lesson.id, lesson)),
     ));
   }
   
   Future<Lesson?> getLesson(String lessonId) async {
+    _ensureInitialized();
     try {
       return _lessonBox.get(lessonId);
     } catch (e, stackTrace) {
@@ -136,10 +162,12 @@ class HiveService {
   }
   
   Future<List<Lesson>> getAllLessons() async {
+    _ensureInitialized();
     return _lessonBox.values.toList();
   }
   
   Future<List<Lesson>> searchLessons(String query) async {
+    _ensureInitialized();
     final normalizedQuery = query.toLowerCase();
     return _lessonBox.values
         .where((lesson) => 
@@ -150,74 +178,89 @@ class HiveService {
   }
 
   Future<void> saveLesson(Lesson lesson) async {
+    _ensureInitialized();
     await _lessonBox.put(lesson.id, lesson);
   }
 
   // LocalLesson methods
   Future<void> cacheLocalLesson(LocalLesson lesson) async {
+    _ensureInitialized();
     await _localLessonBox.put(lesson.id, lesson);
   }
 
   Future<List<LocalLesson>> getLocalLessons(String userId) async {
+    _ensureInitialized();
     return _localLessonBox.values
         .where((lesson) => lesson.userId == userId)
         .toList();
   }
 
   Future<LocalLesson?> getLocalLesson(String lessonId) async {
+    _ensureInitialized();
     return _localLessonBox.get(lessonId);
   }
 
   Future<void> deleteLocalLesson(String lessonId) async {
+    _ensureInitialized();
     await _localLessonBox.delete(lessonId);
   }
 
   Future<void> saveProgress(UserProgress progress) async {
+    _ensureInitialized();
     await _progressBoxInstance.put(progress.id, progress);
   }
 
   // Concept methods
   Future<void> cacheConcept(Concept concept) async {
+    _ensureInitialized();
     await _conceptBox.put(concept.id, concept);
   }
   
   Future<void> cacheConcepts(List<Concept> concepts) async {
+    _ensureInitialized();
     await _conceptBox.putAll(Map.fromEntries(
       concepts.map((concept) => MapEntry(concept.id, concept)),
     ));
   }
   
   Future<Concept?> getConcept(String conceptId) async {
+    _ensureInitialized();
     return _conceptBox.get(conceptId);
   }
   
   Future<List<Concept>> getConceptsByLesson(String lessonId) async {
+    _ensureInitialized();
     final concepts = _conceptBox.values.toList();
     return concepts.where((concept) => concept.lessonId == lessonId).toList();
   }
   
   // MCQ methods
   Future<void> cacheMcq(Mcq mcq) async {
+    _ensureInitialized();
     await _mcqBox.put(mcq.id, mcq);
   }
   
   Future<void> cacheMcqs(List<Mcq> mcqs) async {
+    _ensureInitialized();
     await _mcqBox.putAll(Map.fromEntries(
       mcqs.map((mcq) => MapEntry(mcq.id, mcq)),
     ));
   }
   
   Future<Mcq?> getMcq(String mcqId) async {
+    _ensureInitialized();
     return _mcqBox.get(mcqId);
   }
   
   Future<List<Mcq>> getMcqsByLesson(String lessonId) async {
+    _ensureInitialized();
     final mcqs = _mcqBox.values.toList();
     return mcqs.where((mcq) => mcq.lessonId == lessonId).toList();
   }
   
   // Progress methods
   Future<void> cacheProgress(UserProgress progress) async {
+    _ensureInitialized();
     try {
       final existing = _progressBoxInstance.get(progress.id);
       
@@ -237,6 +280,7 @@ class HiveService {
 
   // Progress methods
   Future<List<UserProgress>> getProgress() async {
+    _ensureInitialized();
     try {
       return _progressBoxInstance.values.toList();
     } catch (e, stackTrace) {
@@ -247,6 +291,7 @@ class HiveService {
   }
 
   Future<List<UserProgress>> getUnsyncedProgress() async {
+    _ensureInitialized();
     try {
       final progress = _progressBoxInstance.values.toList();
       return progress.where((p) => !p.isSynced).toList();
@@ -258,6 +303,7 @@ class HiveService {
   }
 
   Future<void> markProgressAsSynced(List<String> progressIds) async {
+    _ensureInitialized();
     if (progressIds.isEmpty) return;
     
     try {
@@ -285,6 +331,7 @@ class HiveService {
 
   // Clear methods
   Future<void> clearAllData() async {
+    _ensureInitialized();
     await Future.wait([
       _lessonBox.clear(),
       _localLessonBox.clear(),
@@ -294,10 +341,15 @@ class HiveService {
     ]);
   }
   
-  Future<void> clearProgress() => _progressBoxInstance.clear();
+  Future<void> clearProgress() {
+    _ensureInitialized();
+    return _progressBoxInstance.clear();
+  }
   
   // Close all boxes when done
   Future<void> close() async {
+    if (!_isInitialized) return;
+    
     await Future.wait([
       _lessonBox.close(),
       _localLessonBox.close(),
@@ -305,6 +357,8 @@ class HiveService {
       _mcqBox.close(),
       _progressBoxInstance.close(),
     ]);
+    
+    _isInitialized = false;
   }
   
   /// Merge two progress objects, keeping the most recent data

@@ -3,12 +3,18 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/core/errors/app_exceptions.dart';
+import 'package:learning_pwa/core/logging/app_logger.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final _logger = AppLogger('AuthNotifier');
+  final _supabase = Supabase.instance.client;
+  late final StreamSubscription _authStateSubscription;
+
   AuthNotifier() : super(AuthInitial()) {
     final session = _supabase.auth.currentSession;
     if (session != null) {
@@ -17,8 +23,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } else {
       state = GuestMode();
     }
-    _authStateSubscription =
-        _supabase.auth.onAuthStateChange.listen((data) {
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) {
       final session = data.session;
       if (session != null) {
         _upsertUser(session.user);
@@ -28,14 +33,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     });
   }
-  
+
   /// Sign in as a guest
   void signInAsGuest() {
     state = GuestMode();
   }
-
-  final _supabase = Supabase.instance.client;
-  late final StreamSubscription _authStateSubscription;
 
   Future<void> signInWithGoogle() async {
     try {
@@ -44,22 +46,68 @@ class AuthNotifier extends StateNotifier<AuthState> {
         OAuthProvider.google,
         redirectTo: kIsWeb ? Uri.base.origin : null,
       );
-    } catch (e) {
-      print('Google sign-in error: $e');
-      state = AuthError(e.toString());
+    } catch (e, stackTrace) {
+      // Log full error details securely
+      _logger.error(
+        'Google sign-in failed',
+        error: e,
+        stackTrace: stackTrace,
+        metadata: {'method': 'signInWithGoogle'},
+      );
+
+      // Sanitized user-facing message
+      state = AuthError('Unable to sign in. Please try again.');
+      rethrow;
     }
   }
 
   Future<void> _upsertUser(User user) async {
-    try {
-      await _supabase.from('users').upsert({
-        'id': user.id,
-        'email': user.email,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      print('Error upserting user: $e');
-      // Optionally, handle the error in the UI
+    int attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        await _supabase.from('users').upsert({
+          'id': user.id,
+          'email': user.email,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+
+        _logger.info('User record upserted successfully',
+            metadata: {'userId': user.id});
+        return; // Success
+      } catch (e, stackTrace) {
+        attempts++;
+
+        _logger.warn(
+          'User upsert failed (attempt $attempts/$maxAttempts)',
+          error: e,
+          stackTrace: stackTrace,
+          metadata: {'userId': user.id, 'attempt': attempts},
+        );
+
+        if (attempts >= maxAttempts) {
+          // Critical: User authenticated but not in database
+          _logger.error(
+            'CRITICAL: User upsert failed after $maxAttempts attempts',
+            error: e,
+            stackTrace: stackTrace,
+            metadata: {'userId': user.id},
+          );
+
+          // Sign out the user to prevent inconsistent state
+          await _supabase.auth.signOut();
+          state = AuthError('Failed to create user account. Please try again.');
+          throw DatabaseException(
+            'User record creation failed after $maxAttempts attempts',
+            originalError: e,
+            stackTrace: stackTrace,
+          );
+        }
+
+        // Exponential backoff: wait before retry
+        await Future.delayed(Duration(milliseconds: 500 * attempts));
+      }
     }
   }
 

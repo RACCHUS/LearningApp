@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
+import 'package:learning_pwa/core/logging/app_logger.dart';
 
 enum TimerMode { countdown, stopwatch }
 
@@ -39,8 +40,9 @@ class TimerState {
   }
 }
 
-
 class TimerNotifier extends StateNotifier<TimerState> {
+  final _logger = AppLogger('TimerNotifier');
+
   TimerNotifier()
       : super(TimerState(
           enabled: false,
@@ -68,9 +70,15 @@ class TimerNotifier extends StateNotifier<TimerState> {
   void setMode(TimerMode mode) {
     pause();
     if (mode == TimerMode.countdown) {
-      state = state.copyWith(mode: mode, timeLeftSeconds: state.durationSeconds, elapsedSeconds: 0);
+      state = state.copyWith(
+          mode: mode,
+          timeLeftSeconds: state.durationSeconds,
+          elapsedSeconds: 0);
     } else {
-      state = state.copyWith(mode: mode, elapsedSeconds: 0, timeLeftSeconds: state.durationSeconds);
+      state = state.copyWith(
+          mode: mode,
+          elapsedSeconds: 0,
+          timeLeftSeconds: state.durationSeconds);
     }
   }
 
@@ -78,14 +86,24 @@ class TimerNotifier extends StateNotifier<TimerState> {
     if (!state.enabled || state.running) return;
     state = state.copyWith(running: true);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.mode == TimerMode.countdown) {
-        if (state.timeLeftSeconds > 0) {
-          state = state.copyWith(timeLeftSeconds: state.timeLeftSeconds - 1);
+      try {
+        if (state.mode == TimerMode.countdown) {
+          if (state.timeLeftSeconds > 0) {
+            state = state.copyWith(timeLeftSeconds: state.timeLeftSeconds - 1);
+          } else {
+            pause();
+            _logger.info('Timer completed');
+          }
         } else {
-          pause();
+          state = state.copyWith(elapsedSeconds: state.elapsedSeconds + 1);
         }
-      } else {
-        state = state.copyWith(elapsedSeconds: state.elapsedSeconds + 1);
+      } catch (e, stackTrace) {
+        _logger.error(
+          'Timer tick failed',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        // Timer continues despite error - don't crash the periodic callback
       }
     });
   }
@@ -103,7 +121,8 @@ class TimerNotifier extends StateNotifier<TimerState> {
   void reset() {
     pause();
     if (state.mode == TimerMode.countdown) {
-      state = state.copyWith(timeLeftSeconds: state.durationSeconds, elapsedSeconds: 0);
+      state = state.copyWith(
+          timeLeftSeconds: state.durationSeconds, elapsedSeconds: 0);
     } else {
       state = state.copyWith(elapsedSeconds: 0);
     }
@@ -116,4 +135,5 @@ class TimerNotifier extends StateNotifier<TimerState> {
   }
 }
 
-final timerProvider = StateNotifierProvider<TimerNotifier, TimerState>((ref) => TimerNotifier());
+final timerProvider =
+    StateNotifierProvider<TimerNotifier, TimerState>((ref) => TimerNotifier());
