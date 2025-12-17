@@ -17,11 +17,15 @@ import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
 import 'package:learning_pwa/providers/app_initialization_provider.dart';
 import 'package:learning_pwa/core/errors/global_error_handler.dart';
+import 'package:learning_pwa/core/logging/error_reporting_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize global error handling FIRST
+  // Initialize error reporting service FIRST
+  await ErrorReportingService.instance.initialize();
+
+  // Initialize global error handling
   GlobalErrorHandler.initialize();
 
   try {
@@ -36,7 +40,7 @@ Future<void> main() async {
         print('⚠️ Warning: Could not load .env file: $e');
         print('📝 Make sure to copy .env.example to .env and configure it');
       }
-      
+
       // For web deployment, we might need to hardcode or use different approach
       if (kIsWeb) {
         print('🌐 Running on web - using fallback configuration');
@@ -88,11 +92,15 @@ Future<void> main() async {
     if (!SupabaseConfig.isConfigured) {
       if (kDebugMode) {
         print('❌ ERROR: Supabase configuration missing!');
-        print('📝 Please copy .env.example to .env and configure your Supabase credentials');
-        print('SUPABASE_URL: ${SupabaseConfig.url.isEmpty ? 'MISSING' : 'SET'}');
-        print('SUPABASE_ANON_KEY: ${SupabaseConfig.anonKey.isEmpty ? 'MISSING' : 'SET'}');
+        print(
+            '📝 Please copy .env.example to .env and configure your Supabase credentials');
+        print(
+            'SUPABASE_URL: ${SupabaseConfig.url.isEmpty ? 'MISSING' : 'SET'}');
+        print(
+            'SUPABASE_ANON_KEY: ${SupabaseConfig.anonKey.isEmpty ? 'MISSING' : 'SET'}');
       }
-      throw Exception('Supabase configuration missing. Please configure .env file.');
+      throw Exception(
+          'Supabase configuration missing. Please configure .env file.');
     }
 
     print('🔄 Initializing Supabase...');
@@ -118,7 +126,7 @@ Future<void> main() async {
       print('❌ App initialization failed: $e');
       print('Stack trace: $stackTrace');
     }
-    
+
     // Show error app instead of crashing
     runApp(
       MaterialApp(
@@ -158,7 +166,7 @@ Future<void> _initializeHandsFreeMode() async {
     final settingsService = HandsFreeSettingsService();
     await settingsService.initialize();
     final settings = settingsService.settings;
-    
+
     if (settings.defaultHandsFreeMode || settingsService.isHandsFreeEnabled) {
       if (kDebugMode) {
         print('🎙️ Auto-enabling hands-free mode based on user settings');
@@ -195,10 +203,11 @@ class _LearningAppState extends ConsumerState<LearningApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
-    
+
     // Set global scaffoldMessengerKey for push notifications
-    PushNotificationService.scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-    
+    PushNotificationService.scaffoldMessengerKey =
+        GlobalKey<ScaffoldMessengerState>();
+
     return MaterialApp.router(
       scaffoldMessengerKey: PushNotificationService.scaffoldMessengerKey,
       title: 'Learning PWA',

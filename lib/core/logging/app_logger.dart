@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/core/errors/global_error_handler.dart';
+import 'package:learning_pwa/core/logging/error_reporting_service.dart';
 
 enum LogLevel { trace, debug, info, warn, error, fatal }
 
@@ -80,8 +81,7 @@ class AppLogger {
       'message': message,
       'timestamp': DateTime.now().toIso8601String(),
       if (error != null) 'error': GlobalErrorHandler.sanitizeForLogging(error),
-      if (stackTrace != null && kDebugMode)
-        'stackTrace': stackTrace.toString(),
+      if (stackTrace != null && kDebugMode) 'stackTrace': stackTrace.toString(),
       if (metadata != null) 'metadata': metadata,
     };
 
@@ -112,8 +112,12 @@ class AppLogger {
 
     // Send errors and fatals to external service in production
     if (kReleaseMode && (level == LogLevel.error || level == LogLevel.fatal)) {
-      // TODO: Integrate with Sentry/Crashlytics
-      // ErrorReportingService.instance.reportError(error, stackTrace, context: logData);
+      ErrorReportingService.instance.reportError(
+        error,
+        stackTrace,
+        context: logData,
+        level: level.name,
+      );
     }
   }
 }
