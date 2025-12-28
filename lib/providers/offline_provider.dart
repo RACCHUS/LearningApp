@@ -1,26 +1,38 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
+import 'package:learning_pwa/services/connectivity_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final offlineProvider =
     StateNotifierProvider<OfflineNotifier, OfflineState>((ref) {
-  return OfflineNotifier(ref.read(hiveServiceProvider));
+  final connectivityService = ref.read(connectivityServiceProvider);
+  return OfflineNotifier(ref.read(hiveServiceProvider), connectivityService);
 });
 
 class OfflineNotifier extends StateNotifier<OfflineState> {
   final HiveService _hiveService;
+  final ConnectivityService _connectivityService;
   final _supabase = Supabase.instance.client;
+  
+  // Subscription for cleanup
+  StreamSubscription<bool>? _connectivitySubscription;
 
-  OfflineNotifier(this._hiveService) : super(const OfflineState()) {
-    Connectivity().onConnectivityChanged.listen((connectivityResult) {
-      if (connectivityResult != ConnectivityResult.none) {
+  OfflineNotifier(this._hiveService, this._connectivityService) : super(const OfflineState()) {
+    _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
+      if (isConnected) {
         syncProgress();
       }
     });
+  }
+  
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> init() async {

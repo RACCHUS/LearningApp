@@ -1,20 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/models/voice_command.dart';
-
-// import 'enhanced_voice_input_service_mockito_test.mocks.dart';
 
 // Note: SpeechRecognitionManager is a singleton, so we'll test the service
 // integration points rather than mocking the manager directly
 @GenerateMocks([])
 void main() {
-  group('EnhancedVoiceInputService Integration Tests', () {
-    late EnhancedVoiceInputService service;
+  group('VoiceInputService Integration Tests', () {
+    late VoiceInputService service;
 
     setUp(() {
-      service = EnhancedVoiceInputService();
+      service = VoiceInputService();
     });
 
     test('should initialize service', () async {
@@ -89,7 +87,7 @@ void main() {
 
     test('should parse voice command from recognized text', () {
       // Arrange
-      final service = EnhancedVoiceInputService();
+      final service = VoiceInputService();
       
       // Act - test command parsing
       // Note: This tests the VoiceCommandParser integration

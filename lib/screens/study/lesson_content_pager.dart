@@ -12,7 +12,7 @@ import 'package:learning_pwa/screens/study/mcq_screen.dart';
 import 'package:learning_pwa/screens/study/concept_screen.dart';
 import 'package:learning_pwa/widgets/page_navigator_widget.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
@@ -175,7 +175,7 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
     final settingsNotifier = ref.read(audioLessonSettingsProvider.notifier);
     
     // Request microphone permissions FIRST, before enabling hands-free mode
-    final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+    final audioNotifier = ref.read(audioPlaybackProvider.notifier);
     print('🎙️ About to request microphone permissions for hands-free mode...'); // Always print
     print('🎙️ Audio notifier: $audioNotifier'); // Always print
     

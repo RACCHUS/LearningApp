@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/global_voice_command.dart';
 import 'package:learning_pwa/services/global_voice_service.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 
 /// Provider for the global voice service
@@ -13,6 +14,11 @@ final globalVoiceServiceProvider = Provider<GlobalVoiceService>((ref) {
 class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
   final GlobalVoiceService _service;
   final Ref _ref;
+  
+  // Subscriptions for cleanup
+  StreamSubscription<bool>? _listeningSubscription;
+  StreamSubscription<GlobalVoiceCommand>? _commandSubscription;
+  StreamSubscription<String>? _statusSubscription;
 
   GlobalVoiceNotifier(this._service, this._ref) : super(const GlobalVoiceState()) {
     _initializeService();
@@ -21,7 +27,7 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
 
   Future<void> _initializeService() async {
     // Get the enhanced voice service from the audio provider
-    final audioNotifier = _ref.read(enhancedAudioProvider.notifier);
+    final audioNotifier = _ref.read(audioPlaybackProvider.notifier);
     
     // Get the router for navigation
     final router = _ref.read(routerProvider);
@@ -40,18 +46,18 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
 
   void _setupListeners() {
     // Listen to service state changes
-    _service.isListeningStream.listen((isListening) {
+    _listeningSubscription = _service.isListeningStream.listen((isListening) {
       state = state.copyWith(isListening: isListening);
     });
 
-    _service.commandStream.listen((command) {
+    _commandSubscription = _service.commandStream.listen((command) {
       state = state.copyWith(
         lastCommand: command,
         lastCommandTime: DateTime.now(),
       );
     });
 
-    _service.statusStream.listen((status) {
+    _statusSubscription = _service.statusStream.listen((status) {
       state = state.copyWith(statusMessage: status);
     });
   }
@@ -59,7 +65,7 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
   /// Enable global voice listening
   Future<bool> enable() async {
     // Ensure we have permissions first
-    final audioNotifier = _ref.read(enhancedAudioProvider.notifier);
+    final audioNotifier = _ref.read(audioPlaybackProvider.notifier);
     final hasPermissions = await audioNotifier.requestMicrophonePermissions();
     
     if (!hasPermissions) {
@@ -119,6 +125,9 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
 
   @override
   void dispose() {
+    _listeningSubscription?.cancel();
+    _commandSubscription?.cancel();
+    _statusSubscription?.cancel();
     _service.dispose();
     super.dispose();
   }

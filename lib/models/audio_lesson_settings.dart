@@ -39,6 +39,11 @@ class AudioLessonSettings {
   @HiveField(10)
   final bool interruptOnNextCommand;
 
+  /// Voice recognition locale (e.g., 'en_US', 'en_GB', 'es_ES', 'fr_FR')
+  /// Used by speech recognition providers to determine language model
+  @HiveField(11)
+  final String voiceLocale;
+
   const AudioLessonSettings({
     this.handsFreeModeEnabled = false,
     this.autoProgressDelay = const Duration(seconds: 3),
@@ -51,6 +56,7 @@ class AudioLessonSettings {
     this.immediateAnswerProgression = true,
     this.voiceRetryAttempts = 3,
     this.interruptOnNextCommand = true,
+    this.voiceLocale = 'en_US',
   });
 
   factory AudioLessonSettings.fromJson(Map<String, dynamic> json) => 
@@ -70,6 +76,7 @@ class AudioLessonSettings {
     bool? immediateAnswerProgression,
     int? voiceRetryAttempts,
     bool? interruptOnNextCommand,
+    String? voiceLocale,
   }) {
     return AudioLessonSettings(
       handsFreeModeEnabled: handsFreeModeEnabled ?? this.handsFreeModeEnabled,
@@ -83,6 +90,7 @@ class AudioLessonSettings {
       immediateAnswerProgression: immediateAnswerProgression ?? this.immediateAnswerProgression,
       voiceRetryAttempts: voiceRetryAttempts ?? this.voiceRetryAttempts,
       interruptOnNextCommand: interruptOnNextCommand ?? this.interruptOnNextCommand,
+      voiceLocale: voiceLocale ?? this.voiceLocale,
     );
   }
 
@@ -101,7 +109,8 @@ class AudioLessonSettings {
           autoProgressAfterReading == other.autoProgressAfterReading &&
           immediateAnswerProgression == other.immediateAnswerProgression &&
           voiceRetryAttempts == other.voiceRetryAttempts &&
-          interruptOnNextCommand == other.interruptOnNextCommand;
+          interruptOnNextCommand == other.interruptOnNextCommand &&
+          voiceLocale == other.voiceLocale;
 
   @override
   int get hashCode =>
@@ -115,5 +124,6 @@ class AudioLessonSettings {
       autoProgressAfterReading.hashCode ^
       immediateAnswerProgression.hashCode ^
       voiceRetryAttempts.hashCode ^
-      interruptOnNextCommand.hashCode;
+      interruptOnNextCommand.hashCode ^
+      voiceLocale.hashCode;
 }

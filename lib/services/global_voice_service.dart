@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/global_voice_command.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/services/voice_command_corrector.dart';
+import 'package:learning_pwa/services/global_voice/global_voice.dart';
 import 'package:learning_pwa/widgets/voice_command_confirmation.dart';
 
 /// Global voice service that listens for voice commands throughout the app
@@ -14,21 +15,24 @@ class GlobalVoiceService {
   factory GlobalVoiceService() => _instance;
   GlobalVoiceService._internal();
 
-  EnhancedVoiceInputService? _voiceService;
-  GoRouter? _router;
+  VoiceInputService? _voiceService;
   bool _isListening = false;
   bool _isEnabled = false;
   String? _currentRoute;
+  
+  /// Voice recognition locale (e.g., 'en_US', 'en-US')
+  /// Set this to match the user's preferred language from settings
+  String _voiceLocale = 'en_US';
   
   // Voice command correction
   final VoiceCommandCorrector _voiceCorrector = VoiceCommandCorrector();
   BuildContext? _context; // For showing confirmation dialogs
   
-  // Phrase accumulation for multi-word commands
-  String _accumulatedPhrase = '';
-  Timer? _phraseAccumulationTimer;
-  bool _isAccumulatingPhrase = false;
-  static const Duration _phraseAccumulationDelay = Duration(milliseconds: 1200);
+  // Extracted modules for better maintainability
+  final PhraseAccumulator _phraseAccumulator = PhraseAccumulator();
+  final CommandSynonymMapper _synonymMapper = CommandSynonymMapper();
+  final ContextualHelpProvider _helpProvider = ContextualHelpProvider();
+  GlobalCommandExecutor? _commandExecutor;
   
   // Stream controllers for state management
   final StreamController<bool> _isListeningController = StreamController<bool>.broadcast();
@@ -45,16 +49,26 @@ class GlobalVoiceService {
   bool get isListening => _isListening;
   bool get isAvailable => _voiceService?.isAvailable ?? false;
   bool get hasPermissions => _voiceService?.hasPermissions ?? false;
+  String get voiceLocale => _voiceLocale;
+  
+  /// Update the voice recognition locale
+  /// Call this when user changes language preference in settings
+  set voiceLocale(String locale) => _voiceLocale = locale;
 
   /// Initialize the global voice service
   Future<void> initialize({
-    required EnhancedVoiceInputService voiceService,
+    required VoiceInputService voiceService,
     GoRouter? router,
     BuildContext? context,
   }) async {
     _voiceService = voiceService;
-    _router = router;
     _context = context;
+    
+    // Initialize command executor with router
+    _commandExecutor = GlobalCommandExecutor(
+      router: router,
+      onStatusUpdate: _updateStatus,
+    );
     
     // Initialize voice corrector
     _voiceCorrector.initialize();
@@ -103,7 +117,15 @@ class GlobalVoiceService {
     }
 
     // Start listening immediately
-    await _startListening();
+    try {
+      await _startListening();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🌐 Error starting listening after enable: $e');
+      }
+      // Don't fail enable if starting listening fails
+      // The service will retry on next cycle
+    }
     return true;
   }
 
@@ -113,9 +135,7 @@ class GlobalVoiceService {
     await _stopListening();
     
     // Clean up phrase accumulation
-    _phraseAccumulationTimer?.cancel();
-    _isAccumulatingPhrase = false;
-    _accumulatedPhrase = '';
+    _phraseAccumulator.reset();
     
     _updateStatus('Global voice disabled');
     
@@ -144,12 +164,12 @@ class GlobalVoiceService {
     
     try {
       if (kDebugMode) {
-        print('🌐 Starting global voice listening...');
+        print('🌐 Starting global voice listening with locale: $_voiceLocale');
       }
 
       // Start voice recognition with longer timeout for multi-word commands
       final success = await _voiceService!.startListening(
-        localeId: 'en_US',
+        localeId: _voiceLocale,
         listenFor: const Duration(seconds: 10), // Increased from 5 to 10
         pauseFor: const Duration(milliseconds: 800), // Wait for natural pauses
       );
@@ -236,9 +256,7 @@ class GlobalVoiceService {
         }
         
         // Reset accumulation state since we're processing immediately
-        _isAccumulatingPhrase = false;
-        _phraseAccumulationTimer?.cancel();
-        _accumulatedPhrase = '';
+        _phraseAccumulator.reset();
         
         _commandController.add(immediateCommand);
         _updateStatus('Command: ${immediateCommand.phrase}');
@@ -247,58 +265,27 @@ class GlobalVoiceService {
       }
     }
 
-    // Enhanced phrase accumulation for multi-word commands or lower confidence
-    if (_isAccumulatingPhrase) {
-      // Add to accumulated phrase if it's not a duplicate
-      final accumulatedWords = _accumulatedPhrase.split(' ');
-      
-      // Check if this is a continuation or new text
-      bool isNewText = true;
-      if (accumulatedWords.isNotEmpty && words.isNotEmpty) {
-        isNewText = !words.every((word) => accumulatedWords.contains(word.toLowerCase()));
-      }
-      
-      if (isNewText && text.trim().isNotEmpty) {
-        _accumulatedPhrase = '$_accumulatedPhrase $text'.trim();
-        if (kDebugMode) {
-          print('🌐 Accumulated phrase: "$_accumulatedPhrase"');
-        }
-      }
-    } else {
-      // Start new accumulation
-      _accumulatedPhrase = text.trim();
-      _isAccumulatingPhrase = true;
-      
-      if (kDebugMode) {
-        print('🌐 Starting phrase accumulation with: "$_accumulatedPhrase"');
-      }
-    }
-
-    // Cancel previous timer and start new one
-    _phraseAccumulationTimer?.cancel();
+    // Use phrase accumulator for multi-word commands or lower confidence
+    _phraseAccumulator.addText(text);
     
-    // Use shorter timeout for simple commands, longer for complex ones
-    final timeoutDuration = words.length <= 2 ? 
-        const Duration(milliseconds: 600) : // Faster for simple commands
-        _phraseAccumulationDelay; // Full delay for complex commands
-    
-    _phraseAccumulationTimer = Timer(timeoutDuration, () {
-      _processFinalPhrase(_accumulatedPhrase, confidence);
-    });
+    // Start timer with callback to process final phrase
+    _phraseAccumulator.startTimer(
+      onComplete: (finalPhrase) => _processFinalPhrase(finalPhrase, confidence),
+      wordCount: words.length,
+    );
   }
 
   /// Process the final accumulated phrase after waiting for completion
   Future<void> _processFinalPhrase(String finalPhrase, double confidence) async {
     // Reset accumulation state
-    _isAccumulatingPhrase = false;
-    _phraseAccumulationTimer?.cancel();
+    _phraseAccumulator.reset();
     
     if (kDebugMode) {
       print('🌐 Processing final phrase: "$finalPhrase" (confidence: $confidence)');
     }
 
-    // Enhanced synonym mapping for better recognition
-    String normalizedPhrase = _applyCommandSynonyms(finalPhrase.toLowerCase().trim());
+    // Apply synonym mapping for better recognition
+    String normalizedPhrase = _synonymMapper.normalize(finalPhrase);
     
     // Try voice correction if original command is not recognized
     GlobalVoiceCommand? command = GlobalVoiceCommand.parseCommand(normalizedPhrase);
@@ -383,63 +370,6 @@ class GlobalVoiceService {
     }
   }
 
-  /// Apply command synonyms for better recognition
-  String _applyCommandSynonyms(String input) {
-    // Map common speech recognition variants to standard commands
-    final synonymMap = {
-      // Navigation synonyms
-      'go home': ['home', 'main', 'dashboard', 'start'],
-      'settings': ['setting', 'preferences', 'config', 'configuration'],
-      'profile': ['my profile', 'user profile', 'account'],
-      
-      // Lesson management synonyms
-      'find lesson': ['search lesson', 'look for lesson', 'show lesson', 'open lesson'],
-      'start lesson': ['begin lesson', 'launch lesson', 'play lesson', 'run lesson'],
-      'my lessons': ['lessons', 'lesson list', 'all lessons', 'lesson library'],
-      'recent lessons': ['recent', 'last lessons', 'recently viewed'],
-      
-      // Action synonyms
-      'find': ['search', 'look for', 'show', 'open', 'display'],
-      'start': ['begin', 'launch', 'play', 'run', 'open'],
-    };
-
-    String normalized = input;
-    
-    // Apply full phrase synonyms first
-    for (final entry in synonymMap.entries) {
-      final standardForm = entry.key;
-      final variants = entry.value;
-      
-      for (final variant in variants) {
-        if (normalized.contains(variant)) {
-          normalized = normalized.replaceAll(variant, standardForm);
-          break;
-        }
-      }
-    }
-    
-    // Special handling for lesson commands with parameters
-    if (normalized.contains('lesson')) {
-      // Handle patterns like "find laptops" -> "find lesson laptops"
-      final findPattern = RegExp(r'\b(find|search|show|open)\s+(?!lesson)(\w+)');
-      normalized = normalized.replaceAllMapped(findPattern, (match) {
-        return '${match.group(1)} lesson ${match.group(2)}';
-      });
-      
-      // Handle patterns like "start laptops" -> "start lesson laptops"
-      final startPattern = RegExp(r'\b(start|begin|launch|play|run)\s+(?!lesson)(\w+)');
-      normalized = normalized.replaceAllMapped(startPattern, (match) {
-        return '${match.group(1)} lesson ${match.group(2)}';
-      });
-    }
-    
-    if (kDebugMode && normalized != input) {
-      print('🌐 Applied synonyms: "$input" -> "$normalized"');
-    }
-    
-    return normalized;
-  }
-
   /// Stop listening for commands
   Future<void> _stopListening() async {
     if (!_isListening || _voiceService == null) {
@@ -472,155 +402,35 @@ class GlobalVoiceService {
 
   /// Get context-specific help based on current route
   String getContextualHelp() {
-    switch (_currentRoute) {
-      case '/':
-      case '/home':
-        return '''
-Home Screen Voice Commands:
-• "My lessons" - View lesson library
-• "Recent lessons" - View recent lessons  
-• "Find lesson [name]" - Search for a lesson
-• "Start lesson [name]" - Launch a lesson
-• "Settings" - Open settings
-        ''';
-      case '/lessons':
-        return '''
-Lesson Library Voice Commands:
-• "Start lesson [name]" - Launch a lesson
-• "Find lesson [name]" - Search for a lesson
-• "Recent lessons" - View recent lessons
-• "Go home" - Return to home screen
-        ''';
-      case '/settings':
-        return '''
-Settings Voice Commands:
-• "Voice help" - Show voice command help
-• "Toggle hands free" - Enable/disable hands-free mode
-• "Go home" - Return to home screen
-        ''';
-      default:
-        return GlobalVoiceCommand.getGlobalCommandsHelp();
-    }
+    return _helpProvider.getHelpForRoute(_currentRoute);
+  }
+  
+  /// Get brief help suggestion for current route
+  String getBriefHelp() {
+    return _helpProvider.getBriefHelpForRoute(_currentRoute);
+  }
+  
+  /// Get example commands for current route
+  List<String> getExampleCommands() {
+    return _helpProvider.getExamplesForRoute(_currentRoute);
   }
 
   /// Execute a recognized global voice command
   Future<void> _executeCommand(GlobalVoiceCommand command) async {
-    if (_router == null) {
+    if (_commandExecutor == null) {
       if (kDebugMode) {
-        print('🌐 Router not available, cannot execute navigation command: ${command.phrase}');
+        print('🌐 Command executor not available, cannot execute: ${command.phrase}');
       }
       return;
     }
 
     try {
-      switch (command.type) {
-        case GlobalVoiceCommandType.navigation:
-          await _executeNavigationCommand(command);
-          break;
-        case GlobalVoiceCommandType.lessonManagement:
-          await _executeLessonCommand(command);
-          break;
-        case GlobalVoiceCommandType.app:
-          await _executeAppCommand(command);
-          break;
-      }
+      await _commandExecutor!.execute(command);
     } catch (e) {
       if (kDebugMode) {
         print('🌐 Error executing command "${command.phrase}": $e');
       }
-    }
-  }
-
-  /// Execute navigation commands
-  Future<void> _executeNavigationCommand(GlobalVoiceCommand command) async {
-    if (_router == null) return;
-
-    switch (command.phrase.toLowerCase()) {
-      case 'go home':
-      case 'home':
-      case 'home page':
-        _router!.go('/');
-        if (kDebugMode) print('🌐 Navigated to home');
-        break;
-      case 'settings':
-      case 'go to settings':
-      case 'open settings':
-        _router!.go('/settings');
-        if (kDebugMode) print('🌐 Navigated to settings');
-        break;
-      case 'profile':
-      case 'my profile':
-      case 'go to profile':
-        _router!.go('/profile');
-        if (kDebugMode) print('🌐 Navigated to profile');
-        break;
-      case 'lessons':
-      case 'my lessons':
-      case 'lesson list':
-        _router!.go('/');
-        if (kDebugMode) print('🌐 Navigated to lessons (home)');
-        break;
-      case 'create lesson':
-      case 'new lesson':
-        _router!.go('/create-lesson');
-        if (kDebugMode) print('🌐 Navigated to create lesson');
-        break;
-      default:
-        if (kDebugMode) print('🌐 Unknown navigation command: ${command.phrase}');
-    }
-  }
-
-  /// Execute lesson management commands
-  Future<void> _executeLessonCommand(GlobalVoiceCommand command) async {
-    if (kDebugMode) {
-      print('🌐 Lesson command executed: ${command.phrase}');
-    }
-    
-    // Extract lesson name from parameters if available
-    final lessonName = command.parameters['lessonName'] as String?;
-    
-    if (lessonName != null && lessonName.isNotEmpty) {
-      // Navigate to home with search query
-      _router?.go('/?search=${Uri.encodeComponent(lessonName)}');
-      
-      if (kDebugMode) {
-        print('🌐 Searching for lesson: "$lessonName"');
-      }
-      
-      _updateStatus('Searching for: $lessonName');
-    } else {
-      // General lesson management commands
-      switch (command.phrase.toLowerCase()) {
-        case 'my lessons':
-        case 'lesson library':
-        case 'all lessons':
-          _router?.go('/');
-          if (kDebugMode) print('🌐 Navigated to lesson library');
-          break;
-        case 'recent lessons':
-        case 'recent':
-          _router?.go('/?filter=recent');
-          if (kDebugMode) print('🌐 Showing recent lessons');
-          break;
-        default:
-          // Default to home screen
-          _router?.go('/');
-          if (kDebugMode) print('🌐 Navigated to home for lesson management');
-      }
-    }
-  }
-
-  /// Execute app-level commands
-  Future<void> _executeAppCommand(GlobalVoiceCommand command) async {
-    switch (command.phrase.toLowerCase()) {
-      case 'help':
-      case 'voice help':
-      case 'what can i say':
-        // Could show a help dialog here
-        if (kDebugMode) print('🌐 Help command executed');
-        break;
-      default:
-        if (kDebugMode) print('🌐 Unknown app command: ${command.phrase}');
+      _updateStatus('Error executing command');
     }
   }
 
@@ -639,9 +449,7 @@ Settings Voice Commands:
     _stopListening();
     
     // Clean up phrase accumulation
-    _phraseAccumulationTimer?.cancel();
-    _isAccumulatingPhrase = false;
-    _accumulatedPhrase = '';
+    _phraseAccumulator.dispose();
     
     _isListeningController.close();
     _commandController.close();

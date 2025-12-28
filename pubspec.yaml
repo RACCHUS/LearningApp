@@ -35,6 +35,8 @@ dependencies:
   # Voice correction libraries
   fuzzy: ^0.5.1
   string_similarity: ^2.0.0
+  # Concurrency utilities for voice system
+  synchronized: ^3.1.0
 
 dev_dependencies:
   flutter_test:

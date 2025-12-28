@@ -4,23 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/global_voice_service.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'global_voice_service_mockito_test.mocks.dart';
 
-@GenerateMocks([EnhancedVoiceInputService, GoRouter])
+@GenerateMocks([VoiceInputService, GoRouter])
 void main() {
   group('GlobalVoiceService with mockito', () {
     late GlobalVoiceService service;
-    late MockEnhancedVoiceInputService mockVoice;
+    late MockVoiceInputService mockVoice;
     late MockGoRouter mockRouter;
     late StreamController<AudioState> stateController;
 
     setUp(() {
       service = GlobalVoiceService();
-      mockVoice = MockEnhancedVoiceInputService();
+      mockVoice = MockVoiceInputService();
       mockRouter = MockGoRouter();
       stateController = StreamController<AudioState>.broadcast();
 
@@ -57,7 +57,7 @@ void main() {
 
     test('enable fails when permissions are missing', () async {
       // Create a new mock with different permissions
-      final mockVoiceNoPerm = MockEnhancedVoiceInputService();
+      final mockVoiceNoPerm = MockVoiceInputService();
       when(mockVoiceNoPerm.isAvailable).thenReturn(true);
       when(mockVoiceNoPerm.hasPermissions).thenReturn(false);
       

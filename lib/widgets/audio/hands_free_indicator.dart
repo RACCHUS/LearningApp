@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 
 class HandsFreeIndicator extends ConsumerWidget {
@@ -196,7 +196,7 @@ class HandsFreeModeToggle extends ConsumerWidget {
         onChanged: (_) async {
           // If enabling hands-free mode, request permissions first
           if (!isEnabled) {
-            final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+            final audioNotifier = ref.read(audioPlaybackProvider.notifier);
             
             if (kDebugMode) {
               print('🎙️ Requesting microphone permissions for hands-free mode...');

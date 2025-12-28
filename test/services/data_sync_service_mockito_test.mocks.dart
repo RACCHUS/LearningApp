@@ -420,6 +420,13 @@ class MockSupabaseClient extends _i1.Mock implements _i2.SupabaseClient {
 /// See the documentation for Mockito's code generation for more information.
 class MockHiveService extends _i1.Mock implements _i5.HiveService {
   @override
+  bool get isInitialized => (super.noSuchMethod(
+        Invocation.getter(#isInitialized),
+        returnValue: false,
+        returnValueForMissingStub: false,
+      ) as bool);
+
+  @override
   _i3.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,

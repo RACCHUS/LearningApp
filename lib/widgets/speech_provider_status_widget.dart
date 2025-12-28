@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 
 /// Widget that displays current speech provider status and provides manual input when needed
 class SpeechProviderStatusWidget extends ConsumerStatefulWidget {
@@ -29,8 +29,8 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
 
   @override
   Widget build(BuildContext context) {
-    final audioNotifier = ref.watch(enhancedAudioProvider.notifier);
-    final audioState = ref.watch(enhancedAudioProvider);
+    final audioNotifier = ref.watch(audioPlaybackProvider.notifier);
+    final audioState = ref.watch(audioPlaybackProvider);
 
     return Card(
       child: Padding(
@@ -57,7 +57,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
     );
   }
 
-  Widget _buildProviderStatus(EnhancedAudioNotifier audioNotifier) {
+  Widget _buildProviderStatus(AudioPlaybackNotifier audioNotifier) {
     final isManualMode = audioNotifier.isManualInputMode;
     final canListen = audioNotifier.canListen;
     
@@ -101,7 +101,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
     );
   }
 
-  Widget _buildSetupInstructions(EnhancedAudioNotifier audioNotifier) {
+  Widget _buildSetupInstructions(AudioPlaybackNotifier audioNotifier) {
     final instructions = audioNotifier.getSetupInstructions();
     
     return Container(
@@ -142,7 +142,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
     );
   }
 
-  Widget _buildManualInputSection(EnhancedAudioNotifier audioNotifier) {
+  Widget _buildManualInputSection(AudioPlaybackNotifier audioNotifier) {
     if (!_showInput && !audioNotifier.isManualInputMode) {
       return Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -216,7 +216,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
     );
   }
 
-  Widget _buildCommandMappings(EnhancedAudioNotifier audioNotifier) {
+  Widget _buildCommandMappings(AudioPlaybackNotifier audioNotifier) {
     final mappings = audioNotifier.getCommandMappings();
     
     if (mappings.isEmpty) return const SizedBox.shrink();
@@ -264,7 +264,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
   void _submitManualInput(String input) {
     if (input.trim().isEmpty) return;
     
-    final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+    final audioNotifier = ref.read(audioPlaybackProvider.notifier);
     
     // Submit to the speech manager
     audioNotifier.submitManualInput(input.trim());
@@ -281,7 +281,7 @@ class _SpeechProviderStatusWidgetState extends ConsumerState<SpeechProviderStatu
     }
   }
 
-  void _requestPermissions(EnhancedAudioNotifier audioNotifier) async {
+  void _requestPermissions(AudioPlaybackNotifier audioNotifier) async {
     try {
       final granted = await audioNotifier.requestMicrophonePermissions();
       

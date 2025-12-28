@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
@@ -103,9 +104,12 @@ final audioLessonSettingsProvider = StateNotifierProvider<AudioLessonSettingsNot
 class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
   final AudioLessonOrchestrator _orchestrator;
   
+  // Subscription for cleanup
+  StreamSubscription<AudioLessonState>? _stateSubscription;
+  
   AudioLessonStateNotifier(this._orchestrator) : super(AudioLessonState.idle) {
     // Listen to orchestrator state changes
-    _orchestrator.stateStream.listen((newState) {
+    _stateSubscription = _orchestrator.stateStream.listen((newState) {
       state = newState;
     });
   }
@@ -137,6 +141,12 @@ class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
   Future<void> repeatContent() async {
     await _orchestrator.repeatContent();
   }
+  
+  @override
+  void dispose() {
+    _stateSubscription?.cancel();
+    super.dispose();
+  }
 }
 
 final audioLessonStateProvider = StateNotifierProvider<AudioLessonStateNotifier, AudioLessonState>((ref) {
@@ -148,11 +158,20 @@ final audioLessonStateProvider = StateNotifierProvider<AudioLessonStateNotifier,
 class AudioLessonProgressNotifier extends StateNotifier<int> {
   final AudioLessonOrchestrator _orchestrator;
   
+  // Subscription for cleanup
+  StreamSubscription<int>? _progressSubscription;
+  
   AudioLessonProgressNotifier(this._orchestrator) : super(0) {
     // Listen to orchestrator progress changes
-    _orchestrator.progressStream.listen((progress) {
+    _progressSubscription = _orchestrator.progressStream.listen((progress) {
       state = progress;
     });
+  }
+  
+  @override
+  void dispose() {
+    _progressSubscription?.cancel();
+    super.dispose();
   }
 }
 
@@ -165,15 +184,24 @@ final audioLessonProgressProvider = StateNotifierProvider<AudioLessonProgressNot
 class AudioLessonActionsNotifier extends StateNotifier<LessonFlowAction?> {
   final AudioLessonOrchestrator _orchestrator;
   
+  // Subscription for cleanup
+  StreamSubscription<LessonFlowAction>? _actionSubscription;
+  
   AudioLessonActionsNotifier(this._orchestrator) : super(null) {
     // Listen to orchestrator action events
-    _orchestrator.actionStream.listen((action) {
+    _actionSubscription = _orchestrator.actionStream.listen((action) {
       state = action;
     });
   }
 
   void clearAction() {
     state = null;
+  }
+  
+  @override
+  void dispose() {
+    _actionSubscription?.cancel();
+    super.dispose();
   }
 }
 

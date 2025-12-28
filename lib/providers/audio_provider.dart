@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/audio_service.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
@@ -85,14 +86,18 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
 
   final AudioSettingsNotifier _settingsNotifier;
   final AudioService _audioService = AudioService();
-  final EnhancedVoiceInputService _voiceService = EnhancedVoiceInputService();
+  final VoiceInputService _voiceService = VoiceInputService();
+  
+  // Subscriptions for cleanup
+  StreamSubscription<AudioState>? _audioSubscription;
+  StreamSubscription<AudioState>? _voiceSubscription;
 
   Future<void> _initialize() async {
     await _audioService.initialize();
     await _voiceService.initialize();
 
     // Listen to audio service state changes
-    _audioService.stateStream.listen((audioState) {
+    _audioSubscription = _audioService.stateStream.listen((audioState) {
       state = state.copyWith(
         playbackState: audioState.playbackState,
         currentText: audioState.currentText,
@@ -104,7 +109,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
     });
 
     // Listen to voice service state changes
-    _voiceService.stateStream.listen((voiceState) {
+    _voiceSubscription = _voiceService.stateStream.listen((voiceState) {
       state = state.copyWith(
         voiceInputState: voiceState.voiceInputState,
         recognizedText: voiceState.recognizedText,
@@ -112,6 +117,13 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
         hasPermissions: voiceState.hasPermissions,
       );
     });
+  }
+  
+  @override
+  void dispose() {
+    _audioSubscription?.cancel();
+    _voiceSubscription?.cancel();
+    super.dispose();
   }
 
   // Text-to-Speech methods
@@ -208,7 +220,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
   bool get canListen => _voiceService.canListen; // Use the service's combined check
   
   // Expose voice service for orchestrator injection
-  EnhancedVoiceInputService get voiceService => _voiceService;
+  VoiceInputService get voiceService => _voiceService;
   
   List<String> get availableVoices => state.availableVoices;
   List<String> get availableLocales => _voiceService.getAvailableLocales();

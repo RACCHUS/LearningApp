@@ -143,8 +143,34 @@ class VoiceCommand {
     'wrong': false,
   };
 
-  static VoiceCommand? parseCommand(String text) {
+  /// Helper method to check if a phrase matches using word boundaries
+  /// Prevents false positives like "no" matching in "know" or "start" in "restart"
+  static bool _matchesWithWordBoundary(String text, String phrase) {
+    // Exact match
+    if (text == phrase) return true;
+    
+    // Word boundary match using regex
+    final pattern = RegExp(
+      r'(^|\s)' + RegExp.escape(phrase) + r'($|\s|[.,!?])',
+      caseSensitive: false,
+    );
+    return pattern.hasMatch(text);
+  }
+
+  /// Sort entries by key length (longest first) to prioritize specific matches
+  static List<MapEntry<String, T>> _sortByLengthDescending<T>(Map<String, T> map) {
+    final entries = map.entries.toList();
+    entries.sort((a, b) => b.key.length.compareTo(a.key.length));
+    return entries;
+  }
+
+  static VoiceCommand? parseCommand(String text, {double confidence = 1.0}) {
     final normalizedText = text.toLowerCase().trim();
+    
+    // Reject very low confidence input
+    if (confidence < 0.4) {
+      return null;
+    }
     
     // Check for "go to page [number]" command
     final pagePattern = RegExp(r'go to page (\d+)|page (\d+)|jump to page (\d+)');
@@ -157,62 +183,74 @@ class VoiceCommand {
           phrase: 'go to page $pageNumber',
           value: NavigationCommand.jumpToPage,
           alternatives: [pageNumber.toString()], // Store page number in alternatives
+          confidence: confidence,
         );
       }
     }
     
-    // Check navigation commands
-    for (final entry in navigationCommands.entries) {
-      if (normalizedText.contains(entry.key)) {
+    // Check navigation commands (sorted by length - longest first)
+    for (final entry in _sortByLengthDescending(navigationCommands)) {
+      if (_matchesWithWordBoundary(normalizedText, entry.key)) {
         return VoiceCommand(
           type: VoiceCommandType.navigation,
           phrase: entry.key,
           value: entry.value,
+          confidence: confidence,
         );
       }
     }
 
-    // Check control commands
-    for (final entry in controlCommands.entries) {
-      if (normalizedText.contains(entry.key)) {
+    // Check control commands (sorted by length - longest first)
+    for (final entry in _sortByLengthDescending(controlCommands)) {
+      if (_matchesWithWordBoundary(normalizedText, entry.key)) {
         return VoiceCommand(
           type: VoiceCommandType.control,
           phrase: entry.key,
           value: entry.value,
+          confidence: confidence,
         );
       }
     }
 
-    // Check mode commands
-    for (final entry in modeCommands.entries) {
-      if (normalizedText.contains(entry.key)) {
+    // Check mode commands (sorted by length - longest first)
+    for (final entry in _sortByLengthDescending(modeCommands)) {
+      if (_matchesWithWordBoundary(normalizedText, entry.key)) {
         return VoiceCommand(
           type: VoiceCommandType.mode,
           phrase: entry.key,
           value: entry.value,
+          confidence: confidence,
         );
       }
     }
 
-    // Check MCQ answers
-    for (final entry in mcqAnswers.entries) {
-      if (normalizedText == entry.key || normalizedText.endsWith(entry.key)) {
-        return VoiceCommand(
-          type: VoiceCommandType.answer,
-          phrase: entry.key,
-          value: entry.value,
-        );
+    // Check MCQ answers (require higher confidence for answers)
+    if (confidence >= 0.6) {
+      for (final entry in _sortByLengthDescending(mcqAnswers)) {
+        // For MCQ answers, check exact match or word boundary
+        if (normalizedText == entry.key || 
+            _matchesWithWordBoundary(normalizedText, entry.key)) {
+          return VoiceCommand(
+            type: VoiceCommandType.answer,
+            phrase: entry.key,
+            value: entry.value,
+            confidence: confidence,
+          );
+        }
       }
     }
 
-    // Check True/False answers
-    for (final entry in trueFalseAnswers.entries) {
-      if (normalizedText.contains(entry.key)) {
-        return VoiceCommand(
-          type: VoiceCommandType.answer,
-          phrase: entry.key,
-          value: entry.value,
-        );
+    // Check True/False answers (require higher confidence and use word boundaries)
+    if (confidence >= 0.6) {
+      for (final entry in _sortByLengthDescending(trueFalseAnswers)) {
+        if (_matchesWithWordBoundary(normalizedText, entry.key)) {
+          return VoiceCommand(
+            type: VoiceCommandType.answer,
+            phrase: entry.key,
+            value: entry.value,
+            confidence: confidence,
+          );
+        }
       }
     }
 

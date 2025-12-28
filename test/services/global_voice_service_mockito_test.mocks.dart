@@ -15,7 +15,7 @@ import 'package:go_router/src/router.dart' as _i12;
 import 'package:go_router/src/state.dart' as _i7;
 import 'package:learning_pwa/models/audio_state.dart' as _i10;
 import 'package:learning_pwa/models/voice_command.dart' as _i11;
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart' as _i8;
+import 'package:learning_pwa/services/voice_input_service.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i13;
 
@@ -98,12 +98,11 @@ class _FakeGoRouterState_5 extends _i1.SmartFake implements _i7.GoRouterState {
         );
 }
 
-/// A class which mocks [EnhancedVoiceInputService].
+/// A class which mocks [VoiceInputService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockEnhancedVoiceInputService extends _i1.Mock
-    implements _i8.EnhancedVoiceInputService {
-  MockEnhancedVoiceInputService() {
+class MockVoiceInputService extends _i1.Mock implements _i8.VoiceInputService {
+  MockVoiceInputService() {
     _i1.throwOnMissingStub(this);
   }
 

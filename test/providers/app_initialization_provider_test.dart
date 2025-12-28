@@ -47,6 +47,9 @@ void main() {
         final state = container.read(appInitializationProvider);
         expect(state.isInitialized, true); // Should still be marked as initialized
       }
+      
+      // Allow any pending async work to complete before test ends
+      await Future.delayed(const Duration(milliseconds: 100));
     });
 
     test('should reset initialization state', () {

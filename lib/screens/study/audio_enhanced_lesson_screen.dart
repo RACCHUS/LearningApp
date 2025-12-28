@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
@@ -57,7 +57,7 @@ class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonS
       final settingsNotifier = ref.read(audioLessonSettingsProvider.notifier);
       
       // Request microphone permissions before enabling hands-free mode
-      final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+      final audioNotifier = ref.read(audioPlaybackProvider.notifier);
       if (kDebugMode) {
         print('🎙️ Requesting microphone permissions for hands-free mode...');
       }

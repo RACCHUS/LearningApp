@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/models/global_voice_command.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
@@ -39,7 +39,7 @@ class _HandsFreeTestScreenState extends ConsumerState<HandsFreeTestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final audioState = ref.watch(enhancedAudioProvider);
+    final audioState = ref.watch(audioPlaybackProvider);
     final globalVoiceState = ref.watch(globalVoiceProvider);
     final handsFreeSettings = ref.watch(handsFreeSettingsProvider);
 
@@ -174,7 +174,7 @@ class _HandsFreeTestScreenState extends ConsumerState<HandsFreeTestScreen> {
     });
 
     try {
-      final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+      final audioNotifier = ref.read(audioPlaybackProvider.notifier);
       
       // Start listening
       await audioNotifier.startListening(timeout: const Duration(seconds: 5));

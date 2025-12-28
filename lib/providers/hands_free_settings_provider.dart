@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/hands_free_settings.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
@@ -10,6 +11,9 @@ final handsFreeSettingsServiceProvider = Provider<HandsFreeSettingsService>((ref
 /// State notifier for hands-free settings
 class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
   final HandsFreeSettingsService _service;
+  
+  // Subscription for cleanup
+  StreamSubscription<HandsFreeSettings>? _settingsSubscription;
 
   HandsFreeSettingsNotifier(this._service) : super(const HandsFreeSettings()) {
     _initializeSettings();
@@ -22,7 +26,7 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
   }
 
   void _setupListeners() {
-    _service.settingsStream.listen((settings) {
+    _settingsSubscription = _service.settingsStream.listen((settings) {
       state = settings;
     });
   }
@@ -100,6 +104,7 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 
   @override
   void dispose() {
+    _settingsSubscription?.cancel();
     _service.dispose();
     super.dispose();
   }
@@ -108,6 +113,9 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 /// State notifier for hands-free enabled state
 class HandsFreeStateNotifier extends StateNotifier<bool> {
   final HandsFreeSettingsService _service;
+  
+  // Subscription for cleanup
+  StreamSubscription<bool>? _stateSubscription;
 
   HandsFreeStateNotifier(this._service) : super(false) {
     _initializeState();
@@ -120,7 +128,7 @@ class HandsFreeStateNotifier extends StateNotifier<bool> {
   }
 
   void _setupListeners() {
-    _service.stateStream.listen((enabled) {
+    _stateSubscription = _service.stateStream.listen((enabled) {
       state = enabled;
     });
   }
@@ -147,6 +155,7 @@ class HandsFreeStateNotifier extends StateNotifier<bool> {
 
   @override
   void dispose() {
+    _stateSubscription?.cancel();
     _service.dispose();
     super.dispose();
   }

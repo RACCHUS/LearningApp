@@ -64,9 +64,9 @@ class VoiceInteractionHandler {
       print('🎙️ Starting voice input with timeout: ${_settings.voiceInputTimeout}');
     }
 
-    // Start listening for voice input
+    // Start listening for voice input using locale from settings
     _voiceService.startListening(
-      localeId: 'en_US',
+      localeId: _settings.voiceLocale,
       listenFor: _settings.voiceInputTimeout,
     );
   }

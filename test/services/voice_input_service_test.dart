@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/audio_state.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 
 void main() {
-  group('EnhancedVoiceInputService', () {
-    final service = EnhancedVoiceInputService();
+  group('VoiceInputService', () {
+    final service = VoiceInputService();
 
     test('exposes safe defaults before initialization', () {
       expect(service.isInitialized, isFalse);

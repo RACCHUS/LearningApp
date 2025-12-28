@@ -1,21 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/audio_service.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 
-// Enhanced Audio Provider using the new speech recognition system
-final enhancedAudioProvider = StateNotifierProvider<EnhancedAudioNotifier, AudioState>((ref) {
-  return EnhancedAudioNotifier();
+// Audio Playback Provider - manages TTS playback and voice recognition state
+final audioPlaybackProvider = StateNotifierProvider<AudioPlaybackNotifier, AudioState>((ref) {
+  return AudioPlaybackNotifier();
 });
 
-class EnhancedAudioNotifier extends StateNotifier<AudioState> {
-  EnhancedAudioNotifier() : super(const AudioState()) {
+class AudioPlaybackNotifier extends StateNotifier<AudioState> {
+  AudioPlaybackNotifier() : super(const AudioState()) {
     _initialize();
   }
 
   final AudioService _audioService = AudioService();
-  final EnhancedVoiceInputService _voiceService = EnhancedVoiceInputService();
+  final VoiceInputService _voiceService = VoiceInputService();
 
   Future<void> _initialize() async {
     await _audioService.initialize();
@@ -158,7 +158,7 @@ class EnhancedAudioNotifier extends StateNotifier<AudioState> {
   double get recognitionConfidence => state.confidence;
   
   // Service access for global voice service
-  EnhancedVoiceInputService get voiceService => _voiceService;
+  VoiceInputService get voiceService => _voiceService;
 
   // Manual state setters for testing
   void setMicrophonePermissionGranted(bool granted) {

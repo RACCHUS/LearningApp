@@ -30,13 +30,14 @@ class AudioLessonSettingsAdapter extends TypeAdapter<AudioLessonSettings> {
       immediateAnswerProgression: fields[8] as bool,
       voiceRetryAttempts: fields[9] as int,
       interruptOnNextCommand: fields[10] as bool,
+      voiceLocale: fields[11] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, AudioLessonSettings obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.handsFreeModeEnabled)
       ..writeByte(1)
@@ -58,7 +59,9 @@ class AudioLessonSettingsAdapter extends TypeAdapter<AudioLessonSettings> {
       ..writeByte(9)
       ..write(obj.voiceRetryAttempts)
       ..writeByte(10)
-      ..write(obj.interruptOnNextCommand);
+      ..write(obj.interruptOnNextCommand)
+      ..writeByte(11)
+      ..write(obj.voiceLocale);
   }
 
   @override
@@ -95,6 +98,7 @@ AudioLessonSettings _$AudioLessonSettingsFromJson(Map<String, dynamic> json) =>
           json['immediateAnswerProgression'] as bool? ?? true,
       voiceRetryAttempts: (json['voiceRetryAttempts'] as num?)?.toInt() ?? 3,
       interruptOnNextCommand: json['interruptOnNextCommand'] as bool? ?? true,
+      voiceLocale: json['voiceLocale'] as String? ?? 'en_US',
     );
 
 Map<String, dynamic> _$AudioLessonSettingsToJson(
@@ -111,4 +115,5 @@ Map<String, dynamic> _$AudioLessonSettingsToJson(
       'immediateAnswerProgression': instance.immediateAnswerProgression,
       'voiceRetryAttempts': instance.voiceRetryAttempts,
       'interruptOnNextCommand': instance.interruptOnNextCommand,
+      'voiceLocale': instance.voiceLocale,
     };

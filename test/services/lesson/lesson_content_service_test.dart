@@ -10,9 +10,15 @@ void main() {
 
   group('LessonContentService', () {
     late LessonContentService service;
+    late FakeSupabaseClient fakeClient;
 
     setUp(() {
-      service = LessonContentService(supabase: FakeSupabaseClient());
+      fakeClient = FakeSupabaseClient();
+      service = LessonContentService(supabase: fakeClient);
+    });
+    
+    tearDown(() {
+      fakeClient.clearData();
     });
 
     group('Constructor', () {
@@ -27,7 +33,7 @@ void main() {
     });
 
     group('addTerms', () {
-      test('accepts list of terms', () {
+      test('accepts list of terms and tracks insert', () async {
         final terms = [
           Term(
             id: '',
@@ -38,44 +44,42 @@ void main() {
           ),
         ];
 
-        // Test that method signature is correct
-        expect(
-          () => service.addTerms('lesson-1', terms),
-          throwsA(anything), // Fake client throws
-        );
+        await service.addTerms('lesson-1', terms);
+        
+        // Verify the insert was tracked
+        expect(fakeClient.insertedRecords, isNotEmpty);
       });
 
-      test('handles empty terms list', () {
-        expect(
-          () => service.addTerms('lesson-1', []),
-          throwsA(anything),
-        );
+      test('handles empty terms list', () async {
+        await service.addTerms('lesson-1', []);
+        
+        // No terms to insert
+        expect(fakeClient.insertedRecords, isEmpty);
       });
     });
 
     group('addQuestions', () {
-      test('accepts list of questions', () {
+      test('accepts list of questions', () async {
         final questions = [
           Question(
             id: '',
             questionText: 'What is 2+2?',
             options: ['3', '4', '5'],
-            correctAnswer: 1, // Index of correct answer
+            correctAnswer: 1,
             type: 'multiple-choice',
             explanation: 'Basic math',
             createdBy: 'user-1',
           ),
         ];
 
-        expect(
-          () => service.addQuestions('lesson-1', questions),
-          throwsA(anything),
-        );
+        await service.addQuestions('lesson-1', questions);
+        
+        expect(fakeClient.insertedRecords, isNotEmpty);
       });
     });
 
     group('addConcepts', () {
-      test('accepts list of concepts', () {
+      test('accepts list of concepts', () async {
         final concepts = [
           Concept(
             id: '',
@@ -87,45 +91,51 @@ void main() {
           ),
         ];
 
-        expect(
-          () => service.addConcepts('lesson-1', concepts),
-          throwsA(anything),
-        );
+        await service.addConcepts('lesson-1', concepts);
+        
+        expect(fakeClient.insertedRecords, isNotEmpty);
       });
     });
 
     group('removeContent', () {
-      test('accepts lessonId parameter', () {
-        expect(
-          () => service.removeContent(lessonId: 'lesson-1'),
-          throwsA(anything),
-        );
+      test('accepts lessonId parameter and tracks delete', () async {
+        await service.removeContent(lessonId: 'lesson-1');
+        
+        // Delete was called with the lesson ID
+        expect(fakeClient.deletedIds, contains('lesson-1'));
       });
 
-      test('accepts termIds parameter', () {
-        expect(
-          () => service.removeContent(termIds: ['term-1', 'term-2']),
-          throwsA(anything),
-        );
+      test('accepts termIds parameter', () async {
+        await service.removeContent(termIds: ['term-1', 'term-2']);
+        
+        expect(fakeClient.deletedIds, containsAll(['term-1', 'term-2']));
       });
 
-      test('accepts questionIds parameter', () {
-        expect(
-          () => service.removeContent(questionIds: ['q-1']),
-          throwsA(anything),
-        );
+      test('accepts questionIds parameter', () async {
+        await service.removeContent(questionIds: ['q-1']);
+        
+        expect(fakeClient.deletedIds, contains('q-1'));
       });
 
-      test('accepts conceptIds parameter', () {
-        expect(
-          () => service.removeContent(conceptIds: ['c-1']),
-          throwsA(anything),
-        );
+      test('accepts conceptIds parameter', () async {
+        await service.removeContent(conceptIds: ['c-1']);
+        
+        expect(fakeClient.deletedIds, contains('c-1'));
       });
     });
 
     group('getContentCounts', () {
       test('returns map with content counts', () async {
+        // Set up test data
+        fakeClient.setTableData('terms', [
+          {'id': 't1', 'lesson_id': 'lesson-1'},
+          {'id': 't2', 'lesson_id': 'lesson-1'},
+        ]);
+        fakeClient.setTableData('questions', [
+          {'id': 'q1', 'lesson_id': 'lesson-1'},
+        ]);
+        fakeClient.setTableData('concepts', []);
+        
         final counts = await service.getContentCounts('lesson-1');
 
         expect(counts, isA<Map<String, int>>());
@@ -134,13 +144,16 @@ void main() {
         expect(counts.containsKey('concepts'), isTrue);
       });
 
-      test('returns zeros on error', () async {
-        // Non-existent lesson should return zeros
+      test('returns zeros for empty lesson', () async {
+        fakeClient.setTableData('terms', []);
+        fakeClient.setTableData('questions', []);
+        fakeClient.setTableData('concepts', []);
+        
         final counts = await service.getContentCounts('non-existent');
 
-        expect(counts['terms'], greaterThanOrEqualTo(0));
-        expect(counts['questions'], greaterThanOrEqualTo(0));
-        expect(counts['concepts'], greaterThanOrEqualTo(0));
+        expect(counts['terms'], 0);
+        expect(counts['questions'], 0);
+        expect(counts['concepts'], 0);
       });
     });
   });

@@ -7,7 +7,7 @@ import 'dart:async' as _i3;
 
 import 'package:learning_pwa/models/audio_state.dart' as _i4;
 import 'package:learning_pwa/models/voice_command.dart' as _i5;
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart' as _i2;
+import 'package:learning_pwa/services/voice_input_service.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -24,12 +24,11 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-/// A class which mocks [EnhancedVoiceInputService].
+/// A class which mocks [VoiceInputService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockEnhancedVoiceInputService extends _i1.Mock
-    implements _i2.EnhancedVoiceInputService {
-  MockEnhancedVoiceInputService() {
+class MockVoiceInputService extends _i1.Mock implements _i2.VoiceInputService {
+  MockVoiceInputService() {
     _i1.throwOnMissingStub(this);
   }
 

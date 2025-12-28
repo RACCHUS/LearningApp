@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
-import 'package:learning_pwa/providers/enhanced_audio_provider.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
 
 /// Onboarding widget for setting up hands-free mode
 class HandsFreeOnboarding extends ConsumerStatefulWidget {
@@ -278,7 +278,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
   }
 
   Future<void> _requestPermissions() async {
-    final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+    final audioNotifier = ref.read(audioPlaybackProvider.notifier);
     final granted = await audioNotifier.requestMicrophonePermissions();
     
     setState(() {
@@ -301,7 +301,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
     });
 
     try {
-      final audioNotifier = ref.read(enhancedAudioProvider.notifier);
+      final audioNotifier = ref.read(audioPlaybackProvider.notifier);
       final command = await audioNotifier.listenForCommand(
         timeout: const Duration(seconds: 5),
       );

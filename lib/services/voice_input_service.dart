@@ -1,20 +1,26 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/models/voice_command.dart';
+import 'package:learning_pwa/services/speech_recognition/speech_recognition_manager.dart';
+import 'package:learning_pwa/services/speech_recognition/speech_recognition_provider.dart';
+import 'package:learning_pwa/services/voice_command_parser.dart';
 
+/// Voice input service using the multi-provider speech recognition system
+/// Provides browser-compatible speech recognition with Chrome, Safari, and manual input support
 class VoiceInputService {
   static final VoiceInputService _instance = VoiceInputService._internal();
   factory VoiceInputService() => _instance;
   VoiceInputService._internal();
 
-  SpeechToText? _speechToText;
-  bool _isInitialized = false;
-  bool _isAvailable = false;
-  bool _hasPermissions = false; // Track permission state
+  final SpeechRecognitionManager _speechManager = SpeechRecognitionManager();
+  final VoiceCommandParser _commandParser = VoiceCommandParser();
   
+  // Subscriptions for cleanup
+  StreamSubscription<ProviderInfo>? _providerChangesSubscription;
+  
+  bool _isInitialized = false;
+  bool _hasPermissions = false;
   VoiceInputState _state = VoiceInputState.idle;
   String? _recognizedText;
   double _confidence = 0.0;
@@ -23,406 +29,452 @@ class VoiceInputService {
   final StreamController<AudioState> _stateController = StreamController<AudioState>.broadcast();
   Stream<AudioState> get stateStream => _stateController.stream;
 
+  // Getters
   bool get isInitialized => _isInitialized;
-  bool get isAvailable => _isAvailable;
+  bool get isAvailable => _speechManager.currentProviderInfo != null;
   bool get hasPermissions => _hasPermissions;
-  bool get canListen => _isAvailable && _hasPermissions; // New combined check
+  bool get canListen => isAvailable && hasPermissions;
   VoiceInputState get currentState => _state;
   String? get recognizedText => _recognizedText;
+  double get confidence => _confidence;
+  String? get errorMessage => _errorMessage;
+  bool get isListening => _speechManager.isListening;
 
+  /// Initialize the enhanced voice input service
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      _speechToText = SpeechToText();
-      
       if (kDebugMode) {
-        print('Initializing SpeechToText...');
+        print('🎙️ Initializing Enhanced Voice Input Service...');
       }
-      
-      final initResult = await _speechToText!.initialize(
-        onError: _onSpeechError,
-        onStatus: _onSpeechStatus,
-        debugLogging: kDebugMode,
-      );
 
-      _isAvailable = initResult == true;
-      _isInitialized = true;
-      _updateState(VoiceInputState.idle);
+      // Initialize the speech recognition manager
+      final success = await _speechManager.initialize();
       
-      if (kDebugMode) {
-        print('VoiceInputService initialized. Available: $_isAvailable');
+      if (success) {
+        _isInitialized = true;
+        _updateState(VoiceInputState.idle);
+        
+        // Listen for provider changes
+        _providerChangesSubscription = _speechManager.providerChanges.listen((providerInfo) {
+          if (kDebugMode) {
+            print('🎙️ Speech provider changed: ${providerInfo.name}');
+          }
+          _updateState(_state); // Refresh state with new provider info
+        });
+
+        if (kDebugMode) {
+          print('🎙️ Enhanced Voice Input Service initialized successfully');
+          print('🎙️ Current provider: ${_speechManager.currentProviderInfo?.name}');
+        }
+      } else {
+        _errorMessage = 'No speech recognition providers available';
+        _updateState(VoiceInputState.error);
+        
+        if (kDebugMode) {
+          print('🎙️ Enhanced Voice Input Service initialization failed');
+        }
       }
-      
     } catch (e) {
-      _isAvailable = false;
-      _isInitialized = true; // Mark as initialized even if failed
-      _errorMessage = 'Failed to initialize speech recognition: $e';
+      _isInitialized = false;
+      _errorMessage = 'Voice service initialization failed: $e';
       _updateState(VoiceInputState.error);
       
       if (kDebugMode) {
-        print('VoiceInputService initialization error: $e');
+        print('🎙️ Enhanced Voice Input Service initialization error: $e');
       }
     }
   }
 
+  /// Check microphone permissions
   Future<bool> checkPermissions() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
     try {
-      // On web, the best way to check microphone permission is to try to use it
-      // The permission_handler package doesn't work reliably on web
-      if (kIsWeb) {
-        if (!_isInitialized || !_isAvailable || _speechToText == null) {
-          return false;
-        }
-        
-        // Try a very brief listen test to check permissions
-        try {
-          final testResult = await _speechToText!.listen(
-            onResult: (_) {}, // Empty result handler for test
-            listenFor: const Duration(milliseconds: 100), // Very short test
-            pauseFor: const Duration(milliseconds: 50),
-          );
-          
-          // Stop immediately after test
-          await _speechToText!.stop();
-          
-          return testResult == true;
-        } catch (e) {
-          if (kDebugMode) {
-            print('Permission test failed: $e');
-          }
-          return false;
-        }
-      }
-      
-      // For non-web platforms, use permission_handler
-      final status = await Permission.microphone.status;
-      
-      if (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied) {
-        final result = await Permission.microphone.request();
-        return result == PermissionStatus.granted;
-      }
-      
-      return status == PermissionStatus.granted;
+      _hasPermissions = await _speechManager.hasPermissions();
+      return _hasPermissions;
     } catch (e) {
       if (kDebugMode) {
-        print('Permission check error: $e');
+        print('🎙️ Permission check error: $e');
       }
+      _hasPermissions = false;
       return false;
     }
   }
 
+  /// Request microphone permissions
+  Future<bool> requestPermissions() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final result = await _speechManager.requestPermissions();
+      
+      if (kDebugMode) {
+        print('🎙️ Permission request result: $result');
+        print('🎙️ _hasPermissions before update: $_hasPermissions');
+      }
+
+      // Update the local permissions flag
+      _hasPermissions = result;
+      
+      if (kDebugMode) {
+        print('🎙️ _hasPermissions after update: $_hasPermissions');
+      }
+      
+      // Update state if permissions changed
+      if (result) {
+        _updateState(VoiceInputState.idle);
+      }
+
+      return result;
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Permission request error: $e');
+      }
+      _errorMessage = 'Permission request failed: $e';
+      return false;
+    }
+  }
+
+  /// Start listening for voice input
   Future<bool> startListening({
     String? localeId,
     Duration? listenFor,
     Duration? pauseFor,
   }) async {
-    if (!_isInitialized || !_isAvailable || _speechToText == null) {
-      if (kDebugMode) {
-        print('Voice service not ready: initialized=$_isInitialized, available=$_isAvailable');
-      }
-      return false;
+    if (!_isInitialized) {
+      await initialize();
+      if (!_isInitialized) return false;
     }
 
-    // Check if already listening to avoid duplicate calls
-    if (_speechToText != null) {
-      try {
-        final isListening = _speechToText!.isListening;
-        if (isListening == true) {
-          if (kDebugMode) {
-            print('Already listening, stopping first');
-          }
-          await _speechToText!.stop();
-          // Wait a moment for the stop to complete
-          await Future.delayed(const Duration(milliseconds: 100));
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error checking listening state: $e');
-        }
-      }
+    // Check permissions first
+    final hasPerms = await checkPermissions();
+    if (!hasPerms) {
+      _errorMessage = 'Microphone permissions not granted';
+      _updateState(VoiceInputState.error);
+      return false;
     }
 
     try {
       _recognizedText = null;
       _confidence = 0.0;
       _errorMessage = null;
-      
-      if (kDebugMode) {
-        print('Attempting to start listening...');
-      }
-
-      // Set state to listening before actually starting
       _updateState(VoiceInputState.listening);
 
-      final success = await _speechToText!.listen(
-        onResult: _onSpeechResult,
-        localeId: localeId ?? 'en_US',
-        listenFor: listenFor ?? const Duration(seconds: 5),
-        pauseFor: pauseFor ?? const Duration(seconds: 2),
-        // Important: Web requires explicit user gesture, so set this
-        onSoundLevelChange: (level) {
-          if (kDebugMode && level > 0) {
-            print('Sound detected: $level');
-          }
-        },
+      final success = await _speechManager.startListening(
+        timeout: listenFor ?? const Duration(seconds: 5),
+        language: localeId ?? 'en-US',
       );
 
-      if (kDebugMode) {
-        print('Listen result: $success');
-      }
-
-      if (success != true) {
-        _errorMessage = 'Failed to start listening - check microphone permissions';
+      if (success) {
+        if (kDebugMode) {
+          print('🎙️ Started listening successfully');
+        }
+        
+        // Start monitoring for results
+        _monitorSpeechResults();
+        return true;
+      } else {
+        _errorMessage = _speechManager.errorMessage ?? 'Failed to start listening';
         _updateState(VoiceInputState.error);
+        
+        if (kDebugMode) {
+          print('🎙️ Failed to start listening: $_errorMessage');
+        }
+        
         return false;
       }
-
-      return true;
-      
     } catch (e) {
       _errorMessage = 'Error starting voice input: $e';
       _updateState(VoiceInputState.error);
       
       if (kDebugMode) {
-        print('StartListening error: $e');
+        print('🎙️ Start listening error: $e');
+      }
+      
+      return false;
+    }
+  }
+
+  /// Monitor speech recognition results
+  void _monitorSpeechResults() {
+    Timer.periodic(const Duration(milliseconds: 200), (timer) {
+      if (!_speechManager.isListening) {
+        timer.cancel();
+        
+        // Get final results
+        _recognizedText = _speechManager.lastRecognizedText;
+        _confidence = _speechManager.confidence;
+        
+        if (_recognizedText != null && _recognizedText!.isNotEmpty) {
+          _updateState(VoiceInputState.completed);
+          
+          if (kDebugMode) {
+            print('🎙️ Speech recognition completed: "$_recognizedText" (confidence: $_confidence)');
+          }
+        } else {
+          _errorMessage = _speechManager.errorMessage ?? 'No speech detected';
+          _updateState(VoiceInputState.error);
+          
+          if (kDebugMode) {
+            print('🎙️ Speech recognition completed with no results');
+          }
+        }
+      } else {
+        // Update with interim results if available
+        final interimText = _speechManager.lastRecognizedText;
+        if (interimText != null && interimText != _recognizedText) {
+          _recognizedText = interimText;
+          _confidence = _speechManager.confidence;
+          _updateState(VoiceInputState.processing);
+        }
+      }
+    });
+  }
+
+  /// Stop listening for voice input
+  Future<void> stopListening() async {
+    try {
+      await _speechManager.stopListening();
+      
+      // Ensure state is updated after stopping
+      // If we have recognized text, transition to completed, otherwise to idle
+      if (_recognizedText != null && _recognizedText!.isNotEmpty) {
+        _updateState(VoiceInputState.completed);
+      } else if (_state == VoiceInputState.listening) {
+        _updateState(VoiceInputState.idle);
+      }
+      
+      if (kDebugMode) {
+        print('🎙️ Stopped listening');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Stop listening error: $e');
+      }
+      _updateState(VoiceInputState.error);
+    }
+  }
+
+  /// Cancel current listening session
+  Future<void> cancel() async {
+    try {
+      await _speechManager.cancel();
+      
+      _recognizedText = null;
+      _confidence = 0.0;
+      _errorMessage = null;
+      _updateState(VoiceInputState.idle);
+      
+      if (kDebugMode) {
+        print('🎙️ Voice input cancelled');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Cancel error: $e');
+      }
+    }
+  }
+
+  /// Listen for a voice command with timeout
+  /// Uses proper cleanup to prevent StreamController memory leaks
+  Future<VoiceCommand?> listenForCommand({
+    Duration? timeout,
+    String? localeId,
+  }) async {
+    StreamSubscription<AudioState>? subscription;
+    Timer? timeoutTimer;
+    
+    try {
+      // Start listening
+      final success = await startListening(
+        localeId: localeId,
+        listenFor: timeout ?? const Duration(seconds: 3),
+      );
+
+      if (!success) {
+        if (kDebugMode) {
+          print('🎙️ listenForCommand: Failed to start listening');
+        }
+        return null;
+      }
+
+      // Wait for completion
+      final completer = Completer<VoiceCommand?>();
+
+      subscription = stateStream.listen((audioState) {
+        // Prevent completing multiple times
+        if (completer.isCompleted) return;
+        
+        if (audioState.voiceInputState == VoiceInputState.completed) {
+          final command = parseLastCommand();
+          
+          if (kDebugMode) {
+            print('🎙️ listenForCommand: Completed with command: ${command?.phrase ?? "none"}');
+          }
+          
+          completer.complete(command);
+        } else if (audioState.voiceInputState == VoiceInputState.error) {
+          if (kDebugMode) {
+            print('🎙️ listenForCommand: Error - ${audioState.errorMessage}');
+          }
+          
+          completer.complete(null);
+        }
+      });
+
+      // Timeout fallback
+      timeoutTimer = Timer(timeout ?? const Duration(seconds: 15), () {
+        if (!completer.isCompleted) {
+          stopListening();
+          
+          if (kDebugMode) {
+            print('🎙️ listenForCommand: Timeout reached');
+          }
+          
+          completer.complete(null);
+        }
+      });
+
+      return await completer.future;
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ listenForCommand error: $e');
+      }
+      return null;
+    } finally {
+      // CRITICAL: Always clean up resources to prevent memory leaks
+      timeoutTimer?.cancel();
+      await subscription?.cancel();
+    }
+  }
+
+  /// Parse the last recognized text into a voice command
+  VoiceCommand? parseLastCommand() {
+    if (_recognizedText == null || _recognizedText!.isEmpty) {
+      return null;
+    }
+
+    return _commandParser.parseCommand(_recognizedText!);
+  }
+
+  /// Submit manual input (for manual provider mode)
+  void submitManualInput(String input) {
+    _speechManager.submitManualInput(input);
+  }
+
+  /// Wait for manual input (for manual provider mode)
+  Future<String?> waitForManualInput() async {
+    try {
+      return await _speechManager.waitForManualInput();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Error waiting for manual input: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Get available locales
+  List<String> getAvailableLocales() {
+    // Return supported locales based on current provider capabilities
+    final capabilities = _speechManager.capabilities;
+    if (capabilities.containsKey('languages')) {
+      final languages = capabilities['languages'];
+      if (languages is List) {
+        return List<String>.from(languages);
+      }
+    }
+    
+    return ['en-US', 'en-GB', 'es-ES', 'fr-FR', 'de-DE'];
+  }
+
+  /// Get current provider information
+  ProviderInfo? get currentProviderInfo => _speechManager.currentProviderInfo;
+
+  /// Get setup instructions for current provider
+  List<String> getSetupInstructions() {
+    return _speechManager.getSetupInstructions();
+  }
+
+  /// Get command mappings for manual input
+  Map<String, String> getCommandMappings() {
+    return _speechManager.getCommandMappings();
+  }
+
+  /// Get provider capabilities
+  Map<String, dynamic> get capabilities => _speechManager.capabilities;
+
+  /// Check if using manual input mode
+  bool get isManualInputMode {
+    final providerInfo = _speechManager.currentProviderInfo;
+    if (providerInfo == null) return false;
+    return providerInfo.capabilities['isManual'] == true;
+  }
+
+  /// Get status log for debugging
+  List<String> get statusLog => _speechManager.statusLog;
+
+  /// Fallback to next available provider
+  Future<bool> fallbackToNextProvider() async {
+    try {
+      return await _speechManager.fallbackToNextProvider();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🎙️ Error falling back to next provider: $e');
       }
       return false;
     }
   }
 
-  Future<void> stopListening() async {
-    if (_speechToText != null) {
-      try {
-        final isListening = _speechToText!.isListening;
-        if (isListening == true) {
-          await _speechToText!.stop();
-          _updateState(VoiceInputState.completed);
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('StopListening error: $e');
-        }
-      }
-    }
-  }
-
-  Future<void> cancel() async {
-    if (_speechToText != null) {
-      try {
-        await _speechToText!.cancel();
-        // Wait a moment for cancellation to complete
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        if (kDebugMode) {
-          print('Cancel error: $e');
-        }
-      }
-    }
-    
-    // Reset all state variables
-    _recognizedText = null;
-    _confidence = 0.0;
-    _errorMessage = null;
-    _updateState(VoiceInputState.idle);
-    
-    if (kDebugMode) {
-      print('Voice service cancelled and reset to idle state');
-    }
-  }
-
-  void _onSpeechResult(result) {
-    try {
-      _recognizedText = result.recognizedWords;
-      _confidence = result.confidence;
-      
-      if (result.finalResult) {
-        _updateState(VoiceInputState.completed);
-      } else {
-        _updateState(VoiceInputState.processing);
-      }
-      
-      if (kDebugMode) {
-        print('Speech result: $_recognizedText (confidence: $_confidence)');
-      }
-      
-    } catch (e) {
-      if (kDebugMode) {
-        print('Speech result error: $e');
-      }
-    }
-  }
-
-  void _onSpeechError(error) {
-    _errorMessage = error.errorMsg;
-    _updateState(VoiceInputState.error);
-    
-    if (kDebugMode) {
-      print('Speech error: $_errorMessage');
-    }
-  }
-
-  void _onSpeechStatus(String status) {
-    if (kDebugMode) {
-      print('Speech status: $status');
-    }
-    
-    switch (status) {
-      case 'listening':
-        _updateState(VoiceInputState.listening);
-        break;
-      case 'notListening':
-        // Only go to idle if we haven't completed or errored
-        if (_state == VoiceInputState.listening || _state == VoiceInputState.processing) {
-          // If we were listening but now not listening without a result, 
-          // it might be a timeout or permission issue
-          if (_recognizedText == null || _recognizedText!.isEmpty) {
-            _errorMessage = 'No speech detected - try speaking louder or check microphone';
-            _updateState(VoiceInputState.error);
-          } else {
-            _updateState(VoiceInputState.idle);
-          }
-        }
-        break;
-      case 'done':
-        // Speech recognition session completed
-        if (_recognizedText != null && _recognizedText!.isNotEmpty) {
-          _updateState(VoiceInputState.completed);
-        } else {
-          // No results captured
-          _errorMessage = 'No speech detected - ensure microphone access is granted';
-          _updateState(VoiceInputState.error);
-        }
-        break;
-    }
-  }
-
-  VoiceCommand? parseLastCommand() {
-    if (_recognizedText == null || _recognizedText!.isEmpty) {
-      return null;
-    }
-    
-    return VoiceCommand.parseCommand(_recognizedText!);
-  }
-
-  // Convenience method for quick command recognition
-  Future<VoiceCommand?> listenForCommand({
-    Duration? timeout,
-    String? localeId,
-  }) async {
-    // Ensure clean state before starting
-    if (_speechToText != null) {
-      try {
-        if (_speechToText!.isListening) {
-          await _speechToText!.stop();
-          await Future.delayed(const Duration(milliseconds: 100)); // Wait for stop to complete
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error stopping previous listen: $e');
-        }
-      }
-    }
-    
-    // Reset state variables
-    _recognizedText = null;
-    _confidence = 0.0;
-    _errorMessage = null;
-    _updateState(VoiceInputState.idle);
-    
-    final success = await startListening(
-      localeId: localeId,
-      listenFor: timeout ?? const Duration(seconds: 3),
-    );
-    
-    if (!success) {
-      if (kDebugMode) {
-        print('listenForCommand: Failed to start listening');
-      }
-      return null;
-    }
-
-    // Wait for completion or timeout
-    final completer = Completer<VoiceCommand?>();
-    late StreamSubscription subscription;
-    
-    subscription = stateStream.listen((audioState) {
-      if (kDebugMode) {
-        print('listenForCommand: State changed to ${audioState.voiceInputState}');
-      }
-      
-      if (audioState.voiceInputState == VoiceInputState.completed) {
-        subscription.cancel();
-        final command = parseLastCommand();
-        if (kDebugMode) {
-          print('listenForCommand: Completed with command: $command');
-        }
-        completer.complete(command);
-      } else if (audioState.voiceInputState == VoiceInputState.error) {
-        subscription.cancel();
-        if (kDebugMode) {
-          print('listenForCommand: Error state - ${audioState.errorMessage}');
-        }
-        completer.complete(null);
-      }
-    });
-
-    // Timeout fallback
-    Timer(timeout ?? const Duration(seconds: 5), () {
-      if (!completer.isCompleted) {
-        if (kDebugMode) {
-          print('listenForCommand: Timeout reached');
-        }
-        subscription.cancel();
-        stopListening();
-        completer.complete(null);
-      }
-    });
-
-    return completer.future;
-  }
-
-  List<String> getAvailableLocales() {
-    if (_speechToText == null || !_isAvailable) return [];
-    
-    try {
-      // Return commonly supported locales as fallback
-      return ['en_US', 'en_GB', 'es_ES', 'fr_FR', 'de_DE'];
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error getting locales: $e');
-      }
-      return ['en_US'];
-    }
-  }
-
+  /// Update internal state and notify listeners
   void _updateState(VoiceInputState newState) {
     _state = newState;
+    
     _stateController.add(AudioState(
       voiceInputState: _state,
       recognizedText: _recognizedText,
       confidence: _confidence,
       errorMessage: _errorMessage,
-      isAvailable: _isAvailable,
+      isAvailable: isAvailable,
+      hasPermissions: _hasPermissions,
     ));
   }
 
-  // Testing method to manually set recognized text for debugging
-  void setRecognizedTextForTesting(String text) {
-    _recognizedText = text;
-    _updateState(VoiceInputState.processing);
-  }
-
-  // Method to manually set permission state when we know permissions are granted
+  /// Manually set permission state (for testing)
   void setPermissionGranted(bool granted) {
     _hasPermissions = granted;
     if (kDebugMode) {
-      print('🎙️ Permission state manually set to: $granted');
+      print('🎙️ Enhanced service - permission state manually set to: $granted');
+    }
+    _updateState(_state);
+  }
+
+  /// Set recognized text for testing
+  void setRecognizedTextForTesting(String text) {
+    _recognizedText = text;
+    _confidence = 1.0;
+    _updateState(VoiceInputState.completed);
+    
+    if (kDebugMode) {
+      print('🎙️ Enhanced service - test text set: "$text"');
     }
   }
 
+  /// Dispose of all resources
   void dispose() {
+    _providerChangesSubscription?.cancel();
+    _speechManager.dispose();
     _stateController.close();
-    _speechToText?.cancel();
+    _isInitialized = false;
+    
+    if (kDebugMode) {
+      print('🎙️ Enhanced Voice Input Service disposed');
+    }
   }
 }

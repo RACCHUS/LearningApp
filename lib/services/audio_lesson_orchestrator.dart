@@ -1,11 +1,13 @@
 import 'dart:async';
+import 'dart:math' show min, pow;
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/audio_lesson/content_processor.dart';
-import 'package:learning_pwa/services/enhanced_voice_input_service.dart';
+import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
+import 'package:synchronized/synchronized.dart';
 
 enum AudioLessonState {
   idle,
@@ -39,7 +41,7 @@ class AudioLessonOrchestrator {
   // Core services
   final AudioService _audioService = AudioService();
   final ContentProcessor _contentProcessor = ContentProcessor();
-  EnhancedVoiceInputService? _voiceService; // Make nullable and injectable
+  VoiceInputService? _voiceService; // Make nullable and injectable
 
   // State management (simplified)
   AudioLessonSettings _settings = const AudioLessonSettings();
@@ -61,6 +63,16 @@ class AudioLessonOrchestrator {
   int _currentIndex = 0;
   bool _isActive = false;
   bool _isListeningForCommands = false; // Prevent overlapping voice listening
+  
+  // Voice listening reliability improvements
+  final Lock _listeningLock = Lock();
+  int _consecutiveVoiceFailures = 0;
+  static const int _maxConsecutiveVoiceFailures = 5;
+  
+  // Command debouncing
+  VoiceCommand? _lastExecutedCommand;
+  DateTime? _lastCommandTime;
+  static const Duration _commandDebounceDuration = Duration(milliseconds: 800);
 
   // Getters
   AudioLessonState get currentState => _state;
@@ -82,7 +94,7 @@ class AudioLessonOrchestrator {
   }
 
   /// Set the voice service to use (allows injection from audio provider)
-  void setVoiceService(EnhancedVoiceInputService voiceService) {
+  void setVoiceService(VoiceInputService voiceService) {
     _voiceService = voiceService;
     if (kDebugMode) {
       print('🎙️ Voice service injected into orchestrator');
@@ -442,16 +454,35 @@ class AudioLessonOrchestrator {
   }
 
   /// Listen for voice commands in hands-free mode
+  /// Uses lock to prevent race conditions and exponential backoff for reliability
   Future<void> _listenForVoiceCommands() async {
     if (!_settings.handsFreeModeEnabled || !_settings.voiceNavigationEnabled) {
       return;
     }
 
+    // Use lock to prevent race conditions with overlapping calls
+    await _listeningLock.synchronized(() async {
+      await _listenForVoiceCommandsInternal();
+    });
+  }
+
+  /// Internal implementation of voice command listening
+  Future<void> _listenForVoiceCommandsInternal() async {
     // Prevent overlapping listening sessions
     if (_isListeningForCommands) {
       if (kDebugMode) {
         print('🎙️ Already listening for commands, skipping new request');
       }
+      return;
+    }
+
+    // Check for max consecutive failures
+    if (_consecutiveVoiceFailures >= _maxConsecutiveVoiceFailures) {
+      if (kDebugMode) {
+        print('🎙️ Max consecutive voice failures reached ($_consecutiveVoiceFailures). Voice input disabled.');
+        print('   - User should restart hands-free mode to try again');
+      }
+      _updateState(AudioLessonState.error);
       return;
     }
 
@@ -527,6 +558,9 @@ class AudioLessonOrchestrator {
       );
 
       if (command != null) {
+        // Reset failure counter on successful command
+        _consecutiveVoiceFailures = 0;
+        
         if (kDebugMode) {
           print(
               '🎙️ Voice command received: ${command.phrase} (${command.type})');
@@ -555,26 +589,46 @@ class AudioLessonOrchestrator {
         }
       }
     } on Exception catch (e, stackTrace) {
+      _consecutiveVoiceFailures++;
+      
       if (kDebugMode) {
         print('❌ Voice command exception: $e');
+        print('   - Consecutive failures: $_consecutiveVoiceFailures/$_maxConsecutiveVoiceFailures');
         print('Stack trace: $stackTrace');
       }
 
-      // On error, wait longer before trying again to avoid rapid retries
-      // Especially important during permission dialogs or speech recognition failures
-      if (_isActive && _settings.handsFreeModeEnabled) {
-        await Future.delayed(const Duration(seconds: 5)); // Increased delay
+      // Exponential backoff on error to avoid rapid retries
+      if (_isActive && _settings.handsFreeModeEnabled && 
+          _consecutiveVoiceFailures < _maxConsecutiveVoiceFailures) {
+        final backoffSeconds = min(30, pow(2, _consecutiveVoiceFailures).toInt());
+        if (kDebugMode) {
+          print('🎙️ Waiting ${backoffSeconds}s before retry (exponential backoff)');
+        }
+        await Future.delayed(Duration(seconds: backoffSeconds));
         await _listenForVoiceCommands();
+      } else if (_consecutiveVoiceFailures >= _maxConsecutiveVoiceFailures) {
+        _updateState(AudioLessonState.error);
+        if (kDebugMode) {
+          print('🎙️ Voice input disabled after $_consecutiveVoiceFailures consecutive failures');
+        }
       }
     } catch (e, stackTrace) {
+      _consecutiveVoiceFailures++;
+      
       if (kDebugMode) {
         print('❌ Unexpected voice listening error: $e');
+        print('   - Consecutive failures: $_consecutiveVoiceFailures/$_maxConsecutiveVoiceFailures');
         print('Stack trace: $stackTrace');
       }
 
-      if (_isActive && _settings.handsFreeModeEnabled) {
-        await Future.delayed(const Duration(seconds: 5));
+      // Exponential backoff on error
+      if (_isActive && _settings.handsFreeModeEnabled &&
+          _consecutiveVoiceFailures < _maxConsecutiveVoiceFailures) {
+        final backoffSeconds = min(30, pow(2, _consecutiveVoiceFailures).toInt());
+        await Future.delayed(Duration(seconds: backoffSeconds));
         await _listenForVoiceCommands();
+      } else if (_consecutiveVoiceFailures >= _maxConsecutiveVoiceFailures) {
+        _updateState(AudioLessonState.error);
       }
     } finally {
       // CRITICAL: Always reset flag in finally block
@@ -582,9 +636,31 @@ class AudioLessonOrchestrator {
     }
   }
 
-  /// Handle a received voice command
+  /// Reset voice failure counter (call when restarting hands-free mode)
+  void resetVoiceFailures() {
+    _consecutiveVoiceFailures = 0;
+    if (kDebugMode) {
+      print('🎙️ Voice failure counter reset');
+    }
+  }
+
+  /// Handle a received voice command with debouncing
   Future<void> _handleVoiceCommand(VoiceCommand command) async {
     if (!_isActive) return;
+
+    // Debounce duplicate commands
+    final now = DateTime.now();
+    if (_lastExecutedCommand?.phrase == command.phrase &&
+        _lastCommandTime != null &&
+        now.difference(_lastCommandTime!) < _commandDebounceDuration) {
+      if (kDebugMode) {
+        print('🎙️ Debounced duplicate command: ${command.phrase}');
+      }
+      return;
+    }
+    
+    _lastExecutedCommand = command;
+    _lastCommandTime = now;
 
     // Interrupt current audio if setting is enabled
     if (_settings.interruptOnNextCommand &&

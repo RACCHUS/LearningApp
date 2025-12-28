@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/services/speech_recognition/speech_recognition_provider.dart';
 import 'package:learning_pwa/services/safari_compatibility_service.dart';
+import 'package:learning_pwa/services/speech_recognition/web_speech_api.dart';
 
 /// Safari-specific speech recognition provider
-/// Handles Safari's unique requirements and limitations for Web Speech API
+/// Uses the native Web Speech API with Safari-specific optimizations
 class SafariSpeechProvider extends SpeechRecognitionProvider {
   bool _isInitialized = false;
   bool _isListening = false;
@@ -15,6 +16,13 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
   Timer? _timeoutTimer;
   Completer<bool>? _permissionCompleter;
   bool _userGestureReceived = false;
+  
+  // Web Speech API wrapper
+  WebSpeechRecognition? _webSpeech;
+  StreamSubscription<SpeechResult>? _resultSubscription;
+  StreamSubscription<String>? _errorSubscription;
+  StreamSubscription<void>? _endSubscription;
+  Completer<void>? _listeningCompleter;
 
   @override
   String get providerName => 'Safari Web Speech API';
@@ -165,6 +173,26 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
         print('🍎 Safari config: $safariConfig');
       }
 
+      // Initialize Web Speech API if needed
+      if (_webSpeech == null) {
+        _webSpeech = WebSpeechRecognition();
+        final initialized = _webSpeech!.initialize(
+          language: language ?? 'en-US',
+          continuous: false, // Safari doesn't handle continuous well
+        );
+        
+        if (!initialized) {
+          _errorMessage = _webSpeech!.errorMessage ?? 'Failed to initialize speech recognition';
+          if (kDebugMode) {
+            print('🍎 Safari provider: Failed to initialize WebSpeechRecognition');
+          }
+          return false;
+        }
+        
+        // Set up event listeners
+        _setupWebSpeechListeners();
+      }
+
       // Set up timeout timer
       _timeoutTimer?.cancel();
       _timeoutTimer = Timer(timeout ?? safariTimeout, () {
@@ -173,16 +201,24 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
         }
       });
 
-      // Simulate Safari speech recognition behavior
-      // In a real implementation, this would use the Web Speech API
+      // Start the Web Speech API
+      _listeningCompleter = Completer<void>();
+      final started = await _webSpeech!.start();
+      
+      if (!started) {
+        _errorMessage = _webSpeech!.errorMessage ?? 'Failed to start speech recognition';
+        _timeoutTimer?.cancel();
+        if (kDebugMode) {
+          print('🍎 Safari provider: Failed to start WebSpeechRecognition');
+        }
+        return false;
+      }
+      
       _isListening = true;
       
-      // Simulate a delay and then stop listening
-      Timer(const Duration(seconds: 2), () {
-        if (_isListening) {
-          _simulateSpeechResult('safari test result');
-        }
-      });
+      if (kDebugMode) {
+        print('🍎 Safari provider: Speech recognition started successfully');
+      }
 
       return true;
     } catch (e) {
@@ -194,11 +230,55 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
       return false;
     }
   }
+  
+  /// Set up listeners for Web Speech API events
+  void _setupWebSpeechListeners() {
+    if (_webSpeech == null) return;
+    
+    // Cancel any existing subscriptions
+    _resultSubscription?.cancel();
+    _errorSubscription?.cancel();
+    _endSubscription?.cancel();
+    
+    // Listen for results
+    _resultSubscription = _webSpeech!.onResult.listen((result) {
+      _lastRecognizedText = result.transcript;
+      _confidence = result.confidence;
+      
+      if (kDebugMode) {
+        print('🍎 Safari provider received result: "${result.transcript}" (confidence: ${result.confidence})');
+      }
+    });
+    
+    // Listen for errors
+    _errorSubscription = _webSpeech!.onError.listen((error) {
+      _errorMessage = error;
+      _isListening = false;
+      _timeoutTimer?.cancel();
+      _listeningCompleter?.complete();
+      
+      if (kDebugMode) {
+        print('🍎 Safari provider error: $error');
+      }
+    });
+    
+    // Listen for end
+    _endSubscription = _webSpeech!.onEnd.listen((_) {
+      _isListening = false;
+      _timeoutTimer?.cancel();
+      _listeningCompleter?.complete();
+      
+      if (kDebugMode) {
+        print('🍎 Safari provider: Recognition ended');
+      }
+    });
+  }
 
   @override
   Future<void> stopListening() async {
     if (_isListening) {
       _timeoutTimer?.cancel();
+      await _webSpeech?.stop();
       _isListening = false;
       
       if (kDebugMode) {
@@ -210,9 +290,11 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
   @override
   Future<void> cancel() async {
     _timeoutTimer?.cancel();
+    _webSpeech?.abort();
     _isListening = false;
     _lastRecognizedText = null;
     _confidence = 0.0;
+    _listeningCompleter?.complete();
     
     if (kDebugMode) {
       print('🍎 Safari provider: Cancelled');
@@ -277,18 +359,6 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
     _timeoutTimer?.cancel();
   }
 
-  /// Simulate speech recognition result (for testing)
-  void _simulateSpeechResult(String text) {
-    _lastRecognizedText = text;
-    _confidence = 0.8; // Simulate moderate confidence
-    _isListening = false;
-    _timeoutTimer?.cancel();
-
-    if (kDebugMode) {
-      print('🍎 Safari provider: Speech result: "$text" (confidence: $_confidence)');
-    }
-  }
-
   /// Get Safari-specific setup instructions
   List<String> getSetupInstructions() {
     return SafariCompatibilityService.permissionInstructions;
@@ -307,7 +377,18 @@ class SafariSpeechProvider extends SpeechRecognitionProvider {
   @override
   void dispose() {
     _timeoutTimer?.cancel();
+    
+    // Cancel stream subscriptions
+    _resultSubscription?.cancel();
+    _errorSubscription?.cancel();
+    _endSubscription?.cancel();
+    
+    // Dispose Web Speech API
+    _webSpeech?.dispose();
+    _webSpeech = null;
+    
     _permissionCompleter = null;
+    _listeningCompleter = null;
     _isInitialized = false;
     _isListening = false;
     _hasPermissions = false;
