@@ -1,16 +1,20 @@
 /// Settings for hands-free voice navigation functionality
 class HandsFreeSettings {
-  final bool defaultHandsFreeMode;        // Auto-enable on app start
-  final bool globalVoiceCommands;         // Listen for commands anywhere
-  final bool autoLessonHandsFree;         // Auto hands-free for lessons
-  final Duration voiceTimeout;            // Command timeout
-  final double confidenceThreshold;       // Minimum confidence level
-  final bool autoRequestPermissions;      // Auto-request mic permissions
-  final bool showVoiceIndicator;          // Show voice status indicator
-  final bool announceCommands;            // Audio feedback for commands
-  final bool enableWakeWord;              // Wake word activation
-  final String wakeWord;                  // Custom wake word
-  final bool persistAcrossSessions;       // Remember hands-free state
+  final bool defaultHandsFreeMode; // Auto-enable voice on app start
+
+  /// @deprecated Use GlobalVoiceProvider.isEnabled for runtime state.
+  /// This field is kept for backward compatibility with stored settings.
+  final bool globalVoiceCommands;
+
+  final bool autoLessonHandsFree; // Auto hands-free for lessons
+  final Duration voiceTimeout; // Command timeout
+  final double confidenceThreshold; // Minimum confidence level
+  final bool autoRequestPermissions; // Auto-request mic permissions
+  final bool showVoiceIndicator; // Show voice status indicator
+  final bool announceCommands; // Audio feedback for commands
+  final bool enableWakeWord; // Wake word activation
+  final String wakeWord; // Custom wake word
+  final bool persistAcrossSessions; // Remember hands-free state
 
   const HandsFreeSettings({
     this.defaultHandsFreeMode = false,
@@ -45,12 +49,14 @@ class HandsFreeSettings {
       autoLessonHandsFree: autoLessonHandsFree ?? this.autoLessonHandsFree,
       voiceTimeout: voiceTimeout ?? this.voiceTimeout,
       confidenceThreshold: confidenceThreshold ?? this.confidenceThreshold,
-      autoRequestPermissions: autoRequestPermissions ?? this.autoRequestPermissions,
+      autoRequestPermissions:
+          autoRequestPermissions ?? this.autoRequestPermissions,
       showVoiceIndicator: showVoiceIndicator ?? this.showVoiceIndicator,
       announceCommands: announceCommands ?? this.announceCommands,
       enableWakeWord: enableWakeWord ?? this.enableWakeWord,
       wakeWord: wakeWord ?? this.wakeWord,
-      persistAcrossSessions: persistAcrossSessions ?? this.persistAcrossSessions,
+      persistAcrossSessions:
+          persistAcrossSessions ?? this.persistAcrossSessions,
     );
   }
 
@@ -89,11 +95,11 @@ class HandsFreeSettings {
   @override
   String toString() {
     return 'HandsFreeSettings('
-           'defaultHandsFreeMode: $defaultHandsFreeMode, '
-           'globalVoiceCommands: $globalVoiceCommands, '
-           'autoLessonHandsFree: $autoLessonHandsFree, '
-           'voiceTimeout: $voiceTimeout, '
-           'confidenceThreshold: $confidenceThreshold)';
+        'defaultHandsFreeMode: $defaultHandsFreeMode, '
+        'globalVoiceCommands: $globalVoiceCommands, '
+        'autoLessonHandsFree: $autoLessonHandsFree, '
+        'voiceTimeout: $voiceTimeout, '
+        'confidenceThreshold: $confidenceThreshold)';
   }
 
   @override

@@ -16,7 +16,8 @@ class HandsFreeOnboarding extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<HandsFreeOnboarding> createState() => _HandsFreeOnboardingState();
+  ConsumerState<HandsFreeOnboarding> createState() =>
+      _HandsFreeOnboardingState();
 }
 
 class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
@@ -28,17 +29,20 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
   final List<OnboardingStep> _steps = [
     OnboardingStep(
       title: 'Welcome to Hands-Free Mode',
-      content: 'Control the app with your voice! Navigate lessons, answer questions, and access features without touching the screen.',
+      content:
+          'Control the app with your voice! Navigate lessons, answer questions, and access features without touching the screen.',
       icon: Icons.voice_over_off,
     ),
     OnboardingStep(
       title: 'Microphone Permission',
-      content: 'We need access to your microphone to listen for voice commands. This permission is required for hands-free functionality.',
+      content:
+          'We need access to your microphone to listen for voice commands. This permission is required for hands-free functionality.',
       icon: Icons.mic,
     ),
     OnboardingStep(
       title: 'Test Your Voice',
-      content: 'Let\'s test if your microphone is working. Try saying "next" when prompted.',
+      content:
+          'Let\'s test if your microphone is working. Try saying "next" when prompted.',
       icon: Icons.record_voice_over,
     ),
     OnboardingStep(
@@ -48,7 +52,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
     ),
     OnboardingStep(
       title: 'You\'re All Set!',
-      content: 'Hands-free mode is ready to use. You can always change these settings later.',
+      content:
+          'Hands-free mode is ready to use. You can always change these settings later.',
       icon: Icons.check_circle,
     ),
   ];
@@ -68,7 +73,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
             backgroundColor: Colors.grey[300],
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
           ),
-          
+
           // Main content
           Expanded(
             child: Padding(
@@ -76,7 +81,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
               child: _buildStepContent(),
             ),
           ),
-          
+
           // Navigation buttons
           _buildNavigationButtons(),
         ],
@@ -86,7 +91,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
 
   Widget _buildStepContent() {
     final step = _steps[_currentStep];
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -99,8 +104,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
         Text(
           step.title,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
@@ -110,7 +115,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
-        
+
         // Step-specific content
         _buildStepSpecificContent(),
       ],
@@ -190,22 +195,19 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
         return Column(
           children: [
             SwitchListTile(
-              title: const Text('Enable by default'),
-              subtitle: const Text('Start with hands-free mode enabled'),
+              title: const Text('Auto-start voice commands'),
+              subtitle: const Text('Enable voice commands when the app starts'),
               value: settings.defaultHandsFreeMode,
-              onChanged: (value) => settingsNotifier.toggleDefaultHandsFreeMode(),
+              onChanged: (value) =>
+                  settingsNotifier.toggleDefaultHandsFreeMode(),
             ),
             SwitchListTile(
-              title: const Text('Global voice commands'),
-              subtitle: const Text('Listen for commands throughout the app'),
-              value: settings.globalVoiceCommands,
-              onChanged: (value) => settingsNotifier.toggleGlobalVoiceCommands(),
-            ),
-            SwitchListTile(
-              title: const Text('Auto hands-free for lessons'),
-              subtitle: const Text('Automatically enable for lessons'),
+              title: const Text('Auto-start for lessons'),
+              subtitle:
+                  const Text('Enable voice commands when you start a lesson'),
               value: settings.autoLessonHandsFree,
-              onChanged: (value) => settingsNotifier.toggleAutoLessonHandsFree(),
+              onChanged: (value) =>
+                  settingsNotifier.toggleAutoLessonHandsFree(),
             ),
             SwitchListTile(
               title: const Text('Show voice indicator'),
@@ -235,9 +237,9 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
               onPressed: _goToPreviousStep,
               child: const Text('Back'),
             ),
-          
+
           const Spacer(),
-          
+
           // Next/Finish button
           ElevatedButton(
             onPressed: _canProceed() ? _goToNextStep : null,
@@ -280,7 +282,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
   Future<void> _requestPermissions() async {
     final audioNotifier = ref.read(audioPlaybackProvider.notifier);
     final granted = await audioNotifier.requestMicrophonePermissions();
-    
+
     setState(() {
       _permissionsGranted = granted;
     });
@@ -307,7 +309,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
       );
 
       setState(() {
-        _voiceTestPassed = command != null && command.phrase.toLowerCase().contains('next');
+        _voiceTestPassed =
+            command != null && command.phrase.toLowerCase().contains('next');
         _isTestingVoice = false;
       });
 
@@ -321,7 +324,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No command detected. Try speaking louder and clearer.'),
+            content:
+                Text('No command detected. Try speaking louder and clearer.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -330,7 +334,7 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
       setState(() {
         _isTestingVoice = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Voice test failed: $e'),

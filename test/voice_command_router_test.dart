@@ -160,6 +160,91 @@ void main() {
       }
     });
 
+    test('should recognize choose patterns', () {
+      final testCases = {
+        'choose a': 'A',
+        'choose b': 'B',
+        'choose c': 'C',
+        'choose d': 'D',
+      };
+
+      for (final entry in testCases.entries) {
+        final command = VoiceCommandRouter.parseContextAwareCommand(
+          entry.key,
+          context: 'mcq',
+        );
+
+        expect(command, isNotNull, reason: 'Should parse: ${entry.key}');
+        expect(command!.type, VoiceCommandType.answer);
+        expect(command.value, entry.value);
+      }
+    });
+
+    test('should recognize select and pick patterns', () {
+      final testCases = {
+        'select a': 'A',
+        'select b': 'B',
+        'pick c': 'C',
+        'pick d': 'D',
+      };
+
+      for (final entry in testCases.entries) {
+        final command = VoiceCommandRouter.parseContextAwareCommand(
+          entry.key,
+          context: 'mcq',
+        );
+
+        expect(command, isNotNull, reason: 'Should parse: ${entry.key}');
+        expect(command!.type, VoiceCommandType.answer);
+        expect(command.value, entry.value);
+      }
+    });
+
+    test('should recognize letter homophones with choice indicator', () {
+      // Speech recognition often hears these instead of single letters
+      final testCases = {
+        'choose hey': 'A', // "A" heard as "hey"
+        'choose bee': 'B', // "B" heard as "bee"
+        'choose see': 'C', // "C" heard as "see"
+        'choose dee': 'D', // "D" heard as "dee"
+        'choice sea': 'C', // "C" heard as "sea"
+        'select aye': 'A', // "A" heard as "aye"
+      };
+
+      for (final entry in testCases.entries) {
+        final command = VoiceCommandRouter.parseContextAwareCommand(
+          entry.key,
+          context: 'mcq',
+        );
+
+        expect(command, isNotNull,
+            reason: 'Should parse homophone: ${entry.key}');
+        expect(command!.type, VoiceCommandType.answer);
+        expect(command.value, entry.value,
+            reason: '${entry.key} should map to ${entry.value}');
+      }
+    });
+
+    test('should recognize standalone unambiguous homophones', () {
+      final testCases = {
+        'bee': 'B',
+        'sea': 'C',
+        'dee': 'D',
+      };
+
+      for (final entry in testCases.entries) {
+        final command = VoiceCommandRouter.parseContextAwareCommand(
+          entry.key,
+          context: 'mcq',
+        );
+
+        expect(command, isNotNull,
+            reason: 'Should parse standalone: ${entry.key}');
+        expect(command!.type, VoiceCommandType.answer);
+        expect(command.value, entry.value);
+      }
+    });
+
     test('should recognize natural speech patterns', () {
       final testCases = [
         'the first one',
@@ -355,7 +440,13 @@ void main() {
     });
 
     test('should not interpret navigation commands as answers', () {
-      final navigationCommands = ['next', 'previous', 'pause', 'stop', 'repeat'];
+      final navigationCommands = [
+        'next',
+        'previous',
+        'pause',
+        'stop',
+        'repeat'
+      ];
 
       for (final navCommand in navigationCommands) {
         final command = VoiceCommandRouter.parseContextAwareCommand(
@@ -629,7 +720,7 @@ void main() {
 
       expect(command, isNotNull);
       expect(command!.type, VoiceCommandType.answer);
-      
+
       // Should convert to index (B = index 1)
       final letterToIndex = {'A': 0, 'B': 1, 'C': 2, 'D': 3};
       final index = letterToIndex[command.value];

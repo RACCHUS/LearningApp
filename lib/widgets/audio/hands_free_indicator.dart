@@ -14,7 +14,7 @@ class HandsFreeIndicator extends ConsumerWidget {
     final isLessonActive = ref.watch(isAudioLessonActiveProvider);
     final lessonState = ref.watch(audioLessonStateProvider);
     final lessonInfo = ref.watch(audioLessonInfoProvider);
-    
+
     if (!isHandsFreeEnabled || !isLessonActive) {
       return const SizedBox.shrink();
     }
@@ -47,7 +47,8 @@ class HandsFreeIndicator extends ConsumerWidget {
               color: _getTextColor(context, lessonState),
             ),
           ),
-          if (lessonState == AudioLessonState.reading || lessonState == AudioLessonState.processing) ...[
+          if (lessonState == AudioLessonState.reading ||
+              lessonState == AudioLessonState.processing) ...[
             const SizedBox(width: 8),
             SizedBox(
               width: 12,
@@ -148,11 +149,13 @@ class HandsFreeIndicator extends ConsumerWidget {
     }
   }
 
-  String _getStatusText(AudioLessonState state, Map<String, dynamic> lessonInfo) {
+  String _getStatusText(
+      AudioLessonState state, Map<String, dynamic> lessonInfo) {
     final currentIndex = lessonInfo['currentIndex'] as int;
     final totalContent = lessonInfo['totalContent'] as int;
-    final progressText = totalContent > 0 ? '${currentIndex + 1}/$totalContent' : '';
-    
+    final progressText =
+        totalContent > 0 ? '${currentIndex + 1}/$totalContent' : '';
+
     switch (state) {
       case AudioLessonState.reading:
         return 'Reading $progressText';
@@ -179,7 +182,7 @@ class HandsFreeModeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isEnabled = ref.watch(handsFreeModeProvider);
     final settingsNotifier = ref.read(audioLessonSettingsProvider.notifier);
-    
+
     return ListTile(
       leading: Icon(
         isEnabled ? Icons.record_voice_over : Icons.touch_app,
@@ -187,9 +190,9 @@ class HandsFreeModeToggle extends ConsumerWidget {
       ),
       title: const Text('Hands-Free Mode'),
       subtitle: Text(
-        isEnabled 
-          ? 'Voice navigation and auto-reading enabled'
-          : 'Touch controls required',
+        isEnabled
+            ? 'Voice navigation and auto-reading enabled'
+            : 'Touch controls required',
       ),
       trailing: Switch(
         value: isEnabled,
@@ -197,34 +200,38 @@ class HandsFreeModeToggle extends ConsumerWidget {
           // If enabling hands-free mode, request permissions first
           if (!isEnabled) {
             final audioNotifier = ref.read(audioPlaybackProvider.notifier);
-            
+
             if (kDebugMode) {
-              print('🎙️ Requesting microphone permissions for hands-free mode...');
+              print(
+                  '🎙️ Requesting microphone permissions for hands-free mode...');
             }
-            
-            final permissionsGranted = await audioNotifier.requestMicrophonePermissions();
-            
+
+            final permissionsGranted =
+                await audioNotifier.requestMicrophonePermissions();
+
             if (!permissionsGranted) {
               if (kDebugMode) {
-                print('❌ Microphone permissions denied - hands-free mode not enabled');
+                print(
+                    '❌ Microphone permissions denied - hands-free mode not enabled');
               }
               // Show user feedback about permission requirement
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Microphone permission required for hands-free mode'),
+                    content: Text(
+                        'Microphone permission required for hands-free mode'),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
               return;
             }
-            
+
             if (kDebugMode) {
               print('✅ Microphone permissions granted for hands-free mode');
             }
           }
-          
+
           // Toggle hands-free mode
           settingsNotifier.toggleHandsFreeMode();
         },
@@ -240,20 +247,21 @@ class AudioLessonProgressIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lessonInfo = ref.watch(audioLessonInfoProvider);
     final isActive = lessonInfo['isActive'] as bool;
-    
+
     if (!isActive) {
       return const SizedBox.shrink();
     }
-    
+
     final currentIndex = lessonInfo['currentIndex'] as int;
     final totalContent = lessonInfo['totalContent'] as int;
     final progress = totalContent > 0 ? (currentIndex + 1) / totalContent : 0.0;
-    
+
     return Column(
       children: [
         LinearProgressIndicator(
           value: progress,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         const SizedBox(height: 4),
         Text(
@@ -267,7 +275,7 @@ class AudioLessonProgressIndicator extends ConsumerWidget {
 
 class VoiceCommandHelpDialog extends StatelessWidget {
   final String? context;
-  
+
   const VoiceCommandHelpDialog({super.key, this.context});
 
   @override
@@ -281,7 +289,7 @@ class VoiceCommandHelpDialog extends StatelessWidget {
           children: [
             _buildCommandSection('Navigation', [
               'Next - Move to next content',
-              'Previous - Go back to previous content', 
+              'Previous - Go back to previous content',
               'Repeat - Repeat current content',
               'First - Go to first content',
               'Last - Go to last content',
@@ -309,9 +317,10 @@ class VoiceCommandHelpDialog extends StatelessWidget {
             ]),
             const SizedBox(height: 16),
             _buildCommandSection('Answers', [
-              'For multiple choice: Say A, B, C, or D',
-              'For true/false: Say true or false',
-              'For short answer: Speak your answer clearly',
+              'Multiple choice: Say "choose A", "choose B", etc.',
+              'Also works: "first", "second", "option A"',
+              'True/false: Say "true" or "false"',
+              'Short answer: Speak your answer clearly',
             ]),
           ],
         ),
@@ -335,9 +344,9 @@ class VoiceCommandHelpDialog extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         ...commands.map((command) => Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 4),
-          child: Text('• $command'),
-        )),
+              padding: const EdgeInsets.only(left: 16, bottom: 4),
+              child: Text('• $command'),
+            )),
       ],
     );
   }
