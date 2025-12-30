@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/web_utils.dart';
+import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 // ...existing code...
 import 'package:learning_pwa/providers/lesson_provider.dart';
@@ -10,6 +11,7 @@ import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
 import 'package:learning_pwa/screens/study/lesson_mode_dialog.dart';
 import 'package:learning_pwa/widgets/timer_widget.dart';
+import 'package:learning_pwa/widgets/celebration_overlay.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
@@ -268,6 +270,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   void _onLessonComplete() {
     // Update study progress
     ref.read(studyProvider.notifier).markLessonAsCompleted(widget.lessonId);
+    
+    // Trigger celebration (confetti + haptic)
+    HapticUtils.milestone();
+    CelebrationOverlay.trigger(ref, CelebrationType.lessonComplete);
     
     // Get study state for score information
     final studyState = ref.read(studyProvider);

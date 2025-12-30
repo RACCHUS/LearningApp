@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Concept study content widget
 /// 
@@ -41,9 +41,9 @@ class ConceptContent extends StatelessWidget {
           
           // Example section (if available)
           if (concept.exampleText != null) ...[
-            const SizedBox(height: AppTheme.spacing24),
+            const SizedBox(height: DesignTokens.space5),
             const Divider(),
-            const SizedBox(height: AppTheme.spacing16),
+            const SizedBox(height: DesignTokens.space4),
             
             // Example header with audio
             Row(
@@ -61,7 +61,7 @@ class ConceptContent extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacing8),
+            const SizedBox(height: DesignTokens.space2),
             
             // Example content
             Container(
@@ -85,9 +85,9 @@ class ConceptContent extends StatelessWidget {
           
           // Key points section (if available)
           if (concept.keyPoints != null && concept.keyPoints!.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spacing24),
+            const SizedBox(height: DesignTokens.space5),
             const Divider(),
-            const SizedBox(height: AppTheme.spacing16),
+            const SizedBox(height: DesignTokens.space4),
             
             Text(
               'Key Points:',
@@ -95,10 +95,10 @@ class ConceptContent extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacing12),
+            const SizedBox(height: DesignTokens.space3),
             
             ...concept.keyPoints!.map<Widget>((point) => Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spacing8),
+              padding: const EdgeInsets.only(bottom: DesignTokens.space2),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -124,7 +124,7 @@ class ConceptContent extends StatelessWidget {
           ],
           
           // Additional spacing at bottom for scroll comfort
-          const SizedBox(height: AppTheme.spacing24),
+          const SizedBox(height: DesignTokens.space5),
         ],
       ),
     );

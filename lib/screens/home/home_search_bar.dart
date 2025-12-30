@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
 
 class HomeSearchBar extends StatefulWidget {
   final TextEditingController controller;
@@ -19,6 +20,8 @@ class HomeSearchBar extends StatefulWidget {
 }
 
 class _HomeSearchBarState extends State<HomeSearchBar> {
+  bool _isFocused = false;
+
   @override
   void didUpdateWidget(covariant HomeSearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -33,73 +36,84 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: widget.controller,
-        decoration: InputDecoration(
-          hintText: 'Search lessons...',
-          hintStyle: TextStyle(
-            color: Theme.of(context).hintColor.withValues(alpha: 0.7),
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
-          ),
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark
-              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
-              : Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          suffixIcon: widget.searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
-                  ),
-                  onPressed: () {
-                    widget.controller.clear();
-                    widget.onClear();
-                  },
-                  tooltip: 'Clear search',
-                )
+      padding: const EdgeInsets.all(DesignTokens.space4),
+      child: AnimatedContainer(
+        duration: DesignTokens.durationNormal,
+        curve: DesignTokens.curveDefault,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+          boxShadow: _isFocused
+              ? DesignTokens.glowEffect(colorScheme.primary)
               : null,
         ),
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 16,
-        ),
-        onChanged: widget.onChanged,
-        onSubmitted: (value) {
-          if (value.trim().isNotEmpty) {
-            // Search is already handled by onChanged, just provide feedback
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Searching for: "${value.trim()}"'),
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 1),
+        child: Focus(
+          onFocusChange: (focused) {
+            setState(() => _isFocused = focused);
+          },
+          child: TextField(
+            controller: widget.controller,
+            decoration: InputDecoration(
+              hintText: 'Search lessons...',
+              hintStyle: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
-            );
-          }
-        },
+              prefixIcon: AnimatedContainer(
+                duration: DesignTokens.durationFast,
+                child: Icon(
+                  Icons.search,
+                  color: _isFocused 
+                      ? colorScheme.primary 
+                      : colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHigh,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                borderSide: BorderSide(
+                  color: colorScheme.outline,
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                borderSide: BorderSide(
+                  color: colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: DesignTokens.space3,
+                horizontal: DesignTokens.space4,
+              ),
+              suffixIcon: widget.searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      onPressed: () {
+                        widget.controller.clear();
+                        widget.onClear();
+                      },
+                      tooltip: 'Clear search',
+                    )
+                  : null,
+            ),
+            style: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
+            onChanged: widget.onChanged,
+          ),
+        ),
       ),
     );
   }

@@ -77,6 +77,21 @@ class LessonService {
     return _importService.validateLessonJson(jsonString);
   }
 
+  /// Update lesson metadata
+  Future<Lesson> updateLesson(
+    String lessonId, {
+    String? title,
+    String? description,
+    List<String>? tags,
+  }) async {
+    return _crudService.updateLesson(
+      lessonId,
+      title: title,
+      description: description,
+      tags: tags,
+    );
+  }
+
   /// Add lesson content (legacy method for backward compatibility)
   Future<void> addLessonContent(String lessonId, List<LessonContent> content, String userId) async {
     debugPrint('🔍 DEBUG: Adding ${content.length} content items to lesson $lessonId');

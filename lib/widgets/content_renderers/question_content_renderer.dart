@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
+import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/utils/math_utils.dart';
 import 'package:learning_pwa/utils/voice_command_router.dart';
 import 'package:learning_pwa/widgets/question_widgets/mcq_question_widget.dart';
@@ -88,7 +89,15 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
           selectedIndex: selectedMcq,
           showCorrect: showMcqCorrect,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
-          onSubmit: () => setState(() => showMcqCorrect = true),
+          onSubmit: () {
+            final isCorrect = selectedMcq == widget.content.correctAnswer;
+            if (isCorrect) {
+              HapticUtils.success();
+            } else {
+              HapticUtils.error();
+            }
+            setState(() => showMcqCorrect = true);
+          },
           onNext: widget.onNext,
           onVoiceInput: _handleVoiceInput,
           customTextBuilder: _renderText,
@@ -100,7 +109,16 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
           selectedValue: selectedTf,
           showCorrect: showTfCorrect,
           onSelectionChanged: (value) => setState(() => selectedTf = value),
-          onSubmit: () => setState(() => showTfCorrect = true),
+          onSubmit: () {
+            final correctValue = widget.content.correctAnswer == 0; // 0=true, 1=false
+            final isCorrect = selectedTf == correctValue;
+            if (isCorrect) {
+              HapticUtils.success();
+            } else {
+              HapticUtils.error();
+            }
+            setState(() => showTfCorrect = true);
+          },
           onNext: widget.onNext,
           onVoiceInput: _handleVoiceInput,
           customTextBuilder: _renderText,
@@ -120,6 +138,11 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
               shortAnswerController.text,
               widget.content.options[widget.content.correctAnswer],
             );
+            if (isCorrect) {
+              HapticUtils.success();
+            } else {
+              HapticUtils.error();
+            }
             setState(() {
               showSaCorrect = true;
               shortAnswerFeedback = isCorrect ? 'Correct!' : 'Incorrect';

@@ -1,571 +1,603 @@
-import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/course_models.dart';
 import '../models/lesson.dart';
+import 'lesson_service.dart';
 
-/// Service for managing courses, lesson series, and course organization
+/// Service for managing courses, lesson associations, and course organization
+/// 
+/// This service provides real Supabase database operations for:
+/// - Creating, reading, updating, deleting courses
+/// - Managing course-lesson associations
+/// - Course progress tracking
 class CourseService {
-  
+  final SupabaseClient _supabase;
+  final LessonService _lessonService;
+
+  CourseService({
+    SupabaseClient? supabase,
+    LessonService? lessonService,
+  })  : _supabase = supabase ?? Supabase.instance.client,
+        _lessonService = lessonService ?? LessonService();
+
+  // ============================================================================
+  // COURSE CRUD OPERATIONS
+  // ============================================================================
+
   /// Create a new course
-  static Future<Course> createCourse({
+  Future<Course> createCourse({
     required String title,
     required String description,
-    required String category,
-    required String difficulty,
-    required String author,
-    required List<String> tags,
-    required List<String> skillsAcquired,
-    int estimatedHours = 0,
+    String? category,
+    String difficulty = 'beginner',
+    List<String> tags = const [],
+    String? imageUrl,
     bool isPublic = false,
-    bool isFeatured = false,
+    int estimatedHours = 0,
   }) async {
-    final course = Course(
-      id: _generateId(),
-      title: title,
-      description: description,
-      category: category,
-      difficulty: difficulty,
-      author: author,
-      estimatedHours: estimatedHours,
-      tags: tags,
-      skillsAcquired: skillsAcquired,
-      isPublic: isPublic,
-      isFeatured: isFeatured,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      status: CourseStatus.draft,
-    );
-    
-    // In a real implementation, save to database
-    await _saveCourse(course);
-    
-    return course;
-  }
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User must be authenticated to create a course');
+      }
 
-  /// Create a new lesson series within a course
-  static Future<LessonSeries> createLessonSeries({
-    required String courseId,
-    required String title,
-    required String description,
-    required int seriesOrder,
-    required SeriesType type,
-    List<String> prerequisites = const [],
-    bool isOptional = false,
-    int estimatedMinutes = 0,
-  }) async {
-    final series = LessonSeries(
-      id: _generateId(),
-      courseId: courseId,
-      title: title,
-      description: description,
-      seriesOrder: seriesOrder,
-      lessonIds: [],
-      prerequisites: prerequisites,
-      isOptional: isOptional,
-      type: type,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      estimatedMinutes: estimatedMinutes,
-    );
-    
-    // In a real implementation, save to database
-    await _saveLessonSeries(series);
-    
-    return series;
-  }
+      final data = {
+        'user_id': userId,
+        'title': title,
+        'description': description,
+        'category': category,
+        'difficulty': difficulty,
+        'tags': tags,
+        'image_url': imageUrl,
+        'is_public': isPublic,
+        'estimated_hours': estimatedHours,
+        'status': 'draft',
+      };
 
-  /// Add lesson to course
-  static Future<CourseLessonAssociation> addLessonToCourse({
-    required String courseId,
-    required String lessonId,
-    String? seriesId,
-    required int orderInCourse,
-    int? orderInSeries,
-    bool isRequired = true,
-    List<String> prerequisites = const [],
-    DateTime? completionDeadline,
-  }) async {
-    final association = CourseLessonAssociation(
-      id: _generateId(),
-      courseId: courseId,
-      lessonId: lessonId,
-      seriesId: seriesId,
-      orderInCourse: orderInCourse,
-      orderInSeries: orderInSeries,
-      isRequired: isRequired,
-      prerequisites: prerequisites,
-      addedAt: DateTime.now(),
-      completionDeadline: completionDeadline,
-    );
-    
-    // Update series if specified
-    if (seriesId != null) {
-      await _addLessonToSeries(seriesId, lessonId);
+      final response = await _supabase
+          .from('courses')
+          .insert(data)
+          .select()
+          .single();
+
+      debugPrint('✅ Course created: ${response['id']}');
+      return _courseFromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error creating course: $e');
+      rethrow;
     }
-    
-    // In a real implementation, save to database
-    await _saveCourseLessonAssociation(association);
-    
-    return association;
   }
 
-  /// Get course with all its series and lessons
-  static Future<CourseWithContent> getCourseWithContent(String courseId) async {
-    final course = await getCourse(courseId);
-    final series = await getLessonSeriesForCourse(courseId);
-    final associations = await getCourseLessonAssociations(courseId);
-    
-    // Get all lessons
-    final lessonIds = associations.map((a) => a.lessonId).toSet().toList();
-    final lessons = await _getLessons(lessonIds);
-    
-    return CourseWithContent(
-      course: course,
-      series: series,
-      lessons: lessons,
-      associations: associations,
-    );
+  /// Get a course by ID
+  Future<Course> getCourse(String courseId) async {
+    try {
+      final response = await _supabase
+          .from('courses')
+          .select()
+          .eq('id', courseId)
+          .single();
+
+      return _courseFromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error fetching course: $e');
+      rethrow;
+    }
   }
 
-  /// Get course by ID
-  static Future<Course> getCourse(String courseId) async {
-    // In a real implementation, fetch from database
-    return _getMockCourse(courseId);
+  /// Get all courses for the current user
+  Future<List<Course>> getUserCourses() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        return [];
+      }
+
+      final response = await _supabase
+          .from('courses')
+          .select()
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false);
+
+      return (response as List).map((c) => _courseFromJson(c)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching user courses: $e');
+      rethrow;
+    }
   }
 
-  /// Get all courses
-  static Future<List<Course>> getCourses({
+  /// Get all courses with optional filters
+  Future<List<Course>> getCourses({
     String? category,
     String? difficulty,
     bool? isPublic,
-    bool? isFeatured,
-    CourseStatus? status,
+    String? status,
     int limit = 20,
     int offset = 0,
   }) async {
-    // In a real implementation, fetch from database with filters
-    return _getMockCourses();
+    try {
+      var query = _supabase.from('courses').select();
+
+      if (category != null) {
+        query = query.eq('category', category);
+      }
+      if (difficulty != null) {
+        query = query.eq('difficulty', difficulty);
+      }
+      if (isPublic != null) {
+        query = query.eq('is_public', isPublic);
+      }
+      if (status != null) {
+        query = query.eq('status', status);
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List).map((c) => _courseFromJson(c)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching courses: $e');
+      rethrow;
+    }
   }
 
-  /// Get lesson series for a course
-  static Future<List<LessonSeries>> getLessonSeriesForCourse(String courseId) async {
-    // In a real implementation, fetch from database
-    return _getMockLessonSeries(courseId);
+  /// Update a course
+  Future<Course> updateCourse(Course course) async {
+    try {
+      final data = {
+        'title': course.title,
+        'description': course.description,
+        'category': course.category,
+        'difficulty': course.difficulty,
+        'tags': course.tags,
+        'image_url': course.imageUrl,
+        'is_public': course.isPublic,
+        'estimated_hours': course.estimatedHours,
+        'status': course.status.name,
+      };
+
+      final response = await _supabase
+          .from('courses')
+          .update(data)
+          .eq('id', course.id)
+          .select()
+          .single();
+
+      debugPrint('✅ Course updated: ${course.id}');
+      return _courseFromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error updating course: $e');
+      rethrow;
+    }
   }
 
-  /// Get course-lesson associations
-  static Future<List<CourseLessonAssociation>> getCourseLessonAssociations(String courseId) async {
-    // In a real implementation, fetch from database
-    return _getMockAssociations(courseId);
+  /// Delete a course
+  Future<void> deleteCourse(String courseId) async {
+    try {
+      await _supabase.from('courses').delete().eq('id', courseId);
+      debugPrint('✅ Course deleted: $courseId');
+    } catch (e) {
+      debugPrint('❌ Error deleting course: $e');
+      rethrow;
+    }
   }
 
-  /// Update course order
-  static Future<void> reorderLessonsInCourse(
+  // ============================================================================
+  // COURSE-LESSON ASSOCIATIONS
+  // ============================================================================
+
+  /// Add a lesson to a course
+  Future<CourseLessonAssociation> addLessonToCourse({
+    required String courseId,
+    required String lessonId,
+    int? orderIndex,
+    bool isRequired = true,
+    String? sectionTitle,
+  }) async {
+    try {
+      // Get current max order if not specified
+      if (orderIndex == null) {
+        final existing = await getCourseLessons(courseId);
+        orderIndex = existing.isEmpty ? 0 : existing.length;
+      }
+
+      final data = {
+        'course_id': courseId,
+        'lesson_id': lessonId,
+        'order_index': orderIndex,
+        'is_required': isRequired,
+        'section_title': sectionTitle,
+      };
+
+      final response = await _supabase
+          .from('course_lessons')
+          .insert(data)
+          .select()
+          .single();
+
+      debugPrint('✅ Lesson added to course: $lessonId -> $courseId');
+      return _associationFromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error adding lesson to course: $e');
+      rethrow;
+    }
+  }
+
+  /// Get all lesson associations for a course
+  Future<List<CourseLessonAssociation>> getCourseLessons(String courseId) async {
+    try {
+      final response = await _supabase
+          .from('course_lessons')
+          .select()
+          .eq('course_id', courseId)
+          .order('order_index');
+
+      return (response as List).map((a) => _associationFromJson(a)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching course lessons: $e');
+      rethrow;
+    }
+  }
+
+  /// Get course with all its lessons
+  Future<CourseWithContent> getCourseWithContent(String courseId) async {
+    try {
+      final course = await getCourse(courseId);
+      final associations = await getCourseLessons(courseId);
+
+      // Fetch all lessons
+      final lessons = <Lesson>[];
+      for (final assoc in associations) {
+        try {
+          final lesson = await _lessonService.getLesson(assoc.lessonId);
+          lessons.add(lesson);
+        } catch (e) {
+          debugPrint('⚠️ Could not fetch lesson ${assoc.lessonId}: $e');
+        }
+      }
+
+      return CourseWithContent(
+        course: course,
+        series: [], // Series not implemented in current schema
+        lessons: lessons,
+        associations: associations,
+      );
+    } catch (e) {
+      debugPrint('❌ Error fetching course with content: $e');
+      rethrow;
+    }
+  }
+
+  /// Remove a lesson from a course
+  Future<void> removeLessonFromCourse(String courseId, String lessonId) async {
+    try {
+      await _supabase
+          .from('course_lessons')
+          .delete()
+          .eq('course_id', courseId)
+          .eq('lesson_id', lessonId);
+
+      debugPrint('✅ Lesson removed from course: $lessonId from $courseId');
+
+      // Reorder remaining lessons
+      await _reorderAfterRemoval(courseId);
+    } catch (e) {
+      debugPrint('❌ Error removing lesson from course: $e');
+      rethrow;
+    }
+  }
+
+  /// Reorder lessons in a course
+  Future<void> reorderLessonsInCourse(
     String courseId,
     List<String> lessonIds,
   ) async {
-    final associations = await getCourseLessonAssociations(courseId);
-    
-    for (int i = 0; i < lessonIds.length; i++) {
-      final lessonId = lessonIds[i];
-      final association = associations.firstWhere((a) => a.lessonId == lessonId);
-      
-      final updatedAssociation = association.copyWith(
-        orderInCourse: i + 1,
-      );
-      
-      await _saveCourseLessonAssociation(updatedAssociation);
+    try {
+      for (int i = 0; i < lessonIds.length; i++) {
+        await _supabase
+            .from('course_lessons')
+            .update({'order_index': i})
+            .eq('course_id', courseId)
+            .eq('lesson_id', lessonIds[i]);
+      }
+      debugPrint('✅ Course lessons reordered');
+    } catch (e) {
+      debugPrint('❌ Error reordering lessons: $e');
+      rethrow;
     }
   }
 
-  /// Update series order
-  static Future<void> reorderLessonsInSeries(
-    String seriesId,
-    List<String> lessonIds,
+  /// Update lesson section title
+  Future<void> updateLessonSection(
+    String courseId,
+    String lessonId,
+    String? sectionTitle,
   ) async {
-    final series = await getLessonSeries(seriesId);
-    final updatedSeries = series.copyWith(
-      lessonIds: lessonIds,
-      updatedAt: DateTime.now(),
-    );
-    
-    await _saveLessonSeries(updatedSeries);
-    
-    // Update associations
-    for (int i = 0; i < lessonIds.length; i++) {
-      final lessonId = lessonIds[i];
-      final associations = await _getAssociationsForLesson(lessonId);
-      
-      for (final association in associations) {
-        if (association.seriesId == seriesId) {
-          final updated = association.copyWith(orderInSeries: i + 1);
-          await _saveCourseLessonAssociation(updated);
+    try {
+      await _supabase
+          .from('course_lessons')
+          .update({'section_title': sectionTitle})
+          .eq('course_id', courseId)
+          .eq('lesson_id', lessonId);
+      debugPrint('✅ Lesson section updated');
+    } catch (e) {
+      debugPrint('❌ Error updating lesson section: $e');
+      rethrow;
+    }
+  }
+
+  // ============================================================================
+  // COURSE PROGRESS
+  // ============================================================================
+
+  /// Get or create course progress for current user
+  Future<CourseProgress> getCourseProgress(String courseId) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User must be authenticated');
+      }
+
+      // Try to get existing progress
+      final response = await _supabase
+          .from('course_progress')
+          .select()
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .maybeSingle();
+
+      if (response != null) {
+        return _progressFromJson(response);
+      }
+
+      // Create new progress record
+      final associations = await getCourseLessons(courseId);
+      final newProgress = {
+        'user_id': userId,
+        'course_id': courseId,
+        'lessons_completed': 0,
+        'total_lessons': associations.length,
+        'status': 'not_started',
+      };
+
+      final created = await _supabase
+          .from('course_progress')
+          .insert(newProgress)
+          .select()
+          .single();
+
+      return _progressFromJson(created);
+    } catch (e) {
+      debugPrint('❌ Error getting course progress: $e');
+      rethrow;
+    }
+  }
+
+  /// Update course progress
+  Future<CourseProgress> updateCourseProgress({
+    required String courseId,
+    int? lessonsCompleted,
+    String? status,
+    int? additionalMinutes,
+  }) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User must be authenticated');
+      }
+
+      final updates = <String, dynamic>{
+        'last_accessed_at': DateTime.now().toIso8601String(),
+      };
+
+      if (lessonsCompleted != null) {
+        updates['lessons_completed'] = lessonsCompleted;
+      }
+      if (status != null) {
+        updates['status'] = status;
+        if (status == 'in_progress') {
+          updates['started_at'] = DateTime.now().toIso8601String();
+        } else if (status == 'completed') {
+          updates['completed_at'] = DateTime.now().toIso8601String();
         }
       }
+
+      final response = await _supabase
+          .from('course_progress')
+          .update(updates)
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .select()
+          .single();
+
+      // Handle time increment separately if needed
+      if (additionalMinutes != null && additionalMinutes > 0) {
+        await _supabase.rpc('increment_course_time', params: {
+          'p_user_id': userId,
+          'p_course_id': courseId,
+          'p_minutes': additionalMinutes,
+        });
+      }
+
+      return _progressFromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error updating course progress: $e');
+      rethrow;
     }
   }
 
-  /// Get lesson series by ID
-  static Future<LessonSeries> getLessonSeries(String seriesId) async {
-    // In a real implementation, fetch from database
-    final series = _getMockLessonSeries('').firstWhere((s) => s.id == seriesId);
-    return series;
-  }
+  /// Get all course progress for current user
+  Future<List<CourseProgress>> getAllCourseProgress() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        return [];
+      }
 
-  /// Remove lesson from course
-  static Future<void> removeLessonFromCourse(String courseId, String lessonId) async {
-    // Remove association
-    final associations = await getCourseLessonAssociations(courseId);
-    final association = associations.firstWhere((a) => a.lessonId == lessonId);
-    await _deleteCourseLessonAssociation(association.id);
-    
-    // Remove from series if applicable
-    if (association.seriesId != null) {
-      await _removeLessonFromSeries(association.seriesId!, lessonId);
-    }
-    
-    // Reorder remaining lessons
-    final remainingAssociations = associations.where((a) => a.lessonId != lessonId).toList();
-    remainingAssociations.sort((a, b) => a.orderInCourse.compareTo(b.orderInCourse));
-    
-    for (int i = 0; i < remainingAssociations.length; i++) {
-      final updated = remainingAssociations[i].copyWith(orderInCourse: i + 1);
-      await _saveCourseLessonAssociation(updated);
+      final response = await _supabase
+          .from('course_progress')
+          .select()
+          .eq('user_id', userId)
+          .order('last_accessed_at', ascending: false);
+
+      return (response as List).map((p) => _progressFromJson(p)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching all course progress: $e');
+      rethrow;
     }
   }
 
-  /// Delete course
-  static Future<void> deleteCourse(String courseId) async {
-    // Delete all associations
-    final associations = await getCourseLessonAssociations(courseId);
-    for (final association in associations) {
-      await _deleteCourseLessonAssociation(association.id);
-    }
-    
-    // Delete all series
-    final series = await getLessonSeriesForCourse(courseId);
-    for (final s in series) {
-      await _deleteLessonSeries(s.id);
-    }
-    
-    // Delete course
-    await _deleteCourse(courseId);
-  }
+  // ============================================================================
+  // COURSE PUBLISHING & VALIDATION
+  // ============================================================================
 
-  /// Update course
-  static Future<Course> updateCourse(Course course) async {
-    final updatedCourse = course.copyWith(updatedAt: DateTime.now());
-    await _saveCourse(updatedCourse);
-    return updatedCourse;
-  }
-
-  /// Publish course
-  static Future<Course> publishCourse(String courseId) async {
-    final course = await getCourse(courseId);
-    
-    // Validate course is ready for publishing
+  /// Publish a course (make it public)
+  Future<Course> publishCourse(String courseId) async {
     final validation = await validateCourseForPublishing(courseId);
     if (!validation.isValid) {
       throw CourseValidationException(validation.errors);
     }
-    
-    final publishedCourse = course.copyWith(
+
+    final course = await getCourse(courseId);
+    return updateCourse(course.copyWith(
       status: CourseStatus.published,
-      updatedAt: DateTime.now(),
-    );
-    
-    await _saveCourse(publishedCourse);
-    return publishedCourse;
+      isPublic: true,
+    ));
+  }
+
+  /// Archive a course
+  Future<Course> archiveCourse(String courseId) async {
+    final course = await getCourse(courseId);
+    return updateCourse(course.copyWith(
+      status: CourseStatus.archived,
+    ));
   }
 
   /// Validate course for publishing
-  static Future<CourseValidationResult> validateCourseForPublishing(String courseId) async {
+  Future<CourseValidationResult> validateCourseForPublishing(String courseId) async {
     final errors = <String>[];
     final warnings = <String>[];
-    
-    final course = await getCourse(courseId);
-    final associations = await getCourseLessonAssociations(courseId);
-    
-    // Check course metadata
-    if (course.title.length < 10) {
-      errors.add('Course title must be at least 10 characters');
+
+    try {
+      final course = await getCourse(courseId);
+      final associations = await getCourseLessons(courseId);
+
+      // Check course metadata
+      if (course.title.length < 5) {
+        errors.add('Course title must be at least 5 characters');
+      }
+      if (course.description.isEmpty) {
+        errors.add('Course description is required');
+      }
+      if (course.tags.isEmpty) {
+        warnings.add('Consider adding tags to improve discoverability');
+      }
+
+      // Check lesson content
+      if (associations.isEmpty) {
+        errors.add('Course must contain at least one lesson');
+      } else if (associations.length < 2) {
+        warnings.add('Consider adding more lessons for a comprehensive course');
+      }
+
+      return CourseValidationResult(
+        isValid: errors.isEmpty,
+        errors: errors,
+        warnings: warnings,
+      );
+    } catch (e) {
+      return CourseValidationResult(
+        isValid: false,
+        errors: ['Failed to validate course: $e'],
+        warnings: [],
+      );
     }
-    
-    if (course.description.length < 50) {
-      errors.add('Course description must be at least 50 characters');
-    }
-    
-    if (course.tags.isEmpty) {
-      warnings.add('Consider adding tags to improve discoverability');
-    }
-    
-    if (course.skillsAcquired.isEmpty) {
-      warnings.add('Consider adding skills that learners will acquire');
-    }
-    
-    // Check lesson content
-    if (associations.isEmpty) {
-      errors.add('Course must contain at least one lesson');
-    } else if (associations.length < 3) {
-      warnings.add('Consider adding more lessons for a comprehensive course');
-    }
-    
-    // Check lesson ordering
-    final orders = associations.map((a) => a.orderInCourse).toList();
-    orders.sort();
-    for (int i = 0; i < orders.length; i++) {
-      if (orders[i] != i + 1) {
-        errors.add('Lesson ordering is inconsistent');
-        break;
+  }
+
+  // ============================================================================
+  // PRIVATE HELPERS
+  // ============================================================================
+
+  Future<void> _reorderAfterRemoval(String courseId) async {
+    final remaining = await getCourseLessons(courseId);
+    for (int i = 0; i < remaining.length; i++) {
+      if (remaining[i].orderInCourse != i) {
+        await _supabase
+            .from('course_lessons')
+            .update({'order_index': i})
+            .eq('id', remaining[i].id);
       }
     }
-    
-    return CourseValidationResult(
-      isValid: errors.isEmpty,
-      errors: errors,
-      warnings: warnings,
-    );
   }
 
-  /// Get course analytics
-  static Future<CourseAnalytics> getCourseAnalytics(String courseId) async {
-    // In a real implementation, this would calculate from user progress data
-    return CourseAnalytics(
-      courseId: courseId,
-      totalEnrollments: Random().nextInt(1000) + 100,
-      completionRate: Random().nextDouble() * 0.4 + 0.6, // 60-100%
-      averageRating: Random().nextDouble() * 2 + 3, // 3-5 stars
-      averageCompletionTime: Random().nextInt(10) + 5, // 5-15 hours
-      dropoffPoints: _generateMockDropoffPoints(),
-      popularLessons: _generateMockPopularLessons(),
-      engagementMetrics: _generateMockEngagementMetrics(),
-    );
-  }
-
-  // Private helper methods
-  static String _generateId() {
-    return DateTime.now().millisecondsSinceEpoch.toString() + 
-           Random().nextInt(1000).toString().padLeft(3, '0');
-  }
-
-  static Future<void> _saveCourse(Course course) async {
-    // In a real implementation, save to database/API
-    print('Saving course: ${course.title}');
-  }
-
-  static Future<void> _saveLessonSeries(LessonSeries series) async {
-    // In a real implementation, save to database/API
-    print('Saving lesson series: ${series.title}');
-  }
-
-  static Future<void> _saveCourseLessonAssociation(CourseLessonAssociation association) async {
-    // In a real implementation, save to database/API
-    print('Saving course-lesson association: ${association.id}');
-  }
-
-  static Future<void> _addLessonToSeries(String seriesId, String lessonId) async {
-    // In a real implementation, update series in database
-    print('Adding lesson $lessonId to series $seriesId');
-  }
-
-  static Future<void> _removeLessonFromSeries(String seriesId, String lessonId) async {
-    // In a real implementation, update series in database
-    print('Removing lesson $lessonId from series $seriesId');
-  }
-
-  static Future<void> _deleteCourseLessonAssociation(String associationId) async {
-    // In a real implementation, delete from database
-    print('Deleting association: $associationId');
-  }
-
-  static Future<void> _deleteLessonSeries(String seriesId) async {
-    // In a real implementation, delete from database
-    print('Deleting series: $seriesId');
-  }
-
-  static Future<void> _deleteCourse(String courseId) async {
-    // In a real implementation, delete from database
-    print('Deleting course: $courseId');
-  }
-
-  static Future<List<Lesson>> _getLessons(List<String> lessonIds) async {
-    // In a real implementation, fetch lessons from database
-    return lessonIds.map((id) => _getMockLesson(id)).toList();
-  }
-
-  static Future<List<CourseLessonAssociation>> _getAssociationsForLesson(String lessonId) async {
-    // In a real implementation, fetch from database
-    return []; // Mock implementation
-  }
-
-  // Mock data generators
-  static Course _getMockCourse(String courseId) {
+  Course _courseFromJson(Map<String, dynamic> json) {
     return Course(
-      id: courseId,
-      title: 'Complete Web Development Bootcamp',
-      description: 'Learn modern web development from scratch with hands-on projects and real-world applications.',
-      category: 'Programming',
-      difficulty: 'intermediate',
-      author: 'instructor_001',
-      estimatedHours: 40,
-      tags: ['web-development', 'javascript', 'react', 'node.js'],
-      skillsAcquired: ['HTML/CSS', 'JavaScript', 'React', 'Node.js', 'Database Design'],
-      isPublic: true,
-      isFeatured: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-      status: CourseStatus.published,
-      enrollmentCount: 245,
-      rating: 4.6,
-      reviewCount: 89,
+      id: json['id'],
+      title: json['title'],
+      description: json['description'] ?? '',
+      category: json['category'] ?? '',
+      difficulty: json['difficulty'] ?? 'beginner',
+      author: json['user_id'] ?? '',
+      estimatedHours: json['estimated_hours'] ?? 0,
+      tags: List<String>.from(json['tags'] ?? []),
+      skillsAcquired: [], // Not in current schema
+      isPublic: json['is_public'] ?? false,
+      isFeatured: false, // Not in current schema
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      imageUrl: json['image_url'],
+      status: CourseStatus.values.firstWhere(
+        (s) => s.name == json['status'],
+        orElse: () => CourseStatus.draft,
+      ),
     );
   }
 
-  static List<Course> _getMockCourses() {
-    return [
-      Course(
-        id: 'course_001',
-        title: 'Complete Web Development Bootcamp',
-        description: 'Learn modern web development from scratch',
-        category: 'Programming',
-        difficulty: 'intermediate',
-        author: 'instructor_001',
-        estimatedHours: 40,
-        tags: ['web-development', 'javascript'],
-        skillsAcquired: ['HTML/CSS', 'JavaScript'],
-        isPublic: true,
-        isFeatured: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-        status: CourseStatus.published,
-        enrollmentCount: 245,
-        rating: 4.6,
-        reviewCount: 89,
-      ),
-      Course(
-        id: 'course_002',
-        title: 'Data Science with Python',
-        description: 'Master data science concepts and tools',
-        category: 'Data Science',
-        difficulty: 'advanced',
-        author: 'instructor_002',
-        estimatedHours: 60,
-        tags: ['python', 'data-science', 'machine-learning'],
-        skillsAcquired: ['Python', 'Pandas', 'NumPy', 'Scikit-learn'],
-        isPublic: true,
-        isFeatured: false,
-        createdAt: DateTime.now().subtract(const Duration(days: 60)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 10)),
-        status: CourseStatus.published,
-        enrollmentCount: 178,
-        rating: 4.8,
-        reviewCount: 67,
-      ),
-    ];
-  }
-
-  static List<LessonSeries> _getMockLessonSeries(String courseId) {
-    return [
-      LessonSeries(
-        id: 'series_001',
-        courseId: courseId,
-        title: 'HTML & CSS Fundamentals',
-        description: 'Learn the basics of web markup and styling',
-        seriesOrder: 1,
-        lessonIds: ['lesson_001', 'lesson_002', 'lesson_003'],
-        prerequisites: [],
-        isOptional: false,
-        type: SeriesType.sequential,
-        createdAt: DateTime.now().subtract(const Duration(days: 25)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-        estimatedMinutes: 180,
-      ),
-      LessonSeries(
-        id: 'series_002',
-        courseId: courseId,
-        title: 'JavaScript Essentials',
-        description: 'Master JavaScript programming concepts',
-        seriesOrder: 2,
-        lessonIds: ['lesson_004', 'lesson_005', 'lesson_006'],
-        prerequisites: ['series_001'],
-        isOptional: false,
-        type: SeriesType.sequential,
-        createdAt: DateTime.now().subtract(const Duration(days: 20)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-        estimatedMinutes: 240,
-      ),
-    ];
-  }
-
-  static List<CourseLessonAssociation> _getMockAssociations(String courseId) {
-    return [
-      CourseLessonAssociation(
-        id: 'assoc_001',
-        courseId: courseId,
-        lessonId: 'lesson_001',
-        seriesId: 'series_001',
-        orderInCourse: 1,
-        orderInSeries: 1,
-        isRequired: true,
-        prerequisites: [],
-        addedAt: DateTime.now().subtract(const Duration(days: 25)),
-      ),
-      CourseLessonAssociation(
-        id: 'assoc_002',
-        courseId: courseId,
-        lessonId: 'lesson_002',
-        seriesId: 'series_001',
-        orderInCourse: 2,
-        orderInSeries: 2,
-        isRequired: true,
-        prerequisites: ['lesson_001'],
-        addedAt: DateTime.now().subtract(const Duration(days: 24)),
-      ),
-    ];
-  }
-
-  static Lesson _getMockLesson(String lessonId) {
-    // This would typically come from the lesson service
-    return Lesson(
-      id: lessonId,
-      title: 'Sample Lesson',
-      description: 'A sample lesson for demonstration',
-      userId: 'instructor_001',
-      tags: ['sample'],
-      terms: [],
-      questions: [],
-      concepts: [],
-      createdAt: DateTime.now().subtract(const Duration(days: 20)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+  CourseLessonAssociation _associationFromJson(Map<String, dynamic> json) {
+    return CourseLessonAssociation(
+      id: json['id'],
+      courseId: json['course_id'],
+      lessonId: json['lesson_id'],
+      seriesId: null, // Not in current schema
+      orderInCourse: json['order_index'] ?? 0,
+      orderInSeries: null,
+      isRequired: json['is_required'] ?? true,
+      prerequisites: [],
+      addedAt: DateTime.parse(json['added_at']),
+      metadata: {'section_title': json['section_title']},
     );
   }
 
-  static List<DropoffPoint> _generateMockDropoffPoints() {
-    return [
-      DropoffPoint(lessonId: 'lesson_003', dropoffRate: 0.15),
-      DropoffPoint(lessonId: 'lesson_006', dropoffRate: 0.22),
-      DropoffPoint(lessonId: 'lesson_009', dropoffRate: 0.18),
-    ];
-  }
-
-  static List<PopularLesson> _generateMockPopularLessons() {
-    return [
-      PopularLesson(lessonId: 'lesson_001', completionRate: 0.95, averageRating: 4.8),
-      PopularLesson(lessonId: 'lesson_004', completionRate: 0.87, averageRating: 4.6),
-      PopularLesson(lessonId: 'lesson_007', completionRate: 0.92, averageRating: 4.7),
-    ];
-  }
-
-  static EngagementMetrics _generateMockEngagementMetrics() {
-    return EngagementMetrics(
-      averageSessionDuration: 45.3,
-      averageLessonsPerSession: 2.1,
-      weeklyActiveUsers: 156,
-      monthlyActiveUsers: 423,
+  CourseProgress _progressFromJson(Map<String, dynamic> json) {
+    return CourseProgress(
+      id: json['id'],
+      courseId: json['course_id'],
+      userId: json['user_id'],
+      lessonProgress: {},
+      overallProgress: json['total_lessons'] > 0
+          ? json['lessons_completed'] / json['total_lessons']
+          : 0.0,
+      startedAt: json['started_at'] != null
+          ? DateTime.parse(json['started_at'])
+          : DateTime.now(),
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'])
+          : null,
+      lastAccessedAt: DateTime.parse(json['last_accessed_at']),
+      totalTimeSpentMinutes: json['total_time_minutes'] ?? 0,
+      status: CourseProgressStatus.values.firstWhere(
+        (s) => s.name == json['status']?.replaceAll('_', ''),
+        orElse: () => CourseProgressStatus.notStarted,
+      ),
     );
   }
 }
 
-// Additional data models for course organization
+// ============================================================================
+// SUPPORTING CLASSES
+// ============================================================================
+
+/// Course with all its content loaded
 class CourseWithContent {
   final Course course;
   final List<LessonSeries> series;
@@ -578,8 +610,39 @@ class CourseWithContent {
     required this.lessons,
     required this.associations,
   });
+
+  /// Get lessons in order
+  List<Lesson> get orderedLessons {
+    final ordered = <Lesson>[];
+    final sortedAssocs = List<CourseLessonAssociation>.from(associations)
+      ..sort((a, b) => a.orderInCourse.compareTo(b.orderInCourse));
+    
+    for (final assoc in sortedAssocs) {
+      final lesson = lessons.firstWhere(
+        (l) => l.id == assoc.lessonId,
+        orElse: () => throw Exception('Lesson not found: ${assoc.lessonId}'),
+      );
+      ordered.add(lesson);
+    }
+    return ordered;
+  }
+
+  /// Get lessons grouped by section
+  Map<String?, List<Lesson>> get lessonsBySection {
+    final grouped = <String?, List<Lesson>>{};
+    final sortedAssocs = List<CourseLessonAssociation>.from(associations)
+      ..sort((a, b) => a.orderInCourse.compareTo(b.orderInCourse));
+    
+    for (final assoc in sortedAssocs) {
+      final sectionTitle = assoc.metadata?['section_title'] as String?;
+      final lesson = lessons.firstWhere((l) => l.id == assoc.lessonId);
+      grouped.putIfAbsent(sectionTitle, () => []).add(lesson);
+    }
+    return grouped;
+  }
 }
 
+/// Result of course validation
 class CourseValidationResult {
   final bool isValid;
   final List<String> errors;
@@ -592,65 +655,11 @@ class CourseValidationResult {
   });
 }
 
+/// Exception thrown when course validation fails
 class CourseValidationException implements Exception {
   final List<String> errors;
   CourseValidationException(this.errors);
-  
+
   @override
   String toString() => 'Course validation failed: ${errors.join(', ')}';
-}
-
-class CourseAnalytics {
-  final String courseId;
-  final int totalEnrollments;
-  final double completionRate;
-  final double averageRating;
-  final int averageCompletionTime;
-  final List<DropoffPoint> dropoffPoints;
-  final List<PopularLesson> popularLessons;
-  final EngagementMetrics engagementMetrics;
-
-  CourseAnalytics({
-    required this.courseId,
-    required this.totalEnrollments,
-    required this.completionRate,
-    required this.averageRating,
-    required this.averageCompletionTime,
-    required this.dropoffPoints,
-    required this.popularLessons,
-    required this.engagementMetrics,
-  });
-}
-
-class DropoffPoint {
-  final String lessonId;
-  final double dropoffRate;
-
-  DropoffPoint({required this.lessonId, required this.dropoffRate});
-}
-
-class PopularLesson {
-  final String lessonId;
-  final double completionRate;
-  final double averageRating;
-
-  PopularLesson({
-    required this.lessonId,
-    required this.completionRate,
-    required this.averageRating,
-  });
-}
-
-class EngagementMetrics {
-  final double averageSessionDuration;
-  final double averageLessonsPerSession;
-  final int weeklyActiveUsers;
-  final int monthlyActiveUsers;
-
-  EngagementMetrics({
-    required this.averageSessionDuration,
-    required this.averageLessonsPerSession,
-    required this.weeklyActiveUsers,
-    required this.monthlyActiveUsers,
-  });
 }

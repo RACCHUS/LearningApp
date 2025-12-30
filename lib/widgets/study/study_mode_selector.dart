@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Widget for selecting and displaying study mode options
 /// 
@@ -26,7 +26,7 @@ class _StudyModeSelectorState extends State<StudyModeSelector> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
+      padding: const EdgeInsets.all(DesignTokens.space4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,7 +37,7 @@ class _StudyModeSelectorState extends State<StudyModeSelector> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppTheme.spacing24),
+          const SizedBox(height: DesignTokens.space5),
           
           // Flashcards mode
           _StudyModeCard(
@@ -48,7 +48,7 @@ class _StudyModeSelectorState extends State<StudyModeSelector> {
             selectedMode: widget.selectedMode,
             onModeChanged: widget.onModeChanged,
           ),
-          const SizedBox(height: AppTheme.spacing16),
+          const SizedBox(height: DesignTokens.space4),
           
           // MCQ mode
           _StudyModeCard(
@@ -59,7 +59,7 @@ class _StudyModeSelectorState extends State<StudyModeSelector> {
             selectedMode: widget.selectedMode,
             onModeChanged: widget.onModeChanged,
           ),
-          const SizedBox(height: AppTheme.spacing16),
+          const SizedBox(height: DesignTokens.space4),
           
           // Concepts mode
           _StudyModeCard(
@@ -70,7 +70,7 @@ class _StudyModeSelectorState extends State<StudyModeSelector> {
             selectedMode: widget.selectedMode,
             onModeChanged: widget.onModeChanged,
           ),
-          const SizedBox(height: AppTheme.spacing16),
+          const SizedBox(height: DesignTokens.space4),
           
           // Mixed mode
           _StudyModeCard(
@@ -126,7 +126,7 @@ class _StudyModeCard extends StatelessWidget {
       child: InkWell(
         onTap: () => onModeChanged(mode),
         child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacing16),
+          padding: const EdgeInsets.all(DesignTokens.space4),
           child: Row(
             children: [
               Icon(
@@ -136,7 +136,7 @@ class _StudyModeCard extends StatelessWidget {
                   ? colorScheme.onPrimaryContainer
                   : colorScheme.onSurface,
               ),
-              const SizedBox(width: AppTheme.spacing16),
+              const SizedBox(width: DesignTokens.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +165,7 @@ class _StudyModeCard extends StatelessWidget {
                 ),
               ),
               if (isSelected) ...[
-                const SizedBox(width: AppTheme.spacing16),
+                const SizedBox(width: DesignTokens.space4),
                 Icon(
                   Icons.check_circle,
                   color: colorScheme.primary,

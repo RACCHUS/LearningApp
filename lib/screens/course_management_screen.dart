@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/course_models.dart';
 import '../services/course_service.dart';
 
+/// Provider for CourseService
+final courseServiceProvider = Provider<CourseService>((ref) => CourseService());
+
 /// Course management screen for creating and organizing courses
 class CourseManagementScreen extends ConsumerStatefulWidget {
   const CourseManagementScreen({super.key});
 
   @override
-  ConsumerState<CourseManagementScreen> createState() => _CourseManagementScreenState();
+  ConsumerState<CourseManagementScreen> createState() =>
+      _CourseManagementScreenState();
 }
 
 class _CourseManagementScreenState extends ConsumerState<CourseManagementScreen>
@@ -16,6 +20,8 @@ class _CourseManagementScreenState extends ConsumerState<CourseManagementScreen>
   late TabController _tabController;
   List<Course> _courses = [];
   bool _isLoading = false;
+
+  CourseService get _courseService => ref.read(courseServiceProvider);
 
   @override
   void initState() {
@@ -33,7 +39,7 @@ class _CourseManagementScreenState extends ConsumerState<CourseManagementScreen>
   Future<void> _loadCourses() async {
     setState(() => _isLoading = true);
     try {
-      final courses = await CourseService.getCourses();
+      final courses = await _courseService.getUserCourses();
       setState(() {
         _courses = courses;
         _isLoading = false;
@@ -163,7 +169,7 @@ class _CourseManagementScreenState extends ConsumerState<CourseManagementScreen>
 
     if (confirmed == true) {
       try {
-        await CourseService.deleteCourse(course.id);
+        await _courseService.deleteCourse(course.id);
         await _loadCourses();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -272,7 +278,8 @@ class CourseCard extends StatelessWidget {
                 children: [
                   _buildInfoChip(Icons.category, course.category),
                   _buildInfoChip(Icons.trending_up, course.difficulty),
-                  _buildInfoChip(Icons.access_time, '${course.estimatedHours}h'),
+                  _buildInfoChip(
+                      Icons.access_time, '${course.estimatedHours}h'),
                   _buildStatusChip(course.status),
                 ],
               ),
@@ -281,10 +288,14 @@ class CourseCard extends StatelessWidget {
                 Wrap(
                   spacing: 4,
                   runSpacing: 4,
-                  children: course.tags.take(3).map((tag) => Chip(
-                    label: Text(tag),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  )).toList(),
+                  children: course.tags
+                      .take(3)
+                      .map((tag) => Chip(
+                            label: Text(tag),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ))
+                      .toList(),
                 ),
               ],
               const SizedBox(height: 8),
@@ -345,7 +356,7 @@ class CourseCard extends StatelessWidget {
         label = 'Under Review';
         break;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -380,7 +391,7 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
   final _authorController = TextEditingController();
   final _tagsController = TextEditingController();
   final _skillsController = TextEditingController();
-  
+
   String _difficulty = 'beginner';
   int _estimatedHours = 1;
   bool _isPublic = false;
@@ -401,7 +412,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 24),
-            
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
@@ -420,7 +430,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               },
             ),
             const SizedBox(height: 16),
-            
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
@@ -440,7 +449,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               },
             ),
             const SizedBox(height: 16),
-            
             Row(
               children: [
                 Expanded(
@@ -479,7 +487,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               ],
             ),
             const SizedBox(height: 16),
-            
             Row(
               children: [
                 Expanded(
@@ -518,7 +525,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               ],
             ),
             const SizedBox(height: 16),
-            
             TextFormField(
               controller: _tagsController,
               decoration: const InputDecoration(
@@ -528,18 +534,17 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               ),
             ),
             const SizedBox(height: 16),
-            
             TextFormField(
               controller: _skillsController,
               decoration: const InputDecoration(
                 labelText: 'Skills Acquired',
-                hintText: 'Comma-separated skills (e.g., HTML, CSS, JavaScript)',
+                hintText:
+                    'Comma-separated skills (e.g., HTML, CSS, JavaScript)',
                 border: OutlineInputBorder(),
               ),
               maxLines: 2,
             ),
             const SizedBox(height: 16),
-            
             Row(
               children: [
                 Expanded(
@@ -561,7 +566,6 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
               ],
             ),
             const SizedBox(height: 24),
-            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -593,30 +597,30 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
           .where((tag) => tag.isNotEmpty)
           .toList();
 
-      final skills = _skillsController.text
-          .split(',')
-          .map((skill) => skill.trim())
-          .where((skill) => skill.isNotEmpty)
-          .toList();
+      // Skills will be used in future implementation
+      // final skills = _skillsController.text
+      //     .split(',')
+      //     .map((skill) => skill.trim())
+      //     .where((skill) => skill.isNotEmpty)
+      //     .toList();
 
-      await CourseService.createCourse(
+      final courseService = CourseService();
+      await courseService.createCourse(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _categoryController.text.trim(),
         difficulty: _difficulty,
-        author: _authorController.text.trim(),
         tags: tags,
-        skillsAcquired: skills,
-        estimatedHours: _estimatedHours,
+        imageUrl: null,
         isPublic: _isPublic,
-        isFeatured: _isFeatured,
+        estimatedHours: _estimatedHours,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Course created successfully!')),
         );
-        
+
         // Clear form
         _formKey.currentState!.reset();
         _titleController.clear();
@@ -664,9 +668,9 @@ class CourseAnalyticsView extends StatefulWidget {
 }
 
 class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
+  final CourseService _courseService = CourseService();
   List<Course> _courses = [];
   String? _selectedCourseId;
-  CourseAnalytics? _analytics;
   bool _isLoading = false;
 
   @override
@@ -676,29 +680,13 @@ class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
   }
 
   Future<void> _loadCourses() async {
-    final courses = await CourseService.getCourses();
+    final courses = await _courseService.getUserCourses();
     setState(() {
       _courses = courses;
       if (courses.isNotEmpty && _selectedCourseId == null) {
         _selectedCourseId = courses.first.id;
-        _loadAnalytics();
       }
     });
-  }
-
-  Future<void> _loadAnalytics() async {
-    if (_selectedCourseId == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final analytics = await CourseService.getCourseAnalytics(_selectedCourseId!);
-      setState(() {
-        _analytics = analytics;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
   }
 
   @override
@@ -713,7 +701,6 @@ class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
-          
           if (_courses.isNotEmpty)
             DropdownButtonFormField<String>(
               value: _selectedCourseId,
@@ -721,167 +708,55 @@ class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
                 labelText: 'Select Course',
                 border: OutlineInputBorder(),
               ),
-              items: _courses.map((course) => DropdownMenuItem(
-                value: course.id,
-                child: Text(course.title),
-              )).toList(),
+              items: _courses
+                  .map((course) => DropdownMenuItem(
+                        value: course.id,
+                        child: Text(course.title),
+                      ))
+                  .toList(),
               onChanged: (value) {
                 setState(() => _selectedCourseId = value);
-                _loadAnalytics();
               },
             ),
-          
           const SizedBox(height: 24),
-          
           if (_isLoading)
             const Center(child: CircularProgressIndicator())
-          else if (_analytics != null)
-            Expanded(child: _buildAnalyticsContent())
-          else
-            const Center(child: Text('No analytics data available')),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsContent() {
-    final analytics = _analytics!;
-    
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Key metrics
-          Row(
-            children: [
-              Expanded(child: _buildMetricCard(
-                'Total Enrollments',
-                analytics.totalEnrollments.toString(),
-                Icons.people,
-                Colors.blue,
-              )),
-              const SizedBox(width: 16),
-              Expanded(child: _buildMetricCard(
-                'Completion Rate',
-                '${(analytics.completionRate * 100).toStringAsFixed(1)}%',
-                Icons.check_circle,
-                Colors.green,
-              )),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(child: _buildMetricCard(
-                'Average Rating',
-                analytics.averageRating.toStringAsFixed(1),
-                Icons.star,
-                Colors.amber,
-              )),
-              const SizedBox(width: 16),
-              Expanded(child: _buildMetricCard(
-                'Avg. Completion Time',
-                '${analytics.averageCompletionTime}h',
-                Icons.schedule,
-                Colors.purple,
-              )),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          // Engagement metrics
-          Text(
-            'Engagement Metrics',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
-          
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildEngagementRow('Avg. Session Duration', 
-                      '${analytics.engagementMetrics.averageSessionDuration.toStringAsFixed(1)} min'),
-                  _buildEngagementRow('Avg. Lessons per Session', 
-                      analytics.engagementMetrics.averageLessonsPerSession.toStringAsFixed(1)),
-                  _buildEngagementRow('Weekly Active Users', 
-                      analytics.engagementMetrics.weeklyActiveUsers.toString()),
-                  _buildEngagementRow('Monthly Active Users', 
-                      analytics.engagementMetrics.monthlyActiveUsers.toString()),
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Popular lessons
-          if (analytics.popularLessons.isNotEmpty) ...[
-            Text(
-              'Popular Lessons',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            
-            ...analytics.popularLessons.map((lesson) => Card(
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.green.withValues(alpha: 0.2),
-                  child: const Icon(Icons.school, color: Colors.green),
-                ),
-                title: Text('Lesson ${lesson.lessonId}'),
-                subtitle: Text('Completion: ${(lesson.completionRate * 100).toStringAsFixed(1)}%'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+          else if (_courses.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.star, size: 16, color: Colors.amber),
-                    Text(' ${lesson.averageRating.toStringAsFixed(1)}'),
+                    Icon(Icons.analytics_outlined,
+                        size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text('No courses to analyze',
+                        style: TextStyle(color: Colors.grey)),
+                    SizedBox(height: 8),
+                    Text('Create a course first to see analytics',
+                        style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
-            )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
+            )
+          else
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.construction, size: 64, color: Colors.amber),
+                    SizedBox(height: 16),
+                    Text('Analytics Coming Soon',
+                        style: TextStyle(fontSize: 18)),
+                    SizedBox(height: 8),
+                    Text(
+                        'Course analytics will be available in a future update',
+                        style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
               ),
             ),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEngagementRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -899,6 +774,7 @@ class CourseDetailsScreen extends StatefulWidget {
 }
 
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
+  final CourseService _courseService = CourseService();
   CourseWithContent? _courseContent;
   bool _isLoading = false;
 
@@ -911,7 +787,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _loadCourseContent() async {
     setState(() => _isLoading = true);
     try {
-      final content = await CourseService.getCourseWithContent(widget.course.id);
+      final content =
+          await _courseService.getCourseWithContent(widget.course.id);
       setState(() {
         _courseContent = content;
         _isLoading = false;
@@ -949,7 +826,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
   Widget _buildCourseContent() {
     final content = _courseContent!;
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -961,7 +838,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 16),
-          
+
           // Course series
           if (content.series.isNotEmpty) ...[
             Text(
@@ -969,43 +846,42 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            
             ...content.series.map((series) => Card(
-              child: ExpansionTile(
-                title: Text(series.title),
-                subtitle: Text(series.description),
-                children: series.lessonIds.map((lessonId) {
-                  final lesson = content.lessons.firstWhere(
-                    (l) => l.id == lessonId,
-                    orElse: () => content.lessons.first,
-                  );
-                  return ListTile(
-                    title: Text(lesson.title),
-                    subtitle: Text(lesson.description ?? ''),
-                    leading: const Icon(Icons.play_lesson),
-                  );
-                }).toList(),
-              ),
-            )),
+                  child: ExpansionTile(
+                    title: Text(series.title),
+                    subtitle: Text(series.description),
+                    children: series.lessonIds.map((lessonId) {
+                      final lesson = content.lessons.firstWhere(
+                        (l) => l.id == lessonId,
+                        orElse: () => content.lessons.first,
+                      );
+                      return ListTile(
+                        title: Text(lesson.title),
+                        subtitle: Text(lesson.description ?? ''),
+                        leading: const Icon(Icons.play_lesson),
+                      );
+                    }).toList(),
+                  ),
+                )),
           ],
-          
+
           const SizedBox(height: 16),
-          
+
           // All lessons
           Text(
             'All Lessons (${content.lessons.length})',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          
+
           ...content.lessons.map((lesson) => Card(
-            child: ListTile(
-              title: Text(lesson.title),
-              subtitle: Text(lesson.description ?? ''),
-              leading: const Icon(Icons.school),
-              trailing: Text('${lesson.terms.length} terms'),
-            ),
-          )),
+                child: ListTile(
+                  title: Text(lesson.title),
+                  subtitle: Text(lesson.description ?? ''),
+                  leading: const Icon(Icons.school),
+                  trailing: Text('${lesson.terms.length} terms'),
+                ),
+              )),
         ],
       ),
     );

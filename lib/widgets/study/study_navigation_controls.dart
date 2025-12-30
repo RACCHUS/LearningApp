@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Study navigation controls widget
 /// 
@@ -27,7 +27,7 @@ class StudyNavigationControls extends StatelessWidget {
     final isLast = currentIndex >= totalItems - 1;
     
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacing16),
+      padding: const EdgeInsets.all(DesignTokens.space4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

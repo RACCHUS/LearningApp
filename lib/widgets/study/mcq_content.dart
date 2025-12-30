@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
+import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Multiple choice question study content widget
 /// 
@@ -77,7 +77,7 @@ class _McqContentState extends State<McqContent> {
               final optionLetter = String.fromCharCode(65 + index); // A, B, C, D
               
               return Padding(
-                padding: const EdgeInsets.only(bottom: AppTheme.spacing16),
+                padding: const EdgeInsets.only(bottom: DesignTokens.space4),
                 child: Row(
                   children: [
                     Expanded(
