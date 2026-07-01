@@ -114,6 +114,79 @@
         }
       };
     }
+
+    // ---------------------------------------------------------------------
+    // PWA "Add to Home Screen" install prompt.
+    // Captures the browser's deferred prompt and shows a small custom button
+    // so mobile/desktop users discover that the app is installable.
+    // ---------------------------------------------------------------------
+    (function () {
+      let deferredInstallPrompt = null;
+
+      function showInstallButton() {
+        if (document.getElementById('pwa-install-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'pwa-install-btn';
+        btn.textContent = 'Install app';
+        btn.setAttribute('aria-label', 'Install this app on your device');
+        btn.style.cssText = [
+          'position:fixed', 'right:16px', 'bottom:16px', 'z-index:9999',
+          'padding:10px 16px', 'border:none', 'border-radius:24px',
+          'background:#1976d2', 'color:#fff', 'font:600 14px system-ui,sans-serif',
+          'box-shadow:0 2px 8px rgba(0,0,0,0.3)', 'cursor:pointer'
+        ].join(';');
+        btn.addEventListener('click', async function () {
+          if (!deferredInstallPrompt) return;
+          deferredInstallPrompt.prompt();
+          try { await deferredInstallPrompt.userChoice; } catch (e) {}
+          deferredInstallPrompt = null;
+          btn.remove();
+        });
+        document.body.appendChild(btn);
+      }
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        showInstallButton();
+      });
+
+      window.addEventListener('appinstalled', function () {
+        deferredInstallPrompt = null;
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) btn.remove();
+      });
+    })();
+
+    // ---------------------------------------------------------------------
+    // Lightweight offline/online banner so users know when data may be stale.
+    // ---------------------------------------------------------------------
+    (function () {
+      function ensureBanner() {
+        let banner = document.getElementById('offline-banner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'offline-banner';
+          banner.setAttribute('role', 'status');
+          banner.textContent = 'You are offline — changes will sync when reconnected.';
+          banner.style.cssText = [
+            'position:fixed', 'left:0', 'right:0', 'top:0', 'z-index:9999',
+            'padding:8px 12px', 'text-align:center',
+            'background:#b00020', 'color:#fff',
+            'font:600 13px system-ui,sans-serif', 'display:none'
+          ].join(';');
+          document.body.appendChild(banner);
+        }
+        return banner;
+      }
+      function updateOnlineStatus() {
+        const banner = ensureBanner();
+        banner.style.display = navigator.onLine ? 'none' : 'block';
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      window.addEventListener('load', updateOnlineStatus);
+    })();
   </script>
 </head>
 <body>

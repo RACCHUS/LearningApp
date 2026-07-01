@@ -213,6 +213,6 @@ This project is private and not licensed for public use.
 ---
 
 For additional documentation, see:
-- [FEATURE_ALIGNMENT_PLAN.md](FEATURE_ALIGNMENT_PLAN.md) - Feature roadmap and implementation status
-- [GEMINI_INTEGRATION_ANALYSIS.md](GEMINI_INTEGRATION_ANALYSIS.md) - AI integration details
-- [VOICE_SYSTEM_FIX_PLAN.md](VOICE_SYSTEM_FIX_PLAN.md) - Voice system architecture
+- [CAREER_SKILLS_PLAN.md](CAREER_SKILLS_PLAN.md) - Career paths and skills system implementation plan
+- [EDITOR_BUILDER_PLAN.md](EDITOR_BUILDER_PLAN.md) - Lesson editor and course builder plan
+- [RELIABILITY_FIXES_PLAN.md](RELIABILITY_FIXES_PLAN.md) - Reliability fixes audit trail

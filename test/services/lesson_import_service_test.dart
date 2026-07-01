@@ -3,6 +3,9 @@ import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_crud_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_content_service.dart';
 import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/models/term.dart';
+import 'package:learning_pwa/models/question.dart';
+import 'package:learning_pwa/models/concept.dart';
 import 'dart:convert';
 
 // Mock services for testing
@@ -37,11 +40,34 @@ class MockLessonCrudService implements LessonCrudService {
 }
 
 class MockLessonContentService implements LessonContentService {
+  final Map<String, List<Term>> addedTerms = {};
+  final Map<String, List<Question>> addedQuestions = {};
+  final Map<String, List<Concept>> addedConcepts = {};
+
+  @override
+  Future<void> addTerms(String lessonId, List<Term> terms) async {
+    addedTerms.putIfAbsent(lessonId, () => []).addAll(terms);
+  }
+
+  @override
+  Future<void> addQuestions(String lessonId, List<Question> questions) async {
+    addedQuestions.putIfAbsent(lessonId, () => []).addAll(questions);
+  }
+
+  @override
+  Future<void> addConcepts(String lessonId, List<Concept> concepts) async {
+    addedConcepts.putIfAbsent(lessonId, () => []).addAll(concepts);
+  }
+
   @override
   Future<Map<String, int>> getContentCounts(String lessonId) async {
-    return {'terms': 0, 'questions': 0, 'concepts': 0};
+    return {
+      'terms': addedTerms[lessonId]?.length ?? 0,
+      'questions': addedQuestions[lessonId]?.length ?? 0,
+      'concepts': addedConcepts[lessonId]?.length ?? 0,
+    };
   }
-  
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

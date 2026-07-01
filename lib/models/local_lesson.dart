@@ -80,6 +80,7 @@ class LocalLesson extends BaseLesson {
     String? id,
     String? title,
     String? description,
+    String? emoji,
     List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,

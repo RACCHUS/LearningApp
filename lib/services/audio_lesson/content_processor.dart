@@ -49,9 +49,10 @@ class ContentProcessor {
 
   /// Cleans and normalizes text for TTS
   String cleanTextForTTS(String text) {
-    // Basic text cleaning for TTS
+    // Keep common punctuation that TTS engines handle correctly:
+    // apostrophes, hyphens, parentheses, slashes, quotes
     return text
-        .replaceAll(RegExp(r'[^\w\s\.\,\!\?\:\;]'), '') // Remove special chars except basic punctuation
+        .replaceAll(RegExp(r'''[^\w\s\.\,\!\?\:\;\-\'\"\(\)\/]'''), '')
         .replaceAll(RegExp(r'\s+'), ' ') // Normalize whitespace
         .trim();
   }

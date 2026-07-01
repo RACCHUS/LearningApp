@@ -1,5 +1,5 @@
 📘 Software Design Document (SDD)
-**App Name:** [Your App Name Here]  
+**App Name:** Learning PWA  
 **Type:** Learning PWA (Web, Android, iOS via browser install)  
 **Frontend:** Flutter Web  
 **Backend:** Supabase (Auth, Postgres, Storage)  

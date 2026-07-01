@@ -54,11 +54,15 @@ class AudioLessonOrchestrator {
       StreamController<LessonFlowAction>.broadcast();
   final StreamController<int> _progressController =
       StreamController<int>.broadcast();
+  final StreamController<int> _failedSegmentsController =
+      StreamController<int>.broadcast();
 
   // Stream getters for compatibility
   Stream<AudioLessonState> get stateStream => _stateController.stream;
   Stream<LessonFlowAction> get actionStream => _actionController.stream;
   Stream<int> get progressStream => _progressController.stream;
+  /// Emits the count of failed TTS segments after reading a content item.
+  Stream<int> get failedSegmentsStream => _failedSegmentsController.stream;
   List<LessonContent> _contentList = [];
   int _currentIndex = 0;
   bool _isActive = false;
@@ -266,6 +270,8 @@ class AudioLessonOrchestrator {
     final content = _contentList[_currentIndex];
     _updateState(AudioLessonState.reading);
 
+    int failedSegments = 0;
+
     try {
       // Use ContentProcessor to extract and clean text
       final audioTexts = _extractContentTexts(content);
@@ -281,38 +287,35 @@ class AudioLessonOrchestrator {
               await _audioService.speak(cleanText, interrupt: false);
 
           if (!success) {
-            // TTS failed for this segment
+            failedSegments++;
             if (kDebugMode) {
               print('⚠️ TTS failed for text segment $i: "$text"');
             }
-
-            // Continue with next segment instead of failing entire content
             continue;
           }
 
-          await _waitForAudioCompletion();
+          // Wait for speech to finish via completion callback (no polling)
+          await _audioService.speakCompletion;
         } on Exception catch (e, stackTrace) {
+          failedSegments++;
           if (kDebugMode) {
             print('❌ Error speaking text segment $i: $e');
             print('Stack trace: $stackTrace');
           }
-
-          // Log error but continue with next segment
-          // This prevents single problematic text from breaking entire lesson
           continue;
         }
+      }
+
+      // Notify listeners if any segments failed
+      if (failedSegments > 0) {
+        _failedSegmentsController.add(failedSegments);
       }
     } on Exception catch (e, stackTrace) {
       if (kDebugMode) {
         print('❌ Critical error in _readCurrentContent: $e');
         print('Stack trace: $stackTrace');
       }
-
-      // Update state to error
       _updateState(AudioLessonState.error);
-
-      // Optionally, notify user of content read failure
-      // Could trigger a callback or event here
       return;
     }
 
@@ -387,11 +390,8 @@ class AudioLessonOrchestrator {
   }
 
   Future<void> _waitForAudioCompletion() async {
-    while (_audioService.currentState.isPlaying ||
-        _audioService.currentState.isLoading) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!_isActive || _state == AudioLessonState.paused) break;
-    }
+    // Prefer the callback-based speakCompletion future when available.
+    await _audioService.speakCompletion;
   }
 
   Future<void> _completeLesson() async {

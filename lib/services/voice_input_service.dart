@@ -18,6 +18,7 @@ class VoiceInputService {
   
   // Subscriptions for cleanup
   StreamSubscription<ProviderInfo>? _providerChangesSubscription;
+  Timer? _monitorTimer;
   
   bool _isInitialized = false;
   bool _hasPermissions = false;
@@ -203,7 +204,8 @@ class VoiceInputService {
 
   /// Monitor speech recognition results
   void _monitorSpeechResults() {
-    Timer.periodic(const Duration(milliseconds: 200), (timer) {
+    _monitorTimer?.cancel();
+    _monitorTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
       if (!_speechManager.isListening) {
         timer.cancel();
         
@@ -239,6 +241,8 @@ class VoiceInputService {
 
   /// Stop listening for voice input
   Future<void> stopListening() async {
+    _monitorTimer?.cancel();
+    _monitorTimer = null;
     try {
       await _speechManager.stopListening();
       
@@ -263,6 +267,8 @@ class VoiceInputService {
 
   /// Cancel current listening session
   Future<void> cancel() async {
+    _monitorTimer?.cancel();
+    _monitorTimer = null;
     try {
       await _speechManager.cancel();
       

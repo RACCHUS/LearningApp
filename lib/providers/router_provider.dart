@@ -16,12 +16,34 @@ import 'package:learning_pwa/screens/test/hands_free_test_screen.dart';
 import 'package:learning_pwa/screens/course_management_screen.dart';
 import 'package:learning_pwa/screens/courses/course_detail_screen.dart';
 import 'package:learning_pwa/screens/study_sets/content_picker_screen.dart';
+import 'package:learning_pwa/screens/study_sets/saved_study_sets_screen.dart';
 import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
+import 'package:learning_pwa/screens/careers/career_paths_screen.dart';
+import 'package:learning_pwa/screens/careers/career_path_create_screen.dart';
+import 'package:learning_pwa/screens/careers/career_path_detail_screen.dart';
+import 'package:learning_pwa/screens/careers/my_careers_screen.dart';
+import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
+import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
+import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
+import 'package:learning_pwa/screens/settings/reset_center_screen.dart';
+import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart';
+import 'package:learning_pwa/screens/onboarding/onboarding_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) async {
+      if (state.matchedLocation == '/onboarding') return null;
+      final onboarded = await hasCompletedOnboarding();
+      if (!onboarded) return '/onboarding';
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: '/login',
         name: 'login',
@@ -98,6 +120,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/study-sets',
+        name: 'study-sets',
+        builder: (context, state) => const SavedStudySetsScreen(),
+      ),
+      GoRoute(
         path: '/content-picker',
         name: 'content-picker',
         builder: (context, state) {
@@ -157,6 +184,81 @@ final routerProvider = Provider<GoRouter>((ref) {
           final courseId = state.pathParameters['courseId'];
           return CourseBuilderScreen(courseId: courseId);
         },
+      ),
+
+      // Career paths routes
+      GoRoute(
+        path: '/careers',
+        name: 'career-paths',
+        builder: (context, state) => const CareerPathsScreen(),
+      ),
+      // NOTE: Must be registered BEFORE the `/careers/:careerPathId` route
+      // so the literal `create` segment wins over the path parameter.
+      GoRoute(
+        path: '/careers/create',
+        name: 'career-path-create',
+        builder: (context, state) => const CareerPathCreateScreen(),
+      ),
+      GoRoute(
+        path: '/careers/:careerPathId',
+        name: 'career-path-detail',
+        builder: (context, state) {
+          final careerPathId = state.pathParameters['careerPathId']!;
+          return CareerPathDetailScreen(pathId: careerPathId);
+        },
+      ),
+      GoRoute(
+        path: '/my-careers',
+        name: 'my-careers',
+        builder: (context, state) => const MyCareersScreen(),
+      ),
+
+      // Skills routes
+      GoRoute(
+        path: '/skills',
+        name: 'skills-profile',
+        builder: (context, state) => const SkillsProfileScreen(),
+      ),
+      GoRoute(
+        path: '/skills/:skillSlug',
+        name: 'skill-detail',
+        builder: (context, state) {
+          final skillSlug = state.pathParameters['skillSlug']!;
+          return SkillDetailScreen(skillSlug: skillSlug);
+        },
+      ),
+
+      // Assessment route
+      GoRoute(
+        path: '/assess/:assessmentId',
+        name: 'assessment',
+        builder: (context, state) {
+          final assessmentId = state.pathParameters['assessmentId']!;
+          return AssessmentScreen(assessmentId: assessmentId);
+        },
+      ),
+
+      // Guided generation route
+      GoRoute(
+        path: '/guided-generation',
+        name: 'guided-generation',
+        builder: (context, state) {
+          final q = state.uri.queryParameters;
+          return GuidedGenerationScreen(
+            initialSubject: q['subject'],
+            initialAudience: q['audience'],
+            initialDuration: int.tryParse(q['duration'] ?? ''),
+            initialDifficulty: q['difficulty'],
+            initialFocus: q['focus'],
+          );
+        },
+      ),
+
+      // Reset center route
+      GoRoute(
+        path: '/settings/reset',
+        name: 'reset-center',
+        builder: (context, state) => const ResetCenterScreen(),
       ),
     ],
 

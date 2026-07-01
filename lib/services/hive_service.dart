@@ -13,32 +13,34 @@ import 'package:learning_pwa/models/concept_content.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/local_lesson.dart';
+import 'package:learning_pwa/core/hive_type_ids.dart';
 
 // Register Hive adapters for all models
 void registerHiveAdapters() {
-  // Register adapters if not already registered
-  if (!Hive.isAdapterRegistered(0)) {
+  // Register adapters if not already registered.
+  // Type ids are centralized in HiveTypeIds to avoid collisions.
+  if (!Hive.isAdapterRegistered(HiveTypeIds.lesson)) {
     Hive.registerAdapter(LessonAdapter());
   }
-  if (!Hive.isAdapterRegistered(1)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.concept)) {
     Hive.registerAdapter(concept_adapter.ConceptAdapter());
   }
-  if (!Hive.isAdapterRegistered(2)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.mcq)) {
     Hive.registerAdapter(McqAdapter());
   }
-  if (!Hive.isAdapterRegistered(4)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.termContent)) {
     Hive.registerAdapter(TermContentAdapter());
   }
-  if (!Hive.isAdapterRegistered(5)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.questionContent)) {
     Hive.registerAdapter(QuestionContentAdapter());
   }
-  if (!Hive.isAdapterRegistered(6)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.conceptContent)) {
     Hive.registerAdapter(ConceptContentAdapter());
   }
-  if (!Hive.isAdapterRegistered(9)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.localLesson)) {
     Hive.registerAdapter(LocalLessonAdapter());
   }
-  if (!Hive.isAdapterRegistered(20)) {
+  if (!Hive.isAdapterRegistered(HiveTypeIds.audioSettings)) {
     Hive.registerAdapter(AudioSettingsAdapter());
   }
   // UserProgress adapter should be registered if it exists

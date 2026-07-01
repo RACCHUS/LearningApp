@@ -20,6 +20,14 @@ class AudioService {
 
   bool _isInitialized = false;
 
+  /// Completer that resolves when the current speak() call finishes.
+  Completer<void>? _speakCompleter;
+
+  /// Future that completes when the current speech utterance ends
+  /// (via completion, cancellation, or error). Returns immediately if idle.
+  Future<void> get speakCompletion =>
+      _speakCompleter?.future ?? Future.value();
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -57,6 +65,7 @@ class AudioService {
           progress: 1.0,
           currentText: null,
         ));
+        _completeSpeaking();
       });
 
       _flutterTts!.setCancelHandler(() {
@@ -64,6 +73,7 @@ class AudioService {
           playbackState: AudioPlaybackState.stopped,
           currentText: null,
         ));
+        _completeSpeaking();
       });
 
       _flutterTts!.setPauseHandler(() {
@@ -83,17 +93,20 @@ class AudioService {
           playbackState: AudioPlaybackState.error,
           errorMessage: msg,
         ));
+        _completeSpeaking();
         if (kDebugMode) {
           print('❌ TTS error: $msg');
         }
       });
 
       // Get available voices
-      final voices = await _getAvailableVoices();
+      final voiceInfos = await _getAvailableVoiceInfos();
+      final voiceNames = voiceInfos.map((v) => v.name).toList();
       
       _updateState(_state.copyWith(
         isAvailable: true,
-        availableVoices: voices,
+        availableVoices: voiceNames,
+        availableVoiceInfos: voiceInfos,
       ));
 
       _isInitialized = true;
@@ -103,7 +116,7 @@ class AudioService {
       
       if (kDebugMode) {
         print('✅ AudioService initialized successfully');
-        print('Available voices: ${voices.length}');
+        print('Available voices: ${voiceInfos.length}');
       }
       
     } catch (e) {
@@ -120,7 +133,7 @@ class AudioService {
     }
   }
 
-  Future<List<String>> _getAvailableVoices() async {
+  Future<List<VoiceInfo>> _getAvailableVoiceInfos() async {
     try {
       if (_flutterTts == null) return [];
       
@@ -128,7 +141,10 @@ class AudioService {
       if (voices is List) {
         return voices
             .where((voice) => voice is Map && voice['name'] != null)
-            .map((voice) => voice['name'] as String)
+            .map((voice) => VoiceInfo(
+                  name: voice['name'] as String,
+                  locale: (voice['locale'] as String?) ?? '',
+                ))
             .toList();
       }
       return [];
@@ -171,6 +187,10 @@ class AudioService {
         await stop();
       }
 
+      // Create a new completer for this utterance
+      _completeSpeaking(); // resolve any dangling completer
+      _speakCompleter = Completer<void>();
+
       _updateState(_state.copyWith(
         playbackState: AudioPlaybackState.loading,
         currentText: text,
@@ -186,10 +206,37 @@ class AudioService {
         playbackState: AudioPlaybackState.error,
         errorMessage: 'Speech failed: $e',
       ));
+      _completeSpeaking();
       if (kDebugMode) {
         print('TTS speak error: $e');
       }
       return false;
+    }
+  }
+
+  /// Safely resolve the current speak completer if pending.
+  void _completeSpeaking() {
+    if (_speakCompleter != null && !_speakCompleter!.isCompleted) {
+      _speakCompleter!.complete();
+    }
+    _speakCompleter = null;
+  }
+
+  /// Preview a specific voice with a sample sentence, then restore the original voice.
+  Future<void> previewVoice(VoiceInfo voice) async {
+    if (_flutterTts == null) return;
+    try {
+      await stop();
+      await _flutterTts!.setVoice({'name': voice.name, 'locale': voice.locale});
+      _speakCompleter = Completer<void>();
+      await _flutterTts!.speak('Hello! This is how I sound when reading your lessons.');
+      await speakCompletion;
+      // Restore the user's preferred voice
+      await updateSettings(_settings);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Voice preview error: $e');
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:learning_pwa/core/errors/model_parse_exception.dart';
 
 part 'question.g.dart';
 
@@ -62,7 +63,6 @@ class Question {
   }
 
   factory Question.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: Question.fromJson input: ' + json.toString());
     final id = json['id']?.toString();
     final questionText = json['question_text']?.toString();
     final optionsRaw = json['options'];
@@ -72,30 +72,48 @@ class Question {
     // Accept both 'created_by' and 'user_id' for compatibility
     final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
     final createdAtRaw = json['created_at']?.toString();
-    if (id == null || questionText == null || optionsRaw == null || correctAnswer == null || type == null || createdBy == null || createdAtRaw == null) {
-      print('ERROR: Null value in Question.fromJson fields. id: $id, questionText: $questionText, options: $optionsRaw, correctAnswer: $correctAnswer, type: $type, createdBy: $createdBy, createdAt: $createdAtRaw');
-      throw Exception('Null value in required Question field');
+    final missing = <String>[
+      if (id == null) 'id',
+      if (questionText == null) 'question_text',
+      if (optionsRaw == null) 'options',
+      if (correctAnswer == null) 'correct_answer',
+      if (type == null) 'type',
+      if (createdBy == null) 'created_by',
+      if (createdAtRaw == null) 'created_at',
+    ];
+    if (missing.isNotEmpty) {
+      throw ModelParseException(
+        'Question',
+        'Missing required field(s)',
+        fields: missing,
+      );
     }
     List<String> options;
     try {
       options = List<String>.from(optionsRaw as List);
-    } catch (e) {
-      print('ERROR: Failed to parse options in Question.fromJson: $optionsRaw');
-      throw Exception('Invalid options format in Question.fromJson');
+    } catch (_) {
+      throw const ModelParseException(
+        'Question',
+        'Invalid options format (expected a list)',
+        fields: ['options'],
+      );
     }
-    final createdAt = DateTime.tryParse(createdAtRaw);
+    final createdAt = DateTime.tryParse(createdAtRaw!);
     if (createdAt == null) {
-      print('ERROR: Invalid date format in Question.fromJson: $createdAtRaw');
-      throw Exception('Invalid date format in Question.fromJson');
+      throw const ModelParseException(
+        'Question',
+        'Invalid date format',
+        fields: ['created_at'],
+      );
     }
     return Question(
-      id: id,
-      questionText: questionText,
+      id: id!,
+      questionText: questionText!,
       options: options,
       correctAnswer: correctAnswer is int ? correctAnswer : int.tryParse(correctAnswer.toString()) ?? 0,
-      type: type,
+      type: type!,
       explanation: explanation,
-      createdBy: createdBy,
+      createdBy: createdBy!,
       createdAt: createdAt,
     );
   }

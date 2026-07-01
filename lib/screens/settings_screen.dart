@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/settings_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
 import 'package:learning_pwa/screens/settings/audio_settings_screen.dart';
+import 'package:learning_pwa/widgets/error_retry_view.dart';
+import 'package:flutter/foundation.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -15,6 +18,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late SettingsModel _settings;
   bool _loading = true;
+  Object? _loadError;
   final _timeController = TextEditingController();
 
   @override
@@ -24,12 +28,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('settings');
     setState(() {
-      _settings = raw != null ? SettingsModel.fromRawJson(raw) : SettingsModel.defaultSettings();
-      _loading = false;
+      _loading = true;
+      _loadError = null;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('settings');
+      if (!mounted) return;
+      setState(() {
+        _settings = raw != null
+            ? SettingsModel.fromRawJson(raw)
+            : SettingsModel.defaultSettings();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -74,6 +93,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    if (_loadError != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Settings')),
+        body: ErrorRetryView(
+          message: 'Couldn\'t load your settings.',
+          error: _loadError,
+          showDetails: kDebugMode,
+          onRetry: _loadSettings,
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: Padding(
@@ -111,12 +141,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: const Icon(Icons.add),
                     onPressed: () {
                       final time = _timeController.text.trim();
-                      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(time)) {
+                      if (RegExp(r'^([01]?\d|2[0-3]):[0-5]\d$')
+                          .hasMatch(time)) {
                         _addTime(time);
                         _timeController.clear();
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Enter time as HH:MM')),
+                          const SnackBar(
+                            content: Text('Enter a valid 24-hour time, e.g. 09:30'),
+                          ),
                         );
                       }
                     },
@@ -141,12 +174,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
             
+            // Reset Center Navigation
+            ListTile(
+              leading: const Icon(Icons.restart_alt, color: Colors.orange),
+              title: const Text('Reset Center'),
+              subtitle: const Text('Reset progress and manage reverts'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/settings/reset'),
+            ),
+            
             const Divider(height: 32),
             
             SwitchListTile(
               title: const Text('Dark Mode'),
               value: _settings.darkMode,
               onChanged: _toggleTheme,
+            ),
+            
+            const Divider(height: 32),
+            
+            // Study Batch Size
+            ListTile(
+              title: const Text('Cards per Study Session'),
+              subtitle: Text(
+                _settings.studyBatchSize == 0
+                    ? 'Unlimited'
+                    : '${_settings.studyBatchSize} cards',
+              ),
+              trailing: SizedBox(
+                width: 200,
+                child: Slider(
+                  value: _settings.studyBatchSize.toDouble(),
+                  min: 0,
+                  max: 50,
+                  divisions: 10,
+                  label: _settings.studyBatchSize == 0
+                      ? 'Unlimited'
+                      : '${_settings.studyBatchSize}',
+                  onChanged: (value) {
+                    setState(() {
+                      _settings.studyBatchSize = value.toInt();
+                    });
+                    _saveSettings();
+                  },
+                ),
+              ),
             ),
           ],
         ),

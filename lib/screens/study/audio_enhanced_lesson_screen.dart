@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/session_result.dart';
+import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/providers/audio_playback_provider.dart';
+import 'package:learning_pwa/providers/study_provider.dart';
+import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
@@ -25,6 +31,7 @@ class AudioEnhancedLessonScreen extends ConsumerStatefulWidget {
 class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonScreen> {
   int pageIndex = 0;
   bool _isOrchestratorMode = false;
+  StreamSubscription<int>? _failedSegmentsSub;
 
   @override
   void initState() {
@@ -41,6 +48,7 @@ class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonS
 
   @override
   void dispose() {
+    _failedSegmentsSub?.cancel();
     // Stop orchestrator when leaving screen
     if (_isOrchestratorMode) {
       final orchestrator = ref.read(audioLessonOrchestratorProvider);
@@ -87,6 +95,20 @@ class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonS
       
       // Initialize orchestrator
       await orchestrator.initialize();
+      
+      // Listen for TTS segment failures to notify the user
+      _failedSegmentsSub?.cancel();
+      _failedSegmentsSub = orchestrator.failedSegmentsStream.listen((count) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$count segment${count > 1 ? 's' : ''} could not be read aloud'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      });
       
       // Start lesson with orchestrator
       await orchestrator.startLesson(lessonData.lessonContent, startIndex: pageIndex);
@@ -257,35 +279,45 @@ class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonS
   }
 
   void _handleLessonComplete() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Lesson Complete!'),
-        content: const Text('Congratulations! You have completed this lesson.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Return to lesson list
-            },
-            child: const Text('Done'),
+    final studyState = ref.read(studyProvider);
+    final lessonAsync = ref.read(lessonProvider(widget.lessonId));
+
+    lessonAsync.whenData((lessonData) {
+      // Build missed terms from studyProvider.termStatus
+      final missedTerms = lessonData.lesson.terms
+          .where((t) => studyState.termStatus[t.id] == false)
+          .map((t) => MissedTerm(term: t))
+          .toList();
+
+      // Build missed questions from studyProvider.questionAnswers
+      final missedQuestions = <MissedQuestion>[];
+      for (final q in lessonData.lesson.questions) {
+        final selected = studyState.questionAnswers[q.id];
+        if (selected != null && selected != q.correctAnswer) {
+          missedQuestions.add(MissedQuestion(question: q, selectedAnswer: selected));
+        }
+      }
+
+      final totalItems = lessonData.lesson.terms.length +
+          lessonData.lesson.questions.length;
+      final correctItems = totalItems - missedTerms.length - missedQuestions.length;
+
+      final result = SessionResult(
+        mode: SessionMode.lesson,
+        correct: correctItems,
+        total: totalItems,
+        missedTerms: missedTerms,
+        missedQuestions: missedQuestions,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => SessionResultsScreen(result: result),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Restart lesson
-              setState(() {
-                pageIndex = 0;
-              });
-              if (_isOrchestratorMode) {
-                _initializeOrchestrator();
-              }
-            },
-            child: const Text('Restart'),
-          ),
-        ],
-      ),
-    );
+        );
+      }
+    });
   }
 
   Widget _buildEmptyState() {

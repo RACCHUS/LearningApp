@@ -3,13 +3,13 @@
   "short_name": "LearningApp",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#121212",
   "theme_color": "#1976d2",
   "description": "A mobile-first learning app for busy adults and students.",
   "permissions": ["microphone"],
   "categories": ["education", "productivity"],
   "lang": "en",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
   "icons": [
     {

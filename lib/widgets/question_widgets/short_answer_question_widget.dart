@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/content_types.dart';
+import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/short_answer_field.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
@@ -59,8 +60,46 @@ class _ShortAnswerQuestionWidgetState extends State<ShortAnswerQuestionWidget> {
         ),
         if (widget.showCorrect && widget.content.explanation != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Explanation: ${widget.content.explanation!}'),
+            padding: const EdgeInsets.only(top: 12.0),
+            child: Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lightbulb_outline,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Explanation',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.volume_up, size: 20),
+                          onPressed: () {
+                            AudioService().speak(
+                              'Explanation: ${widget.content.explanation!}',
+                              interrupt: true,
+                            );
+                          },
+                          tooltip: 'Read explanation aloud',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(widget.content.explanation!),
+                  ],
+                ),
+              ),
+            ),
           ),
       ],
     );

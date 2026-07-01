@@ -11,6 +11,8 @@ import 'mixed_mode_screen.dart';
 import 'package:learning_pwa/widgets/timer_widget.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
+import 'package:learning_pwa/widgets/error_retry_view.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class StudySetScreen extends StatefulWidget {
@@ -117,8 +119,12 @@ class _StudySetScreenState extends State<StudySetScreen> {
                     body: Center(child: CircularProgressIndicator()),
                   ),
                   error: (e, st) => Scaffold(
-                    body: Center(
-                      child: Text('Error loading lesson: $e'),
+                    body: ErrorRetryView(
+                      message: 'We couldn\'t load this lesson.',
+                      error: e,
+                      showDetails: kDebugMode,
+                      onRetry: () =>
+                          ref.invalidate(lessonProvider(lessonId)),
                     ),
                   ),
                 );
@@ -194,13 +200,16 @@ class _StudySetScreenState extends State<StudySetScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return Center(
-                        child: Text('Error: \n'+ snapshot.error.toString() + '\nLesson IDs: \\${widget.lessonIds}'),
+                      return ErrorRetryView(
+                        message: 'Failed to load study set',
+                        error: snapshot.error,
+                        showDetails: kDebugMode,
+                        onRetry: () => setState(() {}),
                       );
                     }
                     if (!snapshot.hasData) {
-                      return Center(
-                        child: Text('No study set data found.\nLesson IDs: \\${widget.lessonIds}'),
+                      return const Center(
+                        child: Text('No study set data found.'),
                       );
                     }
                     final studySet = snapshot.data as StudySet;

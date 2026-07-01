@@ -6,6 +6,7 @@ abstract class BaseLesson {
   final String id;
   final String title;
   final String? description;
+  final String? emoji;
   final List<String> tags;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -15,6 +16,7 @@ abstract class BaseLesson {
     required this.id,
     required this.title,
     this.description,
+    this.emoji,
     required this.tags,
     required this.createdAt,
     required this.updatedAt,
@@ -26,6 +28,7 @@ abstract class BaseLesson {
     String? id,
     String? title,
     String? description,
+    String? emoji,
     List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -41,6 +44,7 @@ abstract class BaseLesson {
           id == other.id &&
           title == other.title &&
           description == other.description &&
+          emoji == other.emoji &&
           listEquals(tags, other.tags) &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt &&
@@ -51,6 +55,7 @@ abstract class BaseLesson {
       id.hashCode ^
       title.hashCode ^
       description.hashCode ^
+      emoji.hashCode ^
       tags.hashCode ^
       createdAt.hashCode ^
       updatedAt.hashCode ^

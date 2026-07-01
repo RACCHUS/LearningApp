@@ -22,7 +22,7 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
     tags: e['tags'] != null ? List<String>.from(e['tags']) : <String>[],
     createdAt: DateTime.parse(e['created_at'] as String),
     updatedAt: DateTime.parse(e['updated_at'] as String),
-    userId: e['user_id'] as String? ?? '00000000-0000-0000-0000-000000000000',
+    userId: e['user_id'] as String? ?? '',
     terms: <Term>[],
     questions: <Question>[],
     concepts: <Concept>[],
@@ -108,7 +108,7 @@ final lessonProvider =
       tags: response['tags'] != null ? List<String>.from(response['tags']) : <String>[],
       createdAt: DateTime.parse(response['created_at'] as String),
       updatedAt: DateTime.parse(response['updated_at'] as String),
-      userId: response['user_id'] as String? ?? '00000000-0000-0000-0000-000000000000',
+      userId: response['user_id'] as String? ?? '',
       terms: <Term>[], // We'll populate these separately
       questions: <Question>[],
       concepts: <Concept>[],

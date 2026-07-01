@@ -1,0 +1,99 @@
+{
+  "title": "Data Structures: Lists & Maps",
+  "description": "Learn how to store and organize collections of data using lists, maps, and sets.",
+  "tags": ["programming", "beginner", "fundamentals", "data-structures"],
+  "concepts": [
+    {
+      "id": "prog04_c1",
+      "emoji": "📚",
+      "concept_text": "Why Collections Matter",
+      "example_text": "Individual variables work for single values, but real programs deal with groups of data — a list of users, a shopping cart of items, a dictionary of word definitions. Collections let you store, access, and manipulate groups of related values efficiently."
+    },
+    {
+      "id": "prog04_c2",
+      "emoji": "👆",
+      "concept_text": "Indexing: Accessing Elements",
+      "example_text": "Lists use zero-based indexing. The first element is at index 0, the second at index 1, etc. In the list ['apple', 'banana', 'cherry'], 'apple' is at index 0 and 'cherry' is at index 2. Accessing an index that doesn't exist causes a runtime error."
+    },
+    {
+      "id": "prog04_c3",
+      "emoji": "🧭",
+      "concept_text": "Choosing the Right Structure",
+      "example_text": "Use a List when order matters and you access by position (a playlist). Use a Map when you need key-value lookups (a phone book — name → number). Use a Set when you need unique values with no duplicates (a collection of unique tags)."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog04_t1",
+      "emoji": "📋",
+      "term": "List (Array)",
+      "definition": "An ordered collection of elements, accessed by index. Elements can be repeated. Most fundamental collection type.",
+      "example": "var fruits = ['apple', 'banana', 'cherry'];\nprint(fruits[0]); // 'apple'\nfruits.add('date');\nprint(fruits.length); // 4"
+    },
+    {
+      "id": "prog04_t2",
+      "emoji": "🗺️",
+      "term": "Map (Dictionary/Object)",
+      "definition": "A collection of key-value pairs. Each key is unique and maps to a value. Used for lookups and structured data.",
+      "example": "var user = {'name': 'Alice', 'age': 30};\nprint(user['name']); // 'Alice'\nuser['email'] = 'alice@example.com';"
+    },
+    {
+      "id": "prog04_t3",
+      "emoji": "🎯",
+      "term": "Set",
+      "definition": "An unordered collection of unique elements. Adding a duplicate is silently ignored. Useful for membership testing.",
+      "example": "var tags = {'dart', 'flutter', 'mobile'};\ntags.add('dart'); // no effect — already exists\nprint(tags.contains('flutter')); // true"
+    },
+    {
+      "id": "prog04_t4",
+      "emoji": "👆",
+      "term": "Index",
+      "definition": "The numerical position of an element in a list. Typically starts at 0 (zero-based indexing).",
+      "example": "var colors = ['red', 'green', 'blue'];\n// colors[0] = 'red'\n// colors[1] = 'green'\n// colors[2] = 'blue'"
+    },
+    {
+      "id": "prog04_t5",
+      "emoji": "🔄",
+      "term": "Iteration",
+      "definition": "The process of going through each element in a collection one at a time, typically using a for or for-in loop.",
+      "example": "var numbers = [10, 20, 30];\nfor (var n in numbers) {\n  print(n); // 10, 20, 30\n}"
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog04_q1",
+      "question": "What index does the first element of a list have?",
+      "options": ["1", "0", "-1", "It depends on the language"],
+      "correct_answer": 1,
+      "explanation": "In almost all modern programming languages, lists/arrays use zero-based indexing. The first element is at index 0."
+    },
+    {
+      "id": "prog04_q2",
+      "question": "Which data structure uses key-value pairs?",
+      "options": ["List", "Set", "Map", "Queue"],
+      "correct_answer": 2,
+      "explanation": "A Map (also called Dictionary or Object) stores data as key-value pairs, like a phonebook mapping names to phone numbers."
+    },
+    {
+      "id": "prog04_q3",
+      "question": "What happens when you add a duplicate value to a Set?",
+      "options": ["It throws an error", "The duplicate is added", "The duplicate is ignored", "The original is removed"],
+      "correct_answer": 2,
+      "explanation": "Sets only contain unique values. Adding a value that already exists is silently ignored — no error, but no duplicate is created."
+    },
+    {
+      "id": "prog04_q4",
+      "question": "Which collection should you use to store a ranked leaderboard?",
+      "options": ["Set — because scores are unique", "Map — because you need names", "List — because order matters", "Any of the above"],
+      "correct_answer": 2,
+      "explanation": "A List preserves order, making it ideal for ranked data like leaderboards where position (1st, 2nd, 3rd) matters."
+    },
+    {
+      "id": "prog04_q5",
+      "question": "What does list.length return for ['a', 'b', 'c']?",
+      "options": ["2", "3", "4", "0"],
+      "correct_answer": 1,
+      "explanation": "The length property returns the number of elements in the list. ['a', 'b', 'c'] has 3 elements, so length is 3. Note: the last index is length - 1 = 2."
+    }
+  ]
+}

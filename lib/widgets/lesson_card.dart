@@ -131,6 +131,17 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Emoji prefix (picture-superiority effect):
+                                // gives the lesson a quick visual anchor
+                                // before users parse the title text.
+                                if (lesson.emoji != null &&
+                                    lesson.emoji!.isNotEmpty) ...[
+                                  Text(
+                                    lesson.emoji!,
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                  const SizedBox(width: DesignTokens.space2),
+                                ],
                                 Expanded(
                                   child: Text(
                                     lesson.title,

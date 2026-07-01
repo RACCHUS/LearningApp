@@ -1,0 +1,106 @@
+{
+  "title": "Variables & Data Types",
+  "description": "Learn the building blocks of programming — how to store and work with different kinds of data.",
+  "tags": ["programming", "beginner", "fundamentals", "variables"],
+  "concepts": [
+    {
+      "id": "prog01_c1",
+      "emoji": "📦",
+      "concept_text": "What is a Variable?",
+      "example_text": "A variable is a named container that stores a value in memory. Think of it like a labeled box — the label is the variable name, and the contents are the value. For example: age = 25 creates a box labeled 'age' containing the number 25."
+    },
+    {
+      "id": "prog01_c2",
+      "emoji": "🏷️",
+      "concept_text": "Why Data Types Matter",
+      "example_text": "Data types tell the computer how to interpret and store values. The number 42 and the text '42' look similar but are stored differently. Numbers support math operations (42 + 8 = 50), while text supports string operations ('42' + '8' = '428'). Using the wrong type causes bugs."
+    },
+    {
+      "id": "prog01_c3",
+      "emoji": "🛡️",
+      "concept_text": "Type Safety",
+      "example_text": "Some languages (like Dart, Java, TypeScript) are 'type-safe' — they check that you use the right types at compile time. Others (like Python, JavaScript) are 'dynamically typed' — types are checked at runtime. Type safety catches errors earlier but requires more explicit code."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog01_t1",
+      "emoji": "🔢",
+      "term": "Integer (int)",
+      "definition": "A whole number without a decimal point. Used for counting, indexing, and discrete values.",
+      "example": "int count = 10; // Dart\nlet count = 10; // JavaScript\ncount = 10 # Python"
+    },
+    {
+      "id": "prog01_t2",
+      "emoji": "💧",
+      "term": "Floating Point (double/float)",
+      "definition": "A number with a decimal point. Used for measurements, calculations, and continuous values.",
+      "example": "double price = 9.99; // Dart\nlet price = 9.99; // JavaScript\nprice = 9.99 # Python"
+    },
+    {
+      "id": "prog01_t3",
+      "emoji": "📝",
+      "term": "String",
+      "definition": "A sequence of characters (text). Enclosed in quotes. Used for names, messages, and any textual data.",
+      "example": "String name = 'Alice'; // Dart\nlet name = \"Alice\"; // JavaScript\nname = 'Alice' # Python"
+    },
+    {
+      "id": "prog01_t4",
+      "emoji": "✅",
+      "term": "Boolean (bool)",
+      "definition": "A value that is either true or false. Used for conditions, flags, and logical operations.",
+      "example": "bool isActive = true; // Dart\nlet isActive = false; // JavaScript\nis_active = True # Python"
+    },
+    {
+      "id": "prog01_t5",
+      "emoji": "⬜",
+      "term": "Null / None",
+      "definition": "A special value meaning 'no value' or 'nothing'. Represents the intentional absence of any value.",
+      "example": "String? name = null; // Dart (nullable)\nlet name = null; // JavaScript\nname = None # Python"
+    },
+    {
+      "id": "prog01_t6",
+      "emoji": "📋",
+      "term": "Variable Declaration",
+      "definition": "The act of creating a new variable by specifying its name and optionally its type and initial value.",
+      "example": "var x = 5; // Dart infers type\nint x = 5; // Dart explicit type\nlet x = 5; // JavaScript\nconst x = 5; // JavaScript constant"
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog01_q1",
+      "question": "Which data type would you use to store someone's name?",
+      "options": ["int", "bool", "String", "double"],
+      "correct_answer": 2,
+      "explanation": "A String is used to store text data like names. Strings are sequences of characters enclosed in quotes."
+    },
+    {
+      "id": "prog01_q2",
+      "question": "What is the result of: 5 + 3.0 in most languages?",
+      "options": ["8 (integer)", "8.0 (floating point)", "\"53.0\" (string)", "Error"],
+      "correct_answer": 1,
+      "explanation": "When you mix an integer and a float in arithmetic, most languages promote the result to a floating point number: 8.0."
+    },
+    {
+      "id": "prog01_q3",
+      "question": "What value does a boolean variable hold?",
+      "options": ["Any number", "Text or numbers", "true or false", "A list of items"],
+      "correct_answer": 2,
+      "explanation": "Boolean variables can only hold two values: true or false. They're used for conditions and logical operations."
+    },
+    {
+      "id": "prog01_q4",
+      "question": "What does 'null' represent in programming?",
+      "options": ["The number zero", "An empty string", "The absence of a value", "A boolean false"],
+      "correct_answer": 2,
+      "explanation": "Null (or None in Python) represents the intentional absence of any value. It is different from 0, empty string, or false."
+    },
+    {
+      "id": "prog01_q5",
+      "question": "Which of these is a valid variable name in most languages?",
+      "options": ["2ndPlace", "my-variable", "user_name", "class"],
+      "correct_answer": 2,
+      "explanation": "user_name is valid. Variable names can't start with numbers (2ndPlace), can't contain hyphens (my-variable), and 'class' is a reserved keyword in most languages."
+    }
+  ]
+}

@@ -78,6 +78,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         title: const Text('Review'),
         actions: [
           if (!session.isComplete && session.items.isNotEmpty)

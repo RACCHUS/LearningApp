@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -188,9 +189,16 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
       // Show user feedback about permission requirement
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Microphone permission required for hands-free mode'),
+          SnackBar(
+            content: const Text(
+              'Microphone permission is required for hands-free mode.',
+            ),
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Open Settings',
+              onPressed: () => openAppSettings(),
+            ),
           ),
         );
       }

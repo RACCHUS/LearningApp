@@ -52,14 +52,22 @@ class GlobalVoiceIndicator extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            state.isListening 
-                ? Icons.mic 
-                : (state.isEnabled ? Icons.mic_none : Icons.mic_off),
-            size: 16,
-            color: state.isEnabled 
-                ? (state.isListening ? Colors.red : Colors.green)
-                : Colors.grey,
+          Semantics(
+            label: state.isListening
+                ? 'Voice is listening'
+                : (state.isEnabled
+                    ? 'Voice commands on'
+                    : 'Voice commands off'),
+            child: _PulsingMicIcon(
+              icon: state.isListening
+                  ? Icons.mic
+                  : (state.isEnabled ? Icons.mic_none : Icons.mic_off),
+              color: state.isEnabled
+                  ? (state.isListening ? Colors.red : Colors.green)
+                  : Colors.grey,
+              size: 16,
+              animate: state.isListening,
+            ),
           ),
           if (showToggle) ...[
             const SizedBox(width: 4),
@@ -95,13 +103,22 @@ class GlobalVoiceIndicator extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  state.isListening 
-                      ? Icons.mic 
-                      : (state.isEnabled ? Icons.mic_none : Icons.mic_off),
-                  color: state.isEnabled 
-                      ? (state.isListening ? Colors.red : Colors.green)
-                      : Colors.grey,
+                Semantics(
+                  label: state.isListening
+                      ? 'Voice is listening'
+                      : (state.isEnabled
+                          ? 'Voice commands on'
+                          : 'Voice commands off'),
+                  child: _PulsingMicIcon(
+                    icon: state.isListening
+                        ? Icons.mic
+                        : (state.isEnabled ? Icons.mic_none : Icons.mic_off),
+                    color: state.isEnabled
+                        ? (state.isListening ? Colors.red : Colors.green)
+                        : Colors.grey,
+                    size: 24,
+                    animate: state.isListening,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -258,3 +275,67 @@ class AppBarWithGlobalVoice extends ConsumerWidget implements PreferredSizeWidge
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
+
+/// A microphone icon that gently pulses while the app is actively listening,
+/// giving users a clear visual cue that audio is being captured.
+class _PulsingMicIcon extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  final bool animate;
+
+  const _PulsingMicIcon({
+    required this.icon,
+    required this.color,
+    required this.size,
+    required this.animate,
+  });
+
+  @override
+  State<_PulsingMicIcon> createState() => _PulsingMicIconState();
+}
+
+class _PulsingMicIconState extends State<_PulsingMicIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    if (widget.animate) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulsingMicIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.animate && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(widget.icon, size: widget.size, color: widget.color);
+    if (!widget.animate) return icon;
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.85, end: 1.15).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      ),
+      child: icon,
+    );
+  }
+}
+

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
 import 'package:learning_pwa/services/ai_prompt_service.dart';
@@ -10,6 +11,7 @@ import 'package:learning_pwa/widgets/lesson_builder_widget.dart';
 import 'package:learning_pwa/widgets/prompt_display_widget.dart';
 import 'package:learning_pwa/widgets/template_selection_widget.dart';
 import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
   const CreateLessonScreen({super.key});
@@ -48,7 +50,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     
     try {
       final authState = ref.read(authProvider);
-      final userId = authState is AuthSuccess ? authState.user.id : '00000000-0000-0000-0000-000000000000';
+      final userId = authState is AuthSuccess ? authState.user.id : '';
       
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
@@ -64,9 +66,10 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       }
     } catch (e) {
       if (mounted) {
+        final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating lesson: $e'),
+            content: Text(msg),
             backgroundColor: Colors.red,
           ),
         );
@@ -86,7 +89,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     
     try {
       final authState = ref.read(authProvider);
-      final userId = authState is AuthSuccess ? authState.user.id : '00000000-0000-0000-0000-000000000000';
+      final userId = authState is AuthSuccess ? authState.user.id : '';
       
       final lessonService = LessonService();
       
@@ -117,9 +120,10 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       }
     } catch (e) {
       if (mounted) {
+        final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating lesson: $e'),
+            content: Text(msg),
             backgroundColor: Colors.red,
           ),
         );
@@ -250,7 +254,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             
             // Target Audience
             Text(
-              'Target Audience',
+              'Prior Knowledge Level',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -318,7 +322,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               value: _contentFocus,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'conceptual', child: Text('Conceptual - Theory and understanding')),
+                DropdownMenuItem(value: 'theoretical', child: Text('Theoretical - Theory and understanding')),
                 DropdownMenuItem(value: 'practical', child: Text('Practical - Hands-on applications')),
                 DropdownMenuItem(value: 'balanced', child: Text('Balanced - Mix of theory and practice')),
               ],
@@ -372,14 +376,39 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             
             const SizedBox(height: 32),
             
-            // Generate Prompt Button
+            // Guided Generation Button (multi-prompt)
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _subjectController.text.trim().isEmpty ? null : _generateAndShowPrompt,
+                onPressed: () {
+                  final params = <String, String>{
+                    if (_subjectController.text.trim().isNotEmpty)
+                      'subject': _subjectController.text.trim(),
+                    'audience': _targetAudience,
+                    'duration': _durationMinutes.toString(),
+                    'difficulty': _difficulty,
+                    'focus': _contentFocus,
+                  };
+                  context.push(Uri(path: '/guided-generation', queryParameters: params).toString());
+                },
                 icon: const Icon(Icons.auto_awesome),
-                label: const Text('Generate AI Prompt'),
+                label: const Text('AI-Guided Generation'),
                 style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Quick Generate Button (legacy single-prompt)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _subjectController.text.trim().isEmpty ? null : _generateAndShowPrompt,
+                icon: const Icon(Icons.bolt),
+                label: const Text('Quick Generate (Single Prompt)'),
+                style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
               ),

@@ -10,6 +10,7 @@ CREATE TABLE lessons (
   title TEXT NOT NULL,
   description TEXT,
   tags TEXT[] DEFAULT '{}',
+  emoji TEXT,
   user_id UUID REFERENCES users(id) NULL, -- Optional - allows public lessons
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -23,6 +24,7 @@ CREATE TABLE terms (
   term TEXT NOT NULL,
   definition TEXT NOT NULL,
   example TEXT,
+  emoji TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   user_id UUID REFERENCES users(id) NULL -- Optional
@@ -35,6 +37,7 @@ CREATE TABLE concepts (
   concept_text TEXT NOT NULL,
   example_text TEXT,
   key_points TEXT[],
+  emoji TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   user_id UUID REFERENCES users(id) NULL -- Optional
@@ -66,6 +69,7 @@ CREATE TABLE user_progress (
   correct_count INTEGER DEFAULT 0,
   lesson_completed BOOLEAN DEFAULT FALSE,
   study_time_minutes INTEGER DEFAULT 0,
+  study_time_seconds INTEGER DEFAULT 0,
   UNIQUE(user_id, lesson_id, date)
 );
 CREATE INDEX idx_user_progress_user_date ON user_progress(user_id, date);
@@ -105,26 +109,55 @@ CREATE POLICY user_progress_own ON user_progress FOR ALL USING (auth.uid() = use
 CREATE POLICY reminders_own ON reminders FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY offline_content_own ON offline_content FOR ALL USING (auth.uid() = user_id);
 
--- Content access policies - users can access content for lessons they own or public lessons
-CREATE POLICY lessons_access ON lessons FOR ALL USING (
-  user_id IS NULL OR -- Public lessons (no owner)
-  auth.uid() = user_id OR -- User owns the lesson
-  EXISTS (SELECT 1 FROM users WHERE id = auth.uid()) -- Authenticated users can read all
+-- Content access policies
+-- Read: a lesson (and its content) is visible if it is public (no owner) or owned by the caller.
+-- Write: only the owner of the parent lesson may insert/update/delete. Public (ownerless)
+-- lessons are read-only to end users and can only be modified via the service role.
+
+CREATE POLICY lessons_read ON lessons FOR SELECT USING (
+  user_id IS NULL OR auth.uid() = user_id
+);
+CREATE POLICY lessons_write ON lessons FOR ALL USING (
+  auth.uid() = user_id
+) WITH CHECK (
+  auth.uid() = user_id
 );
 
-CREATE POLICY terms_access ON terms FOR ALL USING (
+CREATE POLICY terms_read ON terms FOR SELECT USING (
   EXISTS (
-    SELECT 1 FROM lessons 
-    WHERE lessons.id = terms.lesson_id 
-    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid() OR auth.uid() IS NOT NULL)
+    SELECT 1 FROM lessons
+    WHERE lessons.id = terms.lesson_id
+    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid())
+  )
+);
+CREATE POLICY terms_write ON terms FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = terms.lesson_id AND lessons.user_id = auth.uid()
+  )
+) WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = terms.lesson_id AND lessons.user_id = auth.uid()
   )
 );
 
-CREATE POLICY questions_access ON questions FOR ALL USING (
+CREATE POLICY questions_read ON questions FOR SELECT USING (
   EXISTS (
-    SELECT 1 FROM lessons 
-    WHERE lessons.id = questions.lesson_id 
-    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid() OR auth.uid() IS NOT NULL)
+    SELECT 1 FROM lessons
+    WHERE lessons.id = questions.lesson_id
+    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid())
+  )
+);
+CREATE POLICY questions_write ON questions FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = questions.lesson_id AND lessons.user_id = auth.uid()
+  )
+) WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = questions.lesson_id AND lessons.user_id = auth.uid()
   )
 );
 
@@ -240,10 +273,21 @@ CREATE POLICY study_sets_user_crud ON study_sets FOR ALL USING (auth.uid() = use
 CREATE POLICY course_progress_user_crud ON course_progress FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY study_set_progress_user_crud ON study_set_progress FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY concepts_access ON concepts FOR ALL USING (
+CREATE POLICY concepts_read ON concepts FOR SELECT USING (
   EXISTS (
-    SELECT 1 FROM lessons 
-    WHERE lessons.id = concepts.lesson_id 
-    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid() OR auth.uid() IS NOT NULL)
+    SELECT 1 FROM lessons
+    WHERE lessons.id = concepts.lesson_id
+    AND (lessons.user_id IS NULL OR lessons.user_id = auth.uid())
+  )
+);
+CREATE POLICY concepts_write ON concepts FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = concepts.lesson_id AND lessons.user_id = auth.uid()
+  )
+) WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM lessons
+    WHERE lessons.id = concepts.lesson_id AND lessons.user_id = auth.uid()
   )
 );

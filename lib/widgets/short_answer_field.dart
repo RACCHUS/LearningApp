@@ -17,21 +17,29 @@ class ShortAnswerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          decoration: const InputDecoration(
-            labelText: 'Your Answer',
-            border: OutlineInputBorder(),
+        Semantics(
+          textField: true,
+          label: 'Your answer',
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Your Answer',
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         if (feedback != null) ...[
           const SizedBox(height: 8),
-          Text(
-            feedback!,
-            style: TextStyle(
-              color: feedback == 'Correct!' ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              feedback!,
+              style: TextStyle(
+                color: feedback == 'Correct!' ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ]

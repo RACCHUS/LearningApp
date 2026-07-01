@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/audio_state.dart';
+import 'package:learning_pwa/services/audio_service.dart';
 
 /// Widget that handles audio quality settings like speech rate, volume, pitch
 /// Also includes voice selection and language settings
@@ -141,19 +142,68 @@ class AudioQualitySection extends ConsumerWidget {
   }
 
   Widget _buildVoiceSelection() {
-    return ListTile(
-      title: const Text('Preferred Voice'),
-      subtitle: Text(settings.preferredVoice ?? 'Default'),
-      trailing: DropdownButton<String?>(
-        value: settings.preferredVoice,
-        items: [
-          const DropdownMenuItem(value: null, child: Text('Default')),
-          ...audioState.availableVoices.map((voice) => 
-            DropdownMenuItem(value: voice, child: Text(voice))
+    // Filter voices by selected language
+    final filteredVoices = audioState.availableVoiceInfos
+        .where((v) => v.matchesLanguage(settings.language))
+        .toList();
+
+    if (filteredVoices.isEmpty && audioState.availableVoiceInfos.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final voicesToShow =
+        filteredVoices.isNotEmpty ? filteredVoices : audioState.availableVoiceInfos;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: const Text('Preferred Voice'),
+          subtitle: Text(settings.preferredVoice ?? 'System Default'),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonFormField<String?>(
+            value: voicesToShow.any((v) => v.name == settings.preferredVoice)
+                ? settings.preferredVoice
+                : null,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('System Default')),
+              ...voicesToShow.map((voice) => DropdownMenuItem(
+                    value: voice.name,
+                    child: Text(
+                      voice.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )),
+            ],
+            onChanged: settings.isEnabled ? onPreferredVoiceChanged : null,
           ),
-        ],
-        onChanged: settings.isEnabled ? onPreferredVoiceChanged : null,
-      ),
+        ),
+        if (settings.preferredVoice != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 16, top: 8),
+            child: TextButton.icon(
+              onPressed: settings.isEnabled
+                  ? () {
+                      final voice = audioState.availableVoiceInfos
+                          .where((v) => v.name == settings.preferredVoice)
+                          .firstOrNull;
+                      if (voice != null) {
+                        AudioService().previewVoice(voice);
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.play_circle_outline, size: 20),
+              label: const Text('Preview Voice'),
+            ),
+          ),
+      ],
     );
   }
 

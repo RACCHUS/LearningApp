@@ -78,18 +78,25 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
   }
 
   Future<void> syncProgress() async {
+    // Prevent concurrent sync operations
+    if (state.isSyncing) return;
+    
     state = state.copyWith(isSyncing: true, error: null);
     try {
-      final offlineProgress = await _hiveService.getProgress();
+      // Only push records that haven't been confirmed by the server yet.
+      final offlineProgress = await _hiveService.getUnsyncedProgress();
       if (offlineProgress.isEmpty) {
-        state = state.copyWith(isSyncing: false);
+        state = state.copyWith(isSyncing: false, lastSyncTime: DateTime.now());
         return;
       }
 
-      // Group by userId, lessonId, date
+      // Group by userId, lessonId, date. Track which source record IDs feed
+      // each merged row so we can mark exactly those as synced afterwards.
       final Map<String, UserProgress> merged = {};
+      final Map<String, List<String>> sourceIds = {};
       for (final p in offlineProgress) {
         final key = '${p.userId}_${p.lessonId}_${p.date.toIso8601String().split('T')[0]}';
+        (sourceIds[key] ??= <String>[]).add(p.id);
         if (!merged.containsKey(key)) {
           merged[key] = p;
         } else {
@@ -110,7 +117,7 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
           );
         }
       }
-      
+
       await _supabase.from('user_progress').upsert(
         merged.values.map((e) => {
           'user_id': e.userId,
@@ -122,14 +129,21 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
           'study_time_seconds': e.studyTimeSeconds,
         }).toList(),
       );
-      
-      await _hiveService.clearProgress();
+
+      // Only after the server confirms the upsert, mark the contributing local
+      // records as synced. We keep the data locally (no destructive clear) so a
+      // mid-flight failure can never lose progress — it is simply retried.
+      final syncedIds = [
+        for (final ids in sourceIds.values) ...ids,
+      ].where((id) => id.isNotEmpty).toList();
+      await _hiveService.markProgressAsSynced(syncedIds);
+
       state = state.copyWith(
         isSyncing: false,
         lastSyncTime: DateTime.now(),
         error: null,
       );
-      
+
       debugPrint('✅ Successfully synced ${merged.length} progress records');
     } catch (e, stackTrace) {
       final errorMsg = 'Failed to sync offline progress';

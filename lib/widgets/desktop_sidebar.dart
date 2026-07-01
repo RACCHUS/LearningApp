@@ -32,7 +32,12 @@ class DesktopSidebar extends ConsumerWidget {
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(DesignTokens.space4),
+        padding: const EdgeInsets.fromLTRB(
+          DesignTokens.space4,
+          DesignTokens.space4,
+          DesignTokens.space4,
+          80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

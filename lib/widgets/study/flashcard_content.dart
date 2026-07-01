@@ -24,6 +24,7 @@ class _FlashcardContentState extends State<FlashcardContent> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final currentText = showDefinition ? widget.term.definition : widget.term.term;
+    final String? emoji = widget.term.emoji;
     
     return Column(
       children: [
@@ -63,11 +64,22 @@ class _FlashcardContentState extends State<FlashcardContent> {
                   padding: const EdgeInsets.all(24.0),
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: Text(
-                      currentText,
+                    child: Column(
                       key: ValueKey(showDefinition),
-                      style: textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!showDefinition && emoji != null) ...[                          Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 48),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Text(
+                          currentText,
+                          style: textTheme.headlineMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 ),

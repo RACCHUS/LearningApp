@@ -32,6 +32,27 @@ class _HomeStudySetsListState extends ConsumerState<HomeStudySetsList> {
       );
     }
 
+    if (state.error != null && state.studySets.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text('Failed to load study sets', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => ref.read(studySetProvider.notifier).loadStudySets(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (state.studySets.isEmpty) {
       return SliverFillRemaining(
         child: _buildEmptyState(context),
@@ -133,9 +154,14 @@ class _HomeStudySetsListState extends ConsumerState<HomeStudySetsList> {
     if (confirmed == true && mounted) {
       final success =
           await ref.read(studySetProvider.notifier).deleteStudySet(studySet.id);
-      if (success && mounted) {
+      if (!mounted) return;
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Study set deleted')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete study set. Please try again.')),
         );
       }
     }

@@ -34,9 +34,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     });
   }
 
-  /// Sign in as a guest
-  void signInAsGuest() {
-    state = GuestMode();
+  /// Sign in as a guest using Supabase anonymous auth.
+  ///
+  /// Each guest gets a unique auth.uid() so RLS policies can scope rows to
+  /// the individual guest. Guests can later be upgraded to a full account
+  /// by linking an identity (email / OAuth) without losing their data.
+  Future<void> signInAsGuest() async {
+    try {
+      state = AuthLoading();
+      await _supabase.auth.signInAnonymously();
+      // onAuthStateChange will fire and set state = AuthSuccess.
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Anonymous sign-in failed',
+        error: e,
+        stackTrace: stackTrace,
+        metadata: {'method': 'signInAsGuest'},
+      );
+      state = AuthError('Unable to start guest session. Please try again.');
+      rethrow;
+    }
   }
 
   Future<void> signInWithGoogle() async {
@@ -69,7 +86,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         await _supabase.from('users').upsert({
           'id': user.id,
+          // Anonymous users have no email; column is nullable post-migration.
           'email': user.email,
+          'display_name': user.isAnonymous ? 'Guest' : null,
           'created_at': DateTime.now().toIso8601String(),
         });
 

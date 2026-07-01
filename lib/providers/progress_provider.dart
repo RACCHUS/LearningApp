@@ -30,6 +30,7 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   final HiveService _hiveService;
   final _supabase = Supabase.instance.client;
   late final ProgressSyncService _syncService;
+  Timer? _periodicSyncTimer;
   
   ProgressNotifier(this._hiveService) : super(ProgressInitial()) {
     _syncService = ProgressSyncService(_hiveService);
@@ -41,7 +42,7 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
     await _syncService.syncProgress();
     
     // Schedule periodic sync
-    Timer.periodic(const Duration(minutes: 5), (_) => _syncService.syncProgress());
+    _periodicSyncTimer = Timer.periodic(const Duration(minutes: 5), (_) => _syncService.syncProgress());
   }
 
   Future<void> startLesson({
@@ -228,6 +229,7 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _periodicSyncTimer?.cancel();
     // Save any pending changes before disposing
     if (state is ProgressLoaded) {
       _upsertProgress((state as ProgressLoaded).progress);

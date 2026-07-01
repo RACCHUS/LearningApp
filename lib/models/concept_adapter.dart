@@ -14,6 +14,15 @@ class ConceptAdapter extends TypeAdapter<Concept> {
     final createdBy = reader.readString();
     final createdAt = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
 
+    // Backward-compatible: old data won't have emoji field
+    String? emoji;
+    try {
+      final raw = reader.readString();
+      if (raw.isNotEmpty) emoji = raw;
+    } catch (_) {
+      // Old data without emoji field — ignore
+    }
+
     return Concept(
       id: id,
       lessonId: lessonId,
@@ -21,6 +30,7 @@ class ConceptAdapter extends TypeAdapter<Concept> {
       exampleText: exampleText,
       createdBy: createdBy,
       createdAt: createdAt,
+      emoji: emoji,
     );
   }
 
@@ -32,5 +42,6 @@ class ConceptAdapter extends TypeAdapter<Concept> {
     writer.writeString(obj.exampleText ?? '');
     writer.writeString(obj.createdBy);
     writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
+    writer.writeString(obj.emoji ?? '');
   }
 }

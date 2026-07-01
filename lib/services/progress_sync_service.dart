@@ -4,6 +4,7 @@ import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
+import 'package:learning_pwa/core/network_retry.dart';
 
 class ProgressSyncService {
   final _logger = AppLogger('ProgressSyncService');
@@ -32,7 +33,10 @@ class ProgressSyncService {
       // CRITICAL: Only mark as synced AFTER successful server write
       // This prevents data loss if upsert fails
       try {
-        await _supabase.from('user_progress').upsert(progressData);
+        await retryWithBackoff(
+          () => _supabase.from('user_progress').upsert(progressData),
+          label: 'Progress sync upsert',
+        );
         
         // SUCCESS: Now safe to mark as synced locally
         await _hiveService.markProgressAsSynced(progressIds);

@@ -1,10 +1,12 @@
 import 'package:learning_pwa/models/term_content.dart';
+import 'package:learning_pwa/core/errors/model_parse_exception.dart';
 
 class Term {
   final String id;
   final String term;
   final String definition;
   final String? example;
+  final String? emoji;
   final String createdBy;
 
   Term({
@@ -12,27 +14,38 @@ class Term {
     required this.term,
     required this.definition,
     this.example,
+    this.emoji,
     required this.createdBy,
   });
 
   factory Term.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: Term.fromJson input: ' + json.toString());
     final id = json['id']?.toString();
     final term = json['term']?.toString();
     final definition = json['definition']?.toString();
     final example = json['example']?.toString();
+    final emoji = json['emoji']?.toString();
     // Accept both 'created_by' and 'user_id' for compatibility
     final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
-    if (id == null || term == null || definition == null || createdBy == null) {
-      print('ERROR: Null value in Term.fromJson fields. id: $id, term: $term, definition: $definition, createdBy: $createdBy');
-      throw Exception('Null value in required Term field');
+    final missing = <String>[
+      if (id == null) 'id',
+      if (term == null) 'term',
+      if (definition == null) 'definition',
+      if (createdBy == null) 'created_by',
+    ];
+    if (missing.isNotEmpty) {
+      throw ModelParseException(
+        'Term',
+        'Missing required field(s)',
+        fields: missing,
+      );
     }
     return Term(
-      id: id,
-      term: term,
-      definition: definition,
+      id: id!,
+      term: term!,
+      definition: definition!,
       example: example,
-      createdBy: createdBy,
+      emoji: emoji,
+      createdBy: createdBy!,
     );
   }
   
@@ -42,6 +55,7 @@ class Term {
       term: content.term,
       definition: content.definition,
       example: content.example,
+      emoji: null,
       createdBy: 'system', // Default value since TermContent doesn't have createdBy
     );
   }
@@ -51,6 +65,7 @@ class Term {
     'term': term,
     'definition': definition,
     'example': example,
+    if (emoji != null) 'emoji': emoji,
     'created_by': createdBy,
   };
 }

@@ -163,6 +163,24 @@ class _LessonSelectionScreenState extends ConsumerState<LessonSelectionScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+                  const SizedBox(height: 16),
+                  Text('Failed to load lessons', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => setState(() {}),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No lessons found.'));
           }

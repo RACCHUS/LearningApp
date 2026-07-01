@@ -63,12 +63,13 @@ Future<void> main() async {
     print('✅ Firebase initialized successfully');
 
     // Initialize Push Notification Service (FCM)
+    final List<String> degradedServices = [];
     try {
       print('🔄 Initializing Push Notifications...');
       await PushNotificationService().init();
       print('✅ Push Notifications initialized successfully');
     } catch (e) {
-      // If FCM is not supported, ignore
+      degradedServices.add('Push Notifications');
       if (kDebugMode) {
         print('⚠️ FCM initialization failed: $e');
       }
@@ -78,13 +79,26 @@ Future<void> main() async {
     try {
       print('🔄 Initializing Audio Services...');
       await AudioService().initialize();
-      await VoiceInputService().initialize();
-      print('✅ Audio Services initialized successfully');
+      print('✅ Audio Service initialized successfully');
     } catch (e) {
-      // If audio services fail to initialize, continue without them
+      degradedServices.add('Audio');
       if (kDebugMode) {
-        print('⚠️ Audio services initialization failed: $e');
+        print('⚠️ Audio service initialization failed: $e');
       }
+    }
+
+    try {
+      await VoiceInputService().initialize();
+      print('✅ Voice Input initialized successfully');
+    } catch (e) {
+      degradedServices.add('Voice Input');
+      if (kDebugMode) {
+        print('⚠️ Voice input initialization failed: $e');
+      }
+    }
+
+    if (degradedServices.isNotEmpty) {
+      print('⚠️ App running with degraded services: ${degradedServices.join(", ")}');
     }
 
     // Validate Supabase configuration
@@ -115,10 +129,14 @@ Future<void> main() async {
     await _initializeHandsFreeMode();
     print('✅ Hands-Free Mode initialized successfully');
 
-    print('🚀 All services initialized - launching app...');
+    if (degradedServices.isNotEmpty) {
+      print('🚀 Launching app (degraded: ${degradedServices.join(", ")})...');
+    } else {
+      print('🚀 All services initialized - launching app...');
+    }
     runApp(
-      const ProviderScope(
-        child: LearningApp(),
+      ProviderScope(
+        child: LearningApp(degradedServices: degradedServices),
       ),
     );
   } catch (e, stackTrace) {
@@ -182,7 +200,9 @@ Future<void> _initializeHandsFreeMode() async {
 }
 
 class LearningApp extends ConsumerStatefulWidget {
-  const LearningApp({super.key});
+  final List<String> degradedServices;
+  
+  const LearningApp({super.key, this.degradedServices = const []});
 
   @override
   ConsumerState<LearningApp> createState() => _LearningAppState();
@@ -196,6 +216,19 @@ class _LearningAppState extends ConsumerState<LearningApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appInitNotifier = ref.read(appInitializationProvider.notifier);
       appInitNotifier.initialize();
+      
+      // Notify user of degraded services
+      if (widget.degradedServices.isNotEmpty) {
+        final messenger = PushNotificationService.scaffoldMessengerKey?.currentState;
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Some features unavailable: ${widget.degradedServices.join(", ")}',
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     });
   }
 

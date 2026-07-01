@@ -30,11 +30,14 @@ class Lesson extends BaseLesson {
   final DateTime updatedAt;
   @HiveField(9)
   final String userId;
+  @HiveField(10)
+  final String? emoji;
 
   const Lesson({
     required this.id,
     required this.title,
     this.description,
+    this.emoji,
     required this.tags,
     required this.createdAt,
     required this.updatedAt,
@@ -46,6 +49,7 @@ class Lesson extends BaseLesson {
     id: id,
     title: title,
     description: description,
+    emoji: emoji,
     tags: tags,
     createdAt: createdAt,
     updatedAt: updatedAt,
@@ -57,6 +61,7 @@ class Lesson extends BaseLesson {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
+      emoji: json['emoji'] as String?,
       tags: List<String>.from(json['tags'] as List),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -71,6 +76,7 @@ class Lesson extends BaseLesson {
     'id': id,
     'title': title,
     'description': description,
+    if (emoji != null) 'emoji': emoji,
     'tags': tags,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
@@ -85,6 +91,7 @@ class Lesson extends BaseLesson {
     String? id,
     String? title,
     String? description,
+    String? emoji,
     List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -97,6 +104,7 @@ class Lesson extends BaseLesson {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      emoji: emoji ?? this.emoji,
       tags: tags ?? this.tags,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

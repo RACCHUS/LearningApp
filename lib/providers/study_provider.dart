@@ -6,6 +6,7 @@ import 'package:learning_pwa/models/lesson_progress.dart' as progress_model;
 import 'package:learning_pwa/services/notification_service.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
+import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
@@ -269,6 +270,20 @@ class StudyNotifier extends StateNotifier<StudyState> {
           // Reminder failure shouldn't block completion
           _logger.warn('Failed to schedule reminder', error: reminderError);
         }
+      }
+
+      // Add missed items to spaced repetition review queue
+      try {
+        final spacedRep = SpacedRepetitionService();
+        if (state.currentLessonId != null) {
+          final added = await spacedRep.addLessonToReviewQueue(state.currentLessonId!);
+          if (added > 0) {
+            _logger.info('Added $added items to spaced repetition queue');
+          }
+        }
+      } catch (spacedRepError) {
+        // Spaced rep failure shouldn't block completion
+        _logger.warn('Failed to add items to review queue', error: spacedRepError);
       }
 
       // Update state to mark lesson as completed

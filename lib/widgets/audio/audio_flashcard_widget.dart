@@ -8,6 +8,7 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
   final String frontText;
   final String backText;
   final String? example;
+  final String? emoji;
   final TextStyle? frontStyle;
   final TextStyle? backStyle;
   final Widget Function(String)? customTextBuilder;
@@ -18,6 +19,7 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
     required this.frontText,
     required this.backText,
     this.example,
+    this.emoji,
     this.frontStyle,
     this.backStyle,
     this.customTextBuilder,
@@ -43,6 +45,13 @@ class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Emoji visual anchor (shown on front side only)
+            if (!_showBack && widget.emoji != null) ...[              Text(
+                widget.emoji!,
+                style: const TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 16),
+            ],
             // Main content with audio
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

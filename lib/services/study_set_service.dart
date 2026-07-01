@@ -2,6 +2,7 @@ import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/services/supabase_service.dart';
+import 'package:learning_pwa/core/logging/app_logger.dart';
 
 class StudySet {
   final List<String> lessonIds;
@@ -19,11 +20,28 @@ class StudySet {
 
 class StudySetService {
   final SupabaseService _supabase = SupabaseService();
+  final AppLogger _logger = AppLogger('StudySetService');
 
   Future<StudySet> fetchStudySet(List<String> lessonIds) async {
-    final termsResponse = await _supabase.from('terms').select().filter('lesson_id', 'in', '(${lessonIds.map((id) => '"$id"').join(',')})');
-    final conceptsResponse = await _supabase.from('concepts').select().filter('lesson_id', 'in', '(${lessonIds.map((id) => '"$id"').join(',')})');
-    final questionsResponse = await _supabase.from('questions').select().filter('lesson_id', 'in', '(${lessonIds.map((id) => '"$id"').join(',')})');
+    if (lessonIds.isEmpty) {
+      return StudySet(
+        lessonIds: const [],
+        terms: const [],
+        concepts: const [],
+        questions: const [],
+      );
+    }
+
+    final termsResponse =
+        await _supabase.from('terms').select().inFilter('lesson_id', lessonIds);
+    final conceptsResponse = await _supabase
+        .from('concepts')
+        .select()
+        .inFilter('lesson_id', lessonIds);
+    final questionsResponse = await _supabase
+        .from('questions')
+        .select()
+        .inFilter('lesson_id', lessonIds);
 
     try {
       final terms = (termsResponse as List).map((t) => Term.fromJson(t)).toList();
@@ -37,7 +55,7 @@ class StudySetService {
         questions: questions,
       );
     } catch (e, stack) {
-      print('ERROR in StudySetService parsing: $e\n$stack');
+      _logger.error('Failed to parse study set', error: e, stackTrace: stack);
       rethrow;
     }
   }

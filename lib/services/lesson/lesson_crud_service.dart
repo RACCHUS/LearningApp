@@ -7,6 +7,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:learning_pwa/core/errors/app_exceptions.dart';
 
+/// Maximum number of characters accepted for a lesson title.
+const int kMaxLessonTitleLength = 200;
+
+/// Maximum number of characters accepted for a lesson description.
+const int kMaxLessonDescriptionLength = 2000;
+
+/// Default page size for list queries to avoid unbounded reads.
+const int kLessonsPageSize = 100;
+
 /// Service for lesson CRUD operations
 ///
 /// Handles basic create, read, update, delete operations
@@ -18,15 +27,47 @@ class LessonCrudService {
       : _supabase = supabase ?? Supabase.instance.client;
 
   /// Get all lessons for a user
-  Future<List<Lesson>> getLessonsForUser(String userId) async {
+  Future<List<Lesson>> getLessonsForUser(
+    String userId, {
+    int limit = kLessonsPageSize,
+    int offset = 0,
+  }) async {
     try {
       debugPrint('🔍 DEBUG: Getting lessons for user: $userId');
       debugPrint('🔍 DEBUG: Supabase client: ${_supabase.toString()}');
 
-      // Validate userId format
+      // Fall back to the current auth session if the caller passed nothing.
       if (userId.trim().isEmpty) {
-        debugPrint('🔍 DEBUG: Empty userId, using guest UUID');
-        userId = '00000000-0000-0000-0000-000000000000';
+        userId = _supabase.auth.currentUser?.id ?? '';
+      }
+      if (userId.trim().isEmpty) {
+        // No session at all — only legacy/public lessons are visible.
+        final response = await _supabase
+            .from('lessons')
+            .select('*')
+            .filter('user_id', 'is', null)
+            .order('updated_at', ascending: false)
+            .range(offset, offset + limit - 1);
+        return (response as List)
+            .map<Lesson>((data) => Lesson(
+                  id: data['id']?.toString() ?? '',
+                  title: data['title']?.toString() ?? 'Untitled',
+                  description: data['description']?.toString(),
+                  tags: data['tags'] is List
+                      ? List<String>.from(data['tags'])
+                      : <String>[],
+                  createdAt: data['created_at'] != null
+                      ? DateTime.parse(data['created_at'])
+                      : DateTime.now(),
+                  updatedAt: data['updated_at'] != null
+                      ? DateTime.parse(data['updated_at'])
+                      : DateTime.now(),
+                  userId: data['user_id']?.toString() ?? '',
+                  terms: <Term>[],
+                  questions: <Question>[],
+                  concepts: <Concept>[],
+                ))
+            .toList();
       }
 
       // Get user's own lessons + public lessons (where user_id is null)
@@ -34,7 +75,8 @@ class LessonCrudService {
           .from('lessons')
           .select('*')
           .or('user_id.eq.$userId,user_id.is.null')
-          .order('updated_at', ascending: false);
+          .order('updated_at', ascending: false)
+          .range(offset, offset + limit - 1);
 
       debugPrint('🔍 DEBUG: Query response type: ${response.runtimeType}');
       debugPrint('🔍 DEBUG: Response data: $response');
@@ -202,10 +244,25 @@ class LessonCrudService {
       if (title.trim().isEmpty) {
         throw ArgumentError('Lesson title cannot be empty');
       }
+      if (title.trim().length > kMaxLessonTitleLength) {
+        throw ArgumentError(
+          'Lesson title must be $kMaxLessonTitleLength characters or fewer.',
+        );
+      }
+      if (description != null &&
+          description.trim().length > kMaxLessonDescriptionLength) {
+        throw ArgumentError(
+          'Lesson description must be $kMaxLessonDescriptionLength characters or fewer.',
+        );
+      }
 
       if (userId.trim().isEmpty) {
-        debugPrint('🔍 DEBUG: Empty userId, using guest UUID');
-        userId = '00000000-0000-0000-0000-000000000000';
+        userId = _supabase.auth.currentUser?.id ?? '';
+      }
+      if (userId.trim().isEmpty) {
+        throw AuthenticationException(
+          'You must be signed in (or continue as guest) to create a lesson.',
+        );
       }
 
       // Generate a UUID for the lesson
@@ -245,6 +302,12 @@ class LessonCrudService {
     } on PostgrestException catch (e, stackTrace) {
       if (kDebugMode) {
         debugPrint('❌ Database error adding lesson: ${e.message}');
+      }
+      if (e.message.contains('guest_lesson_limit_reached')) {
+        throw InvalidInputException(
+          'You\'ve reached the guest limit of 5 lessons. Sign up with Google to create more.',
+          code: 'GUEST_LESSON_LIMIT',
+        );
       }
       throw DatabaseException(
         'Failed to create lesson',

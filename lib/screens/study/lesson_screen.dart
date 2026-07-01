@@ -10,6 +10,16 @@ import 'package:learning_pwa/providers/offline_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
 import 'package:learning_pwa/screens/study/lesson_mode_dialog.dart';
+import 'package:learning_pwa/widgets/error_retry_view.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/term.dart';
+import 'package:learning_pwa/models/question.dart';
+import 'package:learning_pwa/models/concept_content.dart';
+import 'package:learning_pwa/models/term_content.dart';
+import 'package:learning_pwa/models/question_content.dart';
+import 'package:learning_pwa/screens/study/flashcard_screen.dart';
+import 'package:learning_pwa/screens/study/mcq_screen.dart';
+import 'package:learning_pwa/screens/study/concept_screen.dart';
 import 'package:learning_pwa/widgets/timer_widget.dart';
 import 'package:learning_pwa/widgets/celebration_overlay.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
@@ -31,7 +41,68 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   bool _isLessonMode = false; // Track lesson mode state
   int _restartCounter = 0; // Track restarts to force rebuild
   
-  // ...existing code...
+  /// Launch a previously saved study mode without showing the dialog
+  void _launchSavedMode(StudyModePreference mode) {
+    final lessonContent = ref.read(lessonProvider(widget.lessonId)).asData?.value.lessonContent ?? [];
+    
+    switch (mode) {
+      case StudyModePreference.lesson:
+        ref.read(studyProvider.notifier).resetStudySession();
+        setState(() => _isLessonMode = true);
+        _checkAutoEnableLessonHandsFree();
+      case StudyModePreference.flashcards:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FlashcardScreen(
+              terms: lessonContent.whereType<TermContent>().map((c) => Term.fromTermContent(c)).toList(),
+            ),
+          ),
+        );
+      case StudyModePreference.mcq:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => McqScreen(
+              questions: lessonContent.whereType<QuestionContent>().map((c) => Question(
+                id: c.id,
+                questionText: c.questionText,
+                options: c.options,
+                correctAnswer: c.correctAnswer,
+                type: 'multiple_choice',
+                explanation: c.explanation,
+                createdBy: 'system',
+              )).toList(),
+            ),
+          ),
+        );
+      case StudyModePreference.concepts:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConceptScreen(
+              concepts: lessonContent.whereType<ConceptContent>().toList(),
+            ),
+          ),
+        );
+      case StudyModePreference.mixed:
+        context.go('/study-set?ids=${widget.lessonId}');
+    }
+  }
+
+  void _showModeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => LessonModeDialog(
+        lessonId: widget.lessonId,
+        onLessonModeSelected: () {
+          ref.read(studyProvider.notifier).resetStudySession();
+          setState(() => _isLessonMode = true);
+          _checkAutoEnableLessonHandsFree();
+        },
+      ),
+    );
+  }
 
   /// Check if auto hands-free for lessons is enabled and enable global voice
   Future<void> _checkAutoEnableLessonHandsFree() async {
@@ -68,9 +139,18 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     final lessonAsync = ref.watch(lessonProvider(widget.lessonId));
 
     // Show mode selection dialog on first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!_modeDialogShown && ModalRoute.of(context)?.isCurrent == true) {
         _modeDialogShown = true;
+        
+        // Check for saved preference
+        final savedMode = await getSavedStudyMode(widget.lessonId);
+        if (savedMode != null && mounted) {
+          _launchSavedMode(savedMode);
+          return;
+        }
+        
+        if (!mounted) return;
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -103,6 +183,14 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.swap_horiz),
+                tooltip: 'Change study mode',
+                onPressed: () async {
+                  await clearStudyMode(widget.lessonId);
+                  if (mounted) _showModeDialog();
+                },
+              ),
               Consumer(
                 builder: (context, ref, _) {
                   final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
@@ -231,37 +319,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
       ),
       error: (error, stackTrace) => Scaffold(
         appBar: AppBar(),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load lesson',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                  onPressed: () {
-                    ref.invalidate(lessonProvider(widget.lessonId));
-                  },
-                ),
-              ],
-            ),
-          ),
+        body: ErrorRetryView(
+          message: 'Failed to load lesson',
+          error: error,
+          showDetails: kDebugMode,
+          onRetry: () => ref.invalidate(lessonProvider(widget.lessonId)),
         ),
       ),
     );

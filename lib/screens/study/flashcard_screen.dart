@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/term.dart';
+import 'package:learning_pwa/models/session_result.dart';
+import 'package:learning_pwa/models/settings_model.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
+import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
   final List<Term> terms;
@@ -28,12 +32,30 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   late int _currentIndex;
   late PageController _pageController;
   bool _isComplete = false;
+  bool _focusMode = false;
+  final Set<String> _difficultTermIds = {};
+  late List<Term> _activeTerms;
 
   @override
   void initState() {
     super.initState();
+    _activeTerms = widget.terms; // default; may be sliced after settings load
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    _loadBatchSize();
+  }
+
+  Future<void> _loadBatchSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('settings');
+    if (raw != null) {
+      final settings = SettingsModel.fromRawJson(raw);
+      if (settings.studyBatchSize > 0 && settings.studyBatchSize < widget.terms.length) {
+        setState(() {
+          _activeTerms = widget.terms.sublist(0, settings.studyBatchSize);
+        });
+      }
+    }
   }
 
   @override
@@ -49,17 +71,18 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   }
 
   void _onKnowIt() {
-    ref.read(studyProvider.notifier).markTermAsKnown(widget.terms[_currentIndex].id);
+    ref.read(studyProvider.notifier).markTermAsKnown(_activeTerms[_currentIndex].id);
     _nextCard();
   }
 
   void _onDontKnow() {
-    ref.read(studyProvider.notifier).markTermAsDifficult(widget.terms[_currentIndex].id);
+    _difficultTermIds.add(_activeTerms[_currentIndex].id);
+    ref.read(studyProvider.notifier).markTermAsDifficult(_activeTerms[_currentIndex].id);
     _nextCard();
   }
 
   void _nextCard() {
-    if (_currentIndex < widget.terms.length - 1) {
+    if (_currentIndex < _activeTerms.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -101,30 +124,65 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     
     return Scaffold(
       // Only show AppBar when not embedded in lesson mode
-      appBar: widget.isEmbeddedInLesson ? null : AppBar(
-        title: Text('Flashcards (${_currentIndex + 1}/${widget.terms.length})'),
+      appBar: widget.isEmbeddedInLesson ? null : _focusMode ? null : AppBar(
+        title: Text('Flashcards (${_currentIndex + 1}/${_activeTerms.length})'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility_off_outlined),
+            tooltip: 'Focus mode',
+            onPressed: () => setState(() => _focusMode = true),
+          ),
+        ],
       ),
       body: Stack(
         children: [
           Column(
             children: [
+              // Minimal progress bar in focus mode
+              if (_focusMode && !widget.isEmbeddedInLesson) ...[
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: (_currentIndex + 1) / _activeTerms.length,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_outlined, size: 20),
+                          tooltip: 'Exit focus mode',
+                          onPressed: () => setState(() => _focusMode = false),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
-                  itemCount: widget.terms.length,
+                  itemCount: _activeTerms.length,
                   itemBuilder: (context, index) {
-                    final term = widget.terms[index];
+                    final term = _activeTerms[index];
                     return Padding(
                       padding: const EdgeInsets.all(16),
                       child: AudioFlashcardWidget(
                         frontText: term.term,
                         backText: term.definition,
                         example: term.example,
+                        emoji: term.emoji,
                         autoPlayOverride: widget.isEmbeddedInLesson ? false : null, // Disable autoplay when embedded
                         frontStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
@@ -181,7 +239,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
               ),
             ],
           ),
-          if (_isComplete)
+          if (_isComplete && !widget.isEmbeddedInLesson)
             Container(
               color: Colors.black54,
               child: Center(
@@ -203,6 +261,14 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                           style: theme.textTheme.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${_activeTerms.length - _difficultTermIds.length}/${_activeTerms.length} known',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -212,6 +278,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                                 setState(() {
                                   _currentIndex = 0;
                                   _isComplete = false;
+                                  _difficultTermIds.clear();
                                 });
                                 _pageController.animateToPage(
                                   0,
@@ -222,8 +289,24 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                               child: const Text('Study Again'),
                             ),
                             ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Done'),
+                              onPressed: () {
+                                final missedTerms = _activeTerms
+                                    .where((t) => _difficultTermIds.contains(t.id))
+                                    .map((t) => MissedTerm(term: t))
+                                    .toList();
+                                final result = SessionResult(
+                                  mode: SessionMode.flashcards,
+                                  correct: _activeTerms.length - _difficultTermIds.length,
+                                  total: _activeTerms.length,
+                                  missedTerms: missedTerms,
+                                );
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (_) => SessionResultsScreen(result: result),
+                                  ),
+                                );
+                              },
+                              child: const Text('See Results'),
                             ),
                           ],
                         ),

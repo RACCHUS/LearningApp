@@ -1,0 +1,106 @@
+{
+  "title": "Control Flow: Decisions & Loops",
+  "description": "Master if/else statements, loops, and how programs make decisions and repeat actions.",
+  "tags": ["programming", "beginner", "fundamentals", "control-flow"],
+  "concepts": [
+    {
+      "id": "prog02_c1",
+      "emoji": "🔀",
+      "concept_text": "Conditional Logic",
+      "example_text": "Programs make decisions using conditions — expressions that evaluate to true or false. An if statement runs code only when its condition is true. This is how programs respond differently to different inputs: if the password is correct, log in; otherwise, show an error."
+    },
+    {
+      "id": "prog02_c2",
+      "emoji": "🔄",
+      "concept_text": "Loops: Repeating Actions",
+      "example_text": "Loops let you run the same code multiple times without writing it repeatedly. A 'for' loop runs a set number of times. A 'while' loop runs as long as a condition is true. Without loops, printing numbers 1-1000 would require 1000 lines of code."
+    },
+    {
+      "id": "prog02_c3",
+      "emoji": "♾️",
+      "concept_text": "Avoiding Infinite Loops",
+      "example_text": "An infinite loop runs forever because its exit condition is never met. For example: while(true) { } never stops. Always ensure your loop has a reachable exit condition — a counter that increments, a flag that changes, or a break statement."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog02_t1",
+      "emoji": "🔀",
+      "term": "if / else",
+      "definition": "A conditional statement that executes one block of code if a condition is true, and optionally a different block if it's false.",
+      "example": "if (age >= 18) {\n  print('Adult');\n} else {\n  print('Minor');\n}"
+    },
+    {
+      "id": "prog02_t2",
+      "emoji": "⚖️",
+      "term": "else if",
+      "definition": "An additional condition checked when the previous if/else if conditions were false. Allows checking multiple conditions in sequence.",
+      "example": "if (score >= 90) {\n  grade = 'A';\n} else if (score >= 80) {\n  grade = 'B';\n} else {\n  grade = 'C';\n}"
+    },
+    {
+      "id": "prog02_t3",
+      "emoji": "🔁",
+      "term": "for loop",
+      "definition": "A loop that repeats code a specific number of times, using a counter variable that increments each iteration.",
+      "example": "for (int i = 0; i < 5; i++) {\n  print(i); // prints 0, 1, 2, 3, 4\n}"
+    },
+    {
+      "id": "prog02_t4",
+      "emoji": "🔄",
+      "term": "while loop",
+      "definition": "A loop that repeats code as long as a given condition remains true. The condition is checked before each iteration.",
+      "example": "int count = 0;\nwhile (count < 3) {\n  print(count);\n  count++;\n}"
+    },
+    {
+      "id": "prog02_t5",
+      "emoji": "🛑",
+      "term": "break",
+      "definition": "A keyword that immediately exits the innermost loop, skipping any remaining iterations.",
+      "example": "for (int i = 0; i < 100; i++) {\n  if (i == 5) break;\n  print(i); // prints 0-4\n}"
+    },
+    {
+      "id": "prog02_t6",
+      "emoji": "🎯",
+      "term": "switch / case",
+      "definition": "A control structure that selects one of many code blocks to execute based on the value of an expression. Cleaner than multiple if/else chains.",
+      "example": "switch (day) {\n  case 'Monday':\n    print('Start of week');\n    break;\n  case 'Friday':\n    print('Almost weekend');\n    break;\n}"
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog02_q1",
+      "question": "What does an 'if' statement check?",
+      "options": ["A variable's type", "Whether a condition is true or false", "The length of a string", "A function's return value"],
+      "correct_answer": 1,
+      "explanation": "An if statement evaluates a boolean condition. If the condition is true, the code block runs. If false, it's skipped (or the else block runs)."
+    },
+    {
+      "id": "prog02_q2",
+      "question": "How many times does this loop run: for (int i = 0; i < 3; i++)?",
+      "options": ["2 times", "3 times", "4 times", "Infinite times"],
+      "correct_answer": 1,
+      "explanation": "The loop starts at i=0 and runs while i < 3. So i takes values 0, 1, 2 — that's 3 iterations. When i becomes 3, the condition is false and the loop stops."
+    },
+    {
+      "id": "prog02_q3",
+      "question": "What's the difference between a 'for' loop and a 'while' loop?",
+      "options": ["There is no difference", "For loops are faster", "For loops have a built-in counter; while loops check a condition", "While loops can only run once"],
+      "correct_answer": 2,
+      "explanation": "A for loop has a built-in counter (initialization, condition, increment). A while loop just checks a condition — you manage any counter yourself. Both can achieve the same result."
+    },
+    {
+      "id": "prog02_q4",
+      "question": "What does the 'break' keyword do inside a loop?",
+      "options": ["Pauses the loop temporarily", "Skips to the next iteration", "Exits the loop immediately", "Restarts the loop from the beginning"],
+      "correct_answer": 2,
+      "explanation": "The break keyword immediately exits the innermost loop. The program continues with the code after the loop. 'continue' (not break) skips to the next iteration."
+    },
+    {
+      "id": "prog02_q5",
+      "question": "What happens if a while loop's condition is always true?",
+      "options": ["The loop runs once", "The program crashes immediately", "An infinite loop — it runs forever", "The compiler prevents it"],
+      "correct_answer": 2,
+      "explanation": "If the condition never becomes false, the loop runs indefinitely — an infinite loop. This freezes the program. Always ensure loops have a reachable exit condition."
+    }
+  ]
+}

@@ -97,22 +97,35 @@ class SearchService {
   SearchService({SupabaseClient? supabase})
       : _supabase = supabase ?? Supabase.instance.client;
 
+  /// Escape characters that are special to SQL LIKE/ILIKE so user input is
+  /// treated as a literal substring rather than a wildcard pattern.
+  String _escapeLikePattern(String input) {
+    return input
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
+  }
+
   /// Perform a full-text search across all content types
   Future<SearchResults> search(String query, {int limit = 20}) async {
     if (query.trim().isEmpty) {
       return SearchResults.empty();
     }
 
+    // Escape LIKE/ILIKE wildcards so user input can't trigger expensive
+    // full-table scans (e.g. a query of just "%").
+    final safeQuery = _escapeLikePattern(query.trim());
+
     final stopwatch = Stopwatch()..start();
 
     try {
       // Run searches in parallel for better performance
       final results = await Future.wait([
-        _searchLessons(query, limit: limit),
-        _searchTerms(query, limit: limit),
-        _searchQuestions(query, limit: limit),
-        _searchConcepts(query, limit: limit),
-        _searchCourses(query, limit: limit),
+        _searchLessons(safeQuery, limit: limit),
+        _searchTerms(safeQuery, limit: limit),
+        _searchQuestions(safeQuery, limit: limit),
+        _searchConcepts(safeQuery, limit: limit),
+        _searchCourses(safeQuery, limit: limit),
       ]);
 
       stopwatch.stop();

@@ -59,6 +59,7 @@ flutter:
   assets:
     - assets/images/
     - assets/sample_lesson.json
+    - assets/lessons/
     - .env
     
   # To add assets from your dependencies, use the following syntax:

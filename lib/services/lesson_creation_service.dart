@@ -98,15 +98,25 @@ class LessonCreationService {
       }
     }
 
-    // Batch insert into Supabase
-    if (terms.isNotEmpty) {
-      await _supabase.from('terms').insert(terms);
-    }
-    if (concepts.isNotEmpty) {
-      await _supabase.from('concepts').insert(concepts);
-    }
-    if (questions.isNotEmpty) {
-      await _supabase.from('questions').insert(questions);
+    // Batch insert into Supabase with cleanup on partial failure
+    try {
+      if (terms.isNotEmpty) {
+        await _supabase.from('terms').insert(terms);
+      }
+      if (concepts.isNotEmpty) {
+        await _supabase.from('concepts').insert(concepts);
+      }
+      if (questions.isNotEmpty) {
+        await _supabase.from('questions').insert(questions);
+      }
+    } catch (e) {
+      // Clean up any partially inserted content
+      await Future.wait([
+        _supabase.from('terms').delete().eq('lesson_id', lessonId),
+        _supabase.from('concepts').delete().eq('lesson_id', lessonId),
+        _supabase.from('questions').delete().eq('lesson_id', lessonId),
+      ]);
+      rethrow;
     }
   }
 

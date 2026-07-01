@@ -34,7 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleGuestSignIn() async {
     setState(() => _isLoading = true);
     try {
-      ref.read(authProvider.notifier).signInAsGuest();
+      await ref.read(authProvider.notifier).signInAsGuest();
       if (mounted) {
         GoRouter.of(context).go('/');
       }

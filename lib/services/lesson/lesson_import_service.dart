@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/models/lesson.dart';
+import 'package:learning_pwa/models/term.dart';
+import 'package:learning_pwa/models/question.dart';
+import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/services/lesson/lesson_crud_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_content_service.dart';
+import 'package:uuid/uuid.dart';
 
 /// Service for importing lessons from JSON
 /// 
@@ -69,35 +73,71 @@ class LessonImportService {
       // Import terms
       if (jsonData['terms'] is List) {
         final termsData = jsonData['terms'] as List;
-        debugPrint('🔍 DEBUG: Importing ${termsData.length} terms');
-        
-        // Note: This is simplified - you would need to create proper Term objects
-        // For now, we'll skip the actual implementation to avoid model complexity
-        debugPrint('ℹ️ INFO: Term import not yet implemented');
+        debugPrint('🔍 Importing ${termsData.length} terms');
+        final terms = termsData
+            .whereType<Map<String, dynamic>>()
+            .map((t) => Term(
+                  id: t['id']?.toString() ?? const Uuid().v4(),
+                  term: t['term']?.toString() ?? '',
+                  definition: t['definition']?.toString() ?? '',
+                  example: t['example']?.toString(),
+                  createdBy: t['created_by']?.toString() ?? userId,
+                ))
+            .where((t) => t.term.isNotEmpty && t.definition.isNotEmpty)
+            .toList();
+        if (terms.isNotEmpty) {
+          await _contentService.addTerms(lessonId, terms);
+        }
       }
 
       // Import questions
       if (jsonData['questions'] is List) {
         final questionsData = jsonData['questions'] as List;
-        debugPrint('🔍 DEBUG: Importing ${questionsData.length} questions');
-        
-        // Note: This is simplified - you would need to create proper Question objects
-        debugPrint('ℹ️ INFO: Question import not yet implemented');
+        debugPrint('🔍 Importing ${questionsData.length} questions');
+        final questions = questionsData
+            .whereType<Map<String, dynamic>>()
+            .map((q) => Question(
+                  id: q['id']?.toString() ?? const Uuid().v4(),
+                  questionText: q['question_text']?.toString() ?? q['question']?.toString() ?? '',
+                  options: q['options'] is List ? List<String>.from(q['options']) : <String>[],
+                  correctAnswer: q['correct_answer'] is int
+                      ? q['correct_answer']
+                      : int.tryParse(q['correct_answer']?.toString() ?? '') ?? 0,
+                  type: q['type']?.toString() ?? 'mcq',
+                  explanation: q['explanation']?.toString(),
+                  createdBy: q['created_by']?.toString() ?? userId,
+                ))
+            .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
+            .toList();
+        if (questions.isNotEmpty) {
+          await _contentService.addQuestions(lessonId, questions);
+        }
       }
 
       // Import concepts
       if (jsonData['concepts'] is List) {
         final conceptsData = jsonData['concepts'] as List;
-        debugPrint('🔍 DEBUG: Importing ${conceptsData.length} concepts');
-        
-        // Note: This is simplified - you would need to create proper Concept objects
-        debugPrint('ℹ️ INFO: Concept import not yet implemented');
+        debugPrint('🔍 Importing ${conceptsData.length} concepts');
+        final concepts = conceptsData
+            .whereType<Map<String, dynamic>>()
+            .map((c) => Concept(
+                  id: c['id']?.toString() ?? const Uuid().v4(),
+                  lessonId: lessonId,
+                  conceptText: c['concept_text']?.toString() ?? c['title']?.toString() ?? '',
+                  exampleText: c['example_text']?.toString() ?? c['example']?.toString(),
+                  createdBy: c['created_by']?.toString() ?? userId,
+                ))
+            .where((c) => c.conceptText.isNotEmpty)
+            .toList();
+        if (concepts.isNotEmpty) {
+          await _contentService.addConcepts(lessonId, concepts);
+        }
       }
 
       // Import generic content
       if (jsonData['content'] is List) {
         final contentData = jsonData['content'] as List;
-        debugPrint('🔍 DEBUG: Importing ${contentData.length} content items');
+        debugPrint('🔍 Importing ${contentData.length} content items');
         
         await _importGenericContent(lessonId, contentData, userId);
       }
@@ -141,9 +181,18 @@ class LessonImportService {
     Map<String, dynamic> data, 
     String userId
   ) async {
-    // Use _contentService to get content counts for logging
-    final counts = await _contentService.getContentCounts(lessonId);
-    debugPrint('🔍 DEBUG: Current term count: ${counts['terms']}, would import term: ${data['term']}');
+    final term = Term(
+      id: data['id']?.toString() ?? const Uuid().v4(),
+      term: data['term']?.toString() ?? '',
+      definition: data['definition']?.toString() ?? '',
+      example: data['example']?.toString(),
+      createdBy: data['created_by']?.toString() ?? userId,
+    );
+    if (term.term.isEmpty || term.definition.isEmpty) {
+      debugPrint('⚠️ Skipping term with empty term/definition');
+      return;
+    }
+    await _contentService.addTerms(lessonId, [term]);
   }
 
   /// Import a question from content data
@@ -152,9 +201,22 @@ class LessonImportService {
     Map<String, dynamic> data, 
     String userId
   ) async {
-    // Use _contentService to get content counts for logging
-    final counts = await _contentService.getContentCounts(lessonId);
-    debugPrint('🔍 DEBUG: Current question count: ${counts['questions']}, would import question: ${data['question']}');
+    final question = Question(
+      id: data['id']?.toString() ?? const Uuid().v4(),
+      questionText: data['question_text']?.toString() ?? data['question']?.toString() ?? '',
+      options: data['options'] is List ? List<String>.from(data['options']) : <String>[],
+      correctAnswer: data['correct_answer'] is int
+          ? data['correct_answer']
+          : int.tryParse(data['correct_answer']?.toString() ?? '') ?? 0,
+      type: data['type']?.toString() ?? 'mcq',
+      explanation: data['explanation']?.toString(),
+      createdBy: data['created_by']?.toString() ?? userId,
+    );
+    if (question.questionText.isEmpty || question.options.isEmpty) {
+      debugPrint('⚠️ Skipping question with empty text/options');
+      return;
+    }
+    await _contentService.addQuestions(lessonId, [question]);
   }
 
   /// Import a concept from content data
@@ -163,9 +225,18 @@ class LessonImportService {
     Map<String, dynamic> data, 
     String userId
   ) async {
-    // Use _contentService to get content counts for logging
-    final counts = await _contentService.getContentCounts(lessonId);
-    debugPrint('🔍 DEBUG: Current concept count: ${counts['concepts']}, would import concept: ${data['title']}');
+    final concept = Concept(
+      id: data['id']?.toString() ?? const Uuid().v4(),
+      lessonId: lessonId,
+      conceptText: data['concept_text']?.toString() ?? data['title']?.toString() ?? '',
+      exampleText: data['example_text']?.toString() ?? data['example']?.toString(),
+      createdBy: data['created_by']?.toString() ?? userId,
+    );
+    if (concept.conceptText.isEmpty) {
+      debugPrint('⚠️ Skipping concept with empty text');
+      return;
+    }
+    await _contentService.addConcepts(lessonId, [concept]);
   }
 
   /// Validate JSON structure

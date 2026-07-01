@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:learning_pwa/core/errors/model_parse_exception.dart';
 
 @HiveType(typeId: 7)
 class Concept {
@@ -20,39 +21,57 @@ class Concept {
   @HiveField(5)
   final DateTime createdAt;
 
+  @HiveField(6)
+  final String? emoji;
+
   Concept({
     required this.id,
     required this.lessonId,
     required this.conceptText,
     this.exampleText,
+    this.emoji,
     required this.createdBy,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory Concept.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: Concept.fromJson input: ' + json.toString());
     final id = json['id']?.toString();
     final lessonId = json['lesson_id']?.toString();
     final conceptText = json['concept_text']?.toString();
     final exampleText = json['example_text']?.toString();
+    final emoji = json['emoji']?.toString();
     // Accept both 'created_by' and 'user_id' for compatibility
     final createdBy = (json['created_by'] ?? json['user_id'])?.toString();
     final createdAtRaw = json['created_at']?.toString();
-    if (id == null || lessonId == null || conceptText == null || createdBy == null || createdAtRaw == null) {
-      print('ERROR: Null value in Concept.fromJson fields. id: $id, lessonId: $lessonId, conceptText: $conceptText, createdBy: $createdBy, createdAt: $createdAtRaw');
-      throw Exception('Null value in required Concept field');
+    final missing = <String>[
+      if (id == null) 'id',
+      if (lessonId == null) 'lesson_id',
+      if (conceptText == null) 'concept_text',
+      if (createdBy == null) 'created_by',
+      if (createdAtRaw == null) 'created_at',
+    ];
+    if (missing.isNotEmpty) {
+      throw ModelParseException(
+        'Concept',
+        'Missing required field(s)',
+        fields: missing,
+      );
     }
-    final createdAt = DateTime.tryParse(createdAtRaw);
+    final createdAt = DateTime.tryParse(createdAtRaw!);
     if (createdAt == null) {
-      print('ERROR: Invalid date format in Concept.fromJson: $createdAtRaw');
-      throw Exception('Invalid date format in Concept.fromJson');
+      throw const ModelParseException(
+        'Concept',
+        'Invalid date format',
+        fields: ['created_at'],
+      );
     }
     return Concept(
-      id: id,
-      lessonId: lessonId,
-      conceptText: conceptText,
+      id: id!,
+      lessonId: lessonId!,
+      conceptText: conceptText!,
       exampleText: exampleText,
-      createdBy: createdBy,
+      emoji: emoji,
+      createdBy: createdBy!,
       createdAt: createdAt,
     );
   }
@@ -62,6 +81,7 @@ class Concept {
         'lesson_id': lessonId,
         'concept_text': conceptText,
         'example_text': exampleText,
+        if (emoji != null) 'emoji': emoji,
         'created_by': createdBy,
         'created_at': createdAt.toIso8601String(),
       };

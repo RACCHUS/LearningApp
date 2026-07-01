@@ -134,8 +134,9 @@ class _CourseCard extends ConsumerWidget {
     final progress = courseProgressAsync.when(
       data: (cp) => cp?.overallProgress ?? 0.0,
       loading: () => 0.0,
-      error: (_, __) => 0.0,
+      error: (_, __) => -1.0,
     );
+    final hasError = progress < 0;
 
     return Card(
       elevation: 1,
@@ -249,14 +250,26 @@ class _CourseCard extends ConsumerWidget {
                         ),
                       if (showProgressDetails) const SizedBox(height: 6),
                       // Progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: colorScheme.surfaceContainerHighest,
-                          minHeight: 6,
+                      if (hasError)
+                        Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, size: 14, color: colorScheme.error),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Could not load progress',
+                              style: textTheme.bodySmall?.copyWith(color: colorScheme.error),
+                            ),
+                          ],
+                        )
+                      else
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: colorScheme.surfaceContainerHighest,
+                            minHeight: 6,
+                          ),
                         ),
-                      ),
                     ],
                   ),
 

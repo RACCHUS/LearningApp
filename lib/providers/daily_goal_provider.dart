@@ -1,9 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/utils/constants.dart';
 
+/// Provider for the user's configured daily goal in minutes
+final dailyGoalMinutesProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getInt('dailyGoalMinutes') ?? StudyConstants.defaultStudyGoalMinutes;
+});
+
 /// Provider for today's study progress towards the daily goal
 final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async {
+  final goalMinutes = await ref.watch(dailyGoalMinutesProvider.future);
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) {
     return DailyGoalProgress.empty();
@@ -30,7 +38,6 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
     }
 
     final studyMinutes = totalSeconds ~/ 60;
-    final goalMinutes = StudyConstants.defaultStudyGoalMinutes;
 
     return DailyGoalProgress(
       studyMinutesToday: studyMinutes,

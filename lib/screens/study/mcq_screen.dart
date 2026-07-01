@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/question.dart';
+import 'package:learning_pwa/models/session_result.dart';
+import 'package:learning_pwa/models/settings_model.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
+import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class McqScreen extends ConsumerStatefulWidget {
   final List<Question> questions;
@@ -29,17 +33,35 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   bool _showFeedback = false;
   bool _isCorrect = false;
   bool _isComplete = false;
+  bool _focusMode = false;
   int _correctAnswers = 0;
   int? _selectedAnswerIndex; // Track selected answer for state persistence
+  final Map<String, int> _wrongAnswers = {}; // questionId -> selectedIndex
+  late List<Question> _activeQuestions;
 
   @override
   void initState() {
     super.initState();
+    _activeQuestions = widget.questions;
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    _loadBatchSize();
     
     // Check if this question was already answered
     _checkForExistingAnswer();
+  }
+
+  Future<void> _loadBatchSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('settings');
+    if (raw != null) {
+      final settings = SettingsModel.fromRawJson(raw);
+      if (settings.studyBatchSize > 0 && settings.studyBatchSize < widget.questions.length) {
+        setState(() {
+          _activeQuestions = widget.questions.sublist(0, settings.studyBatchSize);
+        });
+      }
+    }
   }
 
   @override
@@ -51,7 +73,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   void _checkForExistingAnswer() {
     if (widget.isEmbeddedInLesson) {
       final studyState = ref.read(studyProvider);
-      final currentQuestion = widget.questions[_currentIndex];
+      final currentQuestion = _activeQuestions[_currentIndex];
       final savedAnswer = studyState.questionAnswers[currentQuestion.id];
       
       if (savedAnswer != null) {
@@ -76,7 +98,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   }
 
   void _onAnswerSelected(int selectedIndex) {
-    final currentQuestion = widget.questions[_currentIndex];
+    final currentQuestion = _activeQuestions[_currentIndex];
     
     setState(() {
       _selectedAnswerIndex = selectedIndex;
@@ -84,6 +106,8 @@ class _McqScreenState extends ConsumerState<McqScreen> {
       _isCorrect = selectedIndex == currentQuestion.correctAnswer;
       if (_isCorrect) {
         _correctAnswers++;
+      } else {
+        _wrongAnswers[currentQuestion.id] = selectedIndex;
       }
     });
 
@@ -104,7 +128,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   }
 
   void _nextQuestion() {
-    if (_currentIndex < widget.questions.length - 1) {
+    if (_currentIndex < _activeQuestions.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -128,31 +152,66 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     
     return Scaffold(
       // Only show AppBar when not embedded in lesson mode
-      appBar: widget.isEmbeddedInLesson ? null : AppBar(
-        title: Text('MCQ (${_currentIndex + 1}/${widget.questions.length})'),
+      appBar: widget.isEmbeddedInLesson ? null : _focusMode ? null : AppBar(
+        title: Text('MCQ (${_currentIndex + 1}/${_activeQuestions.length})'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility_off_outlined),
+            tooltip: 'Focus mode',
+            onPressed: () => setState(() => _focusMode = true),
+          ),
+        ],
       ),
       body: Stack(
         children: [
           Column(
             children: [
-              // Progress indicator
-              LinearProgressIndicator(
-                value: (_currentIndex + 1) / widget.questions.length,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
+              // Minimal progress bar — in focus mode show with exit button, otherwise just the bar
+              if (_focusMode && !widget.isEmbeddedInLesson) ...[
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: (_currentIndex + 1) / _activeQuestions.length,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_outlined, size: 20),
+                          tooltip: 'Exit focus mode',
+                          onPressed: () => setState(() => _focusMode = false),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Progress indicator (default)
+                LinearProgressIndicator(
+                  value: (_currentIndex + 1) / _activeQuestions.length,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                ),
+              ],
               
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: widget.questions.length,
+                  itemCount: _activeQuestions.length,
                   itemBuilder: (context, index) {
-                    final currentQuestion = widget.questions[index];
+                    final currentQuestion = _activeQuestions[index];
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -199,7 +258,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  _currentIndex < widget.questions.length - 1 
+                                  _currentIndex < _activeQuestions.length - 1 
                                     ? 'Next Question' 
                                     : 'Finish Quiz',
                                   style: const TextStyle(fontSize: 16),
@@ -241,7 +300,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Score: $_correctAnswers/${widget.questions.length}',
+                          'Score: $_correctAnswers/${_activeQuestions.length}',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -258,6 +317,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                   _isComplete = false;
                                   _showFeedback = false;
                                   _correctAnswers = 0;
+                                  _wrongAnswers.clear();
                                 });
                                 _pageController.animateToPage(
                                   0,
@@ -268,8 +328,27 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                               child: const Text('Try Again'),
                             ),
                             ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Done'),
+                              onPressed: () {
+                                final missedQuestions = _activeQuestions
+                                    .where((q) => _wrongAnswers.containsKey(q.id))
+                                    .map((q) => MissedQuestion(
+                                          question: q,
+                                          selectedAnswer: _wrongAnswers[q.id]!,
+                                        ))
+                                    .toList();
+                                final result = SessionResult(
+                                  mode: SessionMode.mcq,
+                                  correct: _correctAnswers,
+                                  total: _activeQuestions.length,
+                                  missedQuestions: missedQuestions,
+                                );
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (_) => SessionResultsScreen(result: result),
+                                  ),
+                                );
+                              },
+                              child: const Text('See Results'),
                             ),
                           ],
                         ),

@@ -836,3 +836,143 @@ enum SuggestionPriority {
   const SuggestionPriority(this.value);
   final int value;
 }
+
+// =============================================================================
+// Manifest-aware validation (for phased generation pipeline)
+// =============================================================================
+
+/// Validates generated content against the curriculum plan's content manifest
+/// and terminology glossary. Returns a report of issues found.
+class ManifestValidationResult {
+  final int totalExpected;
+  final int totalGenerated;
+  final List<String> missingItems;
+  final List<String> terminologyDrifts;
+  final List<String> mcqIssues;
+  final double completenessScore;
+
+  ManifestValidationResult({
+    required this.totalExpected,
+    required this.totalGenerated,
+    required this.missingItems,
+    required this.terminologyDrifts,
+    required this.mcqIssues,
+    required this.completenessScore,
+  });
+
+  bool get isValid =>
+      missingItems.isEmpty && terminologyDrifts.isEmpty && mcqIssues.isEmpty;
+}
+
+/// Extension on ContentQualityService for manifest-aware validation.
+class ManifestValidator {
+  /// Validate generated content against the lesson plan manifest.
+  static ManifestValidationResult validate({
+    required Map<String, dynamic> lessonPlan,
+    required List<Map<String, dynamic>> generatedContent,
+  }) {
+    final manifest = lessonPlan['content_manifest'] as Map<String, dynamic>? ?? {};
+    final glossary = lessonPlan['terminology_glossary'] as Map<String, dynamic>? ?? {};
+
+    final missingItems = <String>[];
+    final terminologyDrifts = <String>[];
+    final mcqIssues = <String>[];
+
+    // --- Check completeness --------------------------------------------------
+    final expectedTerms = _manifestTitles(manifest, 'terms');
+    final expectedConcepts = _manifestTitles(manifest, 'concepts');
+    final expectedMcqCount = (manifest['mcqs'] as List?)?.length ?? 0;
+
+    final generatedTermTitles = generatedContent
+        .where((c) => c['type'] == 'term')
+        .map((c) => (c['title'] ?? '').toString().toLowerCase())
+        .toSet();
+    final generatedConceptTitles = generatedContent
+        .where((c) => c['type'] == 'concept')
+        .map((c) => (c['title'] ?? '').toString().toLowerCase())
+        .toSet();
+    final generatedMcqCount =
+        generatedContent.where((c) => c['type'] == 'mcq').length;
+
+    for (final t in expectedTerms) {
+      if (!generatedTermTitles.contains(t.toLowerCase())) {
+        missingItems.add('Term: $t');
+      }
+    }
+    for (final c in expectedConcepts) {
+      if (!generatedConceptTitles.contains(c.toLowerCase())) {
+        missingItems.add('Concept: $c');
+      }
+    }
+    if (generatedMcqCount < expectedMcqCount) {
+      missingItems
+          .add('MCQs: expected $expectedMcqCount, got $generatedMcqCount');
+    }
+
+    // --- Check terminology consistency against glossary ----------------------
+    for (final item in generatedContent) {
+      if (item['type'] != 'term') continue;
+      final title = (item['title'] ?? '').toString();
+      final content = (item['content'] ?? '').toString().toLowerCase();
+      final glossaryDef = glossary[title]?.toString().toLowerCase();
+      if (glossaryDef != null && glossaryDef.isNotEmpty) {
+        // Check that the glossary definition words appear in the content.
+        final keyWords = glossaryDef
+            .split(RegExp(r'\s+'))
+            .where((w) => w.length > 3)
+            .toList();
+        final matchCount =
+            keyWords.where((w) => content.contains(w)).length;
+        if (keyWords.isNotEmpty && matchCount / keyWords.length < 0.5) {
+          terminologyDrifts.add(
+              '"$title" definition diverges from glossary');
+        }
+      }
+    }
+
+    // --- Check MCQ quality ---------------------------------------------------
+    for (final item in generatedContent) {
+      if (item['type'] != 'mcq') continue;
+      final options = item['options'];
+      final correctAnswer = item['correct_answer']?.toString();
+      if (options is List && correctAnswer != null) {
+        final optionStrings =
+            options.map((o) => o.toString()).toList();
+        if (!optionStrings.contains(correctAnswer)) {
+          mcqIssues.add(
+              'MCQ "${item['question']}" — correct_answer does not match any option');
+        }
+      }
+      if (item['explanation']?.toString().isEmpty ?? true) {
+        mcqIssues.add(
+            'MCQ "${item['question']}" — missing explanation');
+      }
+    }
+
+    // --- Score ---------------------------------------------------------------
+    final totalExpected =
+        expectedTerms.length + expectedConcepts.length + expectedMcqCount;
+    final totalGenerated = generatedContent.length;
+    final completeness =
+        totalExpected > 0 ? (totalGenerated / totalExpected).clamp(0.0, 1.0) : 1.0;
+
+    return ManifestValidationResult(
+      totalExpected: totalExpected,
+      totalGenerated: totalGenerated,
+      missingItems: missingItems,
+      terminologyDrifts: terminologyDrifts,
+      mcqIssues: mcqIssues,
+      completenessScore: completeness * 100,
+    );
+  }
+
+  static List<String> _manifestTitles(
+      Map<String, dynamic> manifest, String key) {
+    final list = manifest[key];
+    if (list is! List) return [];
+    return list
+        .map((e) => (e is Map ? e['title']?.toString() : null))
+        .whereType<String>()
+        .toList();
+  }
+}

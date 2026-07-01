@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
+import 'package:learning_pwa/providers/connectivity_provider.dart';
 import 'package:learning_pwa/screens/home/home_search_bar.dart';
 import 'package:learning_pwa/screens/home/home_category_filters.dart';
 import 'package:learning_pwa/screens/home/home_lessons_list.dart';
@@ -18,6 +19,7 @@ import 'package:learning_pwa/widgets/recommendation_widgets.dart';
 import 'package:learning_pwa/widgets/review_widgets.dart';
 import 'package:learning_pwa/widgets/streak_badge.dart';
 import 'package:learning_pwa/widgets/celebration_overlay.dart';
+import 'package:learning_pwa/widgets/progress/sync_status_indicator.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -104,28 +106,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SizedBox(width: DesignTokens.space2),
           const GlobalVoiceIndicator(compact: true),
           const SizedBox(width: DesignTokens.space2),
-          IconButton(
-            icon: const Icon(Icons.insights),
-            onPressed: () {
-              context.push('/progress');
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'More options',
+            onSelected: (value) {
+              context.push(value);
             },
-            tooltip: 'My Progress',
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: '/my-careers',
+                child: ListTile(
+                  leading: Icon(Icons.route),
+                  title: Text('My Career Paths'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: '/progress',
+                child: ListTile(
+                  leading: Icon(Icons.insights),
+                  title: Text('My Progress'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: '/test/hands-free',
+                child: ListTile(
+                  leading: Icon(Icons.psychology),
+                  title: Text('Test Hands-Free'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: '/settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text('Settings'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.psychology),
-            onPressed: () {
-              context.push('/test/hands-free');
-            },
-            tooltip: 'Test Hands-Free',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              context.push('/settings');
-            },
-            tooltip: 'Settings',
-          ),
-          if (authState is GuestMode) ...[
+          if (authState is GuestMode ||
+              (authState is AuthSuccess && authState.user.isAnonymous)) ...[
             TextButton.icon(
               icon: Icon(Icons.login, color: colorScheme.primary),
               label: Text(
@@ -150,55 +177,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
           const SizedBox(width: DesignTokens.space2),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.menu_book), text: 'Lessons'),
-            Tab(icon: Icon(Icons.school), text: 'Courses'),
-            Tab(icon: Icon(Icons.collections_bookmark), text: 'Study Sets'),
-          ],
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
+        bottom: PreferredSize(
+          // Provide room for the TabBar (48) + a slim sync status banner.
+          // The indicator collapses to SizedBox.shrink() when idle, so the
+          // extra 4px is only realised visually when sync is active.
+          preferredSize: const Size.fromHeight(52),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.menu_book), text: 'Lessons'),
+                  Tab(icon: Icon(Icons.school), text: 'Courses'),
+                  Tab(icon: Icon(Icons.collections_bookmark), text: 'Study Sets'),
+                ],
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: colorScheme.onSurfaceVariant,
+                indicatorColor: colorScheme.primary,
+              ),
+              const SyncStatusIndicator(),
+            ],
+          ),
         ),
       ),
-      body: CelebrationOverlay(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final showSidebar = constraints.maxWidth >= 1024;
-            
-            final mainContent = Container(
-              color: colorScheme.surface,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(maxWidth: DesignTokens.maxContentWidth),
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Lessons Tab
-                      _buildLessonsTab(),
-                      // Courses Tab
-                      _buildCoursesTab(),
-                      // Study Sets Tab
-                      _buildStudySetsTab(),
-                    ],
+      body: ConnectivityAware(
+        child: CelebrationOverlay(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final showSidebar = constraints.maxWidth >= 1024;
+
+              final mainContent = Container(
+                color: colorScheme.surface,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(maxWidth: DesignTokens.maxContentWidth),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Lessons Tab
+                        _buildLessonsTab(),
+                        // Courses Tab
+                        _buildCoursesTab(),
+                        // Study Sets Tab
+                        _buildStudySetsTab(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-
-            if (showSidebar) {
-              return Row(
-                children: [
-                  Expanded(child: mainContent),
-                  const DesktopSidebar(),
-                ],
               );
-            }
-            
-            return mainContent;
-          },
+
+              if (showSidebar) {
+                return Row(
+                  children: [
+                    Expanded(child: mainContent),
+                    const DesktopSidebar(),
+                  ],
+                );
+              }
+
+              return mainContent;
+            },
+          ),
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(context, ref),

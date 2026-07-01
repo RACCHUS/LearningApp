@@ -475,7 +475,8 @@ class _LessonEditorScreenState extends ConsumerState<LessonEditorScreen>
     if (!_formKey.currentState!.validate()) return;
 
     final lesson = await notifier.save();
-    if (lesson != null && mounted) {
+    if (!mounted) return;
+    if (lesson != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lesson "${lesson.title}" saved successfully!'),
@@ -483,6 +484,13 @@ class _LessonEditorScreenState extends ConsumerState<LessonEditorScreen>
         ),
       );
       Navigator.of(context).pop(lesson);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to save lesson. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 }
