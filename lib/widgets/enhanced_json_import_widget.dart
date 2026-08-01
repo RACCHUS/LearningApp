@@ -293,6 +293,8 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
   }
 
   Widget _buildJsonEditor() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         // JSON Input Area
@@ -304,9 +306,9 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: colorScheme.surfaceContainerLow,
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey[300]!),
+                    bottom: BorderSide(color: colorScheme.outlineVariant),
                   ),
                 ),
                 child: Row(
@@ -350,7 +352,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
                                     timeAgo,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                               ],
@@ -408,7 +410,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
           width: 350,
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(color: Colors.grey[300]!),
+              left: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
           child: _buildValidationPanel(),
@@ -418,10 +420,11 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
   }
 
   Widget _buildLineNumbers() {
+    final colorScheme = Theme.of(context).colorScheme;
     final lines = _jsonController.text.split('\n').length;
     return Container(
       width: 50,
-      color: Colors.grey[100],
+      color: colorScheme.surfaceContainerLow,
       child: Column(
         children: List.generate(
           lines,
@@ -433,7 +436,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
               '${index + 1}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: colorScheme.onSurfaceVariant,
                 fontFamily: 'monospace',
               ),
             ),
@@ -444,6 +447,8 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
   }
 
   Widget _buildValidationPanel() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         // Status Header
@@ -452,7 +457,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
           decoration: BoxDecoration(
             color: _getStatusColor().withValues(alpha: 0.1),
             border: Border(
-              bottom: BorderSide(color: Colors.grey[300]!),
+              bottom: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
           child: Row(

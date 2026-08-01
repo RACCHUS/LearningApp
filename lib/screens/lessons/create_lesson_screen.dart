@@ -15,7 +15,14 @@ import 'package:learning_pwa/theme/semantic_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
-  const CreateLessonScreen({super.key});
+  final int initialTabIndex;
+  final int initialBuilderTabIndex;
+
+  const CreateLessonScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.initialBuilderTabIndex = 0,
+  });
 
   @override
   ConsumerState<CreateLessonScreen> createState() => _CreateLessonScreenState();
@@ -36,7 +43,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // Changed to 3 tabs
+    final initialTab = widget.initialTabIndex.clamp(0, 2);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialTab,
+    );
   }
 
   @override
@@ -191,6 +203,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   onImport: _createLessonFromJson,
                 ),
                 LessonBuilderWidget(
+                  initialContentTabIndex: widget.initialBuilderTabIndex,
                   onCreateLesson: _createLessonFromBuilder,
                 ),
               ],

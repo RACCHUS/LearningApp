@@ -70,7 +70,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/create-lesson',
         name: 'create-lesson',
-        builder: (context, state) => const CreateLessonScreen(),
+        builder: (context, state) {
+          final tabParam = state.uri.queryParameters['tab'];
+          final contentParam = state.uri.queryParameters['content'];
+
+          int initialTab = 0;
+          int initialBuilderTab = 0;
+
+          if (tabParam == 'json') {
+            initialTab = 1;
+          } else if (tabParam == 'manual') {
+            initialTab = 2;
+          }
+
+          if (contentParam == 'mcq' || contentParam == 'question') {
+            initialBuilderTab = 1;
+          } else if (contentParam == 'concept') {
+            initialBuilderTab = 2;
+          } else {
+            initialBuilderTab = 0;
+          }
+
+          return CreateLessonScreen(
+            initialTabIndex: initialTab,
+            initialBuilderTabIndex: initialBuilderTab,
+          );
+        },
       ),
 
       // Course management route

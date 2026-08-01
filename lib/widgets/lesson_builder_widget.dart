@@ -12,6 +12,7 @@ import 'lesson/content_preview_list.dart';
 /// This widget now orchestrates the lesson creation process using
 /// smaller, focused components instead of being a monolithic widget.
 class LessonBuilderWidget extends StatefulWidget {
+  final int initialContentTabIndex;
   final Function({
     required String title,
     required String description,
@@ -21,6 +22,7 @@ class LessonBuilderWidget extends StatefulWidget {
 
   const LessonBuilderWidget({
     super.key,
+    this.initialContentTabIndex = 0,
     required this.onCreateLesson,
   });
 
@@ -66,7 +68,12 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
   @override
   void initState() {
     super.initState();
-    _contentTabController = TabController(length: 3, vsync: this);
+    final initialTab = widget.initialContentTabIndex.clamp(0, 2);
+    _contentTabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialTab,
+    );
   }
 
   @override
