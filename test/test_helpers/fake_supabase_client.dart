@@ -34,10 +34,30 @@ class FakeSupabaseClient implements SupabaseClient {
       deletedIds: deletedIds,
     );
   }
-  
+
+  /// Fake auth with no active session (currentUser == null) by default.
+  final FakeGoTrueClient _auth = FakeGoTrueClient();
+
+  @override
+  GoTrueClient get auth => _auth;
+
   @override
   dynamic noSuchMethod(Invocation invocation) {
     throw UnimplementedError('FakeSupabaseClient - method ${invocation.memberName} not implemented');
+  }
+}
+
+/// A fake GoTrueClient exposing a null current session/user for tests.
+class FakeGoTrueClient implements GoTrueClient {
+  @override
+  User? get currentUser => null;
+
+  @override
+  Session? get currentSession => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    throw UnimplementedError('FakeGoTrueClient - method ${invocation.memberName} not implemented');
   }
 }
 
@@ -262,6 +282,34 @@ class FakeListTransformBuilder<T> implements PostgrestTransformBuilder<T> {
   @override
   Future<R> then<R>(FutureOr<R> Function(T) onValue, {Function? onError}) {
     return Future.value(data).then(onValue);
+  }
+
+  @override
+  PostgrestTransformBuilder<T> order(String column, {bool ascending = true, bool nullsFirst = false, dynamic referencedTable}) {
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<T> limit(int count, {dynamic referencedTable}) {
+    final list = data;
+    if (list is List && list.length > count) {
+      return FakeListTransformBuilder(data: list.sublist(0, count < 0 ? 0 : count) as T);
+    }
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<T> range(int from, int to, {dynamic referencedTable}) {
+    final list = data;
+    if (list is List) {
+      final start = from < 0 ? 0 : from;
+      if (start >= list.length) {
+        return FakeListTransformBuilder(data: <Map<String, dynamic>>[] as T);
+      }
+      final end = (to + 1) > list.length ? list.length : (to + 1);
+      return FakeListTransformBuilder(data: list.sublist(start, end < start ? start : end) as T);
+    }
+    return this;
   }
   
   @override

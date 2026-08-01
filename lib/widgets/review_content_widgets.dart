@@ -110,6 +110,8 @@ class FlashcardReviewWidget extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    DifficultyBadge(category: item.difficultyCategory),
+                    const SizedBox(height: 16),
                     Icon(
                       showAnswer ? Icons.check_circle_outline : Icons.lightbulb_outline,
                       size: 48,
@@ -601,6 +603,8 @@ class ConceptReviewWidget extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    DifficultyBadge(category: item.difficultyCategory),
+                    const SizedBox(height: 16),
                     Icon(
                       Icons.psychology_outlined,
                       size: 48,
@@ -826,7 +830,6 @@ class _QualityButtons extends StatelessWidget {
   final void Function(RecallQuality quality) onQualitySelected;
 
   const _QualityButtons({required this.onQualitySelected});
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -902,6 +905,58 @@ class _QualityButton extends StatelessWidget {
             label,
             style: const TextStyle(fontSize: 12),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small colored pill showing how well-learned an item is (SM-2 derived).
+class DifficultyBadge extends StatelessWidget {
+  final DifficultyCategory category;
+
+  const DifficultyBadge({super.key, required this.category});
+
+  static Color colorFor(DifficultyCategory category) {
+    switch (category) {
+      case DifficultyCategory.learning:
+        return const Color(0xFFE53935); // red — needs work
+      case DifficultyCategory.familiar:
+        return const Color(0xFFF9A825); // amber — getting there
+      case DifficultyCategory.mastered:
+        return const Color(0xFF43A047); // green — solid
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = colorFor(category);
+    return Semantics(
+      label: 'Difficulty: ${category.displayName}',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              category.displayName,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

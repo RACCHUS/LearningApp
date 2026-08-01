@@ -8,6 +8,7 @@ import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
+import 'package:learning_pwa/widgets/study/break_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   bool _focusMode = false;
   final Set<String> _difficultTermIds = {};
   late List<Term> _activeTerms;
+  final DateTime _sessionStart = DateTime.now();
 
   @override
   void initState() {
@@ -299,6 +301,8 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                                   correct: _activeTerms.length - _difficultTermIds.length,
                                   total: _activeTerms.length,
                                   missedTerms: missedTerms,
+                                  duration:
+                                      DateTime.now().difference(_sessionStart),
                                 );
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
@@ -316,6 +320,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                 ),
               ),
             ),
+          const BreakOverlay(),
         ],
       ),
       // Only show GlobalVoiceFAB when not embedded in lesson to avoid conflicts

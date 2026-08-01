@@ -104,6 +104,21 @@ enum ReviewableContentType {
   }
 }
 
+/// How well-learned an item is, derived from its SM-2 repetition level.
+/// Used purely for UI cues (e.g. a colored difficulty dot); carries no color
+/// itself so the model stays presentation-agnostic.
+enum DifficultyCategory {
+  /// Not yet learned or reset after a lapse (level 0).
+  learning('Learning'),
+  /// Recalled a few times but not yet solid (levels 1–2).
+  familiar('Familiar'),
+  /// Reliably recalled over longer intervals (level 3+).
+  mastered('Mastered');
+
+  final String displayName;
+  const DifficultyCategory(this.displayName);
+}
+
 /// A single reviewable item with spaced repetition metadata
 /// 
 /// This model is designed to support any content type through:
@@ -174,6 +189,13 @@ class ReviewableItem {
   double get accuracy {
     if (totalReviews == 0) return 0.0;
     return correctReviews / totalReviews;
+  }
+
+  /// Coarse difficulty bucket derived from the SM-2 repetition level.
+  DifficultyCategory get difficultyCategory {
+    if (repetitionLevel <= 0) return DifficultyCategory.learning;
+    if (repetitionLevel <= 2) return DifficultyCategory.familiar;
+    return DifficultyCategory.mastered;
   }
 
   /// Calculate next review state using simplified SM-2 algorithm

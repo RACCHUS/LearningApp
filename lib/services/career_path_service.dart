@@ -2,6 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/career_path.dart';
 
+/// Maximum characters accepted for a career-path title.
+const int kMaxCareerPathTitleLength = 200;
+
+/// Maximum characters accepted for a career-path description.
+const int kMaxCareerPathDescriptionLength = 2000;
+
+/// Valid slug: lowercase alphanumeric words separated by single hyphens.
+final RegExp _kSlugPattern = RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$');
+
 /// Service for managing career paths and user enrollment
 class CareerPathService {
   final SupabaseClient _supabase;
@@ -95,11 +104,32 @@ class CareerPathService {
       throw Exception('User must be authenticated');
     }
 
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      throw ArgumentError('Career path title cannot be empty');
+    }
+    if (trimmedTitle.length > kMaxCareerPathTitleLength) {
+      throw ArgumentError(
+        'Career path title must be $kMaxCareerPathTitleLength characters or fewer.',
+      );
+    }
+    if (!_kSlugPattern.hasMatch(slug)) {
+      throw ArgumentError(
+        'Slug must be lowercase letters, digits, and hyphens (e.g. "web-developer").',
+      );
+    }
+    if (description != null &&
+        description.trim().length > kMaxCareerPathDescriptionLength) {
+      throw ArgumentError(
+        'Career path description must be $kMaxCareerPathDescriptionLength characters or fewer.',
+      );
+    }
+
     try {
       final response = await _supabase
           .from('career_paths')
           .insert({
-            'title': title,
+            'title': trimmedTitle,
             'slug': slug,
             'description': description,
             'image_url': imageUrl,

@@ -6,7 +6,10 @@ import 'package:learning_pwa/utils/haptic_utils.dart';
 
 /// Main review screen for spaced repetition
 class ReviewScreen extends ConsumerStatefulWidget {
-  const ReviewScreen({super.key});
+  /// Optional cap on the number of items for this session (Quick Review).
+  final int? limit;
+
+  const ReviewScreen({super.key, this.limit});
 
   @override
   ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
@@ -31,7 +34,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
 
     // Start review session when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(reviewSessionProvider.notifier).startSession();
+      ref.read(reviewSessionProvider.notifier).startSession(limit: widget.limit);
     });
   }
 

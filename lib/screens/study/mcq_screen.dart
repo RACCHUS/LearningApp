@@ -7,6 +7,7 @@ import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/widgets/study/break_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class McqScreen extends ConsumerStatefulWidget {
@@ -38,6 +39,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   int? _selectedAnswerIndex; // Track selected answer for state persistence
   final Map<String, int> _wrongAnswers = {}; // questionId -> selectedIndex
   late List<Question> _activeQuestions;
+  final DateTime _sessionStart = DateTime.now();
 
   @override
   void initState() {
@@ -341,6 +343,8 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                   correct: _correctAnswers,
                                   total: _activeQuestions.length,
                                   missedQuestions: missedQuestions,
+                                  duration:
+                                      DateTime.now().difference(_sessionStart),
                                 );
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
@@ -358,6 +362,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                 ),
               ),
             ),
+          const BreakOverlay(),
         ],
       ),
     );

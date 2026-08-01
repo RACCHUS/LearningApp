@@ -271,12 +271,19 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
   ReviewSessionNotifier(this._service, this._ref)
       : super(const ReviewSessionState());
 
-  /// Start a new review session with due items
-  Future<void> startSession() async {
+  /// Start a new review session with due items.
+  ///
+  /// When [limit] is a positive number smaller than the number of due items,
+  /// the session is capped to that many items (used by Quick Review to keep
+  /// sessions short and within the user's batch size).
+  Future<void> startSession({int? limit}) async {
     state = state.copyWith(isLoading: true);
-    
-    final items = await _service.getDueItems();
-    
+
+    final due = await _service.getDueItems();
+    final items = (limit != null && limit > 0 && limit < due.length)
+        ? due.sublist(0, limit)
+        : due;
+
     state = ReviewSessionState(
       items: items,
       currentIndex: 0,

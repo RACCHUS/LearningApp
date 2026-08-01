@@ -9,17 +9,30 @@ class SessionResult {
   final List<MissedTerm> missedTerms;
   final List<MissedQuestion> missedQuestions;
 
+  /// How long the session took, if tracked.
+  final Duration? duration;
+
   const SessionResult({
     required this.mode,
     required this.correct,
     required this.total,
     this.missedTerms = const [],
     this.missedQuestions = const [],
+    this.duration,
   });
 
   double get accuracy => total > 0 ? correct / total : 0.0;
   int get missed => total - correct;
   bool get hasMissedItems => missedTerms.isNotEmpty || missedQuestions.isNotEmpty;
+
+  /// Session length formatted as `m:ss` (e.g. `4:07`), or null if untracked.
+  String? get formattedDuration {
+    final d = duration;
+    if (d == null) return null;
+    final minutes = d.inMinutes;
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
 }
 
 enum SessionMode { flashcards, mcq, lesson, mixed }

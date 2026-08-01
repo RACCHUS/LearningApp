@@ -159,22 +159,13 @@ void main() {
         expect(fakeClient.insertedRecords.first['title'], 'New Lesson');
       });
 
-      test('handles empty userId with guest UUID', () async {
-        fakeClient.setTableData('lessons', [
-          {
-            'id': 'guest-lesson',
-            'title': 'Guest Lesson',
-            'description': 'Desc',
-            'tags': [],
-            'user_id': '00000000-0000-0000-0000-000000000000',
-            'created_at': '2025-01-01T00:00:00.000Z',
-            'updated_at': '2025-01-01T00:00:00.000Z',
-          },
-        ]);
-        
-        final lesson = await service.addLesson('Guest Lesson', 'Desc', '');
-        
-        expect(lesson.userId, '00000000-0000-0000-0000-000000000000');
+      test('throws AuthenticationException when userId is empty and no session', () async {
+        // Guests now use real anonymous auth sessions; an empty userId with no
+        // active session must be rejected rather than falling back to a magic UUID.
+        expect(
+          () => service.addLesson('Guest Lesson', 'Desc', ''),
+          throwsA(isA<AuthenticationException>()),
+        );
       });
     });
 

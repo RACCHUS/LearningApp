@@ -52,14 +52,14 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
         final data = _prefs?.getString(storageKey);
         if (data != null) {
           final settings = deserialize(data);
-          if (settings != null) {
+          if (settings != null && mounted) {
             state = settings;
           }
         }
       } else {
         _hiveBox = await Hive.openBox<T>(storageKey);
         final settings = _hiveBox?.get('settings');
-        if (settings != null) {
+        if (settings != null && mounted) {
           state = settings;
         }
       }
@@ -72,6 +72,8 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
 
   /// Save current settings to persistent storage
   Future<void> saveSettings() async {
+    // Notifier may be disposed before an async persistence call resolves.
+    if (!mounted) return;
     try {
       if (storage == SettingsStorage.sharedPreferences) {
         if (_prefs == null) {
@@ -97,6 +99,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   /// 
   /// This is the primary method subclasses should use to update state
   Future<void> updateSettings(T newSettings) async {
+    if (!mounted) return;
     state = newSettings;
     await saveSettings();
   }
@@ -124,6 +127,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   /// 
   /// Subclasses should override to provide default settings
   Future<void> resetToDefaults() async {
+    if (!mounted) return;
     state = getDefaultSettings();
     await saveSettings();
     debugPrint('✅ Reset $storageKey to defaults');

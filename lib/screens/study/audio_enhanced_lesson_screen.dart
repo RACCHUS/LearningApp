@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/session_result.dart';
-import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/providers/audio_playback_provider.dart';

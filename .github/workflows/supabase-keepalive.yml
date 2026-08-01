@@ -1,0 +1,50 @@
+# Keeps the Supabase free-tier project from being paused after inactivity.
+#
+# Supabase pauses free projects after ~7 days without activity. This workflow
+# sends a tiny, RLS-safe REST request on a schedule so the project stays warm
+# even when nobody is using the app.
+#
+# Setup (one time):
+#   Repo Settings > Secrets and variables > Actions > New repository secret
+#     SUPABASE_URL       = https://<your-project-ref>.supabase.co
+#     SUPABASE_ANON_KEY  = <your anon/public key>   (RLS-protected, safe to store)
+#
+# You can also trigger it manually from the Actions tab (workflow_dispatch).
+
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Every 3 days at 06:00 UTC — comfortably inside the ~7-day pause window.
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY secrets must be set."
+            exit 1
+          fi
+
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/lessons?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+
+          echo "Supabase responded with HTTP $status"
+
+          # Any answer in the 2xx/4xx range means the project is awake and
+          # serving requests. Only connection failures / 5xx indicate trouble.
+          if [ "$status" -ge 200 ] && [ "$status" -lt 500 ]; then
+            echo "Project is awake."
+          else
+            echo "::error::Supabase did not respond as expected (HTTP $status)."
+            exit 1
+          fi

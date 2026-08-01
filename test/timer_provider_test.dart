@@ -201,4 +201,88 @@ void main() {
       expect(state.elapsedSeconds, 0);
     });
   });
+
+  group('Pomodoro break system', () {
+    late ProviderContainer container;
+
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose);
+
+    test('is disabled by default', () {
+      final state = container.read(timerProvider);
+      expect(state.breakEnabled, isFalse);
+      expect(state.isOnBreak, isFalse);
+      expect(state.blocksCompleted, 0);
+    });
+
+    test('setBreak enables and configures the break', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.setBreak(enabled: true, durationSeconds: 120);
+
+      final state = container.read(timerProvider);
+      expect(state.breakEnabled, isTrue);
+      expect(state.breakDurationSeconds, 120);
+    });
+
+    test('starts a break after a work block completes', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(2);
+      notifier.setBreak(enabled: true, durationSeconds: 3);
+
+      notifier.tick(); // 2 -> 1
+      expect(container.read(timerProvider).isOnBreak, isFalse);
+      notifier.tick(); // block completes -> break begins
+
+      final state = container.read(timerProvider);
+      expect(state.isOnBreak, isTrue);
+      expect(state.blocksCompleted, 1);
+      expect(state.breakTimeLeftSeconds, 3);
+    });
+
+    test('resumes a fresh work block when the break ends', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(1);
+      notifier.setBreak(enabled: true, durationSeconds: 2);
+
+      notifier.tick(); // block completes -> break (2 left)
+      expect(container.read(timerProvider).isOnBreak, isTrue);
+      notifier.tick(); // break 2 -> 1
+      notifier.tick(); // break ends
+
+      final state = container.read(timerProvider);
+      expect(state.isOnBreak, isFalse);
+      expect(state.timeLeftSeconds, 1);
+    });
+
+    test('pauses at zero when breaks are disabled', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(1);
+      notifier.start();
+
+      notifier.tick(); // completes with no break
+
+      final state = container.read(timerProvider);
+      expect(state.isOnBreak, isFalse);
+      expect(state.running, isFalse);
+      expect(state.blocksCompleted, 1);
+    });
+
+    test('skipBreak resumes work immediately', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(1);
+      notifier.setBreak(enabled: true, durationSeconds: 300);
+
+      notifier.tick(); // -> break
+      expect(container.read(timerProvider).isOnBreak, isTrue);
+
+      notifier.skipBreak();
+      final state = container.read(timerProvider);
+      expect(state.isOnBreak, isFalse);
+      expect(state.timeLeftSeconds, 1);
+    });
+  });
 }

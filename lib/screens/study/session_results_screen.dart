@@ -97,6 +97,14 @@ class SessionResultsScreen extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (result.formattedDuration != null) ...[
+                  const SizedBox(height: 12),
+                  Chip(
+                    avatar: Icon(Icons.timer_outlined,
+                        size: 18, color: colorScheme.onSurfaceVariant),
+                    label: Text('Time: ${result.formattedDuration}'),
+                  ),
+                ],
                 const SizedBox(height: 32),
 
                 // Stats row

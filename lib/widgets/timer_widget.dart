@@ -49,6 +49,33 @@ class TimerWidget extends ConsumerWidget {
                   ? null
                   : (v) => timerNotifier.setDuration(v.toInt()),
             ),
+          if (timerState.mode == TimerMode.countdown) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Break after each block'),
+                Switch(
+                  value: timerState.breakEnabled,
+                  onChanged: (v) => timerNotifier.setBreak(enabled: v),
+                ),
+              ],
+            ),
+            if (timerState.breakEnabled)
+              Text(
+                'Break length: ${timerState.breakDurationSeconds ~/ 60} min',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            if (timerState.breakEnabled)
+              Slider(
+                value: timerState.breakDurationSeconds.toDouble(),
+                min: 60,
+                max: 900,
+                divisions: 14,
+                label: '${timerState.breakDurationSeconds ~/ 60} min',
+                onChanged: (v) =>
+                    timerNotifier.setBreak(durationSeconds: v.toInt()),
+              ),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

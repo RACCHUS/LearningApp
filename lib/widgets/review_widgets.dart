@@ -1,8 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/settings_model.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Reads the user's study batch size (0 = unlimited) from local settings.
+Future<int> _studyBatchSize() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('settings');
+    if (raw != null) return SettingsModel.fromRawJson(raw).studyBatchSize;
+  } catch (_) {
+    // Fall through to default.
+  }
+  return 15;
+}
+
+/// Launches a short, batch-limited cross-lesson review (Quick Review).
+Future<void> _startQuickReview(BuildContext context) async {
+  final limit = await _studyBatchSize();
+  if (!context.mounted) return;
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => ReviewScreen(limit: limit > 0 ? limit : null),
+    ),
+  );
+}
 
 /// Compact card showing items due for review
 class ReviewDueCard extends ConsumerWidget {
@@ -28,9 +53,7 @@ class ReviewDueCard extends ConsumerWidget {
           ),
           child: InkWell(
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ReviewScreen()),
-              );
+              _startQuickReview(context);
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(
@@ -55,7 +78,7 @@ class ReviewDueCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${summary.dueToday} items due for review',
+                          'Quick Review — ${summary.dueToday} due',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),

@@ -6,6 +6,7 @@ import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 // ...existing code...
 import 'package:learning_pwa/providers/lesson_provider.dart';
+import 'package:learning_pwa/providers/lesson_progress_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
@@ -40,6 +41,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   bool _modeDialogShown = false;
   bool _isLessonMode = false; // Track lesson mode state
   int _restartCounter = 0; // Track restarts to force rebuild
+  bool _nudgeChecked = false; // Anti-cramming nudge shown at most once
   
   /// Launch a previously saved study mode without showing the dialog
   void _launchSavedMode(StudyModePreference mode) {
@@ -133,6 +135,32 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   }
 
 
+  /// Gently discourage cramming: if this lesson was studied within the last
+  /// few hours, suggest spacing reviews out instead of re-studying now.
+  Future<void> _maybeShowAntiCrammingNudge() async {
+    try {
+      final lastStudied =
+          await ref.read(lessonLastStudiedProvider(widget.lessonId).future);
+      if (lastStudied == null || !mounted) return;
+
+      final since = DateTime.now().difference(lastStudied);
+      if (since < const Duration(hours: 4)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'You studied this recently. Spacing reviews out strengthens '
+              'memory — a short review may help more than a full re-study.',
+            ),
+            duration: Duration(seconds: 6),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      // Non-critical nudge — ignore failures.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -140,6 +168,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
 
     // Show mode selection dialog on first build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_nudgeChecked) {        _nudgeChecked = true;
+        _maybeShowAntiCrammingNudge();
+      }
       if (!_modeDialogShown && ModalRoute.of(context)?.isCurrent == true) {
         _modeDialogShown = true;
         

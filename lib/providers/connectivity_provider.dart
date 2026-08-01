@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/supabase_health_provider.dart';
 import 'package:learning_pwa/services/connectivity_service.dart';
+import 'package:learning_pwa/services/supabase_health_service.dart';
 
 final connectivityProvider = StateNotifierProvider<ConnectivityNotifier, bool>((ref) {
   final connectivityService = ref.watch(connectivityServiceProvider);
@@ -46,7 +48,34 @@ class ConnectivityAware extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isConnected = ref.watch(connectivityProvider);
-    
+    final supabaseStatus = ref.watch(supabaseHealthProvider);
+
+    // Device offline takes precedence over backend-unreachable messaging.
+    final Widget banner;
+    if (!isConnected) {
+      banner = const _StatusBanner(
+        key: ValueKey('offline'),
+        color: Colors.orange,
+        message:
+            'You are offline. Your progress is saved on this device and will '
+            'sync when you reconnect.',
+        icon: Icons.cloud_off,
+      );
+    } else if (supabaseStatus == SupabaseStatus.unreachable) {
+      banner = _StatusBanner(
+        key: const ValueKey('unreachable'),
+        color: const Color(0xFFB00020),
+        message:
+            "Can't reach the server right now — it may be temporarily "
+            'unavailable. Your work is saved locally and will sync '
+            'automatically once it is back.',
+        icon: Icons.cloud_off,
+        onRetry: () => ref.read(supabaseHealthProvider.notifier).refresh(),
+      );
+    } else {
+      banner = const SizedBox.shrink(key: ValueKey('none'));
+    }
+
     return Stack(
       children: [
         child,
@@ -56,21 +85,62 @@ class ConnectivityAware extends ConsumerWidget {
           top: 0,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
-            child: isConnected
-                ? const SizedBox.shrink()
-                : Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.orange,
-                    child: const Center(
-                      child: Text(
-                        'You are currently offline. Some features may be limited.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
+            child: banner,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({
+    super.key,
+    required this.color,
+    required this.message,
+    required this.icon,
+    this.onRetry,
+  });
+
+  final Color color;
+  final String message;
+  final IconData icon;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      child: SafeArea(
+        bottom: false,
+        child: Semantics(
+          liveRegion: true,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                if (onRetry != null)
+                  TextButton(
+                    onPressed: onRetry,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    child: const Text('Retry'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

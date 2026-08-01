@@ -39,6 +39,9 @@ class _LessonCardState extends ConsumerState<LessonCard> {
       error: (_, __) => 0.0,
     );
 
+    // Granular mastery (null until the lesson has review items)
+    final mastery = ref.watch(lessonMasteryProvider(lesson.id)).valueOrNull;
+
     // Get accent color based on primary tag
     final accentColor = lesson.tags.isNotEmpty
         ? DesignTokens.getTagColor(lesson.tags.first)
@@ -195,6 +198,21 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                                         .withValues(alpha: 0.5),
                                   ),
                                 ),
+
+                                // Mastery label (spaced-repetition derived)
+                                if (mastery != null) ...[
+                                  const SizedBox(width: DesignTokens.space3),
+                                  Icon(Icons.trending_up,
+                                      size: 14, color: accentColor),
+                                  const SizedBox(width: DesignTokens.space1),
+                                  Text(
+                                    '${(mastery * 100).round()}% mastered',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: accentColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
 
                                 // Tags
                                 if (lesson.tags.isNotEmpty) ...[

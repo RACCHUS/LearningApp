@@ -1,6 +1,71 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Highest SM-2 repetition level treated as fully mastered.
+const int kMaxMasteryLevel = 6;
+
+/// Average normalized SM-2 mastery (0.0–1.0) for a set of repetition levels.
+///
+/// Each item contributes `min(level, kMaxMasteryLevel) / kMaxMasteryLevel`.
+/// Returns null when there are no reviewable items (mastery is unknown, which
+/// the UI shows differently from 0%).
+double? computeMastery(List<int> repetitionLevels) {
+  if (repetitionLevels.isEmpty) return null;
+  final total = repetitionLevels.fold<double>(
+    0.0,
+    (sum, level) => sum + (level.clamp(0, kMaxMasteryLevel) / kMaxMasteryLevel),
+  );
+  return total / repetitionLevels.length;
+}
+
+/// Granular mastery for a lesson (0.0–1.0), or null if the user has no review
+/// items for it yet. Derived from the spaced-repetition levels of its items.
+final lessonMasteryProvider =
+    FutureProvider.family<double?, String>((ref, lessonId) async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return null;
+
+  try {
+    final response = await Supabase.instance.client
+        .from('review_items')
+        .select('repetition_level')
+        .eq('user_id', userId)
+        .eq('lesson_id', lessonId);
+
+    final levels = (response as List)
+        .map((r) => (r['repetition_level'] as int?) ?? 0)
+        .toList();
+    return computeMastery(levels);
+  } catch (e) {
+    // Non-critical — hide the mastery label on failure.
+    return null;
+  }
+});
+
+/// Timestamp of the most recent study session for a lesson, or null if never
+/// studied. Used to gently discourage cramming (re-studying too soon).
+final lessonLastStudiedProvider =
+    FutureProvider.family<DateTime?, String>((ref, lessonId) async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return null;
+
+  try {
+    final response = await Supabase.instance.client
+        .from('user_progress')
+        .select('date')
+        .eq('user_id', userId)
+        .eq('lesson_id', lessonId)
+        .order('date', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return DateTime.parse(response['date'] as String);
+  } catch (e) {
+    return null;
+  }
+});
+
 /// Provider for individual lesson progress (0.0 to 1.0)
 /// 
 /// Fetches from Supabase user_progress table

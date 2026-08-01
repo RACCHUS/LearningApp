@@ -121,6 +121,7 @@ class LessonCrudService {
         stackTrace: stackTrace,
       );
     } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
       if (kDebugMode) {
         debugPrint('❌ Unexpected error getting lessons: $e');
       }
@@ -171,6 +172,7 @@ class LessonCrudService {
         stackTrace: stackTrace,
       );
     } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
       if (kDebugMode) {
         debugPrint('❌ Unexpected error getting lesson: $e');
       }
@@ -315,6 +317,7 @@ class LessonCrudService {
         stackTrace: stackTrace,
       );
     } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
       if (kDebugMode) {
         debugPrint('❌ Unexpected error adding lesson: $e');
       }
@@ -345,6 +348,7 @@ class LessonCrudService {
         stackTrace: stackTrace,
       );
     } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
       if (kDebugMode) {
         debugPrint('❌ Unexpected error deleting lesson: $e');
       }
@@ -407,6 +411,7 @@ class LessonCrudService {
         stackTrace: stackTrace,
       );
     } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
       if (kDebugMode) {
         debugPrint('❌ Unexpected error updating lesson: $e');
       }
