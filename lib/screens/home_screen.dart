@@ -107,6 +107,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.quiz),
+                title: const Text('Create Questions (MCQ)'),
+                subtitle: const Text('Jump straight to the question builder tab'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/create-lesson?tab=manual&content=mcq');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.style),
+                title: const Text('Create Flashcards (Terms)'),
+                subtitle: const Text('Jump straight to the flashcard/term builder tab'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/create-lesson?tab=manual&content=term');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.lightbulb_outline),
+                title: const Text('Create Concepts'),
+                subtitle: const Text('Jump straight to the concept builder tab'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/create-lesson?tab=manual&content=concept');
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.update),
                 title: const Text('Update Existing Lesson'),
                 subtitle: const Text('Pick an existing lesson and add/edit content'),
