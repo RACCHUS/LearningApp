@@ -94,7 +94,6 @@ class FlashcardReviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -347,6 +346,7 @@ class _TrueFalseReviewWidgetState extends State<TrueFalseReviewWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -593,7 +593,6 @@ class ConceptReviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -723,6 +722,7 @@ class _MatchingReviewWidgetState extends State<MatchingReviewWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
 
     if (_pairs.isEmpty) {
       return Center(

@@ -199,7 +199,6 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   }
 
   Widget _buildAiAssistantTab() {
-    final colorScheme = Theme.of(context).colorScheme;
     final semantic = Theme.of(context).extension<SemanticColors>()!;
 
     return SingleChildScrollView(
