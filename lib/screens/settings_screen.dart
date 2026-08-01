@@ -7,6 +7,10 @@ import 'package:learning_pwa/providers/theme_provider.dart';
 import 'package:learning_pwa/screens/settings/audio_settings_screen.dart';
 import 'package:learning_pwa/widgets/error_retry_view.dart';
 import 'package:flutter/foundation.dart';
+import 'package:learning_pwa/providers/daily_goal_provider.dart';
+import 'package:learning_pwa/utils/constants.dart';
+
+const String _dailyGoalKey = 'dailyGoalMinutes';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -20,6 +24,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _loading = true;
   Object? _loadError;
   final _timeController = TextEditingController();
+  int _dailyGoalMinutes = StudyConstants.defaultStudyGoalMinutes;
+  bool _dailyGoalSet = false;
 
   @override
   void initState() {
@@ -40,6 +46,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _settings = raw != null
             ? SettingsModel.fromRawJson(raw)
             : SettingsModel.defaultSettings();
+        final storedGoal = prefs.getInt(_dailyGoalKey);
+        _dailyGoalMinutes = storedGoal ?? StudyConstants.defaultStudyGoalMinutes;
+        _dailyGoalSet = storedGoal != null;
         _loading = false;
       });
     } catch (e) {
@@ -86,6 +95,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Update app-wide theme
     ref.read(themeModeProvider.notifier).setTheme(value ? ThemeMode.dark : ThemeMode.light);
     _saveSettings();
+  }
+
+  Future<void> _setDailyGoalMinutes(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_dailyGoalKey, minutes);
+    if (!mounted) return;
+    setState(() {
+      _dailyGoalMinutes = minutes;
+      _dailyGoalSet = true;
+    });
+    ref.invalidate(dailyGoalMinutesProvider);
+    ref.invalidate(dailyGoalProgressProvider);
+  }
+
+  Future<void> _setDailyGoalLater() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_dailyGoalKey);
+    if (!mounted) return;
+    setState(() {
+      _dailyGoalMinutes = StudyConstants.defaultStudyGoalMinutes;
+      _dailyGoalSet = false;
+    });
+    ref.invalidate(dailyGoalMinutesProvider);
+    ref.invalidate(dailyGoalProgressProvider);
+  }
+
+  Future<void> _showCustomGoalDialog() async {
+    final controller = TextEditingController(
+      text: _dailyGoalMinutes.toString(),
+    );
+
+    final customGoal = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Custom Daily Goal'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Minutes per day',
+            hintText: '1-720',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < 1 || value > 720) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Enter a valid goal between 1 and 720 minutes.',
+                    ),
+                  ),
+                );
+                return;
+              }
+              Navigator.of(context).pop(value);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (customGoal != null) {
+      await _setDailyGoalMinutes(customGoal);
+    }
   }
 
   @override
@@ -181,6 +262,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text('Reset progress and manage reverts'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () => context.push('/settings/reset'),
+            ),
+
+            const Divider(height: 32),
+
+            ListTile(
+              title: const Text('Daily Study Goal'),
+              subtitle: Text(
+                _dailyGoalSet
+                    ? '$_dailyGoalMinutes minutes per day'
+                    : 'Set later (currently using default ${StudyConstants.defaultStudyGoalMinutes} minutes)',
+              ),
+              trailing: TextButton(
+                onPressed: _showCustomGoalDialog,
+                child: const Text('Custom'),
+              ),
+            ),
+            Slider(
+              value: _dailyGoalMinutes.clamp(5, 180).toDouble(),
+              min: 5,
+              max: 180,
+              divisions: 35,
+              label: '$_dailyGoalMinutes min',
+              onChanged: (value) {
+                setState(() {
+                  _dailyGoalMinutes = value.round();
+                  _dailyGoalSet = true;
+                });
+              },
+              onChangeEnd: (value) async {
+                await _setDailyGoalMinutes(value.round());
+              },
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _setDailyGoalLater,
+                icon: const Icon(Icons.schedule),
+                label: const Text('Set later / use default'),
+              ),
             ),
             
             const Divider(height: 32),

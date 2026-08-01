@@ -24,8 +24,10 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
+  final _customGoalController = TextEditingController();
   int _currentPage = 0;
   int _selectedGoal = 15;
+  bool _setGoalLater = false;
   bool _isLoading = false;
 
   static const _goalOptions = [5, 15, 30, 60];
@@ -33,6 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _customGoalController.dispose();
     super.dispose();
   }
 
@@ -42,8 +45,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Save daily goal
-      await prefs.setInt(_dailyGoalKey, _selectedGoal);
+      // Save daily goal unless user opted to set it later in Settings.
+      if (_setGoalLater) {
+        await prefs.remove(_dailyGoalKey);
+      } else {
+        await prefs.setInt(_dailyGoalKey, _selectedGoal);
+      }
 
       // Import sample lesson
       try {
@@ -70,6 +77,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _onGoalChanged(int goal) {
+    setState(() {
+      _selectedGoal = goal;
+      _setGoalLater = false;
+    });
+  }
+
+  void _setLater() {
+    setState(() {
+      _setGoalLater = true;
+    });
+  }
+
+  void _applyCustomGoal() {
+    final parsed = int.tryParse(_customGoalController.text.trim());
+    if (parsed == null || parsed < 1 || parsed > 720) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a valid goal between 1 and 720 minutes.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedGoal = parsed;
+      _setGoalLater = false;
+    });
   }
 
   void _nextPage() {
@@ -100,9 +137,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     textTheme: textTheme,
                     colorScheme: colorScheme,
                     selectedGoal: _selectedGoal,
+                    setGoalLater: _setGoalLater,
+                    customGoalController: _customGoalController,
                     goalOptions: _goalOptions,
-                    onGoalChanged: (goal) =>
-                        setState(() => _selectedGoal = goal),
+                    onGoalChanged: _onGoalChanged,
+                    onSetLater: _setLater,
+                    onApplyCustomGoal: _applyCustomGoal,
                   ),
                   _GetStartedPage(
                     textTheme: textTheme,
@@ -216,15 +256,23 @@ class _GoalPage extends StatelessWidget {
   final TextTheme textTheme;
   final ColorScheme colorScheme;
   final int selectedGoal;
+  final bool setGoalLater;
+  final TextEditingController customGoalController;
   final List<int> goalOptions;
   final ValueChanged<int> onGoalChanged;
+  final VoidCallback onSetLater;
+  final VoidCallback onApplyCustomGoal;
 
   const _GoalPage({
     required this.textTheme,
     required this.colorScheme,
     required this.selectedGoal,
+    required this.setGoalLater,
+    required this.customGoalController,
     required this.goalOptions,
     required this.onGoalChanged,
+    required this.onSetLater,
+    required this.onApplyCustomGoal,
   });
 
   @override
@@ -257,7 +305,7 @@ class _GoalPage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           ...goalOptions.map((minutes) {
-            final isSelected = minutes == selectedGoal;
+            final isSelected = !setGoalLater && minutes == selectedGoal;
             final label = minutes < 60
                 ? '$minutes minutes'
                 : '${minutes ~/ 60} hour';
@@ -325,6 +373,66 @@ class _GoalPage extends StatelessWidget {
               ),
             );
           }),
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Material(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Custom Minutes',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: customGoalController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter minutes (1-720)',
+                                isDense: true,
+                              ),
+                              onSubmitted: (_) => onApplyCustomGoal(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            onPressed: onApplyCustomGoal,
+                            child: const Text('Use'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onSetLater,
+            icon: Icon(
+              setGoalLater ? Icons.check_circle : Icons.schedule,
+              color: setGoalLater ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+            label: Text(
+              setGoalLater
+                  ? 'Goal will be set later in Settings'
+                  : 'Set this later in Settings',
+            ),
+          ),
         ],
       ),
     );

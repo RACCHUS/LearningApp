@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   LessonSortOption _sortOption = LessonSortOption.recent;
+  bool _showRecommendations = false;
 
   @override
   void initState() {
@@ -243,12 +245,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(context, ref),
+      floatingActionButtonLocation: kIsWeb
+          ? FloatingActionButtonLocation.startFloat
+          : FloatingActionButtonLocation.endFloat,
     );
   }
 
   Widget _buildLessonsTab() {
     final allLessons = ref.watch(allLessonsProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final showGuidedSections = _searchQuery.isEmpty && selectedTag == null;
 
     return CustomScrollView(
       slivers: [
@@ -271,21 +277,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
 
         // Continue Learning Hero (only when not searching)
-        if (_searchQuery.isEmpty && selectedTag == null)
+        if (showGuidedSections)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                DesignTokens.space4,
+                DesignTokens.space2,
+                DesignTokens.space4,
+                0,
+              ),
+              child: Text(
+                'Continue Your Path',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ),
+
+        if (showGuidedSections)
           const SliverToBoxAdapter(
             child: ContinueLearningHero(),
           ),
 
         // Review Due Card (only when not searching)
-        if (_searchQuery.isEmpty && selectedTag == null)
+        if (showGuidedSections)
           const SliverToBoxAdapter(
             child: ReviewDueCard(),
-          ),
-
-        // Recommendations (only when not searching)
-        if (_searchQuery.isEmpty && selectedTag == null)
-          const SliverToBoxAdapter(
-            child: RecommendationSection(),
           ),
 
         // Category Filters
@@ -322,6 +340,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           sortOption: _sortOption,
           onClearSearch: _clearFilters,
         ),
+
+        // Recommendations are useful, but secondary to the user's active path.
+        if (showGuidedSections)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                DesignTokens.space4,
+                DesignTokens.space3,
+                DesignTokens.space4,
+                0,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showRecommendations = !_showRecommendations;
+                    });
+                  },
+                  icon: Icon(
+                    _showRecommendations
+                        ? Icons.expand_less
+                        : Icons.explore_outlined,
+                  ),
+                  label: Text(
+                    _showRecommendations
+                        ? 'Hide Discovery'
+                        : 'Discover More Lessons',
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        if (showGuidedSections && _showRecommendations)
+          const SliverToBoxAdapter(
+            child: RecommendationSection(),
+          ),
       ],
     );
   }
