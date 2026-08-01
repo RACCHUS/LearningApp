@@ -116,45 +116,65 @@
     }
 
     // ---------------------------------------------------------------------
-    // PWA "Add to Home Screen" install prompt.
-    // Captures the browser's deferred prompt and shows a small custom button
-    // so mobile/desktop users discover that the app is installable.
+    // PWA install prompt API (controlled by app settings UI).
+    // We intentionally do NOT auto-show a sticky install button.
     // ---------------------------------------------------------------------
     (function () {
       let deferredInstallPrompt = null;
+      const DISMISS_KEY = 'learningPwaInstallDismissed';
 
-      function showInstallButton() {
-        if (document.getElementById('pwa-install-btn')) return;
-        const btn = document.createElement('button');
-        btn.id = 'pwa-install-btn';
-        btn.textContent = 'Install app';
-        btn.setAttribute('aria-label', 'Install this app on your device');
-        btn.style.cssText = [
-          'position:fixed', 'right:16px', 'bottom:16px', 'z-index:9999',
-          'padding:10px 16px', 'border:none', 'border-radius:24px',
-          'background:#1976d2', 'color:#fff', 'font:600 14px system-ui,sans-serif',
-          'box-shadow:0 2px 8px rgba(0,0,0,0.3)', 'cursor:pointer'
-        ].join(';');
-        btn.addEventListener('click', async function () {
-          if (!deferredInstallPrompt) return;
-          deferredInstallPrompt.prompt();
-          try { await deferredInstallPrompt.userChoice; } catch (e) {}
-          deferredInstallPrompt = null;
-          btn.remove();
-        });
-        document.body.appendChild(btn);
+      function isDismissed() {
+        try {
+          return window.localStorage.getItem(DISMISS_KEY) === '1';
+        } catch (e) {
+          return false;
+        }
       }
+
+      function setDismissed(value) {
+        try {
+          if (value) {
+            window.localStorage.setItem(DISMISS_KEY, '1');
+          } else {
+            window.localStorage.removeItem(DISMISS_KEY);
+          }
+        } catch (e) {}
+      }
+
+      window.learningPwa = {
+        canInstall: function () {
+          return !!deferredInstallPrompt && !isDismissed();
+        },
+        promptInstall: async function () {
+          if (!deferredInstallPrompt || isDismissed()) return false;
+          deferredInstallPrompt.prompt();
+          try {
+            const choice = await deferredInstallPrompt.userChoice;
+            const accepted = choice && choice.outcome === 'accepted';
+            if (accepted) {
+              deferredInstallPrompt = null;
+            }
+            return !!accepted;
+          } catch (e) {
+            return false;
+          }
+        },
+        dismiss: function () {
+          setDismissed(true);
+        },
+        resetDismissed: function () {
+          setDismissed(false);
+        }
+      };
 
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferredInstallPrompt = e;
-        showInstallButton();
       });
 
       window.addEventListener('appinstalled', function () {
         deferredInstallPrompt = null;
-        const btn = document.getElementById('pwa-install-btn');
-        if (btn) btn.remove();
+        setDismissed(true);
       });
     })();
 

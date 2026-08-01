@@ -79,6 +79,117 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
+  Future<void> _openCreateMenu() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_note),
+                title: const Text('New Lesson (Manual Editor)'),
+                subtitle: const Text('Build terms, questions, concepts, and more'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/lesson-editor');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.auto_awesome),
+                title: const Text('New Lesson (AI / Import)'),
+                subtitle: const Text('Generate or import a complete lesson JSON'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/create-lesson');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.update),
+                title: const Text('Update Existing Lesson'),
+                subtitle: const Text('Pick an existing lesson and add/edit content'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openExistingLessonPicker();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.school),
+                title: const Text('New Course'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/course-builder');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.route),
+                title: const Text('New Career Path'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  this.context.push('/careers/create');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openExistingLessonPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        final lessonsAsync = ref.watch(allLessonsProvider);
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: lessonsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Could not load lessons: $e'),
+                ),
+              ),
+              data: (lessons) {
+                if (lessons.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('No lessons yet. Create one first.'),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: lessons.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final lesson = lessons[index];
+                    return ListTile(
+                      leading: const Icon(Icons.menu_book),
+                      title: Text(lesson.title),
+                      subtitle: Text(lesson.description ?? ''),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        this.context.push('/lesson-editor/${lesson.id}');
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -529,11 +640,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           case 0: // Lessons
             return FloatingActionButton.extended(
               heroTag: "homeCreateLessonFAB",
-              onPressed: () async {
-                await context.push('/lesson-editor');
-                ref.invalidate(allLessonsProvider);
-              },
-              label: const Text('New Lesson'),
+              onPressed: _openCreateMenu,
+              label: const Text('Create'),
               icon: const Icon(Icons.add),
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,

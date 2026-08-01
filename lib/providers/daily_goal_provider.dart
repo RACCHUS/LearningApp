@@ -14,7 +14,11 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
   final goalMinutes = await ref.watch(dailyGoalMinutesProvider.future);
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) {
-    return DailyGoalProgress.empty();
+    // Guests still have a configurable local goal even without cloud progress.
+    return DailyGoalProgress(
+      studyMinutesToday: 0,
+      goalMinutes: goalMinutes,
+    );
   }
 
   try {
@@ -44,8 +48,11 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
       goalMinutes: goalMinutes,
     );
   } catch (e) {
-    // Return empty on error - daily goal is non-critical
-    return DailyGoalProgress.empty();
+    // Daily-goal rendering is non-critical; preserve configured goal on fallback.
+    return DailyGoalProgress(
+      studyMinutesToday: 0,
+      goalMinutes: goalMinutes,
+    );
   }
 });
 

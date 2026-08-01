@@ -9,6 +9,7 @@ import 'package:learning_pwa/widgets/error_retry_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/utils/constants.dart';
+import 'package:learning_pwa/utils/pwa_install_utils.dart';
 
 const String _dailyGoalKey = 'dailyGoalMinutes';
 
@@ -26,6 +27,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _timeController = TextEditingController();
   int _dailyGoalMinutes = StudyConstants.defaultStudyGoalMinutes;
   bool _dailyGoalSet = false;
+  bool _canInstallPwa = false;
 
   @override
   void initState() {
@@ -51,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _dailyGoalSet = storedGoal != null;
         _loading = false;
       });
+      await _refreshPwaInstallState();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -58,6 +61,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _refreshPwaInstallState() async {
+    if (!kIsWeb) return;
+    final canInstall = await canInstallPwa();
+    if (!mounted) return;
+    setState(() {
+      _canInstallPwa = canInstall;
+    });
+  }
+
+  Future<void> _installPwaNow() async {
+    if (!kIsWeb) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Install is only available on web/PWA.')),
+      );
+      return;
+    }
+
+    final accepted = await promptPwaInstall();
+    if (!mounted) return;
+
+    await _refreshPwaInstallState();
+
+    if (accepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Install prompt accepted.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Install prompt was not available/accepted. You can also use your browser menu (Install app).',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _dismissPwaPrompt() async {
+    await dismissPwaInstallPrompt();
+    await _refreshPwaInstallState();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Install prompt hidden for now.')),
+    );
+  }
+
+  Future<void> _enablePwaPromptAgain() async {
+    await resetPwaInstallPromptPreference();
+    await _refreshPwaInstallState();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Install prompt can be shown again when available.')),
+    );
   }
 
   Future<void> _saveSettings() async {
@@ -301,6 +360,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 icon: const Icon(Icons.schedule),
                 label: const Text('Set later / use default'),
               ),
+            ),
+
+            const Divider(height: 32),
+
+            ListTile(
+              leading: const Icon(Icons.download_for_offline),
+              title: const Text('Install App (PWA)'),
+              subtitle: Text(
+                kIsWeb
+                    ? (_canInstallPwa
+                        ? 'Install is available for this browser/device.'
+                        : 'Install prompt is currently unavailable or dismissed.')
+                    : 'Install is only available on web/PWA.',
+              ),
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: kIsWeb ? _installPwaNow : null,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Install Now'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: kIsWeb ? _dismissPwaPrompt : null,
+                  icon: const Icon(Icons.visibility_off),
+                  label: const Text('Hide Prompt'),
+                ),
+                TextButton.icon(
+                  onPressed: kIsWeb ? _enablePwaPromptAgain : null,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Enable Prompt Again'),
+                ),
+              ],
             ),
             
             const Divider(height: 32),
