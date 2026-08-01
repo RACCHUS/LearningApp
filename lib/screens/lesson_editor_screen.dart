@@ -13,10 +13,12 @@ import '../widgets/editors/content_list_tile.dart';
 /// Screen for creating and editing lessons with mixed content types
 class LessonEditorScreen extends ConsumerStatefulWidget {
   final String? lessonId;
+  final int initialTabIndex;
 
   const LessonEditorScreen({
     super.key,
     this.lessonId,
+    this.initialTabIndex = 0,
   });
 
   @override
@@ -36,7 +38,11 @@ class _LessonEditorScreenState extends ConsumerState<LessonEditorScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
+    );
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
   }

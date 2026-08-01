@@ -83,79 +83,121 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: ListView(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit_note),
+                  title: const Text('New Lesson (Manual Editor)'),
+                  subtitle: const Text('Build terms, questions, concepts, and more'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    this.context.push('/lesson-editor');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome),
+                  title: const Text('New Lesson (AI / Import)'),
+                  subtitle: const Text('Generate or import a complete lesson JSON'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    this.context.push('/create-lesson');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.quiz),
+                  title: const Text('Create Questions (MCQ)'),
+                  subtitle: const Text('Create in a new lesson or attach to an existing lesson'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openContentTargetMenu(contentType: 'mcq', label: 'Questions (MCQ)');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.style),
+                  title: const Text('Create Flashcards (Terms)'),
+                  subtitle: const Text('Create in a new lesson or attach to an existing lesson'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openContentTargetMenu(contentType: 'term', label: 'Flashcards (Terms)');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.lightbulb_outline),
+                  title: const Text('Create Concepts'),
+                  subtitle: const Text('Create in a new lesson or attach to an existing lesson'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openContentTargetMenu(contentType: 'concept', label: 'Concepts');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.update),
+                  title: const Text('Update Existing Lesson'),
+                  subtitle: const Text('Pick an existing lesson and add/edit content'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openExistingLessonPicker();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.school),
+                  title: const Text('New Course'),
+                  subtitle: const Text('Create a course and organize lessons'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    this.context.push('/course-builder');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.route),
+                  title: const Text('New Career Path'),
+                  subtitle: const Text('Create a career path and map courses'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    this.context.push('/careers/create');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openContentTargetMenu({
+    required String contentType,
+    required String label,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.edit_note),
-                title: const Text('New Lesson (Manual Editor)'),
-                subtitle: const Text('Build terms, questions, concepts, and more'),
+                leading: const Icon(Icons.add_circle_outline),
+                title: Text('Create New Lesson with $label'),
+                subtitle: const Text('Starts a new lesson and opens the right builder tab'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  this.context.push('/lesson-editor');
+                  this.context.push('/create-lesson?tab=manual&content=$contentType');
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.auto_awesome),
-                title: const Text('New Lesson (AI / Import)'),
-                subtitle: const Text('Generate or import a complete lesson JSON'),
+                leading: const Icon(Icons.link),
+                title: Text('Attach $label to Existing Lesson'),
+                subtitle: const Text('Pick an existing lesson and jump to the matching editor tab'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  this.context.push('/create-lesson');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.quiz),
-                title: const Text('Create Questions (MCQ)'),
-                subtitle: const Text('Jump straight to the question builder tab'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  this.context.push('/create-lesson?tab=manual&content=mcq');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.style),
-                title: const Text('Create Flashcards (Terms)'),
-                subtitle: const Text('Jump straight to the flashcard/term builder tab'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  this.context.push('/create-lesson?tab=manual&content=term');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.lightbulb_outline),
-                title: const Text('Create Concepts'),
-                subtitle: const Text('Jump straight to the concept builder tab'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  this.context.push('/create-lesson?tab=manual&content=concept');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.update),
-                title: const Text('Update Existing Lesson'),
-                subtitle: const Text('Pick an existing lesson and add/edit content'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _openExistingLessonPicker();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.school),
-                title: const Text('New Course'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  this.context.push('/course-builder');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.route),
-                title: const Text('New Career Path'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  this.context.push('/careers/create');
+                  _openExistingLessonPicker(preferredContentType: contentType);
                 },
               ),
             ],
@@ -165,7 +207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Future<void> _openExistingLessonPicker() async {
+  Future<void> _openExistingLessonPicker({String? preferredContentType}) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -204,7 +246,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       subtitle: Text(lesson.description ?? ''),
                       onTap: () {
                         Navigator.of(context).pop();
-                        this.context.push('/lesson-editor/${lesson.id}');
+                        final route = Uri(
+                          path: '/lesson-editor/${lesson.id}',
+                          queryParameters: preferredContentType == null
+                              ? null
+                              : <String, String>{'tab': preferredContentType},
+                        ).toString();
+                        this.context.push(route);
                       },
                     );
                   },

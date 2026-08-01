@@ -185,14 +185,35 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/lesson-editor',
         name: 'lesson-editor-new',
-        builder: (context, state) => const LessonEditorScreen(),
+        builder: (context, state) {
+          final tabParam = state.uri.queryParameters['tab'];
+          int initialTab = 0;
+          if (tabParam == 'mcq' || tabParam == 'question') {
+            initialTab = 1;
+          } else if (tabParam == 'concept') {
+            initialTab = 2;
+          }
+
+          return LessonEditorScreen(initialTabIndex: initialTab);
+        },
       ),
       GoRoute(
         path: '/lesson-editor/:lessonId',
         name: 'lesson-editor',
         builder: (context, state) {
           final lessonId = state.pathParameters['lessonId'];
-          return LessonEditorScreen(lessonId: lessonId);
+          final tabParam = state.uri.queryParameters['tab'];
+          int initialTab = 0;
+          if (tabParam == 'mcq' || tabParam == 'question') {
+            initialTab = 1;
+          } else if (tabParam == 'concept') {
+            initialTab = 2;
+          }
+
+          return LessonEditorScreen(
+            lessonId: lessonId,
+            initialTabIndex: initialTab,
+          );
         },
       ),
 
