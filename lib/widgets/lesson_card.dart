@@ -302,6 +302,10 @@ class _LessonCardState extends ConsumerState<LessonCard> {
       child: Row(
         children: tags.take(3).map((tag) {
           final tagColor = DesignTokens.getTagColor(tag);
+          final chipBackground =
+              Color.alphaBlend(tagColor.withValues(alpha: 0.22), colorScheme.surfaceContainerLow);
+          final chipTextColor =
+              DesignTokens.readableOn(chipBackground).withValues(alpha: 0.92);
           return Padding(
             padding: const EdgeInsets.only(right: DesignTokens.space1),
             child: Container(
@@ -310,17 +314,17 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                 vertical: DesignTokens.space1,
               ),
               decoration: BoxDecoration(
-                color: tagColor.withValues(alpha: 0.15),
+                color: chipBackground,
                 borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
                 border: Border.all(
-                  color: tagColor.withValues(alpha: 0.3),
+                  color: tagColor.withValues(alpha: 0.45),
                   width: 1,
                 ),
               ),
               child: Text(
                 tag,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: tagColor.withValues(alpha: 0.9),
+                      color: chipTextColor,
                       fontWeight: FontWeight.w500,
                     ),
               ),

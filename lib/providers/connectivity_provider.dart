@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/supabase_health_provider.dart';
 import 'package:learning_pwa/services/connectivity_service.dart';
 import 'package:learning_pwa/services/supabase_health_service.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 
 final connectivityProvider = StateNotifierProvider<ConnectivityNotifier, bool>((ref) {
   final connectivityService = ref.watch(connectivityServiceProvider);
@@ -49,13 +50,15 @@ class ConnectivityAware extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isConnected = ref.watch(connectivityProvider);
     final supabaseStatus = ref.watch(supabaseHealthProvider);
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
 
     // Device offline takes precedence over backend-unreachable messaging.
     final Widget banner;
     if (!isConnected) {
-      banner = const _StatusBanner(
+      banner = _StatusBanner(
         key: ValueKey('offline'),
-        color: Colors.orange,
+        color: semantic.warning,
+        foregroundColor: semantic.onWarning,
         message:
             'You are offline. Your progress is saved on this device and will '
             'sync when you reconnect.',
@@ -64,7 +67,8 @@ class ConnectivityAware extends ConsumerWidget {
     } else if (supabaseStatus == SupabaseStatus.unreachable) {
       banner = _StatusBanner(
         key: const ValueKey('unreachable'),
-        color: const Color(0xFFB00020),
+        color: semantic.danger,
+        foregroundColor: semantic.onDanger,
         message:
             "Can't reach the server right now — it may be temporarily "
             'unavailable. Your work is saved locally and will sync '
@@ -97,12 +101,14 @@ class _StatusBanner extends StatelessWidget {
   const _StatusBanner({
     super.key,
     required this.color,
+    required this.foregroundColor,
     required this.message,
     required this.icon,
     this.onRetry,
   });
 
   final Color color;
+  final Color foregroundColor;
   final String message;
   final IconData icon;
   final VoidCallback? onRetry;
@@ -119,19 +125,19 @@ class _StatusBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white, size: 18),
+                Icon(icon, color: foregroundColor, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     message,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: foregroundColor),
                   ),
                 ),
                 if (onRetry != null)
                   TextButton(
                     onPressed: onRetry,
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
+                      foregroundColor: foregroundColor,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                     child: const Text('Retry'),

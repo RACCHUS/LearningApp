@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 import '../../models/data_snapshot.dart';
 import '../../providers/reset_provider.dart';
 import '../../widgets/reset_pickers.dart';
@@ -11,6 +12,8 @@ class ResetCenterScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availableReverts = ref.watch(availableRevertsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
 
     return Scaffold(
       appBar: AppBar(
@@ -21,12 +24,12 @@ class ResetCenterScreen extends ConsumerWidget {
         children: [
           // Warning card
           Card(
-            color: Colors.orange.shade50,
+            color: semantic.warning.withValues(alpha: 0.12),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.warning, color: Colors.orange.shade700),
+                  Icon(Icons.warning, color: semantic.warning),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -36,14 +39,14 @@ class ResetCenterScreen extends ConsumerWidget {
                           'Reset & Revert',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade900,
+                            color: semantic.warning,
                           ),
                         ),
                         Text(
                           'Resets mark your progress as unverified. You have 30 days to revert a reset.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.orange.shade800,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -94,7 +97,7 @@ class ResetCenterScreen extends ConsumerWidget {
             title: 'Reset All Progress',
             description:
                 'Start fresh! Reset all your skills, courses, and career paths.',
-            color: Colors.red,
+            color: semantic.danger,
             onTap: () => _showResetAllDialog(context, ref),
           ),
 
@@ -127,7 +130,7 @@ class ResetCenterScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         Icon(Icons.history,
-                            size: 48, color: Colors.grey.shade400),
+                            size: 48, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
                         const SizedBox(height: 12),
                         const Text(
                           'No reverts available',
@@ -135,7 +138,7 @@ class ResetCenterScreen extends ConsumerWidget {
                         ),
                         Text(
                           'When you reset progress, you\'ll be able to revert within 30 days.',
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -234,12 +237,13 @@ class ResetCenterScreen extends ConsumerWidget {
     required String title,
     required String message,
   }) {
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.warning, color: Colors.orange),
+            Icon(Icons.warning, color: semantic.warning),
             const SizedBox(width: 8),
             Text(title),
           ],
@@ -253,12 +257,12 @@ class ResetCenterScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: semantic.info.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info, color: Colors.blue, size: 20),
+                  Icon(Icons.info, color: semantic.info, size: 20),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -277,7 +281,10 @@ class ResetCenterScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            style: FilledButton.styleFrom(
+              backgroundColor: semantic.warning,
+              foregroundColor: semantic.onWarning,
+            ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Reset'),
           ),
@@ -287,12 +294,13 @@ class ResetCenterScreen extends ConsumerWidget {
   }
 
   Future<void> _showResetAllDialog(BuildContext context, WidgetRef ref) async {
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red),
+            Icon(Icons.warning, color: semantic.danger),
             SizedBox(width: 8),
             Text('Reset All Progress'),
           ],
@@ -313,12 +321,12 @@ class ResetCenterScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: semantic.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info, color: Colors.orange),
+                  Icon(Icons.info, color: semantic.warning),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -337,7 +345,10 @@ class ResetCenterScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: semantic.danger,
+              foregroundColor: semantic.onDanger,
+            ),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Reset Everything'),
           ),
@@ -375,6 +386,7 @@ class _ResetOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = color ?? Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       child: InkWell(
@@ -408,7 +420,7 @@ class _ResetOptionCard extends StatelessWidget {
                       description,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -430,6 +442,8 @@ class _RevertCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -456,7 +470,7 @@ class _RevertCard extends ConsumerWidget {
                           'ID: ${snapshot.targetId}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                     ],
@@ -467,8 +481,8 @@ class _RevertCard extends ConsumerWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: snapshot.daysRemaining <= 7
-                        ? Colors.red.shade100
-                        : Colors.orange.shade100,
+                        ? semantic.danger.withValues(alpha: 0.16)
+                        : semantic.warning.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -476,8 +490,8 @@ class _RevertCard extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: snapshot.daysRemaining <= 7
-                          ? Colors.red.shade700
-                          : Colors.orange.shade700,
+                          ? semantic.danger
+                          : semantic.warning,
                     ),
                   ),
                 ),
@@ -486,11 +500,11 @@ class _RevertCard extends ConsumerWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.schedule, size: 14, color: Colors.grey.shade600),
+                Icon(Icons.schedule, size: 14, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text(
                   'Reset on ${_formatDate(snapshot.createdAt)}',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),

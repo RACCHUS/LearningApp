@@ -93,7 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             fontWeight: FontWeight.w700,
             fontSize: 28,
             letterSpacing: -0.5,
-            color: colorScheme.primary,
+            color: colorScheme.onSurface,
           ),
         ),
         actions: [
@@ -168,7 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ] else if (authState is AuthSuccess) ...[
             IconButton(
-              icon: Icon(Icons.account_circle, color: colorScheme.primary),
+              icon: Icon(Icons.account_circle, color: colorScheme.onSurfaceVariant),
               tooltip: 'Profile',
               onPressed: () {
                 context.push('/profile');

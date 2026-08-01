@@ -11,6 +11,7 @@ import 'package:learning_pwa/widgets/lesson_builder_widget.dart';
 import 'package:learning_pwa/widgets/prompt_display_widget.dart';
 import 'package:learning_pwa/widgets/template_selection_widget.dart';
 import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -56,10 +57,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
       
       if (mounted) {
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lesson "${lesson.title}" created successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: semantic.success,
           ),
         );
         Navigator.of(context).pop(lesson);
@@ -67,10 +69,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     } catch (e) {
       if (mounted) {
         final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
-            backgroundColor: Colors.red,
+            backgroundColor: semantic.danger,
           ),
         );
       }
@@ -110,10 +113,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       );
       
       if (mounted) {
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lesson "${lesson.title}" created successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: semantic.success,
           ),
         );
         Navigator.of(context).pop(lesson);
@@ -121,10 +125,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     } catch (e) {
       if (mounted) {
         final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
-            backgroundColor: Colors.red,
+            backgroundColor: semantic.danger,
           ),
         );
       }
@@ -194,6 +199,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   }
 
   Widget _buildAiAssistantTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Container(
@@ -209,12 +217,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700]),
+                        Icon(Icons.info_outline, color: semantic.info),
                         const SizedBox(width: 8),
                         Text(
                           'AI-Assisted Lesson Creation',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.blue[700],
+                            color: semantic.info,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -342,12 +350,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.library_books, color: Colors.orange[700]),
+                        Icon(Icons.library_books, color: semantic.warning),
                         const SizedBox(width: 8),
                         Text(
                           'Or Start with a Template',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.orange[700],
+                            color: semantic.warning,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -425,6 +433,8 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   }
 
   void _generateAndShowPrompt() {
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final prompt = AiPromptService.generateLessonCreationPrompt(
       subject: _subjectController.text.trim(),
       targetAudience: _targetAudience,
@@ -438,9 +448,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.auto_awesome, color: Colors.purple),
+            Icon(Icons.auto_awesome, color: semantic.info),
             SizedBox(width: 8),
             Text('AI Prompt Generated'),
           ],
@@ -455,18 +465,18 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: semantic.success.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                    border: Border.all(color: semantic.success.withValues(alpha: 0.35)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.check_circle, color: Colors.green),
+                      Icon(Icons.check_circle, color: semantic.success),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Prompt copied to clipboard! Use it with ChatGPT, Claude, or any AI tool.',
-                          style: TextStyle(color: Colors.green),
+                          style: TextStyle(color: semantic.success),
                         ),
                       ),
                     ],
@@ -490,9 +500,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   height: 200,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(color: colorScheme.outlineVariant),
                   ),
                   child: SingleChildScrollView(
                     child: SelectableText(
@@ -536,6 +546,8 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
   }
 
   void _showTemplateDialog() {
+    final semantic = Theme.of(context).extension<SemanticColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -548,12 +560,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                  color: semantic.warning.withValues(alpha: 0.12),
+                  border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.library_books, color: Colors.orange[700]),
+                    Icon(Icons.library_books, color: semantic.warning),
                     const SizedBox(width: 8),
                     Text(
                       'Lesson Templates',

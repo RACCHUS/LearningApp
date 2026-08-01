@@ -2,6 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/user_xp.dart';
 import 'package:learning_pwa/services/xp_service.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
+
+class _TierPalette {
+  static Color color(LevelTier tier) {
+    switch (tier) {
+      case LevelTier.bronze:
+        return const Color(0xFFCD7F32);
+      case LevelTier.silver:
+        return const Color(0xFFC0C0C0);
+      case LevelTier.gold:
+        return const Color(0xFFFFD700);
+      case LevelTier.platinum:
+        return const Color(0xFFE5E4E2);
+      case LevelTier.diamond:
+        return const Color(0xFF00CED1);
+      case LevelTier.master:
+        return const Color(0xFF9400D3);
+    }
+  }
+
+  static LinearGradient gradient(LevelTier tier) {
+    switch (tier) {
+      case LevelTier.bronze:
+        return const LinearGradient(
+          colors: [Color(0xFFCD7F32), Color(0xFFA0522D)],
+        );
+      case LevelTier.silver:
+        return const LinearGradient(
+          colors: [Color(0xFFC0C0C0), Color(0xFF808080)],
+        );
+      case LevelTier.gold:
+        return const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
+        );
+      case LevelTier.platinum:
+        return const LinearGradient(
+          colors: [Color(0xFFE5E4E2), Color(0xFF8C8C8C)],
+        );
+      case LevelTier.diamond:
+        return const LinearGradient(
+          colors: [Color(0xFF00CED1), Color(0xFF20B2AA)],
+        );
+      case LevelTier.master:
+        return const LinearGradient(
+          colors: [Color(0xFF9400D3), Color(0xFF4B0082)],
+        );
+    }
+  }
+
+  static LinearGradient diagonalGradient(LevelTier tier) {
+    final base = gradient(tier);
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: base.colors,
+    );
+  }
+}
 
 /// Compact level badge for header display
 class LevelBadge extends ConsumerWidget {
@@ -26,11 +84,11 @@ class LevelBadge extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              gradient: _getTierGradient(tier),
+              gradient: _TierPalette.gradient(tier),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: _getTierColor(tier).withValues(alpha: 0.3),
+                  color: _TierPalette.color(tier).withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -60,51 +118,6 @@ class LevelBadge extends ConsumerWidget {
     );
   }
 
-  LinearGradient _getTierGradient(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const LinearGradient(
-          colors: [Color(0xFFCD7F32), Color(0xFFA0522D)],
-        );
-      case LevelTier.silver:
-        return const LinearGradient(
-          colors: [Color(0xFFC0C0C0), Color(0xFF808080)],
-        );
-      case LevelTier.gold:
-        return const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
-        );
-      case LevelTier.platinum:
-        return const LinearGradient(
-          colors: [Color(0xFFE5E4E2), Color(0xFF8C8C8C)],
-        );
-      case LevelTier.diamond:
-        return const LinearGradient(
-          colors: [Color(0xFF00CED1), Color(0xFF20B2AA)],
-        );
-      case LevelTier.master:
-        return const LinearGradient(
-          colors: [Color(0xFF9400D3), Color(0xFF4B0082)],
-        );
-    }
-  }
-
-  Color _getTierColor(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const Color(0xFFCD7F32);
-      case LevelTier.silver:
-        return const Color(0xFFC0C0C0);
-      case LevelTier.gold:
-        return const Color(0xFFFFD700);
-      case LevelTier.platinum:
-        return const Color(0xFFE5E4E2);
-      case LevelTier.diamond:
-        return const Color(0xFF00CED1);
-      case LevelTier.master:
-        return const Color(0xFF9400D3);
-    }
-  }
 }
 
 /// Full XP progress card for profile/sidebar
@@ -155,7 +168,7 @@ class XpProgressCard extends ConsumerWidget {
                           Text(
                             tier.displayName,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: _getTierColor(tier),
+                              color: _TierPalette.color(tier),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -189,7 +202,7 @@ class XpProgressCard extends ConsumerWidget {
                     value: summary.progressToNextLevel,
                     minHeight: 8,
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation(_getTierColor(tier)),
+                    valueColor: AlwaysStoppedAnimation(_TierPalette.color(tier)),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -221,23 +234,6 @@ class XpProgressCard extends ConsumerWidget {
       },
     );
   }
-
-  Color _getTierColor(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const Color(0xFFCD7F32);
-      case LevelTier.silver:
-        return const Color(0xFFC0C0C0);
-      case LevelTier.gold:
-        return const Color(0xFFFFD700);
-      case LevelTier.platinum:
-        return const Color(0xFFE5E4E2);
-      case LevelTier.diamond:
-        return const Color(0xFF00CED1);
-      case LevelTier.master:
-        return const Color(0xFF9400D3);
-    }
-  }
 }
 
 class _LevelIcon extends StatelessWidget {
@@ -252,11 +248,11 @@ class _LevelIcon extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        gradient: _getTierGradient(tier),
+        gradient: _TierPalette.diagonalGradient(tier),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: _getTierColor(tier).withValues(alpha: 0.4),
+            color: _TierPalette.color(tier).withValues(alpha: 0.4),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -274,64 +270,6 @@ class _LevelIcon extends StatelessWidget {
       ),
     );
   }
-
-  LinearGradient _getTierGradient(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFCD7F32), Color(0xFFA0522D)],
-        );
-      case LevelTier.silver:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFC0C0C0), Color(0xFF808080)],
-        );
-      case LevelTier.gold:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
-        );
-      case LevelTier.platinum:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE5E4E2), Color(0xFF8C8C8C)],
-        );
-      case LevelTier.diamond:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF00CED1), Color(0xFF20B2AA)],
-        );
-      case LevelTier.master:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF9400D3), Color(0xFF4B0082)],
-        );
-    }
-  }
-
-  Color _getTierColor(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const Color(0xFFCD7F32);
-      case LevelTier.silver:
-        return const Color(0xFFC0C0C0);
-      case LevelTier.gold:
-        return const Color(0xFFFFD700);
-      case LevelTier.platinum:
-        return const Color(0xFFE5E4E2);
-      case LevelTier.diamond:
-        return const Color(0xFF00CED1);
-      case LevelTier.master:
-        return const Color(0xFF9400D3);
-    }
-  }
 }
 
 class _StatColumn extends StatelessWidget {
@@ -347,13 +285,14 @@ class _StatColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = theme.extension<SemanticColors>();
     return Column(
       children: [
         Text(
           value,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.green,
+            color: semantic?.success ?? theme.colorScheme.primary,
           ),
         ),
         const SizedBox(height: 2),
@@ -462,11 +401,16 @@ class _XpGainPopupState extends State<XpGainPopup>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.green.shade600,
+              color: Theme.of(context)
+                  .extension<SemanticColors>()!
+                  .success,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withValues(alpha: 0.4),
+                  color: Theme.of(context)
+                      .extension<SemanticColors>()!
+                      .success
+                      .withValues(alpha: 0.4),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -525,11 +469,11 @@ class LevelUpDialog extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: _getTierGradient(tier),
+              gradient: _TierPalette.gradient(tier),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: _getTierColor(tier).withValues(alpha: 0.5),
+                  color: _TierPalette.color(tier).withValues(alpha: 0.5),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -562,7 +506,7 @@ class LevelUpDialog extends StatelessWidget {
           Text(
             tier.displayName,
             style: theme.textTheme.titleMedium?.copyWith(
-              color: _getTierColor(tier),
+              color: _TierPalette.color(tier),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -574,51 +518,5 @@ class LevelUpDialog extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  LinearGradient _getTierGradient(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const LinearGradient(
-          colors: [Color(0xFFCD7F32), Color(0xFFA0522D)],
-        );
-      case LevelTier.silver:
-        return const LinearGradient(
-          colors: [Color(0xFFC0C0C0), Color(0xFF808080)],
-        );
-      case LevelTier.gold:
-        return const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
-        );
-      case LevelTier.platinum:
-        return const LinearGradient(
-          colors: [Color(0xFFE5E4E2), Color(0xFF8C8C8C)],
-        );
-      case LevelTier.diamond:
-        return const LinearGradient(
-          colors: [Color(0xFF00CED1), Color(0xFF20B2AA)],
-        );
-      case LevelTier.master:
-        return const LinearGradient(
-          colors: [Color(0xFF9400D3), Color(0xFF4B0082)],
-        );
-    }
-  }
-
-  Color _getTierColor(LevelTier tier) {
-    switch (tier) {
-      case LevelTier.bronze:
-        return const Color(0xFFCD7F32);
-      case LevelTier.silver:
-        return const Color(0xFFC0C0C0);
-      case LevelTier.gold:
-        return const Color(0xFFFFD700);
-      case LevelTier.platinum:
-        return const Color(0xFFE5E4E2);
-      case LevelTier.diamond:
-        return const Color(0xFF00CED1);
-      case LevelTier.master:
-        return const Color(0xFF9400D3);
-    }
   }
 }

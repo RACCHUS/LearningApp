@@ -93,6 +93,11 @@ class DesignTokens {
     return tagColors[tag.toLowerCase()] ?? const Color(0xFF4FC3F7);
   }
 
+  /// Pick a readable text/icon color for a given background.
+  static Color readableOn(Color background) {
+    return background.computeLuminance() > 0.45 ? Colors.black87 : Colors.white;
+  }
+
   // ============== HELPER METHODS ==============
   
   /// Get responsive horizontal padding based on screen width

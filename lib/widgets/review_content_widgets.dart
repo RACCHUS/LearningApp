@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 
 /// Factory for creating content-type-specific review widgets
 /// 
@@ -93,6 +94,7 @@ class FlashcardReviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -376,8 +378,8 @@ class _TrueFalseReviewWidgetState extends State<TrueFalseReviewWidget> {
                           : Icons.cancel,
                       size: 48,
                       color: _selectedAnswer == _correctAnswer 
-                          ? Colors.green 
-                          : Colors.red,
+                        ? semantic.success
+                        : semantic.danger,
                     ),
                     Text(
                       _selectedAnswer == _correctAnswer 
@@ -399,7 +401,8 @@ class _TrueFalseReviewWidgetState extends State<TrueFalseReviewWidget> {
                 child: _TrueFalseButton(
                   label: 'True',
                   icon: Icons.check,
-                  color: Colors.green,
+                  color: semantic.success,
+                  foregroundColor: semantic.onSuccess,
                   onPressed: () => _submit(true),
                 ),
               ),
@@ -408,7 +411,8 @@ class _TrueFalseReviewWidgetState extends State<TrueFalseReviewWidget> {
                 child: _TrueFalseButton(
                   label: 'False',
                   icon: Icons.close,
-                  color: Colors.red,
+                  color: semantic.danger,
+                  foregroundColor: semantic.onDanger,
                   onPressed: () => _submit(false),
                 ),
               ),
@@ -423,12 +427,14 @@ class _TrueFalseButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final Color foregroundColor;
   final VoidCallback onPressed;
 
   const _TrueFalseButton({
     required this.label,
     required this.icon,
     required this.color,
+    required this.foregroundColor,
     required this.onPressed,
   });
 
@@ -442,6 +448,7 @@ class _TrueFalseButton extends StatelessWidget {
         label: Text(label),
         style: FilledButton.styleFrom(
           backgroundColor: color,
+          foregroundColor: foregroundColor,
         ),
       ),
     );
@@ -505,6 +512,7 @@ class _FillInBlankReviewWidgetState extends State<FillInBlankReviewWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -543,7 +551,7 @@ class _FillInBlankReviewWidgetState extends State<FillInBlankReviewWidget> {
                     Icon(
                       _isCorrect! ? Icons.check_circle : Icons.cancel,
                       size: 48,
-                      color: _isCorrect! ? Colors.green : Colors.red,
+                      color: _isCorrect! ? semantic.success : semantic.danger,
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -585,6 +593,7 @@ class ConceptReviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
 
     return Column(
       children: [
@@ -811,8 +820,8 @@ class _MatchingReviewWidgetState extends State<MatchingReviewWidget> {
             '$_correctCount/${_pairs.length} correct',
             style: theme.textTheme.titleMedium?.copyWith(
               color: _correctCount == _pairs.length 
-                  ? Colors.green 
-                  : Colors.orange,
+                  ? semantic.success
+                  : semantic.warning,
             ),
           ),
         if (!_submitted)
@@ -833,6 +842,7 @@ class _QualityButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic = theme.extension<SemanticColors>()!;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -848,25 +858,29 @@ class _QualityButtons extends StatelessWidget {
               _QualityButton(
                 quality: RecallQuality.blackout,
                 label: 'Forgot',
-                color: Colors.red,
+                color: semantic.danger,
+                foregroundColor: semantic.onDanger,
                 onTap: () => onQualitySelected(RecallQuality.blackout),
               ),
               _QualityButton(
                 quality: RecallQuality.difficult,
                 label: 'Hard',
-                color: Colors.orange,
+                color: semantic.warning,
+                foregroundColor: semantic.onWarning,
                 onTap: () => onQualitySelected(RecallQuality.difficult),
               ),
               _QualityButton(
                 quality: RecallQuality.good,
                 label: 'Good',
-                color: Colors.lightGreen,
+                color: semantic.info,
+                foregroundColor: semantic.onInfo,
                 onTap: () => onQualitySelected(RecallQuality.good),
               ),
               _QualityButton(
                 quality: RecallQuality.perfect,
                 label: 'Easy',
-                color: Colors.green,
+                color: semantic.success,
+                foregroundColor: semantic.onSuccess,
                 onTap: () => onQualitySelected(RecallQuality.perfect),
               ),
             ],
@@ -881,12 +895,14 @@ class _QualityButton extends StatelessWidget {
   final RecallQuality quality;
   final String label;
   final Color color;
+  final Color foregroundColor;
   final VoidCallback onTap;
 
   const _QualityButton({
     required this.quality,
     required this.label,
     required this.color,
+    required this.foregroundColor,
     required this.onTap,
   });
 
@@ -899,6 +915,7 @@ class _QualityButton extends StatelessWidget {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             backgroundColor: color,
+            foregroundColor: foregroundColor,
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
           child: Text(

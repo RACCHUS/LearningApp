@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 
 class AppTheme {
   // ============== DARK THEME COLORS ==============
@@ -27,6 +28,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      extensions: const <ThemeExtension<dynamic>>[
+        SemanticColors.light,
+      ],
       textTheme: _buildTextTheme(ThemeData.light().textTheme),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
@@ -99,6 +103,9 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      extensions: const <ThemeExtension<dynamic>>[
+        SemanticColors.dark,
+      ],
       scaffoldBackgroundColor: _darkSurface,
       textTheme: _buildTextTheme(ThemeData.dark().textTheme),
       appBarTheme: AppBarTheme(
