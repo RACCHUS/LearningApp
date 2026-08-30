@@ -1,49 +1,51 @@
-import 'dart:js_util' as js_util;
-import 'dart:html' as html;
+import 'dart:js_interop';
 
-Object? _pwaApi() {
-  if (!js_util.hasProperty(html.window, 'learningPwa')) return null;
-  return js_util.getProperty(html.window, 'learningPwa');
+@JS('learningPwa')
+external _LearningPwaApi? get _learningPwa;
+
+extension type _LearningPwaApi(JSObject _) implements JSObject {
+  external JSBoolean canInstall();
+  external JSPromise<JSBoolean> promptInstall();
+  external void dismiss();
+  external void resetDismissed();
 }
 
 Future<bool> canInstallPwa() async {
-  final api = _pwaApi();
+  final api = _learningPwa;
   if (api == null) return false;
   try {
-    return js_util.callMethod<bool>(api, 'canInstall', const []) ?? false;
+    return api.canInstall().toDart;
   } catch (_) {
     return false;
   }
 }
 
 Future<bool> promptPwaInstall() async {
-  final api = _pwaApi();
+  final api = _learningPwa;
   if (api == null) return false;
   try {
-    final result = js_util.callMethod<Object?>(api, 'promptInstall', const []);
-    if (result == null) return false;
-    final resolved = await js_util.promiseToFuture<Object?>(result);
-    return resolved == true;
+    final result = await api.promptInstall().toDart;
+    return result.toDart;
   } catch (_) {
     return false;
   }
 }
 
 Future<void> dismissPwaInstallPrompt() async {
-  final api = _pwaApi();
+  final api = _learningPwa;
   if (api == null) return;
   try {
-    js_util.callMethod<void>(api, 'dismiss', const []);
+    api.dismiss();
   } catch (_) {
     // Best-effort only.
   }
 }
 
 Future<void> resetPwaInstallPromptPreference() async {
-  final api = _pwaApi();
+  final api = _learningPwa;
   if (api == null) return;
   try {
-    js_util.callMethod<void>(api, 'resetDismissed', const []);
+    api.resetDismissed();
   } catch (_) {
     // Best-effort only.
   }

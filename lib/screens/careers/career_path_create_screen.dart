@@ -148,14 +148,13 @@ class _CareerPathCreateScreenState
                                 return CheckboxListTile(
                                   value: isSelected,
                                   title: Text(course.title),
-                                  subtitle:
-                                      (course.description ?? '').isNotEmpty
-                                          ? Text(
-                                              course.description!,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            )
-                                          : null,
+                                  subtitle: course.description.isNotEmpty
+                                      ? Text(
+                                          course.description,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
+                                      : null,
                                   controlAffinity:
                                       ListTileControlAffinity.leading,
                                   onChanged: (value) {
