@@ -289,7 +289,7 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
         lesson = await _lessonService.addLesson(
           state.title,
           state.description,
-          _userId!,
+          _userId,
           tags: state.tags,
         );
 
