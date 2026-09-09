@@ -1,0 +1,70 @@
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class AudioLessonSettingsAdapter extends TypeAdapter<AudioLessonSettings> {
+  @override
+  final int typeId = 21;
+
+  @override
+  AudioLessonSettings read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return AudioLessonSettings(
+      handsFreeModeEnabled: fields[0] as bool,
+      autoProgressDelay: fields[1] as Duration,
+      voiceInputTimeout: fields[2] as Duration,
+      autoReadAllContent: fields[3] as bool,
+      voiceNavigationEnabled: fields[4] as bool,
+      confirmationsEnabled: fields[5] as bool,
+      pauseBetweenItems: fields[6] as double,
+      autoProgressAfterReading: fields[7] as bool,
+      immediateAnswerProgression: fields[8] as bool,
+      voiceRetryAttempts: fields[9] as int,
+      interruptOnNextCommand: fields[10] as bool,
+      voiceLocale: fields[11] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, AudioLessonSettings obj) {
+    writer
+      ..writeByte(12)
+      ..writeByte(0)
+      ..write(obj.handsFreeModeEnabled)
+      ..writeByte(1)
+      ..write(obj.autoProgressDelay)
+      ..writeByte(2)
+      ..write(obj.voiceInputTimeout)
+      ..writeByte(3)
+      ..write(obj.autoReadAllContent)
+      ..writeByte(4)
+      ..write(obj.voiceNavigationEnabled)
+      ..writeByte(5)
+      ..write(obj.confirmationsEnabled)
+      ..writeByte(6)
+      ..write(obj.pauseBetweenItems)
+      ..writeByte(7)
+      ..write(obj.autoProgressAfterReading)
+      ..writeByte(8)
+      ..write(obj.immediateAnswerProgression)
+      ..writeByte(9)
+      ..write(obj.voiceRetryAttempts)
+      ..writeByte(10)
+      ..write(obj.interruptOnNextCommand)
+      ..writeByte(11)
+      ..write(obj.voiceLocale);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioLessonSettingsAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

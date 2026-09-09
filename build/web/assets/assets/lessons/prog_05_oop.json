@@ -1,0 +1,106 @@
+{
+  "title": "Object-Oriented Programming Basics",
+  "description": "Understand classes, objects, inheritance, and encapsulation — the core of OOP.",
+  "tags": ["programming", "beginner", "fundamentals", "oop"],
+  "concepts": [
+    {
+      "id": "prog05_c1",
+      "emoji": "🌍",
+      "concept_text": "Objects Model the Real World",
+      "example_text": "Object-Oriented Programming organizes code around 'objects' that model real things. A Dog object has properties (name, breed, age) and behaviors (bark, fetch, sit). Instead of scattered variables and functions, OOP bundles related data and logic together into a single unit."
+    },
+    {
+      "id": "prog05_c2",
+      "emoji": "🏗️",
+      "concept_text": "Classes vs Objects",
+      "example_text": "A class is a blueprint; an object is a thing built from that blueprint. The class 'Car' defines that cars have a color and can drive. The object 'myCar' is a specific red car. You can create many objects from one class — like building many houses from the same floor plan."
+    },
+    {
+      "id": "prog05_c3",
+      "emoji": "🏛️",
+      "concept_text": "The Four Pillars of OOP",
+      "example_text": "1) Encapsulation — bundling data and methods together, hiding internal details. 2) Inheritance — creating new classes based on existing ones. 3) Polymorphism — different classes responding to the same method differently. 4) Abstraction — simplifying complex systems by exposing only what's needed."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog05_t1",
+      "emoji": "📐",
+      "term": "Class",
+      "definition": "A blueprint or template that defines the properties (data) and methods (behavior) that objects of that type will have.",
+      "example": "class Dog {\n  String name;\n  int age;\n  Dog(this.name, this.age);\n  void bark() => print('Woof!');\n}"
+    },
+    {
+      "id": "prog05_t2",
+      "emoji": "🎯",
+      "term": "Object (Instance)",
+      "definition": "A specific thing created from a class. It has actual values for the properties defined in the class.",
+      "example": "var myDog = Dog('Rex', 3);\nprint(myDog.name); // 'Rex'\nmyDog.bark(); // 'Woof!'"
+    },
+    {
+      "id": "prog05_t3",
+      "emoji": "🏗️",
+      "term": "Constructor",
+      "definition": "A special method that runs when a new object is created. It initializes the object's properties with starting values.",
+      "example": "class User {\n  String name;\n  User(this.name); // constructor\n}\nvar user = User('Alice');"
+    },
+    {
+      "id": "prog05_t4",
+      "emoji": "🧬",
+      "term": "Inheritance",
+      "definition": "A mechanism where a new class (child) inherits properties and methods from an existing class (parent). Promotes code reuse.",
+      "example": "class Animal {\n  void eat() => print('Eating');\n}\nclass Cat extends Animal {\n  void meow() => print('Meow');\n}\n// Cat can eat() AND meow()"
+    },
+    {
+      "id": "prog05_t5",
+      "emoji": "🔒",
+      "term": "Encapsulation",
+      "definition": "Hiding an object's internal data and only exposing it through controlled methods (getters/setters). Protects data integrity.",
+      "example": "class BankAccount {\n  double _balance = 0; // private\n  double get balance => _balance;\n  void deposit(double amt) {\n    if (amt > 0) _balance += amt;\n  }\n}"
+    },
+    {
+      "id": "prog05_t6",
+      "emoji": "⚙️",
+      "term": "Method",
+      "definition": "A function that belongs to a class. It defines what objects of that class can do.",
+      "example": "class Calculator {\n  int add(int a, int b) => a + b;\n  int multiply(int a, int b) => a * b;\n}"
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog05_q1",
+      "question": "What is the relationship between a class and an object?",
+      "options": ["They are the same thing", "A class is an instance of an object", "An object is an instance of a class", "A class is a type of function"],
+      "correct_answer": 2,
+      "explanation": "A class is a blueprint that defines properties and methods. An object is a specific instance created from that blueprint with actual values."
+    },
+    {
+      "id": "prog05_q2",
+      "question": "What does a constructor do?",
+      "options": ["Deletes an object", "Copies an object", "Initializes a new object with starting values", "Returns the class name"],
+      "correct_answer": 2,
+      "explanation": "A constructor is a special method that runs automatically when you create a new object. It sets up the object's initial state."
+    },
+    {
+      "id": "prog05_q3",
+      "question": "What is inheritance in OOP?",
+      "options": ["Copying code between files", "A child class gaining properties/methods from a parent class", "Two objects sharing the same variable", "Deleting unused classes"],
+      "correct_answer": 1,
+      "explanation": "Inheritance lets a new class extend an existing class, automatically gaining its properties and methods while adding its own."
+    },
+    {
+      "id": "prog05_q4",
+      "question": "Why is encapsulation important?",
+      "options": ["It makes code run faster", "It protects data from invalid changes", "It eliminates bugs completely", "It replaces functions with classes"],
+      "correct_answer": 1,
+      "explanation": "Encapsulation hides internal data behind controlled methods. A BankAccount can prevent negative deposits by validating inside the deposit() method."
+    },
+    {
+      "id": "prog05_q5",
+      "question": "In 'class Cat extends Animal', what is Cat?",
+      "options": ["The parent class", "The child (subclass)", "An object", "A method"],
+      "correct_answer": 1,
+      "explanation": "Cat is the child class (subclass) that extends (inherits from) Animal, the parent class. Cat gets all of Animal's properties and methods."
+    }
+  ]
+}

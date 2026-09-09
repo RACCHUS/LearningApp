@@ -1,0 +1,166 @@
+{
+  "id": "a7f3c2e1-9b4d-4e6a-8c12-3f5d7e9a1b20",
+  "title": "Recursion",
+  "description": "Understand how a function can solve a problem by calling itself. Learn base cases, the call stack, and when recursion beats a loop.",
+  "tags": ["programming", "intermediate", "recursion", "algorithms"],
+  "difficulty": "intermediate",
+  "concepts": [
+    {
+      "id": "prog06_c1",
+      "emoji": "🔁",
+      "concept_text": "What Recursion Is",
+      "example_text": "Recursion is when a function solves a problem by calling itself on a smaller version of that same problem. Each call peels off one piece of the work and hands the rest to another copy of the function. A classic example is computing a factorial: factorial(5) is just 5 × factorial(4), which is 5 × 4 × factorial(3), and so on. The function keeps deferring work to smaller calls until the problem is trivial enough to answer directly."
+    },
+    {
+      "id": "prog06_c2",
+      "emoji": "🛑",
+      "concept_text": "The Base Case Stops the Recursion",
+      "example_text": "Every recursive function needs a base case — a condition that returns an answer without recursing further. The base case is what prevents infinite recursion. For factorial, the base case is factorial(0) = 1: once you reach 0 you stop calling yourself and start returning values back up. Without a base case, the function would call itself forever and crash with a stack overflow."
+    },
+    {
+      "id": "prog06_c3",
+      "emoji": "📚",
+      "concept_text": "The Call Stack",
+      "example_text": "Each time a function calls itself, the computer pushes a new frame onto the call stack to remember where it was. The recursive calls stack up until the base case is hit, then they unwind one by one as each call returns its result to the caller below it. This is why deep recursion can run out of memory: every pending call occupies a stack frame until it finishes. Understanding the stack explains both how recursion produces its answer and why it has a depth limit."
+    },
+    {
+      "id": "prog06_c4",
+      "emoji": "⚖️",
+      "concept_text": "Recursion vs. Iteration",
+      "example_text": "Any recursive solution can also be written with a loop, and vice versa, but each style fits different problems. Recursion shines on naturally nested or branching data like trees, file systems, and divide-and-conquer algorithms, where it reads cleanly. Iteration is usually more memory-efficient because it does not add stack frames. A good rule of thumb: use recursion when the problem is defined in terms of smaller copies of itself, and a loop when you are simply repeating a step a fixed number of times."
+    },
+    {
+      "id": "prog06_c5",
+      "emoji": "🌳",
+      "concept_text": "Recursion on Branching Data",
+      "example_text": "Recursion is especially powerful when a problem splits into multiple sub-problems. Traversing a binary tree, for example, means visiting the left subtree and the right subtree — each of which is itself a smaller tree handled by the same function. This is called tree recursion because each call can spawn more than one further call. Algorithms like merge sort and quicksort use the same divide-and-conquer idea: split the input, solve each half recursively, then combine the results."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog06_t1",
+      "emoji": "🔁",
+      "term": "Recursion",
+      "definition": "A technique where a function calls itself to solve smaller instances of the same problem.",
+      "example": "int factorial(int n) => n == 0 ? 1 : n * factorial(n - 1);"
+    },
+    {
+      "id": "prog06_t2",
+      "emoji": "🛑",
+      "term": "Base Case",
+      "definition": "The condition under which a recursive function returns a value directly instead of calling itself, stopping the recursion.",
+      "example": "if (n == 0) return 1; // base case for factorial"
+    },
+    {
+      "id": "prog06_t3",
+      "emoji": "➡️",
+      "term": "Recursive Case",
+      "definition": "The part of a recursive function that calls itself with a smaller or simpler input, moving toward the base case.",
+      "example": "return n * factorial(n - 1); // recursive case"
+    },
+    {
+      "id": "prog06_t4",
+      "emoji": "📚",
+      "term": "Call Stack",
+      "definition": "The region of memory that tracks active function calls, pushing a frame for each call and popping it when the call returns.",
+      "example": "factorial(3) → factorial(2) → factorial(1) → factorial(0) all sit on the stack at once."
+    },
+    {
+      "id": "prog06_t5",
+      "emoji": "💥",
+      "term": "Stack Overflow",
+      "definition": "An error that occurs when recursion goes too deep (often due to a missing or unreachable base case) and exhausts the call stack.",
+      "example": "void loop() => loop(); // no base case → stack overflow"
+    },
+    {
+      "id": "prog06_t6",
+      "emoji": "🎯",
+      "term": "Tail Recursion",
+      "definition": "A recursive call that is the very last operation in a function, allowing some languages to optimize it into a loop without growing the stack.",
+      "example": "int sum(int n, int acc) => n == 0 ? acc : sum(n - 1, acc + n);"
+    },
+    {
+      "id": "prog06_t7",
+      "emoji": "🌳",
+      "term": "Tree Recursion",
+      "definition": "Recursion in which a single call makes two or more recursive calls, branching like a tree.",
+      "example": "int fib(int n) => n < 2 ? n : fib(n - 1) + fib(n - 2);"
+    },
+    {
+      "id": "prog06_t8",
+      "emoji": "✂️",
+      "term": "Divide and Conquer",
+      "definition": "A problem-solving strategy that splits a problem into smaller sub-problems, solves each recursively, and combines the results.",
+      "example": "Merge sort splits an array in half, sorts each half, then merges them."
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog06_q1",
+      "question": "What is the purpose of a base case in a recursive function?",
+      "options": [
+        "To make the function run faster",
+        "To stop the recursion by returning a value without calling itself",
+        "To call the function with a larger input",
+        "To allocate more memory on the stack"
+      ],
+      "correct_answer": 1,
+      "explanation": "The base case returns a result directly, ending the chain of calls. 'Faster' is unrelated; calling with a larger input would move away from the base case; and the base case reduces stack usage rather than allocating more."
+    },
+    {
+      "id": "prog06_q2",
+      "question": "What happens if a recursive function never reaches its base case?",
+      "options": [
+        "It returns null",
+        "It runs once and stops",
+        "It causes a stack overflow",
+        "It automatically converts to a loop"
+      ],
+      "correct_answer": 2,
+      "explanation": "Without reaching a base case the function keeps pushing new frames until the call stack is exhausted, causing a stack overflow. It does not return null, stop on its own, or convert to a loop."
+    },
+    {
+      "id": "prog06_q3",
+      "question": "In factorial(4) = 4 * factorial(3), which part is the recursive case?",
+      "options": [
+        "The number 4",
+        "The multiplication operator",
+        "The call to factorial(3)",
+        "The equals sign"
+      ],
+      "correct_answer": 2,
+      "explanation": "The recursive case is the part where the function calls itself on a smaller input — factorial(3). The other options are just pieces of the expression, not the recursive call."
+    },
+    {
+      "id": "prog06_q4",
+      "question": "Which data structure does the computer use to keep track of active recursive calls?",
+      "options": ["A queue", "The call stack", "A hash map", "A linked list"],
+      "correct_answer": 1,
+      "explanation": "Function calls are tracked on the call stack, which pushes a frame per call and pops it on return. A queue is first-in-first-out, and hash maps and linked lists are not used to manage call frames."
+    },
+    {
+      "id": "prog06_q5",
+      "question": "When is recursion typically the most natural choice over a simple loop?",
+      "options": [
+        "When repeating a step a fixed number of times",
+        "When the problem is defined in terms of smaller copies of itself, like traversing a tree",
+        "When you want to use the least possible memory",
+        "When the input is always a single number"
+      ],
+      "correct_answer": 1,
+      "explanation": "Recursion fits problems that break into smaller versions of themselves, such as tree traversal or divide-and-conquer. A fixed repetition suits a loop, iteration usually uses less memory, and a single number does not inherently call for recursion."
+    },
+    {
+      "id": "prog06_q6",
+      "question": "What makes a recursive call 'tail recursive'?",
+      "options": [
+        "It has no base case",
+        "The recursive call is the last operation performed in the function",
+        "It calls itself twice",
+        "It uses a global variable"
+      ],
+      "correct_answer": 1,
+      "explanation": "Tail recursion means the recursive call is the final action, so no further work happens after it returns — letting some compilers optimize away the extra stack frame. Calling twice is tree recursion, a missing base case is a bug, and using a global variable is unrelated."
+    }
+  ]
+}

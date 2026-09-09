@@ -1,0 +1,29 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+AudioSettings _$AudioSettingsFromJson(Map<String, dynamic> json) =>
+    AudioSettings(
+      isEnabled: json['isEnabled'] as bool? ?? true,
+      speechRate: (json['speechRate'] as num?)?.toDouble() ?? 1.0,
+      volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
+      pitch: (json['pitch'] as num?)?.toDouble() ?? 1.0,
+      preferredVoice: json['preferredVoice'] as String?,
+      autoPlay: json['autoPlay'] as bool? ?? false,
+      autoReadQuestions: json['autoReadQuestions'] as bool? ?? false,
+      autoReadAnswers: json['autoReadAnswers'] as bool? ?? false,
+      language: json['language'] as String? ?? 'en-US',
+    );
+
+Map<String, dynamic> _$AudioSettingsToJson(AudioSettings instance) =>
+    <String, dynamic>{
+      'isEnabled': instance.isEnabled,
+      'speechRate': instance.speechRate,
+      'volume': instance.volume,
+      'pitch': instance.pitch,
+      'preferredVoice': instance.preferredVoice,
+      'autoPlay': instance.autoPlay,
+      'autoReadQuestions': instance.autoReadQuestions,
+      'autoReadAnswers': instance.autoReadAnswers,
+      'language': instance.language,
+    };

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1976d2">
+  <meta name="permissions" content="microphone">
+  
+  <!-- Safari-specific PWA meta tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Learning PWA">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-192.png">
+  
+  <!-- Safari-specific viewport and compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  
+  <title>Learning PWA</title>
+  <script>
+    // Enhanced feature detection for speech recognition capabilities with Safari support
+    window.speechSupport = {
+      hasWebSpeech: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
+      hasGetUserMedia: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
+      browserType: (function() {
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('edg/') || ua.includes('edge/')) return 'edge';
+        if (ua.includes('chrome/') && !ua.includes('edg/')) return 'chrome';
+        if (ua.includes('firefox/')) return 'firefox';
+        if (ua.includes('safari/') && !ua.includes('chrome/')) return 'safari';
+        return 'other';
+      })(),
+      // Safari-specific detection
+      isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+      safariVersion: (function() {
+        const match = navigator.userAgent.match(/Version\/(\d+\.\d+)/);
+        return match ? match[1] : '';
+      })(),
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+      isPrivateBrowsing: (function() {
+        try {
+          localStorage.setItem('__safari_test__', 'test');
+          localStorage.removeItem('__safari_test__');
+          return false;
+        } catch (e) {
+          return true; // Likely private browsing mode
+        }
+      })(),
+      isPWA: window.matchMedia('(display-mode: standalone)').matches,
+      timestamp: Date.now()
+    };
+    
+    // Safari-specific optimizations
+    if (window.speechSupport.isSafari) {
+      console.log('🍎 Safari detected - version:', window.speechSupport.safariVersion);
+      console.log('🍎 Safari mobile:', window.speechSupport.isMobile);
+      console.log('🍎 Safari private browsing:', window.speechSupport.isPrivateBrowsing);
+      
+      // Safari-specific speech recognition check
+      window.speechSupport.safariSpeechSupported = (function() {
+        const version = parseFloat(window.speechSupport.safariVersion);
+        return version >= 16.4; // Safari 16.4+ has improved speech recognition
+      })();
+      
+      console.log('🍎 Safari speech recognition supported:', window.speechSupport.safariSpeechSupported);
+    }
+    
+    // Log feature detection results
+    console.log('🌐 Browser Speech Support:', window.speechSupport);
+    
+    // Safari-compatible service worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/flutter_service_worker.js')
+          .then(function(registration) {
+            console.log('🔧 Service Worker registered successfully');
+          })
+          .catch(function(error) {
+            console.log('🔧 Service Worker registration failed:', error);
+            if (window.speechSupport.isSafari) {
+              console.log('🍎 Safari may have service worker restrictions');
+            }
+          });
+      });
+    }
+    
+    // Safari-specific audio context handling
+    if (window.speechSupport.isSafari) {
+      window.safariAudioContextReady = false;
+      
+      // Function to initialize audio context with user gesture
+      window.initSafariAudioContext = function() {
+        if (!window.safariAudioContextReady) {
+          try {
+            // Create a dummy audio context to trigger permission
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+              audioContext.resume().then(() => {
+                window.safariAudioContextReady = true;
+                console.log('🍎 Safari audio context initialized');
+              });
+            } else {
+              window.safariAudioContextReady = true;
+            }
+          } catch (e) {
+            console.log('🍎 Safari audio context initialization failed:', e);
+          }
+        }
+      };
+    }
+
+    // ---------------------------------------------------------------------
+    // PWA install prompt API (controlled by app settings UI).
+    // We intentionally do NOT auto-show a sticky install button.
+    // ---------------------------------------------------------------------
+    (function () {
+      let deferredInstallPrompt = null;
+      const DISMISS_KEY = 'learningPwaInstallDismissed';
+
+      function isDismissed() {
+        try {
+          return window.localStorage.getItem(DISMISS_KEY) === '1';
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function setDismissed(value) {
+        try {
+          if (value) {
+            window.localStorage.setItem(DISMISS_KEY, '1');
+          } else {
+            window.localStorage.removeItem(DISMISS_KEY);
+          }
+        } catch (e) {}
+      }
+
+      window.learningPwa = {
+        canInstall: function () {
+          return !!deferredInstallPrompt && !isDismissed();
+        },
+        promptInstall: async function () {
+          if (!deferredInstallPrompt || isDismissed()) return false;
+          deferredInstallPrompt.prompt();
+          try {
+            const choice = await deferredInstallPrompt.userChoice;
+            const accepted = choice && choice.outcome === 'accepted';
+            if (accepted) {
+              deferredInstallPrompt = null;
+            }
+            return !!accepted;
+          } catch (e) {
+            return false;
+          }
+        },
+        dismiss: function () {
+          setDismissed(true);
+        },
+        resetDismissed: function () {
+          setDismissed(false);
+        }
+      };
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+      });
+
+      window.addEventListener('appinstalled', function () {
+        deferredInstallPrompt = null;
+        setDismissed(true);
+      });
+    })();
+
+    // ---------------------------------------------------------------------
+    // Lightweight offline/online banner so users know when data may be stale.
+    // ---------------------------------------------------------------------
+    (function () {
+      function ensureBanner() {
+        let banner = document.getElementById('offline-banner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'offline-banner';
+          banner.setAttribute('role', 'status');
+          banner.textContent = 'You are offline — changes will sync when reconnected.';
+          banner.style.cssText = [
+            'position:fixed', 'left:0', 'right:0', 'top:0', 'z-index:9999',
+            'padding:8px 12px', 'text-align:center',
+            'background:#b00020', 'color:#fff',
+            'font:600 13px system-ui,sans-serif', 'display:none'
+          ].join(';');
+          document.body.appendChild(banner);
+        }
+        return banner;
+      }
+      function updateOnlineStatus() {
+        const banner = ensureBanner();
+        banner.style.display = navigator.onLine ? 'none' : 'block';
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      window.addEventListener('load', updateOnlineStatus);
+    })();
+  </script>
+</head>
+<body>
+  <script src="main.dart.js" type="application/javascript"></script>
+</body>
+</html>

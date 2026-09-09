@@ -1,0 +1,99 @@
+{
+  "title": "Functions & Methods",
+  "description": "Learn how to organize code into reusable, named blocks that take inputs and produce outputs.",
+  "tags": ["programming", "beginner", "fundamentals", "functions"],
+  "concepts": [
+    {
+      "id": "prog03_c1",
+      "emoji": "🧩",
+      "concept_text": "Why Functions Exist",
+      "example_text": "Without functions, you'd copy-paste the same code everywhere it's needed. Functions let you write code once, name it, and call it whenever needed. They make code shorter, more readable, and easier to fix — change it in one place and it's fixed everywhere."
+    },
+    {
+      "id": "prog03_c2",
+      "emoji": "🎯",
+      "concept_text": "Parameters vs Arguments",
+      "example_text": "Parameters are the variable names in the function definition: void greet(String name). Arguments are the actual values you pass when calling: greet('Alice'). The parameter 'name' receives the argument 'Alice'. Think: parameters are parking spots, arguments are the cars that park in them."
+    },
+    {
+      "id": "prog03_c3",
+      "emoji": "↩️",
+      "concept_text": "Return Values",
+      "example_text": "A function can send a result back using 'return'. The function int add(int a, int b) { return a + b; } returns a number. The caller receives it: int sum = add(3, 4); // sum is 7. Functions that don't return anything use 'void' as their return type."
+    }
+  ],
+  "terms": [
+    {
+      "id": "prog03_t1",
+      "emoji": "⚙️",
+      "term": "Function",
+      "definition": "A named, reusable block of code that performs a specific task. It can accept inputs (parameters) and return an output.",
+      "example": "int square(int n) {\n  return n * n;\n}\nprint(square(5)); // 25"
+    },
+    {
+      "id": "prog03_t2",
+      "emoji": "📥",
+      "term": "Parameter",
+      "definition": "A variable declared in a function's definition that acts as a placeholder for values the function will receive.",
+      "example": "void greet(String name) { // 'name' is a parameter\n  print('Hello, $name!');\n}"
+    },
+    {
+      "id": "prog03_t3",
+      "emoji": "↩️",
+      "term": "Return Type",
+      "definition": "The data type of the value a function sends back to its caller. 'void' means the function returns nothing.",
+      "example": "int add(int a, int b) => a + b; // returns int\nvoid log(String msg) => print(msg); // returns nothing"
+    },
+    {
+      "id": "prog03_t4",
+      "emoji": "🔭",
+      "term": "Scope",
+      "definition": "The region of code where a variable is accessible. Variables declared inside a function are 'local' — they don't exist outside that function.",
+      "example": "void myFunc() {\n  int x = 10; // local to myFunc\n}\nprint(x); // ERROR: x is not defined here"
+    },
+    {
+      "id": "prog03_t5",
+      "emoji": "🪆",
+      "term": "Recursion",
+      "definition": "When a function calls itself to solve a problem by breaking it into smaller subproblems. Requires a base case to stop.",
+      "example": "int factorial(int n) {\n  if (n <= 1) return 1; // base case\n  return n * factorial(n - 1); // recursive call\n}"
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog03_q1",
+      "question": "What is the main benefit of using functions?",
+      "options": ["Programs run faster", "Code can be reused without duplication", "Variables become global", "Loops are no longer needed"],
+      "correct_answer": 1,
+      "explanation": "Functions let you write code once and reuse it by calling the function name. This avoids duplication and makes code easier to maintain."
+    },
+    {
+      "id": "prog03_q2",
+      "question": "What does 'void' mean as a return type?",
+      "options": ["The function returns zero", "The function returns null", "The function doesn't return any value", "The function returns an empty string"],
+      "correct_answer": 2,
+      "explanation": "A void function performs an action but doesn't return a value. You can't assign its result to a variable."
+    },
+    {
+      "id": "prog03_q3",
+      "question": "What is a 'local variable'?",
+      "options": ["A variable stored on disk", "A variable only accessible within its function", "A variable shared between all functions", "A variable that never changes"],
+      "correct_answer": 1,
+      "explanation": "Local variables are declared inside a function and only exist within that function's scope. They can't be accessed from outside."
+    },
+    {
+      "id": "prog03_q4",
+      "question": "What happens if a recursive function has no base case?",
+      "options": ["It returns null", "It runs forever (stack overflow)", "It returns 0", "The compiler fixes it"],
+      "correct_answer": 1,
+      "explanation": "Without a base case, a recursive function calls itself infinitely, filling up the call stack until the program crashes with a stack overflow error."
+    },
+    {
+      "id": "prog03_q5",
+      "question": "What does this function return: int double(int x) { return x * 2; } when called as double(7)?",
+      "options": ["7", "14", "49", "Error"],
+      "correct_answer": 1,
+      "explanation": "The function multiplies its input by 2. double(7) returns 7 * 2 = 14."
+    }
+  ]
+}

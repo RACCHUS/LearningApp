@@ -1,0 +1,85 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Flutter Web Run",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"chrome"
+			],
+			"group": "test",
+			"problemMatcher": [
+				"$dart-build"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Import: All Asset Lessons",
+			"type": "shell",
+			"command": "dart",
+			"args": ["tool/import_lesson.dart", "assets/lessons/"],
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "Import: Data Samples",
+			"type": "shell",
+			"command": "dart",
+			"args": ["tool/import_lesson.dart", "data/samples/"],
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "Import: Validate Lessons (Dry Run)",
+			"type": "shell",
+			"command": "dart",
+			"args": ["tool/import_lesson.dart", "assets/lessons/", "--dry-run"],
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "Import: List Database Lessons",
+			"type": "shell",
+			"command": "dart",
+			"args": ["tool/import_lesson.dart", "--list"],
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		},
+		{
+			"label": "Import: Current File as Lesson",
+			"type": "shell",
+			"command": "dart",
+			"args": ["tool/import_lesson.dart", "${file}"],
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"clear": true
+			}
+		}
+	]
+}

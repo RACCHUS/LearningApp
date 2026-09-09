@@ -1,0 +1,42 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+AudioLessonSettings _$AudioLessonSettingsFromJson(Map<String, dynamic> json) =>
+    AudioLessonSettings(
+      handsFreeModeEnabled: json['handsFreeModeEnabled'] as bool? ?? false,
+      autoProgressDelay: json['autoProgressDelay'] == null
+          ? const Duration(seconds: 3)
+          : Duration(microseconds: (json['autoProgressDelay'] as num).toInt()),
+      voiceInputTimeout: json['voiceInputTimeout'] == null
+          ? const Duration(seconds: 5)
+          : Duration(microseconds: (json['voiceInputTimeout'] as num).toInt()),
+      autoReadAllContent: json['autoReadAllContent'] as bool? ?? true,
+      voiceNavigationEnabled: json['voiceNavigationEnabled'] as bool? ?? true,
+      confirmationsEnabled: json['confirmationsEnabled'] as bool? ?? true,
+      pauseBetweenItems: (json['pauseBetweenItems'] as num?)?.toDouble() ?? 1.0,
+      autoProgressAfterReading:
+          json['autoProgressAfterReading'] as bool? ?? false,
+      immediateAnswerProgression:
+          json['immediateAnswerProgression'] as bool? ?? true,
+      voiceRetryAttempts: (json['voiceRetryAttempts'] as num?)?.toInt() ?? 3,
+      interruptOnNextCommand: json['interruptOnNextCommand'] as bool? ?? true,
+      voiceLocale: json['voiceLocale'] as String? ?? 'en_US',
+    );
+
+Map<String, dynamic> _$AudioLessonSettingsToJson(
+        AudioLessonSettings instance) =>
+    <String, dynamic>{
+      'handsFreeModeEnabled': instance.handsFreeModeEnabled,
+      'autoProgressDelay': instance.autoProgressDelay.inMicroseconds,
+      'voiceInputTimeout': instance.voiceInputTimeout.inMicroseconds,
+      'autoReadAllContent': instance.autoReadAllContent,
+      'voiceNavigationEnabled': instance.voiceNavigationEnabled,
+      'confirmationsEnabled': instance.confirmationsEnabled,
+      'pauseBetweenItems': instance.pauseBetweenItems,
+      'autoProgressAfterReading': instance.autoProgressAfterReading,
+      'immediateAnswerProgression': instance.immediateAnswerProgression,
+      'voiceRetryAttempts': instance.voiceRetryAttempts,
+      'interruptOnNextCommand': instance.interruptOnNextCommand,
+      'voiceLocale': instance.voiceLocale,
+    };

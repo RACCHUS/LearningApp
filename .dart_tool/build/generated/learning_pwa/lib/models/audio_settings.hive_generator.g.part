@@ -1,0 +1,61 @@
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class AudioSettingsAdapter extends TypeAdapter<AudioSettings> {
+  @override
+  final int typeId = 20;
+
+  @override
+  AudioSettings read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return AudioSettings(
+      isEnabled: fields[0] as bool,
+      speechRate: fields[1] as double,
+      volume: fields[2] as double,
+      pitch: fields[3] as double,
+      preferredVoice: fields[4] as String?,
+      autoPlay: fields[5] as bool,
+      autoReadQuestions: fields[6] as bool,
+      autoReadAnswers: fields[7] as bool,
+      language: fields[8] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, AudioSettings obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.isEnabled)
+      ..writeByte(1)
+      ..write(obj.speechRate)
+      ..writeByte(2)
+      ..write(obj.volume)
+      ..writeByte(3)
+      ..write(obj.pitch)
+      ..writeByte(4)
+      ..write(obj.preferredVoice)
+      ..writeByte(5)
+      ..write(obj.autoPlay)
+      ..writeByte(6)
+      ..write(obj.autoReadQuestions)
+      ..writeByte(7)
+      ..write(obj.autoReadAnswers)
+      ..writeByte(8)
+      ..write(obj.language);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioSettingsAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

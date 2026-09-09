@@ -1,0 +1,52 @@
+{
+  "lesson": {
+    "id": "sample_flutter_intro",
+    "title": "Introduction to Flutter",
+    "description": "A beginner-friendly introduction to Flutter framework",
+    "tags": ["flutter", "mobile", "beginner", "dart"],
+    "createdBy": "system",
+    "createdAt": "2025-07-31T20:19:04.000Z"
+  },
+  "content": [
+    {
+      "id": "content1",
+      "type": "concept",
+      "title": "What is Flutter?",
+      "description": "Flutter is an open-source UI software development kit created by Google. It's used to develop applications for Android, iOS, Linux, macOS, Windows, and the web from a single codebase.",
+      "createdBy": "system"
+    },
+    {
+      "id": "content2",
+      "type": "term",
+      "term": "Widget",
+      "definition": "The basic building blocks of Flutter apps. Everything in Flutter is a widget, including structural elements, stylistic elements, and even layout properties.",
+      "example": "Text('Hello, World!') is a widget that displays a text string.",
+      "createdBy": "system"
+    },
+    {
+      "id": "content3",
+      "type": "mcq",
+      "question": "What programming language is Flutter primarily built with?",
+      "options": ["Java", "Dart", "Kotlin", "Swift"],
+      "correctIndex": 1,
+      "explanation": "Flutter uses Dart as its primary programming language, which was chosen for its ability to compile to native code and its support for hot reload.",
+      "createdBy": "system"
+    },
+    {
+      "id": "content4",
+      "type": "concept",
+      "title": "Hot Reload",
+      "description": "One of Flutter's most popular features is hot reload, which allows you to see the results of your changes almost instantly without restarting your app or losing its state.",
+      "createdBy": "system"
+    },
+    {
+      "id": "content5",
+      "type": "mcq",
+      "question": "Which widget is used to create a scrollable list of widgets?",
+      "options": ["Row", "Column", "ListView", "Container"],
+      "correctIndex": 2,
+      "explanation": "The ListView widget is used to create a scrollable list of widgets arranged linearly.",
+      "createdBy": "system"
+    }
+  ]
+}
