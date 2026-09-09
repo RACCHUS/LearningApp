@@ -1,0 +1,28 @@
+# Environment variables (CRITICAL: Never commit real credentials)
+.env
+.env.*
+!.env.example
+
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub/
+build/
+
+# VS Code
+.vscode/
+
+# Firebase
+.firebase/
+
+# Others
+.idea/
+*.iml
+
+# Flutter tooling files
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# macOS / Windows
+.DS_Store
+Thumbs.db

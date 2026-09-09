@@ -1,0 +1,48 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class SupabaseService {
+  static final SupabaseService _instance = SupabaseService._internal();
+  factory SupabaseService() => _instance;
+  
+  late final SupabaseClient _client;
+  
+  SupabaseService._internal() {
+    _client = Supabase.instance.client;
+  }
+  
+  // Auth methods
+  Future<AuthResponse> signInWithGoogle() async {
+    try {
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'https://your-app-url.com/callback', // Update with your app URL
+      );
+      // Return a successful response with current auth state
+      return AuthResponse(
+        user: _client.auth.currentUser,
+        session: _client.auth.currentSession,
+      );
+    } catch (e) {
+      throw Exception('Google sign-in failed: $e');
+    }
+  }
+  
+  Future<void> signOut() async {
+    await _client.auth.signOut();
+  }
+  
+  // User data methods
+  User? get currentUser => _client.auth.currentUser;
+  
+  Stream<AuthState> get onAuthStateChange => _client.auth.onAuthStateChange;
+  
+  // Database methods
+  PostgrestQueryBuilder<dynamic> from(String table) => _client.from(table);
+  
+  // Storage methods
+  SupabaseStorageClient get storage => _client.storage;
+  
+  // Realtime subscriptions
+  RealtimeChannel channel(String name) => 
+      _client.channel(name);
+}
