@@ -13,6 +13,7 @@ import 'package:learning_pwa/models/concept_content.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/local_lesson.dart';
+import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/core/hive_type_ids.dart';
 
 // Register Hive adapters for all models
@@ -43,6 +44,12 @@ void registerHiveAdapters() {
   if (!Hive.isAdapterRegistered(HiveTypeIds.audioSettings)) {
     Hive.registerAdapter(AudioSettingsAdapter());
   }
+  if (!Hive.isAdapterRegistered(HiveTypeIds.learningContext)) {
+    Hive.registerAdapter(LearningContextAdapter());
+  }
+  if (!Hive.isAdapterRegistered(HiveTypeIds.resumePointer)) {
+    Hive.registerAdapter(ResumePointerAdapter());
+  }
   // UserProgress adapter should be registered if it exists
   // Add other adapters as needed
 }
@@ -60,6 +67,8 @@ class HiveService {
   static const String _conceptsBox = 'concepts';
   static const String _mcqsBox = 'mcqs';
   static const String _progressBox = 'progress';
+  static const String _learningContextsBox = 'learning_contexts';
+  static const String _resumePointersBox = 'resume_pointers';
   
   bool _isInitialized = false;
   
@@ -68,6 +77,14 @@ class HiveService {
   late final Box<Concept> _conceptBox;
   late final Box<Mcq> _mcqBox;
   late final Box<UserProgress> _progressBoxInstance;
+  late final Box<LearningContext> _learningContextBox;
+  late final Box<ResumePointer> _resumePointerBox;
+
+  /// Contexts the learner is pursuing. See `UI_ARCHITECTURE_LOCKED.md` §4.2.
+  Box<LearningContext> get learningContextBox => _learningContextBox;
+
+  /// Where the learner stopped, one entry per context.
+  Box<ResumePointer> get resumePointerBox => _resumePointerBox;
   
   /// Check if HiveService is initialized
   bool get isInitialized => _isInitialized;
@@ -100,6 +117,10 @@ class HiveService {
       _conceptBox = await Hive.openBox<Concept>(_conceptsBox);
       _mcqBox = await Hive.openBox<Mcq>(_mcqsBox);
       _progressBoxInstance = await Hive.openBox<UserProgress>(_progressBox);
+      _learningContextBox =
+          await Hive.openBox<LearningContext>(_learningContextsBox);
+      _resumePointerBox =
+          await Hive.openBox<ResumePointer>(_resumePointersBox);
       
       _isInitialized = true;
       debugPrint('✅ HiveService initialized successfully');

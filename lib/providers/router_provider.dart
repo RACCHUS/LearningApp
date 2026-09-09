@@ -3,7 +3,6 @@ import 'package:learning_pwa/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:learning_pwa/screens/home_screen.dart';
 import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
 import 'package:learning_pwa/screens/lesson_editor_screen.dart';
 import 'package:learning_pwa/screens/course_builder_screen.dart';
@@ -17,7 +16,7 @@ import 'package:learning_pwa/screens/course_management_screen.dart';
 import 'package:learning_pwa/screens/courses/course_detail_screen.dart';
 import 'package:learning_pwa/screens/study_sets/content_picker_screen.dart';
 import 'package:learning_pwa/screens/study_sets/saved_study_sets_screen.dart';
-import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
+import 'package:learning_pwa/screens/progress/progress_screen.dart';
 import 'package:learning_pwa/screens/careers/career_paths_screen.dart';
 import 'package:learning_pwa/screens/careers/career_path_create_screen.dart';
 import 'package:learning_pwa/screens/careers/career_path_detail_screen.dart';
@@ -26,19 +25,59 @@ import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
 import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart';
+import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart';
 import 'package:learning_pwa/screens/onboarding/onboarding_screen.dart';
+import 'package:learning_pwa/screens/learn/learn_screen.dart';
+import 'package:learning_pwa/screens/library/library_screen.dart';
+import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
+import 'package:learning_pwa/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/learn',
     redirect: (context, state) async {
       if (state.matchedLocation == '/onboarding') return null;
       final onboarded = await hasCompletedOnboarding();
       if (!onboarded) return '/onboarding';
+      // Legacy entry point: Learn is the home surface now.
+      if (state.matchedLocation == '/') return '/learn';
       return null;
     },
     routes: [
+      // Persistent three-destination shell: Learn | Library | Progress.
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/learn',
+            name: 'learn',
+            builder: (context, state) => const LearnScreen(),
+          ),
+          GoRoute(
+            path: '/library',
+            name: 'library',
+            builder: (context, state) => LibraryScreen(
+              initialQuery: state.uri.queryParameters['search'],
+            ),
+          ),
+          GoRoute(
+            path: '/progress',
+            name: 'progress-dashboard',
+            builder: (context, state) => const ProgressScreen(),
+          ),
+        ],
+      ),
+
+      // Course outline — the single secondary destination from Learn.
+      GoRoute(
+        path: '/course/:courseId/outline',
+        name: 'course-outline',
+        builder: (context, state) => CourseOutlineScreen(
+          courseId: state.pathParameters['courseId']!,
+        ),
+      ),
+
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
@@ -54,16 +93,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
       ),
-      // Home route
+      // Legacy home surface, replaced by /learn. Kept only as a redirect
+      // target so existing deep links and bookmarks keep working.
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) {
-          final searchQuery = state.uri.queryParameters['search'];
-          final filter = state.uri.queryParameters['filter'];
-          return HomeScreen(
-              initialSearchQuery: searchQuery, initialFilter: filter);
-        },
+        redirect: (context, state) => '/learn',
       ),
 
       // Create lesson route
@@ -171,9 +206,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
-        path: '/progress',
-        name: 'progress-dashboard',
-        builder: (context, state) => const ProgressDashboardScreen(),
+        path: '/settings/motivation',
+        name: 'settings-motivation',
+        builder: (context, state) => const MotivationSettingsScreen(),
       ),
       GoRoute(
         path: '/test/hands-free',

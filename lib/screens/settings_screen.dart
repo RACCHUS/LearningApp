@@ -246,7 +246,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,6 +321,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text('Reset progress and manage reverts'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () => context.push('/settings/reset'),
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.emoji_events_outlined),
+              title: const Text('Motivation'),
+              subtitle: const Text('XP, levels, streaks and celebrations'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/settings/motivation'),
             ),
 
             const Divider(height: 32),

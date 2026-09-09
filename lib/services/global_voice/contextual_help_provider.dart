@@ -10,7 +10,10 @@ class ContextualHelpProvider {
     switch (route) {
       case '/':
       case '/home':
+      case '/learn':
         return _homeScreenHelp;
+      case '/library':
+        return _lessonLibraryHelp;
       case '/lessons':
         return _lessonLibraryHelp;
       case '/settings':
