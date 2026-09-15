@@ -41,8 +41,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final contexts = ref.watch(learningContextsProvider);
-    final lessonsAsync = ref.watch(availableLessonsProvider);
-    final lessons = (lessonsAsync.valueOrNull ?? const [])
+    final catalogAsync = ref.watch(availableLessonsCatalogProvider);
+    final catalog = catalogAsync.valueOrNull;
+    final lessons = (catalog?.lessons ?? const [])
         .where((l) =>
             _query.isEmpty ||
             l.title.toLowerCase().contains(_query.toLowerCase()))
@@ -103,49 +104,60 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           const SizedBox(height: DesignTokens.space5),
           _SectionHeader('Discover', trailing: '${lessons.length}'),
-          if (lessonsAsync.isLoading)
+          if (catalogAsync.isLoading)
             const Padding(
               padding: EdgeInsets.all(DesignTokens.space5),
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (lessonsAsync.hasError)
+          else if (catalogAsync.hasError)
             _InlineError(
               message: 'Could not load lessons.',
-              onRetry: () => ref.invalidate(availableLessonsProvider),
+              onRetry: () => ref.invalidate(availableLessonsCatalogProvider),
             )
-          else if (lessons.isEmpty)
-            const _EmptyHint(
-              'No lessons match. Try a different search, or create one below.',
-            )
-          else
-            ...lessons.take(50).map(
-                  (l) => ListTile(
-                    key: Key('library-lesson-${l.id}'),
-                    title: Text(l.title),
-                    subtitle: Text(
-                      l.description ?? 'No description',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          else ...[
+            if (catalog?.hasRemoteError ?? false)
+              _InlineWarning(
+                message:
+                    'Online lessons could not be loaded. Showing saved and built-in lessons.',
+                onRetry: () {
+                  ref.invalidate(remoteCatalogLessonsProvider);
+                  ref.invalidate(availableLessonsCatalogProvider);
+                },
+              ),
+            if (lessons.isEmpty)
+              const _EmptyHint(
+                'No lessons match. Try a different search, or create one below.',
+              )
+            else
+              ...lessons.take(50).map(
+                    (l) => ListTile(
+                      key: Key('library-lesson-${l.id}'),
+                      title: Text(l.title),
+                      subtitle: Text(
+                        l.description ?? 'No description',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: TextButton(
+                        child: const Text('Start learning'),
+                        onPressed: () async {
+                          final created = await ref
+                              .read(learningContextsProvider.notifier)
+                              .add(
+                                label: l.title,
+                                rootType: ContextRootType.lesson,
+                                rootId: l.id,
+                                emoji: l.emoji,
+                              );
+                          if (created != null && context.mounted) {
+                            context.go('/learn');
+                          }
+                        },
+                      ),
+                      onTap: () => context.push('/lesson/${l.id}'),
                     ),
-                    trailing: TextButton(
-                      child: const Text('Start learning'),
-                      onPressed: () async {
-                        final created = await ref
-                            .read(learningContextsProvider.notifier)
-                            .add(
-                              label: l.title,
-                              rootType: ContextRootType.lesson,
-                              rootId: l.id,
-                              emoji: l.emoji,
-                            );
-                        if (created != null && context.mounted) {
-                          context.go('/learn');
-                        }
-                      },
-                    ),
-                    onTap: () => context.push('/lesson/${l.id}'),
                   ),
-                ),
+          ],
           const SizedBox(height: DesignTokens.space5),
           _SectionHeader('Create'),
           Wrap(
@@ -253,6 +265,40 @@ class _InlineError extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: Text(message)),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineWarning extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _InlineWarning({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DesignTokens.space3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: DesignTokens.space2),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
