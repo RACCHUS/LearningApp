@@ -8,26 +8,90 @@ import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/term.dart';
-import 'package:learning_pwa/providers/combined_lessons_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/services/hive_service.dart';
+import 'package:learning_pwa/services/lesson/lesson_catalog_service.dart';
 
-/// Lessons the learner can browse right now.
+/// Catalog data shown in Library.
 ///
-/// Database/offline lessons are merged with bundled asset lessons so Library is
-/// never empty just because the user is signed out, offline, or has no Supabase
-/// rows yet. Asset lessons are real selectable lessons, not marketing cards.
-final availableLessonsProvider = FutureProvider<List<BaseLesson>>((ref) async {
+/// [remoteError] is intentionally retained even when local/assets let the
+/// Library keep working. A broken Supabase catalog must not be silently masked
+/// by bundled fallback content.
+class AvailableLessonsCatalog {
+  final List<BaseLesson> lessons;
+  final String? remoteError;
+
+  const AvailableLessonsCatalog({
+    required this.lessons,
+    this.remoteError,
+  });
+
+  bool get hasRemoteError => remoteError != null;
+}
+
+final lessonCatalogServiceProvider = Provider<LessonCatalogService>((ref) {
+  return LessonCatalogService();
+});
+
+/// All lessons the current Supabase session is allowed to read.
+///
+/// There is deliberately no user-id filter here. Supabase RLS decides catalog
+/// visibility; ownership only controls mutation permissions.
+final remoteCatalogLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
+  return ref.watch(lessonCatalogServiceProvider).getReadableLessons();
+});
+
+/// Device-local lessons are a separate source from the remote catalog.
+final offlineCatalogLessonsProvider = FutureProvider<List<BaseLesson>>((ref) async {
   final userId = ref.watch(learnerIdProvider);
-  final combined = await ref.watch(combinedLessonsProvider(userId).future);
+  return hiveService.getOfflineLessons(userId);
+});
+
+/// Complete Library catalog with graceful fallback.
+///
+/// Precedence for duplicate IDs is assets < remote < offline. That preserves
+/// the user's local working copy when the same lesson exists in multiple
+/// sources while still making every RLS-readable Supabase lesson discoverable.
+final availableLessonsCatalogProvider =
+    FutureProvider<AvailableLessonsCatalog>((ref) async {
   final assets = await ref.watch(assetLessonsProvider.future);
 
+  List<Lesson> remote = const [];
+  String? remoteError;
+  try {
+    remote = await ref.watch(remoteCatalogLessonsProvider.future);
+  } catch (e) {
+    remoteError = e.toString();
+    debugPrint('⚠️ Remote lesson catalog unavailable: $e');
+  }
+
+  List<BaseLesson> offline = const [];
+  try {
+    offline = await ref.watch(offlineCatalogLessonsProvider.future);
+  } catch (e) {
+    debugPrint('⚠️ Offline lesson catalog unavailable: $e');
+  }
+
   final byId = <String, BaseLesson>{};
-  for (final lesson in [...assets, ...combined]) {
+  for (final lesson in <BaseLesson>[...assets, ...remote, ...offline]) {
     byId[lesson.id] = lesson;
   }
+
   final lessons = byId.values.toList()
     ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-  return lessons;
+
+  return AvailableLessonsCatalog(
+    lessons: lessons,
+    remoteError: remoteError,
+  );
+});
+
+/// Backward-compatible list-only view for call sites that do not need source
+/// health. Library uses [availableLessonsCatalogProvider] so it can surface a
+/// remote-source warning without hiding fallback lessons.
+final availableLessonsProvider = FutureProvider<List<BaseLesson>>((ref) async {
+  final catalog = await ref.watch(availableLessonsCatalogProvider.future);
+  return catalog.lessons;
 });
 
 final assetLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
