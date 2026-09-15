@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/learning_context_service.dart';
 import 'package:learning_pwa/services/learning_context_sync_service.dart';
@@ -29,8 +30,17 @@ final learningContextSyncServiceProvider =
 final nextActionEngineProvider =
     Provider<NextActionEngine>((ref) => const NextActionEngine());
 
-/// Signed-in user id, or a stable local id so the app works signed-out.
+/// Current learner identity used for local/synced learner-owned state.
+///
+/// Watching [authProvider] makes this reactive when a user moves between local,
+/// anonymous Supabase auth, and a full account. The previous implementation
+/// read Supabase.currentUser once and could leave downstream providers stuck on
+/// `local-user` after auth changed.
 final learnerIdProvider = Provider<String>((ref) {
+  final authState = ref.watch(authProvider);
+  if (authState is AuthSuccess) {
+    return authState.user.id;
+  }
   return Supabase.instance.client.auth.currentUser?.id ?? 'local-user';
 });
 
