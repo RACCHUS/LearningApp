@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/term.dart';
@@ -31,9 +32,8 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
 
 final lessonProvider =
     FutureProvider.family<FullLesson, String>((ref, lessonId) async {
-  final supabase = Supabase.instance.client;
-  
   try {
+    final supabase = Supabase.instance.client;
     log('🚀 Starting lesson load for ID: $lessonId', name: 'LessonProvider');
     
     // Get lesson with content using direct foreign key relationships
@@ -305,9 +305,66 @@ return FullLesson(
     
   } catch (e, stackTrace) {
     log('Error loading lesson: $e', name: 'LessonProvider', error: e, stackTrace: stackTrace);
+    final assetLesson = await _assetLessonById(ref, lessonId);
+    if (assetLesson != null) {
+      log('✅ Loaded bundled asset lesson fallback: $lessonId', name: 'LessonProvider');
+      return _fullLessonFromAsset(assetLesson);
+    }
     rethrow;
   }
 });
+
+Future<Lesson?> _assetLessonById(Ref ref, String lessonId) async {
+  try {
+    final lessons = await ref.read(assetLessonsProvider.future);
+    for (final lesson in lessons) {
+      if (lesson.id == lessonId) return lesson;
+    }
+  } catch (e) {
+    log('Asset lesson fallback failed: $e', name: 'LessonProvider');
+  }
+  return null;
+}
+
+FullLesson _fullLessonFromAsset(Lesson lesson) {
+  var order = 0;
+  final content = <LessonContent>[
+    for (final term in lesson.terms)
+      TermContent(
+        id: term.id,
+        lessonId: lesson.id,
+        order: order++,
+        term: term.term,
+        definition: term.definition,
+        example: term.example ?? '',
+        createdAt: lesson.createdAt,
+        updatedAt: lesson.updatedAt,
+      ),
+    for (final concept in lesson.concepts)
+      ConceptContent(
+        id: concept.id,
+        lessonId: lesson.id,
+        order: order++,
+        conceptText: concept.conceptText,
+        exampleText: concept.exampleText ?? '',
+        createdAt: lesson.createdAt,
+        updatedAt: lesson.updatedAt,
+      ),
+    for (final question in lesson.questions)
+      QuestionContent(
+        id: question.id,
+        lessonId: lesson.id,
+        order: order++,
+        questionText: question.questionText,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation ?? '',
+        createdAt: lesson.createdAt,
+        updatedAt: lesson.updatedAt,
+      ),
+  ];
+  return FullLesson(lesson: lesson, lessonContent: content);
+}
 
 class FullLesson {
   final Lesson lesson;

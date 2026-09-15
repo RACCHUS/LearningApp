@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
-import 'package:learning_pwa/providers/lessons_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
@@ -41,8 +41,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final contexts = ref.watch(learningContextsProvider);
-    final lessonsState = ref.watch(lessonsProvider);
-    final lessons = lessonsState.lessons
+    final lessonsAsync = ref.watch(availableLessonsProvider);
+    final lessons = (lessonsAsync.valueOrNull ?? const [])
         .where((l) =>
             _query.isEmpty ||
             l.title.toLowerCase().contains(_query.toLowerCase()))
@@ -103,15 +103,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           const SizedBox(height: DesignTokens.space5),
           _SectionHeader('Discover', trailing: '${lessons.length}'),
-          if (lessonsState.isLoading)
+          if (lessonsAsync.isLoading)
             const Padding(
               padding: EdgeInsets.all(DesignTokens.space5),
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (lessonsState.error != null)
+          else if (lessonsAsync.hasError)
             _InlineError(
               message: 'Could not load lessons.',
-              onRetry: () => ref.read(lessonsProvider.notifier).loadLessons(),
+              onRetry: () => ref.invalidate(availableLessonsProvider),
             )
           else if (lessons.isEmpty)
             const _EmptyHint(

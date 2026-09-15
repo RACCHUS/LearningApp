@@ -1574,8 +1574,10 @@ file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/audio_lesson_pro
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/audio_playback_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/audio_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/auth_provider.dart
+file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/available_lessons_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/base_settings_notifier.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/career_path_provider.dart
+file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/combined_lessons_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/course_builder_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/daily_goal_provider.dart
 file:///C:/Users/richa/Documents/Code/LearningApp/lib/providers/generation_session_provider.dart
