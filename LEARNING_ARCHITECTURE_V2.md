@@ -1,8 +1,8 @@
 # Learning Architecture V2 — Formal Implementation Specification
 
 **Status:** Proposed implementation baseline  
-**Repository:** \`RACCHUS/LearningApp\`  
-**Supersedes:** The v1 domain/hierarchy assumptions in \`UI_ARCHITECTURE_LOCKED.md\` where this document explicitly differs. The v1 interaction principles remain in force unless overridden here.  
+**Repository:** `RACCHUS/LearningApp`  
+**Supersedes:** The v1 domain/hierarchy assumptions in `UI_ARCHITECTURE_LOCKED.md` where this document explicitly differs. The v1 interaction principles remain in force unless overridden here.  
 **Core law:** **Knowledge is global. Learning is scoped.**
 
 ---
@@ -65,23 +65,23 @@ V2 is a migration, not a rewrite from an empty database.
 
 The current production code/database already has:
 
-- \`lessons\`, with lesson-owned \`terms\`, \`questions\`, and \`concepts\`;
-- \`courses\` and \`course_lessons\`;
-- \`study_sets\`, \`course_progress\`, and \`study_set_progress\`;
-- \`career_paths\`, \`career_path_courses\`, \`skills\`, \`career_path_skills\`, \`course_skills\`;
-- skill assessments and \`user_skill_stats\`;
-- \`review_items\` using content-level SM-2-style scheduling;
-- \`learning_contexts\` and \`resume_pointers\`;
+- `lessons`, with lesson-owned `terms`, `questions`, and `concepts`;
+- `courses` and `course_lessons`;
+- `study_sets`, `course_progress`, and `study_set_progress`;
+- `career_paths`, `career_path_courses`, `skills`, `career_path_skills`, `course_skills`;
+- skill assessments and `user_skill_stats`;
+- `review_items` using content-level SM-2-style scheduling;
+- `learning_contexts` and `resume_pointers`;
 - the three-destination shell: **Learn | Library | Progress**;
 - direct lesson/course/study-set flows that must continue to work.
 
-Current \`LearningContext.root_type\` values are:
+Current `LearningContext.root_type` values are:
 
-\`path | course | module | lesson | studySet\`
+`path | course | module | lesson | studySet`
 
 Current local Hive serialization stores the root type by enum **index**, which makes enum reordering unsafe.
 
-Current \`concepts\` are lesson-owned and the Dart \`Concept\` model requires \`lessonId\`. V2 therefore must not destructively redefine that table/model in its first migration.
+Current `concepts` are lesson-owned and the Dart `Concept` model requires `lessonId`. V2 therefore must not destructively redefine that table/model in its first migration.
 
 ---
 
@@ -106,7 +106,7 @@ A field is a discovery/taxonomy object. It is **not** something the learner comp
 
 ### 3.2 Formal learning targets
 
-A \`LearningTarget\` is a destination whose requirements can be versioned.
+A `LearningTarget` is a destination whose requirements can be versioned.
 
 Supported V2 target types:
 
@@ -162,7 +162,7 @@ A career can use:
 Skill Area → Skill
 ~~~
 
-The same \`CurriculumNode\` entity represents these structures through \`node_type\`.
+The same `CurriculumNode` entity represents these structures through `node_type`.
 
 ### 3.4 Global knowledge graph
 
@@ -332,7 +332,7 @@ create index if not exists curriculum_nodes_parent_idx
   on public.curriculum_nodes(parent_id);
 ~~~
 
-\`node_type\` is deliberately data-driven instead of a database enum because target structures vary. The application recognizes common types such as:
+`node_type` is deliberately data-driven instead of a database enum because target structures vary. The application recognizes common types such as:
 
 ~~~text
 root
@@ -352,7 +352,7 @@ Unknown node types must render generically instead of failing.
 
 ### 4.4 Canonical concepts
 
-The existing \`public.concepts\` table remains lesson-owned legacy content. V2 adds a separate canonical concept table.
+The existing `public.concepts` table remains lesson-owned legacy content. V2 adds a separate canonical concept table.
 
 ~~~sql
 create table if not exists public.knowledge_concepts (
@@ -474,7 +474,7 @@ These are explicit curation links. Scope may also discover eligible content thro
 
 ### 4.7 Optional course modules
 
-Modules remain optional. Existing \`course_lessons\` continues to work for courses without modules.
+Modules remain optional. Existing `course_lessons` continues to work for courses without modules.
 
 ~~~sql
 create table if not exists public.course_modules (
@@ -504,11 +504,11 @@ create index if not exists module_lessons_lesson_idx
   on public.module_lessons(lesson_id);
 ~~~
 
-No synthetic module is required. A course may use direct \`course_lessons\`, modules, or both during migration.
+No synthetic module is required. A course may use direct `course_lessons`, modules, or both during migration.
 
 ### 4.8 Existing content-to-concept mappings
 
-V2 does **not** immediately replace \`questions\`, \`terms\`, or legacy lesson-owned \`concepts\`. It maps them to canonical knowledge.
+V2 does **not** immediately replace `questions`, `terms`, or legacy lesson-owned `concepts`. It maps them to canonical knowledge.
 
 ~~~sql
 create table if not exists public.lesson_knowledge_concepts (
@@ -619,7 +619,7 @@ create index if not exists learning_path_steps_order_idx
 
 ### 4.10 Concept evidence and derived user state
 
-The evidence log is the durable source of truth for V2 knowledge-state calculations. \`user_concept_state\` is a rebuildable cache.
+The evidence log is the durable source of truth for V2 knowledge-state calculations. `user_concept_state` is a rebuildable cache.
 
 ~~~sql
 create table if not exists public.concept_evidence_events (
@@ -830,7 +830,7 @@ Changing focus must not create a new LearningContext.
 
 ### 5.5 Hive migration
 
-The existing \`LearningContextAdapter\` must remain typeId 10.
+The existing `LearningContextAdapter` must remain typeId 10.
 
 Do not repurpose existing field IDs 0–8.
 
@@ -848,8 +848,8 @@ Add fields with new IDs:
 
 Writer behavior:
 
-- continue writing legacy field 3 (\`rootType.index\`) for backward compatibility;
-- also write field 9 (\`rootType.name\`);
+- continue writing legacy field 3 (`rootType.index`) for backward compatibility;
+- also write field 9 (`rootType.name`);
 - reader prefers field 9 when present, then falls back to field 3.
 
 This removes future dependence on enum order without invalidating existing Hive data.
@@ -898,23 +898,23 @@ abstract interface class ScopeResolver {
 
 ### 6.3 Target context resolution
 
-For \`rootType == target\`:
+For `rootType == target`:
 
-1. resolve \`targetVersionId\`; if null, use the single \`current\` version;
-2. load curriculum nodes after applying \`scope_config\` included/excluded node filters;
-3. collect node concepts with \`relevance = core\`;
-4. if \`scope_mode = core_plus_prerequisites\`, recursively follow \`concept_relations.relation_type = prerequisite\`;
+1. resolve `targetVersionId`; if null, use the single `current` version;
+2. load curriculum nodes after applying `scope_config` included/excluded node filters;
+3. collect node concepts with `relevance = core`;
+4. if `scope_mode = core_plus_prerequisites`, recursively follow `concept_relations.relation_type = prerequisite`;
 5. default max prerequisite depth = 2 unless explicitly configured;
 6. collect explicitly linked courses/lessons;
 7. add lessons/questions/terms whose canonical concept mappings overlap core/supporting scope;
-8. never automatically add content based only on \`related_to\`.
+8. never automatically add content based only on `related_to`.
 
 ### 6.4 Direct course/module/lesson resolution
 
 - Course: use modules/direct course lessons, then their canonical concepts.
 - Module: use its module lessons and concepts.
-- Lesson: use \`lesson_knowledge_concepts\` plus item mappings.
-- Legacy unmapped lesson content may fall back to lesson-level inclusion but must be marked as \`legacyFallback = true\` internally.
+- Lesson: use `lesson_knowledge_concepts` plus item mappings.
+- Legacy unmapped lesson content may fall back to lesson-level inclusion but must be marked as `legacyFallback = true` internally.
 
 ### 6.5 Concept context resolution
 
@@ -922,7 +922,7 @@ The selected concept is core.
 
 If prerequisites are enabled, recursively add prerequisite concepts as supporting.
 
-No neighboring \`related_to\` concepts enter Learn automatically.
+No neighboring `related_to` concepts enter Learn automatically.
 
 ### 6.6 Study-set resolution
 
@@ -967,12 +967,12 @@ enum LearningItemType {
 
 For initial V2:
 
-- existing \`questions\` are question items;
-- existing \`terms\` are term/flashcard-like items;
+- existing `questions` are question items;
+- existing `terms` are term/flashcard-like items;
 - existing assessment questions remain assessment items;
 - future arbitrary front/back flashcards may get a dedicated table later.
 
-A physical unified \`learning_items\` table is explicitly **deferred** until all content services use this abstraction. Avoid a high-risk rewrite just to normalize tables.
+A physical unified `learning_items` table is explicitly **deferred** until all content services use this abstraction. Avoid a high-risk rewrite just to normalize tables.
 
 ---
 
@@ -1108,11 +1108,11 @@ Study-time preference (optional)
 
 Backend action:
 
-1. create \`LearningContext(rootType=target)\`;
-2. pin exact \`targetVersionId\`;
+1. create `LearningContext(rootType=target)`;
+2. pin exact `targetVersionId`;
 3. save scope preset/config;
 4. resolve scope;
-5. route to \`/learn\`.
+5. route to `/learn`.
 
 The exact exam curriculum is populated from authoritative source records; V2 must not invent an exam blueprint when source data is missing.
 
@@ -1137,7 +1137,7 @@ Include
 ○ Entire program
 ~~~
 
-The preset becomes \`scope_config\`, primarily through included/excluded curriculum-node groups.
+The preset becomes `scope_config`, primarily through included/excluded curriculum-node groups.
 
 General-education material never appears in a "major only" context merely because the full degree target contains it.
 
@@ -1177,7 +1177,7 @@ Study scope
 [ Start learning ]
 ~~~
 
-Creates \`rootType=concept\`.
+Creates `rootType=concept`.
 
 ### 9.6 Single lesson
 
@@ -1264,8 +1264,8 @@ Keep these routes functional during migration:
 
 Migration behavior:
 
-- \`/careers\` eventually redirects to \`/library/targets?type=career\`;
-- a migrated legacy career detail resolves its mapped V2 target and redirects to \`/targets/:targetId\`;
+- `/careers` eventually redirects to `/library/targets?type=career`;
+- a migrated legacy career detail resolves its mapped V2 target and redirects to `/targets/:targetId`;
 - course, lesson, and study-set routes remain first-class indefinitely;
 - old bookmarks/deep links must not break.
 
@@ -1316,7 +1316,7 @@ Search this program...
 Search this course...
 ~~~
 
-Results must be filtered by \`ResolvedScope\`.
+Results must be filtered by `ResolvedScope`.
 
 An explicit action may switch to "Search entire Library."
 
@@ -1370,31 +1370,31 @@ by curriculum area.
 
 No V2 migration may initially drop:
 
-- \`lessons\`
-- \`terms\`
-- \`questions\`
-- legacy \`concepts\`
-- \`courses\`
-- \`course_lessons\`
-- \`study_sets\`
-- \`career_paths\`
-- \`skills\`
-- \`review_items\`
+- `lessons`
+- `terms`
+- `questions`
+- legacy `concepts`
+- `courses`
+- `course_lessons`
+- `study_sets`
+- `career_paths`
+- `skills`
+- `review_items`
 - current progress tables.
 
 ### 13.2 Legacy concepts
 
-Backfill one canonical \`knowledge_concepts\` row for every legacy \`concepts\` row.
+Backfill one canonical `knowledge_concepts` row for every legacy `concepts` row.
 
 Do **not** deduplicate automatically by text during migration.
 
 For each legacy concept:
 
 1. create a canonical concept;
-2. create \`lesson_knowledge_concepts\`;
-3. store \`legacy_concept_id\`.
+2. create `lesson_knowledge_concepts`;
+3. store `legacy_concept_id`.
 
-Duplicate concepts can be curated later using aliases and \`merged_into_id\`.
+Duplicate concepts can be curated later using aliases and `merged_into_id`.
 
 Automatic text merging at migration time is prohibited because two similar strings are not guaranteed to represent the same knowledge atom.
 
@@ -1414,18 +1414,18 @@ Newly created official content should require canonical concept mapping.
 
 ### 13.4 Career paths
 
-Existing \`career_paths\` stay live during transition.
+Existing `career_paths` stay live during transition.
 
 Backfill strategy:
 
-1. create \`learning_targets(target_type='career')\`;
-2. create one legacy target version, e.g. \`legacy-v1\`;
+1. create `learning_targets(target_type='career')`;
+2. create one legacy target version, e.g. `legacy-v1`;
 3. create curriculum nodes from career-path sections/courses/skills;
-4. map \`career_path_courses\` to node/course links;
-5. map skills through \`skill_knowledge_concepts\` as those mappings become available;
-6. maintain a migration map table or deterministic metadata entry containing legacy \`career_path_id\`.
+4. map `career_path_courses` to node/course links;
+5. map skills through `skill_knowledge_concepts` as those mappings become available;
+6. maintain a migration map table or deterministic metadata entry containing legacy `career_path_id`.
 
-Do not delete \`user_career_paths\` until migrated contexts and history are proven.
+Do not delete `user_career_paths` until migrated contexts and history are proven.
 
 ### 13.5 Skills
 
@@ -1433,9 +1433,9 @@ Skills remain a useful competency aggregation above concepts.
 
 They are **not** the canonical knowledge atom.
 
-Add \`skill_knowledge_concepts\` mappings.
+Add `skill_knowledge_concepts` mappings.
 
-Existing \`user_skill_stats\` remains a legacy assessment summary and must not be silently converted into high-confidence concept knowledge.
+Existing `user_skill_stats` remains a legacy assessment summary and must not be silently converted into high-confidence concept knowledge.
 
 ### 13.6 Existing LearningContexts
 
@@ -1445,27 +1445,27 @@ No destructive backfill is required.
 
 New target/concept contexts use the appended root types.
 
-Legacy \`path\` contexts continue to resolve through the old path adapter until their target migration is complete.
+Legacy `path` contexts continue to resolve through the old path adapter until their target migration is complete.
 
 ### 13.7 Existing review_items
 
-Keep \`review_items\` as the current scheduling queue.
+Keep `review_items` as the current scheduling queue.
 
 During transition:
 
 - if a due item's content has canonical concept mappings, filter context review by those mappings;
 - otherwise use existing lesson/context logic as a legacy fallback;
-- new review outcomes also write \`concept_evidence_events\` when concept mappings exist.
+- new review outcomes also write `concept_evidence_events` when concept mappings exist.
 
-No historical per-review events can be reconstructed accurately from aggregate \`review_items\`; do not fabricate them.
+No historical per-review events can be reconstructed accurately from aggregate `review_items`; do not fabricate them.
 
 ### 13.8 Course modules
 
 Existing courses do not need synthetic modules.
 
-If meaningful \`section_title\` values already exist in \`course_lessons\`, an optional migration may create modules from them.
+If meaningful `section_title` values already exist in `course_lessons`, an optional migration may create modules from them.
 
-Otherwise, direct \`course_lessons\` remains valid.
+Otherwise, direct `course_lessons` remains valid.
 
 ---
 
@@ -1495,7 +1495,7 @@ user_concept_state
 existing review/progress tables
 ~~~
 
-Policies use \`auth.uid() = user_id\`.
+Policies use `auth.uid() = user_id`.
 
 ### 14.3 Mappings do not bypass content RLS
 
@@ -1546,7 +1546,7 @@ Responsibilities:
 - multiply item evidence by mapping weight;
 - distinguish primary/supporting mappings;
 - write evidence events;
-- refresh derived \`user_concept_state\`.
+- refresh derived `user_concept_state`.
 
 ### 15.4 LegacyContentMappingService
 
@@ -1692,7 +1692,7 @@ Tests:
 Deliver:
 
 - backfill one canonical concept per legacy concept;
-- \`lesson_knowledge_concepts\` mappings;
+- `lesson_knowledge_concepts` mappings;
 - no automatic dedupe;
 - curator tooling for merge/alias operations;
 - concept repository and concept detail read path.
@@ -1915,7 +1915,7 @@ A learner can start one concept without enrolling in a course, target, or career
 Do not block V2 on:
 
 - perfect concept deduplication;
-- a universal \`learning_items\` table;
+- a universal `learning_items` table;
 - AI choosing the user's learning target;
 - validated exam-pass probability;
 - automatic ingestion of every exam/degree on earth;
