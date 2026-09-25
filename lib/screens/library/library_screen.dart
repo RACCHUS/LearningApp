@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/account_actions.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
 /// came to browse and manage.
@@ -50,7 +51,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Library')),
+      appBar: AppBar(
+        title: const Text('Library'),
+        actions: const [AccountActions()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(DesignTokens.space4),
         children: [

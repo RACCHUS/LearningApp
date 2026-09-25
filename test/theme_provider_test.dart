@@ -104,28 +104,28 @@ void main() {
       expect(firstState, secondState);
     });
 
-    test('multiple containers should have independent states', () async {
-      // This test verifies SharedPreferences persistence across container instances
+    test('saved light theme survives a new provider container', () async {
       SharedPreferences.setMockInitialValues({});
       
       final container1 = ProviderContainer();
       await Future.delayed(const Duration(milliseconds: 200));
       
-      // Set container1 to dark mode and save to SharedPreferences
-      await container1.read(themeModeProvider.notifier).setTheme(ThemeMode.dark);
+      // Save a non-default choice so a broken load cannot pass by coincidence.
+      await container1.read(themeModeProvider.notifier).setTheme(ThemeMode.light);
       await Future.delayed(const Duration(milliseconds: 150));
-      expect(container1.read(themeModeProvider), ThemeMode.dark);
+      expect(container1.read(themeModeProvider), ThemeMode.light);
       
       // Dispose container1
       container1.dispose();
       await Future.delayed(const Duration(milliseconds: 100));
       
-      // Create container2 - it should load the saved dark value
+      // Create container2 - it should load the saved light value.
       final container2 = ProviderContainer();
+      container2.read(themeModeProvider); // Start its async local load.
       await Future.delayed(const Duration(milliseconds: 200));
       
-      // Container2 loads from SharedPreferences and should see dark mode
-      expect(container2.read(themeModeProvider), ThemeMode.dark);
+      // Container2 loads from this device's SharedPreferences.
+      expect(container2.read(themeModeProvider), ThemeMode.light);
       
       container2.dispose();
     });

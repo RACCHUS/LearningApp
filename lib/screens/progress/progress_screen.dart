@@ -6,6 +6,7 @@ import 'package:learning_pwa/providers/motivation_preferences_provider.dart';
 import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/account_actions.dart';
 
 /// Answers "How am I progressing?".
 ///
@@ -33,6 +34,7 @@ class ProgressScreen extends ConsumerWidget {
               ref.invalidate(retentionSummaryProvider);
             },
           ),
+          const AccountActions(),
         ],
       ),
       body: ListView(

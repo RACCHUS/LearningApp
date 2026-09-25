@@ -6,6 +6,7 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/next_action_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/account_actions.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/learn/context_switcher.dart';
 import 'package:learning_pwa/widgets/learn/continue_card.dart';
@@ -30,16 +31,7 @@ class LearnScreen extends ConsumerWidget {
       appBar: AppBar(
         titleSpacing: DesignTokens.space4,
         title: ContextSwitcher(state: contextsState),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_horiz),
-            onSelected: (value) => context.push(value),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: '/settings', child: Text('Settings')),
-              PopupMenuItem(value: '/profile', child: Text('Profile')),
-            ],
-          ),
-        ],
+        actions: const [AccountActions()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

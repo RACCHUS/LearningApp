@@ -1,11 +1,12 @@
 # UI Architecture — LOCKED BASELINE
 
-**Status:** Locked. **Version 1.3** — implementation baseline. **Architecture frozen; P0 may begin.**
+**Status:** Locked. **Version 1.4** — implementation baseline. **Architecture frozen; P0 may begin.**
 **Supersedes:** the IA sections of `LEARNING_UI_PLAN.md` and `LEARNING_UI_RESEARCH.md`. Those documents remain valid for *study-mechanics* sprints (emoji, focus mode, batch size, recall-before-reveal); this document overrides them wherever they disagree about navigation, screen composition, or what appears on the home screen.
 **Change control:** see [§14](#14-change-control).
 **v1.1 changelog:** six amendments — recommendation policy de-escalated, retrieval bands renamed and re-scoped, Progress question broadened, gamification defaults split into presets, change control widened to four grounds, exclamation-mark rule scoped to urgency framing. See §1.4.
 **v1.2 changelog:** five corrections — four internal contradictions resolved (lesson-rooted contexts, content-neutral Next-Action engine, nav-badge wording, context ordering) plus a verified correction to §6 after reading the actual algorithm. See §1.5.
 **v1.3 changelog:** two corrections — the `ReviewOnly` dead end (a real defect, mirror of B2) and unspecified empty-catalog behaviour in the zero state. See §1.6. Plus five spec-hygiene fixes at freeze: §1.6.1.
+**v1.4 changelog:** one user-evidence amendment — replace opaque three-dot overflow with state-aware account actions (avatar when signed in; Log in + Settings when signed out/guest), with locked local-only device preferences. See §1.7.
 
 ---
 
@@ -141,7 +142,15 @@ Five items found in a final read-through. Three were editorial drift; two were r
 | **D4** | `goal` was a runtime `ContextRootType` while §4.3 defers the Goal entity and P1 requires a test per `rootType` — an untestable enum case | **`goal` removed from the enum.** Goal stays in the conceptual hierarchy (§4.1) and returns as a root type when the entity exists. Shipping infrastructure for a model that does not exist is the kind of speculative generality §2 rejects |
 | **D5** | `ResumePointer.activityId` could hold a `reviewBatchId`, but no `ReviewBatch` was ever defined | **Review sessions are not resumable in v1.** `ActivityKind` narrowed to `ResumableKind { lesson, studySet }`. Justified on semantics, not convenience — see §4.2 |
 
-**With these applied the architecture is frozen.** Further change requires one of the four §14 grounds. "A different design is also defensible" is not one of them.
+**With these applied the architecture was frozen.** Further change requires one of the four §14 grounds. "A different design is also defensible" is not one of them.
+
+### 1.7 Amendment in v1.4 (User Evidence)
+
+Raised directly from learner testing and discoverability friction. Accepted under the **User evidence** ground (§14).
+
+| # | Finding | Resolution |
+|---|---|---|
+| **E1** | **Opaque overflow (`⋯`) hides login status & settings discoverability.** The three-dot menu required tapping blindly just to see whether the user was authenticated. Furthermore, signed-out users lacked a visible route to log in, and settings access was tied up in an ambiguous menu. | **State-aware `AccountActions`** (§3, §5.1): Replaces `⋯` across Learn, Library, and Progress.<br>• **Signed in (non-anonymous):** Displays the account avatar/initial with tooltip; tapping opens Profile and Settings.<br>• **Signed out / guest:** Directly renders a clear "Log in" button and a separate "Settings" icon button.<br>• **Settings persistence:** Locked as **device-local only** (`SharedPreferences` / browser `localStorage`). Preferences (theme, daily goal, notifications, batch size) remain independent per device/browser and must not be overwritten by remote profile synchronization. |
 
 ---
 
@@ -181,11 +190,11 @@ Five statements. Everything below is derived from these. If a future feature con
 
 **Not top-level destinations** (and this is a change from today's `Lessons | Courses | Study Sets` tabs): Lessons, Courses, Study Sets, Careers, Skills, Create, Search. These are *content types and actions*, not *intentions*. They all live inside Library.
 
-**Settings** is reached from the app bar (mobile: overflow; desktop: rail footer). It is not a destination because it is not a learning intention.
+**Settings** is reached from the app bar via `AccountActions` (avatar menu when signed in, dedicated settings icon when signed out/guest; desktop: also rail footer; E1). It is not a destination because it is not a learning intention.
 
 **Locked chrome rules:**
 - **No top-level navigation destination control may display a badge, dot, count, animation, or other attention indicator.** (Scoped in B3: this governs the `NavigationBar` / `NavigationRail` items only. Informational counts *inside* Library or Progress are fine — the user opened that screen deliberately. The rule bans summoning, not information.)
-- The app bar on Learn contains: context switcher (conditionally, §1.2b) + overflow menu. Nothing else. No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`.
+- The app bar on Learn contains: context switcher (conditionally, §1.2b) + `AccountActions` (E1). Nothing else. No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`.
 - `SyncStatusIndicator` and `GlobalVoiceIndicator` render **only when not in the idle/nominal state.** Silent when healthy.
 
 ---
@@ -293,7 +302,7 @@ Content column is **max 720dp wide, centred**. This is a doing screen, not a das
 
 ```
 ┌──────────────────────────────────────────┐
-│  Learn                              ⋯    │
+│  Learn                     [Account]     │   ← AccountActions (E1)
 ├──────────────────────────────────────────┤
 │                                          │
 │   What do you want to learn?             │
@@ -307,6 +316,7 @@ Content column is **max 720dp wide, centred**. This is a doing screen, not a das
 └──────────────────────────────────────────┘
 ```
 Two options. No carousel, no featured grid, no onboarding quiz, no "popular this week". Both routes land in Library and, on selection, create a `LearningContext` and return the user to Learn.
+*(Note: `[Account]` renders `AccountActions` — avatar with Profile/Settings menu when signed in; "Log in" + Settings icon when signed out/guest).*
 
 **Neither option may terminate in an empty screen (C2 — locked).**
 
@@ -318,7 +328,7 @@ Two options. No carousel, no featured grid, no onboarding quiz, no "popular this
 
 ```
 ┌──────────────────────────────────────────┐
-│  Software Engineering  ▾            ⋯    │   ← switcher (plain text if 1 context)
+│  Software Engineering  ▾   [Account]     │   ← switcher (plain text if 1 context)
 ├──────────────────────────────────────────┤
 │                                          │
 │  Continue                                │   ← section label, muted, small
