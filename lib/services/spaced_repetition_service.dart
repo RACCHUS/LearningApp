@@ -3,14 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:uuid/uuid.dart';
+import 'concept_evidence_service.dart';
 
 /// Service for managing spaced repetition review items
 class SpacedRepetitionService {
   final SupabaseClient _supabase;
+  final ConceptEvidenceService? _evidenceService;
   static const _uuid = Uuid();
 
-  SpacedRepetitionService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+  SpacedRepetitionService({
+    SupabaseClient? supabase,
+    ConceptEvidenceService? evidenceService,
+  })  : _supabase = supabase ?? Supabase.instance.client,
+        _evidenceService = evidenceService;
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
@@ -183,6 +188,20 @@ class SpacedRepetitionService {
           .eq('id', item.id)
           .eq('user_id', _userId!);
 
+      // Propagate evidence asynchronously per Learning Architecture v2 §8.2
+      final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
+      _evidenceService?.recordEvidence(
+        userId: _userId!,
+        contentId: item.contentId,
+        contentType: item.contentType,
+        evidenceValue: evidenceValue,
+        lessonId: item.lessonId,
+      ).catchError((e) {
+        if (kDebugMode) {
+          print('⚠️ Concept evidence propagation error: $e');
+        }
+      });
+
       return updatedItem;
     } catch (e) {
       if (kDebugMode) {
@@ -242,7 +261,9 @@ class SpacedRepetitionService {
 
 /// Provider for SpacedRepetitionService
 final spacedRepetitionServiceProvider = Provider<SpacedRepetitionService>((ref) {
-  return SpacedRepetitionService();
+  return SpacedRepetitionService(
+    evidenceService: ConceptEvidenceService(),
+  );
 });
 
 /// Provider for all review items

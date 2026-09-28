@@ -5,6 +5,7 @@ import '../../models/learning_context.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/targets/target_readiness_card.dart';
 
 class TargetDetailScreen extends ConsumerWidget {
   final String targetId;
@@ -176,36 +177,43 @@ class TargetDetailScreen extends ConsumerWidget {
                   error: (e, _) => const SizedBox.shrink(),
                   data: (ver) {
                     if (ver == null) return const SizedBox.shrink();
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(DesignTokens.space3),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.verified, color: Colors.green),
-                            const SizedBox(width: DesignTokens.space3),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Curriculum Version ${ver.versionCode}',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  if (ver.title != null)
-                                    Text(
-                                      ver.title!,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(DesignTokens.space3),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified, color: Colors.green),
+                                const SizedBox(width: DesignTokens.space3),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Curriculum Version ${ver.versionCode}',
+                                        style: theme.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
+                                      if (ver.title != null)
+                                        Text(
+                                          ver.title!,
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: DesignTokens.space4),
+                        TargetReadinessCard(targetVersionId: ver.id),
+                      ],
                     );
                   },
                 ),
