@@ -7,10 +7,12 @@
 do $$
 declare
   cp record;
+  cp_json jsonb;
   new_target_id uuid;
   new_version_id uuid;
   new_node_id uuid;
   c_rec record;
+  c_json jsonb;
   new_concept_id uuid;
   sec_rec record;
   new_module_id uuid;
@@ -23,11 +25,12 @@ begin
     for cp in
       select * from public.career_paths
     loop
+      cp_json := to_jsonb(cp);
       -- Check if already mapped in v2_migration_map
       select v2_id into new_target_id
       from public.v2_migration_map
       where legacy_type = 'career_path'
-        and legacy_id = cp.id::text
+        and legacy_id = cp_json->>'id'
         and v2_type = 'learning_target';
 
       if new_target_id is null then
@@ -49,16 +52,22 @@ begin
         ) values (
           new_target_id,
           'career',
-          cp.title,
-          cp.slug,
-          cp.description,
-          cp.image_url,
-          coalesce(cp.is_public, true),
-          coalesce(cp.is_official, false),
+          coalesce(cp_json->>'title', 'Untitled Career'),
+          coalesce(cp_json->>'slug', 'career-' || substr(md5(gen_random_uuid()::text), 1, 8)),
+          cp_json->>'description',
+          cp_json->>'image_url',
+          coalesce((cp_json->>'is_public')::boolean, true),
+          coalesce((cp_json->>'is_official')::boolean, false),
           'published',
-          cp.created_by,
-          cp.created_at,
-          cp.updated_at
+          case
+            when (cp_json->>'created_by') is not null and (cp_json->>'created_by') ~ '^[0-9a-fA-F-]{36}$'
+              then (cp_json->>'created_by')::uuid
+            when (cp_json->>'user_id') is not null and (cp_json->>'user_id') ~ '^[0-9a-fA-F-]{36}$'
+              then (cp_json->>'user_id')::uuid
+            else null
+          end,
+          coalesce((cp_json->>'created_at')::timestamptz, now()),
+          coalesce((cp_json->>'updated_at')::timestamptz, (cp_json->>'created_at')::timestamptz, now())
         )
         on conflict (slug) do update
           set title = excluded.title
@@ -71,7 +80,7 @@ begin
           v2_id
         ) values (
           'career_path',
-          cp.id::text,
+          cp_json->>'id',
           'learning_target',
           new_target_id
         )
@@ -93,8 +102,8 @@ begin
           'v1',
           'Initial Curriculum',
           'published',
-          cp.created_at,
-          cp.updated_at
+          coalesce((cp_json->>'created_at')::timestamptz, now()),
+          coalesce((cp_json->>'updated_at')::timestamptz, (cp_json->>'created_at')::timestamptz, now())
         )
         on conflict (target_id, version_code) do update
           set title = excluded.title
@@ -107,7 +116,7 @@ begin
           v2_id
         ) values (
           'career_path_version',
-          cp.id::text,
+          cp_json->>'id',
           'target_version',
           new_version_id
         )
@@ -128,11 +137,11 @@ begin
           new_node_id,
           new_version_id,
           'track',
-          cp.title,
+          coalesce(cp_json->>'title', 'Untitled Career'),
           0,
           'core',
-          cp.created_at,
-          cp.updated_at
+          coalesce((cp_json->>'created_at')::timestamptz, now()),
+          coalesce((cp_json->>'updated_at')::timestamptz, (cp_json->>'created_at')::timestamptz, now())
         );
 
         -- Attach courses from career_path_courses if table exists
@@ -149,7 +158,7 @@ begin
             coalesce(cpc.order_index, 0),
             coalesce(cpc.is_required, true)
           from public.career_path_courses cpc
-          where cpc.career_path_id = cp.id
+          where cpc.career_path_id = (cp_json->>'id')::uuid
           on conflict do nothing;
         end if;
 
@@ -164,10 +173,11 @@ begin
     for c_rec in
       select * from public.concepts
     loop
+      c_json := to_jsonb(c_rec);
       select v2_id into new_concept_id
       from public.v2_migration_map
       where legacy_type = 'legacy_concept'
-        and legacy_id = c_rec.id::text
+        and legacy_id = c_json->>'id'
         and v2_type = 'knowledge_concept';
 
       if new_concept_id is null then
@@ -186,15 +196,21 @@ begin
           updated_at
         ) values (
           new_concept_id,
-          c_rec.concept_text,
-          c_rec.example_text,
-          c_rec.emoji,
+          coalesce(c_json->>'concept_text', c_json->>'name', 'Untitled Concept'),
+          c_json->>'example_text',
+          c_json->>'emoji',
           'active',
-          c_rec.created_by,
+          case
+            when (c_json->>'created_by') is not null and (c_json->>'created_by') ~ '^[0-9a-fA-F-]{36}$'
+              then (c_json->>'created_by')::uuid
+            when (c_json->>'user_id') is not null and (c_json->>'user_id') ~ '^[0-9a-fA-F-]{36}$'
+              then (c_json->>'user_id')::uuid
+            else null
+          end,
           'legacy_concept',
-          c_rec.id::text,
-          coalesce(c_rec.created_at, now()),
-          coalesce(c_rec.created_at, now())
+          c_json->>'id',
+          coalesce((c_json->>'created_at')::timestamptz, now()),
+          coalesce((c_json->>'updated_at')::timestamptz, (c_json->>'created_at')::timestamptz, now())
         );
 
         insert into public.v2_migration_map (
@@ -204,27 +220,29 @@ begin
           v2_id
         ) values (
           'legacy_concept',
-          c_rec.id::text,
+          c_json->>'id',
           'knowledge_concept',
           new_concept_id
         )
         on conflict do nothing;
 
-        -- Bind to lesson in lesson_concepts
-        if c_rec.lesson_id is not null then
+        -- Bind to lesson in lesson_concepts if lesson exists
+        if (c_json->>'lesson_id') is not null and (c_json->>'lesson_id') ~ '^[0-9a-fA-F-]{36}$' then
           insert into public.lesson_concepts (
             lesson_id,
             concept_id,
             role,
             weight,
             sort_order
-          ) values (
-            c_rec.lesson_id,
+          )
+          select
+            l.id,
             new_concept_id,
             'primary',
             1.0,
             0
-          )
+          from public.lessons l
+          where l.id = (c_json->>'lesson_id')::uuid
           on conflict do nothing;
         end if;
 
