@@ -20,7 +20,7 @@ class SupabaseConfig {
   // existing deployments working when no --dart-define / .env is provided.
   static const String _fallbackUrl = 'https://xzvkdwebtbxlrxagtzlv.supabase.co';
   static const String _fallbackAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6dmtkd2VidGJ4bHJ4YWd0emx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTY4NTMsImV4cCI6MjA2OTAzMjg1M30.PrrRi4aecxwUVSeKgor-la2Vk-Tg6heRPGdUOzfEPIY';
+      'sb_publishable_CHeZhqsA_unx_imSPmvf9w_2VAoEf2D';
 
   static String _fromDotenv(String key) {
     try {
