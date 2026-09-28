@@ -74,12 +74,24 @@
     // Log feature detection results
     console.log('🌐 Browser Speech Support:', window.speechSupport);
     
-    // Safari-compatible service worker registration
+    // Safari-compatible service worker registration with active update checking
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('/flutter_service_worker.js')
           .then(function(registration) {
             console.log('🔧 Service Worker registered successfully');
+            registration.update();
+            registration.addEventListener('updatefound', function() {
+              const installingWorker = registration.installing;
+              if (installingWorker) {
+                installingWorker.addEventListener('statechange', function() {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 New version detected! Reloading page to update...');
+                    window.location.reload();
+                  }
+                });
+              }
+            });
           })
           .catch(function(error) {
             console.log('🔧 Service Worker registration failed:', error);

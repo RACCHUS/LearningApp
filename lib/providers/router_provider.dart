@@ -17,9 +17,6 @@ import 'package:learning_pwa/screens/courses/course_detail_screen.dart';
 import 'package:learning_pwa/screens/study_sets/content_picker_screen.dart';
 import 'package:learning_pwa/screens/study_sets/saved_study_sets_screen.dart';
 import 'package:learning_pwa/screens/progress/progress_screen.dart';
-import 'package:learning_pwa/screens/careers/career_paths_screen.dart';
-import 'package:learning_pwa/screens/careers/career_path_create_screen.dart';
-import 'package:learning_pwa/screens/careers/my_careers_screen.dart';
 import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
 import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
@@ -321,19 +318,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Career paths routes (Legacy retirement redirects to Learning Architecture v2 targets)
       GoRoute(
         path: '/career-paths',
-        redirect: (context, state) => '/careers',
+        redirect: (context, state) => '/library',
       ),
       GoRoute(
         path: '/careers',
         name: 'career-paths',
-        builder: (context, state) => const CareerPathsScreen(),
+        redirect: (context, state) => '/library',
       ),
-      // NOTE: Must be registered BEFORE the `/careers/:careerPathId` route
-      // so the literal `create` segment wins over the path parameter.
       GoRoute(
         path: '/careers/create',
-        name: 'career-path-create',
-        builder: (context, state) => const CareerPathCreateScreen(),
+        redirect: (context, state) => '/library',
       ),
       GoRoute(
         path: '/careers/:careerPathId',
@@ -345,8 +339,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/my-careers',
-        name: 'my-careers',
-        builder: (context, state) => const MyCareersScreen(),
+        redirect: (context, state) => '/library',
       ),
 
       // Skills routes
