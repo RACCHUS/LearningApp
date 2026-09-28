@@ -14,6 +14,7 @@ import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/local_lesson.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/core/hive_type_ids.dart';
 
 // Register Hive adapters for all models
@@ -50,6 +51,12 @@ void registerHiveAdapters() {
   if (!Hive.isAdapterRegistered(HiveTypeIds.resumePointer)) {
     Hive.registerAdapter(ResumePointerAdapter());
   }
+  if (!Hive.isAdapterRegistered(HiveTypeIds.resolvedScopeCache)) {
+    Hive.registerAdapter(ResolvedScopeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(HiveTypeIds.contextCurriculumSnapshot)) {
+    Hive.registerAdapter(ContextCurriculumSnapshotAdapter());
+  }
   // UserProgress adapter should be registered if it exists
   // Add other adapters as needed
 }
@@ -69,6 +76,8 @@ class HiveService {
   static const String _progressBox = 'progress';
   static const String _learningContextsBox = 'learning_contexts';
   static const String _resumePointersBox = 'resume_pointers';
+  static const String _resolvedScopesBox = 'resolved_scopes';
+  static const String _contextSnapshotsBox = 'context_snapshots';
   
   bool _isInitialized = false;
   
@@ -79,12 +88,20 @@ class HiveService {
   late final Box<UserProgress> _progressBoxInstance;
   late final Box<LearningContext> _learningContextBox;
   late final Box<ResumePointer> _resumePointerBox;
+  late final Box<ResolvedScope> _resolvedScopeBox;
+  late final Box<ContextCurriculumSnapshot> _contextSnapshotBox;
 
   /// Contexts the learner is pursuing. See `UI_ARCHITECTURE_LOCKED.md` §4.2.
   Box<LearningContext> get learningContextBox => _learningContextBox;
 
   /// Where the learner stopped, one entry per context.
   Box<ResumePointer> get resumePointerBox => _resumePointerBox;
+
+  /// Offline cache of resolved scopes for active contexts (§7.4).
+  Box<ResolvedScope> get resolvedScopeBox => _resolvedScopeBox;
+
+  /// Lightweight curriculum outline snapshots for instant offline rendering (§7.4).
+  Box<ContextCurriculumSnapshot> get contextSnapshotBox => _contextSnapshotBox;
   
   /// Check if HiveService is initialized
   bool get isInitialized => _isInitialized;
@@ -121,6 +138,10 @@ class HiveService {
           await Hive.openBox<LearningContext>(_learningContextsBox);
       _resumePointerBox =
           await Hive.openBox<ResumePointer>(_resumePointersBox);
+      _resolvedScopeBox =
+          await Hive.openBox<ResolvedScope>(_resolvedScopesBox);
+      _contextSnapshotBox =
+          await Hive.openBox<ContextCurriculumSnapshot>(_contextSnapshotsBox);
       
       _isInitialized = true;
       debugPrint('✅ HiveService initialized successfully');

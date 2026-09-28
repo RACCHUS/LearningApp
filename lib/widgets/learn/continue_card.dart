@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// The single primary action. Exactly one filled button, exactly one secondary.
-class ContinueCard extends StatelessWidget {
+class ContinueCard extends ConsumerWidget {
   final NextAction action;
 
   const ContinueCard({super.key, required this.action});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final view = _ContinueView.from(action);
+    final activeContext = ref.watch(learningContextsProvider).active;
+    final view = _ContinueView.from(action, activeContext);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +87,7 @@ class _ContinueView {
     this.rationale,
   });
 
-  factory _ContinueView.from(NextAction action) {
+  factory _ContinueView.from(NextAction action, [LearningContext? context]) {
     switch (action) {
       case ResumeActivity(:final activity):
         return _ContinueView(
@@ -93,8 +97,8 @@ class _ContinueView {
           rationale: action.rationale,
           primaryLabel: 'Continue',
           primaryRoute: _route(activity),
-          secondaryLabel: _secondaryLabel(activity),
-          secondaryRoute: _secondaryRoute(activity),
+          secondaryLabel: _secondaryLabel(activity, context),
+          secondaryRoute: _secondaryRoute(activity, context),
         );
 
       case StartActivity(:final activity):
@@ -105,8 +109,8 @@ class _ContinueView {
           rationale: action.rationale,
           primaryLabel: activity is StudySetActivity ? 'Practice' : 'Start',
           primaryRoute: _route(activity),
-          secondaryLabel: _secondaryLabel(activity),
-          secondaryRoute: _secondaryRoute(activity),
+          secondaryLabel: _secondaryLabel(activity, context),
+          secondaryRoute: _secondaryRoute(activity, context),
         );
 
       case ReinforceConcepts(:final activity):
@@ -186,7 +190,8 @@ class _ContinueView {
     return '/review';
   }
 
-  static String _secondaryLabel(LearningActivity activity) {
+  static String _secondaryLabel(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootType == ContextRootType.target) return 'Exam outline →';
     if (activity is StudySetActivity) return 'Browse set';
     if (activity is LessonActivity && activity.courseId == null) {
       return 'Choose lesson';
@@ -194,7 +199,10 @@ class _ContinueView {
     return 'Course outline';
   }
 
-  static String _secondaryRoute(LearningActivity activity) {
+  static String _secondaryRoute(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootType == ContextRootType.target) {
+      return '/target/${context!.rootId}/outline';
+    }
     if (activity is LessonActivity) {
       final courseId = activity.courseId;
       return courseId == null ? '/library' : '/course/$courseId/outline';

@@ -19,7 +19,6 @@ import 'package:learning_pwa/screens/study_sets/saved_study_sets_screen.dart';
 import 'package:learning_pwa/screens/progress/progress_screen.dart';
 import 'package:learning_pwa/screens/careers/career_paths_screen.dart';
 import 'package:learning_pwa/screens/careers/career_path_create_screen.dart';
-import 'package:learning_pwa/screens/careers/career_path_detail_screen.dart';
 import 'package:learning_pwa/screens/careers/my_careers_screen.dart';
 import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
@@ -31,6 +30,11 @@ import 'package:learning_pwa/screens/onboarding/onboarding_screen.dart';
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
 import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
+import 'package:learning_pwa/screens/targets/target_detail_screen.dart';
+import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
+import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
+import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
+import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -69,13 +73,60 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Course outline — the single secondary destination from Learn.
+      // Course outline — the single secondary destination from Learn for courses.
       GoRoute(
         path: '/course/:courseId/outline',
         name: 'course-outline',
         builder: (context, state) => CourseOutlineScreen(
           courseId: state.pathParameters['courseId']!,
         ),
+      ),
+
+      // Target detail and outline routes (Learning Architecture v2)
+      GoRoute(
+        path: '/target/:targetId',
+        name: 'target-detail',
+        builder: (context, state) => TargetDetailScreen(
+          targetId: state.pathParameters['targetId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/target/:targetId/outline',
+        name: 'target-outline',
+        builder: (context, state) => TargetOutlineScreen(
+          targetId: state.pathParameters['targetId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/concept/:conceptId',
+        name: 'concept-detail',
+        builder: (context, state) => ConceptDetailScreen(
+          conceptId: state.pathParameters['conceptId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/start-learning',
+        name: 'start-learning',
+        builder: (context, state) {
+          final title = state.uri.queryParameters['title'] ?? 'Learning Target';
+          final rootTypeStr = state.uri.queryParameters['rootType'] ?? 'target';
+          final rootId = state.uri.queryParameters['rootId'] ?? '';
+          final emoji = state.uri.queryParameters['emoji'];
+          final targetVersionId = state.uri.queryParameters['targetVersionId'];
+
+          final rootType = ContextRootType.values.firstWhere(
+            (e) => e.name == rootTypeStr,
+            orElse: () => ContextRootType.target,
+          );
+
+          return StartLearningScreen(
+            title: title,
+            rootType: rootType,
+            rootId: rootId,
+            emoji: emoji,
+            targetVersionId: targetVersionId,
+          );
+        },
       ),
 
       GoRoute(
@@ -267,7 +318,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Career paths routes
+      // Career paths routes (Legacy retirement redirects to Learning Architecture v2 targets)
+      GoRoute(
+        path: '/career-paths',
+        redirect: (context, state) => '/careers',
+      ),
       GoRoute(
         path: '/careers',
         name: 'career-paths',
@@ -283,9 +338,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/careers/:careerPathId',
         name: 'career-path-detail',
-        builder: (context, state) {
+        redirect: (context, state) {
           final careerPathId = state.pathParameters['careerPathId']!;
-          return CareerPathDetailScreen(pathId: careerPathId);
+          return '/target/$careerPathId';
         },
       ),
       GoRoute(

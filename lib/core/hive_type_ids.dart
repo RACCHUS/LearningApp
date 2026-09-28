@@ -30,9 +30,11 @@ class HiveTypeIds {
   static const int localLesson = 9; // LocalLessonAdapter
   static const int learningContext = 10; // LearningContextAdapter
   static const int resumePointer = 11; // ResumePointerAdapter
+  static const int resolvedScopeCache = 12; // ResolvedScopeCacheAdapter (v2)
+  static const int contextCurriculumSnapshot = 13; // ContextCurriculumSnapshotAdapter (v2)
   static const int audioSettings = 20; // AudioSettingsAdapter
   static const int audioLessonSettings = 21; // AudioLessonSettingsAdapter
 
   /// Ids that are free for new models (gaps in the sequence above).
-  static const List<int> freeIds = [7, 12, 13, 14, 15, 16, 17, 18, 19];
+  static const List<int> freeIds = [7, 14, 15, 16, 17, 18, 19];
 }

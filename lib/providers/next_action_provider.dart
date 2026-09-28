@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/services/course_service.dart';
 import 'package:learning_pwa/services/learning_context_service.dart';
 import 'package:learning_pwa/services/learning_context_migration.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/services/saved_study_set_service.dart';
+import 'package:learning_pwa/services/scope_resolver.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 
 final courseServiceProvider = Provider<CourseService>((ref) => CourseService());
@@ -51,26 +54,73 @@ class ContextSnapshotResolver {
   final SavedStudySetService _studySets;
   final SpacedRepetitionService _reviews;
   final LearningContextService _contexts;
+  final ScopeResolver? _scopeResolver;
 
   const ContextSnapshotResolver({
     required CourseService courses,
     required SavedStudySetService studySets,
     required SpacedRepetitionService reviews,
     required LearningContextService contexts,
+    ScopeResolver? scopeResolver,
   })  : _courses = courses,
         _studySets = studySets,
         _reviews = reviews,
-        _contexts = contexts;
+        _contexts = contexts,
+        _scopeResolver = scopeResolver;
 
   Future<ContextSnapshot> resolve(LearningContext context) async {
     final due = await _safeDueItems();
     final resume = _contexts.resumeFor(context.id);
+
+    ResolvedScope? resolvedScope;
+    if (_scopeResolver != null &&
+        (context.rootType == ContextRootType.target ||
+            context.rootType == ContextRootType.concept)) {
+      try {
+        resolvedScope = await _scopeResolver.resolveScope(context);
+      } catch (e) {
+        debugPrint('⚠️ Could not resolve scope for context ${context.id}: $e');
+      }
+    }
 
     LearningActivity? next;
     LearningActivity? resumeActivity;
     var resumeItemCount = 0;
 
     switch (context.rootType) {
+      case ContextRootType.target:
+      case ContextRootType.concept:
+        if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
+          final studied = due.map((i) => i.lessonId).toSet();
+          final nextAct = resolvedScope.orderedActivities
+              .where((a) => !studied.contains(a.activityId));
+          final index = resolvedScope.orderedActivities
+              .indexWhere((a) => !studied.contains(a.activityId));
+
+          if (nextAct.isNotEmpty) {
+            final first = nextAct.first;
+            next = LessonActivity(
+              lessonId: first.activityId,
+              title: first.title,
+              courseId: first.courseId,
+              courseTitle: first.courseTitle,
+              moduleTitle: first.moduleTitle,
+              position: index >= 0 ? index + 1 : null,
+              total: resolvedScope.orderedActivities.length,
+            );
+          } else {
+            next = null;
+          }
+          resumeActivity = _lessonFromPointer(resume);
+          resumeItemCount = 0;
+        } else {
+          final resolved = await _resolveCourseActivity(context, due);
+          next = resolved.next;
+          resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
+          resumeItemCount = resolved.resumeItemCount;
+        }
+        break;
+
       case ContextRootType.path:
       case ContextRootType.course:
       case ContextRootType.module:
@@ -101,7 +151,7 @@ class ContextSnapshotResolver {
     }
 
     final dueIds = due
-        .where((i) => _belongsToContext(i, context))
+        .where((i) => _belongsToContext(i, context, resolvedScope))
         .map((i) => i.contentId)
         .toList();
 
@@ -192,7 +242,18 @@ class ContextSnapshotResolver {
     return items.where((i) => i.lessonId == lessonId).length;
   }
 
-  bool _belongsToContext(ReviewableItem item, LearningContext context) {
+  bool _belongsToContext(
+    ReviewableItem item,
+    LearningContext context, [
+    ResolvedScope? scope,
+  ]) {
+    if (scope != null) {
+      if (scope.containsConcept(item.contentId)) return true;
+      if (item.lessonId != null && scope.containsActivity(item.lessonId!)) {
+        return true;
+      }
+      return false;
+    }
     if (context.rootType == ContextRootType.lesson) {
       return item.lessonId == context.rootId;
     }
@@ -224,6 +285,7 @@ final contextSnapshotResolverProvider = Provider<ContextSnapshotResolver>((ref) 
     studySets: ref.watch(savedStudySetServiceProvider),
     reviews: ref.watch(spacedRepetitionServiceProvider),
     contexts: ref.watch(learningContextServiceProvider),
+    scopeResolver: ref.watch(scopeResolverProvider),
   );
 });
 

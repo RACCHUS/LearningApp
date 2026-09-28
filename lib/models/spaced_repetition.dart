@@ -52,7 +52,9 @@ enum ReviewableContentType {
   /// Matching pairs
   matching,
   /// Free-form question (legacy)
-  question;
+  question,
+  /// Standalone or lesson-bound flashcard (v2)
+  flashcard;
 
   String get displayName {
     switch (this) {
@@ -70,6 +72,8 @@ enum ReviewableContentType {
         return 'Matching';
       case ReviewableContentType.question:
         return 'Question';
+      case ReviewableContentType.flashcard:
+        return 'Flashcard';
     }
   }
 
@@ -90,6 +94,8 @@ enum ReviewableContentType {
         return '🔗';
       case ReviewableContentType.question:
         return '❓';
+      case ReviewableContentType.flashcard:
+        return '🗂️';
     }
   }
 
@@ -134,7 +140,7 @@ class ReviewableItem {
   final String id;
   final String contentId;
   final ReviewableContentType contentType;
-  final String lessonId;
+  final String? lessonId;
   final String title;
   final String? subtitle;
   final int repetitionLevel;
@@ -152,7 +158,7 @@ class ReviewableItem {
     required this.id,
     required this.contentId,
     required this.contentType,
-    required this.lessonId,
+    this.lessonId,
     required this.title,
     this.subtitle,
     this.repetitionLevel = 0,
@@ -250,7 +256,7 @@ class ReviewableItem {
         (e) => e.name == json['content_type'],
         orElse: () => ReviewableContentType.term,
       ),
-      lessonId: json['lesson_id'] as String,
+      lessonId: json['lesson_id'] as String?,
       title: json['title'] as String,
       subtitle: json['subtitle'] as String?,
       repetitionLevel: json['repetition_level'] as int? ?? 0,
@@ -291,6 +297,7 @@ class ReviewableItem {
     String? contentId,
     ReviewableContentType? contentType,
     String? lessonId,
+    bool clearLessonId = false,
     String? title,
     String? subtitle,
     int? repetitionLevel,
@@ -305,7 +312,7 @@ class ReviewableItem {
       id: id ?? this.id,
       contentId: contentId ?? this.contentId,
       contentType: contentType ?? this.contentType,
-      lessonId: lessonId ?? this.lessonId,
+      lessonId: clearLessonId ? null : (lessonId ?? this.lessonId),
       title: title ?? this.title,
       subtitle: subtitle ?? this.subtitle,
       repetitionLevel: repetitionLevel ?? this.repetitionLevel,

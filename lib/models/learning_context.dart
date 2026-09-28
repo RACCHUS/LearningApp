@@ -2,10 +2,22 @@ import 'package:hive/hive.dart';
 import 'package:learning_pwa/core/hive_type_ids.dart';
 
 /// Where a [LearningContext] is rooted in the content hierarchy.
-///
-/// `goal` is deliberately absent: no Goal entity exists yet (spec D4).
-/// Concepts are absent too — they are measurement atoms, not destinations.
-enum ContextRootType { path, course, module, lesson, studySet }
+enum ContextRootType {
+  target,
+  path,
+  course,
+  module,
+  lesson,
+  concept,
+  studySet,
+}
+
+/// How prerequisites and secondary concepts are included in scope.
+enum ScopeMode {
+  coreOnly,
+  coreAndPrerequisites,
+  custom,
+}
 
 /// Activity kinds that can be meaningfully resumed.
 ///
@@ -18,7 +30,7 @@ enum ResumableKind { lesson, studySet }
 /// the hierarchy that thing happens to live.
 ///
 /// This is what makes the hierarchy optional: the switcher and the Learn screen
-/// never care whether the root is a career path or a bare study set.
+/// never care whether the root is a career path, an exam target, or a bare study set.
 class LearningContext {
   final String id;
   final String userId;
@@ -32,6 +44,19 @@ class LearningContext {
   /// `>= 0` pins the context; `-1` leaves it ordered by [lastActiveAt].
   final int sortOrder;
 
+  /// For `target` contexts: the specific version of the target curriculum.
+  final String? targetVersionId;
+
+  /// Focused sub-area within the context (e.g. 'exam_domain', 'module').
+  final String? activeFocusType;
+  final String? activeFocusId;
+
+  /// How prerequisites are included in the scope.
+  final ScopeMode scopeMode;
+
+  /// Target/context specific configuration (e.g. elective exclusions).
+  final Map<String, dynamic> scopeConfig;
+
   const LearningContext({
     required this.id,
     required this.userId,
@@ -42,6 +67,11 @@ class LearningContext {
     this.emoji,
     this.isArchived = false,
     this.sortOrder = -1,
+    this.targetVersionId,
+    this.activeFocusType,
+    this.activeFocusId,
+    this.scopeMode = ScopeMode.coreAndPrerequisites,
+    this.scopeConfig = const {},
   });
 
   bool get isPinned => sortOrder >= 0;
@@ -60,6 +90,13 @@ class LearningContext {
     DateTime? lastActiveAt,
     bool? isArchived,
     int? sortOrder,
+    String? targetVersionId,
+    bool clearTargetVersionId = false,
+    String? activeFocusType,
+    String? activeFocusId,
+    bool clearActiveFocus = false,
+    ScopeMode? scopeMode,
+    Map<String, dynamic>? scopeConfig,
   }) {
     return LearningContext(
       id: id ?? this.id,
@@ -71,6 +108,15 @@ class LearningContext {
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       isArchived: isArchived ?? this.isArchived,
       sortOrder: sortOrder ?? this.sortOrder,
+      targetVersionId: clearTargetVersionId
+          ? null
+          : (targetVersionId ?? this.targetVersionId),
+      activeFocusType:
+          clearActiveFocus ? null : (activeFocusType ?? this.activeFocusType),
+      activeFocusId:
+          clearActiveFocus ? null : (activeFocusId ?? this.activeFocusId),
+      scopeMode: scopeMode ?? this.scopeMode,
+      scopeConfig: scopeConfig ?? this.scopeConfig,
     );
   }
 
@@ -84,6 +130,11 @@ class LearningContext {
         'last_active_at': lastActiveAt.toIso8601String(),
         'is_archived': isArchived,
         'sort_order': sortOrder,
+        if (targetVersionId != null) 'target_version_id': targetVersionId,
+        if (activeFocusType != null) 'active_focus_type': activeFocusType,
+        if (activeFocusId != null) 'active_focus_id': activeFocusId,
+        'scope_mode': scopeMode.name,
+        'scope_config': scopeConfig,
       };
 
   factory LearningContext.fromJson(Map<String, dynamic> json) {
@@ -106,6 +157,11 @@ class LearningContext {
           DateTime.fromMillisecondsSinceEpoch(0),
       isArchived: json['is_archived'] as bool? ?? false,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? -1,
+      targetVersionId: json['target_version_id'] as String?,
+      activeFocusType: json['active_focus_type'] as String?,
+      activeFocusId: json['active_focus_id'] as String?,
+      scopeMode: _scopeModeFromName(json['scope_mode'] as String?),
+      scopeConfig: (json['scope_config'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
 
@@ -113,6 +169,13 @@ class LearningContext {
     return ContextRootType.values.firstWhere(
       (t) => t.name == name,
       orElse: () => ContextRootType.course,
+    );
+  }
+
+  static ScopeMode _scopeModeFromName(String? name) {
+    return ScopeMode.values.firstWhere(
+      (m) => m.name == name,
+      orElse: () => ScopeMode.coreAndPrerequisites,
     );
   }
 
@@ -216,27 +279,72 @@ class LearningContextAdapter extends TypeAdapter<LearningContext> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    final rootTypeIndex = (fields[3] as num?)?.toInt() ?? 0;
+
+    final rawRoot = fields[3];
+    ContextRootType rootType;
+    if (rawRoot is String) {
+      rootType = ContextRootType.values.firstWhere(
+        (e) => e.name == rawRoot,
+        orElse: () => ContextRootType.course,
+      );
+    } else if (rawRoot is int) {
+      // Deterministic legacy ordinal mapping from v1:
+      // 0: path, 1: course, 2: module, 3: lesson, 4: studySet
+      switch (rawRoot) {
+        case 0:
+          rootType = ContextRootType.path;
+          break;
+        case 1:
+          rootType = ContextRootType.course;
+          break;
+        case 2:
+          rootType = ContextRootType.module;
+          break;
+        case 3:
+          rootType = ContextRootType.lesson;
+          break;
+        case 4:
+          rootType = ContextRootType.studySet;
+          break;
+        default:
+          rootType = ContextRootType.course;
+      }
+    } else {
+      rootType = ContextRootType.course;
+    }
+
+    final rawScopeMode = fields[12];
+    ScopeMode scopeMode = ScopeMode.coreAndPrerequisites;
+    if (rawScopeMode is String) {
+      scopeMode = ScopeMode.values.firstWhere(
+        (m) => m.name == rawScopeMode,
+        orElse: () => ScopeMode.coreAndPrerequisites,
+      );
+    }
+
     return LearningContext(
       id: fields[0] as String,
       userId: fields[1] as String? ?? '',
       label: fields[2] as String? ?? 'Untitled',
-      rootType: rootTypeIndex >= 0 && rootTypeIndex < ContextRootType.values.length
-          ? ContextRootType.values[rootTypeIndex]
-          : ContextRootType.course,
+      rootType: rootType,
       rootId: fields[4] as String? ?? '',
       emoji: fields[5] as String?,
       lastActiveAt: fields[6] as DateTime? ??
           DateTime.fromMillisecondsSinceEpoch(0),
       isArchived: fields[7] as bool? ?? false,
       sortOrder: (fields[8] as num?)?.toInt() ?? -1,
+      targetVersionId: fields[9] as String?,
+      activeFocusType: fields[10] as String?,
+      activeFocusId: fields[11] as String?,
+      scopeMode: scopeMode,
+      scopeConfig: (fields[13] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
 
   @override
   void write(BinaryWriter writer, LearningContext obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -244,7 +352,7 @@ class LearningContextAdapter extends TypeAdapter<LearningContext> {
       ..writeByte(2)
       ..write(obj.label)
       ..writeByte(3)
-      ..write(obj.rootType.index)
+      ..write(obj.rootType.name) // Stable String serialization in v2
       ..writeByte(4)
       ..write(obj.rootId)
       ..writeByte(5)
@@ -254,7 +362,17 @@ class LearningContextAdapter extends TypeAdapter<LearningContext> {
       ..writeByte(7)
       ..write(obj.isArchived)
       ..writeByte(8)
-      ..write(obj.sortOrder);
+      ..write(obj.sortOrder)
+      ..writeByte(9)
+      ..write(obj.targetVersionId)
+      ..writeByte(10)
+      ..write(obj.activeFocusType)
+      ..writeByte(11)
+      ..write(obj.activeFocusId)
+      ..writeByte(12)
+      ..write(obj.scopeMode.name)
+      ..writeByte(13)
+      ..write(obj.scopeConfig);
   }
 }
 

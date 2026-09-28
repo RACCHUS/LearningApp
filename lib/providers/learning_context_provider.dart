@@ -153,15 +153,41 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     required String rootId,
     String? emoji,
   }) async {
+    return createOrSwitch(
+      userId: _userId,
+      label: label,
+      rootType: rootType,
+      rootId: rootId,
+      emoji: emoji,
+    );
+  }
+
+  Future<LearningContext?> createOrSwitch({
+    required String userId,
+    required String label,
+    required ContextRootType rootType,
+    required String rootId,
+    String? emoji,
+    String? targetVersionId,
+    String? activeFocusType,
+    String? activeFocusId,
+    ScopeMode scopeMode = ScopeMode.coreAndPrerequisites,
+    Map<String, dynamic> scopeConfig = const {},
+  }) async {
     final service = _service;
     if (service == null) return null;
     try {
       final created = await service.createOrGet(
-        userId: _userId,
+        userId: userId,
         label: label,
         rootType: rootType,
         rootId: rootId,
         emoji: emoji,
+        targetVersionId: targetVersionId,
+        activeFocusType: activeFocusType,
+        activeFocusId: activeFocusId,
+        scopeMode: scopeMode,
+        scopeConfig: scopeConfig,
       );
       await load();
       await setActive(created.id);
@@ -170,6 +196,23 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
       debugPrint('❌ Could not start learning "$label": $e');
       state = state.copyWith(error: 'Could not start "$label". Please retry.');
       return null;
+    }
+  }
+
+  Future<void> updateFocus(
+    String contextId, {
+    String? activeFocusType,
+    String? activeFocusId,
+  }) async {
+    try {
+      await _service?.updateFocus(
+        contextId,
+        activeFocusType: activeFocusType,
+        activeFocusId: activeFocusId,
+      );
+      await load();
+    } catch (e) {
+      debugPrint('⚠️ Could not update focus: $e');
     }
   }
 

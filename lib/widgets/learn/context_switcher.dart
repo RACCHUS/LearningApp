@@ -126,6 +126,8 @@ class ContextSwitcher extends ConsumerWidget {
   }
 
   static String _fallbackEmoji(ContextRootType type) => switch (type) {
+        ContextRootType.target => '🎯',
+        ContextRootType.concept => '💡',
         ContextRootType.path => '🧭',
         ContextRootType.course => '📘',
         ContextRootType.module => '📗',

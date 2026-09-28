@@ -11,6 +11,13 @@ final userCoursesProvider = FutureProvider<List<Course>>((ref) async {
   return courseService.getUserCourses();
 });
 
+/// Provider for searching courses
+final searchCoursesProvider =
+    FutureProvider.family<List<Course>, String>((ref, query) async {
+  final courseService = CourseService();
+  return courseService.searchCourses(query: query);
+});
+
 /// Provider for individual course progress
 final courseProgressProvider = FutureProvider.family<CourseProgress?, String>((ref, courseId) async {
   final courseService = CourseService();

@@ -58,6 +58,13 @@ class ReviewContentFactory {
           item: item,
           onAnswerSubmitted: onAnswerSubmitted,
         );
+      case ReviewableContentType.flashcard:
+        return FlashcardReviewWidget(
+          item: item,
+          showAnswer: showAnswer,
+          onReveal: onReveal,
+          onQualitySelected: onQualitySelected,
+        );
       case ReviewableContentType.question:
         // Legacy question type - treat as multiple choice if has options
         if (item.metadata?['options'] != null) {

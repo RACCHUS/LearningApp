@@ -141,6 +141,21 @@ class CourseService {
     }
   }
 
+  /// Search courses by title
+  Future<List<Course>> searchCourses({String? query, int limit = 20}) async {
+    try {
+      var q = _supabase.from('courses').select();
+      if (query != null && query.trim().isNotEmpty) {
+        q = q.ilike('title', '%${query.trim()}%');
+      }
+      final response = await q.order('title').limit(limit);
+      return (response as List).map((c) => _courseFromJson(c)).toList();
+    } catch (e) {
+      debugPrint('❌ Error searching courses: $e');
+      return [];
+    }
+  }
+
   /// Update a course
   Future<Course> updateCourse(Course course) async {
     try {

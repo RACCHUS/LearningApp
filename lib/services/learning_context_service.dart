@@ -40,6 +40,11 @@ class LearningContextService {
     required String rootId,
     String? emoji,
     DateTime? lastActiveAt,
+    String? targetVersionId,
+    String? activeFocusType,
+    String? activeFocusId,
+    ScopeMode scopeMode = ScopeMode.coreAndPrerequisites,
+    Map<String, dynamic> scopeConfig = const {},
   }) async {
     if (rootId.isEmpty) {
       throw ArgumentError.value(rootId, 'rootId', 'must not be empty');
@@ -66,9 +71,30 @@ class LearningContextService {
       rootId: rootId,
       emoji: emoji,
       lastActiveAt: lastActiveAt ?? DateTime.now(),
+      targetVersionId: targetVersionId,
+      activeFocusType: activeFocusType,
+      activeFocusId: activeFocusId,
+      scopeMode: scopeMode,
+      scopeConfig: scopeConfig,
     );
     await _contexts.put(context.id, context);
     return context;
+  }
+
+  Future<void> updateFocus(
+    String contextId, {
+    String? activeFocusType,
+    String? activeFocusId,
+  }) async {
+    final existing = _contexts.get(contextId);
+    if (existing == null) return;
+    await _contexts.put(
+      contextId,
+      existing.copyWith(
+        activeFocusType: activeFocusType,
+        activeFocusId: activeFocusId,
+      ),
+    );
   }
 
   Future<void> touch(String contextId) async {
