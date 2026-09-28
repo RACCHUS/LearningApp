@@ -25,25 +25,19 @@ jobs:
     steps:
       - name: Ping Supabase REST endpoint
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://xzvkdwebtbxlrxagtzlv.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_CHeZhqsA_unx_imSPmvf9w_2VAoEf2D' }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY secrets must be set."
-            exit 1
-          fi
-
           status=$(curl -s -o /dev/null -w '%{http_code}' \
             "$SUPABASE_URL/rest/v1/lessons?select=id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            -H "apikey: $SUPABASE_ANON_KEY")
 
           echo "Supabase responded with HTTP $status"
 
           # Any answer in the 2xx/4xx range means the project is awake and
           # serving requests. Only connection failures / 5xx indicate trouble.
           if [ "$status" -ge 200 ] && [ "$status" -lt 500 ]; then
-            echo "Project is awake."
+            echo "Project is awake and serving requests."
           else
             echo "::error::Supabase did not respond as expected (HTTP $status)."
             exit 1
