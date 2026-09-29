@@ -1,9 +1,9 @@
 # Canonical Taxonomy Architecture: Dual-Layer Learning Ontology, External Classifications (CIP / SOC / O*NET), and Labor Market Crosswalks
 
-**Document Status:** Implementation-Ready Locked Baseline — v2.1 Architecture Specification  
+**Document Status:** Final Architecture Baseline (Locked for Implementation) — v2.2 Specification  
 **Target File:** `CANONICAL_TAXONOMY_ARCHITECTURE.md` (Repository Root)  
 **Applies To:** Learning Architecture v2 (`learning_targets`, `target_versions`, `fields`, `courses`, `knowledge_concepts`, `occupation_nodes`)  
-**Version:** 2.1 — Final Pre-Implementation Specification  
+**Version:** 2.2 — Hardened Production Baseline  
 **Author:** Antigravity Engineering & System Architecture  
 
 ---
@@ -15,39 +15,38 @@ The core conceptual foundation of this architecture is the **strict separation b
 
 > **Official government taxonomies (CIP, SOC, ISCED, NAICS) are authoritative external classifications that seed and map to LearningApp; they do NOT define the immutable identity or permanent schema of our internal ontology.**
 
-If external codes are embedded directly as the primary identity of internal `fields`, then when a decennial update occurs (such as CIP 2030), the platform is forced into a dilemma: either duplicate internal fields (`Field A: Computer Science (CIP 2020)` vs `Field B: Computer Science (CIP 2030)`), or perform destructive updates that mutate existing learner progress and course links.
+If external codes are embedded directly as the primary identity of internal `fields`, then when a decennial update occurs (such as CIP 2030), the platform is forced into an impossible dilemma: either duplicate internal fields (`Field A: Computer Science (CIP 2020)` vs `Field B: Computer Science (CIP 2030)`), or perform destructive updates that mutate existing learner progress and course links.
 
 To permanently solve this, LearningApp implements a **True Dual-Layer Model**:
 1. **Internal Canonical Plane:** Our internal `fields` have permanent, immutable UUIDs and their own coherent browsing hierarchy.
 2. **External Classification Plane:** Dedicated `external_classification_nodes` store external taxonomies (CIP 2020, CIP 2030, ISCED-F 2013) with full provenance.
 3. **Crosswalk Layer:** The `field_external_classifications` junction links our permanent internal fields to one or more external classification nodes without altering internal identity.
+4. **Labor Crosswalk Layer:** The official NCES/BLS crosswalk is stored at the external layer (`external_classification_occupation_mappings`) linking CIP nodes directly to SOC occupations. An application view (`v_field_occupation_mappings`) exposes these relationships to internal fields transparently.
 
 ```
                  INTERNAL ONTOLOGY                           EXTERNAL CLASSIFICATIONS
              ┌─────────────────────────┐                    ┌─────────────────────────┐
              │    LearningApp Field    │                    │  external_class_nodes   │
              │   (Permanent UUID)      │◄───(many-to-many)─►│    (CIP 2020 / 2030)    │
-             └────────────┬────────────┘                    └─────────────────────────┘
-                          │                                              ▲
-                          ├──────────────────────────────┐               │
-                          ▼                              ▼               ▼
-             ┌─────────────────────────┐    ┌─────────────────────────┐ ┌─────────────────────────┐
-             │     CatalogCluster      │    │     learning_targets    │ │ taxonomy_source_releases│
-             │   (Presentation Layer)  │    │  (Degrees, Certs, AP,   │ │ (Provenance, Checksums) │
-             └─────────────────────────┘    │   Curriculum Standards) │ └─────────────────────────┘
-                                            └────────────┬────────────┘
-                                                         │
-                                                         ▼
-                                            ┌─────────────────────────┐ ┌─────────────────────────┐
-                                            │     occupation_nodes    │◄┤    BLS SOC / O*NET      │
-                                            │ (Hierarchical 5-Tiers)  │ │(Taxonomy vs Data Release│
-                                            └────────────┬────────────┘ └─────────────────────────┘
-                                                         │                           ▲
-                                                         ▼                           │
-                                            ┌─────────────────────────┐ ┌────────────┴────────────┐
-                                            │  occupation_industries  │◄┤   BLS National Matrix   │
-                                            │  (Employment Matrix)    │ │      & US NAICS         │
-                                            └─────────────────────────┘ └─────────────────────────┘
+             └────────────┬────────────┘                    └────────────┬────────────┘
+                          │                                              │ (Official Crosswalk)
+                          ├──────────────────────────────┐               ▼
+                          ▼                              ▼  ┌─────────────────────────┐
+             ┌─────────────────────────┐    ┌──────────┐ │  │ ext_class_occ_mappings │
+             │     CatalogCluster      │    │ Targets  │ │  │ (CIP Code ↔ SOC Code)   │
+             │   (Presentation Layer)  │    │ & Courses│ │  └────────────┬────────────┘
+             └─────────────────────────┘    └──────────┘ │               │
+                                                         │               ▼
+                                            ┌────────────┴────────┐ ┌─────────────────────────┐
+                                            │ v_field_occ_mappings│◄┤     occupation_nodes    │
+                                            │  (Application View) │ │ (Hierarchical 5-Tiers)  │
+                                            └─────────────────────┘ └────────────┬────────────┘
+                                                                                 │
+                                                                                 ▼
+                                                                    ┌─────────────────────────┐
+                                                                    │  occupation_industries  │
+                                                                    │  (BLS Matrix & NAICS)   │
+                                                                    └─────────────────────────┘
 ```
 
 ### 1.2 Core Standards Reference Matrix
@@ -57,8 +56,8 @@ To permanently solve this, LearningApp implements a **True Dual-Layer Model**:
 | **Fields of Study** | **NCES CIP 2020** (US Dept of Education) | `fields` $\longleftrightarrow$ `external_classification_nodes` | Initial canonical seed (~48 series, ~450 groups, ~2,400 programs). Internal UUIDs remain permanent. |
 | **International Fields** | **UNESCO ISCED-F 2013** | `external_classification_nodes` | Many-to-many external classification crosswalk (11 broad, 29 narrow, 80 detailed fields). |
 | **Occupations & Labor** | **BLS SOC 2018 + O\*NET-SOC 2019** | `occupation_nodes` | Independent 5-tier labor taxonomy (Major $\rightarrow$ Minor $\rightarrow$ Broad $\rightarrow$ Detailed $\rightarrow$ O\*NET Extension). |
-| **Field ↔ Career Relations** | **NCES / BLS Official Crosswalk** | `field_occupation_mappings` | **Qualitative, content-based alignment** (unweighted binary links). |
-| **Labor Analytics & Fit** | **BLS Projections & Outcomes** | `field_occupation_metrics` | Generic, typed analytical metrics with strict population and methodology attribution. |
+| **Field ↔ Career Relations** | **NCES / BLS Official Crosswalk** | `external_classification_occupation_mappings` | **Qualitative, content-based alignment** linking CIP nodes to SOC nodes. Queried via view `v_field_occupation_mappings`. |
+| **Labor Analytics & Fit** | **BLS Projections & Outcomes** | `field_occupation_metrics` | Generic, typed analytical metrics with strict population, methodology, and fail-closed privacy safeguards. |
 | **Industries** | **US Census NAICS 2022 + BLS Matrix** | `occupation_industries` | Many-to-many matrix capturing actual employment concentrations by industry sector. |
 | **Non-Institutional Topics** | **LearningApp Native Fields** | `fields` (`field_kind = 'native_field'`) | Native fields with semantic lateral relations, NOT forced sub-children of CIP codes. |
 | **K–12 Curriculum & Benchmarks**| **State Standards, NGSS, Common Core, AP** | `learning_targets` (`target_type = 'curriculum_standard'`) | Specific academic benchmarks modeled as formal targets, not artificial CIP field nodes. |
@@ -144,8 +143,8 @@ CIP 2020 contains **48 primary two-digit series**, not 47. Crucially, the non-de
    - Populates `taxonomy_node_lineage` using the official NCES CIP 2020 $\rightarrow$ 2030 change crosswalk.
    - **Result:** No duplicate internal fields are created. Existing targets, courses, and user progress remain untouched.
 
-### 3.3 Decennial Lineage Tracking with Valid Null Endpoints
-When external agencies publish edition changes, official statuses include deletions (which have no `to_code`) and new introductions (which have no `from_code`).
+### 3.3 Decennial Lineage Tracking with Valid Null Endpoints and Idempotency
+When external agencies publish edition changes, official statuses include deletions (which have no `to_code`) and new introductions (which have no `from_code`). Duplicate protection is enforced via an expression index:
 
 ```sql
 create table if not exists public.taxonomy_node_lineage (
@@ -175,6 +174,16 @@ create table if not exists public.taxonomy_node_lineage (
     (transition_type not in ('deleted', 'newly_introduced') and from_code is not null and to_code is not null)
   )
 );
+
+create unique index if not exists taxonomy_lineage_unique_idx
+  on public.taxonomy_node_lineage (
+    source_system,
+    from_version,
+    coalesce(from_code, ''),
+    to_version,
+    coalesce(to_code, ''),
+    transition_type
+  );
 ```
 
 ### 3.4 Non-Institutional Topics & Interdisciplinary Fields
@@ -207,24 +216,33 @@ Level 1: Major Group (2 digits, e.g., '15-0000: Computer and Mathematical Occupa
 ### 4.2 Distinguishing Taxonomy Version from Data Release
 O\*NET has two distinct version dimensions:
 1. **Taxonomy Structure:** `O*NET-SOC 2019` (the structural classification).
-2. **Database Content Release:** e.g., `O*NET 31.0` (August 2026), updated quarterly with updated task lists, salary statistics, and job zone descriptions.
+2. **Database Content Release:** e.g., `O*NET 31.0` (August 2026), updated quarterly with task lists, salary statistics, and job zone descriptions.
 
-Both are recorded distinctly in `occupation_nodes` to prevent quarterly data refreshes from generating redundant occupation rows.
+`data_release_version` is nullable on `occupation_nodes` and populated only when enriched with O*NET data, ensuring raw SOC major/minor groups do not falsely claim O*NET 31.0 provenance.
 
 ---
 
 ## 5. Educational-to-Labor Market Crosswalks: Truth in Data
 
-### 5.1 Qualitative Crosswalk vs. Empirical Metrics
-The official NCES / BLS CIP–SOC Crosswalk is explicitly **qualitative**. It is built by labor economists based on instructional descriptions and occupational task statements. It does **NOT** measure actual student graduation outcomes or employment placement statistics.
+### 5.1 Official Crosswalk at the External Layer
+The official NCES / BLS CIP–SOC Crosswalk maps **CIP classification nodes to SOC occupation nodes**. It does not map internal LearningApp fields directly.
 
-Our architecture enforces strict data hygiene:
-1. **Official Crosswalk (`field_occupation_mappings`):** Unweighted, qualitative binary mapping (`mapping_kind = 'official_qualitative'`). We **never manufacture an artificial `confidence = 1.000` or `is_primary` flag**.
-2. **Analytical Metrics Layer (`field_occupation_metrics`):** A typed, generic metrics table that stores empirical outcome statistics only when supported by credible sources.
+Therefore:
+1. **Raw Federal Crosswalk (`external_classification_occupation_mappings`):** Anchored directly to `external_classification_nodes.id` and `occupation_nodes.id`. Unweighted, qualitative binary mapping (`mapping_kind = 'official_qualitative'`).
+2. **Application View (`v_field_occupation_mappings`):** Transparently joins internal fields through `field_external_classifications` to expose related occupations to the UI.
+3. **Analytical Metrics Layer (`field_occupation_metrics`):** A typed, generic metrics table that stores empirical outcome statistics only when supported by credible sources.
 
-### 5.2 Metrics Attribution & Privacy Safeguards
+### 5.2 Metrics Attribution & Fail-Closed Privacy Safeguards
 - **Derived Alignment:** Metrics of type `derived_education_alignment_score` are explicitly documented as internal calculations using BLS educational requirement inputs, never misrepresented as official BLS scores.
-- **Privacy Threshold for Learner Analytics:** Learner-derived metrics (`app_user_transition_share`) may only be written to public tables if satisfying a minimum statistical threshold ($N \ge 50$ distinct learners). Raw individual user transitions are never published in public taxonomy tables.
+- **Fail-Closed Privacy Safeguard:** `privacy_threshold_met` defaults to `false`. A database check constraint enforces that `app_user_transition_share` metrics must have `sample_size >= 50` and `privacy_threshold_met = true`. RLS policy strictly rejects unverified rows:
+  ```sql
+  check (
+    (metric_type <> 'app_user_transition_share') or
+    (sample_size is not null and sample_size >= 50 and privacy_threshold_met = true)
+  )
+  ```
+- **Explicit Methodology Version:** `methodology_version text not null default 'source_native_v1'` prevents NULL-equality bypass in PostgreSQL unique constraints.
+- **Metric Bounds:** `check (metric_value >= 0.0 and metric_value <= 1.0)`.
 
 ---
 
@@ -244,14 +262,14 @@ Fundamental cognitive concepts do not exist in academic isolation:
 Grade-level standards (e.g. *Florida B.E.S.T. 7th Grade Math*, *Next Generation Science Standards - High School Chemistry*, *AP US History*) are modeled as **`learning_targets`** with `target_type = 'curriculum_standard'` and linked to underlying fields via `learning_target_fields`. They are **never forced as artificial nodes into the CIP Field tree**.
 
 ### 6.4 Occupations ↔ Industries (BLS National Employment Matrix)
-Rather than asserting that occupations belong to industries in a false tree, we model the BLS National Employment Matrix as a many-to-many relationship:
+Rather than asserting that occupations belong to industries in a false tree, we model the BLS National Employment Matrix as a many-to-many relationship with range validation:
 ```sql
 create table if not exists public.occupation_industries (
   occupation_id uuid not null references public.occupation_nodes(id) on delete cascade,
   naics_code text not null,
   industry_title text not null,
-  employment_count integer,
-  industry_share numeric(5,4), -- % of this occupation employed in this industry
+  employment_count integer check (employment_count is null or employment_count >= 0),
+  industry_share numeric(5,4) check (industry_share is null or (industry_share >= 0.0 and industry_share <= 1.0)),
   data_year integer not null,
   source_release_id uuid references public.taxonomy_source_releases(id) on delete set null,
   primary key (occupation_id, naics_code, data_year)
@@ -265,9 +283,8 @@ create table if not exists public.occupation_industries (
 The full-text search index incorporates:
 1. Canonical Name (`A` weight)
 2. Aliases, trade acronyms, and abbreviations e.g. *"CS"*, *"HVAC"*, *"RN"*, *"cyber"*, *"AI"*, *"ML"* (`A` weight)
-3. Classification Codes e.g. `11.0701` (`B` weight)
-4. Official illustrative examples and cross-references (`B` weight)
-5. Description text (`C` weight)
+3. Official illustrative examples and cross-references (`B` weight)
+4. Description text (`C` weight)
 
 ---
 
@@ -293,7 +310,7 @@ To navigate 2,400+ nodes without cognitive overload, the UI displays 12 visual c
 
 ```sql
 -- ============================================================================
--- Canonical Taxonomy Architecture v2.1 Consolidated Schema
+-- Canonical Taxonomy Architecture v2.2 Consolidated Schema
 -- ============================================================================
 
 -- 0. TAXONOMY SOURCE RELEASES (Provenance, Checksums & Licensing)
@@ -347,9 +364,8 @@ create table if not exists public.external_classification_nodes (
   version text not null,              -- '2020', '2030', '2013'
   code text not null,                 -- '11', '11.07', '11.0701'
   parent_code text,                   -- '11', '11.07'
-  level text not null check (
-    level in ('2_digit', '4_digit', '6_digit', 'broad', 'narrow', 'detailed')
-  ),
+  level_code text not null,           -- e.g. 'series', 'group', 'program', 'broad', 'narrow', 'detailed'
+  level_depth integer not null default 1 check (level_depth between 1 and 10),
   title text not null,
   definition text,
   cross_references text[] not null default '{}',
@@ -379,7 +395,7 @@ create table if not exists public.field_external_classifications (
 create index if not exists field_ext_class_field_idx
   on public.field_external_classifications(field_id);
 
--- 4. TAXONOMY NODE LINEAGE (Decennial Version Transitions)
+-- 4. TAXONOMY NODE LINEAGE (Decennial Version Transitions with Idempotency)
 create table if not exists public.taxonomy_node_lineage (
   id uuid primary key default gen_random_uuid(),
   source_system text not null,
@@ -408,6 +424,16 @@ create table if not exists public.taxonomy_node_lineage (
   )
 );
 
+create unique index if not exists taxonomy_lineage_unique_idx
+  on public.taxonomy_node_lineage (
+    source_system,
+    from_version,
+    coalesce(from_code, ''),
+    to_version,
+    coalesce(to_code, ''),
+    transition_type
+  );
+
 -- 5. LATERAL FIELD RELATIONS (With Symmetry Guarantees)
 create table if not exists public.field_relations (
   from_field_id uuid not null references public.fields(id) on delete cascade,
@@ -423,14 +449,12 @@ create table if not exists public.field_relations (
   notes text,
   primary key (from_field_id, to_field_id, relation_type),
   check (from_field_id <> to_field_id),
-  -- Canonical ordering for symmetric relations prevents duplicate inverse rows
   check (
     relation_type not in ('shares_foundations', 'cross_disciplinary_partner')
     or from_field_id < to_field_id
   )
 );
 
--- Bidirectional helper view for application queries
 create or replace view public.v_field_relations_bidirectional as
   select from_field_id, to_field_id, relation_type, notes from public.field_relations
   union all
@@ -450,7 +474,7 @@ create table if not exists public.occupation_nodes (
   ),
   taxonomy_system text not null default 'bls_soc',
   taxonomy_version text not null default 'soc_2018',
-  data_release_version text default 'onet_31_0',
+  data_release_version text,          -- Populated only when enriched with O*NET release
   job_zone integer check (job_zone between 1 and 5),
   source_release_id uuid references public.taxonomy_source_releases(id) on delete set null,
   metadata jsonb not null default '{}'::jsonb,
@@ -463,9 +487,10 @@ create table if not exists public.occupation_nodes (
 create index if not exists occupation_nodes_parent_idx on public.occupation_nodes(parent_id);
 create index if not exists occupation_nodes_level_idx on public.occupation_nodes(level);
 
--- 7. FIELD OCCUPATION MAPPINGS (Official Qualitative Crosswalk)
-create table if not exists public.field_occupation_mappings (
-  field_id uuid not null references public.fields(id) on delete cascade,
+-- 7. EXTERNAL CLASSIFICATION OCCUPATION MAPPINGS (Raw Federal CIP-SOC Crosswalk)
+create table if not exists public.external_classification_occupation_mappings (
+  id uuid primary key default gen_random_uuid(),
+  classification_node_id uuid not null references public.external_classification_nodes(id) on delete cascade,
   occupation_id uuid not null references public.occupation_nodes(id) on delete cascade,
   source_release_id uuid references public.taxonomy_source_releases(id) on delete set null,
   mapping_source text not null default 'nces_bls_crosswalk_2020',
@@ -475,10 +500,27 @@ create table if not exists public.field_occupation_mappings (
   ),
   source_notes text,
   created_at timestamptz not null default now(),
-  primary key (field_id, occupation_id, mapping_source, mapping_version)
+  unique (classification_node_id, occupation_id, source_release_id)
 );
 
--- 8. FIELD OCCUPATION METRICS (Typed Labor Market Analytics)
+-- Convenient Application View joining internal Fields to related Occupations
+create or replace view public.v_field_occupation_mappings as
+  select distinct
+    fec.field_id,
+    ecom.occupation_id,
+    ecn.system as classification_system,
+    ecn.version as classification_version,
+    ecn.code as classification_code,
+    ocn.code as occupation_code,
+    ocn.title as occupation_title,
+    ecom.mapping_kind,
+    ecom.source_release_id
+  from public.external_classification_occupation_mappings ecom
+  join public.external_classification_nodes ecn on ecn.id = ecom.classification_node_id
+  join public.field_external_classifications fec on fec.classification_node_id = ecn.id
+  join public.occupation_nodes ocn on ocn.id = ecom.occupation_id;
+
+-- 8. FIELD OCCUPATION METRICS (Typed Labor Market Analytics with Privacy Safeguards)
 create table if not exists public.field_occupation_metrics (
   id uuid primary key default gen_random_uuid(),
   field_id uuid not null references public.fields(id) on delete cascade,
@@ -491,18 +533,23 @@ create table if not exists public.field_occupation_metrics (
       'app_user_transition_share'
     )
   ),
-  metric_value numeric(8,5) not null,
+  metric_value numeric(8,5) not null check (metric_value >= 0.0 and metric_value <= 1.0),
   population text,                      -- e.g. 'employed_bachelors_degree_holders_age_25_64'
   geography text not null default 'US',
   data_year integer not null,
   source_release_id uuid references public.taxonomy_source_releases(id) on delete set null,
-  methodology_version text,
-  sample_size integer,
-  privacy_threshold_met boolean not null default true,
+  methodology_version text not null default 'source_native_v1',
+  sample_size integer check (sample_size is null or sample_size >= 0),
+  privacy_threshold_met boolean not null default false, -- Fail-closed
   notes text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  unique (field_id, occupation_id, metric_type, data_year, methodology_version)
+  unique (field_id, occupation_id, metric_type, data_year, methodology_version),
+  -- Fail-closed check: app user transitions require minimum sample size and verified threshold
+  check (
+    (metric_type <> 'app_user_transition_share') or
+    (sample_size is not null and sample_size >= 50 and privacy_threshold_met = true)
+  )
 );
 
 -- 9. OCCUPATION INDUSTRIES (BLS National Employment Matrix)
@@ -510,8 +557,8 @@ create table if not exists public.occupation_industries (
   occupation_id uuid not null references public.occupation_nodes(id) on delete cascade,
   naics_code text not null,
   industry_title text not null,
-  employment_count integer,
-  industry_share numeric(5,4),          -- % of this occupation employed in this industry
+  employment_count integer check (employment_count is null or employment_count >= 0),
+  industry_share numeric(5,4) check (industry_share is null or (industry_share >= 0.0 and industry_share <= 1.0)),
   data_year integer not null,
   source_release_id uuid references public.taxonomy_source_releases(id) on delete set null,
   primary key (occupation_id, naics_code, data_year)
@@ -582,7 +629,7 @@ alter table public.field_external_classifications enable row level security;
 alter table public.taxonomy_node_lineage enable row level security;
 alter table public.field_relations enable row level security;
 alter table public.occupation_nodes enable row level security;
-alter table public.field_occupation_mappings enable row level security;
+alter table public.external_classification_occupation_mappings enable row level security;
 alter table public.field_occupation_metrics enable row level security;
 alter table public.occupation_industries enable row level security;
 alter table public.learning_target_fields enable row level security;
@@ -597,7 +644,7 @@ create policy "public_read_field_ext_class" on public.field_external_classificat
 create policy "public_read_taxonomy_lineage" on public.taxonomy_node_lineage for select using (true);
 create policy "public_read_field_relations" on public.field_relations for select using (true);
 create policy "public_read_occupation_nodes" on public.occupation_nodes for select using (true);
-create policy "public_read_field_occ_map" on public.field_occupation_mappings for select using (true);
+create policy "public_read_ext_class_occ_map" on public.external_classification_occupation_mappings for select using (true);
 create policy "public_read_field_occ_metrics" on public.field_occupation_metrics for select using (privacy_threshold_met = true);
 create policy "public_read_occ_industries" on public.occupation_industries for select using (true);
 create policy "public_read_catalog_clusters" on public.catalog_clusters for select using (true);
@@ -653,12 +700,13 @@ Phase 3: Ingest SOC 2018 & O*NET 31.0
   3.3 Ingest Minor Groups -> public.occupation_nodes (level = 'minor_group', parent_id = major.id).
   3.4 Ingest Broad Occupations -> public.occupation_nodes (level = 'broad_occupation', parent_id = minor.id).
   3.5 Ingest Detailed Occupations -> public.occupation_nodes (level = 'detailed_occupation', parent_id = broad.id).
-  3.6 Stream O*NET 31.0 Occupation Data.txt to append O*NET extensions and Job Zones.
+  3.6 Stream O*NET 31.0 Occupation Data.txt to append O*NET extensions and Job Zones (populating data_release_version = 'onet_31_0').
 
 Phase 4: Ingest Official CIP–SOC Crosswalk
   4.1 Stream CIP2020_SOC2018_Crosswalk.csv.
-  4.2 Map CIP code to field_id; map SOC code to occupation_id.
-  4.3 Upsert into public.field_occupation_mappings (mapping_kind = 'official_qualitative').
+  4.2 Map CIP classification_node_id and SOC occupation_id.
+  4.3 Upsert into public.external_classification_occupation_mappings (mapping_kind = 'official_qualitative').
+  4.4 Application queries automatically consume crosswalks via public.v_field_occupation_mappings.
 
 Phase 5: Ingest Presentation Catalog Clusters
   5.1 Seed 12 CatalogClusters with emojis, titles, and theme colors.
@@ -667,12 +715,18 @@ Phase 5: Ingest Presentation Catalog Clusters
 
 ---
 
-## 11. Review Resolution Matrix: Evolution Across Versions
+## 11. Complete Review Resolution Matrix (Frozen Baseline)
 
-This table certifies how all feedback items across review iterations have been resolved in Architecture v2.1:
+This table certifies how all feedback items across all review cycles have been resolved in Architecture v2.2:
 
-| Issue | Severity | Resolution in Architecture v2.1 |
+| Issue | Severity | Resolution in Architecture v2.2 |
 |---|---|---|
+| **Crosswalk attached at wrong layer** | Critical architectural | Moved raw crosswalk to `external_classification_occupation_mappings` (CIP node $\longleftrightarrow$ SOC node). Exposed to internal fields via `v_field_occupation_mappings`. |
+| **Privacy threshold not enforced** | Critical security | `privacy_threshold_met` defaults to `false` (fail-closed). DB check constraint enforces $N \ge 50$ for `app_user_transition_share`. RLS selects only verified rows. |
+| **NULL methodology_version defeats uniqueness** | Critical schema | `methodology_version` made `NOT NULL default 'source_native_v1'`. Added `0.0 <= metric_value <= 1.0` range check. |
+| **Lineage lost duplicate protection** | Critical schema | Added unique expression index `taxonomy_lineage_unique_idx` using `COALESCE` on `from_code` and `to_code`. |
+| **O\*NET release version overstated** | Data integrity | Removed global default on `occupation_nodes.data_release_version`; populated strictly when enriched by O*NET. |
+| **External classification level rigid** | Extensibility | Replaced hardcoded enum with `level_code text not null` and `level_depth integer not null default 1`. |
 | **Illegal DDL Defaults** | Critical bug | Eliminated redundant `source_level` / `node_kind`. Consolidated into `field_kind text not null` with zero illegal defaults. |
 | **Internal vs External Identity Conflict** | Critical schema | Introduced `external_classification_nodes` + `field_external_classifications`. Internal `fields` have permanent UUIDs that survive decennial updates. |
 | **Lineage Nullable Endpoints** | Critical schema | Made `from_code` / `to_code` nullable in `taxonomy_node_lineage` with exact check constraints for `deleted` and `newly_introduced`. |
