@@ -12,16 +12,23 @@ import 'package:learning_pwa/widgets/prompt_display_widget.dart';
 import 'package:learning_pwa/widgets/template_selection_widget.dart';
 import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
+import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
   final int initialBuilderTabIndex;
+  final String? nodeId;
+  final String? nodeTitle;
+  final String? targetVersionId;
 
   const CreateLessonScreen({
     super.key,
     this.initialTabIndex = 0,
     this.initialBuilderTabIndex = 0,
+    this.nodeId,
+    this.nodeTitle,
+    this.targetVersionId,
   });
 
   @override
@@ -49,6 +56,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       vsync: this,
       initialIndex: initialTab,
     );
+    if (widget.nodeTitle != null && widget.nodeTitle!.isNotEmpty) {
+      _subjectController.text = widget.nodeTitle!;
+    }
   }
 
   @override
@@ -68,11 +78,22 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
       
+      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
+        final targetService = ref.read(learningTargetServiceProvider);
+        await targetService.bindLessonToNode(
+          curriculumNodeId: widget.nodeId!,
+          lessonId: lesson.id,
+        );
+      }
+
       if (mounted) {
         final semantic = Theme.of(context).extension<SemanticColors>()!;
+        final message = widget.nodeTitle != null
+            ? 'Lesson "${lesson.title}" created and bound to ${widget.nodeTitle}!'
+            : 'Lesson "${lesson.title}" created successfully!';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lesson "${lesson.title}" created successfully!'),
+            content: Text(message),
             backgroundColor: semantic.success,
           ),
         );
@@ -124,11 +145,22 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         userId,
       );
       
+      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
+        final targetService = ref.read(learningTargetServiceProvider);
+        await targetService.bindLessonToNode(
+          curriculumNodeId: widget.nodeId!,
+          lessonId: lesson.id,
+        );
+      }
+
       if (mounted) {
         final semantic = Theme.of(context).extension<SemanticColors>()!;
+        final message = widget.nodeTitle != null
+            ? 'Lesson "${lesson.title}" created and bound to ${widget.nodeTitle}!'
+            : 'Lesson "${lesson.title}" created successfully!';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lesson "${lesson.title}" created successfully!'),
+            content: Text(message),
             backgroundColor: semantic.success,
           ),
         );
@@ -408,6 +440,8 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                     'duration': _durationMinutes.toString(),
                     'difficulty': _difficulty,
                     'focus': _contentFocus,
+                    if (widget.nodeId != null) 'nodeId': widget.nodeId!,
+                    if (widget.targetVersionId != null) 'targetVersionId': widget.targetVersionId!,
                   };
                   context.push(Uri(path: '/guided-generation', queryParameters: params).toString());
                 },

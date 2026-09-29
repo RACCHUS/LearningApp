@@ -13,13 +13,16 @@ create policy "lesson_concepts_read" on public.lesson_concepts
   for select using (
     exists (
       select 1 from public.lessons l
-      left join public.courses c on c.id = l.course_id
       where l.id = lesson_concepts.lesson_id
         and (
           l.user_id = auth.uid()
           or l.user_id is null
-          or c.is_public = true
-          or c.user_id = auth.uid()
+          or exists (
+            select 1 from public.course_lessons cl
+            join public.courses c on c.id = cl.course_id
+            where cl.lesson_id = l.id
+              and (c.is_public = true or c.user_id = auth.uid())
+          )
         )
     )
   );
@@ -39,8 +42,8 @@ DECLARE
   v_f_uuid uuid;
   v_t_uuid uuid;
 BEGIN
-  SELECT id INTO v_soc_rel_id FROM public.taxonomy_source_releases WHERE source_name = 'bls_soc' AND release_version = 'soc_2018' LIMIT 1;
-  SELECT id INTO v_onet_rel_id FROM public.taxonomy_source_releases WHERE source_name = 'onet_soc' AND release_version = '2019' LIMIT 1;
+  SELECT id INTO v_soc_rel_id FROM public.taxonomy_source_releases WHERE source_system = 'bls_soc' AND release_version = '2018' LIMIT 1;
+  SELECT id INTO v_onet_rel_id FROM public.taxonomy_source_releases WHERE source_system = 'onet' AND release_version = 'onet_31_0' LIMIT 1;
 
   -- 1. Minor Group 15-1200
   SELECT id INTO v_major_id FROM public.occupation_nodes WHERE code = '15-0000' AND taxonomy_system = 'bls_soc' LIMIT 1;

@@ -247,7 +247,8 @@ class ScopeResolver {
     // 3. Bounded prerequisite traversal (Loop termination + maxDepth)
     final supportingConceptIds = <String>{};
     if (context.scopeMode != ScopeMode.coreOnly && coreConceptIds.isNotEmpty) {
-      final maxDepth = (context.scopeConfig['maxPrereqDepth'] as num?)?.toInt() ?? 1;
+      final rawDepth = (context.scopeConfig['maxPrereqDepth'] as num?)?.toInt() ?? 1;
+      final maxDepth = rawDepth.clamp(1, 2);
       await _traversePrerequisites(
         client,
         coreConceptIds,
@@ -509,12 +510,14 @@ class ScopeResolver {
   ) async {
     final setRes = await client
         .from('study_sets')
-        .select('id, title, question_ids, term_ids')
+        .select('id, title, question_ids, term_ids, lesson_ids, concept_ids')
         .eq('id', context.rootId)
         .maybeSingle();
 
-    final qIds = (setRes?['question_ids'] as List?)?.map((e) => e.toString()).toSet() ?? const {};
-    final tIds = (setRes?['term_ids'] as List?)?.map((e) => e.toString()).toSet() ?? const {};
+    final qIds = (setRes?['question_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
+    final tIds = (setRes?['term_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
+    final lIds = (setRes?['lesson_ids'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
+    final cIds = (setRes?['concept_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
 
     // Also load any flashcards attached to study set
     final fcRes = await client
@@ -524,15 +527,82 @@ class ScopeResolver {
 
     final fIds = (fcRes as List).map((f) => f['flashcard_id'] as String).toSet();
 
+    final orderedActivities = <ScopedLearningActivity>[
+      ScopedLearningActivity(
+        activityId: context.rootId,
+        kind: ScopedActivityKind.studySet,
+        title: context.label,
+      ),
+    ];
+
+    // If study set links lessons, fetch lesson activities and content
+    if (lIds.isNotEmpty) {
+      final lessonsRes = await client
+          .from('lessons')
+          .select('id, title')
+          .inFilter('id', lIds);
+
+      for (final l in (lessonsRes as List)) {
+        final lid = l['id'] as String;
+        orderedActivities.add(
+          ScopedLearningActivity(
+            activityId: lid,
+            kind: ScopedActivityKind.lesson,
+            title: l['title'] as String? ?? 'Lesson',
+          ),
+        );
+      }
+
+      // Add concepts from lessons
+      final lcRes = await client
+          .from('lesson_concepts')
+          .select('concept_id')
+          .inFilter('lesson_id', lIds);
+      for (final lc in (lcRes as List)) {
+        cIds.add(lc['concept_id'] as String);
+      }
+
+      // Add questions and terms from lessons
+      final qRes = await client
+          .from('questions')
+          .select('id')
+          .inFilter('lesson_id', lIds);
+      for (final q in (qRes as List)) {
+        qIds.add(q['id'] as String);
+      }
+
+      final tRes = await client
+          .from('terms')
+          .select('id')
+          .inFilter('lesson_id', lIds);
+      for (final t in (tRes as List)) {
+        tIds.add(t['id'] as String);
+      }
+    }
+
+    // If concept IDs exist, pull their attached flashcards and questions
+    if (cIds.isNotEmpty) {
+      final cqRes = await client
+          .from('concept_questions')
+          .select('question_id')
+          .inFilter('concept_id', cIds.toList());
+      for (final cq in (cqRes as List)) {
+        qIds.add(cq['question_id'] as String);
+      }
+
+      final cfRes = await client
+          .from('concept_flashcards')
+          .select('flashcard_id')
+          .inFilter('concept_id', cIds.toList());
+      for (final cf in (cfRes as List)) {
+        fIds.add(cf['flashcard_id'] as String);
+      }
+    }
+
     return ResolvedScope(
       contextId: context.id,
-      orderedActivities: [
-        ScopedLearningActivity(
-          activityId: context.rootId,
-          kind: ScopedActivityKind.studySet,
-          title: context.label,
-        ),
-      ],
+      coreConceptIds: cIds,
+      orderedActivities: orderedActivities,
       questionIds: qIds,
       termIds: tIds,
       flashcardIds: fIds,

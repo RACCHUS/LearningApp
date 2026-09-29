@@ -5,6 +5,8 @@ import 'package:learning_pwa/models/course_models.dart';
 import 'package:learning_pwa/models/knowledge_concept.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_target.dart';
+import 'package:learning_pwa/models/catalog_cluster.dart';
+import 'package:learning_pwa/providers/canonical_taxonomy_provider.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
@@ -41,7 +43,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   void initState() {
     super.initState();
     _query = widget.initialQuery ?? '';
-    _selectedCategory = widget.initialType;
+    if (widget.initialType == 'standardized_exam' || widget.initialType == 'licensure_exam') {
+      _selectedCategory = 'exam';
+    } else {
+      _selectedCategory = widget.initialType;
+    }
   }
 
   @override
@@ -72,8 +78,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     TargetType? targetTypeFilter;
     if (_selectedCategory == 'career') targetTypeFilter = TargetType.career;
     if (_selectedCategory == 'certification') targetTypeFilter = TargetType.certification;
-    if (_selectedCategory == 'standardized_exam') targetTypeFilter = TargetType.standardizedExam;
     if (_selectedCategory == 'academic_program') targetTypeFilter = TargetType.academicProgram;
+    if (_selectedCategory == 'curriculum_standard') targetTypeFilter = TargetType.curriculumStandard;
 
     // Query targets
     final targetsAsync = ref.watch(targetsListProvider((
@@ -81,6 +87,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       search: _query.isNotEmpty ? _query : null,
     )));
     var targets = targetsAsync.valueOrNull ?? const <LearningTarget>[];
+
+    if (_selectedCategory == 'exam' || _selectedCategory == 'standardized_exam') {
+      targets = targets
+          .where((t) =>
+              t.targetType == TargetType.standardizedExam ||
+              t.targetType == TargetType.licensureExam)
+          .toList();
+    } else if (_selectedCategory == 'course') {
+      targets = const [];
+    }
 
     // Query courses (when searching)
     List<Course> courses = const [];
@@ -94,24 +110,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       concepts = ref.watch(searchConceptsProvider(_query)).valueOrNull ?? const [];
     }
 
+    // When a target destination is explicitly selected, hide lessons and courses
+    if (_selectedCategory != null && _selectedCategory != 'course') {
+      lessons = const [];
+      courses = const [];
+    }
+
     // Apply Contextual Scope filter if active and enabled (§11.2)
     final bool canScope = activeContext != null;
     final bool effectiveScoped = canScope && _isScoped;
 
     if (effectiveScoped && activeScope != null) {
-      // 1. Lessons in scope
-      if (activeContext.rootType == ContextRootType.target) {
-        lessons = lessons
-            .where((l) => activeScope.orderedActivities.any((a) => a.activityId == l.id))
-            .toList();
-      } else if (activeContext.rootType == ContextRootType.course) {
-        lessons = lessons
-            .where((l) =>
-                activeScope.orderedActivities.any((a) => a.activityId == l.id))
-            .toList();
-      } else if (activeContext.rootType == ContextRootType.lesson) {
-        lessons = lessons.where((l) => l.id == activeContext.rootId).toList();
-      }
+      // 1. Lessons in scope: universal across all root types
+      lessons = lessons.where((l) {
+        if (activeContext.rootType == ContextRootType.lesson && l.id == activeContext.rootId) {
+          return true;
+        }
+        return activeScope.includesItem(contentId: l.id, lessonId: l.id) ||
+            activeScope.orderedActivities.any((a) => a.activityId == l.id);
+      }).toList();
 
       // 2. Targets in scope
       if (activeContext.rootType == ContextRootType.target) {
@@ -122,17 +139,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         targets = const [];
       }
 
-      // 3. Courses in scope
+      // 3. Courses in scope (including target-context course search)
       if (activeContext.rootType == ContextRootType.course) {
         courses = courses.where((c) => c.id == activeContext.rootId).toList();
+      } else {
+        final courseIdsInScope = activeScope.orderedActivities
+            .map((a) => a.courseId)
+            .whereType<String>()
+            .toSet();
+        courses = courses.where((c) => courseIdsInScope.contains(c.id)).toList();
       }
 
       // 4. Concepts in scope
-      concepts = concepts
-          .where((c) =>
-              activeScope.coreConceptIds.contains(c.id) ||
-              activeScope.supportingConceptIds.contains(c.id))
-          .toList();
+      concepts = concepts.where((c) {
+        if (activeContext.rootType == ContextRootType.concept && c.id == activeContext.rootId) {
+          return true;
+        }
+        return activeScope.coreConceptIds.contains(c.id) ||
+            activeScope.supportingConceptIds.contains(c.id);
+      }).toList();
     }
 
     final bool isSearching = _query.trim().isNotEmpty;
@@ -242,9 +267,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   key: const Key('library-filter-exams'),
                   avatar: const Text('📝'),
                   label: const Text('Exams'),
-                  selected: _selectedCategory == 'standardized_exam',
+                  selected: _selectedCategory == 'exam' || _selectedCategory == 'standardized_exam',
                   onSelected: (selected) {
-                    setState(() => _selectedCategory = selected ? 'standardized_exam' : null);
+                    setState(() => _selectedCategory = selected ? 'exam' : null);
                   },
                 ),
                 const SizedBox(width: DesignTokens.space2),
@@ -255,6 +280,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   selected: _selectedCategory == 'academic_program',
                   onSelected: (selected) {
                     setState(() => _selectedCategory = selected ? 'academic_program' : null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-standards'),
+                  avatar: const Text('📋'),
+                  label: const Text('Curriculum Standards'),
+                  selected: _selectedCategory == 'curriculum_standard',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'curriculum_standard' : null);
                   },
                 ),
                 const SizedBox(width: DesignTokens.space2),
@@ -447,6 +482,64 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             const SizedBox(height: DesignTokens.space5),
 
+            if (_selectedCategory != 'course') ...[
+              // Knowledge Clusters Section (CIP / Canonical Field Domains)
+              _SectionHeader('Explore Domains & Fields', trailing: '12 Domains'),
+              const SizedBox(height: DesignTokens.space2),
+              Consumer(
+                builder: (context, ref, _) {
+                  final clustersAsync = ref.watch(catalogClustersProvider);
+                  return clustersAsync.when(
+                    data: (clusters) => SizedBox(
+                      height: 110,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: clusters.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: DesignTokens.space2),
+                        itemBuilder: (context, idx) {
+                          final c = clusters[idx];
+                          return InkWell(
+                            onTap: () => _showClusterDetailsModal(context, c),
+                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                            child: Container(
+                              width: 140,
+                              padding: const EdgeInsets.all(DesignTokens.space3),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                                border: Border.all(
+                                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(c.emoji ?? '🌐', style: const TextStyle(fontSize: 24)),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    c.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
+                    error: (_, __) => const SizedBox.shrink(),
+                  );
+                },
+              ),
+              const SizedBox(height: DesignTokens.space4),
+            ],
+
             // Learning Targets Section
             _SectionHeader(
               'Learning Goals & Targets',
@@ -516,110 +609,112 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             const SizedBox(height: DesignTokens.space5),
 
-            _SectionHeader(
-              'Discover Lessons',
-              trailing: '${lessons.length}',
-              action: TextButton.icon(
-                onPressed: () => context.push('/create-lesson'),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Create Lesson'),
-              ),
-            ),
-            if (catalogAsync.isLoading)
-              const Padding(
-                padding: EdgeInsets.all(DesignTokens.space5),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (catalogAsync.hasError)
-              _InlineError(
-                message: 'Could not load lessons.',
-                onRetry: () => ref.invalidate(availableLessonsCatalogProvider),
-              )
-            else ...[
-              if (catalog?.hasRemoteError ?? false)
-                _InlineWarning(
-                  message:
-                      'Online lessons could not be loaded. Showing saved and built-in lessons.',
-                  onRetry: () {
-                    ref.invalidate(remoteCatalogLessonsProvider);
-                    ref.invalidate(availableLessonsCatalogProvider);
-                  },
+            if (_selectedCategory == null || _selectedCategory == 'course') ...[
+              _SectionHeader(
+                'Discover Lessons',
+                trailing: '${lessons.length}',
+                action: TextButton.icon(
+                  onPressed: () => context.push('/create-lesson'),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Create Lesson'),
                 ),
-              if (lessons.isEmpty)
-                Card(
-                  elevation: 0,
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(DesignTokens.space4),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(DesignTokens.space2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.tertiaryContainer,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.auto_stories_outlined, color: theme.colorScheme.tertiary),
-                        ),
-                        const SizedBox(width: DesignTokens.space3),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'No lessons available',
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                'Create a lesson or generate curriculum with AI.',
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                              ),
-                            ],
-                          ),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: () => context.push('/create-lesson'),
-                          child: const Text('Create Lesson'),
-                        ),
-                      ],
-                    ),
-                  ),
+              ),
+              if (catalogAsync.isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(DesignTokens.space5),
+                  child: Center(child: CircularProgressIndicator()),
                 )
-              else
-                ...lessons.take(50).map(
-                      (l) => ListTile(
-                        key: Key('library-lesson-${l.id}'),
-                        title: Text(l.title),
-                        subtitle: Text(
-                          l.description ?? 'No description',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: TextButton(
-                          child: const Text('Start learning'),
-                          onPressed: () async {
-                            final created = await ref
-                                .read(learningContextsProvider.notifier)
-                                .add(
-                                  label: l.title,
-                                  rootType: ContextRootType.lesson,
-                                  rootId: l.id,
-                                  emoji: l.emoji,
-                                );
-                            if (created != null && context.mounted) {
-                              context.go('/learn');
-                            }
-                          },
-                        ),
-                        onTap: () => context.push('/lesson/${l.id}'),
+              else if (catalogAsync.hasError)
+                _InlineError(
+                  message: 'Could not load lessons.',
+                  onRetry: () => ref.invalidate(availableLessonsCatalogProvider),
+                )
+              else ...[
+                if (catalog?.hasRemoteError ?? false)
+                  _InlineWarning(
+                    message:
+                        'Online lessons could not be loaded. Showing saved and built-in lessons.',
+                    onRetry: () {
+                      ref.invalidate(remoteCatalogLessonsProvider);
+                      ref.invalidate(availableLessonsCatalogProvider);
+                    },
+                  ),
+                if (lessons.isEmpty)
+                  Card(
+                    elevation: 0,
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                      side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(DesignTokens.space4),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(DesignTokens.space2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.tertiaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.auto_stories_outlined, color: theme.colorScheme.tertiary),
+                          ),
+                          const SizedBox(width: DesignTokens.space3),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'No lessons available',
+                                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  'Create a lesson or generate curriculum with AI.',
+                                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          FilledButton.tonal(
+                            onPressed: () => context.push('/create-lesson'),
+                            child: const Text('Create Lesson'),
+                          ),
+                        ],
                       ),
                     ),
+                  )
+                else
+                  ...lessons.take(50).map(
+                        (l) => ListTile(
+                          key: Key('library-lesson-${l.id}'),
+                          title: Text(l.title),
+                          subtitle: Text(
+                            l.description ?? 'No description',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: TextButton(
+                            child: const Text('Start learning'),
+                            onPressed: () async {
+                              final created = await ref
+                                  .read(learningContextsProvider.notifier)
+                                  .add(
+                                    label: l.title,
+                                    rootType: ContextRootType.lesson,
+                                    rootId: l.id,
+                                    emoji: l.emoji,
+                                  );
+                              if (created != null && context.mounted) {
+                                context.go('/learn');
+                              }
+                            },
+                          ),
+                          onTap: () => context.push('/lesson/${l.id}'),
+                        ),
+                      ),
+              ],
+              const SizedBox(height: DesignTokens.space5),
             ],
-            const SizedBox(height: DesignTokens.space5),
             _SectionHeader('Create'),
             Wrap(
               spacing: DesignTokens.space3,
@@ -666,6 +761,178 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showClusterDetailsModal(BuildContext context, CatalogCluster cluster) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(DesignTokens.radiusLg)),
+      ),
+      builder: (modalContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Consumer(
+              builder: (context, ref, _) {
+                final fieldsAsync = ref.watch(clusterFieldsProvider(cluster.id));
+                final targetsAsync = ref.watch(clusterTargetsProvider(cluster.id));
+                final theme = Theme.of(context);
+
+                return ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(DesignTokens.space4),
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: DesignTokens.space3),
+                    Row(
+                      children: [
+                        Text(cluster.emoji ?? '🌐', style: const TextStyle(fontSize: 32)),
+                        const SizedBox(width: DesignTokens.space3),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cluster.title,
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              if (cluster.description != null)
+                                Text(
+                                  cluster.description!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: DesignTokens.space5),
+                    Text(
+                      'Learning Targets in this Domain',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: DesignTokens.space2),
+                    targetsAsync.when(
+                      data: (targets) {
+                        if (targets.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: DesignTokens.space2),
+                            child: Text(
+                              'No learning targets linked to this cluster yet.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: targets.map((t) => ListTile(
+                            leading: Text(t.emoji ?? '🎯', style: const TextStyle(fontSize: 20)),
+                            title: Text(t.title),
+                            subtitle: Text(t.disambiguationTag),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.pop(modalContext);
+                              context.push('/target/${t.id}');
+                            },
+                          )).toList(),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(DesignTokens.space3),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (err, _) => Text('Error loading targets: $err'),
+                    ),
+                    const SizedBox(height: DesignTokens.space4),
+                    Text(
+                      'Canonical Fields (CIP Series & Programs)',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: DesignTokens.space2),
+                    fieldsAsync.when(
+                      data: (fields) {
+                        if (fields.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: DesignTokens.space2),
+                            child: Text(
+                              'No canonical fields found.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: fields.map((f) => ListTile(
+                            dense: true,
+                            leading: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                f.slug.toUpperCase(),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            title: Text(f.name),
+                            subtitle: f.description != null ? Text(f.description!, maxLines: 2, overflow: TextOverflow.ellipsis) : null,
+                            trailing: Text(
+                              f.fieldKind.toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.pop(modalContext);
+                              setState(() {
+                                _search.text = f.name;
+                                _query = f.name;
+                              });
+                            },
+                          )).toList(),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(DesignTokens.space3),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (err, _) => Text('Error loading fields: $err'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

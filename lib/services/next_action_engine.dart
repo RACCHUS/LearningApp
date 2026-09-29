@@ -149,10 +149,11 @@ class ReviewOnly extends NextAction {
 
 class ContextComplete extends NextAction {
   final ForwardOffer offer;
-  const ContextComplete({required this.offer});
+  final String? customRationale;
+  const ContextComplete({required this.offer, this.customRationale});
 
   @override
-  String get rationale => "You've finished this course.";
+  String get rationale => customRationale ?? "You've finished this course.";
 }
 
 // ---------------------------------------------------------------------------
@@ -263,7 +264,13 @@ class NextActionEngine {
         offer: offer,
       );
     }
-    return ContextComplete(offer: offer);
+    final isTarget = active.context.rootType == ContextRootType.target;
+    return ContextComplete(
+      offer: offer,
+      customRationale: isTarget
+          ? 'Curriculum outline is ready. Add or generate lessons to start learning.'
+          : null,
+    );
   }
 
   /// Switcher ordering: pinned first by [LearningContext.sortOrder] ascending,
@@ -279,9 +286,9 @@ class NextActionEngine {
 
   /// Whether the secondary review prompt renders beneath the primary action.
   ///
-  /// Suppressed when review is already the primary action.
+  /// Suppressed when review is already the primary action (ReviewOnly or ReinforceConcepts).
   bool showSecondaryReviewPrompt(NextAction action, int dueCount) {
     if (dueCount <= 0) return false;
-    return action is! ReviewOnly;
+    return action is! ReviewOnly && action is! ReinforceConcepts;
   }
 }

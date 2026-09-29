@@ -97,7 +97,12 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
 
                     if (filteredNodes.isEmpty) {
                       if (_searchQuery.isEmpty) {
-                        return _buildEmptyAuthoringState(context, version, theme);
+                        return _buildEmptyAuthoringState(
+                          context,
+                          version,
+                          theme,
+                          targetTitle: targetAsync.valueOrNull?.title,
+                        );
                       }
                       return Center(
                         child: Text(
@@ -232,8 +237,9 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
   Widget _buildEmptyAuthoringState(
     BuildContext context,
     TargetVersion version,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    String? targetTitle,
+  }) {
     final colorScheme = theme.colorScheme;
     return Center(
       child: SingleChildScrollView(
@@ -280,7 +286,11 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                   label: const Text('Add Topic'),
                 ),
                 FilledButton.tonalIcon(
-                  onPressed: () => context.push('/create-lesson'),
+                  onPressed: () => _handleEmptyOutlineGenerate(
+                    context,
+                    version.id,
+                    targetTitle ?? 'Curriculum Topic',
+                  ),
                   icon: const Icon(Icons.auto_awesome),
                   label: const Text('Generate with AI'),
                 ),
@@ -290,6 +300,63 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleEmptyOutlineGenerate(
+    BuildContext context,
+    String versionId,
+    String targetTitle,
+  ) async {
+    final titleController = TextEditingController(text: targetTitle);
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Create Topic for Lesson'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'A curriculum topic provides the structure to anchor your AI-generated lesson:',
+            ),
+            const SizedBox(height: DesignTokens.space3),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Topic Title',
+                hintText: 'e.g. Core Concepts',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Continue to AI Generator'),
+          ),
+        ],
+      ),
+    );
+
+    if (proceed == true && titleController.text.trim().isNotEmpty && context.mounted) {
+      final service = ref.read(learningTargetServiceProvider);
+      final node = await service.addCurriculumNode(
+        targetVersionId: versionId,
+        title: titleController.text.trim(),
+        description: 'Curriculum unit for $targetTitle',
+      );
+      if (node != null && context.mounted) {
+        ref.invalidate(targetCurriculumNodesProvider(versionId));
+        context.push(
+          '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=$versionId',
+        );
+      }
+    }
   }
 
   Future<void> _showAddNodeDialog(BuildContext context, String versionId) async {

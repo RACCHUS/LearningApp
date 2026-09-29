@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/curriculum_node.dart';
 import '../models/knowledge_concept.dart';
 import '../models/learning_target.dart';
+import '../models/catalog_cluster.dart';
+import '../models/canonical_field.dart';
 
 class LearningTargetService {
   final SupabaseClient _supabase;
@@ -372,6 +374,78 @@ class LearningTargetService {
     } catch (e) {
       debugPrint('❌ Error binding concept to curriculum node: $e');
       return false;
+    }
+  }
+
+  /// Get the 12 presentation catalog clusters
+  Future<List<CatalogCluster>> getCatalogClusters() async {
+    try {
+      final res = await _supabase
+          .from('catalog_clusters')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order');
+      return (res as List).map((json) => CatalogCluster.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching catalog clusters: $e');
+      return [];
+    }
+  }
+
+  /// Get canonical fields belonging to a catalog cluster
+  Future<List<CanonicalField>> getClusterFields(String clusterId) async {
+    try {
+      final res = await _supabase
+          .from('catalog_cluster_fields')
+          .select('fields(*)')
+          .eq('cluster_id', clusterId)
+          .order('sort_order');
+      final list = <CanonicalField>[];
+      for (final row in (res as List)) {
+        final f = row['fields'] as Map<String, dynamic>?;
+        if (f != null) {
+          list.add(CanonicalField.fromJson(f));
+        }
+      }
+      return list;
+    } catch (e) {
+      debugPrint('❌ Error fetching cluster fields: $e');
+      return [];
+    }
+  }
+
+  /// Get canonical fields (all or by parentId)
+  Future<List<CanonicalField>> getFields({String? parentId, int limit = 100}) async {
+    try {
+      var query = _supabase.from('fields').select('*').eq('is_active', true);
+      if (parentId != null) {
+        query = query.eq('parent_id', parentId);
+      }
+      final res = await query.order('sort_order').limit(limit);
+      return (res as List).map((json) => CanonicalField.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching fields: $e');
+      return [];
+    }
+  }
+
+  /// Get learning targets belonging to fields in a catalog cluster
+  Future<List<LearningTarget>> getTargetsForCluster(String clusterId) async {
+    try {
+      final fields = await getClusterFields(clusterId);
+      if (fields.isEmpty) return [];
+      final fieldIds = fields.map((f) => f.id).toList();
+
+      final res = await _supabase
+          .from('learning_targets')
+          .select('*')
+          .inFilter('field_id', fieldIds)
+          .eq('status', 'published')
+          .order('title');
+      return (res as List).map((json) => LearningTarget.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching targets for cluster: $e');
+      return [];
     }
   }
 }

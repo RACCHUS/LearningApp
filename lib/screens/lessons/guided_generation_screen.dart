@@ -11,6 +11,7 @@ import '../../services/ai_prompt_service.dart';
 import '../../services/content_quality_service.dart';
 import '../../services/lesson_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/learning_target_provider.dart';
 
 /// Step-by-step wizard that walks the user through multi-prompt lesson
 /// generation: Plan → Terms → Concepts → MCQs → Review → Import.
@@ -22,6 +23,8 @@ class GuidedGenerationScreen extends ConsumerStatefulWidget {
     this.initialDuration,
     this.initialDifficulty,
     this.initialFocus,
+    this.nodeId,
+    this.targetVersionId,
   });
 
   final String? initialSubject;
@@ -29,6 +32,8 @@ class GuidedGenerationScreen extends ConsumerStatefulWidget {
   final int? initialDuration;
   final String? initialDifficulty;
   final String? initialFocus;
+  final String? nodeId;
+  final String? targetVersionId;
 
   @override
   ConsumerState<GuidedGenerationScreen> createState() =>
@@ -1009,15 +1014,29 @@ class _GuidedGenerationScreenState
           : '';
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
+      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
+        final targetService = ref.read(learningTargetServiceProvider);
+        await targetService.bindLessonToNode(
+          curriculumNodeId: widget.nodeId!,
+          lessonId: lesson.id,
+        );
+      }
       if (mounted) {
+        final msg = widget.nodeId != null
+            ? 'Lesson "${lesson.title}" imported and bound to curriculum topic!'
+            : 'Lesson "${lesson.title}" imported!';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lesson "${lesson.title}" imported!'),
+            content: Text(msg),
             backgroundColor: Colors.green,
           ),
         );
         ref.read(generationSessionProvider.notifier).clearSession();
-        context.go('/lessons');
+        if (widget.targetVersionId != null && context.mounted) {
+          context.pop();
+        } else {
+          context.go('/lessons');
+        }
       }
     } catch (e) {
       if (mounted) {

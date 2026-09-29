@@ -158,6 +158,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final tabParam = state.uri.queryParameters['tab'];
           final contentParam = state.uri.queryParameters['content'];
+          final nodeId = state.uri.queryParameters['nodeId'];
+          final nodeTitle = state.uri.queryParameters['nodeTitle'];
+          final targetVersionId = state.uri.queryParameters['targetVersionId'];
 
           int initialTab = 0;
           int initialBuilderTab = 0;
@@ -179,6 +182,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CreateLessonScreen(
             initialTabIndex: initialTab,
             initialBuilderTabIndex: initialBuilderTab,
+            nodeId: nodeId,
+            nodeTitle: nodeTitle,
+            targetVersionId: targetVersionId,
           );
         },
       ),
@@ -224,9 +230,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'study-set',
         builder: (context, state) {
           final idsParam = state.uri.queryParameters['ids'] ?? '';
+          final setId = state.uri.queryParameters['setId'] ?? state.uri.queryParameters['id'];
           final lessonIds =
               idsParam.isNotEmpty ? idsParam.split(',') : <String>[];
-          return StudySetScreen(lessonIds: lessonIds);
+          return StudySetScreen(
+            lessonIds: lessonIds,
+            studySetId: setId,
+          );
         },
       ),
       GoRoute(
@@ -399,6 +409,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialDuration: int.tryParse(q['duration'] ?? ''),
             initialDifficulty: q['difficulty'],
             initialFocus: q['focus'],
+            nodeId: q['nodeId'],
+            targetVersionId: q['targetVersionId'],
           );
         },
       ),

@@ -74,22 +74,32 @@ class ContextSnapshotResolver {
         _scopeResolver = scopeResolver,
         _completedLessonIdsFetcher = completedLessonIdsFetcher;
 
-  Future<Set<String>> _getCompletedLessonIds() async {
+  Future<Set<String>> _getCompletedLessonIds(LearningContext context) async {
     final fetcher = _completedLessonIdsFetcher;
     if (fetcher != null) {
       return await fetcher();
     }
 
     final completed = <String>{};
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final effectiveUserId = context.userId.isNotEmpty
+        ? context.userId
+        : Supabase.instance.client.auth.currentUser?.id;
 
     // 1. Check local Hive progress first (instant & offline)
     try {
       final progressList = await hiveService.getProgress();
       for (final p in progressList) {
         if (p.lessonCompleted) {
-          if (currentUserId == null || p.userId == currentUserId || p.userId.isEmpty) {
-            completed.add(p.lessonId);
+          if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+            // Strict isolation for signed-in / owned contexts
+            if (p.userId == effectiveUserId) {
+              completed.add(p.lessonId);
+            }
+          } else {
+            // Guest mode: only match unowned / guest rows
+            if (p.userId.isEmpty || p.userId == 'anonymous' || p.userId == 'guest') {
+              completed.add(p.lessonId);
+            }
           }
         }
       }
@@ -99,12 +109,11 @@ class ContextSnapshotResolver {
 
     // 2. Supplement with remote Supabase user_progress if signed in
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId != null) {
+      if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
         final res = await Supabase.instance.client
             .from('user_progress')
             .select('lesson_id')
-            .eq('user_id', userId)
+            .eq('user_id', effectiveUserId)
             .eq('lesson_completed', true);
 
         for (final row in (res as List)) {
@@ -123,7 +132,7 @@ class ContextSnapshotResolver {
 
   Future<ContextSnapshot> resolve(LearningContext context) async {
     final due = await _safeDueItems();
-    final completedLessons = await _getCompletedLessonIds();
+    final completedLessons = await _getCompletedLessonIds(context);
     final resume = _contexts.resumeFor(context.id);
 
     ResolvedScope? resolvedScope;
@@ -142,6 +151,7 @@ class ContextSnapshotResolver {
     switch (context.rootType) {
       case ContextRootType.target:
       case ContextRootType.concept:
+      case ContextRootType.module:
         if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
           final nextAct = resolvedScope.orderedActivities
               .where((a) => !completedLessons.contains(a.activityId));
@@ -165,16 +175,23 @@ class ContextSnapshotResolver {
           resumeActivity = _lessonFromPointer(resume);
           resumeItemCount = 0;
         } else {
-          final resolved = await _resolveCourseActivity(context, completedLessons);
-          next = resolved.next;
-          resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
-          resumeItemCount = resolved.resumeItemCount;
+          // If this is a course or path, fall through to course activity lookup;
+          // for targets, concepts, or modules without orderedActivities, do not call course lookup.
+          if (context.rootType == ContextRootType.course || context.rootType == ContextRootType.path) {
+            final resolved = await _resolveCourseActivity(context, completedLessons);
+            next = resolved.next;
+            resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
+            resumeItemCount = resolved.resumeItemCount;
+          } else {
+            next = null;
+            resumeActivity = _lessonFromPointer(resume);
+            resumeItemCount = 0;
+          }
         }
         break;
 
       case ContextRootType.path:
       case ContextRootType.course:
-      case ContextRootType.module:
         final resolved = await _resolveCourseActivity(context, completedLessons);
         next = resolved.next;
         resumeActivity = resolved.resume ?? _lessonFromPointer(resume);

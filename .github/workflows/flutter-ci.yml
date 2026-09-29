@@ -50,3 +50,23 @@ jobs:
 
       - name: Build web release
         run: flutter build web --release
+
+  verify-database:
+    name: Verify clean Supabase migrations from scratch
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify migrations from scratch
+        run: |
+          supabase start
+          supabase db reset
+          supabase db lint

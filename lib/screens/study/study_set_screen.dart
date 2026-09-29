@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/services/study_set_service.dart';
+import 'package:learning_pwa/services/saved_study_set_service.dart';
 
 import 'flashcard_screen.dart';
 import 'mcq_screen.dart';
@@ -17,7 +18,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class StudySetScreen extends StatefulWidget {
   final List<String> lessonIds;
-  const StudySetScreen({Key? key, required this.lessonIds}) : super(key: key);
+  final String? studySetId;
+
+  const StudySetScreen({
+    Key? key,
+    this.lessonIds = const [],
+    this.studySetId,
+  }) : super(key: key);
 
   @override
   State<StudySetScreen> createState() => _StudySetScreenState();
@@ -164,6 +171,33 @@ class _StudySetScreenState extends State<StudySetScreen> {
     );
   }
 
+  late Future<StudySet> _studySetFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudySet();
+  }
+
+  void _loadStudySet() {
+    _studySetFuture = _fetchStudySetData();
+  }
+
+  Future<StudySet> _fetchStudySetData() async {
+    if (widget.studySetId != null && widget.studySetId!.isNotEmpty) {
+      final savedService = SavedStudySetService();
+      final savedSet = await savedService.getStudySet(widget.studySetId!);
+      final content = await savedService.fetchStudySetContent(savedSet);
+      return StudySet(
+        lessonIds: savedSet.lessonIds,
+        terms: content.terms,
+        concepts: content.concepts,
+        questions: content.questions,
+      );
+    }
+    return StudySetService().fetchStudySet(widget.lessonIds);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,8 +227,8 @@ class _StudySetScreenState extends State<StudySetScreen> {
             children: [
               if (timerEnabled) const TimerWidget(),
               Expanded(
-                child: FutureBuilder(
-                  future: StudySetService().fetchStudySet(widget.lessonIds),
+                child: FutureBuilder<StudySet>(
+                  future: _studySetFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -204,7 +238,7 @@ class _StudySetScreenState extends State<StudySetScreen> {
                         message: 'Failed to load study set',
                         error: snapshot.error,
                         showDetails: kDebugMode,
-                        onRetry: () => setState(() {}),
+                        onRetry: () => setState(() => _loadStudySet()),
                       );
                     }
                     if (!snapshot.hasData) {
@@ -212,7 +246,7 @@ class _StudySetScreenState extends State<StudySetScreen> {
                         child: Text('No study set data found.'),
                       );
                     }
-                    final studySet = snapshot.data as StudySet;
+                    final studySet = snapshot.data!;
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
