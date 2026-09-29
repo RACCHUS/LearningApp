@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
 
@@ -9,7 +10,10 @@ class ReviewScreen extends ConsumerStatefulWidget {
   /// Optional cap on the number of items for this session (Quick Review).
   final int? limit;
 
-  const ReviewScreen({super.key, this.limit});
+  /// Optional context ID to scope review items strictly to the context's resolved scope.
+  final String? contextId;
+
+  const ReviewScreen({super.key, this.limit, this.contextId});
 
   @override
   ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
@@ -34,7 +38,12 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
 
     // Start review session when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(reviewSessionProvider.notifier).startSession(limit: widget.limit);
+      final effectiveContextId = widget.contextId ??
+          ref.read(learningContextsProvider).active?.id;
+      ref.read(reviewSessionProvider.notifier).startSession(
+            limit: widget.limit,
+            contextId: effectiveContextId,
+          );
     });
   }
 
@@ -79,12 +88,17 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
     final session = ref.watch(reviewSessionProvider);
     final theme = Theme.of(context);
 
+    final activeContext = ref.watch(learningContextsProvider).active;
+    final titleText = (session.contextId != null && activeContext != null)
+        ? 'Review · ${activeContext.label}'
+        : 'Review';
+
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Review'),
+        title: Text(titleText),
         actions: [
           if (!session.isComplete && session.items.isNotEmpty)
             Padding(

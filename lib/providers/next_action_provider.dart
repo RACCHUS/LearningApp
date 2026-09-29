@@ -12,6 +12,8 @@ import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/services/saved_study_set_service.dart';
 import 'package:learning_pwa/services/scope_resolver.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
+import 'package:learning_pwa/services/hive_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 final courseServiceProvider = Provider<CourseService>((ref) => CourseService());
 
@@ -56,20 +58,69 @@ class ContextSnapshotResolver {
   final LearningContextService _contexts;
   final ScopeResolver? _scopeResolver;
 
+  final Future<Set<String>> Function()? _completedLessonIdsFetcher;
+
   const ContextSnapshotResolver({
     required CourseService courses,
     required SavedStudySetService studySets,
     required SpacedRepetitionService reviews,
     required LearningContextService contexts,
     ScopeResolver? scopeResolver,
+    Future<Set<String>> Function()? completedLessonIdsFetcher,
   })  : _courses = courses,
         _studySets = studySets,
         _reviews = reviews,
         _contexts = contexts,
-        _scopeResolver = scopeResolver;
+        _scopeResolver = scopeResolver,
+        _completedLessonIdsFetcher = completedLessonIdsFetcher;
+
+  Future<Set<String>> _getCompletedLessonIds() async {
+    final fetcher = _completedLessonIdsFetcher;
+    if (fetcher != null) {
+      return await fetcher();
+    }
+
+    final completed = <String>{};
+
+    // 1. Check local Hive progress first (instant & offline)
+    try {
+      final progressList = await hiveService.getProgress();
+      for (final p in progressList) {
+        if (p.lessonCompleted) {
+          completed.add(p.lessonId);
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not load local completed lessons: $e');
+    }
+
+    // 2. Supplement with remote Supabase user_progress if signed in
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final res = await Supabase.instance.client
+            .from('user_progress')
+            .select('lesson_id')
+            .eq('user_id', userId)
+            .eq('lesson_completed', true);
+
+        for (final row in (res as List)) {
+          final id = row['lesson_id'] as String?;
+          if (id != null && id.isNotEmpty) {
+            completed.add(id);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not query remote completed lessons: $e');
+    }
+
+    return completed;
+  }
 
   Future<ContextSnapshot> resolve(LearningContext context) async {
     final due = await _safeDueItems();
+    final completedLessons = await _getCompletedLessonIds();
     final resume = _contexts.resumeFor(context.id);
 
     ResolvedScope? resolvedScope;
@@ -91,11 +142,10 @@ class ContextSnapshotResolver {
       case ContextRootType.target:
       case ContextRootType.concept:
         if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
-          final studied = due.map((i) => i.lessonId).toSet();
           final nextAct = resolvedScope.orderedActivities
-              .where((a) => !studied.contains(a.activityId));
+              .where((a) => !completedLessons.contains(a.activityId));
           final index = resolvedScope.orderedActivities
-              .indexWhere((a) => !studied.contains(a.activityId));
+              .indexWhere((a) => !completedLessons.contains(a.activityId));
 
           if (nextAct.isNotEmpty) {
             final first = nextAct.first;
@@ -114,7 +164,7 @@ class ContextSnapshotResolver {
           resumeActivity = _lessonFromPointer(resume);
           resumeItemCount = 0;
         } else {
-          final resolved = await _resolveCourseActivity(context, due);
+          final resolved = await _resolveCourseActivity(context, completedLessons);
           next = resolved.next;
           resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
           resumeItemCount = resolved.resumeItemCount;
@@ -124,15 +174,15 @@ class ContextSnapshotResolver {
       case ContextRootType.path:
       case ContextRootType.course:
       case ContextRootType.module:
-        final resolved = await _resolveCourseActivity(context, due);
+        final resolved = await _resolveCourseActivity(context, completedLessons);
         next = resolved.next;
         resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
         resumeItemCount = resolved.resumeItemCount;
         break;
 
       case ContextRootType.lesson:
-        final started = due.any((i) => i.lessonId == context.rootId);
-        next = started
+        final isCompleted = completedLessons.contains(context.rootId);
+        next = isCompleted
             ? null
             : LessonActivity(lessonId: context.rootId, title: context.label);
         resumeActivity = _lessonFromPointer(resume);
@@ -170,7 +220,7 @@ class ContextSnapshotResolver {
   Future<({LearningActivity? next, LearningActivity? resume, int resumeItemCount})>
       _resolveCourseActivity(
     LearningContext context,
-    List<ReviewableItem> due,
+    Set<String> completedLessons,
   ) async {
     try {
       final content = await _courses.getCourseWithContent(context.rootId);
@@ -179,9 +229,8 @@ class ContextSnapshotResolver {
         return (next: null, resume: null, resumeItemCount: 0);
       }
 
-      final studied = due.map((i) => i.lessonId).toSet();
-      final nextLesson = lessons.where((l) => !studied.contains(l.id));
-      final index = lessons.indexWhere((l) => !studied.contains(l.id));
+      final nextLesson = lessons.where((l) => !completedLessons.contains(l.id));
+      final index = lessons.indexWhere((l) => !completedLessons.contains(l.id));
 
       final next = nextLesson.isEmpty
           ? null

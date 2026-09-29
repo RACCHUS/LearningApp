@@ -106,6 +106,7 @@ class ResolvedScope {
   final Set<String> termIds;
   final Set<String> flashcardIds;
   final DateTime resolvedAt;
+  final String? configHash;
 
   const ResolvedScope({
     required this.contextId,
@@ -118,6 +119,7 @@ class ResolvedScope {
     this.termIds = const {},
     this.flashcardIds = const {},
     required this.resolvedAt,
+    this.configHash,
   });
 
   /// All concepts in the active learning boundary (core + supporting)
@@ -128,6 +130,19 @@ class ResolvedScope {
 
   bool containsActivity(String activityId) =>
       orderedActivities.any((a) => a.activityId == activityId);
+
+  /// Whether an item belongs to this resolved scope (by concept, question, term, flashcard, or lesson).
+  bool includesItem({
+    required String contentId,
+    String? lessonId,
+  }) {
+    if (containsConcept(contentId)) return true;
+    if (questionIds.contains(contentId)) return true;
+    if (termIds.contains(contentId)) return true;
+    if (flashcardIds.contains(contentId)) return true;
+    if (lessonId != null && containsActivity(lessonId)) return true;
+    return false;
+  }
 
   factory ResolvedScope.fromJson(Map<String, dynamic> json) {
     return ResolvedScope(
@@ -146,6 +161,7 @@ class ResolvedScope {
       resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'] as String)
           : DateTime.now(),
+      configHash: json['config_hash'] as String?,
     );
   }
 
@@ -160,6 +176,7 @@ class ResolvedScope {
         'term_ids': termIds.toList(),
         'flashcard_ids': flashcardIds.toList(),
         'resolved_at': resolvedAt.toIso8601String(),
+        'config_hash': configHash,
       };
 }
 

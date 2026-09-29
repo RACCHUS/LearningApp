@@ -8,19 +8,37 @@ import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 
+import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/models/scope.dart';
+import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
+
+final contextScopeProvider = FutureProvider.family<ResolvedScope, LearningContext>((ref, context) async {
+  return ref.watch(scopeResolverProvider).resolveScope(context);
+});
+
 /// Answers "How am I progressing?".
 ///
-/// Order is not arbitrary — retention first, motivation last, because that is
-/// the order of honesty. Sections 2-4 are collapsed on arrival; progressive
-/// disclosure applies inside Progress too.
-class ProgressScreen extends ConsumerWidget {
+/// Progress V2 implements the dual perspective:
+/// 1. Current Context: Scoped readiness and curriculum boundaries for the active target
+/// 2. All Knowledge: Global concept retrieval bands and all-time completion
+class ProgressScreen extends ConsumerStatefulWidget {
   const ProgressScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends ConsumerState<ProgressScreen> {
+  int _selectedTab = 0; // 0: Current Context, 1: All Knowledge
+
+  @override
+  Widget build(BuildContext context) {
     final progressAsync = ref.watch(dashboardProgressProvider);
     final retention = ref.watch(retentionSummaryProvider);
     final motivation = ref.watch(motivationPreferencesProvider);
+    final activeContext = ref.watch(learningContextsProvider).active;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,29 +58,221 @@ class ProgressScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(DesignTokens.space4),
         children: [
-          _RetentionSection(summary: retention),
-          const SizedBox(height: DesignTokens.space3),
-          progressAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(DesignTokens.space5),
-              child: Center(child: CircularProgressIndicator()),
+          // Segmented Switch: Current Context vs All Knowledge (§11.3)
+          SegmentedButton<int>(
+            segments: const [
+              ButtonSegment(
+                value: 0,
+                label: Text('Current Context'),
+                icon: Icon(Icons.my_location),
+              ),
+              ButtonSegment(
+                value: 1,
+                label: Text('All Knowledge'),
+                icon: Icon(Icons.public),
+              ),
+            ],
+            selected: {_selectedTab},
+            onSelectionChanged: (set) => setState(() => _selectedTab = set.first),
+          ),
+          const SizedBox(height: DesignTokens.space4),
+
+          if (_selectedTab == 0) ...[
+            // CURRENT CONTEXT VIEW
+            if (activeContext != null)
+              _CurrentContextSection(activeContext: activeContext)
+            else
+              const _NoActiveContextCard(),
+          ] else ...[
+            // ALL KNOWLEDGE VIEW
+            _RetentionSection(summary: retention),
+            const SizedBox(height: DesignTokens.space3),
+            progressAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(DesignTokens.space5),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => _SectionError(
+                onRetry: () => ref.invalidate(dashboardProgressProvider),
+              ),
+              data: (progress) => Column(
+                children: [
+                  _CompletionSection(progress: progress),
+                  _ActivitySection(progress: progress),
+                  if (!motivation.isFullyQuiet)
+                    _MotivationSection(
+                      progress: progress,
+                      preferences: motivation,
+                    ),
+                ],
+              ),
             ),
-            error: (e, _) => _SectionError(
-              onRetry: () => ref.invalidate(dashboardProgressProvider),
-            ),
-            data: (progress) => Column(
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CurrentContextSection extends ConsumerWidget {
+  final LearningContext activeContext;
+
+  const _CurrentContextSection({required this.activeContext});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scopeAsync = ref.watch(contextScopeProvider(activeContext));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(DesignTokens.space4),
+            child: Row(
               children: [
-                _CompletionSection(progress: progress),
-                _ActivitySection(progress: progress),
-                if (!motivation.isFullyQuiet)
-                  _MotivationSection(
-                    progress: progress,
-                    preferences: motivation,
+                if (activeContext.emoji != null) ...[
+                  Text(activeContext.emoji!, style: const TextStyle(fontSize: 28)),
+                  const SizedBox(width: DesignTokens.space3),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activeContext.label,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Active Target · ${activeContext.rootType.name.toUpperCase()}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),
+        ),
+        const SizedBox(height: DesignTokens.space3),
+        if (activeContext.targetVersionId != null &&
+            activeContext.targetVersionId!.isNotEmpty) ...[
+          TargetReadinessCard(targetVersionId: activeContext.targetVersionId!),
+          const SizedBox(height: DesignTokens.space3),
         ],
+        scopeAsync.when(
+          loading: () => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(DesignTokens.space4),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (e, _) => const SizedBox.shrink(),
+          data: (scope) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(DesignTokens.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Curriculum Scope Boundaries',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: DesignTokens.space3),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _StatColumn(
+                        label: 'Activities',
+                        value: '${scope.orderedActivities.length}',
+                      ),
+                      _StatColumn(
+                        label: 'Core Concepts',
+                        value: '${scope.coreConceptIds.length}',
+                      ),
+                      _StatColumn(
+                        label: 'Supporting',
+                        value: '${scope.supportingConceptIds.length}',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatColumn extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatColumn({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NoActiveContextCard extends StatelessWidget {
+  const _NoActiveContextCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.space5),
+        child: Column(
+          children: [
+            const Icon(Icons.track_changes_outlined, size: 40),
+            const SizedBox(height: DesignTokens.space3),
+            Text(
+              'No Active Learning Context',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: DesignTokens.space2),
+            Text(
+              'Select an active target, career, or exam from the Learn screen to view scoped knowledge readiness.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

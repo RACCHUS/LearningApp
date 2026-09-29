@@ -78,7 +78,6 @@ class LearningTargetService {
           .from('target_versions')
           .select('*')
           .eq('target_id', targetId)
-          .eq('status', 'published')
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();
@@ -186,7 +185,10 @@ class LearningTargetService {
     }
   }
 
-  /// Create a new learning target (career, certification, exam, academic program, curriculum standard)
+  /// Create a new learning target (career, certification, exam, academic program, curriculum standard).
+  ///
+  /// Defaults to private (`is_public = false`) and `status = 'draft'` to avoid polluting
+  /// the canonical catalog and protect learner privacy per V2 architecture rules.
   Future<LearningTarget?> createTarget({
     required String title,
     required TargetType targetType,
@@ -196,7 +198,8 @@ class LearningTargetService {
     String? institutionName,
     String? jurisdiction,
     String? emoji,
-    bool isPublic = true,
+    bool isPublic = false,
+    String status = 'draft',
   }) async {
     try {
       final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '') +
@@ -225,7 +228,7 @@ class LearningTargetService {
                                 ? '🎓'
                                 : '🎯')))),
             'is_public': isPublic,
-            'status': 'published',
+            'status': status,
             'created_by': userId,
           })
           .select('*')
@@ -239,13 +242,109 @@ class LearningTargetService {
         'version_code': 'v1.0',
         'title': '${target.title} (v1.0)',
         'description': 'Initial curriculum version for ${target.title}',
-        'status': 'published',
+        'status': status,
       });
 
       return target;
     } catch (e) {
       debugPrint('❌ Error creating learning target: $e');
       return null;
+    }
+  }
+
+  /// Add a curriculum node to a target version
+  Future<CurriculumNode?> addCurriculumNode({
+    required String targetVersionId,
+    required String title,
+    String? description,
+    String? code,
+    String nodeType = 'domain',
+    int sortOrder = 0,
+    String? parentId,
+    double weight = 1.0,
+  }) async {
+    try {
+      final res = await _supabase
+          .from('curriculum_nodes')
+          .insert({
+            'target_version_id': targetVersionId,
+            'title': title.trim(),
+            'description': description?.trim(),
+            'code': code?.trim(),
+            'node_type': nodeType,
+            'sort_order': sortOrder,
+            'parent_id': parentId,
+            'weight': weight,
+          })
+          .select('*')
+          .single();
+      return CurriculumNode.fromJson(res);
+    } catch (e) {
+      debugPrint('❌ Error adding curriculum node: $e');
+      return null;
+    }
+  }
+
+  /// Bind a course to a curriculum node
+  Future<bool> bindCourseToNode({
+    required String curriculumNodeId,
+    required String courseId,
+    bool isPrimary = true,
+    int sortOrder = 0,
+  }) async {
+    try {
+      await _supabase.from('curriculum_node_courses').upsert({
+        'curriculum_node_id': curriculumNodeId,
+        'course_id': courseId,
+        'is_primary': isPrimary,
+        'sort_order': sortOrder,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error binding course to curriculum node: $e');
+      return false;
+    }
+  }
+
+  /// Bind a lesson to a curriculum node
+  Future<bool> bindLessonToNode({
+    required String curriculumNodeId,
+    required String lessonId,
+    String teachingRole = 'core',
+    int sortOrder = 0,
+  }) async {
+    try {
+      await _supabase.from('curriculum_node_lessons').upsert({
+        'curriculum_node_id': curriculumNodeId,
+        'lesson_id': lessonId,
+        'teaching_role': teachingRole,
+        'sort_order': sortOrder,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error binding lesson to curriculum node: $e');
+      return false;
+    }
+  }
+
+  /// Bind a concept to a curriculum node
+  Future<bool> bindConceptToNode({
+    required String curriculumNodeId,
+    required String conceptId,
+    String importance = 'core',
+    int sortOrder = 0,
+  }) async {
+    try {
+      await _supabase.from('curriculum_node_concepts').upsert({
+        'curriculum_node_id': curriculumNodeId,
+        'concept_id': conceptId,
+        'importance': importance,
+        'sort_order': sortOrder,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error binding concept to curriculum node: $e');
+      return false;
     }
   }
 }

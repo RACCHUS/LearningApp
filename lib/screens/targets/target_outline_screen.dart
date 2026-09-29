@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/curriculum_node.dart';
+import '../../models/learning_target.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../services/hive_service.dart';
@@ -31,6 +33,19 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
           loading: () => const Text('Loading outline...'),
           error: (_, __) => const Text('Curriculum Outline'),
         ),
+        actions: [
+          versionAsync.when(
+            data: (version) => version != null
+                ? IconButton(
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Add Topic',
+                    onPressed: () => _showAddNodeDialog(context, version.id),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -81,11 +96,12 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                           }).toList();
 
                     if (filteredNodes.isEmpty) {
+                      if (_searchQuery.isEmpty) {
+                        return _buildEmptyAuthoringState(context, version, theme);
+                      }
                       return Center(
                         child: Text(
-                          _searchQuery.isEmpty
-                              ? 'No curriculum nodes found for this version'
-                              : 'No matches found in outline',
+                          'No matches found in outline',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -139,6 +155,124 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
           SnackBar(content: Text('Scope focused on: ${node.title}')),
         );
       }
+    }
+  }
+
+  Widget _buildEmptyAuthoringState(
+    BuildContext context,
+    TargetVersion version,
+    ThemeData theme,
+  ) {
+    final colorScheme = theme.colorScheme;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(DesignTokens.space4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(DesignTokens.space4),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.account_tree_outlined,
+                size: 40,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: DesignTokens.space3),
+            Text(
+              'No Curriculum Nodes Yet',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: DesignTokens.space1),
+            Text(
+              'Start building this curriculum outline by adding topics or generating with AI.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: DesignTokens.space4),
+            Wrap(
+              spacing: DesignTokens.space3,
+              runSpacing: DesignTokens.space2,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _showAddNodeDialog(context, version.id),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Topic'),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => context.push('/create-lesson'),
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Generate with AI'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAddNodeDialog(BuildContext context, String versionId) async {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Curriculum Topic'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Topic Title',
+                hintText: 'e.g. Network Fundamentals',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: DesignTokens.space3),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(
+                labelText: 'Description (optional)',
+                hintText: 'Summary of what this unit covers',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (created == true && titleController.text.trim().isNotEmpty) {
+      final service = ref.read(learningTargetServiceProvider);
+      await service.addCurriculumNode(
+        targetVersionId: versionId,
+        title: titleController.text.trim(),
+        description: descController.text.trim().isNotEmpty
+            ? descController.text.trim()
+            : null,
+      );
+      ref.invalidate(targetCurriculumNodesProvider(versionId));
     }
   }
 

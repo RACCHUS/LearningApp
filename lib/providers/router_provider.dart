@@ -31,6 +31,7 @@ import 'package:learning_pwa/screens/targets/target_detail_screen.dart';
 import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
+import 'package:learning_pwa/screens/review_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -232,6 +233,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/study-sets',
         name: 'study-sets',
         builder: (context, state) => const SavedStudySetsScreen(),
+      ),
+      GoRoute(
+        path: '/review',
+        name: 'review',
+        builder: (context, state) {
+          final contextId = state.uri.queryParameters['contextId'];
+          final limitStr = state.uri.queryParameters['limit'];
+          final limit = limitStr != null ? int.tryParse(limitStr) : null;
+          return ReviewScreen(
+            contextId: contextId,
+            limit: limit,
+          );
+        },
       ),
       GoRoute(
         path: '/content-picker',

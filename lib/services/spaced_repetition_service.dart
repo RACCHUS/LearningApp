@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
+import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'concept_evidence_service.dart';
 
@@ -297,19 +300,44 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
   /// When [limit] is a positive number smaller than the number of due items,
   /// the session is capped to that many items (used by Quick Review to keep
   /// sessions short and within the user's batch size).
-  Future<void> startSession({int? limit}) async {
+  ///
+  /// When [contextId] is provided, the review session is strictly scoped to items
+  /// belonging to the active [LearningContext]'s resolved scope (per V2 rule:
+  /// "Knowledge is global. Learning is scoped.").
+  Future<void> startSession({int? limit, String? contextId}) async {
     state = state.copyWith(isLoading: true);
 
     final due = await _service.getDueItems();
-    final items = (limit != null && limit > 0 && limit < due.length)
-        ? due.sublist(0, limit)
-        : due;
+    List<ReviewableItem> filteredDue = due;
+
+    if (contextId != null && contextId.isNotEmpty) {
+      try {
+        final contextsService = _ref.read(learningContextServiceProvider);
+        final context = contextsService.byId(contextId) ??
+            _ref.read(learningContextsProvider).contexts.where((c) => c.id == contextId).firstOrNull;
+        if (context != null) {
+          final scopeResolver = _ref.read(scopeResolverProvider);
+          final scope = await scopeResolver.resolveScope(context);
+          filteredDue = due.where((item) => scope.includesItem(
+            contentId: item.contentId,
+            lessonId: item.lessonId,
+          )).toList();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error scoping review items for context $contextId: $e');
+      }
+    }
+
+    final items = (limit != null && limit > 0 && limit < filteredDue.length)
+        ? filteredDue.sublist(0, limit)
+        : filteredDue;
 
     state = ReviewSessionState(
       items: items,
       currentIndex: 0,
       isLoading: false,
       isComplete: items.isEmpty,
+      contextId: contextId,
     );
   }
 
@@ -376,6 +404,7 @@ class ReviewSessionState {
   final bool isComplete;
   final int reviewedCount;
   final int correctCount;
+  final String? contextId;
 
   const ReviewSessionState({
     this.items = const [],
@@ -384,6 +413,7 @@ class ReviewSessionState {
     this.isComplete = false,
     this.reviewedCount = 0,
     this.correctCount = 0,
+    this.contextId,
   });
 
   ReviewableItem? get currentItem =>
@@ -403,6 +433,7 @@ class ReviewSessionState {
     bool? isComplete,
     int? reviewedCount,
     int? correctCount,
+    String? contextId,
   }) {
     return ReviewSessionState(
       items: items ?? this.items,
@@ -411,6 +442,7 @@ class ReviewSessionState {
       isComplete: isComplete ?? this.isComplete,
       reviewedCount: reviewedCount ?? this.reviewedCount,
       correctCount: correctCount ?? this.correctCount,
+      contextId: contextId ?? this.contextId,
     );
   }
 }

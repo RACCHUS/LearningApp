@@ -19,22 +19,50 @@ class ScopeResolver {
         _scopeBox = scopeBox,
         _snapshotBox = snapshotBox;
 
+  static const Duration defaultCacheTtl = Duration(hours: 4);
+
+  static String computeConfigHash(LearningContext context) {
+    return '${context.targetVersionId ?? ''}:${context.scopeMode.name}:${context.activeFocusId ?? ''}:${context.scopeConfig.toString()}';
+  }
+
   /// Resolves the complete scope for the given context.
-  /// Falls back to local Hive cache if offline or on network failure.
+  /// Uses a stale-while-revalidate policy with TTL and context configuration hashing
+  /// per Learning Architecture v2 §7.4:
+  /// - If fresh cache exists and config matches: returns instantly.
+  /// - If stale cache exists and config matches: returns immediately for instant UI
+  ///   while initiating a background refresh.
+  /// - If config changed or forceRefresh: fetches fresh remote scope.
+  /// - Falls back to local Hive cache if offline or on network failure.
   Future<ResolvedScope> resolveScope(
     LearningContext context, {
     bool forceRefresh = false,
+    Duration? cacheTtl,
   }) async {
+    final configHash = computeConfigHash(context);
+    final ttl = cacheTtl ?? defaultCacheTtl;
+
     // 1. Try local cache first if not forced
     if (!forceRefresh && _scopeBox != null && _scopeBox.containsKey(context.id)) {
       final cached = _scopeBox.get(context.id);
       if (cached != null) {
-        return cached;
+        final isConfigMatch =
+            cached.configHash == null || cached.configHash == configHash;
+        final isFresh = DateTime.now().difference(cached.resolvedAt) < ttl;
+
+        if (isConfigMatch) {
+          if (isFresh) {
+            return cached;
+          } else {
+            // Stale-while-revalidate: return cached immediately, trigger remote check in background
+            _revalidateInBackground(context, configHash);
+            return cached;
+          }
+        }
       }
     }
 
     try {
-      final resolved = await _resolveOnline(context);
+      final resolved = await _resolveOnline(context, configHash: configHash);
       // Cache resolved scope
       if (_scopeBox != null) {
         await _scopeBox.put(context.id, resolved);
@@ -52,36 +80,73 @@ class ScopeResolver {
       return ResolvedScope(
         contextId: context.id,
         resolvedAt: DateTime.now(),
+        configHash: configHash,
       );
     }
   }
 
-  Future<ResolvedScope> _resolveOnline(LearningContext context) async {
+  void _revalidateInBackground(LearningContext context, String configHash) {
+    _resolveOnline(context, configHash: configHash).then((fresh) async {
+      if (_scopeBox != null) {
+        await _scopeBox.put(context.id, fresh);
+      }
+    }).catchError((e) {
+      debugPrint('⚠️ Background ScopeResolver revalidation failed: $e');
+    });
+  }
+
+  Future<ResolvedScope> _resolveOnline(
+    LearningContext context, {
+    String? configHash,
+  }) async {
     final client = _supabase;
     if (client == null) {
       return ResolvedScope(
         contextId: context.id,
         resolvedAt: DateTime.now(),
+        configHash: configHash,
       );
     }
 
+    final ResolvedScope raw;
     switch (context.rootType) {
       case ContextRootType.target:
-        return _resolveTargetScope(context, client);
+        raw = await _resolveTargetScope(context, client);
+        break;
       case ContextRootType.concept:
-        return _resolveConceptScope(context, client);
+        raw = await _resolveConceptScope(context, client);
+        break;
       case ContextRootType.course:
-        return _resolveCourseScope(context, client);
+        raw = await _resolveCourseScope(context, client);
+        break;
       case ContextRootType.module:
-        return _resolveModuleScope(context, client);
+        raw = await _resolveModuleScope(context, client);
+        break;
       case ContextRootType.lesson:
-        return _resolveLessonScope(context, client);
+        raw = await _resolveLessonScope(context, client);
+        break;
       case ContextRootType.studySet:
-        return _resolveStudySetScope(context, client);
+        raw = await _resolveStudySetScope(context, client);
+        break;
       case ContextRootType.path:
         // Legacy path maps to course resolution
-        return _resolveCourseScope(context, client);
+        raw = await _resolveCourseScope(context, client);
+        break;
     }
+
+    return ResolvedScope(
+      contextId: raw.contextId,
+      coreConceptIds: raw.coreConceptIds,
+      supportingConceptIds: raw.supportingConceptIds,
+      relatedConceptIds: raw.relatedConceptIds,
+      curriculumNodeIds: raw.curriculumNodeIds,
+      orderedActivities: raw.orderedActivities,
+      questionIds: raw.questionIds,
+      termIds: raw.termIds,
+      flashcardIds: raw.flashcardIds,
+      resolvedAt: DateTime.now(),
+      configHash: configHash ?? computeConfigHash(context),
+    );
   }
 
   // ==========================================================================
