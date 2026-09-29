@@ -60,6 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'library',
             builder: (context, state) => LibraryScreen(
               initialQuery: state.uri.queryParameters['search'],
+              initialType: state.uri.queryParameters['type'],
             ),
           ),
           GoRoute(

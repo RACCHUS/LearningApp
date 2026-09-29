@@ -377,16 +377,27 @@ alter table public.fields
 
 create index if not exists fields_kind_idx on public.fields(field_kind, sort_order);
 
--- Full-Text Search generated column and GIN index
+-- Full-Text Search tsvector column, trigger, and GIN index
 alter table public.fields
-  add column if not exists search_tsv tsvector
-  generated always as (
-    setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-    setweight(to_tsvector('english', array_to_string(aliases, ' ')), 'A') ||
-    setweight(to_tsvector('english', array_to_string(cross_references, ' ')), 'B') ||
-    setweight(to_tsvector('english', array_to_string(illustrative_examples, ' ')), 'B') ||
-    setweight(to_tsvector('english', coalesce(description, '')), 'C')
-  ) stored;
+  add column if not exists search_tsv tsvector;
+
+create or replace function public.fields_generate_search_tsv()
+returns trigger as $$
+begin
+  new.search_tsv :=
+    setweight(to_tsvector('english', coalesce(new.name, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(array_to_string(new.aliases, ' '), '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(array_to_string(new.cross_references, ' '), '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(array_to_string(new.illustrative_examples, ' '), '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(new.description, '')), 'C');
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_fields_search_tsv on public.fields;
+create trigger trg_fields_search_tsv
+  before insert or update on public.fields
+  for each row execute function public.fields_generate_search_tsv();
 
 create index if not exists fields_search_tsv_idx
   on public.fields using gin(search_tsv);

@@ -13,6 +13,8 @@ import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 
+import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
+
 /// Where choice expands. Higher information density is correct here: the user
 /// came to browse and manage.
 ///
@@ -20,8 +22,9 @@ import 'package:learning_pwa/widgets/account_actions.dart';
 /// top-level navigation controls only (spec B3).
 class LibraryScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
+  final String? initialType;
 
-  const LibraryScreen({super.key, this.initialQuery});
+  const LibraryScreen({super.key, this.initialQuery, this.initialType});
 
   @override
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
@@ -31,12 +34,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   late final TextEditingController _search =
       TextEditingController(text: widget.initialQuery ?? '');
   String _query = '';
+  String? _selectedCategory;
   bool _isScoped = true;
 
   @override
   void initState() {
     super.initState();
     _query = widget.initialQuery ?? '';
+    _selectedCategory = widget.initialType;
   }
 
   @override
@@ -64,9 +69,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             (l.description?.toLowerCase().contains(_query.toLowerCase()) ?? false))
         .toList();
 
+    TargetType? targetTypeFilter;
+    if (_selectedCategory == 'career') targetTypeFilter = TargetType.career;
+    if (_selectedCategory == 'certification') targetTypeFilter = TargetType.certification;
+    if (_selectedCategory == 'standardized_exam') targetTypeFilter = TargetType.standardizedExam;
+    if (_selectedCategory == 'academic_program') targetTypeFilter = TargetType.academicProgram;
+
     // Query targets
     final targetsAsync = ref.watch(targetsListProvider((
-      type: null,
+      type: targetTypeFilter,
       search: _query.isNotEmpty ? _query : null,
     )));
     var targets = targetsAsync.valueOrNull ?? const <LearningTarget>[];
@@ -191,7 +202,75 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ],
             ),
           ],
-          const SizedBox(height: DesignTokens.space5),
+          const SizedBox(height: DesignTokens.space3),
+
+          // Destination Category Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                FilterChip(
+                  key: const Key('library-filter-all'),
+                  label: const Text('All Destinations'),
+                  selected: _selectedCategory == null,
+                  onSelected: (selected) {
+                    if (selected) setState(() => _selectedCategory = null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-careers'),
+                  avatar: const Text('💼'),
+                  label: const Text('Careers'),
+                  selected: _selectedCategory == 'career',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'career' : null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-certs'),
+                  avatar: const Text('📜'),
+                  label: const Text('Certifications'),
+                  selected: _selectedCategory == 'certification',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'certification' : null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-exams'),
+                  avatar: const Text('📝'),
+                  label: const Text('Exams'),
+                  selected: _selectedCategory == 'standardized_exam',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'standardized_exam' : null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-academics'),
+                  avatar: const Text('🎓'),
+                  label: const Text('Academic Programs'),
+                  selected: _selectedCategory == 'academic_program',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'academic_program' : null);
+                  },
+                ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-courses'),
+                  avatar: const Text('📚'),
+                  label: const Text('Courses & Lessons'),
+                  selected: _selectedCategory == 'course',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'course' : null);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: DesignTokens.space4),
 
           if (isSearching) ...[
             // MULTI-ENTITY SEARCH RESULTS WITH DISAMBIGUATION TAGS (§11.1 & §11.2)
@@ -291,7 +370,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ],
           ] else ...[
             // NORMAL BROWSING MODE
-            _SectionHeader('Your learning'),
+            _SectionHeader(
+              'Your learning',
+              action: TextButton.icon(
+                onPressed: () => CreateTargetDialog.show(context),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Create Goal'),
+              ),
+            ),
             if (contexts.error != null)
               _InlineError(
                 message: contexts.error!,
@@ -299,7 +385,49 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ref.read(learningContextsProvider.notifier).load(),
               )
             else if (contexts.contexts.isEmpty)
-              const _EmptyHint('Nothing yet. Start something below.')
+              Card(
+                elevation: 0,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(DesignTokens.space4),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(DesignTokens.space2),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
+                      ),
+                      const SizedBox(width: DesignTokens.space3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'No active learning tracks',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'Set up a learning destination or pick a lesson below.',
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FilledButton.tonal(
+                        onPressed: () => CreateTargetDialog.show(context),
+                        child: const Text('Create Goal'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
             else
               ...contexts.contexts.map(
                 (c) => ListTile(
@@ -320,8 +448,62 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             const SizedBox(height: DesignTokens.space5),
 
             // Learning Targets Section
-            if (targets.isNotEmpty) ...[
-              _SectionHeader('Learning Targets', trailing: '${targets.length}'),
+            _SectionHeader(
+              'Learning Goals & Targets',
+              trailing: targets.isNotEmpty ? '${targets.length}' : null,
+              action: TextButton.icon(
+                onPressed: () => CreateTargetDialog.show(context, initialType: targetTypeFilter),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Create Goal'),
+              ),
+            ),
+            if (targets.isEmpty)
+              Card(
+                elevation: 0,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                  side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(DesignTokens.space4),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(DesignTokens.space2),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.track_changes, color: theme.colorScheme.secondary),
+                      ),
+                      const SizedBox(width: DesignTokens.space3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedCategory != null
+                                  ? 'No ${_selectedCategory!.replaceAll('_', ' ')} goals yet'
+                                  : 'No learning goals yet',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'Set up a career, cert, or exam target to track your mastery.',
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FilledButton.tonal(
+                        onPressed: () => CreateTargetDialog.show(context, initialType: targetTypeFilter),
+                        child: const Text('Create Goal'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
               ...targets.take(6).map(
                 (t) => ListTile(
                   key: Key('library-target-${t.id}'),
@@ -332,10 +514,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () => context.push('/target/${t.id}'),
                 ),
               ),
-              const SizedBox(height: DesignTokens.space5),
-            ],
+            const SizedBox(height: DesignTokens.space5),
 
-            _SectionHeader('Discover', trailing: '${lessons.length}'),
+            _SectionHeader(
+              'Discover Lessons',
+              trailing: '${lessons.length}',
+              action: TextButton.icon(
+                onPressed: () => context.push('/create-lesson'),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Create Lesson'),
+              ),
+            ),
             if (catalogAsync.isLoading)
               const Padding(
                 padding: EdgeInsets.all(DesignTokens.space5),
@@ -357,8 +546,48 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   },
                 ),
               if (lessons.isEmpty)
-                const _EmptyHint(
-                  'No lessons match. Try a different search, or create one below.',
+                Card(
+                  elevation: 0,
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(DesignTokens.space4),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(DesignTokens.space2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.tertiaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.auto_stories_outlined, color: theme.colorScheme.tertiary),
+                        ),
+                        const SizedBox(width: DesignTokens.space3),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'No lessons available',
+                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                'Create a lesson or generate curriculum with AI.',
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton.tonal(
+                          onPressed: () => context.push('/create-lesson'),
+                          child: const Text('Create Lesson'),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               else
                 ...lessons.take(50).map(
@@ -444,7 +673,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? trailing;
-  const _SectionHeader(this.title, {this.trailing});
+  final Widget? action;
+  const _SectionHeader(this.title, {this.trailing, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +683,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: DesignTokens.space2),
       child: Row(
         children: [
-          Text(title, style: theme.textTheme.titleMedium),
+          Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           if (trailing != null) ...[
             const SizedBox(width: DesignTokens.space2),
             Text(
@@ -462,6 +692,8 @@ class _SectionHeader extends StatelessWidget {
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
+          const Spacer(),
+          if (action != null) action!,
         ],
       ),
     );

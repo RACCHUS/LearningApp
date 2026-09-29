@@ -195,11 +195,20 @@ class _LessonPickerDialogState extends ConsumerState<LessonPickerDialog> {
                             if (_searchQuery.isEmpty) ...[
                               const SizedBox(height: 8),
                               Text(
-                                'Create some lessons first',
+                                'Create some lessons first to add them here',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant
                                       .withValues(alpha: 0.7),
                                 ),
+                              ),
+                              const SizedBox(height: 16),
+                              FilledButton.tonalIcon(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  context.push('/editor');
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create Lesson'),
                               ),
                             ],
                           ],

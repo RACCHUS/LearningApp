@@ -154,9 +154,9 @@ class _ContinueView {
         return const _ContinueView(
           sectionLabel: 'Start',
           title: 'What do you want to learn?',
-          primaryLabel: 'Browse courses',
+          primaryLabel: 'Explore destinations',
           primaryRoute: '/library',
-          secondaryLabel: 'Import or create',
+          secondaryLabel: 'Create goal or lesson',
           secondaryRoute: '/create-lesson',
         );
     }

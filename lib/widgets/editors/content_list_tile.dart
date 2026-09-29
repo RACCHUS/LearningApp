@@ -212,7 +212,7 @@ class EmptyContentState extends StatelessWidget {
             FilledButton.tonalIcon(
               onPressed: onAdd,
               icon: const Icon(Icons.add),
-              label: Text('Add ${type.name}'),
+              label: Text('Create ${type.name}'),
             ),
           ],
         ),

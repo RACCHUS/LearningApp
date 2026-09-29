@@ -3,7 +3,8 @@ enum TargetType {
   academicProgram,
   certification,
   licensureExam,
-  standardizedExam;
+  standardizedExam,
+  curriculumStandard;
 
   static TargetType fromString(String value) {
     switch (value) {
@@ -17,6 +18,8 @@ enum TargetType {
         return TargetType.licensureExam;
       case 'standardized_exam':
         return TargetType.standardizedExam;
+      case 'curriculum_standard':
+        return TargetType.curriculumStandard;
       default:
         return TargetType.career;
     }
@@ -34,6 +37,8 @@ enum TargetType {
         return 'licensure_exam';
       case TargetType.standardizedExam:
         return 'standardized_exam';
+      case TargetType.curriculumStandard:
+        return 'curriculum_standard';
     }
   }
 
@@ -49,6 +54,8 @@ enum TargetType {
         return 'Licensure Exam';
       case TargetType.standardizedExam:
         return 'Standardized Exam';
+      case TargetType.curriculumStandard:
+        return 'Curriculum Standard';
     }
   }
 }
@@ -224,6 +231,10 @@ class LearningTarget {
         return 'Career';
       case TargetType.standardizedExam:
         return 'Standardized Exam';
+      case TargetType.curriculumStandard:
+        return jurisdiction != null && jurisdiction!.trim().isNotEmpty
+            ? 'Curriculum Standard ($jurisdiction)'
+            : 'Curriculum Standard';
     }
   }
 }

@@ -288,7 +288,7 @@ class EmptyCourseLessonsState extends StatelessWidget {
             FilledButton.tonalIcon(
               onPressed: onAddLessons,
               icon: const Icon(Icons.add),
-              label: const Text('Add Lessons'),
+              label: const Text('Create or Add Lessons'),
             ),
           ],
         ),

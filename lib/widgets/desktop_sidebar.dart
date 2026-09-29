@@ -226,12 +226,17 @@ class DesktopSidebar extends ConsumerWidget {
 
   Future<void> _startRandomQuiz(BuildContext context, WidgetRef ref) async {
     final lessonsAsync = ref.read(allLessonsProvider);
-    
     lessonsAsync.when(
       data: (lessons) {
         if (lessons.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No lessons available. Create one first!')),
+            SnackBar(
+              content: const Text('No lessons available yet.'),
+              action: SnackBarAction(
+                label: 'Create',
+                onPressed: () => context.push('/editor'),
+              ),
+            ),
           );
           return;
         }

@@ -185,4 +185,67 @@ class LearningTargetService {
       return [];
     }
   }
+
+  /// Create a new learning target (career, certification, exam, academic program, curriculum standard)
+  Future<LearningTarget?> createTarget({
+    required String title,
+    required TargetType targetType,
+    String? description,
+    String? fieldId,
+    String? providerName,
+    String? institutionName,
+    String? jurisdiction,
+    String? emoji,
+    bool isPublic = true,
+  }) async {
+    try {
+      final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '') +
+          '-${DateTime.now().millisecondsSinceEpoch % 10000}';
+      final userId = _supabase.auth.currentUser?.id;
+
+      final res = await _supabase
+          .from('learning_targets')
+          .insert({
+            'title': title.trim(),
+            'slug': slug,
+            'target_type': targetType.toDbString(),
+            'description': description?.trim(),
+            'field_id': fieldId,
+            'provider_name': providerName?.trim(),
+            'institution_name': institutionName?.trim(),
+            'jurisdiction': jurisdiction?.trim(),
+            'emoji': emoji ??
+                (targetType == TargetType.career
+                    ? '💼'
+                    : (targetType == TargetType.certification
+                        ? '📜'
+                        : (targetType == TargetType.standardizedExam
+                            ? '📝'
+                            : (targetType == TargetType.academicProgram
+                                ? '🎓'
+                                : '🎯')))),
+            'is_public': isPublic,
+            'status': 'published',
+            'created_by': userId,
+          })
+          .select('*')
+          .single();
+
+      final target = LearningTarget.fromJson(res);
+
+      // Auto-create initial TargetVersion so it can immediately receive curriculum nodes
+      await _supabase.from('target_versions').insert({
+        'target_id': target.id,
+        'version_code': 'v1.0',
+        'title': '${target.title} (v1.0)',
+        'description': 'Initial curriculum version for ${target.title}',
+        'status': 'published',
+      });
+
+      return target;
+    } catch (e) {
+      debugPrint('❌ Error creating learning target: $e');
+      return null;
+    }
+  }
 }
