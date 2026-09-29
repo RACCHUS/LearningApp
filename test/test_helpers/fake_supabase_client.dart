@@ -86,13 +86,45 @@ class FakeSupabaseQueryBuilder implements SupabaseQueryBuilder {
   
   @override
   PostgrestFilterBuilder<List<Map<String, dynamic>>> insert(Object values, {bool defaultToNull = true}) {
+    final Map<String, dynamic>? record;
     if (values is Map<String, dynamic>) {
-      insertedRecords.add(values);
+      record = Map<String, dynamic>.from(values);
+      record.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
+      insertedRecords.add(record);
     } else if (values is List) {
+      record = null;
       insertedRecords.addAll(values.cast<Map<String, dynamic>>());
+    } else {
+      record = null;
     }
     return FakePostgrestFilterBuilder(
-      data: [if (values is Map<String, dynamic>) values],
+      data: [if (record != null) record],
+      insertedRecords: insertedRecords,
+      deletedIds: deletedIds,
+      isInsert: true,
+    );
+  }
+  
+  @override
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> upsert(
+    Object values, {
+    String? onConflict,
+    bool ignoreDuplicates = false,
+    bool defaultToNull = true,
+  }) {
+    final Map<String, dynamic>? record;
+    if (values is Map<String, dynamic>) {
+      record = Map<String, dynamic>.from(values);
+      record.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
+      insertedRecords.add(record);
+    } else if (values is List) {
+      record = null;
+      insertedRecords.addAll(values.cast<Map<String, dynamic>>());
+    } else {
+      record = null;
+    }
+    return FakePostgrestFilterBuilder(
+      data: [if (record != null) record],
       insertedRecords: insertedRecords,
       deletedIds: deletedIds,
       isInsert: true,

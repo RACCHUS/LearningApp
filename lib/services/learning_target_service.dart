@@ -18,7 +18,13 @@ class LearningTargetService {
     int limit = 50,
   }) async {
     try {
-      var query = _supabase.from('learning_targets').select('*').eq('status', 'published');
+      final userId = _supabase.auth.currentUser?.id;
+      var query = _supabase.from('learning_targets').select('*');
+      if (userId != null) {
+        query = query.or('status.eq.published,created_by.eq.$userId');
+      } else {
+        query = query.eq('status', 'published');
+      }
 
       if (type != null) {
         query = query.eq('target_type', type.toDbString());
@@ -289,14 +295,14 @@ class LearningTargetService {
   Future<bool> bindCourseToNode({
     required String curriculumNodeId,
     required String courseId,
-    bool isPrimary = true,
+    bool isRequired = true,
     int sortOrder = 0,
   }) async {
     try {
       await _supabase.from('curriculum_node_courses').upsert({
         'curriculum_node_id': curriculumNodeId,
         'course_id': courseId,
-        'is_primary': isPrimary,
+        'is_required': isRequired,
         'sort_order': sortOrder,
       });
       return true;
@@ -306,18 +312,39 @@ class LearningTargetService {
     }
   }
 
+  /// Bind a module to a curriculum node
+  Future<bool> bindModuleToNode({
+    required String curriculumNodeId,
+    required String moduleId,
+    bool isRequired = true,
+    int sortOrder = 0,
+  }) async {
+    try {
+      await _supabase.from('curriculum_node_modules').upsert({
+        'curriculum_node_id': curriculumNodeId,
+        'module_id': moduleId,
+        'is_required': isRequired,
+        'sort_order': sortOrder,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error binding module to curriculum node: $e');
+      return false;
+    }
+  }
+
   /// Bind a lesson to a curriculum node
   Future<bool> bindLessonToNode({
     required String curriculumNodeId,
     required String lessonId,
-    String teachingRole = 'core',
+    bool isRequired = true,
     int sortOrder = 0,
   }) async {
     try {
       await _supabase.from('curriculum_node_lessons').upsert({
         'curriculum_node_id': curriculumNodeId,
         'lesson_id': lessonId,
-        'teaching_role': teachingRole,
+        'is_required': isRequired,
         'sort_order': sortOrder,
       });
       return true;
@@ -331,15 +358,15 @@ class LearningTargetService {
   Future<bool> bindConceptToNode({
     required String curriculumNodeId,
     required String conceptId,
-    String importance = 'core',
-    int sortOrder = 0,
+    String relevance = 'core',
+    double weight = 1.0,
   }) async {
     try {
       await _supabase.from('curriculum_node_concepts').upsert({
         'curriculum_node_id': curriculumNodeId,
         'concept_id': conceptId,
-        'importance': importance,
-        'sort_order': sortOrder,
+        'relevance': relevance,
+        'weight': weight,
       });
       return true;
     } catch (e) {

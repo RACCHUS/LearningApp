@@ -241,9 +241,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final contextId = state.uri.queryParameters['contextId'];
           final limitStr = state.uri.queryParameters['limit'];
           final limit = limitStr != null ? int.tryParse(limitStr) : null;
+          final conceptsStr = state.uri.queryParameters['concepts'];
+          final specificConceptIds = conceptsStr != null && conceptsStr.isNotEmpty
+              ? conceptsStr.split(',').where((s) => s.isNotEmpty).toList()
+              : null;
           return ReviewScreen(
             contextId: contextId,
             limit: limit,
+            specificConceptIds: specificConceptIds,
           );
         },
       ),

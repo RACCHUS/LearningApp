@@ -114,13 +114,19 @@ class _ContinueView {
         );
 
       case ReinforceConcepts(:final activity):
+        final queryParams = <String>[];
+        if (context != null) queryParams.add('contextId=${context.id}');
+        if (activity.conceptIds.isNotEmpty) {
+          queryParams.add('concepts=${activity.conceptIds.join(',')}');
+        }
+        final route = queryParams.isEmpty ? '/review' : '/review?${queryParams.join('&')}';
         return _ContinueView(
           sectionLabel: 'Reinforce',
           title: activity.title,
           orientation: '~${activity.estimate.inMinutes} min',
           rationale: action.rationale,
           primaryLabel: 'Review',
-          primaryRoute: '/review',
+          primaryRoute: route,
           secondaryLabel: 'Choose lesson',
           secondaryRoute: '/library',
         );
@@ -128,13 +134,19 @@ class _ContinueView {
       // Reviews are primary only because the context is exhausted — the way
       // onward is still present, as the secondary action (spec C1).
       case ReviewOnly(:final activity, :final offer):
+        final queryParams = <String>[];
+        if (context != null) queryParams.add('contextId=${context.id}');
+        if (activity.conceptIds.isNotEmpty) {
+          queryParams.add('concepts=${activity.conceptIds.join(',')}');
+        }
+        final route = queryParams.isEmpty ? '/review' : '/review?${queryParams.join('&')}';
         return _ContinueView(
           sectionLabel: 'Ready to review',
           title: activity.title,
           orientation: '~${activity.estimate.inMinutes} min',
           rationale: action.rationale,
           primaryLabel: 'Review',
-          primaryRoute: '/review',
+          primaryRoute: route,
           secondaryLabel: offer.label,
           secondaryRoute: '/library',
         );

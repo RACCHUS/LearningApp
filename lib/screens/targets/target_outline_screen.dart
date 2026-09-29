@@ -132,13 +132,84 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     );
   }
 
-  void _handleNodeTap(CurriculumNode node) {
-    // If the node has an attached lesson or course, direct jump (<2 taps)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selected ${node.title}'),
-        duration: const Duration(seconds: 1),
+  Future<void> _handleNodeTap(CurriculumNode node) async {
+    final service = ref.read(learningTargetServiceProvider);
+    final lessons = await service.getNodeLessons(node.id);
+    if (!mounted) return;
+
+    if (lessons.isNotEmpty) {
+      // Direct jump (<2 deliberate actions per Direct Access Rule §7.3)
+      context.push('/lesson/${lessons.first.lessonId}');
+      return;
+    }
+
+    // If no lessons are attached yet, open action bottom sheet to add or generate
+    _showNodeActionsBottomSheet(node);
+  }
+
+  void _showNodeActionsBottomSheet(CurriculumNode node) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: DesignTokens.space3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space4),
+                  child: Text(
+                    node.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+                if (node.description != null && node.description!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: DesignTokens.space4,
+                      right: DesignTokens.space4,
+                      top: 4,
+                    ),
+                    child: Text(
+                      node.description!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome),
+                  title: const Text('Generate Lesson with AI'),
+                  subtitle: const Text('Create a new lesson and bind to this topic'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    context.push(
+                      '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}',
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.my_location),
+                  title: const Text('Set as Active Scope Focus'),
+                  subtitle: const Text('Narrow review and recommendations to this topic'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _setNodeFocus(node);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -277,10 +348,17 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
   }
 
   Widget _buildOfflineOrErrorState(ThemeData theme) {
-    // Check if offline snapshot exists in Hive (§7.4)
+    // Check if offline snapshot exists in Hive matching this target (§7.4)
     final hive = ref.read(hiveServiceProvider);
-    final activeCtx = ref.read(learningContextsProvider).active;
-    final snapshot = activeCtx != null ? hive.contextSnapshotBox.get(activeCtx.id) : null;
+    final allContexts = ref.read(learningContextsProvider).contexts;
+    final matchingContext = allContexts.where((c) => c.rootId == widget.targetId).firstOrNull;
+
+    final snapshot = (matchingContext != null
+            ? hive.contextSnapshotBox.get(matchingContext.id)
+            : null) ??
+        hive.contextSnapshotBox.values
+            .where((s) => s.contextId == widget.targetId || s.targetVersionId == widget.targetId)
+            .firstOrNull;
 
     if (snapshot != null && snapshot.nodes.isNotEmpty) {
       final nodes = snapshot.nodes;

@@ -115,14 +115,33 @@ Future<void> main(List<String> args) async {
       await client.getCount('external_classification_occupation_mappings');
   final targetCount = await client.getCount('learning_targets');
 
+  bool hasErrors = false;
+
   print('📊 Taxonomy Entity Counts:');
   print('  • Catalog Clusters:                         $clusterCount / 12');
-  print('  • Canonical Fields (CIP 48 series + core):  $fieldCount');
-  print('  • External Classification Nodes (CIP):      $extNodeCount');
-  print('  • Occupation Nodes (BLS SOC + O*NET):       $occCount');
+  print('  • Canonical Fields (CIP 48 series + core):  $fieldCount / 48');
+  print('  • External Classification Nodes (CIP):      $extNodeCount / 48');
+  print('  • Occupation Nodes (BLS SOC + O*NET):       $occCount / 24');
   print('  • CIP-SOC Qualitative Crosswalks:           $crosswalkCount');
-  print('  • Multi-Destination Learning Targets:       $targetCount');
+  print('  • Multi-Destination Learning Targets:       $targetCount / 17');
   print('');
+
+  if (clusterCount < 12) {
+    print('  ❌ Error: Expected at least 12 catalog clusters, found $clusterCount');
+    hasErrors = true;
+  }
+  if (fieldCount < 48) {
+    print('  ❌ Error: Expected at least 48 canonical fields, found $fieldCount');
+    hasErrors = true;
+  }
+  if (occCount < 24) {
+    print('  ❌ Error: Expected at least 24 occupation nodes, found $occCount');
+    hasErrors = true;
+  }
+  if (targetCount < 17) {
+    print('  ❌ Error: Expected at least 17 learning targets, found $targetCount');
+    hasErrors = true;
+  }
 
   print('🔍 Verifying Required Target Slugs:');
   const requiredSlugs = [
@@ -151,28 +170,56 @@ Future<void> main(List<String> args) async {
       final t = rows.first;
       print('  ✓ [${t['target_type']}] ${t['title']} ($slug)');
     } else {
-      print('  ⏳ Required slug missing from remote seed: $slug (defined in migration)');
+      print('  ❌ Error: Required target slug missing: $slug');
+      hasErrors = true;
     }
   }
 
   print('');
-  print('🌳 Verifying 5-Tier SOC Sample Hierarchy:');
+  print('🌳 Verifying 5-Tier SOC Sample Hierarchy & Parentage:');
   const sampleSocCodes = [
     '15-0000', // Major
-    '15-1200', // Minor
-    '15-1250', // Broad
-    '15-1252', // Detailed
-    '15-1252.00', // O*NET Extension
+    '15-1200', // Minor (parent: 15-0000)
+    '15-1250', // Broad (parent: 15-1200)
+    '15-1252', // Detailed (parent: 15-1250)
+    '15-1252.00', // O*NET Extension (parent: 15-1252)
   ];
 
+  final socNodesByCode = <String, Map<String, dynamic>>{};
   for (final code in sampleSocCodes) {
-    final rows = await client.fetchRows('occupation_nodes', 'code,title,level',
+    final rows = await client.fetchRows('occupation_nodes', 'id,code,title,level,parent_id',
         limit: 1, filter: 'code=eq.$code');
     if (rows.isNotEmpty) {
       final o = rows.first;
+      socNodesByCode[code] = o;
       print('  ✓ ${o['level'].toString().padRight(19)} ${o['code']} - ${o['title']}');
     } else {
-      print('  ⏳ SOC code pending migration execution: $code');
+      print('  ❌ Error: Required SOC code missing: $code');
+      hasErrors = true;
+    }
+  }
+
+  // Verify parent_id linkage chain
+  const parentPairs = [
+    ('15-1200', '15-0000'),
+    ('15-1250', '15-1200'),
+    ('15-1252', '15-1250'),
+    ('15-1252.00', '15-1252'),
+  ];
+
+  for (final pair in parentPairs) {
+    final childCode = pair.$1;
+    final expectedParentCode = pair.$2;
+    final child = socNodesByCode[childCode];
+    final parent = socNodesByCode[expectedParentCode];
+
+    if (child != null && parent != null) {
+      if (child['parent_id'] == parent['id']) {
+        print('  🔗 Parent Link OK: $childCode -> $expectedParentCode');
+      } else {
+        print('  ❌ Error: Broken parent linkage for $childCode. Expected parent_id ${parent['id']} ($expectedParentCode), got ${child['parent_id']}');
+        hasErrors = true;
+      }
     }
   }
 
@@ -184,6 +231,11 @@ Future<void> main(List<String> args) async {
   }
 
   print('====================================================');
-  print('✅ Canonical Taxonomy Architecture Status Check Completed.');
-  exit(0);
+  if (hasErrors) {
+    print('❌ Canonical Taxonomy Architecture Verification FAILED with errors.');
+    exit(1);
+  } else {
+    print('✅ Canonical Taxonomy Architecture Status Check Completed.');
+    exit(0);
+  }
 }

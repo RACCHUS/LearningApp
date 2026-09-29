@@ -13,6 +13,8 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
+import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
+import 'package:learning_pwa/providers/target_readiness_provider.dart';
 
 final contextScopeProvider = FutureProvider.family<ResolvedScope, LearningContext>((ref, context) async {
   return ref.watch(scopeResolverProvider).resolveScope(context);
@@ -278,10 +280,47 @@ class _NoActiveContextCard extends StatelessWidget {
   }
 }
 
-/// Concept-level retrieval bands for the signed-in learner.
+/// Concept-level retrieval bands for the signed-in learner using V2 user_concept_state.
 final retentionSummaryProvider =
     FutureProvider<RetrievalSummary>((ref) async {
   try {
+    final learnerId = ref.watch(learnerIdProvider);
+    if (learnerId.isNotEmpty) {
+      final conceptStates = await ref
+          .watch(conceptEvidenceServiceProvider)
+          .getUserConceptStates(learnerId);
+
+      if (conceptStates.isNotEmpty) {
+        final counts = <RetrievalBand, int>{
+          for (final band in RetrievalBand.values) band: 0,
+        };
+        for (final state in conceptStates.values) {
+          switch (state.retrievalBand) {
+            case ucs.RetrievalBand.needsReinforcement:
+              counts[RetrievalBand.needsReinforcement] =
+                  (counts[RetrievalBand.needsReinforcement] ?? 0) + 1;
+              break;
+            case ucs.RetrievalBand.developing:
+              counts[RetrievalBand.developing] =
+                  (counts[RetrievalBand.developing] ?? 0) + 1;
+              break;
+            case ucs.RetrievalBand.wellRetained:
+              counts[RetrievalBand.wellRetained] =
+                  (counts[RetrievalBand.wellRetained] ?? 0) + 1;
+              break;
+            case ucs.RetrievalBand.wellEstablished:
+              counts[RetrievalBand.wellEstablished] =
+                  (counts[RetrievalBand.wellEstablished] ?? 0) + 1;
+              break;
+            case ucs.RetrievalBand.unassessed:
+              break;
+          }
+        }
+        return RetrievalSummary(counts);
+      }
+    }
+
+    // Fallback: If no canonical concept states exist yet, synthesize from review items
     final items = await ref.watch(spacedRepetitionServiceProvider).getAllReviewItems();
     return RetrievalSummary.from(items.map(_classify));
   } catch (_) {

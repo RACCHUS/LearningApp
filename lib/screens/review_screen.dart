@@ -13,7 +13,15 @@ class ReviewScreen extends ConsumerStatefulWidget {
   /// Optional context ID to scope review items strictly to the context's resolved scope.
   final String? contextId;
 
-  const ReviewScreen({super.key, this.limit, this.contextId});
+  /// Optional list of specific concept IDs to review (e.g. for ReinforceConcepts).
+  final List<String>? specificConceptIds;
+
+  const ReviewScreen({
+    super.key,
+    this.limit,
+    this.contextId,
+    this.specificConceptIds,
+  });
 
   @override
   ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
@@ -43,6 +51,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
       ref.read(reviewSessionProvider.notifier).startSession(
             limit: widget.limit,
             contextId: effectiveContextId,
+            specificConceptIds: widget.specificConceptIds,
           );
     });
   }

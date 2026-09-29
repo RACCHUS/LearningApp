@@ -81,13 +81,16 @@ class ContextSnapshotResolver {
     }
 
     final completed = <String>{};
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
     // 1. Check local Hive progress first (instant & offline)
     try {
       final progressList = await hiveService.getProgress();
       for (final p in progressList) {
         if (p.lessonCompleted) {
-          completed.add(p.lessonId);
+          if (currentUserId == null || p.userId == currentUserId || p.userId.isEmpty) {
+            completed.add(p.lessonId);
+          }
         }
       }
     } catch (e) {
@@ -124,9 +127,7 @@ class ContextSnapshotResolver {
     final resume = _contexts.resumeFor(context.id);
 
     ResolvedScope? resolvedScope;
-    if (_scopeResolver != null &&
-        (context.rootType == ContextRootType.target ||
-            context.rootType == ContextRootType.concept)) {
+    if (_scopeResolver != null) {
       try {
         resolvedScope = await _scopeResolver.resolveScope(context);
       } catch (e) {
@@ -200,10 +201,10 @@ class ContextSnapshotResolver {
         break;
     }
 
-    final dueIds = due
+    final scopedDue = due
         .where((i) => _belongsToContext(i, context, resolvedScope))
-        .map((i) => i.contentId)
         .toList();
+    final dueIds = scopedDue.map((i) => i.contentId).toList();
 
     return ContextSnapshot(
       context: context,
@@ -212,7 +213,7 @@ class ContextSnapshotResolver {
       resumeItemCount: resumeItemCount,
       nextActivity: next,
       dueConceptIds: dueIds,
-      strugglingConceptIds: _struggling(due),
+      strugglingConceptIds: _struggling(scopedDue),
       forwardOffer: next == null ? ForwardOffer.browse : null,
     );
   }
@@ -297,16 +298,16 @@ class ContextSnapshotResolver {
     ResolvedScope? scope,
   ]) {
     if (scope != null) {
-      if (scope.containsConcept(item.contentId)) return true;
-      if (item.lessonId != null && scope.containsActivity(item.lessonId!)) {
-        return true;
-      }
-      return false;
+      return scope.includesItem(
+        contentId: item.contentId,
+        lessonId: item.lessonId,
+      );
     }
     if (context.rootType == ContextRootType.lesson) {
       return item.lessonId == context.rootId;
     }
-    return true;
+    // Fail closed: un-scoped items never leak into contextual review queues
+    return false;
   }
 
   List<String> _struggling(List<ReviewableItem> items) {

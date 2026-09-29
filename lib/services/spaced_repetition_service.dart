@@ -304,13 +304,19 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
   /// When [contextId] is provided, the review session is strictly scoped to items
   /// belonging to the active [LearningContext]'s resolved scope (per V2 rule:
   /// "Knowledge is global. Learning is scoped.").
-  Future<void> startSession({int? limit, String? contextId}) async {
+  Future<void> startSession({
+    int? limit,
+    String? contextId,
+    List<String>? specificConceptIds,
+  }) async {
     state = state.copyWith(isLoading: true);
 
     final due = await _service.getDueItems();
-    List<ReviewableItem> filteredDue = due;
+    List<ReviewableItem> filteredDue;
 
     if (contextId != null && contextId.isNotEmpty) {
+      // Fail closed: start with an empty set for contextual review
+      filteredDue = [];
       try {
         final contextsService = _ref.read(learningContextServiceProvider);
         final context = contextsService.byId(contextId) ??
@@ -322,10 +328,23 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
             contentId: item.contentId,
             lessonId: item.lessonId,
           )).toList();
+        } else {
+          debugPrint('⚠️ Context $contextId not found; failing closed with empty review items.');
         }
       } catch (e) {
-        debugPrint('⚠️ Error scoping review items for context $contextId: $e');
+        debugPrint('⚠️ Error scoping review items for context $contextId (failing closed): $e');
+        filteredDue = [];
       }
+    } else {
+      filteredDue = due;
+    }
+
+    if (specificConceptIds != null && specificConceptIds.isNotEmpty) {
+      final specificSet = specificConceptIds.toSet();
+      filteredDue = filteredDue.where((item) =>
+        specificSet.contains(item.contentId) ||
+        (item.lessonId != null && specificSet.contains(item.lessonId))
+      ).toList();
     }
 
     final items = (limit != null && limit > 0 && limit < filteredDue.length)
