@@ -12,6 +12,7 @@ import '../../services/content_quality_service.dart';
 import '../../services/lesson_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../utils/lesson_creation_feedback.dart';
 
 /// Step-by-step wizard that walks the user through multi-prompt lesson
 /// generation: Plan → Terms → Concepts → MCQs → Review → Import.
@@ -1014,17 +1015,21 @@ class _GuidedGenerationScreenState
           : '';
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
+      bool isBound = false;
       if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
         final targetService = ref.read(learningTargetServiceProvider);
-        await targetService.bindLessonToNode(
+        isBound = await targetService.bindLessonToNode(
           curriculumNodeId: widget.nodeId!,
           lessonId: lesson.id,
         );
       }
       if (mounted) {
-        final msg = widget.nodeId != null
-            ? 'Lesson "${lesson.title}" imported and bound to curriculum topic!'
-            : 'Lesson "${lesson.title}" imported!';
+        final msg = lessonCreationFeedback(
+          lessonTitle: lesson.title,
+          nodeId: widget.nodeId,
+          isBound: isBound,
+          imported: true,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),

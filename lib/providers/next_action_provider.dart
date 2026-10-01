@@ -223,6 +223,8 @@ class ContextSnapshotResolver {
         .toList();
     final dueIds = scopedDue.map((i) => i.contentId).toList();
 
+    final totalActivityCount = resolvedScope?.orderedActivities.length ?? 0;
+
     return ContextSnapshot(
       context: context,
       resume: resume,
@@ -232,6 +234,7 @@ class ContextSnapshotResolver {
       dueConceptIds: dueIds,
       strugglingConceptIds: _struggling(scopedDue),
       forwardOffer: next == null ? ForwardOffer.browse : null,
+      totalActivityCount: totalActivityCount,
     );
   }
 

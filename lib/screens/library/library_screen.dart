@@ -84,6 +84,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     // Query targets
     final targetsAsync = ref.watch(targetsListProvider((
       type: targetTypeFilter,
+      types: _selectedCategory == 'exam'
+          ? const [TargetType.standardizedExam, TargetType.licensureExam]
+          : null,
       search: _query.isNotEmpty ? _query : null,
     )));
     var targets = targetsAsync.valueOrNull ?? const <LearningTarget>[];

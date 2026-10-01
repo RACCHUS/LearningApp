@@ -138,27 +138,33 @@ BEGIN
 
   -- 8. Bind Concepts to Lessons
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT '8c73e33b-825f-45f3-a7e5-3c498350df60', v_concept1_id, 'primary', 1.0
+  SELECT id, v_concept1_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = '8c73e33b-825f-45f3-a7e5-3c498350df60'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT '5e8ae4ec-d37c-41a1-acd7-ededdd97c0d1', v_concept2_id, 'primary', 1.0
+  SELECT id, v_concept2_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = '5e8ae4ec-d37c-41a1-acd7-ededdd97c0d1'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT 'a0db6b00-04b7-4c3b-a797-c1a4bb25d613', v_concept3_id, 'primary', 1.0
+  SELECT id, v_concept3_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = 'a0db6b00-04b7-4c3b-a797-c1a4bb25d613'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT 'ec1def6e-a9c3-4760-9d63-89a5cfeb5796', v_concept4_id, 'primary', 1.0
+  SELECT id, v_concept4_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = 'ec1def6e-a9c3-4760-9d63-89a5cfeb5796'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT '604ec6e2-9acd-4aec-aed3-71f9bd768c19', v_concept5_id, 'primary', 1.0
+  SELECT id, v_concept5_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = '604ec6e2-9acd-4aec-aed3-71f9bd768c19'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
   INSERT INTO public.lesson_concepts (lesson_id, concept_id, role, weight)
-  SELECT 'a7f3c2e1-9b4d-4e6a-8c12-3f5d7e9a1b20', v_concept6_id, 'primary', 1.0
+  SELECT id, v_concept6_id, 'primary', 1.0 FROM public.lessons
+  WHERE id = 'a7f3c2e1-9b4d-4e6a-8c12-3f5d7e9a1b20'
   ON CONFLICT (lesson_id, concept_id) DO NOTHING;
 
 END $$;

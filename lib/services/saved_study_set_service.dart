@@ -14,6 +14,9 @@ class SavedStudySet {
   final List<String> questionIds;
   final List<String> termIds;
   final List<String> conceptIds;
+
+  /// IDs supplied by the study_set_flashcards junction, not a study_sets column.
+  final List<String> flashcardIds;
   final bool isFavorite;
   final List<String> tags;
   final DateTime createdAt;
@@ -28,6 +31,7 @@ class SavedStudySet {
     this.questionIds = const [],
     this.termIds = const [],
     this.conceptIds = const [],
+    this.flashcardIds = const [],
     this.isFavorite = false,
     this.tags = const [],
     required this.createdAt,
@@ -35,7 +39,12 @@ class SavedStudySet {
   });
 
   /// Total number of content items in this study set
-  int get totalItems => lessonIds.length + questionIds.length + termIds.length + conceptIds.length;
+  int get totalItems =>
+      lessonIds.length +
+      questionIds.length +
+      termIds.length +
+      conceptIds.length +
+      flashcardIds.length;
 
   /// Check if study set is empty
   bool get isEmpty => totalItems == 0;
@@ -49,6 +58,7 @@ class SavedStudySet {
     List<String>? questionIds,
     List<String>? termIds,
     List<String>? conceptIds,
+    List<String>? flashcardIds,
     bool? isFavorite,
     List<String>? tags,
     DateTime? createdAt,
@@ -63,6 +73,7 @@ class SavedStudySet {
       questionIds: questionIds ?? this.questionIds,
       termIds: termIds ?? this.termIds,
       conceptIds: conceptIds ?? this.conceptIds,
+      flashcardIds: flashcardIds ?? this.flashcardIds,
       isFavorite: isFavorite ?? this.isFavorite,
       tags: tags ?? this.tags,
       createdAt: createdAt ?? this.createdAt,
@@ -88,6 +99,19 @@ class SavedStudySet {
   }
 
   factory SavedStudySet.fromJson(Map<String, dynamic> json) {
+    final flashcardLinks =
+        (json['study_set_flashcards'] as List? ?? const [])
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList()
+          ..sort((a, b) {
+            final order = (a['sort_order'] as int? ?? 0).compareTo(
+              b['sort_order'] as int? ?? 0,
+            );
+            if (order != 0) return order;
+            return a['flashcard_id'].toString().compareTo(
+              b['flashcard_id'].toString(),
+            );
+          });
     return SavedStudySet(
       id: json['id'],
       userId: json['user_id'],
@@ -97,6 +121,10 @@ class SavedStudySet {
       questionIds: List<String>.from(json['question_ids'] ?? []),
       termIds: List<String>.from(json['term_ids'] ?? []),
       conceptIds: List<String>.from(json['concept_ids'] ?? []),
+      flashcardIds: flashcardLinks
+          .map((row) => row['flashcard_id']?.toString())
+          .whereType<String>()
+          .toList(),
       isFavorite: json['is_favorite'] ?? false,
       tags: List<String>.from(json['tags'] ?? []),
       createdAt: DateTime.parse(json['created_at']),
@@ -147,8 +175,10 @@ class StudySetProgress {
     this.totalTimeMinutes = 0,
   });
 
-  double get completionRate => totalItems > 0 ? itemsCompleted / totalItems : 0.0;
-  double get accuracyRate => itemsCompleted > 0 ? correctCount / itemsCompleted : 0.0;
+  double get completionRate =>
+      totalItems > 0 ? itemsCompleted / totalItems : 0.0;
+  double get accuracyRate =>
+      itemsCompleted > 0 ? correctCount / itemsCompleted : 0.0;
 
   factory StudySetProgress.fromJson(Map<String, dynamic> json) {
     return StudySetProgress(
@@ -168,13 +198,15 @@ class StudySetProgress {
 }
 
 /// Service for managing saved study sets
-/// 
+///
 /// Provides CRUD operations for study sets and their progress tracking
 class SavedStudySetService {
+  static const _studySetSelection =
+      '*, study_set_flashcards(flashcard_id,sort_order)';
   final SupabaseClient _supabase;
 
   SavedStudySetService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+    : _supabase = supabase ?? Supabase.instance.client;
 
   // ============================================================================
   // STUDY SET CRUD
@@ -211,7 +243,7 @@ class SavedStudySetService {
       final response = await _supabase
           .from('study_sets')
           .insert(data)
-          .select()
+          .select(_studySetSelection)
           .single();
 
       debugPrint('✅ Study set created: ${response['id']}');
@@ -227,7 +259,7 @@ class SavedStudySetService {
     try {
       final response = await _supabase
           .from('study_sets')
-          .select()
+          .select(_studySetSelection)
           .eq('id', id)
           .single();
 
@@ -248,7 +280,7 @@ class SavedStudySetService {
 
       final response = await _supabase
           .from('study_sets')
-          .select()
+          .select(_studySetSelection)
           .eq('user_id', userId)
           .order('updated_at', ascending: false);
 
@@ -269,7 +301,7 @@ class SavedStudySetService {
 
       final response = await _supabase
           .from('study_sets')
-          .select()
+          .select(_studySetSelection)
           .eq('user_id', userId)
           .eq('is_favorite', true)
           .order('updated_at', ascending: false);
@@ -299,7 +331,7 @@ class SavedStudySetService {
           .from('study_sets')
           .update(data)
           .eq('id', studySet.id)
-          .select()
+          .select(_studySetSelection)
           .single();
 
       debugPrint('✅ Study set updated: ${studySet.id}');
@@ -345,7 +377,9 @@ class SavedStudySetService {
 
       // Fetch content from lessons
       if (studySet.lessonIds.isNotEmpty) {
-        final lessonContent = await _fetchContentFromLessons(studySet.lessonIds);
+        final lessonContent = await _fetchContentFromLessons(
+          studySet.lessonIds,
+        );
         terms.addAll(lessonContent.terms);
         concepts.addAll(lessonContent.concepts);
         questions.addAll(lessonContent.questions);
@@ -357,15 +391,43 @@ class SavedStudySetService {
         terms.addAll(individualTerms);
       }
 
+      // Fetch standalone flashcards from study_set_flashcards
+      try {
+        final fcRes = await _supabase
+            .from('study_set_flashcards')
+            .select('flashcards(id, front, back, user_id)')
+            .eq('study_set_id', studySet.id)
+            .order('sort_order');
+        for (final row in (fcRes as List)) {
+          final fc = row['flashcards'] as Map<String, dynamic>?;
+          if (fc != null) {
+            terms.add(
+              Term(
+                id: fc['id'] as String,
+                term: fc['front'] as String? ?? '',
+                definition: fc['back'] as String? ?? '',
+                createdBy: fc['user_id'] as String? ?? 'system',
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Note: study_set_flashcards query error (non-fatal): $e');
+      }
+
       // Fetch individual concepts
       if (studySet.conceptIds.isNotEmpty) {
-        final individualConcepts = await _fetchConceptsByIds(studySet.conceptIds);
+        final individualConcepts = await _fetchConceptsByIds(
+          studySet.conceptIds,
+        );
         concepts.addAll(individualConcepts);
       }
 
       // Fetch individual questions
       if (studySet.questionIds.isNotEmpty) {
-        final individualQuestions = await _fetchQuestionsByIds(studySet.questionIds);
+        final individualQuestions = await _fetchQuestionsByIds(
+          studySet.questionIds,
+        );
         questions.addAll(individualQuestions);
       }
 
@@ -382,7 +444,7 @@ class SavedStudySetService {
   }
 
   Future<({List<Term> terms, List<Concept> concepts, List<Question> questions})>
-      _fetchContentFromLessons(List<String> lessonIds) async {
+  _fetchContentFromLessons(List<String> lessonIds) async {
     final terms = <Term>[];
     final concepts = <Concept>[];
     final questions = <Question>[];
@@ -406,27 +468,58 @@ class SavedStudySetService {
         .from('questions')
         .select()
         .inFilter('lesson_id', lessonIds);
-    questions.addAll((questionsResponse as List).map((q) => Question.fromJson(q)));
+    questions.addAll(
+      (questionsResponse as List).map((q) => Question.fromJson(q)),
+    );
 
     return (terms: terms, concepts: concepts, questions: questions);
   }
 
   Future<List<Term>> _fetchTermsByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
-    final response = await _supabase
-        .from('terms')
-        .select()
-        .inFilter('id', ids);
+    final response = await _supabase.from('terms').select().inFilter('id', ids);
     return (response as List).map((t) => Term.fromJson(t)).toList();
   }
 
   Future<List<Concept>> _fetchConceptsByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
-    final response = await _supabase
-        .from('concepts')
-        .select()
-        .inFilter('id', ids);
-    return (response as List).map((c) => Concept.fromJson(c)).toList();
+    final concepts = <Concept>[];
+    try {
+      final response = await _supabase
+          .from('concepts')
+          .select()
+          .inFilter('id', ids);
+      concepts.addAll((response as List).map((c) => Concept.fromJson(c)));
+    } catch (_) {}
+
+    // Support canonical knowledge_concepts
+    final foundIds = concepts.map((c) => c.id).toSet();
+    final remainingIds = ids.where((id) => !foundIds.contains(id)).toList();
+    if (remainingIds.isNotEmpty) {
+      try {
+        final kcResponse = await _supabase
+            .from('knowledge_concepts')
+            .select()
+            .inFilter('id', remainingIds);
+        for (final kc in (kcResponse as List)) {
+          concepts.add(
+            Concept(
+              id: kc['id'] as String,
+              lessonId: '',
+              conceptText: kc['name'] as String? ?? '',
+              exampleText: kc['short_definition'] as String? ?? '',
+              emoji: kc['emoji'] as String?,
+              createdBy: kc['created_by'] as String? ?? 'system',
+              createdAt:
+                  DateTime.tryParse(kc['created_at'] as String? ?? '') ??
+                  DateTime.now(),
+            ),
+          );
+        }
+      } catch (_) {}
+    }
+
+    return concepts;
   }
 
   Future<List<Question>> _fetchQuestionsByIds(List<String> ids) async {
@@ -505,7 +598,9 @@ class SavedStudySetService {
 
       final updates = {
         'items_completed': current.itemsCompleted + 1,
-        'correct_count': isCorrect ? current.correctCount + 1 : current.correctCount,
+        'correct_count': isCorrect
+            ? current.correctCount + 1
+            : current.correctCount,
         'last_studied_at': DateTime.now().toIso8601String(),
       };
 
@@ -601,7 +696,9 @@ class SavedStudySetService {
           .eq('user_id', userId)
           .order('last_studied_at', ascending: false);
 
-      return (response as List).map((p) => StudySetProgress.fromJson(p)).toList();
+      return (response as List)
+          .map((p) => StudySetProgress.fromJson(p))
+          .toList();
     } catch (e) {
       debugPrint('❌ Error fetching all progress: $e');
       rethrow;
@@ -629,7 +726,7 @@ class SavedStudySetService {
   Future<SavedStudySet> duplicateStudySet(String id, {String? newTitle}) async {
     try {
       final original = await getStudySet(id);
-      return createStudySet(
+      final duplicate = await createStudySet(
         title: newTitle ?? '${original.title} (Copy)',
         description: original.description,
         lessonIds: original.lessonIds,
@@ -638,6 +735,17 @@ class SavedStudySetService {
         conceptIds: original.conceptIds,
         tags: original.tags,
       );
+      if (original.flashcardIds.isNotEmpty) {
+        await _supabase.from('study_set_flashcards').insert([
+          for (var index = 0; index < original.flashcardIds.length; index++)
+            {
+              'study_set_id': duplicate.id,
+              'flashcard_id': original.flashcardIds[index],
+              'sort_order': index,
+            },
+        ]);
+      }
+      return duplicate.copyWith(flashcardIds: original.flashcardIds);
     } catch (e) {
       debugPrint('❌ Error duplicating study set: $e');
       rethrow;
@@ -654,12 +762,14 @@ class SavedStudySetService {
   }) async {
     try {
       final current = await getStudySet(studySetId);
-      return updateStudySet(current.copyWith(
-        lessonIds: [...current.lessonIds, ...lessonIds],
-        questionIds: [...current.questionIds, ...questionIds],
-        termIds: [...current.termIds, ...termIds],
-        conceptIds: [...current.conceptIds, ...conceptIds],
-      ));
+      return updateStudySet(
+        current.copyWith(
+          lessonIds: [...current.lessonIds, ...lessonIds],
+          questionIds: [...current.questionIds, ...questionIds],
+          termIds: [...current.termIds, ...termIds],
+          conceptIds: [...current.conceptIds, ...conceptIds],
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Error adding content to study set: $e');
       rethrow;
@@ -676,12 +786,22 @@ class SavedStudySetService {
   }) async {
     try {
       final current = await getStudySet(studySetId);
-      return updateStudySet(current.copyWith(
-        lessonIds: current.lessonIds.where((id) => !lessonIds.contains(id)).toList(),
-        questionIds: current.questionIds.where((id) => !questionIds.contains(id)).toList(),
-        termIds: current.termIds.where((id) => !termIds.contains(id)).toList(),
-        conceptIds: current.conceptIds.where((id) => !conceptIds.contains(id)).toList(),
-      ));
+      return updateStudySet(
+        current.copyWith(
+          lessonIds: current.lessonIds
+              .where((id) => !lessonIds.contains(id))
+              .toList(),
+          questionIds: current.questionIds
+              .where((id) => !questionIds.contains(id))
+              .toList(),
+          termIds: current.termIds
+              .where((id) => !termIds.contains(id))
+              .toList(),
+          conceptIds: current.conceptIds
+              .where((id) => !conceptIds.contains(id))
+              .toList(),
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Error removing content from study set: $e');
       rethrow;

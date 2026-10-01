@@ -28,7 +28,7 @@ create policy "versions_insert" on public.target_versions
     exists (
       select 1 from public.learning_targets t
       where t.id = target_versions.target_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
     )
   );
 
@@ -38,14 +38,14 @@ create policy "versions_update" on public.target_versions
     and exists (
       select 1 from public.learning_targets t
       where t.id = target_versions.target_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
     )
   )
   with check (
     exists (
       select 1 from public.learning_targets t
       where t.id = target_versions.target_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
     )
   );
 
@@ -55,7 +55,7 @@ create policy "versions_delete" on public.target_versions
     and exists (
       select 1 from public.learning_targets t
       where t.id = target_versions.target_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
     )
   );
 
@@ -68,7 +68,7 @@ create policy "nodes_write" on public.curriculum_nodes
       select 1 from public.target_versions v
       join public.learning_targets t on t.id = v.target_id
       where v.id = curriculum_nodes.target_version_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
         and v.status <> 'published'
     )
   )
@@ -77,7 +77,7 @@ create policy "nodes_write" on public.curriculum_nodes
       select 1 from public.target_versions v
       join public.learning_targets t on t.id = v.target_id
       where v.id = curriculum_nodes.target_version_id
-        and (t.created_by = auth.uid() or t.created_by is null)
+        and t.created_by = auth.uid()
         and v.status <> 'published'
     )
   );

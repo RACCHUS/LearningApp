@@ -96,24 +96,27 @@ void main() {
       expect(action, isA<StartActivity>());
     });
 
-    test('case 2 — an unresolvable resume target falls through, not breaks', () {
-      final action = engine.resolve(
-        contexts: [ctx()],
-        active: ContextSnapshot(
-          context: ctx(),
-          resume: ResumePointer(
-            contextId: 'c1',
-            kind: ResumableKind.lesson,
-            activityId: 'deleted-lesson',
-            itemIndex: 2,
-            updatedAt: now,
+    test(
+      'case 2 — an unresolvable resume target falls through, not breaks',
+      () {
+        final action = engine.resolve(
+          contexts: [ctx()],
+          active: ContextSnapshot(
+            context: ctx(),
+            resume: ResumePointer(
+              contextId: 'c1',
+              kind: ResumableKind.lesson,
+              activityId: 'deleted-lesson',
+              itemIndex: 2,
+              updatedAt: now,
+            ),
+            resumeItemCount: 10,
+            nextActivity: lesson,
           ),
-          resumeItemCount: 10,
-          nextActivity: lesson,
-        ),
-      );
-      expect(action, isA<StartActivity>());
-    });
+        );
+        expect(action, isA<StartActivity>());
+      },
+    );
 
     test('case 3 — remediation fires at the threshold', () {
       final action = engine.resolve(
@@ -168,12 +171,47 @@ void main() {
       expect((action as ReviewOnly).activity.count, 3);
     });
 
-    test('case 6 — exhausted context with nothing due yields ContextComplete', () {
-      final action = engine.resolve(
-        contexts: [ctx()],
-        active: ContextSnapshot(context: ctx()),
-      );
-      expect(action, isA<ContextComplete>());
+    test(
+      'case 6 — exhausted context with nothing due yields ContextComplete',
+      () {
+        final action = engine.resolve(
+          contexts: [ctx()],
+          active: ContextSnapshot(context: ctx()),
+        );
+        expect(action, isA<ContextComplete>());
+      },
+    );
+  });
+
+  group('target exhaustion', () {
+    test(
+      'empty target does not claim learning was completed or ask every learner to edit it',
+      () {
+        final target = ctx(rootType: ContextRootType.target);
+        final action =
+            engine.resolve(
+                  contexts: [target],
+                  active: ContextSnapshot(
+                    context: target,
+                    totalActivityCount: 0,
+                  ),
+                )
+                as ContextComplete;
+
+        expect(action.rationale, 'No lessons are available for this goal yet.');
+      },
+    );
+
+    test('target with completed activities reports completion', () {
+      final target = ctx(rootType: ContextRootType.target);
+      final action =
+          engine.resolve(
+                contexts: [target],
+                active: ContextSnapshot(context: target, totalActivityCount: 2),
+              )
+              as ContextComplete;
+
+      expect(action.rationale, "You've completed the learning material here.");
     });
   });
 
@@ -188,8 +226,11 @@ void main() {
             dueConceptIds: List.generate(dueCount, (i) => 'c$i'),
           ),
         );
-        expect(action, isA<StartActivity>(),
-            reason: 'dueCount=$dueCount must not promote review');
+        expect(
+          action,
+          isA<StartActivity>(),
+          reason: 'dueCount=$dueCount must not promote review',
+        );
       }
     });
 
@@ -215,13 +256,13 @@ void main() {
 
     test('no backlog size changes the outcome', () {
       NextAction at(int due) => engine.resolve(
-            contexts: [ctx()],
-            active: ContextSnapshot(
-              context: ctx(),
-              nextActivity: lesson,
-              dueConceptIds: List.generate(due, (i) => 'c$i'),
-            ),
-          );
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: List.generate(due, (i) => 'c$i'),
+        ),
+      );
       expect(at(0).runtimeType, at(1000).runtimeType);
     });
   });
@@ -230,10 +271,7 @@ void main() {
     test('SHIP GATE: ReviewOnly always carries a forward offer', () {
       final action = engine.resolve(
         contexts: [ctx()],
-        active: ContextSnapshot(
-          context: ctx(),
-          dueConceptIds: const ['a'],
-        ),
+        active: ContextSnapshot(context: ctx(), dueConceptIds: const ['a']),
       );
       expect((action as ReviewOnly).offer.label, isNotEmpty);
     });
@@ -268,7 +306,10 @@ void main() {
       test('$rootType resolves a primary action with material available', () {
         final activity = rootType == ContextRootType.studySet
             ? const StudySetActivity(
-                studySetId: 's1', title: 'Spanish Verbs', itemCount: 40)
+                studySetId: 's1',
+                title: 'Spanish Verbs',
+                itemCount: 40,
+              )
             : lesson;
         final action = engine.resolve(
           contexts: [ctx(rootType: rootType)],
@@ -325,8 +366,12 @@ void main() {
         ctx(id: 'pin-a', sortOrder: 0, lastActive: DateTime(2019, 1, 1)),
       ];
       final ordered = engine.orderForSwitcher(contexts);
-      expect(ordered.map((c) => c.id).toList(),
-          ['pin-a', 'pin-b', 'recent', 'old']);
+      expect(ordered.map((c) => c.id).toList(), [
+        'pin-a',
+        'pin-b',
+        'recent',
+        'old',
+      ]);
     });
 
     test('archived contexts never appear', () {

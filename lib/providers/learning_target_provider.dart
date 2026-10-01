@@ -7,11 +7,15 @@ import '../services/learning_target_service.dart';
 final learningTargetServiceProvider =
     Provider<LearningTargetService>((ref) => LearningTargetService());
 
-final targetsListProvider =
-    FutureProvider.family<List<LearningTarget>, ({TargetType? type, String? search})>(
+final targetsListProvider = FutureProvider.family<List<LearningTarget>,
+    ({TargetType? type, List<TargetType>? types, String? search})>(
   (ref, args) async {
     final service = ref.watch(learningTargetServiceProvider);
-    return service.getTargets(type: args.type, search: args.search);
+    return service.getTargets(
+      type: args.type,
+      types: args.types,
+      search: args.search,
+    );
   },
 );
 

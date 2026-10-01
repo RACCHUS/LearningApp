@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/curriculum_node.dart';
 import '../../models/learning_target.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../services/hive_service.dart';
@@ -26,6 +27,15 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     final targetAsync = ref.watch(targetDetailProvider(widget.targetId));
     final versionAsync = ref.watch(targetVersionProvider(widget.targetId));
 
+    final target = targetAsync.valueOrNull;
+    final version = versionAsync.valueOrNull;
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState is AuthSuccess ? authState.user.id : null;
+    final bool isOwner = currentUserId != null && target?.createdBy == currentUserId;
+    final bool canEditCurriculum = isOwner &&
+        (version?.status != TargetVersionStatus.published) &&
+        !(target?.isOfficial ?? false);
+
     return Scaffold(
       appBar: AppBar(
         title: targetAsync.when(
@@ -35,7 +45,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
         ),
         actions: [
           versionAsync.when(
-            data: (version) => version != null
+            data: (version) => (version != null && canEditCurriculum)
                 ? IconButton(
                     icon: const Icon(Icons.add),
                     tooltip: 'Add Topic',
@@ -102,6 +112,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                           version,
                           theme,
                           targetTitle: targetAsync.valueOrNull?.title,
+                          canEditCurriculum: canEditCurriculum,
                         );
                       }
                       return Center(
@@ -122,7 +133,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                         final node = filteredNodes[index];
                         return _CurriculumNodeCard(
                           node: node,
-                          onNodeSelected: () => _handleNodeTap(node),
+                          onNodeSelected: () => _handleNodeTap(node, canEditCurriculum),
                           onFocusRequested: () => _setNodeFocus(node),
                         );
                       },
@@ -137,7 +148,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     );
   }
 
-  Future<void> _handleNodeTap(CurriculumNode node) async {
+  Future<void> _handleNodeTap(CurriculumNode node, bool canEditCurriculum) async {
     final service = ref.read(learningTargetServiceProvider);
     final lessons = await service.getNodeLessons(node.id);
     if (!mounted) return;
@@ -149,10 +160,10 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     }
 
     // If no lessons are attached yet, open action bottom sheet to add or generate
-    _showNodeActionsBottomSheet(node);
+    _showNodeActionsBottomSheet(node, canEditCurriculum);
   }
 
-  void _showNodeActionsBottomSheet(CurriculumNode node) {
+  void _showNodeActionsBottomSheet(CurriculumNode node, bool canEditCurriculum) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -192,13 +203,23 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.auto_awesome),
-                  title: const Text('Generate Lesson with AI'),
-                  subtitle: const Text('Create a new lesson and bind to this topic'),
+                  title: Text(canEditCurriculum
+                      ? 'Generate Lesson with AI'
+                      : 'Create personal study lesson for this topic'),
+                  subtitle: Text(canEditCurriculum
+                      ? 'Create a new lesson and bind to this topic'
+                      : 'Generate a personal lesson for your study of this topic'),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    context.push(
-                      '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}',
-                    );
+                    if (canEditCurriculum) {
+                      context.push(
+                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}',
+                      );
+                    } else {
+                      context.push(
+                        '/create-lesson?nodeTitle=${Uri.encodeComponent(node.title)}',
+                      );
+                    }
                   },
                 ),
                 ListTile(
@@ -239,6 +260,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     TargetVersion version,
     ThemeData theme, {
     String? targetTitle,
+    bool canEditCurriculum = false,
   }) {
     final colorScheme = theme.colorScheme;
     return Center(
@@ -261,41 +283,52 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
             ),
             const SizedBox(height: DesignTokens.space3),
             Text(
-              'No Curriculum Nodes Yet',
+              canEditCurriculum ? 'No Curriculum Nodes Yet' : 'Curriculum Outline Empty',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: DesignTokens.space1),
             Text(
-              'Start building this curriculum outline by adding topics or generating with AI.',
+              canEditCurriculum
+                  ? 'Start building this curriculum outline by adding topics or generating with AI.'
+                  : 'This curriculum outline has no topics defined yet. You can create lessons for personal study.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: DesignTokens.space4),
-            Wrap(
-              spacing: DesignTokens.space3,
-              runSpacing: DesignTokens.space2,
-              alignment: WrapAlignment.center,
-              children: [
-                FilledButton.icon(
-                  onPressed: () => _showAddNodeDialog(context, version.id),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Topic'),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: () => _handleEmptyOutlineGenerate(
-                    context,
-                    version.id,
-                    targetTitle ?? 'Curriculum Topic',
+            if (canEditCurriculum)
+              Wrap(
+                spacing: DesignTokens.space3,
+                runSpacing: DesignTokens.space2,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => _showAddNodeDialog(context, version.id),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Topic'),
                   ),
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Generate with AI'),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _handleEmptyOutlineGenerate(
+                      context,
+                      version.id,
+                      targetTitle ?? 'Curriculum Topic',
+                    ),
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Generate with AI'),
+                  ),
+                ],
+              )
+            else
+              FilledButton.tonalIcon(
+                onPressed: () => context.push(
+                  '/create-lesson?nodeTitle=${Uri.encodeComponent(targetTitle ?? 'Topic')}',
                 ),
-              ],
-            ),
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: const Text('Create Personal Lesson'),
+              ),
           ],
         ),
       ),

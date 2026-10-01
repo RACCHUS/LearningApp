@@ -15,6 +15,7 @@ class LearningTargetService {
   /// Get published learning targets
   Future<List<LearningTarget>> getTargets({
     TargetType? type,
+    List<TargetType>? types,
     String? fieldId,
     String? search,
     int limit = 50,
@@ -28,7 +29,12 @@ class LearningTargetService {
         query = query.eq('status', 'published');
       }
 
-      if (type != null) {
+      if (types != null && types.isNotEmpty) {
+        query = query.inFilter(
+          'target_type',
+          types.map((t) => t.toDbString()).toList(),
+        );
+      } else if (type != null) {
         query = query.eq('target_type', type.toDbString());
       }
       if (fieldId != null) {
@@ -436,13 +442,36 @@ class LearningTargetService {
       if (fields.isEmpty) return [];
       final fieldIds = fields.map((f) => f.id).toList();
 
+      final targetsMap = <String, LearningTarget>{};
+
+      // 1. Direct field_id
       final res = await _supabase
           .from('learning_targets')
           .select('*')
           .inFilter('field_id', fieldIds)
           .eq('status', 'published')
           .order('title');
-      return (res as List).map((json) => LearningTarget.fromJson(json)).toList();
+      for (final json in (res as List)) {
+        final t = LearningTarget.fromJson(json);
+        targetsMap[t.id] = t;
+      }
+
+      // 2. Supporting/cross-referenced fields via learning_target_fields
+      try {
+        final ltfRes = await _supabase
+            .from('learning_target_fields')
+            .select('learning_targets(*)')
+            .inFilter('field_id', fieldIds);
+        for (final row in (ltfRes as List)) {
+          final tJson = row['learning_targets'] as Map<String, dynamic>?;
+          if (tJson != null && tJson['status'] == 'published') {
+            final t = LearningTarget.fromJson(tJson);
+            targetsMap[t.id] = t;
+          }
+        }
+      } catch (_) {}
+
+      return targetsMap.values.toList()..sort((a, b) => a.title.compareTo(b.title));
     } catch (e) {
       debugPrint('❌ Error fetching targets for cluster: $e');
       return [];

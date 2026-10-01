@@ -1,0 +1,1 @@
+-- Intentionally empty. Catalog and sample data are managed by versioned migrations.

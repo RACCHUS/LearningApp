@@ -92,7 +92,9 @@ class ForwardOffer {
     this.nextContextRootType,
   });
 
-  static const ForwardOffer browse = ForwardOffer(label: 'Choose something new');
+  static const ForwardOffer browse = ForwardOffer(
+    label: 'Choose something new',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +192,9 @@ class ContextSnapshot {
   /// Where to go when the context is exhausted.
   final ForwardOffer? forwardOffer;
 
+  /// Total learning activities available in this context's scope.
+  final int totalActivityCount;
+
   const ContextSnapshot({
     required this.context,
     this.resume,
@@ -199,6 +204,7 @@ class ContextSnapshot {
     this.dueConceptIds = const [],
     this.strugglingConceptIds = const [],
     this.forwardOffer,
+    this.totalActivityCount = 0,
   });
 
   int get dueCount => dueConceptIds.length;
@@ -265,12 +271,17 @@ class NextActionEngine {
       );
     }
     final isTarget = active.context.rootType == ContextRootType.target;
-    return ContextComplete(
-      offer: offer,
-      customRationale: isTarget
-          ? 'Curriculum outline is ready. Add or generate lessons to start learning.'
-          : null,
-    );
+    final String? customRationale;
+    if (isTarget) {
+      if (active.totalActivityCount == 0) {
+        customRationale = 'No lessons are available for this goal yet.';
+      } else {
+        customRationale = "You've completed the learning material here.";
+      }
+    } else {
+      customRationale = null;
+    }
+    return ContextComplete(offer: offer, customRationale: customRationale);
   }
 
   /// Switcher ordering: pinned first by [LearningContext.sortOrder] ascending,

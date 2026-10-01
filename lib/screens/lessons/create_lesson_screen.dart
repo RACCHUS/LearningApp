@@ -13,6 +13,7 @@ import 'package:learning_pwa/widgets/template_selection_widget.dart';
 import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
+import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -78,9 +79,10 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
       
+      bool isBound = false;
       if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
         final targetService = ref.read(learningTargetServiceProvider);
-        await targetService.bindLessonToNode(
+        isBound = await targetService.bindLessonToNode(
           curriculumNodeId: widget.nodeId!,
           lessonId: lesson.id,
         );
@@ -88,9 +90,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
 
       if (mounted) {
         final semantic = Theme.of(context).extension<SemanticColors>()!;
-        final message = widget.nodeTitle != null
-            ? 'Lesson "${lesson.title}" created and bound to ${widget.nodeTitle}!'
-            : 'Lesson "${lesson.title}" created successfully!';
+        final message = lessonCreationFeedback(
+          lessonTitle: lesson.title,
+          nodeId: widget.nodeId,
+          nodeTitle: widget.nodeTitle,
+          isBound: isBound,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -145,9 +150,10 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         userId,
       );
       
+      bool isBound = false;
       if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
         final targetService = ref.read(learningTargetServiceProvider);
-        await targetService.bindLessonToNode(
+        isBound = await targetService.bindLessonToNode(
           curriculumNodeId: widget.nodeId!,
           lessonId: lesson.id,
         );
@@ -155,9 +161,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
 
       if (mounted) {
         final semantic = Theme.of(context).extension<SemanticColors>()!;
-        final message = widget.nodeTitle != null
-            ? 'Lesson "${lesson.title}" created and bound to ${widget.nodeTitle}!'
-            : 'Lesson "${lesson.title}" created successfully!';
+        final message = lessonCreationFeedback(
+          lessonTitle: lesson.title,
+          nodeId: widget.nodeId,
+          nodeTitle: widget.nodeTitle,
+          isBound: isBound,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),

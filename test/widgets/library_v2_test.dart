@@ -160,7 +160,7 @@ void main() {
             activeResolvedScopeProvider.overrideWith(
               (ref) => Future.value(resolvedScope),
             ),
-            targetsListProvider((type: null, search: null)).overrideWith(
+            targetsListProvider((type: null, types: null, search: null)).overrideWith(
               (ref) => Future.value([targetHvac]),
             ),
           ],
@@ -208,7 +208,7 @@ void main() {
             activeResolvedScopeProvider.overrideWith(
               (ref) => Future.value(null), // Unscoped/global search
             ),
-            targetsListProvider((type: null, search: 'heat')).overrideWith(
+            targetsListProvider((type: null, types: null, search: 'heat')).overrideWith(
               (ref) => Future.value([targetHvac]),
             ),
             searchCoursesProvider('heat').overrideWith(

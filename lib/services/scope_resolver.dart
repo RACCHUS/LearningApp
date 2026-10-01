@@ -15,9 +15,9 @@ class ScopeResolver {
     SupabaseClient? supabase,
     Box<ResolvedScope>? scopeBox,
     Box<ContextCurriculumSnapshot>? snapshotBox,
-  })  : _supabase = supabase,
-        _scopeBox = scopeBox,
-        _snapshotBox = snapshotBox;
+  }) : _supabase = supabase,
+       _scopeBox = scopeBox,
+       _snapshotBox = snapshotBox;
 
   static const Duration defaultCacheTtl = Duration(hours: 4);
 
@@ -42,7 +42,9 @@ class ScopeResolver {
     final ttl = cacheTtl ?? defaultCacheTtl;
 
     // 1. Try local cache first if not forced
-    if (!forceRefresh && _scopeBox != null && _scopeBox.containsKey(context.id)) {
+    if (!forceRefresh &&
+        _scopeBox != null &&
+        _scopeBox.containsKey(context.id)) {
       final cached = _scopeBox.get(context.id);
       if (cached != null) {
         final isConfigMatch =
@@ -86,13 +88,15 @@ class ScopeResolver {
   }
 
   void _revalidateInBackground(LearningContext context, String configHash) {
-    _resolveOnline(context, configHash: configHash).then((fresh) async {
-      if (_scopeBox != null) {
-        await _scopeBox.put(context.id, fresh);
-      }
-    }).catchError((e) {
-      debugPrint('⚠️ Background ScopeResolver revalidation failed: $e');
-    });
+    _resolveOnline(context, configHash: configHash)
+        .then((fresh) async {
+          if (_scopeBox != null) {
+            await _scopeBox.put(context.id, fresh);
+          }
+        })
+        .catchError((e) {
+          debugPrint('⚠️ Background ScopeResolver revalidation failed: $e');
+        });
   }
 
   Future<ResolvedScope> _resolveOnline(
@@ -174,10 +178,7 @@ class ScopeResolver {
     }
 
     if (versionId == null) {
-      return ResolvedScope(
-        contextId: context.id,
-        resolvedAt: DateTime.now(),
-      );
+      return ResolvedScope(contextId: context.id, resolvedAt: DateTime.now());
     }
 
     // 1. Load curriculum nodes
@@ -193,14 +194,16 @@ class ScopeResolver {
     // Cache snapshot for instant offline outline
     if (_snapshotBox != null) {
       final snapshotNodes = nodesList
-          .map((n) => SnapshotNode(
-                id: n['id'] as String,
-                parentId: n['parent_id'] as String?,
-                title: n['title'] as String? ?? '',
-                code: n['code'] as String?,
-                nodeType: n['node_type'] as String? ?? 'domain',
-                sortOrder: (n['sort_order'] as num?)?.toInt() ?? 0,
-              ))
+          .map(
+            (n) => SnapshotNode(
+              id: n['id'] as String,
+              parentId: n['parent_id'] as String?,
+              title: n['title'] as String? ?? '',
+              code: n['code'] as String?,
+              nodeType: n['node_type'] as String? ?? 'domain',
+              sortOrder: (n['sort_order'] as num?)?.toInt() ?? 0,
+            ),
+          )
           .toList();
 
       await _snapshotBox.put(
@@ -217,8 +220,13 @@ class ScopeResolver {
 
     // Filter nodes by active focus if set
     final activeNodeIds = <String>{};
-    if (context.activeFocusId != null && nodeIds.contains(context.activeFocusId)) {
-      _collectDescendantNodeIds(context.activeFocusId!, nodesList, activeNodeIds);
+    if (context.activeFocusId != null &&
+        nodeIds.contains(context.activeFocusId)) {
+      _collectDescendantNodeIds(
+        context.activeFocusId!,
+        nodesList,
+        activeNodeIds,
+      );
     } else {
       activeNodeIds.addAll(nodeIds);
     }
@@ -247,7 +255,8 @@ class ScopeResolver {
     // 3. Bounded prerequisite traversal (Loop termination + maxDepth)
     final supportingConceptIds = <String>{};
     if (context.scopeMode != ScopeMode.coreOnly && coreConceptIds.isNotEmpty) {
-      final rawDepth = (context.scopeConfig['maxPrereqDepth'] as num?)?.toInt() ?? 1;
+      final rawDepth =
+          (context.scopeConfig['maxPrereqDepth'] as num?)?.toInt() ?? 1;
       final maxDepth = rawDepth.clamp(1, 2);
       await _traversePrerequisites(
         client,
@@ -451,7 +460,12 @@ class ScopeResolver {
       }
     }
 
-    return _buildScopeFromLessons(context.id, lessonIds, orderedActivities, client);
+    return _buildScopeFromLessons(
+      context.id,
+      lessonIds,
+      orderedActivities,
+      client,
+    );
   }
 
   Future<ResolvedScope> _resolveModuleScope(
@@ -485,7 +499,12 @@ class ScopeResolver {
       }
     }
 
-    return _buildScopeFromLessons(context.id, lessonIds, orderedActivities, client);
+    return _buildScopeFromLessons(
+      context.id,
+      lessonIds,
+      orderedActivities,
+      client,
+    );
   }
 
   Future<ResolvedScope> _resolveLessonScope(
@@ -501,7 +520,12 @@ class ScopeResolver {
       ),
     ];
 
-    return _buildScopeFromLessons(context.id, lessonIds, orderedActivities, client);
+    return _buildScopeFromLessons(
+      context.id,
+      lessonIds,
+      orderedActivities,
+      client,
+    );
   }
 
   Future<ResolvedScope> _resolveStudySetScope(
@@ -514,10 +538,19 @@ class ScopeResolver {
         .eq('id', context.rootId)
         .maybeSingle();
 
-    final qIds = (setRes?['question_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
-    final tIds = (setRes?['term_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
-    final lIds = (setRes?['lesson_ids'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
-    final cIds = (setRes?['concept_ids'] as List?)?.map((e) => e.toString()).toSet() ?? <String>{};
+    final qIds =
+        (setRes?['question_ids'] as List?)?.map((e) => e.toString()).toSet() ??
+        <String>{};
+    final tIds =
+        (setRes?['term_ids'] as List?)?.map((e) => e.toString()).toSet() ??
+        <String>{};
+    final lIds =
+        (setRes?['lesson_ids'] as List?)?.map((e) => e.toString()).toList() ??
+        <String>[];
+    final legacyConceptIds =
+        (setRes?['concept_ids'] as List?)?.map((e) => e.toString()).toSet() ??
+        <String>{};
+    final canonicalConceptIds = <String>{};
 
     // Also load any flashcards attached to study set
     final fcRes = await client
@@ -525,7 +558,9 @@ class ScopeResolver {
         .select('flashcard_id')
         .eq('study_set_id', context.rootId);
 
-    final fIds = (fcRes as List).map((f) => f['flashcard_id'] as String).toSet();
+    final fIds = (fcRes as List)
+        .map((f) => f['flashcard_id'] as String)
+        .toSet();
 
     final orderedActivities = <ScopedLearningActivity>[
       ScopedLearningActivity(
@@ -559,7 +594,7 @@ class ScopeResolver {
           .select('concept_id')
           .inFilter('lesson_id', lIds);
       for (final lc in (lcRes as List)) {
-        cIds.add(lc['concept_id'] as String);
+        canonicalConceptIds.add(lc['concept_id'] as String);
       }
 
       // Add questions and terms from lessons
@@ -580,28 +615,66 @@ class ScopeResolver {
       }
     }
 
-    // If concept IDs exist, pull their attached flashcards and questions
-    if (cIds.isNotEmpty) {
-      final cqRes = await client
-          .from('concept_questions')
-          .select('question_id')
-          .inFilter('concept_id', cIds.toList());
-      for (final cq in (cqRes as List)) {
-        qIds.add(cq['question_id'] as String);
+    if (legacyConceptIds.isNotEmpty) {
+      final potentialUuids = legacyConceptIds
+          .where(
+            (id) => RegExp(
+              r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+            ).hasMatch(id),
+          )
+          .toList();
+      if (potentialUuids.isNotEmpty) {
+        try {
+          final kcRes = await client
+              .from('knowledge_concepts')
+              .select('id')
+              .inFilter('id', potentialUuids);
+          for (final row in (kcRes as List)) {
+            canonicalConceptIds.add(row['id'] as String);
+          }
+        } catch (_) {}
       }
 
-      final cfRes = await client
-          .from('concept_flashcards')
-          .select('flashcard_id')
-          .inFilter('concept_id', cIds.toList());
-      for (final cf in (cfRes as List)) {
-        fIds.add(cf['flashcard_id'] as String);
+      final unmapped = legacyConceptIds
+          .where((id) => !canonicalConceptIds.contains(id))
+          .toList();
+      if (unmapped.isNotEmpty) {
+        final mappedLegacyIds = <String>{};
+        try {
+          final mapRes = await client
+              .from('v2_migration_map')
+              .select('legacy_id, v2_id')
+              .eq('legacy_type', 'legacy_concept')
+              .eq('v2_type', 'knowledge_concept')
+              .inFilter('legacy_id', unmapped);
+          for (final row in (mapRes as List)) {
+            mappedLegacyIds.add(row['legacy_id'] as String);
+            canonicalConceptIds.add(row['v2_id'] as String);
+          }
+        } catch (_) {}
+
+        // Fallback: check knowledge_concepts.source_id for legacy concept IDs
+        final stillUnmapped = unmapped
+            .where((id) => !mappedLegacyIds.contains(id))
+            .toList();
+        if (stillUnmapped.isNotEmpty) {
+          try {
+            final srcRes = await client
+                .from('knowledge_concepts')
+                .select('id')
+                .eq('source_type', 'legacy_concept')
+                .inFilter('source_id', stillUnmapped);
+            for (final row in (srcRes as List)) {
+              canonicalConceptIds.add(row['id'] as String);
+            }
+          } catch (_) {}
+        }
       }
     }
 
     return ResolvedScope(
       contextId: context.id,
-      coreConceptIds: cIds,
+      coreConceptIds: canonicalConceptIds,
       orderedActivities: orderedActivities,
       questionIds: qIds,
       termIds: tIds,
@@ -651,7 +724,8 @@ class ScopeResolver {
     List<Map<String, dynamic>> nodesList,
   ) async {
     final nodeOrderMap = {
-      for (final n in nodesList) n['id'] as String: (n['sort_order'] as num?)?.toInt() ?? 0
+      for (final n in nodesList)
+        n['id'] as String: (n['sort_order'] as num?)?.toInt() ?? 0,
     };
 
     final rawCandidates = <_ActivityCandidate>[];
@@ -687,7 +761,9 @@ class ScopeResolver {
         .inFilter('curriculum_node_id', activeNodeIds.toList());
 
     if ((moduleBindingsRes as List).isNotEmpty) {
-      final moduleIds = moduleBindingsRes.map((m) => m['module_id'] as String).toList();
+      final moduleIds = moduleBindingsRes
+          .map((m) => m['module_id'] as String)
+          .toList();
       final modLessonsRes = await client
           .from('course_lessons')
           .select('module_id, order_index, lessons(id, title)')
@@ -696,7 +772,9 @@ class ScopeResolver {
       for (final mb in moduleBindingsRes) {
         final mId = mb['module_id'] as String;
         final nId = mb['curriculum_node_id'] as String;
-        final matching = (modLessonsRes as List).where((ml) => ml['module_id'] == mId);
+        final matching = (modLessonsRes as List).where(
+          (ml) => ml['module_id'] == mId,
+        );
 
         for (final ml in matching) {
           final lesson = ml['lessons'] as Map<String, dynamic>?;
@@ -724,7 +802,9 @@ class ScopeResolver {
         .inFilter('curriculum_node_id', activeNodeIds.toList());
 
     if ((courseBindingsRes as List).isNotEmpty) {
-      final courseIds = courseBindingsRes.map((c) => c['course_id'] as String).toList();
+      final courseIds = courseBindingsRes
+          .map((c) => c['course_id'] as String)
+          .toList();
       final courseLessonsRes = await client
           .from('course_lessons')
           .select('course_id, order_index, lessons(id, title)')
@@ -733,7 +813,9 @@ class ScopeResolver {
       for (final cb in courseBindingsRes) {
         final cId = cb['course_id'] as String;
         final nId = cb['curriculum_node_id'] as String;
-        final matching = (courseLessonsRes as List).where((cl) => cl['course_id'] == cId);
+        final matching = (courseLessonsRes as List).where(
+          (cl) => cl['course_id'] == cId,
+        );
 
         for (final cl in matching) {
           final lesson = cl['lessons'] as Map<String, dynamic>?;
