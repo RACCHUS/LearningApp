@@ -28,9 +28,23 @@ enum ScopedActivityKind {
   }
 }
 
+enum ScopedActivitySource {
+  official,
+  personal;
+
+  static ScopedActivitySource fromString(String? value) {
+    return ScopedActivitySource.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => ScopedActivitySource.official,
+    );
+  }
+}
+
 class ScopedLearningActivity {
   final String activityId;
   final ScopedActivityKind kind;
+  final ScopedActivitySource source;
+  final bool isRequired;
   final String? curriculumNodeId;
   final int curriculumOrder;
   final int activityOrder;
@@ -45,6 +59,8 @@ class ScopedLearningActivity {
   const ScopedLearningActivity({
     required this.activityId,
     required this.kind,
+    this.source = ScopedActivitySource.official,
+    this.isRequired = true,
     this.curriculumNodeId,
     this.curriculumOrder = 0,
     this.activityOrder = 0,
@@ -58,9 +74,14 @@ class ScopedLearningActivity {
   });
 
   factory ScopedLearningActivity.fromJson(Map<String, dynamic> json) {
+    final parsedSource =
+        ScopedActivitySource.fromString(json['source'] as String?);
     return ScopedLearningActivity(
       activityId: json['activity_id'] as String,
       kind: ScopedActivityKind.fromString(json['kind'] as String? ?? 'lesson'),
+      source: parsedSource,
+      isRequired: (json['is_required'] as bool?) ??
+          (parsedSource == ScopedActivitySource.personal ? false : true),
       curriculumNodeId: json['curriculum_node_id'] as String?,
       curriculumOrder: (json['curriculum_order'] as num?)?.toInt() ?? 0,
       activityOrder: (json['activity_order'] as num?)?.toInt() ?? 0,
@@ -79,6 +100,8 @@ class ScopedLearningActivity {
   Map<String, dynamic> toJson() => {
         'activity_id': activityId,
         'kind': kind.name,
+        'source': source.name,
+        'is_required': isRequired,
         'curriculum_node_id': curriculumNodeId,
         'curriculum_order': curriculumOrder,
         'activity_order': activityOrder,
@@ -140,6 +163,7 @@ class ResolvedScope {
     if (questionIds.contains(contentId)) return true;
     if (termIds.contains(contentId)) return true;
     if (flashcardIds.contains(contentId)) return true;
+    if (containsActivity(contentId)) return true;
     if (lessonId != null && containsActivity(lessonId)) return true;
     return false;
   }

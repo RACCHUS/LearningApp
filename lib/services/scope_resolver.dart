@@ -22,7 +22,7 @@ class ScopeResolver {
   static const Duration defaultCacheTtl = Duration(hours: 4);
 
   static String computeConfigHash(LearningContext context) {
-    return '${context.targetVersionId ?? ''}:${context.scopeMode.name}:${context.activeFocusId ?? ''}:${context.scopeConfig.toString()}';
+    return 'v2:${context.userId}:${context.targetVersionId ?? ''}:${context.scopeMode.name}:${context.activeFocusId ?? ''}:${context.scopeConfig.toString()}';
   }
 
   /// Resolves the complete scope for the given context.
@@ -302,6 +302,30 @@ class ScopeResolver {
           .inFilter('concept_id', allConceptIds.toList());
       for (final r in (fRes as List)) {
         flashcardIds.add(r['flashcard_id'] as String);
+      }
+    }
+
+    // 6. Union personal lesson content into practice items
+    final personalLessonIds = orderedActivities
+        .where((a) => a.source == ScopedActivitySource.personal)
+        .map((a) => a.activityId)
+        .toList();
+
+    if (personalLessonIds.isNotEmpty) {
+      final pqRes = await client
+          .from('questions')
+          .select('id')
+          .inFilter('lesson_id', personalLessonIds);
+      for (final r in (pqRes as List)) {
+        questionIds.add(r['id'] as String);
+      }
+
+      final ptRes = await client
+          .from('terms')
+          .select('id')
+          .inFilter('lesson_id', personalLessonIds);
+      for (final r in (ptRes as List)) {
+        termIds.add(r['id'] as String);
       }
     }
 
@@ -836,22 +860,58 @@ class ScopeResolver {
       }
     }
 
+    // 4. Personal Lesson Overlays
+    final personalOverlaysRes = await client
+        .from('user_curriculum_resources')
+        .select('curriculum_node_id, sort_order, lessons(id, title)')
+        .inFilter('curriculum_node_id', activeNodeIds.toList())
+        .order('sort_order');
+
+    for (final po in (personalOverlaysRes as List)) {
+      final lesson = po['lessons'] as Map<String, dynamic>?;
+      if (lesson != null) {
+        final nId = po['curriculum_node_id'] as String;
+        rawCandidates.add(
+          _ActivityCandidate(
+            lessonId: lesson['id'] as String,
+            title: lesson['title'] as String? ?? 'Lesson',
+            nodeId: nId,
+            nodeOrder: nodeOrderMap[nId] ?? 0,
+            bindingOrder: (po['sort_order'] as num?)?.toInt() ?? 0,
+            courseLessonOrder: 0,
+            isDirectBinding: false,
+            source: ScopedActivitySource.personal,
+            isRequired: false,
+          ),
+        );
+      }
+    }
+
     // Sort candidates according to §7.2
     rawCandidates.sort((a, b) {
       // 1. Curriculum node order
       final nodeCmp = a.nodeOrder.compareTo(b.nodeOrder);
       if (nodeCmp != 0) return nodeCmp;
 
-      // 2. Direct bindings take precedence over inherited course/module
+      // 2. Official bindings precede personal study overlays within a node
+      if (a.source != b.source) {
+        return a.source == ScopedActivitySource.official ? -1 : 1;
+      }
+
+      // 3. Direct bindings take precedence over inherited course/module
       if (a.isDirectBinding && !b.isDirectBinding) return -1;
       if (!a.isDirectBinding && b.isDirectBinding) return 1;
 
-      // 3. Binding sort order
+      // 4. Binding sort order
       final bindingCmp = a.bindingOrder.compareTo(b.bindingOrder);
       if (bindingCmp != 0) return bindingCmp;
 
-      // 4. course_lessons order index
-      return a.courseLessonOrder.compareTo(b.courseLessonOrder);
+      // 5. course_lessons order index
+      final courseCmp = a.courseLessonOrder.compareTo(b.courseLessonOrder);
+      if (courseCmp != 0) return courseCmp;
+
+      // 6. Deterministic tie-breaker
+      return a.lessonId.compareTo(b.lessonId);
     });
 
     // Deduplication rule (§7.2): First occurrence in explicitly ordered sequence wins
@@ -865,6 +925,8 @@ class ScopeResolver {
           ScopedLearningActivity(
             activityId: cand.lessonId,
             kind: ScopedActivityKind.lesson,
+            source: cand.source,
+            isRequired: cand.isRequired,
             curriculumNodeId: cand.nodeId,
             curriculumOrder: cand.nodeOrder,
             activityOrder: cand.courseLessonOrder,
@@ -947,6 +1009,8 @@ class _ActivityCandidate {
   final int bindingOrder;
   final int courseLessonOrder;
   final bool isDirectBinding;
+  final ScopedActivitySource source;
+  final bool isRequired;
 
   _ActivityCandidate({
     required this.lessonId,
@@ -956,5 +1020,7 @@ class _ActivityCandidate {
     required this.bindingOrder,
     required this.courseLessonOrder,
     required this.isDirectBinding,
+    this.source = ScopedActivitySource.official,
+    this.isRequired = true,
   });
 }

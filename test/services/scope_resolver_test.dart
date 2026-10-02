@@ -227,4 +227,233 @@ void main() {
       expect(scope.flashcardIds, {'flashcard-in-set'});
     },
   );
+
+  group('Personal Curriculum Overlays in Scope (§7.3.1)', () {
+    test('old Hive scope JSON reads as official activity and required', () {
+      final legacyJson = {
+        'activity_id': 'legacy-lesson-1',
+        'kind': 'lesson',
+        'title': 'Legacy Lesson',
+      };
+      final activity = ScopedLearningActivity.fromJson(legacyJson);
+      expect(activity.source, ScopedActivitySource.official);
+      expect(activity.isRequired, isTrue);
+    });
+
+    test(
+      'focused node plus descendants includes personal lessons but excludes siblings',
+      () async {
+        final fake = FakeSupabaseClient();
+        fake.setTableData('curriculum_nodes', [
+          {
+            'id': 'node-parent',
+            'target_version_id': 'ver-1',
+            'parent_id': null,
+            'title': 'Parent Topic',
+            'node_type': 'domain',
+            'sort_order': 0,
+          },
+          {
+            'id': 'node-child',
+            'target_version_id': 'ver-1',
+            'parent_id': 'node-parent',
+            'title': 'Child Topic',
+            'node_type': 'topic',
+            'sort_order': 1,
+          },
+          {
+            'id': 'node-sibling',
+            'target_version_id': 'ver-1',
+            'parent_id': null,
+            'title': 'Sibling Topic',
+            'node_type': 'domain',
+            'sort_order': 2,
+          },
+        ]);
+        fake.setTableData('curriculum_node_concepts', []);
+        fake.setTableData('curriculum_node_lessons', []);
+        fake.setTableData('curriculum_node_modules', []);
+        fake.setTableData('curriculum_node_courses', []);
+        fake.setTableData('user_curriculum_resources', [
+          {
+            'curriculum_node_id': 'node-parent',
+            'lesson_id': 'lesson-parent',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-parent', 'title': 'Parent Lesson'},
+          },
+          {
+            'curriculum_node_id': 'node-child',
+            'lesson_id': 'lesson-child',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-child', 'title': 'Child Lesson'},
+          },
+          {
+            'curriculum_node_id': 'node-sibling',
+            'lesson_id': 'lesson-sibling',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-sibling', 'title': 'Sibling Lesson'},
+          },
+        ]);
+
+        final context = LearningContext(
+          id: 'ctx-focus-test',
+          userId: 'user-1',
+          label: 'Focus Test',
+          rootType: ContextRootType.target,
+          rootId: 'target-1',
+          targetVersionId: 'ver-1',
+          activeFocusId: 'node-parent',
+          activeFocusType: 'domain',
+          lastActiveAt: DateTime.now(),
+        );
+
+        final scope = await ScopeResolver(supabase: fake).resolveScope(context);
+        final activityIds = scope.orderedActivities.map((a) => a.activityId).toList();
+        expect(activityIds, contains('lesson-parent'));
+        expect(activityIds, contains('lesson-child'));
+        expect(activityIds, isNot(contains('lesson-sibling')));
+      },
+    );
+
+    test(
+      'official activity precedes personal activity deterministically and deduplicates',
+      () async {
+        final fake = FakeSupabaseClient();
+        fake.setTableData('curriculum_nodes', [
+          {
+            'id': 'node-1',
+            'target_version_id': 'ver-1',
+            'parent_id': null,
+            'title': 'Topic 1',
+            'node_type': 'topic',
+            'sort_order': 0,
+          },
+        ]);
+        fake.setTableData('curriculum_node_concepts', []);
+        fake.setTableData('curriculum_node_lessons', [
+          {
+            'curriculum_node_id': 'node-1',
+            'lesson_id': 'lesson-official',
+            'sort_order': 10,
+            'lessons': {'id': 'lesson-official', 'title': 'Official Lesson'},
+          },
+        ]);
+        fake.setTableData('curriculum_node_modules', []);
+        fake.setTableData('curriculum_node_courses', []);
+        fake.setTableData('user_curriculum_resources', [
+          {
+            'curriculum_node_id': 'node-1',
+            'lesson_id': 'lesson-personal',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-personal', 'title': 'Personal Lesson'},
+          },
+          {
+            'curriculum_node_id': 'node-1',
+            'lesson_id': 'lesson-official',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-official', 'title': 'Official Lesson'},
+          },
+        ]);
+
+        final context = LearningContext(
+          id: 'ctx-order-test',
+          userId: 'user-1',
+          label: 'Order Test',
+          rootType: ContextRootType.target,
+          rootId: 'target-1',
+          targetVersionId: 'ver-1',
+          lastActiveAt: DateTime.now(),
+        );
+
+        final scope = await ScopeResolver(supabase: fake).resolveScope(context);
+        expect(scope.orderedActivities.length, 2);
+        expect(scope.orderedActivities[0].activityId, 'lesson-official');
+        expect(scope.orderedActivities[0].source, ScopedActivitySource.official);
+        expect(scope.orderedActivities[0].isRequired, isTrue);
+
+        expect(scope.orderedActivities[1].activityId, 'lesson-personal');
+        expect(scope.orderedActivities[1].source, ScopedActivitySource.personal);
+        expect(scope.orderedActivities[1].isRequired, isFalse);
+      },
+    );
+
+    test(
+      'personal lesson term and question IDs enter scoped practice without concept mappings',
+      () async {
+        final fake = FakeSupabaseClient();
+        fake.setTableData('curriculum_nodes', [
+          {
+            'id': 'node-1',
+            'target_version_id': 'ver-1',
+            'parent_id': null,
+            'title': 'Topic 1',
+            'node_type': 'topic',
+            'sort_order': 0,
+          },
+        ]);
+        fake.setTableData('curriculum_node_concepts', []);
+        fake.setTableData('curriculum_node_lessons', []);
+        fake.setTableData('curriculum_node_modules', []);
+        fake.setTableData('curriculum_node_courses', []);
+        fake.setTableData('user_curriculum_resources', [
+          {
+            'curriculum_node_id': 'node-1',
+            'lesson_id': 'lesson-personal',
+            'sort_order': 0,
+            'lessons': {'id': 'lesson-personal', 'title': 'Personal Lesson'},
+          },
+        ]);
+        fake.setTableData('questions', [
+          {'id': 'q-personal-1', 'lesson_id': 'lesson-personal'},
+        ]);
+        fake.setTableData('terms', [
+          {'id': 't-personal-1', 'lesson_id': 'lesson-personal'},
+        ]);
+
+        final context = LearningContext(
+          id: 'ctx-practice-test',
+          userId: 'user-1',
+          label: 'Practice Test',
+          rootType: ContextRootType.target,
+          rootId: 'target-1',
+          targetVersionId: 'ver-1',
+          lastActiveAt: DateTime.now(),
+        );
+
+        final scope = await ScopeResolver(supabase: fake).resolveScope(context);
+        expect(scope.coreConceptIds, isEmpty);
+        expect(scope.questionIds, contains('q-personal-1'));
+        expect(scope.termIds, contains('t-personal-1'));
+        expect(scope.includesItem(contentId: 'q-personal-1'), isTrue);
+        expect(scope.includesItem(contentId: 't-personal-1'), isTrue);
+        expect(scope.includesItem(contentId: 'lesson-personal'), isTrue);
+      },
+    );
+
+    test('computeConfigHash differentiates by userId and versions the hash', () {
+      final ctxUserA = LearningContext(
+        id: 'ctx-1',
+        userId: 'user-A',
+        label: 'Test',
+        rootType: ContextRootType.target,
+        rootId: 'target-1',
+        lastActiveAt: DateTime.now(),
+      );
+      final ctxUserB = LearningContext(
+        id: 'ctx-1',
+        userId: 'user-B',
+        label: 'Test',
+        rootType: ContextRootType.target,
+        rootId: 'target-1',
+        lastActiveAt: DateTime.now(),
+      );
+
+      final hashA = ScopeResolver.computeConfigHash(ctxUserA);
+      final hashB = ScopeResolver.computeConfigHash(ctxUserB);
+
+      expect(hashA, startsWith('v2:user-A:'));
+      expect(hashB, startsWith('v2:user-B:'));
+      expect(hashA, isNot(equals(hashB)));
+    });
+  });
 }
