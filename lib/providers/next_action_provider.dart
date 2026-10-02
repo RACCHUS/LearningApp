@@ -153,19 +153,29 @@ class ContextSnapshotResolver {
       case ContextRootType.concept:
       case ContextRootType.module:
         if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
-          final nextAct = resolvedScope.orderedActivities
-              .where((a) => !completedLessons.contains(a.activityId));
-          final index = resolvedScope.orderedActivities
-              .indexWhere((a) => !completedLessons.contains(a.activityId));
+          // Incomplete required official lessons outrank unfinished personal lessons
+          final incompleteOfficial = resolvedScope.orderedActivities.where(
+            (a) =>
+                a.source == ScopedActivitySource.official &&
+                a.isRequired &&
+                !completedLessons.contains(a.activityId),
+          );
 
-          if (nextAct.isNotEmpty) {
-            final first = nextAct.first;
+          final candidate = incompleteOfficial.isNotEmpty
+              ? incompleteOfficial.first
+              : resolvedScope.orderedActivities
+                  .where((a) => !completedLessons.contains(a.activityId))
+                  .firstOrNull;
+
+          if (candidate != null) {
+            final index = resolvedScope.orderedActivities
+                .indexWhere((a) => a.activityId == candidate.activityId);
             next = LessonActivity(
-              lessonId: first.activityId,
-              title: first.title,
-              courseId: first.courseId,
-              courseTitle: first.courseTitle,
-              moduleTitle: first.moduleTitle,
+              lessonId: candidate.activityId,
+              title: candidate.title,
+              courseId: candidate.courseId,
+              courseTitle: candidate.courseTitle,
+              moduleTitle: candidate.moduleTitle,
               position: index >= 0 ? index + 1 : null,
               total: resolvedScope.orderedActivities.length,
             );
@@ -224,6 +234,14 @@ class ContextSnapshotResolver {
     final dueIds = scopedDue.map((i) => i.contentId).toList();
 
     final totalActivityCount = resolvedScope?.orderedActivities.length ?? 0;
+    final officialRequired = resolvedScope?.orderedActivities
+            .where((a) => a.source == ScopedActivitySource.official && a.isRequired)
+            .toList() ??
+        const [];
+    final officialRequiredCount = officialRequired.length;
+    final completedOfficialRequiredCount = officialRequired
+        .where((a) => completedLessons.contains(a.activityId))
+        .length;
 
     return ContextSnapshot(
       context: context,
@@ -235,6 +253,8 @@ class ContextSnapshotResolver {
       strugglingConceptIds: _struggling(scopedDue),
       forwardOffer: next == null ? ForwardOffer.browse : null,
       totalActivityCount: totalActivityCount,
+      officialRequiredCount: officialRequiredCount,
+      completedOfficialRequiredCount: completedOfficialRequiredCount,
     );
   }
 

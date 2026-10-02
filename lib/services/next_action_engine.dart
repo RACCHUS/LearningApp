@@ -195,6 +195,12 @@ class ContextSnapshot {
   /// Total learning activities available in this context's scope.
   final int totalActivityCount;
 
+  /// Total required official activities in this context's scope.
+  final int officialRequiredCount;
+
+  /// Completed required official activities in this context's scope.
+  final int completedOfficialRequiredCount;
+
   const ContextSnapshot({
     required this.context,
     this.resume,
@@ -205,9 +211,16 @@ class ContextSnapshot {
     this.strugglingConceptIds = const [],
     this.forwardOffer,
     this.totalActivityCount = 0,
+    this.officialRequiredCount = 0,
+    this.completedOfficialRequiredCount = 0,
   });
 
   int get dueCount => dueConceptIds.length;
+
+  /// True only when the required count is nonzero and all required official activities are complete.
+  bool get officialRequirementsComplete =>
+      officialRequiredCount > 0 &&
+      completedOfficialRequiredCount >= officialRequiredCount;
 }
 
 /// Minimum number of missed concepts before remediation outranks new material.

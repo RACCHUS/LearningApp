@@ -402,4 +402,61 @@ void main() {
       expect(engine.showSecondaryReviewPrompt(action, 1), isFalse);
     });
   });
+
+  group('personal overlay completion separation', () {
+    test('10 completed official + 3 unfinished personal means official requirements are complete', () {
+      final snapshot = ContextSnapshot(
+        context: ctx(),
+        officialRequiredCount: 10,
+        completedOfficialRequiredCount: 10,
+        totalActivityCount: 13,
+      );
+      expect(snapshot.officialRequirementsComplete, isTrue);
+    });
+
+    test('0 official requirements with personal lessons does not count as complete', () {
+      final snapshot = ContextSnapshot(
+        context: ctx(),
+        officialRequiredCount: 0,
+        completedOfficialRequiredCount: 0,
+        totalActivityCount: 3,
+      );
+      expect(snapshot.officialRequirementsComplete, isFalse);
+    });
+
+    test('case 2 — explicit partial resume of a personal lesson outranks next official activity', () {
+      const personalLesson = LessonActivity(
+        lessonId: 'personal-1',
+        title: 'My Notes',
+      );
+      const officialLesson = LessonActivity(
+        lessonId: 'official-1',
+        title: 'Official Topic 1',
+      );
+
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          resume: ResumePointer(
+            contextId: 'c1',
+            kind: ResumableKind.lesson,
+            activityId: 'personal-1',
+            itemIndex: 2,
+            updatedAt: now,
+          ),
+          resumeActivity: personalLesson,
+          resumeItemCount: 5,
+          nextActivity: officialLesson,
+          officialRequiredCount: 10,
+          completedOfficialRequiredCount: 0,
+        ),
+      );
+
+      expect(action, isA<ResumeActivity>());
+      final resume = action as ResumeActivity;
+      expect((resume.activity as LessonActivity).lessonId, 'personal-1');
+      expect(resume.itemIndex, 2);
+    });
+  });
 }
