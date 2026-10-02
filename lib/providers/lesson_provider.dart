@@ -6,7 +6,18 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/concept.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/services/lesson_service.dart';
+import 'package:learning_pwa/services/lesson/lesson_crud_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+final lessonCrudServiceProvider = Provider<LessonCrudService>((ref) {
+  return LessonCrudService();
+});
+
+final lessonServiceProvider = Provider<LessonService>((ref) {
+  return LessonService(crudService: ref.watch(lessonCrudServiceProvider));
+});
 
 // Provider to fetch all lessons (for home screen, not filtered by user_id)
 final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
@@ -24,6 +35,7 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
     createdAt: DateTime.parse(e['created_at'] as String),
     updatedAt: DateTime.parse(e['updated_at'] as String),
     userId: e['user_id'] as String? ?? '',
+    visibility: e['visibility'] as String? ?? 'public',
     terms: <Term>[],
     questions: <Question>[],
     concepts: <Concept>[],
@@ -32,6 +44,7 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
 
 final lessonProvider =
     FutureProvider.family<FullLesson, String>((ref, lessonId) async {
+  ref.watch(learnerIdProvider);
   try {
     final supabase = Supabase.instance.client;
     log('🚀 Starting lesson load for ID: $lessonId', name: 'LessonProvider');
@@ -109,6 +122,7 @@ final lessonProvider =
       createdAt: DateTime.parse(response['created_at'] as String),
       updatedAt: DateTime.parse(response['updated_at'] as String),
       userId: response['user_id'] as String? ?? '',
+      visibility: response['visibility'] as String? ?? 'public',
       terms: <Term>[], // We'll populate these separately
       questions: <Question>[],
       concepts: <Concept>[],

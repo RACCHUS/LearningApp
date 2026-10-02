@@ -63,6 +63,7 @@ class LessonCrudService {
                       ? DateTime.parse(data['updated_at'])
                       : DateTime.now(),
                   userId: data['user_id']?.toString() ?? '',
+                  visibility: data['visibility']?.toString() ?? 'public',
                   terms: <Term>[],
                   questions: <Question>[],
                   concepts: <Concept>[],
@@ -103,6 +104,7 @@ class LessonCrudService {
                     ? DateTime.parse(data['updated_at'])
                     : DateTime.now(),
                 userId: data['user_id']?.toString() ?? userId,
+                visibility: data['visibility']?.toString() ?? 'public',
                 terms: <Term>[], // Load separately if needed
                 questions: <Question>[], // Load separately if needed
                 concepts: <Concept>[], // Load separately if needed
@@ -158,6 +160,7 @@ class LessonCrudService {
         createdAt: DateTime.parse(response['created_at']),
         updatedAt: DateTime.parse(response['updated_at']),
         userId: response['user_id'],
+        visibility: response['visibility']?.toString() ?? 'public',
         terms: _parseTerms(response['terms'] as List<dynamic>?),
         questions: _parseQuestions(response['questions'] as List<dynamic>?),
         concepts: _parseConcepts(response['concepts'] as List<dynamic>?),
@@ -297,6 +300,7 @@ class LessonCrudService {
         createdAt: DateTime.parse(response['created_at']),
         updatedAt: DateTime.parse(response['updated_at']),
         userId: response['user_id'].toString(),
+        visibility: response['visibility']?.toString() ?? 'private',
         terms: <Term>[],
         questions: <Question>[],
         concepts: <Concept>[],
@@ -354,6 +358,61 @@ class LessonCrudService {
       }
       throw DatabaseException(
         'Failed to delete lesson',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Update the visibility of a lesson (e.g. 'private', 'unlisted', 'public').
+  Future<Lesson> setVisibility(String lessonId, String visibility) async {
+    if (!const {'private', 'unlisted', 'public'}.contains(visibility)) {
+      throw ArgumentError('Invalid visibility: $visibility');
+    }
+    try {
+      final response = await _supabase
+          .from('lessons')
+          .update({'visibility': visibility})
+          .eq('id', lessonId)
+          .select('''
+            *,
+            terms(*),
+            questions(*),
+            concepts(*)
+          ''')
+          .single();
+
+      return Lesson(
+        id: response['id'].toString(),
+        title: response['title'].toString(),
+        description: response['description']?.toString(),
+        tags: response['tags'] is List
+            ? List<String>.from(response['tags'])
+            : <String>[],
+        createdAt: DateTime.parse(response['created_at']),
+        updatedAt: DateTime.parse(response['updated_at']),
+        userId: response['user_id']?.toString() ?? '',
+        visibility: response['visibility']?.toString() ?? visibility,
+        terms: _parseTerms(response['terms'] as List<dynamic>?),
+        questions: _parseQuestions(response['questions'] as List<dynamic>?),
+        concepts: _parseConcepts(response['concepts'] as List<dynamic>?),
+      );
+    } on PostgrestException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ Database error setting visibility: ${e.message}');
+      }
+      throw DatabaseException(
+        'Failed to update visibility',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    } catch (e, stackTrace) {
+      if (e is AppException) rethrow;
+      if (kDebugMode) {
+        debugPrint('❌ Unexpected error setting visibility: $e');
+      }
+      throw DatabaseException(
+        'Failed to update visibility',
         originalError: e,
         stackTrace: stackTrace,
       );

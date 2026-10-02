@@ -188,5 +188,23 @@ void main() {
         expect(fakeClient.deletedIds, contains('lesson-to-delete'));
       });
     });
+
+    test('setVisibility returns the persisted public state', () async {
+      fakeClient.setTableData('lessons', [
+        {
+          'id': 'lesson-1',
+          'title': 'My Notes',
+          'tags': <String>[],
+          'user_id': 'owner-1',
+          'visibility': 'private',
+          'created_at': '2026-10-01T00:00:00Z',
+          'updated_at': '2026-10-01T00:00:00Z',
+        },
+      ]);
+
+      final published = await service.setVisibility('lesson-1', 'public');
+
+      expect(published.visibility, 'public');
+    });
   });
 }

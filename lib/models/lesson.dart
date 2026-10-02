@@ -32,12 +32,15 @@ class Lesson extends BaseLesson {
   final String userId;
   @HiveField(10)
   final String? emoji;
+  @HiveField(11, defaultValue: 'public')
+  final String visibility;
 
   const Lesson({
     required this.id,
     required this.title,
     this.description,
     this.emoji,
+    this.visibility = 'public',
     required this.tags,
     required this.createdAt,
     required this.updatedAt,
@@ -66,6 +69,7 @@ class Lesson extends BaseLesson {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       userId: json['user_id'] as String,
+      visibility: json['visibility'] as String? ?? 'public',
       terms: (json['terms'] as List).map((t) => Term.fromJson(t)).toList(),
       questions: (json['questions'] as List).map((q) => Question.fromJson(q)).toList(),
       concepts: (json['concepts'] as List).map((c) => Concept.fromJson(c)).toList(),
@@ -81,6 +85,7 @@ class Lesson extends BaseLesson {
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     'user_id': userId,
+    'visibility': visibility,
     'terms': terms.map((t) => t.toJson()).toList(),
     'questions': questions.map((q) => q.toJson()).toList(),
     'concepts': concepts.map((c) => c.toJson()).toList(),
@@ -96,6 +101,7 @@ class Lesson extends BaseLesson {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? userId,
+    String? visibility,
     List<Term>? terms,
     List<Question>? questions,
     List<Concept>? concepts,
@@ -109,6 +115,7 @@ class Lesson extends BaseLesson {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       userId: userId ?? this.userId,
+      visibility: visibility ?? this.visibility,
       terms: terms ?? this.terms,
       questions: questions ?? this.questions,
       concepts: concepts ?? this.concepts,

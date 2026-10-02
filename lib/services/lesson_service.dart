@@ -92,6 +92,11 @@ class LessonService {
     );
   }
 
+  /// Update the visibility of a lesson (e.g. 'private', 'unlisted', 'public').
+  Future<Lesson> setVisibility(String lessonId, String visibility) async {
+    return _crudService.setVisibility(lessonId, visibility);
+  }
+
   /// Add lesson content (legacy method for backward compatibility)
   Future<void> addLessonContent(String lessonId, List<LessonContent> content, String userId) async {
     debugPrint('🔍 DEBUG: Adding ${content.length} content items to lesson $lessonId');

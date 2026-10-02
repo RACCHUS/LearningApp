@@ -23,6 +23,7 @@ class LessonAdapter extends TypeAdapter<Lesson> {
       title: fields[4] as String,
       description: fields[5] as String?,
       emoji: fields[10] as String?,
+      visibility: fields[11] == null ? 'public' : fields[11] as String,
       tags: (fields[6] as List).cast<String>(),
       createdAt: fields[7] as DateTime,
       updatedAt: fields[8] as DateTime,
@@ -36,7 +37,7 @@ class LessonAdapter extends TypeAdapter<Lesson> {
   @override
   void write(BinaryWriter writer, Lesson obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.terms)
       ..writeByte(1)
@@ -58,7 +59,9 @@ class LessonAdapter extends TypeAdapter<Lesson> {
       ..writeByte(9)
       ..write(obj.userId)
       ..writeByte(10)
-      ..write(obj.emoji);
+      ..write(obj.emoji)
+      ..writeByte(11)
+      ..write(obj.visibility);
   }
 
   @override

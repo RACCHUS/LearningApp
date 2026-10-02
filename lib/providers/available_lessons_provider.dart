@@ -38,6 +38,7 @@ final lessonCatalogServiceProvider = Provider<LessonCatalogService>((ref) {
 /// There is deliberately no user-id filter here. Supabase RLS decides catalog
 /// visibility; ownership only controls mutation permissions.
 final remoteCatalogLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
+  ref.watch(learnerIdProvider);
   return ref.watch(lessonCatalogServiceProvider).getReadableLessons();
 });
 

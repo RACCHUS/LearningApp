@@ -9,6 +9,9 @@ import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/lesson_progress_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
+import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
 import 'package:learning_pwa/screens/study/lesson_mode_dialog.dart';
 import 'package:learning_pwa/widgets/error_retry_view.dart';
@@ -161,6 +164,62 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     }
   }
 
+  Future<void> _toggleVisibility(Lesson lesson) async {
+    final nextVisibility = lesson.visibility == 'public' ? 'private' : 'public';
+    if (nextVisibility == 'public') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Publish Lesson'),
+          content: const Text(
+            'Publishing this lesson will make it visible to everyone in the catalog. You can return it to private at any time.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Publish'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    try {
+      final updated = await ref
+          .read(lessonCrudServiceProvider)
+          .setVisibility(lesson.id, nextVisibility);
+      ref.invalidate(lessonProvider(lesson.id));
+      ref.invalidate(availableLessonsCatalogProvider);
+      ref.invalidate(remoteCatalogLessonsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              updated.visibility == 'public'
+                  ? 'Lesson published to catalog'
+                  : 'Lesson is now private',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update visibility: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -204,6 +263,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
 
     return lessonAsync.when(
       data: (lessonData) {
+        final currentUserId = ref.watch(learnerIdProvider);
+        final isOwner =
+            currentUserId.isNotEmpty && lessonData.lesson.userId == currentUserId;
         // Sort content ONLY by order field (respecting lesson design), ignoring content types
         final contentList = <LessonContent>[...lessonData.lessonContent];
         contentList.sort((a, b) {
@@ -212,8 +274,55 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
         });
         return Scaffold(
           appBar: AppBar(
-            title: Text(lessonData.lesson.title),
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    lessonData.lesson.title,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isOwner) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    key: const Key('lesson_visibility_badge'),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: lessonData.lesson.visibility == 'public'
+                          ? theme.colorScheme.primaryContainer
+                          : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      lessonData.lesson.visibility == 'public'
+                          ? 'Public'
+                          : 'Private',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: lessonData.lesson.visibility == 'public'
+                            ? theme.colorScheme.onPrimaryContainer
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
             actions: [
+              if (isOwner)
+                IconButton(
+                  key: const Key('lesson_visibility_action'),
+                  icon: Icon(
+                    lessonData.lesson.visibility == 'public'
+                        ? Icons.lock_outline
+                        : Icons.public,
+                  ),
+                  tooltip: lessonData.lesson.visibility == 'public'
+                      ? 'Make private'
+                      : 'Publish lesson',
+                  onPressed: () => _toggleVisibility(lessonData.lesson),
+                ),
               IconButton(
                 icon: const Icon(Icons.swap_horiz),
                 tooltip: 'Change study mode',
@@ -224,22 +333,27 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               ),
               Consumer(
                 builder: (context, ref, _) {
-                  final timerEnabled = ref.watch(timerProvider.select((s) => s.enabled));
+                  final timerEnabled =
+                      ref.watch(timerProvider.select((s) => s.enabled));
                   final timerNotifier = ref.read(timerProvider.notifier);
                   return IconButton(
                     icon: Icon(
                       Icons.timer,
-                      color: timerEnabled ? Theme.of(context).colorScheme.primary : null,
+                      color: timerEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
                     ),
                     tooltip: timerEnabled ? 'Disable Timer' : 'Enable Timer',
-                    onPressed: () => timerNotifier.toggleEnabled(!timerEnabled),
+                    onPressed: () =>
+                        timerNotifier.toggleEnabled(!timerEnabled),
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                tooltip: 'Share lesson link',
-                onPressed: () async {
+              if (lessonData.lesson.visibility == 'public')
+                IconButton(
+                  icon: const Icon(Icons.share),
+                  tooltip: 'Share lesson link',
+                  onPressed: () async {
                   final url = Uri.base.removeFragment().replace(path: '/lesson/${widget.lessonId}').toString();
                   final didShare = await shareText(url, title: 'Lesson Link');
                   if (!didShare) {

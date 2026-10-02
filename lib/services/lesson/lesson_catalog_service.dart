@@ -43,6 +43,7 @@ class LessonCatalogService {
                     ? DateTime.parse(data['updated_at'].toString())
                     : DateTime.now(),
                 userId: data['user_id']?.toString() ?? '',
+                visibility: data['visibility']?.toString() ?? 'public',
                 terms: <Term>[],
                 questions: <Question>[],
                 concepts: <Concept>[],

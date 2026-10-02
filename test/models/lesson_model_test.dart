@@ -25,6 +25,26 @@ void main() {
       expect(testLesson.description, 'Test Description');
       expect(testLesson.tags, ['test', 'example']);
       expect(testLesson.userId, 'user_001');
+      expect(testLesson.visibility, 'public');
+    });
+
+    test('preserves private visibility through JSON and copyWith', () {
+      final privateLesson = Lesson.fromJson({
+        'id': 'private-1',
+        'title': 'Private Notes',
+        'tags': <String>[],
+        'created_at': '2026-10-01T00:00:00Z',
+        'updated_at': '2026-10-01T00:00:00Z',
+        'user_id': 'owner-1',
+        'visibility': 'private',
+        'terms': <Object>[],
+        'questions': <Object>[],
+        'concepts': <Object>[],
+      });
+
+      expect(privateLesson.visibility, 'private');
+      expect(privateLesson.toJson()['visibility'], 'private');
+      expect(privateLesson.copyWith(visibility: 'public').visibility, 'public');
     });
 
     test('should serialize to JSON', () {
