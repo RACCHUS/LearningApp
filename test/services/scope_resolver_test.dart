@@ -89,6 +89,35 @@ void main() {
       expect(resolved.containsConcept('c-latent-heat'), isTrue);
     });
 
+    test('invalidateScope evicts cached scope for context or all contexts', () async {
+      final cachedScope1 = ResolvedScope(
+        contextId: 'ctx-1',
+        resolvedAt: DateTime.now(),
+      );
+      final cachedScope2 = ResolvedScope(
+        contextId: 'ctx-2',
+        resolvedAt: DateTime.now(),
+      );
+
+      await scopeBox.put('ctx-1', cachedScope1);
+      await scopeBox.put('ctx-2', cachedScope2);
+
+      final resolver = ScopeResolver(
+        scopeBox: scopeBox,
+        snapshotBox: snapshotBox,
+      );
+
+      expect(scopeBox.containsKey('ctx-1'), isTrue);
+      expect(scopeBox.containsKey('ctx-2'), isTrue);
+
+      await resolver.invalidateScope('ctx-1');
+      expect(scopeBox.containsKey('ctx-1'), isFalse);
+      expect(scopeBox.containsKey('ctx-2'), isTrue);
+
+      await resolver.invalidateScope();
+      expect(scopeBox.containsKey('ctx-2'), isFalse);
+    });
+
     test(
       'stores and reads snapshot in snapshotBox for instant outline',
       () async {

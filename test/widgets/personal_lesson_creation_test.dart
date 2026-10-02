@@ -59,7 +59,7 @@ void main() {
     testWidgets('successful attachment shows exact success copy and invalidates',
         (tester) async {
       final fakeService = _FakeResourceService();
-      bool? result;
+      PersonalAttachmentResult? result;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -94,7 +94,7 @@ void main() {
       await tester.tap(find.text('Attach'));
       await tester.pumpAndSettle();
 
-      expect(result, isTrue);
+      expect(result, PersonalAttachmentResult.attached);
       expect(fakeService.attachCallCount, 1);
       expect(fakeService.lastLessonId, 'lesson-101');
       expect(fakeService.lastNodeId, 'node-202');
@@ -105,7 +105,7 @@ void main() {
         'failed attachment opens dialog with exact failure copy, and retry succeeds',
         (tester) async {
       final fakeService = _FakeResourceService()..shouldFail = true;
-      bool? result;
+      PersonalAttachmentResult? result;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -157,14 +157,14 @@ void main() {
       expect(fakeService.attachCallCount, 2);
       expect(fakeService.lastLessonId, 'lesson-101');
       expect(fakeService.lastNodeId, 'node-202');
-      expect(result, isTrue);
+      expect(result, PersonalAttachmentResult.attached);
       expect(find.text(kPersonalAttachmentSuccessCopy), findsOneWidget);
     });
 
     testWidgets('dismissing failed dialog with Keep in Library preserves lesson',
         (tester) async {
       final fakeService = _FakeResourceService()..shouldFail = true;
-      bool? result;
+      PersonalAttachmentResult? result;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -204,7 +204,7 @@ void main() {
       await tester.tap(find.byKey(const Key('keep_in_library_button')));
       await tester.pumpAndSettle();
 
-      expect(result, isFalse);
+      expect(result, PersonalAttachmentResult.keptInLibrary);
       expect(fakeService.attachCallCount, 1);
     });
   });

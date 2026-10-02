@@ -5,10 +5,17 @@ import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/user_curriculum_resource_provider.dart';
 import 'package:learning_pwa/services/user_curriculum_resource_service.dart';
 
+import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+
 const String kPersonalAttachmentSuccessMessage =
     'Lesson created and added to this topic';
 const String kPersonalAttachmentFailureMessage =
     "Lesson created, but we couldn't attach it to this topic";
+
+enum PersonalAttachmentResult {
+  attached,
+  keptInLibrary,
+}
 
 enum AttachmentStatus {
   idle,
@@ -61,11 +68,12 @@ class PersonalAttachmentController extends ChangeNotifier {
 
 /// Attempts to attach a created lesson to a curriculum topic.
 ///
-/// On success: shows success feedback and returns true.
+/// On success: shows success feedback, evicts scope caches, and returns [PersonalAttachmentResult.attached].
 /// On failure: opens a dialog displaying the failure copy and offering
-/// a "Retry attachment" action. Returns true if retry succeeds, or false
-/// if the user dismisses. The lesson remains preserved in Library regardless.
-Future<bool> handlePersonalStudyAttachment({
+/// a "Retry attachment" action. Returns [PersonalAttachmentResult.attached] if retry succeeds,
+/// or [PersonalAttachmentResult.keptInLibrary] if the user chooses "Keep in Library" or dismisses.
+/// The lesson remains preserved in Library in either case.
+Future<PersonalAttachmentResult> handlePersonalStudyAttachment({
   required BuildContext context,
   required WidgetRef ref,
   required String lessonId,
@@ -84,7 +92,7 @@ Future<bool> handlePersonalStudyAttachment({
 
   final success = await controller.attach();
   if (success) {
-    _invalidateTargetAndCatalog(ref, curriculumNodeId);
+    await _invalidateTargetAndCatalog(ref, curriculumNodeId);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -93,11 +101,11 @@ Future<bool> handlePersonalStudyAttachment({
         ),
       );
     }
-    return true;
+    return PersonalAttachmentResult.attached;
   }
 
   // Failed initial attachment: keep creation result open with Retry attachment
-  if (!context.mounted) return false;
+  if (!context.mounted) return PersonalAttachmentResult.keptInLibrary;
 
   final attachedOnRetry = await showDialog<bool>(
     context: context,
@@ -108,10 +116,16 @@ Future<bool> handlePersonalStudyAttachment({
     ),
   );
 
-  return attachedOnRetry ?? false;
+  return (attachedOnRetry ?? false)
+      ? PersonalAttachmentResult.attached
+      : PersonalAttachmentResult.keptInLibrary;
 }
 
-void _invalidateTargetAndCatalog(WidgetRef ref, String curriculumNodeId) {
+Future<void> _invalidateTargetAndCatalog(WidgetRef ref, String curriculumNodeId) async {
+  try {
+    await ref.read(scopeResolverProvider).invalidateScope();
+  } catch (_) {}
+  ref.invalidate(activeResolvedScopeProvider);
   ref.invalidate(userCurriculumResourcesForNodeProvider(curriculumNodeId));
   ref.invalidate(availableLessonsCatalogProvider);
   ref.invalidate(remoteCatalogLessonsProvider);

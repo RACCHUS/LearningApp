@@ -87,6 +87,17 @@ class ScopeResolver {
     }
   }
 
+  /// Evicts the cached resolved scope for a specific context, or all contexts if omitted.
+  Future<void> invalidateScope([String? contextId]) async {
+    if (_scopeBox != null) {
+      if (contextId != null) {
+        await _scopeBox.delete(contextId);
+      } else {
+        await _scopeBox.clear();
+      }
+    }
+  }
+
   void _revalidateInBackground(LearningContext context, String configHash) {
     _resolveOnline(context, configHash: configHash)
         .then((fresh) async {

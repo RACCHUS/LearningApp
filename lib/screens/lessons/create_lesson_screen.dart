@@ -152,7 +152,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     if (widget.attachmentIntent == 'personal_study' &&
         widget.nodeId != null &&
         widget.nodeId!.isNotEmpty) {
-      final success = await handlePersonalStudyAttachment(
+      await handlePersonalStudyAttachment(
         context: context,
         ref: ref,
         lessonId: lessonId,
@@ -160,7 +160,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         curriculumNodeId: widget.nodeId!,
         nodeTitle: widget.nodeTitle,
       );
-      if (success && mounted) {
+      if (mounted) {
         Navigator.of(context).pop(lesson);
       }
     } else if (widget.attachmentIntent == 'official_draft_binding' &&

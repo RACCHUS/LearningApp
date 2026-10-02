@@ -13,6 +13,7 @@ import 'package:learning_pwa/models/user_curriculum_resource.dart';
 import 'package:learning_pwa/providers/user_curriculum_resource_provider.dart';
 import 'package:learning_pwa/services/user_curriculum_resource_service.dart';
 import 'package:learning_pwa/widgets/targets/topic_lesson_sections.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 import '../test_helpers/fake_supabase_client.dart';
 
 void main() {
@@ -56,7 +57,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Create Personal Lesson'), findsOneWidget);
+      expect(find.text('Create Standalone Lesson'), findsOneWidget);
       expect(find.text('Add Topic'), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -369,6 +370,67 @@ void main() {
       expect(find.text('Your study material'), findsOneWidget);
       expect(find.text('Create personal study lesson'), findsOneWidget);
     });
+
+    testWidgets('tapping topic node on editable draft target shows Add lesson to curriculum and no personal study button',
+        (tester) async {
+      final target = LearningTarget(
+        id: 'draft-target-test',
+        targetType: TargetType.certification,
+        title: 'Draft Networking',
+        slug: 'draft-networking',
+        isOfficial: false,
+        createdBy: 'user-draft-owner',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final version = TargetVersion(
+        id: 'ver-draft-test',
+        targetId: target.id,
+        versionCode: 'v0.1',
+        status: TargetVersionStatus.draft,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final node = CurriculumNode(
+        id: 'node-draft-1',
+        targetVersionId: version.id,
+        title: 'TCP Handshake',
+        sortOrder: 1,
+        nodeType: 'topic',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _UserAuthNotifier('user-draft-owner')),
+            targetDetailProvider(target.id)
+                .overrideWith((ref) => Future.value(target)),
+            targetVersionProvider(target.id)
+                .overrideWith((ref) => Future.value(version)),
+            targetCurriculumNodesProvider(version.id)
+                .overrideWith((ref) => Future.value([node])),
+            nodeLessonsProvider('node-draft-1')
+                .overrideWith((ref) => Future.value([])),
+            userCurriculumResourcesForNodeProvider('node-draft-1')
+                .overrideWith((ref) => Future.value([])),
+          ],
+          child: MaterialApp(home: TargetOutlineScreen(targetId: target.id)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap 'Open' button on node card
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Shows 'Curriculum material' with 'Add lesson to curriculum'
+      expect(find.text('Curriculum material'), findsOneWidget);
+      expect(find.byKey(const Key('add_curriculum_lesson_button')), findsOneWidget);
+      // Explanatory note in Section 2, and no personal study creation button
+      expect(find.byKey(const Key('create_personal_study_lesson_button')), findsNothing);
+    });
   });
 }
 
@@ -396,6 +458,25 @@ class _FakeUnlinkResourceService extends UserCurriculumResourceService {
 class _GuestAuthNotifier extends StateNotifier<AuthState>
     implements AuthNotifier {
   _GuestAuthNotifier() : super(GuestMode());
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _UserAuthNotifier extends StateNotifier<AuthState>
+    implements AuthNotifier {
+  _UserAuthNotifier(String userId)
+      : super(
+          AuthSuccess(
+            User(
+              id: userId,
+              appMetadata: {},
+              userMetadata: {},
+              aud: 'authenticated',
+              createdAt: '2026-01-01',
+            ),
+          ),
+        );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

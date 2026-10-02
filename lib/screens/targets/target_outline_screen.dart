@@ -226,7 +226,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
             Text(
               canEditCurriculum
                   ? 'Start building this curriculum outline by adding topics or generating with AI.'
-                  : 'This curriculum outline has no topics defined yet. You can create lessons for personal study.',
+                  : 'This official target has no topics defined yet. You can create a standalone lesson in your Library.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -257,11 +257,10 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
               )
             else
               FilledButton.tonalIcon(
-                onPressed: () => context.push(
-                  '/create-lesson?nodeTitle=${Uri.encodeComponent(targetTitle ?? 'Topic')}',
-                ),
+                key: const Key('create_standalone_lesson_button'),
+                onPressed: () => context.push('/create-lesson'),
                 icon: const Icon(Icons.auto_stories_outlined),
-                label: const Text('Create Personal Lesson'),
+                label: const Text('Create Standalone Lesson'),
               ),
           ],
         ),
