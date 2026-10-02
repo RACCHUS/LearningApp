@@ -63,6 +63,33 @@ void main() {
       expect(fromJson.metadata['passThreshold'], 0.70);
       expect(fromJson.status, TargetVersionStatus.published);
     });
+
+    test('verifies immutability helpers on TargetVersion status', () {
+      final draft = TargetVersion(
+        id: 'ver-draft',
+        targetId: 't-1',
+        versionCode: 'v1',
+        status: TargetVersionStatus.draft,
+        createdAt: DateTime(2026, 9, 25),
+        updatedAt: DateTime(2026, 9, 25),
+      );
+      expect(draft.isDraft, isTrue);
+      expect(draft.isPublished, isFalse);
+      expect(draft.isRetired, isFalse);
+      expect(draft.isEditable, isTrue);
+
+      final published = draft.copyWith(status: TargetVersionStatus.published);
+      expect(published.isDraft, isFalse);
+      expect(published.isPublished, isTrue);
+      expect(published.isRetired, isFalse);
+      expect(published.isEditable, isFalse);
+
+      final retired = draft.copyWith(status: TargetVersionStatus.retired);
+      expect(retired.isDraft, isFalse);
+      expect(retired.isPublished, isFalse);
+      expect(retired.isRetired, isTrue);
+      expect(retired.isEditable, isFalse);
+    });
   });
 
   group('CurriculumNode & Teaching Bindings', () {

@@ -22,6 +22,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     with SingleTickerProviderStateMixin {
   final _jsonController = TextEditingController();
   final _scrollController = ScrollController();
+  final _lineScrollController = ScrollController();
   late TabController _tabController;
   
   String? _validationError;
@@ -41,13 +42,26 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _jsonController.addListener(_onJsonChanged);
+    _scrollController.addListener(_syncLineNumbersScroll);
     _loadRecentImports();
+  }
+
+  void _syncLineNumbersScroll() {
+    if (_lineScrollController.hasClients && _scrollController.hasClients) {
+      final maxScroll = _lineScrollController.position.maxScrollExtent;
+      final target = _scrollController.offset.clamp(0.0, maxScroll);
+      if (_lineScrollController.offset != target) {
+        _lineScrollController.jumpTo(target);
+      }
+    }
   }
 
   @override
   void dispose() {
     _jsonController.dispose();
+    _scrollController.removeListener(_syncLineNumbersScroll);
     _scrollController.dispose();
+    _lineScrollController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -386,7 +400,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
                         controller: _jsonController,
                         scrollController: _scrollController,
                         decoration: const InputDecoration(
-                          hintText: 'Paste your lesson JSON here...\n\nExample:\n{\n  "lesson": {\n    "title": "Your Lesson Title",\n    "description": "Brief description"\n  },\n  "content": [\n    {\n      "type": "term",\n      "title": "Key Term",\n      "content": "Definition"\n    }\n  ]\n}',
+                          hintText: 'Paste your lesson JSON here...\n\nExample:\n{\n  "lesson": {\n    "title": "Your Lesson Title",\n    "description": "Brief description"\n  },\n  "content": [\n    {\n      "type": "term",\n      "term": "Key Term",\n      "definition": "Definition"\n    }\n  ]\n}',
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.all(16),
                         ),
@@ -395,6 +409,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
                         style: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 14,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -426,18 +441,21 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       width: 50,
       color: colorScheme.surfaceContainerLow,
       child: SingleChildScrollView(
+        controller: _lineScrollController,
         physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 16, bottom: 16),
         child: Column(
           children: List.generate(
             lines,
             (index) => Container(
-              height: 20,
+              height: 21,
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 8),
               child: Text(
                 '${index + 1}',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
+                  height: 1.5,
                   color: colorScheme.onSurfaceVariant,
                   fontFamily: 'monospace',
                 ),
@@ -915,10 +933,23 @@ Required Structure:
   },
   "content": [
     {
-      "type": "term|concept|mcq|text",
-      "title": "string",
-      "content": "string",
-      // Additional fields based on type
+      "type": "term",
+      "term": "Key Term (required)",
+      "definition": "Definition text (required)",
+      "example": "Optional code or usage example"
+    },
+    {
+      "type": "concept",
+      "title": "Concept Title (required)",
+      "description": "Detailed explanation (required)",
+      "keyPoints": ["Bullet point 1", "Bullet point 2"]
+    },
+    {
+      "type": "mcq",
+      "question": "Question text (required)",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0,
+      "explanation": "Why this answer is correct"
     }
   ]
 }
@@ -927,7 +958,7 @@ Common Issues:
 • Use double quotes for strings
 • No trailing commas
 • Match opening/closing brackets
-• Correct field names (case-sensitive)
+• Content types use specific fields: term/definition for terms, title/description for concepts, question/options/correctIndex for mcqs
 '''),
         ),
         actions: [

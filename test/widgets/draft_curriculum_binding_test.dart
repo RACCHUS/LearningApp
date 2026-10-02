@@ -593,5 +593,69 @@ void main() {
       expect(find.byType(PersonalAttachmentResultDialog), findsNothing);
       expect(find.text(kPersonalAttachmentSuccessMessage), findsOneWidget);
     });
+
+    testWidgets(
+        'CreateLessonScreen invalidates catalog and handles guided generation completion pop',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final mockTargetService = _MockTargetBindingService(shouldBindSucceed: true);
+      final mockLessonService = _MockLessonService();
+      dynamic poppedResult;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _UserAuthNotifier('user-owner')),
+            learningTargetServiceProvider.overrideWith((ref) => mockTargetService),
+            lessonServiceProvider.overrideWith((ref) => mockLessonService),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [SemanticColors.light]),
+            home: Scaffold(
+              body: Builder(
+                builder: (ctx) => ElevatedButton(
+                  onPressed: () async {
+                    poppedResult = await Navigator.of(ctx).push(
+                      MaterialPageRoute(
+                        builder: (_) => const CreateLessonScreen(
+                          initialTabIndex: 1, // JSON Import tab
+                          nodeId: 'node-draft-1',
+                          nodeTitle: 'TCP Handshake',
+                          targetVersionId: 'ver-draft-1',
+                          attachmentIntent: 'official_draft_binding',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open Create Lesson'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open screen
+      await tester.tap(find.text('Open Create Lesson'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CreateLessonScreen), findsOneWidget);
+
+      // Load example & import
+      await tester.tap(find.text('Load Example'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Import Lesson'));
+      await tester.pumpAndSettle();
+
+      // CreateLessonScreen popped cleanly after handling post-save attachment
+      expect(find.byType(CreateLessonScreen), findsNothing);
+      expect(poppedResult, isNotNull);
+      expect(poppedResult.id, 'lesson-created-999');
+    });
   });
 }

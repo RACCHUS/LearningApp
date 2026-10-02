@@ -272,6 +272,11 @@ class TargetVersion {
     required this.updatedAt,
   });
 
+  bool get isDraft => status == TargetVersionStatus.draft;
+  bool get isPublished => status == TargetVersionStatus.published;
+  bool get isRetired => status == TargetVersionStatus.retired;
+  bool get isEditable => isDraft;
+
   factory TargetVersion.fromJson(Map<String, dynamic> json) {
     return TargetVersion(
       id: json['id'] as String,

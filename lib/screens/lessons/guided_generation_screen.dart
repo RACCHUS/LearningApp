@@ -16,6 +16,7 @@ import '../../utils/lesson_creation_feedback.dart';
 import '../../widgets/lesson/personal_attachment_result.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/scope_resolver_provider.dart';
+import '../../providers/available_lessons_provider.dart';
 import '../../theme/semantic_colors.dart';
 
 /// Step-by-step wizard that walks the user through multi-prompt lesson
@@ -1021,6 +1022,8 @@ class _GuidedGenerationScreenState
           : '';
       final lessonService = ref.read(lessonServiceProvider);
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
+      ref.invalidate(availableLessonsCatalogProvider);
+      ref.invalidate(remoteCatalogLessonsProvider);
 
       if (widget.attachmentIntent == 'personal_study' &&
           widget.nodeId != null &&
@@ -1035,10 +1038,12 @@ class _GuidedGenerationScreenState
         );
         if (mounted) {
           ref.read(generationSessionProvider.notifier).clearSession();
-          if (widget.targetVersionId != null && context.mounted) {
-            context.pop();
-          } else {
-            context.go('/lessons');
+          if (context.mounted) {
+            if (context.canPop()) {
+              context.pop(lesson);
+            } else {
+              context.go('/lessons');
+            }
           }
         }
         return;
@@ -1084,10 +1089,12 @@ class _GuidedGenerationScreenState
           ),
         );
         ref.read(generationSessionProvider.notifier).clearSession();
-        if (widget.targetVersionId != null && context.mounted) {
-          context.pop();
-        } else {
-          context.go('/lessons');
+        if (context.mounted) {
+          if (context.canPop()) {
+            context.pop(lesson);
+          } else {
+            context.go('/lessons');
+          }
         }
       }
     } catch (e) {

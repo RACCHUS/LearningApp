@@ -6,6 +6,7 @@ import '../../models/learning_target.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../providers/scope_resolver_provider.dart';
 import '../../services/hive_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/targets/topic_lesson_sections.dart';
@@ -34,7 +35,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     final currentUserId = authState is AuthSuccess ? authState.user.id : null;
     final bool isOwner = currentUserId != null && target?.createdBy == currentUserId;
     final bool canEditCurriculum = isOwner &&
-        (version?.status != TargetVersionStatus.published) &&
+        (version?.status == TargetVersionStatus.draft) &&
         !(target?.isOfficial ?? false);
 
     return Scaffold(
@@ -136,6 +137,9 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                           node: node,
                           onNodeSelected: () => _handleNodeTap(node, canEditCurriculum),
                           onFocusRequested: () => _setNodeFocus(node),
+                          onDeleteRequested: canEditCurriculum
+                              ? () => _handleDeleteNode(node, version.id)
+                              : null,
                         );
                       },
                     );
@@ -317,7 +321,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
         description: 'Curriculum unit for $targetTitle',
       );
       if (node != null && context.mounted) {
-        ref.invalidate(targetCurriculumNodesProvider(versionId));
+        await _invalidateNodeAndScope(ref, versionId);
         final uri = Uri(
           path: '/create-lesson',
           queryParameters: {
@@ -330,6 +334,15 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
         context.push(uri.toString());
       }
     }
+  }
+
+  Future<void> _invalidateNodeAndScope(WidgetRef ref, String versionId) async {
+    ref.invalidate(targetCurriculumNodesProvider(versionId));
+    try {
+      await ref.read(scopeResolverProvider).invalidateScope();
+    } catch (_) {}
+    ref.invalidate(activeResolvedScopeProvider);
+    ref.invalidate(learningContextsProvider);
   }
 
   Future<void> _showAddNodeDialog(BuildContext context, String versionId) async {
@@ -383,7 +396,38 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
             ? descController.text.trim()
             : null,
       );
-      ref.invalidate(targetCurriculumNodesProvider(versionId));
+      await _invalidateNodeAndScope(ref, versionId);
+    }
+  }
+
+  Future<void> _handleDeleteNode(CurriculumNode node, String versionId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Topic'),
+        content: Text('Are you sure you want to delete "${node.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final service = ref.read(learningTargetServiceProvider);
+      final ok = await service.deleteCurriculumNode(node.id);
+      if (ok && mounted) {
+        await _invalidateNodeAndScope(ref, versionId);
+      }
     }
   }
 
@@ -446,11 +490,13 @@ class _CurriculumNodeCard extends StatelessWidget {
   final CurriculumNode node;
   final VoidCallback onNodeSelected;
   final VoidCallback onFocusRequested;
+  final VoidCallback? onDeleteRequested;
 
   const _CurriculumNodeCard({
     required this.node,
     required this.onNodeSelected,
     required this.onFocusRequested,
+    this.onDeleteRequested,
   });
 
   @override
@@ -498,12 +544,25 @@ class _CurriculumNodeCard extends StatelessWidget {
                   icon: const Icon(Icons.more_vert, size: 20),
                   onSelected: (val) {
                     if (val == 'focus') onFocusRequested();
+                    if (val == 'delete' && onDeleteRequested != null) {
+                      onDeleteRequested!();
+                    }
                   },
                   itemBuilder: (ctx) => [
                     const PopupMenuItem(
                       value: 'focus',
                       child: Text('Focus active scope on this domain'),
                     ),
+                    if (onDeleteRequested != null)
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          'Delete Topic',
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],

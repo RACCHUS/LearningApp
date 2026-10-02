@@ -17,6 +17,7 @@ import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
 import 'package:learning_pwa/widgets/lesson/personal_attachment_result.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -97,7 +98,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -144,11 +147,15 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _handlePostSaveAttachment(dynamic lesson) async {
+    ref.invalidate(availableLessonsCatalogProvider);
+    ref.invalidate(remoteCatalogLessonsProvider);
     final lessonId = lesson.id as String;
     final lessonTitle = lesson.title as String;
     if (widget.attachmentIntent == 'personal_study' &&
@@ -465,7 +472,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   final params = <String, String>{
                     if (_subjectController.text.trim().isNotEmpty)
                       'subject': _subjectController.text.trim(),
@@ -477,7 +484,12 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                     if (widget.targetVersionId != null) 'targetVersionId': widget.targetVersionId!,
                     if (widget.attachmentIntent != null) 'attachmentIntent': widget.attachmentIntent!,
                   };
-                  context.push(Uri(path: '/guided-generation', queryParameters: params).toString());
+                  final result = await context.push<dynamic>(
+                    Uri(path: '/guided-generation', queryParameters: params).toString(),
+                  );
+                  if (result != null && mounted) {
+                    Navigator.of(context).pop(result);
+                  }
                 },
                 icon: const Icon(Icons.auto_awesome),
                 label: const Text('AI-Guided Generation'),

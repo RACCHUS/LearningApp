@@ -299,6 +299,36 @@ class LearningTargetService {
     }
   }
 
+  /// Delete a curriculum node
+  Future<bool> deleteCurriculumNode(String nodeId) async {
+    try {
+      await _supabase
+          .from('curriculum_nodes')
+          .delete()
+          .eq('id', nodeId);
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error deleting curriculum node: $e');
+      return false;
+    }
+  }
+
+  /// Reorder curriculum nodes by updating their sort orders
+  Future<bool> reorderCurriculumNodes(List<String> nodeIds) async {
+    try {
+      for (int i = 0; i < nodeIds.length; i++) {
+        await _supabase
+            .from('curriculum_nodes')
+            .update({'sort_order': i})
+            .eq('id', nodeIds[i]);
+      }
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error reordering curriculum nodes: $e');
+      return false;
+    }
+  }
+
   /// Bind a course to a curriculum node
   Future<bool> bindCourseToNode({
     required String curriculumNodeId,
