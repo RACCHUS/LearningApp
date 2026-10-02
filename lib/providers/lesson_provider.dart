@@ -44,8 +44,8 @@ final allLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
 
 final lessonProvider =
     FutureProvider.family<FullLesson, String>((ref, lessonId) async {
-  ref.watch(learnerIdProvider);
   try {
+    ref.watch(learnerIdProvider);
     final supabase = Supabase.instance.client;
     log('🚀 Starting lesson load for ID: $lessonId', name: 'LessonProvider');
     

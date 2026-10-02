@@ -69,4 +69,5 @@ jobs:
         run: |
           supabase start
           supabase db reset
+          supabase test db
           supabase db lint
