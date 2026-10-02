@@ -134,7 +134,7 @@ Future<void> _invalidateTargetAndCatalog(WidgetRef ref, String curriculumNodeId)
 
 class PersonalAttachmentResultDialog extends StatefulWidget {
   final PersonalAttachmentController controller;
-  final VoidCallback? onAttached;
+  final Future<void> Function()? onAttached;
 
   const PersonalAttachmentResultDialog({
     super.key,
@@ -192,14 +192,16 @@ class _PersonalAttachmentResultDialogState
                   final ok = await widget.controller.attach();
                   setState(() => _isRetrying = false);
                   if (ok && mounted) {
-                    widget.onAttached?.call();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(kPersonalAttachmentSuccessMessage),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                    Navigator.of(context).pop(true);
+                    await widget.onAttached?.call();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(kPersonalAttachmentSuccessMessage),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.of(context).pop(true);
+                    }
                   }
                 },
           child: const Text('Retry attachment'),

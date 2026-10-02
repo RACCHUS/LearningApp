@@ -425,19 +425,22 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     return Container(
       width: 50,
       color: colorScheme.surfaceContainerLow,
-      child: Column(
-        children: List.generate(
-          lines,
-          (index) => Container(
-            height: 20,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 8),
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: List.generate(
+            lines,
+            (index) => Container(
+              height: 20,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                '${index + 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ),
@@ -852,15 +855,15 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
   "content": [
     {
       "type": "term",
-      "title": "Variable",
-      "content": "A named storage location that holds a value which can be changed during program execution.",
+      "term": "Variable",
+      "definition": "A named storage location that holds a value which can be changed during program execution.",
       "example": "age = 25"
     },
     {
       "type": "concept",
       "title": "Dynamic Typing",
-      "content": "Python automatically determines the data type of a variable based on the value assigned to it.",
-      "key_points": [
+      "description": "Python automatically determines the data type of a variable based on the value assigned to it.",
+      "keyPoints": [
         "No need to declare variable types",
         "Type determined at runtime",
         "Variables can change types"
@@ -870,12 +873,13 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       "type": "mcq",
       "question": "Which of the following is a valid Python variable name?",
       "options": ["2name", "name-2", "name_2", "name 2"],
-      "correct_answer": "name_2",
+      "correctIndex": 2,
       "explanation": "Variable names can contain letters, numbers, and underscores, but cannot start with a number or contain spaces or hyphens."
     }
   ]
 }''';
     _jsonController.text = exampleJson;
+    _validateJson();
   }
 
   void _formatJson() {

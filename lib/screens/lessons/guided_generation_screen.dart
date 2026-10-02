@@ -9,11 +9,14 @@ import '../../models/generation_session.dart';
 import '../../providers/generation_session_provider.dart';
 import '../../services/ai_prompt_service.dart';
 import '../../services/content_quality_service.dart';
-import '../../services/lesson_service.dart';
+import '../../providers/lesson_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../utils/lesson_creation_feedback.dart';
 import '../../widgets/lesson/personal_attachment_result.dart';
+import '../../providers/learning_context_provider.dart';
+import '../../providers/scope_resolver_provider.dart';
+import '../../theme/semantic_colors.dart';
 
 /// Step-by-step wizard that walks the user through multi-prompt lesson
 /// generation: Plan → Terms → Concepts → MCQs → Review → Import.
@@ -1016,7 +1019,7 @@ class _GuidedGenerationScreenState
       final userId = authState is AuthSuccess
           ? authState.user.id
           : '';
-      final lessonService = LessonService();
+      final lessonService = ref.read(lessonServiceProvider);
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
 
       if (widget.attachmentIntent == 'personal_study' &&
@@ -1042,24 +1045,42 @@ class _GuidedGenerationScreenState
       }
 
       bool isBound = false;
-      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
+      final isAttemptingDraftBinding =
+          widget.attachmentIntent == 'official_draft_binding' &&
+          widget.nodeId != null &&
+          widget.nodeId!.isNotEmpty;
+      if (isAttemptingDraftBinding) {
         final targetService = ref.read(learningTargetServiceProvider);
         isBound = await targetService.bindLessonToNode(
           curriculumNodeId: widget.nodeId!,
           lessonId: lesson.id,
         );
+        if (isBound) {
+          ref.invalidate(nodeLessonsProvider(widget.nodeId!));
+          try {
+            await ref.read(scopeResolverProvider).invalidateScope();
+          } catch (_) {}
+          ref.invalidate(activeResolvedScopeProvider);
+          ref.invalidate(learningContextsProvider);
+        }
       }
       if (mounted) {
+        final semantic = Theme.of(context).extension<SemanticColors>();
         final msg = lessonCreationFeedback(
           lessonTitle: lesson.title,
-          nodeId: widget.nodeId,
+          nodeId: isAttemptingDraftBinding ? widget.nodeId : null,
+          nodeTitle: widget.initialSubject,
           isBound: isBound,
           imported: true,
         );
+        final isFailure = isAttemptingDraftBinding && !isBound;
+        final bgColor = isFailure
+            ? (semantic?.warning ?? Colors.orange)
+            : (semantic?.success ?? Colors.green);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
-            backgroundColor: Colors.green,
+            backgroundColor: bgColor,
           ),
         );
         ref.read(generationSessionProvider.notifier).clearSession();

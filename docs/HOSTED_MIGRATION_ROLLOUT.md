@@ -10,8 +10,8 @@ CONSTRAINT lessons_visibility_check CHECK (visibility IN ('private', 'unlisted',
 
 ### RLS and Current Behavior
 - **`public`**: Readable by all users, including unauthenticated/anonymous guests (`auth.uid() IS NULL` or authenticated).
-- **`private`**: Restricted strictly to the creator (`created_by = auth.uid()`).
-- **`unlisted`**: Currently restricted strictly to the creator (`created_by = auth.uid()`), identical to `private`.
+- **`private`**: Restricted strictly to the creator (`user_id = auth.uid()`).
+- **`unlisted`**: Currently restricted strictly to the creator (`user_id = auth.uid()`), identical to `private`.
 
 ### Why `unlisted` is currently private-equivalent
 In the UI, users can toggle between Private and Public. The `unlisted` state is explicitly reserved for future "anyone with the secret link" functionality. Full link-sharing for unlisted lessons will require either:
@@ -27,7 +27,7 @@ Until that capability is implemented, `unlisted` is schema-valid and backfilled 
 ### Context & Invariant
 The local repository migration history features a clean-start baseline:
 - `20241228000000_legacy_base_tables.sql` (backdated baseline)
-- `20260929000001_v2_core_schema.sql` through `20261001000002_user_curriculum_resources.sql`
+- `20250101000001_create_review_items.sql` through `20261001000001_user_curriculum_resources.sql`
 
 Because `20241228000000_legacy_base_tables.sql` is timestamped earlier than migrations that may already have been recorded in the hosted project's `supabase_migrations.schema_migrations` table, executing an unconsidered `supabase db push` against the hosted instance could either attempt to execute an old migration out-of-order or raise a migration ordering conflict.
 

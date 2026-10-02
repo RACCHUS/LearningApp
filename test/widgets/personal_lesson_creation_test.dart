@@ -11,6 +11,9 @@ import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/services/user_curriculum_resource_service.dart';
 import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
 import 'package:learning_pwa/widgets/lesson/personal_attachment_result.dart';
+import 'package:learning_pwa/services/learning_target_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 import '../test_helpers/fake_supabase_client.dart';
 
 class _FakeResourceService extends UserCurriculumResourceService {
@@ -257,5 +260,129 @@ void main() {
 
       expect(find.text('Cryptography Fundamentals'), findsOneWidget);
     });
+
+    testWidgets(
+        'empty draft outline Generate with AI creates topic and routes with official_draft_binding',
+        (tester) async {
+      final target = LearningTarget(
+        id: 'draft-target-empty',
+        targetType: TargetType.certification,
+        title: 'Draft Networking',
+        slug: 'draft-networking',
+        isOfficial: false,
+        createdBy: 'user-owner',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final version = TargetVersion(
+        id: 'ver-draft-empty',
+        targetId: target.id,
+        versionCode: 'v0.1',
+        status: TargetVersionStatus.draft,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final mockService = _MockTargetService();
+
+      String? pushedRoute;
+      final router = GoRouter(
+        initialLocation: '/target/${target.id}/outline',
+        routes: [
+          GoRoute(
+            path: '/target/:targetId/outline',
+            builder: (ctx, state) => TargetOutlineScreen(targetId: target.id),
+          ),
+          GoRoute(
+            path: '/create-lesson',
+            builder: (ctx, state) {
+              pushedRoute = state.uri.toString();
+              return const Scaffold(body: Text('CREATE LESSON SCREEN'));
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _UserAuthNotifier('user-owner')),
+            targetDetailProvider(target.id)
+                .overrideWith((ref) => Future.value(target)),
+            targetVersionProvider(target.id)
+                .overrideWith((ref) => Future.value(version)),
+            targetCurriculumNodesProvider(version.id)
+                .overrideWith((ref) => Future.value([])),
+            learningTargetServiceProvider.overrideWith((ref) => mockService),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Empty state shows 'Generate with AI'
+      expect(find.text('Generate with AI'), findsOneWidget);
+      await tester.tap(find.text('Generate with AI'));
+      await tester.pumpAndSettle();
+
+      // Dialog opens
+      expect(find.text('Create Topic for Lesson'), findsOneWidget);
+      await tester.tap(find.text('Continue to AI Generator'));
+      await tester.pumpAndSettle();
+
+      // Verifies node was created and routed to /create-lesson with official_draft_binding
+      expect(mockService.addedTargetVersionId, 'ver-draft-empty');
+      expect(pushedRoute, contains('/create-lesson'));
+      expect(pushedRoute, contains('attachmentIntent=official_draft_binding'));
+      expect(pushedRoute, contains('nodeId=node-gen-123'));
+    });
   });
+}
+
+class _MockTargetService extends LearningTargetService {
+  _MockTargetService() : super(supabase: FakeSupabaseClient());
+  String? addedTargetVersionId;
+  String? addedTitle;
+
+  @override
+  Future<CurriculumNode?> addCurriculumNode({
+    required String targetVersionId,
+    required String title,
+    String? description,
+    String? code,
+    String nodeType = 'domain',
+    int sortOrder = 0,
+    String? parentId,
+    double weight = 1.0,
+  }) async {
+    addedTargetVersionId = targetVersionId;
+    addedTitle = title;
+    return CurriculumNode(
+      id: 'node-gen-123',
+      targetVersionId: targetVersionId,
+      title: title,
+      sortOrder: sortOrder,
+      nodeType: nodeType,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+  }
+}
+
+class _UserAuthNotifier extends StateNotifier<AuthState>
+    implements AuthNotifier {
+  _UserAuthNotifier(String userId)
+      : super(
+          AuthSuccess(
+            User(
+              id: userId,
+              appMetadata: {},
+              userMetadata: {},
+              aud: 'authenticated',
+              createdAt: '2026-01-01',
+            ),
+          ),
+        );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

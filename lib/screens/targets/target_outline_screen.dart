@@ -318,9 +318,16 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
       );
       if (node != null && context.mounted) {
         ref.invalidate(targetCurriculumNodesProvider(versionId));
-        context.push(
-          '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=$versionId',
+        final uri = Uri(
+          path: '/create-lesson',
+          queryParameters: {
+            'nodeId': node.id,
+            'nodeTitle': node.title,
+            'targetVersionId': versionId,
+            'attachmentIntent': 'official_draft_binding',
+          },
         );
+        context.push(uri.toString());
       }
     }
   }

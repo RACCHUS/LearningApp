@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
-import 'package:learning_pwa/services/lesson_service.dart';
+import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/services/ai_prompt_service.dart';
 import 'package:learning_pwa/widgets/enhanced_json_import_widget.dart';
 import 'package:learning_pwa/widgets/lesson_builder_widget.dart';
@@ -15,6 +15,8 @@ import 'package:learning_pwa/theme/semantic_colors.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
 import 'package:learning_pwa/widgets/lesson/personal_attachment_result.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -79,7 +81,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final authState = ref.read(authProvider);
       final userId = authState is AuthSuccess ? authState.user.id : '';
       
-      final lessonService = LessonService();
+      final lessonService = ref.read(lessonServiceProvider);
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
       
       await _handlePostSaveAttachment(lesson);
@@ -111,7 +113,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final authState = ref.read(authProvider);
       final userId = authState is AuthSuccess ? authState.user.id : '';
       
-      final lessonService = LessonService();
+      final lessonService = ref.read(lessonServiceProvider);
       
       // Create lesson JSON structure
       final lessonJson = {
@@ -171,6 +173,14 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         curriculumNodeId: widget.nodeId!,
         lessonId: lessonId,
       );
+      if (isBound) {
+        ref.invalidate(nodeLessonsProvider(widget.nodeId!));
+        try {
+          await ref.read(scopeResolverProvider).invalidateScope();
+        } catch (_) {}
+        ref.invalidate(activeResolvedScopeProvider);
+        ref.invalidate(learningContextsProvider);
+      }
       if (mounted) {
         final semantic = Theme.of(context).extension<SemanticColors>()!;
         final message = lessonCreationFeedback(
@@ -182,7 +192,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: semantic.success,
+            backgroundColor: isBound ? semantic.success : semantic.warning,
           ),
         );
         Navigator.of(context).pop(lesson);
