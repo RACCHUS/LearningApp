@@ -69,4 +69,21 @@ void main() {
     expect(targets.map((e) => e.id),
         ['target-direct', 'target-supporting']);
   });
+
+  test('getNodeLessons parses joined lesson title', () async {
+    final fake = FakeSupabaseClient();
+    fake.setTableData('curriculum_node_lessons', [
+      {
+        'curriculum_node_id': 'node-1',
+        'lesson_id': 'lesson-1',
+        'sort_order': 0,
+        'is_required': true,
+        'lessons': {'title': 'Official Cryptography'},
+      },
+    ]);
+
+    final lessons = await LearningTargetService(supabase: fake).getNodeLessons('node-1');
+    expect(lessons.length, 1);
+    expect(lessons.first.lessonTitle, 'Official Cryptography');
+  });
 }

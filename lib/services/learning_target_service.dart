@@ -125,7 +125,7 @@ class LearningTargetService {
     try {
       final res = await _supabase
           .from('curriculum_node_lessons')
-          .select('*')
+          .select('*, lessons(title)')
           .eq('curriculum_node_id', curriculumNodeId)
           .order('sort_order');
 

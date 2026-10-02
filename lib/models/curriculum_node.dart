@@ -195,20 +195,30 @@ class CurriculumNodeModule {
 class CurriculumNodeLesson {
   final String curriculumNodeId;
   final String lessonId;
+  final String? lessonTitle;
   final int sortOrder;
   final bool isRequired;
 
   const CurriculumNodeLesson({
     required this.curriculumNodeId,
     required this.lessonId,
+    this.lessonTitle,
     this.sortOrder = 0,
     this.isRequired = true,
   });
 
   factory CurriculumNodeLesson.fromJson(Map<String, dynamic> json) {
+    String? title;
+    final lessonObj = json['lessons'];
+    if (lessonObj is Map<String, dynamic>) {
+      title = lessonObj['title'] as String?;
+    } else if (json['lesson_title'] is String) {
+      title = json['lesson_title'] as String;
+    }
     return CurriculumNodeLesson(
       curriculumNodeId: json['curriculum_node_id'] as String,
       lessonId: json['lesson_id'] as String,
+      lessonTitle: title,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       isRequired: json['is_required'] as bool? ?? true,
     );
@@ -217,6 +227,7 @@ class CurriculumNodeLesson {
   Map<String, dynamic> toJson() => {
         'curriculum_node_id': curriculumNodeId,
         'lesson_id': lessonId,
+        if (lessonTitle != null) 'lesson_title': lessonTitle,
         'sort_order': sortOrder,
         'is_required': isRequired,
       };

@@ -8,6 +8,7 @@ import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../services/hive_service.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/targets/topic_lesson_sections.dart';
 
 class TargetOutlineScreen extends ConsumerStatefulWidget {
   final String targetId;
@@ -148,90 +149,23 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
     );
   }
 
-  Future<void> _handleNodeTap(CurriculumNode node, bool canEditCurriculum) async {
-    final service = ref.read(learningTargetServiceProvider);
-    final lessons = await service.getNodeLessons(node.id);
-    if (!mounted) return;
-
-    if (lessons.isNotEmpty) {
-      // Direct jump (<2 deliberate actions per Direct Access Rule §7.3)
-      context.push('/lesson/${lessons.first.lessonId}');
-      return;
-    }
-
-    // If no lessons are attached yet, open action bottom sheet to add or generate
-    _showNodeActionsBottomSheet(node, canEditCurriculum);
-  }
-
-  void _showNodeActionsBottomSheet(CurriculumNode node, bool canEditCurriculum) {
+  void _handleNodeTap(CurriculumNode node, bool canEditCurriculum) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: DesignTokens.space3),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space4),
-                  child: Text(
-                    node.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                if (node.description != null && node.description!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: DesignTokens.space4,
-                      right: DesignTokens.space4,
-                      top: 4,
-                    ),
-                    child: Text(
-                      node.description!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.auto_awesome),
-                  title: Text(canEditCurriculum
-                      ? 'Generate Lesson with AI'
-                      : 'Create personal study lesson for this topic'),
-                  subtitle: Text(canEditCurriculum
-                      ? 'Create a new lesson and bind to this topic'
-                      : 'Generate a personal lesson for your study of this topic'),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    if (canEditCurriculum) {
-                      context.push(
-                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}&attachmentIntent=official_draft_binding',
-                      );
-                    } else {
-                      context.push(
-                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}&attachmentIntent=personal_study',
-                      );
-                    }
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.my_location),
-                  title: const Text('Set as Active Scope Focus'),
-                  subtitle: const Text('Narrow review and recommendations to this topic'),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _setNodeFocus(node);
-                  },
-                ),
-              ],
+          child: SingleChildScrollView(
+            child: TopicLessonSections(
+              node: node,
+              canEditCurriculum: canEditCurriculum,
+              onFocusRequested: () {
+                Navigator.of(ctx).pop();
+                _setNodeFocus(node);
+              },
             ),
           ),
         );

@@ -49,3 +49,10 @@ final searchConceptsProvider =
   return service.searchConcepts(query: query);
 });
 
+final nodeLessonsProvider =
+    FutureProvider.family<List<CurriculumNodeLesson>, String>((ref, nodeId) async {
+  final service = ref.watch(learningTargetServiceProvider);
+  return service.getNodeLessons(nodeId);
+});
+
+
