@@ -161,8 +161,16 @@ class FakeSupabaseQueryBuilder implements SupabaseQueryBuilder {
 
   @override
   PostgrestFilterBuilder<List<Map<String, dynamic>>> update(Map values) {
+    final updatedData = tableData.map((row) {
+      final updatedRow = Map<String, dynamic>.from(row);
+      values.forEach((k, v) => updatedRow[k.toString()] = v);
+      return updatedRow;
+    }).toList();
+    for (int i = 0; i < tableData.length; i++) {
+      values.forEach((k, v) => tableData[i][k.toString()] = v);
+    }
     return FakePostgrestFilterBuilder(
-      data: List.from(tableData),
+      data: updatedData,
       insertedRecords: insertedRecords,
       deletedIds: deletedIds,
     );
