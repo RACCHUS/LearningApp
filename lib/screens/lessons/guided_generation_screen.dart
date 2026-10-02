@@ -13,6 +13,7 @@ import '../../services/lesson_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../utils/lesson_creation_feedback.dart';
+import '../../widgets/lesson/personal_attachment_result.dart';
 
 /// Step-by-step wizard that walks the user through multi-prompt lesson
 /// generation: Plan → Terms → Concepts → MCQs → Review → Import.
@@ -26,6 +27,7 @@ class GuidedGenerationScreen extends ConsumerStatefulWidget {
     this.initialFocus,
     this.nodeId,
     this.targetVersionId,
+    this.attachmentIntent,
   });
 
   final String? initialSubject;
@@ -35,6 +37,7 @@ class GuidedGenerationScreen extends ConsumerStatefulWidget {
   final String? initialFocus;
   final String? nodeId;
   final String? targetVersionId;
+  final String? attachmentIntent;
 
   @override
   ConsumerState<GuidedGenerationScreen> createState() =>
@@ -1015,6 +1018,29 @@ class _GuidedGenerationScreenState
           : '';
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
+
+      if (widget.attachmentIntent == 'personal_study' &&
+          widget.nodeId != null &&
+          widget.nodeId!.isNotEmpty) {
+        await handlePersonalStudyAttachment(
+          context: context,
+          ref: ref,
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          curriculumNodeId: widget.nodeId!,
+          nodeTitle: widget.initialSubject,
+        );
+        if (mounted) {
+          ref.read(generationSessionProvider.notifier).clearSession();
+          if (widget.targetVersionId != null && context.mounted) {
+            context.pop();
+          } else {
+            context.go('/lessons');
+          }
+        }
+        return;
+      }
+
       bool isBound = false;
       if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
         final targetService = ref.read(learningTargetServiceProvider);

@@ -213,11 +213,11 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                     Navigator.of(ctx).pop();
                     if (canEditCurriculum) {
                       context.push(
-                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}',
+                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}&attachmentIntent=official_draft_binding',
                       );
                     } else {
                       context.push(
-                        '/create-lesson?nodeTitle=${Uri.encodeComponent(node.title)}',
+                        '/create-lesson?nodeId=${node.id}&nodeTitle=${Uri.encodeComponent(node.title)}&targetVersionId=${node.targetVersionId}&attachmentIntent=personal_study',
                       );
                     }
                   },

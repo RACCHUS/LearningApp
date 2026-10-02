@@ -2,6 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
 
 void main() {
+  test('overlay feedback constants match exact spec copy', () {
+    expect(
+      kPersonalAttachmentSuccessCopy,
+      'Lesson created and added to this topic',
+    );
+    expect(
+      kPersonalAttachmentFailureCopy,
+      "Lesson created, but we couldn't attach it to this topic",
+    );
+  });
+
   test(
     'failed curriculum binding is reported separately from lesson creation',
     () {

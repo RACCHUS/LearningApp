@@ -1,3 +1,8 @@
+const String kPersonalAttachmentSuccessCopy =
+    'Lesson created and added to this topic';
+const String kPersonalAttachmentFailureCopy =
+    "Lesson created, but we couldn't attach it to this topic";
+
 /// Describes lesson creation independently of an optional curriculum binding.
 String lessonCreationFeedback({
   required String lessonTitle,

@@ -161,6 +161,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final nodeId = state.uri.queryParameters['nodeId'];
           final nodeTitle = state.uri.queryParameters['nodeTitle'];
           final targetVersionId = state.uri.queryParameters['targetVersionId'];
+          final attachmentIntent = state.uri.queryParameters['attachmentIntent'];
 
           int initialTab = 0;
           int initialBuilderTab = 0;
@@ -185,6 +186,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             nodeId: nodeId,
             nodeTitle: nodeTitle,
             targetVersionId: targetVersionId,
+            attachmentIntent: attachmentIntent,
           );
         },
       ),
@@ -411,6 +413,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialFocus: q['focus'],
             nodeId: q['nodeId'],
             targetVersionId: q['targetVersionId'],
+            attachmentIntent: q['attachmentIntent'],
           );
         },
       ),

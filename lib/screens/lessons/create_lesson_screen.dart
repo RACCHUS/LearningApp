@@ -14,6 +14,7 @@ import 'package:learning_pwa/screens/lesson_creation_guide_screen.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/utils/lesson_creation_feedback.dart';
+import 'package:learning_pwa/widgets/lesson/personal_attachment_result.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class CreateLessonScreen extends ConsumerStatefulWidget {
   final String? nodeId;
   final String? nodeTitle;
   final String? targetVersionId;
+  final String? attachmentIntent;
 
   const CreateLessonScreen({
     super.key,
@@ -30,6 +32,7 @@ class CreateLessonScreen extends ConsumerStatefulWidget {
     this.nodeId,
     this.nodeTitle,
     this.targetVersionId,
+    this.attachmentIntent,
   });
 
   @override
@@ -79,31 +82,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       final lessonService = LessonService();
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
       
-      bool isBound = false;
-      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
-        final targetService = ref.read(learningTargetServiceProvider);
-        isBound = await targetService.bindLessonToNode(
-          curriculumNodeId: widget.nodeId!,
-          lessonId: lesson.id,
-        );
-      }
-
-      if (mounted) {
-        final semantic = Theme.of(context).extension<SemanticColors>()!;
-        final message = lessonCreationFeedback(
-          lessonTitle: lesson.title,
-          nodeId: widget.nodeId,
-          nodeTitle: widget.nodeTitle,
-          isBound: isBound,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: semantic.success,
-          ),
-        );
-        Navigator.of(context).pop(lesson);
-      }
+      await _handlePostSaveAttachment(lesson);
     } catch (e) {
       if (mounted) {
         final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
@@ -150,31 +129,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         userId,
       );
       
-      bool isBound = false;
-      if (widget.nodeId != null && widget.nodeId!.isNotEmpty) {
-        final targetService = ref.read(learningTargetServiceProvider);
-        isBound = await targetService.bindLessonToNode(
-          curriculumNodeId: widget.nodeId!,
-          lessonId: lesson.id,
-        );
-      }
-
-      if (mounted) {
-        final semantic = Theme.of(context).extension<SemanticColors>()!;
-        final message = lessonCreationFeedback(
-          lessonTitle: lesson.title,
-          nodeId: widget.nodeId,
-          nodeTitle: widget.nodeTitle,
-          isBound: isBound,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: semantic.success,
-          ),
-        );
-        Navigator.of(context).pop(lesson);
-      }
+      await _handlePostSaveAttachment(lesson);
     } catch (e) {
       if (mounted) {
         final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
@@ -188,6 +143,65 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
       }
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handlePostSaveAttachment(dynamic lesson) async {
+    final lessonId = lesson.id as String;
+    final lessonTitle = lesson.title as String;
+    if (widget.attachmentIntent == 'personal_study' &&
+        widget.nodeId != null &&
+        widget.nodeId!.isNotEmpty) {
+      final success = await handlePersonalStudyAttachment(
+        context: context,
+        ref: ref,
+        lessonId: lessonId,
+        lessonTitle: lessonTitle,
+        curriculumNodeId: widget.nodeId!,
+        nodeTitle: widget.nodeTitle,
+      );
+      if (success && mounted) {
+        Navigator.of(context).pop(lesson);
+      }
+    } else if (widget.attachmentIntent == 'official_draft_binding' &&
+        widget.nodeId != null &&
+        widget.nodeId!.isNotEmpty) {
+      final targetService = ref.read(learningTargetServiceProvider);
+      final isBound = await targetService.bindLessonToNode(
+        curriculumNodeId: widget.nodeId!,
+        lessonId: lessonId,
+      );
+      if (mounted) {
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
+        final message = lessonCreationFeedback(
+          lessonTitle: lessonTitle,
+          nodeId: widget.nodeId,
+          nodeTitle: widget.nodeTitle,
+          isBound: isBound,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: semantic.success,
+          ),
+        );
+        Navigator.of(context).pop(lesson);
+      }
+    } else {
+      if (mounted) {
+        final semantic = Theme.of(context).extension<SemanticColors>()!;
+        final message = lessonCreationFeedback(
+          lessonTitle: lessonTitle,
+          isBound: false,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: semantic.success,
+          ),
+        );
+        Navigator.of(context).pop(lesson);
+      }
     }
   }
 
@@ -451,6 +465,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                     'focus': _contentFocus,
                     if (widget.nodeId != null) 'nodeId': widget.nodeId!,
                     if (widget.targetVersionId != null) 'targetVersionId': widget.targetVersionId!,
+                    if (widget.attachmentIntent != null) 'attachmentIntent': widget.attachmentIntent!,
                   };
                   context.push(Uri(path: '/guided-generation', queryParameters: params).toString());
                 },
