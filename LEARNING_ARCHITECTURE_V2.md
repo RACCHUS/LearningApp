@@ -1238,3 +1238,50 @@ P6: Legacy Retirement
  ├── Redirect /careers routes to target routes
  └── Deprecate legacy lesson-owned concepts
 ```
+
+---
+
+## 14. Content Ingestion Pipeline & Traceable Content Provenance Layer
+
+### 14.1 The Safe Ingestion Pipeline
+To safeguard the integrity of official learning targets and prevent premature, accidental, or illegal modifications to published curricula, all content follows a strict, multi-stage ingestion and publication lifecycle:
+
+```
+Official Source Blueprint (CompTIA, IEEE/BLS, ACM, NCLEX, USMLE, MCAT)
+       ↓
+Source Manifest (YAML / JSON structured blueprint)
+       ↓
+Draft TargetVersion (created_by = NULL, status = 'draft')
+       ↓
+Curriculum Nodes (Domains & Objectives)
+       ↓
+Knowledge Concepts & Prerequisite Relations
+       ↓
+Original Pedagogical Lessons & Assessment Questions
+       ↓
+Traceable Provenance Mappings (content_source_mappings)
+       ↓
+Automated Validation & Unit Testing (test/services/curriculum_manifest_test.dart)
+       ↓
+Human & Content QA Review
+       ↓
+Promote to Published (TargetVersion.status = 'published')
+       ↓  (Strict Database Immutability via RLS)
+Old TargetVersion Retired (status = 'retired')
+```
+
+### 14.2 Content Integrity & Legal Standards
+1. **Official Blueprints Determine Coverage & Objectives**: Official public examination blueprints, accreditation guidelines, and professional bodies of knowledge define the hierarchical domain breakdown, weightings, and learning objectives.
+2. **Authoritative Sources Determine Facts**: Curricular definitions and domain facts are grounded in verified reference documentation (e.g. NIST SP 800-61, RFC standards, ACM guidelines).
+3. **Original Generated & Authored Assessments**: Assessment questions and practice items are authored originally to test concept mastery, never copied from proprietary commercial question dumps or protected actual exam questions.
+4. **Per-Item Traceability**: Every curriculum node, concept, lesson, and question maintains an explicit junction record in `content_source_mappings` pointing to its exact source citation location.
+
+### 14.3 Traceable Provenance Schema
+- **`content_source_releases`**: Tracks the external authoritative publisher, official document title, edition/version code, retrieved timestamp, license, and cryptographic hash (`sha256`).
+- **`content_source_mappings`**: Connects any curriculum entity (`target_version`, `curriculum_node`, `lesson`, `knowledge_concept`, `question`, `flashcard`) to a `content_source_releases` entry with a relationship tag (`official_blueprint`, `primary_text`, `derived_from`, `reference_citation`, `standards_benchmark`) and exact `citation_location`.
+
+### 14.4 Ingestion CLI Tooling (`tool/ingest_curriculum.dart`)
+- **`--dry-run`**: Validates manifest schema, entity relationships, integrity, domain weights, and prerequisite references without performing database writes.
+- **`--apply`**: Ingests into draft `TargetVersion`, upserts source releases, curriculum nodes, concepts, public lessons, questions, and provenance mappings using `SUPABASE_SERVICE_ROLE_KEY`.
+- **`--publish`**: Promotes draft version to `published` status, enforcing permanent database immutability. Supports `--retire-previous` to cleanly transition prior published editions.
+

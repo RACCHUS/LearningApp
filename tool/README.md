@@ -76,6 +76,55 @@ dart tool/import_lesson.dart --list
 🎉 Done! 5 imported, 0 errors
 ```
 
+### `ingest_curriculum.dart`
+**Purpose**: Authoritative curriculum ingestion and provenance pipeline tool. Ingests curriculum manifests (`.yaml` / `.json`) into draft `TargetVersion`, establishes knowledge concepts, nodes, public lessons, and assessment questions, and maps exact source citations into `content_source_mappings`.
+
+**Usage**:
+```bash
+# 1. Validate manifest without database writes (dry-run):
+dart run tool/ingest_curriculum.dart \
+  --target cert-comptia-security-plus \
+  --version SY0-701 \
+  --manifest content/security_plus_sy0_701.yaml \
+  --dry-run
+
+# 2. Ingest into a draft TargetVersion (requires SUPABASE_SERVICE_ROLE_KEY):
+dart run tool/ingest_curriculum.dart \
+  --target cert-comptia-security-plus \
+  --version SY0-701 \
+  --manifest content/security_plus_sy0_701.yaml \
+  --apply
+
+# 3. Promote draft TargetVersion to published immutable status:
+dart run tool/ingest_curriculum.dart \
+  --target cert-comptia-security-plus \
+  --version SY0-701 \
+  --publish
+```
+
+### `verify_hosted_rls.dart`
+**Purpose**: Authoritative multi-party security smoke test against the live hosted Supabase instance (`User A`, `User B`, and `Anon`).
+
+**Verifies**:
+1. Anonymous public lesson visibility.
+2. Private lesson true-positive read for owner and true-negative isolation for unrelated user and anonymous role.
+3. Personal overlay true-positive read/write for owner and complete isolation from other users.
+4. TargetVersion owner immutability: verifies owner CAN edit draft versions and CANNOT edit, add nodes to, or delete published versions.
+5. Content provenance public read and service-role protected write.
+
+**Usage**:
+```bash
+dart run tool/verify_hosted_rls.dart
+```
+
+### `taxonomy_status.dart`
+**Purpose**: Verify the Canonical Learning Taxonomy status, CIP/SOC classifications, crosswalks, and target coverage.
+
+**Usage**:
+```bash
+dart run tool/taxonomy_status.dart
+```
+
 ### Troubleshooting:
 - **Environment Error**: Check `.env` file exists and contains required variables
 - **File Not Found**: Ensure you're running from project root directory

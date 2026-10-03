@@ -1,0 +1,345 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Source Manifest
+# Target: Software Engineer (Career)
+# ============================================================================
+
+source_release:
+  publisher: "IEEE Computer Society & Bureau of Labor Statistics"
+  title: "Guide to the Software Engineering Body of Knowledge (SWEBOK v4) & BLS Standard Occupational Classification (SOC 15-1252)"
+  version: "SWEBOK-v4-SOC2018"
+  source_url: "https://www.computer.org/education/bodies-of-knowledge/software-engineering"
+  retrieved_at: "2026-10-01T00:00:00Z"
+  license: "Professional Standard Curriculum Reference"
+  sha256: "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
+  metadata:
+    soc_code: "15-1252"
+    soc_title: "Software Developers"
+    cip_alignment: ["11.0201", "11.0701"]
+
+target:
+  slug: "career-software-engineer"
+  title: "Software Engineer"
+  version_code: "SWEBOK-v4"
+  version_title: "Software Engineering Professional Core (SWEBOK v4)"
+  version_description: "Authoritative engineering track encompassing data structures, distributed systems, API architecture, testing, and modern DevOps."
+
+domains:
+  # --------------------------------------------------------------------------
+  # Domain 1: Data Structures & Algorithms
+  # --------------------------------------------------------------------------
+  - code: "SWE-1"
+    title: "Data Structures, Algorithms & Computational Complexity"
+    description: "Algorithmic thinking, asymptotic Big-O analysis, fundamental memory structures, searching, and sorting paradigms."
+    weight: 0.25
+    sort_order: 1
+    importance: "core"
+    citation: "SWEBOK v4 Knowledge Area: Computing Foundations & Algorithms"
+    objectives:
+      - code: "SWE-1.1"
+        title: "Analyze algorithmic time and space complexity"
+        description: "Asymptotic notation, best/average/worst-case analysis, and memory trade-offs."
+        sort_order: 1
+        importance: "core"
+        citation: "SWEBOK v4 Section 1.2: Algorithmic Efficiency"
+        concepts:
+          - slug: "swe-asymptotic-complexity"
+            name: "Asymptotic Big-O Analysis"
+            emoji: "⏱️"
+            short_definition: "Mathematical characterization of runtime execution time and auxiliary space scaling as input size n approaches infinity."
+            description: "Rigorous upper-bound, lower-bound (Omega), and tight-bound (Theta) formalisms describing how resource consumption scales with input size."
+            citation: "SWEBOK v4 Computing Foundations"
+            prerequisites: []
+          - slug: "swe-hash-tables"
+            name: "Hash Tables & Collision Resolution"
+            emoji: "🗄️"
+            short_definition: "Key-value associative data structure providing amortized O(1) average lookup, insertion, and deletion."
+            description: "Data structure utilizing hash functions to map arbitrary keys to array buckets, handling collisions via chaining or open addressing."
+            citation: "SWEBOK v4 Computing Foundations"
+            prerequisites: ["swe-asymptotic-complexity"]
+        lessons:
+          - title: "Mastering Algorithmic Complexity & Hash Tables"
+            description: "Evaluate amortized runtime bounds and collision strategies in associative storage."
+            emoji: "⏱️"
+            tags: ["algorithms", "data-structures", "complexity", "software-engineering"]
+            citation: "SWEBOK v4 Chapter 1"
+            terms:
+              - term: "Big-O Notation"
+                definition: "Mathematical notation describing the limiting behavior of a function when the argument tends towards a particular value or infinity."
+                example: "Binary search executes in O(log n) time."
+                emoji: "📈"
+              - term: "Amortized Analysis"
+                definition: "Evaluating the average running time per operation over a worst-case sequence of operations."
+                example: "Dynamic array appending has O(1) amortized time despite occasional O(n) doubling resizes."
+                emoji: "⚖️"
+              - term: "Hash Collision"
+                definition: "Occasion where two distinct keys produce the exact same array index from the hashing function."
+                example: "Separate chaining resolving collisions using a linked list or red-black tree at the bucket."
+                emoji: "💥"
+            concepts:
+              - concept_text: "Understanding space-time trade-offs is essential for engineering scalable software. A hash table trades additional memory consumption to transform linear O(n) search into amortized constant O(1) retrieval."
+                example_text: "Replacing an iterative array filter with a HashSet lookup reduces query latency from seconds to microseconds on 100k items."
+                key_points:
+                  - "Big-O describes upper bound scalability"
+                  - "Hash tables provide average O(1) search and insert"
+                  - "Separate chaining and open addressing resolve key collisions"
+                  - "Worst-case hash collisions can degrade performance to O(n)"
+            questions:
+              - question_text: "A software service repeatedly looks up user IDs in an unordered dataset of 5,000,000 elements. If stored in a standard balanced binary search tree, what is the theoretical worst-case search complexity, and how would a properly sized hash table compare on average?"
+                options:
+                  - "BST is O(1); Hash table is O(log n)"
+                  - "BST is O(log n); Hash table is O(1) amortized"
+                  - "BST is O(n); Hash table is O(n^2)"
+                  - "Both data structures provide identical O(1) access"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "A balanced BST requires O(log n) comparisons to navigate the tree, while a hash table maps the key directly to a memory bucket in average O(1) time."
+                concept_slugs: ["swe-asymptotic-complexity", "swe-hash-tables"]
+                citation: "SWEBOK v4 Algorithmic Evaluation Guide"
+
+  # --------------------------------------------------------------------------
+  # Domain 2: System Design & Distributed Architecture
+  # --------------------------------------------------------------------------
+  - code: "SWE-2"
+    title: "System Design, Microservices & Distributed Architecture"
+    description: "Scalability paradigms, microservices decomposition, CAP theorem, caching strategies, and event-driven patterns."
+    weight: 0.25
+    sort_order: 2
+    importance: "core"
+    citation: "SWEBOK v4 Knowledge Area: Software Architecture & Design"
+    objectives:
+      - code: "SWE-2.1"
+        title: "Design resilient distributed systems using the CAP theorem"
+        description: "Consistency, Availability, Partition tolerance trade-offs, and eventual consistency models."
+        sort_order: 1
+        importance: "core"
+        citation: "SWEBOK v4 Section 2.3: Distributed Systems Architecture"
+        concepts:
+          - slug: "swe-cap-theorem"
+            name: "CAP Theorem & PACELC"
+            emoji: "🌐"
+            short_definition: "Fundamental theorem proving a distributed data store can guarantee at most two of Consistency, Availability, and Partition Tolerance."
+            description: "Formulation by Eric Brewer proving that across an asynchronous network subject to partition faults, a system must choose between CP and AP."
+            citation: "SWEBOK v4 Distributed Architecture"
+            prerequisites: []
+          - slug: "swe-distributed-caching"
+            name: "Distributed Caching Patterns"
+            emoji: "⚡"
+            short_definition: "Strategies including Cache-Aside, Write-Through, Write-Behind, and eviction algorithms (LRU/LFU)."
+            description: "High-performance memory caching layers (e.g. Redis, Memcached) shielding persistent relational storage from read exhaustion."
+            citation: "SWEBOK v4 Software Design"
+            prerequisites: ["swe-cap-theorem"]
+        lessons:
+          - title: "Distributed Resiliency: CAP Theorem & Caching"
+            description: "Navigate network partition trade-offs and implement resilient cache-aside topologies."
+            emoji: "🌐"
+            tags: ["system-design", "distributed-systems", "architecture", "caching"]
+            citation: "SWEBOK v4 Chapter 2"
+            terms:
+              - term: "Partition Tolerance"
+                definition: "The capability of a distributed cluster to continue operating despite arbitrary dropped or delayed network messages."
+                example: "A network fiber cut separating US-East and EU-West regions."
+                emoji: "✂️"
+              - term: "Cache-Aside (Lazy Loading)"
+                definition: "Pattern where the application service directly queries the cache first, and upon a miss, reads from the database and populates the cache."
+                example: "Checking Redis for a user profile; on miss, querying Postgres and storing the serialized record with a TTL."
+                emoji: "💾"
+            concepts:
+              - concept_text: "In distributed architecture, network partitions cannot be prevented (hardware cables fail, routers crash). Therefore, when a partition occurs, an architect must explicitly choose whether to return an error to preserve strict consistency (CP) or serve stale/divergent data to maintain availability (AP)."
+                example_text: "ATM cash withdrawals prioritize Consistency (CP) to avoid double-spending; social media feed likes prioritize Availability (AP)."
+                key_points:
+                  - "Partitions are inevitable in real-world distributed networks"
+                  - "CP systems reject writes or error when nodes cannot agree"
+                  - "AP systems remain operational but allow eventual consistency"
+                  - "Cache-aside protects primary databases from thundering herds"
+            questions:
+              - question_text: "A globally distributed messaging application experiences a network partition between data centers. The product team requires that all users must still be able to submit posts without errors, even if users on different continents see divergent message feeds temporarily. Which system characteristic is being prioritized?"
+                options:
+                  - "Strict Linearizable Consistency (CP)"
+                  - "High Availability under Partition Tolerance (AP)"
+                  - "Strong Transactional Isolation (ACID)"
+                  - "Zero-Latency Synchronous Replication"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Allowing users to write without rejection during a network split prioritizes Availability over immediate Consistency (an AP architecture), relying on eventual consistency once the partition heals."
+                concept_slugs: ["swe-cap-theorem"]
+                citation: "SWEBOK v4 Architectural Trade-offs Review"
+
+  # --------------------------------------------------------------------------
+  # Domain 3: Web Protocols & API Engineering
+  # --------------------------------------------------------------------------
+  - code: "SWE-3"
+    title: "Web Protocols, API Design & Authentication"
+    description: "HTTP/REST principles, GraphQL, stateless session governance, OAuth2/OIDC, and API security."
+    weight: 0.20
+    sort_order: 3
+    importance: "core"
+    citation: "SWEBOK v4 Knowledge Area: Software Construction & Interoperability"
+    objectives:
+      - code: "SWE-3.1"
+        title: "Design RESTful APIs and secure authentication flows"
+        description: "Idempotency, HTTP verbs, status codes, JWT claims, and OAuth2 authorization code grant."
+        sort_order: 1
+        importance: "core"
+        citation: "SWEBOK v4 Section 3.1: Interface Design"
+        concepts:
+          - slug: "swe-rest-idempotency"
+            name: "RESTful Idempotency & Semantics"
+            emoji: "🔌"
+            short_definition: "Contract where identical repeated requests produce the same side-effect state on the server."
+            description: "Adherence to RFC 9110 specifications: GET, PUT, and DELETE must be idempotent; POST is non-idempotent."
+            citation: "SWEBOK v4 API Construction"
+            prerequisites: []
+        lessons:
+          - title: "API Architecture: REST Semantics & Token Security"
+            description: "Construct scalable, idempotent HTTP endpoints and authenticate with signed JWTs."
+            emoji: "🔌"
+            tags: ["api", "rest", "http", "jwt"]
+            citation: "SWEBOK v4 Section 3.1"
+            terms:
+              - term: "Idempotency"
+                definition: "Property of an HTTP method where making multiple identical requests has the same intended effect as making a single request."
+                example: "PUT /users/123 with body {'status': 'active'} produces the exact same state whether executed once or ten times."
+                emoji: "🔁"
+              - term: "JSON Web Token (JWT)"
+                definition: "Compact, URL-safe means of representing claims to be transferred between two parties, cryptographically signed by an issuer."
+                example: "A header.payload.signature token bearing sub, exp, and roles claims verified with RSA public key."
+                emoji: "🎫"
+            concepts:
+              - concept_text: "Idempotency is the cornerstone of robust network clients. Because mobile and distributed clients experience dropped connection timeouts, only idempotent methods (or operations using explicit idempotency-keys) can be retried safely without duplicating financial transactions or records."
+                example_text: "Stripe and financial APIs enforce Idempotency-Key HTTP headers for POST payment charges."
+                key_points:
+                  - "GET, PUT, DELETE, and HEAD are idempotent by specification"
+                  - "POST is non-idempotent and creates new child resources"
+                  - "JWTs enable stateless authorization across microservices"
+            questions:
+              - question_text: "A payment client sends a charge request to a gateway, but the TCP connection times out before the client receives the response. If the gateway endpoint is a standard non-idempotent POST without deduplication headers, what danger occurs if the client naively retries?"
+                options:
+                  - "The client will encounter an SSL certificate handshake error"
+                  - "The customer may be double-charged if the initial request completed before the timeout"
+                  - "The database will automatically convert the request to a GET"
+                  - "The server will throw a 404 Not Found error"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Because non-idempotent POST operations execute state-mutating actions anew with each delivery, retrying after a dropped network response can execute the charge a second time."
+                concept_slugs: ["swe-rest-idempotency"]
+                citation: "SWEBOK v4 Interoperability & Reliability Guidelines"
+
+  # --------------------------------------------------------------------------
+  # Domain 4: Software Quality & Automated Testing
+  # --------------------------------------------------------------------------
+  - code: "SWE-4"
+    title: "Software Quality, Testing & Verification"
+    description: "Unit testing, integration testing, mocking, test-driven development (TDD), and mutation testing."
+    weight: 0.15
+    sort_order: 4
+    importance: "core"
+    citation: "SWEBOK v4 Knowledge Area: Software Testing"
+    objectives:
+      - code: "SWE-4.1"
+        title: "Implement the Test Pyramid and test doubles"
+        description: "Unit vs integration vs E2E, mock/stub/fake semantics, and regression safety."
+        sort_order: 1
+        importance: "core"
+        citation: "SWEBOK v4 Section 4.2: Test Levels & Automation"
+        concepts:
+          - slug: "swe-test-pyramid"
+            name: "The Test Pyramid Strategy"
+            emoji: "🔺"
+            short_definition: "Testing strategy emphasizing a broad foundation of fast unit tests, fewer integration tests, and minimal end-to-end tests."
+            description: "Testing methodology coined by Mike Cohn balancing execution speed, diagnostic precision, and infrastructure maintenance costs."
+            citation: "SWEBOK v4 Testing Foundations"
+            prerequisites: []
+        lessons:
+          - title: "Verification Engineering: Test Pyramid & Test Doubles"
+            description: "Structure automated test suites and select appropriate mock, stub, and fake isolation doubles."
+            emoji: "🔺"
+            tags: ["testing", "quality", "tdd", "software-engineering"]
+            citation: "SWEBOK v4 Section 4.2"
+            terms:
+              - term: "Test Pyramid"
+                definition: "Architectural guideline recommending high numbers of isolated unit tests, moderate integration tests, and few high-level end-to-end UI tests."
+                example: "70% unit tests, 20% integration tests, 10% E2E tests in a continuous delivery pipeline."
+                emoji: "📐"
+              - term: "Mock vs Stub"
+                definition: "A stub provides predetermined canned answers to method calls; a mock verifies that specific interactions and parameters were invoked."
+                example: "Verifying that a notificationService.sendEmail() was invoked exactly once with recipient address."
+                emoji: "🎭"
+            concepts:
+              - concept_text: "High-level end-to-end tests are slow, non-deterministic (flaky), and expensive to maintain. Grounding test coverage in isolated unit tests and contract integration tests provides rapid sub-minute CI feedback."
+                example_text: "Unit tests run in milliseconds in-memory; end-to-end browser drivers require seconds per scenario."
+                key_points:
+                  - "Unit tests verify business logic in isolation"
+                  - "Integration tests verify database and external API contracts"
+                  - "Fakes implement lightweight in-memory logic; mocks verify call behavior"
+            questions:
+              - question_text: "A development team complains that their continuous integration build takes 90 minutes because all 4,000 test cases spin up a full headless browser and interact with a live cloud database. According to Test Pyramid best practices, what transformation should the team make?"
+                options:
+                  - "Disable all automated tests and rely on manual QA testers"
+                  - "Push business logic testing down into rapid in-memory unit tests using mocks and stubs, reserving E2E tests for critical user journeys"
+                  - "Convert all tests into manual shell scripts run weekly"
+                  - "Run browser tests on developer laptops instead of CI"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The Test Pyramid dictates that the vast majority of tests should be fast, isolated unit tests. End-to-end tests should be reserved for a concise set of critical smoke tests."
+                concept_slugs: ["swe-test-pyramid"]
+                citation: "SWEBOK v4 Automated Test Management"
+
+  # --------------------------------------------------------------------------
+  # Domain 5: CI/CD, DevOps & Operational Telemetry
+  # --------------------------------------------------------------------------
+  - code: "SWE-5"
+    title: "CI/CD, Containerization & Telemetry"
+    description: "Automated pipelines, Docker containerization, Kubernetes orchestration, structured logging, and observability."
+    weight: 0.15
+    sort_order: 5
+    importance: "core"
+    citation: "SWEBOK v4 Knowledge Area: Software Engineering Management & DevOps"
+    objectives:
+      - code: "SWE-5.1"
+        title: "Deploy immutable containers and instrument observability"
+        description: "Container virtualization, blue-green / canary deployments, and the three pillars of observability (logs, metrics, traces)."
+        sort_order: 1
+        importance: "core"
+        citation: "SWEBOK v4 Section 5.3: Continuous Delivery & Observability"
+        concepts:
+          - slug: "swe-container-immutability"
+            name: "Containerization & Immutable Infrastructure"
+            emoji: "📦"
+            short_definition: "Packaging application code and runtime dependencies into isolated, reproducible image artifacts."
+            description: "Deployment philosophy where servers and container images are never modified in-place; all changes require building and deploying a new versioned image."
+            citation: "SWEBOK v4 DevOps Architecture"
+            prerequisites: []
+        lessons:
+          - title: "Modern Delivery: Containers & Observability"
+            description: "Build OCI container images and monitor distributed microservices with traces and metrics."
+            emoji: "📦"
+            tags: ["devops", "containers", "observability", "ci-cd"]
+            citation: "SWEBOK v4 Section 5.3"
+            terms:
+              - term: "Immutable Infrastructure"
+                definition: "Infrastructure paradigm where components are replaced rather than modified, ensuring zero configuration drift."
+                example: "Deploying a new Docker image tag rather than SSHing into a live production VM to edit config files."
+                emoji: "🔒"
+              - term: "Distributed Tracing"
+                definition: "Method used to profile and monitor applications across microservices by propagating a unique trace ID through network calls."
+                example: "OpenTelemetry tracing an HTTP request through API gateway, auth service, database, and cache."
+                emoji: "🔍"
+            concepts:
+              - concept_text: "Modern engineering shifts from reactive debugging on production boxes to immutable container deployments and distributed telemetry. Configuration drift is eradicated when production hosts run deterministic container layers."
+                example_text: "Canary releases route 5% of traffic to a newly deployed container image while monitoring error rates before promoting to 100%."
+                key_points:
+                  - "Containers bundle code with OS dependencies for reproducibility"
+                  - "Three pillars of observability: Metrics (counters/gauges), Logs (events), Traces (request flow)"
+                  - "Canary and Blue-Green deployments enable zero-downtime rollouts"
+            questions:
+              - question_text: "An engineer discovers a critical bug in a production microservice. Following immutable infrastructure best practices, which action must the engineer perform?"
+                options:
+                  - "SSH directly into production containers and edit the Python source files in-place"
+                  - "Fix the bug in source control, trigger an automated CI build to produce a new container image tag, and roll out the new image via canary or rolling update"
+                  - "Reboot the physical server host without changing code"
+                  - "Change the database password to lock out users"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Immutable infrastructure strictly prohibits manual, in-place patching on live instances. All fixes must flow through version control, automated CI container builds, and deterministic orchestrator deployments."
+                concept_slugs: ["swe-container-immutability"]
+                citation: "SWEBOK v4 Operational Governance Standard"

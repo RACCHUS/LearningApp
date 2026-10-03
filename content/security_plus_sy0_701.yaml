@@ -1,0 +1,428 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Source Manifest
+# Target: CompTIA Security+ (SY0-701)
+# ============================================================================
+
+source_release:
+  publisher: "CompTIA"
+  title: "CompTIA Security+ Certification Exam Objectives"
+  version: "SY0-701"
+  source_url: "https://www.comptia.org/certifications/security"
+  retrieved_at: "2026-10-01T00:00:00Z"
+  license: "Authoritative Public Examination Blueprint (Educational Reference)"
+  sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  metadata:
+    total_domains: 5
+    exam_code: "SY0-701"
+    passing_score: 750
+    scale: "100-900"
+
+target:
+  slug: "cert-comptia-security-plus"
+  title: "CompTIA Security+ (SY0-701)"
+  version_code: "SY0-701"
+  version_title: "CompTIA Security+ (SY0-701) Official Blueprint Edition"
+  version_description: "Comprehensive curriculum aligned with CompTIA SY0-701 exam objectives across all 5 core security domains."
+
+domains:
+  # --------------------------------------------------------------------------
+  # Domain 1.0: General Security Concepts (12%)
+  # --------------------------------------------------------------------------
+  - code: "1.0"
+    title: "General Security Concepts"
+    description: "Foundational security principles, confidentiality, integrity, availability, authentication, and access control models."
+    weight: 0.12
+    sort_order: 1
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 1.0"
+    objectives:
+      - code: "1.1"
+        title: "Compare and contrast common security concepts"
+        description: "CIA triad, non-repudiation, AAA framework, zero trust architecture, and fundamental security controls."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 1.1"
+        concepts:
+          - slug: "sec-cia-triad"
+            name: "CIA Triad"
+            emoji: "🛡️"
+            short_definition: "Core model of information security comprising Confidentiality, Integrity, and Availability."
+            description: "The fundamental model guiding information security policies and controls to protect data assets."
+            citation: "CompTIA SY0-701 Objective 1.1"
+            prerequisites: []
+          - slug: "sec-aaa-framework"
+            name: "AAA Framework"
+            emoji: "🔑"
+            short_definition: "Authentication, Authorization, and Accounting architecture for identity governance."
+            description: "Security architecture framework for controlling access to computer resources, enforcing policies, and auditing usage."
+            citation: "CompTIA SY0-701 Objective 1.1"
+            prerequisites: ["sec-cia-triad"]
+          - slug: "sec-zero-trust"
+            name: "Zero Trust Architecture"
+            emoji: "🧱"
+            short_definition: "Security model requiring continuous verification of all identities and devices, never trusting implicitly."
+            description: "A strategic cybersecurity architecture based on the principle of 'never trust, always verify', enforcing least privilege dynamically."
+            citation: "CompTIA SY0-701 Objective 1.1"
+            prerequisites: ["sec-aaa-framework"]
+        lessons:
+          - title: "Foundations of the CIA Triad & AAA Framework"
+            description: "Master the three core pillars of data protection and the AAA access control sequence."
+            emoji: "🛡️"
+            tags: ["security", "foundations", "comptia", "sy0-701"]
+            citation: "CompTIA SY0-701 Section 1.1"
+            terms:
+              - term: "Confidentiality"
+                definition: "Ensuring that information is accessible only to those authorized to have access."
+                example: "Encrypting customer credit card numbers in transit and at rest."
+                emoji: "🔒"
+              - term: "Integrity"
+                definition: "Maintaining and assuring the accuracy and completeness of data over its entire lifecycle."
+                example: "Using SHA-256 cryptographic hashes to verify that software binaries have not been tampered with."
+                emoji: "✅"
+              - term: "Availability"
+                definition: "Guaranteeing timely and reliable access to information and resources for authorized users."
+                example: "Deploying multi-region redundant servers with automated failover."
+                emoji: "⚡"
+              - term: "Non-Repudiation"
+                definition: "Assurance that the author of a statement or signature cannot successfully dispute its authorship."
+                example: "Digital signatures using asymmetric private keys logged with trusted timestamps."
+                emoji: "✍️"
+            concepts:
+              - concept_text: "Security architecture begins with balance across Confidentiality, Integrity, and Availability. Over-emphasizing confidentiality can degrade availability, while neglecting integrity invalidates stored state."
+                example_text: "A database encrypted so strictly that legitimate services cannot query it fails on availability."
+                key_points:
+                  - "Confidentiality prevents unauthorized disclosure"
+                  - "Integrity prevents unauthorized alteration"
+                  - "Availability guarantees authorized access"
+                  - "Non-repudiation binds actions to verified identities"
+            questions:
+              - question_text: "A financial organization detects that transaction logs were silently altered after hours. Which pillar of the CIA triad was directly violated?"
+                options:
+                  - "Confidentiality"
+                  - "Integrity"
+                  - "Availability"
+                  - "Accounting"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Integrity ensures that data remains accurate and unaltered by unauthorized parties. Silently changing logs directly breaches integrity."
+                concept_slugs: ["sec-cia-triad"]
+                citation: "SY0-701 Blueprint Domain 1.1 Practice Assessment"
+              - question_text: "An administrator logs into a network switch with credentials, is granted access only to VLAN configuration commands, and has all session actions recorded. What framework does this sequence exemplify?"
+                options:
+                  - "Defense in Depth"
+                  - "AAA Framework"
+                  - "Zero Trust Microsegmentation"
+                  - "Separation of Duties"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The AAA framework encompasses Authentication (verifying credentials), Authorization (granting VLAN permissions), and Accounting (recording all actions)."
+                concept_slugs: ["sec-aaa-framework"]
+                citation: "SY0-701 Blueprint Domain 1.1 Practice Assessment"
+
+      - code: "1.2"
+        title: "Compare and contrast cryptographic solutions"
+        description: "Symmetric vs asymmetric algorithms, hashing, digital signatures, certificates, and PKI."
+        sort_order: 2
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 1.2"
+        concepts:
+          - slug: "sec-symmetric-asymmetric"
+            name: "Symmetric vs. Asymmetric Cryptography"
+            emoji: "🔐"
+            short_definition: "Comparison between shared single-key algorithms and public/private keypair schemes."
+            description: "Symmetric algorithms (AES) provide fast bulk encryption with one key; asymmetric algorithms (RSA, ECC) provide key exchange and digital signatures."
+            citation: "CompTIA SY0-701 Objective 1.2"
+            prerequisites: ["sec-cia-triad"]
+          - slug: "sec-pki-certificates"
+            name: "Public Key Infrastructure (PKI)"
+            emoji: "📜"
+            short_definition: "Framework of Certificate Authorities, digital certificates, and trust chains."
+            description: "A comprehensive system comprising policies, hardware, and procedures to create, manage, distribute, and revoke digital X.509 certificates."
+            citation: "CompTIA SY0-701 Objective 1.2"
+            prerequisites: ["sec-symmetric-asymmetric"]
+        lessons:
+          - title: "Cryptography Essentials: Ciphers, Hashes & PKI"
+            description: "Explore encryption mechanisms, hash functions, and digital certificate validation."
+            emoji: "🔐"
+            tags: ["security", "cryptography", "pki", "sy0-701"]
+            citation: "CompTIA SY0-701 Section 1.2"
+            terms:
+              - term: "Symmetric Encryption"
+                definition: "Encryption methodology where the exact same key is used to both encrypt and decrypt data."
+                example: "AES-256 GCM used for full disk encryption."
+                emoji: "🗝️"
+              - term: "Asymmetric Encryption"
+                definition: "Encryption utilizing mathematically related public and private key pairs."
+                example: "RSA 4096-bit key exchange during TLS handshake."
+                emoji: "🔑"
+              - term: "Cryptographic Hash"
+                definition: "One-way mathematical function transforming arbitrary data into a fixed-length digest."
+                example: "SHA-256 producing a 256-bit hash value."
+                emoji: "#️⃣"
+            concepts:
+              - concept_text: "Modern secure transport protocols use hybrid cryptography: asymmetric cryptography performs authentication and key exchange, establishing an ephemeral symmetric key for rapid bulk data encryption."
+                example_text: "HTTPS/TLS uses ECDHE for asymmetric key agreement, then encrypts HTTP payload with AES-128 or AES-256."
+                key_points:
+                  - "Symmetric ciphers are computationally fast for bulk data"
+                  - "Asymmetric ciphers solve key distribution and non-repudiation"
+                  - "Hashes provide one-way data integrity verification"
+                  - "PKI binds identities to public keys via trusted Certificate Authorities"
+            questions:
+              - question_text: "Why do modern communication protocols like TLS employ a hybrid encryption approach rather than relying exclusively on asymmetric cryptography?"
+                options:
+                  - "Asymmetric encryption cannot support digital certificates"
+                  - "Asymmetric algorithms require excessive computational overhead for high-volume data streams"
+                  - "Symmetric ciphers are immune to brute-force attacks"
+                  - "Asymmetric key pairs must be changed every 60 seconds"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Asymmetric mathematics involves heavy modular exponentiation or elliptic curve multiplication, making bulk data throughput thousands of times slower than hardware-accelerated symmetric ciphers like AES."
+                concept_slugs: ["sec-symmetric-asymmetric"]
+                citation: "SY0-701 Blueprint Domain 1.2 Practice Assessment"
+
+  # --------------------------------------------------------------------------
+  # Domain 2.0: Threats, Vulnerabilities, and Mitigations (22%)
+  # --------------------------------------------------------------------------
+  - code: "2.0"
+    title: "Threats, Vulnerabilities, and Mitigations"
+    description: "Common threat actors, vectors, social engineering, malware types, vulnerabilities, and hardening mitigations."
+    weight: 0.22
+    sort_order: 2
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 2.0"
+    objectives:
+      - code: "2.1"
+        title: "Compare and contrast common threat actors and motivations"
+        description: "Nation-states, cybercriminals, insider threats, hacktivists, and their resources and sophistication."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 2.1"
+        concepts:
+          - slug: "sec-threat-actors"
+            name: "Threat Actor Profiles"
+            emoji: "🎭"
+            short_definition: "Classification of adversary types by funding, sophistication, intent, and origin."
+            description: "Categorization of malicious entities including Advanced Persistent Threats (APTs), organized cybercrime, and insiders."
+            citation: "CompTIA SY0-701 Objective 2.1"
+            prerequisites: []
+        lessons:
+          - title: "Adversary Taxonomy: From Script Kiddies to APTs"
+            description: "Understand adversary motivations, capabilities, and threat vector analysis."
+            emoji: "🎭"
+            tags: ["threats", "adversaries", "comptia"]
+            citation: "CompTIA SY0-701 Section 2.1"
+            terms:
+              - term: "Advanced Persistent Threat (APT)"
+                definition: "Highly sophisticated, well-funded adversary that establishes long-term undetected network access."
+                example: "State-sponsored cyber espionage campaigns infiltrating government critical infrastructure."
+                emoji: "🕵️"
+              - term: "Insider Threat"
+                definition: "Risk posed to an organization by individuals with legitimate authenticated access."
+                example: "A departing engineer copying proprietary code repositories to personal media."
+                emoji: "⚠️"
+            concepts:
+              - concept_text: "Threat modeling evaluates adversary capabilities against system value. Nation-state APTs focus on prolonged intelligence gathering, while organized cybercrime prioritizes immediate monetary extortion via ransomware."
+                example_text: "Ransomware groups target vulnerable hospitals for extortion payouts; espionage groups target defense contractors silently."
+                key_points:
+                  - "Nation-states possess highest funding and long time horizons"
+                  - "Cybercriminals are financially motivated"
+                  - "Insiders bypass perimeter defenses using legitimate credentials"
+            questions:
+              - question_text: "An organization observes stealthy, highly customized malware maintaining covert persistence across multiple subnetworks for over eight months without extortion demands. What actor type is most likely responsible?"
+                options:
+                  - "Hacktivist group"
+                  - "Advanced Persistent Threat (APT)"
+                  - "Script kiddie"
+                  - "Disgruntled customer"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Long-term stealth, custom tooling, persistence, and non-monetary intelligence goals are hallmark indicators of an Advanced Persistent Threat (APT)."
+                concept_slugs: ["sec-threat-actors"]
+                citation: "SY0-701 Blueprint Domain 2.1 Practice Assessment"
+
+  # --------------------------------------------------------------------------
+  # Domain 3.0: Security Architecture (18%)
+  # --------------------------------------------------------------------------
+  - code: "3.0"
+    title: "Security Architecture"
+    description: "Network architectures, zero trust principles, cloud security models, data protection, and resilience."
+    weight: 0.18
+    sort_order: 3
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 3.0"
+    objectives:
+      - code: "3.1"
+        title: "Compare and contrast security considerations in enterprise architecture"
+        description: "Cloud models (IaaS/PaaS/SaaS), shared responsibility, hybrid infrastructure, and secure network zoning."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 3.1"
+        concepts:
+          - slug: "sec-cloud-shared-responsibility"
+            name: "Cloud Shared Responsibility Model"
+            emoji: "☁️"
+            short_definition: "Division of security ownership between cloud provider and customer across deployment models."
+            description: "Framework defining security responsibilities: provider manages security OF the cloud; customer manages security IN the cloud."
+            citation: "CompTIA SY0-701 Objective 3.1"
+            prerequisites: ["sec-zero-trust"]
+        lessons:
+          - title: "Enterprise & Cloud Security Architecture"
+            description: "Analyze the cloud shared responsibility matrix and perimeter segmentation."
+            emoji: "☁️"
+            tags: ["architecture", "cloud", "comptia"]
+            citation: "CompTIA SY0-701 Section 3.1"
+            terms:
+              - term: "IaaS (Infrastructure as a Service)"
+                definition: "Cloud model where provider provisions physical hardware/virtualization; customer manages OS, runtime, and data."
+                example: "Amazon EC2 or Google Compute Engine."
+                emoji: "🖥️"
+              - term: "SaaS (Software as a Service)"
+                definition: "Cloud model where provider delivers turnkey applications; customer manages only user identities and data access."
+                example: "Microsoft 365 or Google Workspace."
+                emoji: "📱"
+            concepts:
+              - concept_text: "In the cloud shared responsibility model, the customer always retains ultimate accountability for data classification, identity management, and access authorization regardless of whether IaaS, PaaS, or SaaS is chosen."
+                example_text: "Even in SaaS, if an administrator configures public sharing on a sensitive bucket, the breach is customer responsibility."
+                key_points:
+                  - "Provider secures physical infrastructure and hypervisor"
+                  - "Customer configures identity, access rules, and data encryption"
+                  - "IaaS shifts OS patching to customer; SaaS abstracts OS completely"
+            questions:
+              - question_text: "Under the Cloud Shared Responsibility Model for an IaaS deployment, which layer is exclusively the customer's responsibility to patch and secure?"
+                options:
+                  - "Physical datacenter entry gates"
+                  - "Virtual machine operating system"
+                  - "Hypervisor firmware"
+                  - "Hardware cooling infrastructure"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "In IaaS, the cloud provider manages physical hardware and the hypervisor, while the tenant/customer is fully responsible for installing, configuring, and patching the guest operating system."
+                concept_slugs: ["sec-cloud-shared-responsibility"]
+                citation: "SY0-701 Blueprint Domain 3.1 Practice Assessment"
+
+  # --------------------------------------------------------------------------
+  # Domain 4.0: Security Operations (28%)
+  # --------------------------------------------------------------------------
+  - code: "4.0"
+    title: "Security Operations"
+    description: "Monitoring, incident response, digital forensics, vulnerability scanning, and cryptographic management."
+    weight: 0.28
+    sort_order: 4
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 4.0"
+    objectives:
+      - code: "4.1"
+        title: "Explain the importance of incident response and disaster recovery"
+        description: "Incident lifecycle (preparation, detection, containment, eradication, recovery, lessons learned) and BCP/DR."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 4.1"
+        concepts:
+          - slug: "sec-incident-response-lifecycle"
+            name: "Incident Response Lifecycle"
+            emoji: "🚨"
+            short_definition: "Structured methodology for detecting, containing, eradicating, and recovering from cyber incidents."
+            description: "Standardized IR lifecycle (NIST SP 800-61 / ISO 27035) providing systematic procedures from preparation to post-incident review."
+            citation: "CompTIA SY0-701 Objective 4.1"
+            prerequisites: ["sec-cia-triad"]
+        lessons:
+          - title: "Incident Handling & Containment Strategies"
+            description: "Step through the 6 phases of incident response and digital forensics triage."
+            emoji: "🚨"
+            tags: ["operations", "incident-response", "comptia"]
+            citation: "CompTIA SY0-701 Section 4.1"
+            terms:
+              - term: "Containment"
+                definition: "Isolating infected systems to prevent lateral movement and further damage during an active attack."
+                example: "Disconnecting a compromised workstation from the internal VLAN to stop ransomware propagation."
+                emoji: "🚧"
+              - term: "Chain of Custody"
+                definition: "Chronological documentation showing the custody, control, transfer, and disposition of physical/electronic evidence."
+                example: "Signing a forensic custody log before imaging a suspect hard drive."
+                emoji: "⛓️"
+            concepts:
+              - concept_text: "Containment must occur before eradication. Attempting to delete malware while the adversary maintains active command-and-control simply tips off the attacker, prompting immediate data destruction or secondary payload detonation."
+                example_text: "Network isolation precedes malware removal; never restart or scrub a live compromised host before capturing memory."
+                key_points:
+                  - "Preparation builds playbooks before incidents strike"
+                  - "Detection & Analysis verifies indicators of compromise (IOCs)"
+                  - "Containment isolates threats to minimize business impact"
+                  - "Eradication removes malware artifacts and restores clean backups"
+                  - "Lessons Learned prevents recurrence through architecture changes"
+            questions:
+              - question_text: "A security analyst discovers an active command-and-control connection on a financial server. What is the immediate next step in the incident response process?"
+                options:
+                  - "Format the storage drives immediately"
+                  - "Isolate the server from the network (Containment)"
+                  - "Issue a press release to shareholders"
+                  - "Delete the attacker's executable file"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The analyst must contain the breach by isolating the host from the network, preventing lateral movement or data exfiltration before proceeding to evidence preservation and eradication."
+                concept_slugs: ["sec-incident-response-lifecycle"]
+                citation: "SY0-701 Blueprint Domain 4.1 Practice Assessment"
+
+  # --------------------------------------------------------------------------
+  # Domain 5.0: Security Program Management and Oversight (20%)
+  # --------------------------------------------------------------------------
+  - code: "5.0"
+    title: "Security Program Management and Oversight"
+    description: "Governance, risk management strategies, regulatory compliance, audits, and third-party assessments."
+    weight: 0.20
+    sort_order: 5
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 5.0"
+    objectives:
+      - code: "5.1"
+        title: "Summarize risk management processes and concepts"
+        description: "Risk assessment methodologies, qualitative vs quantitative analysis, risk tolerance, and mitigation strategies."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 5.1"
+        concepts:
+          - slug: "sec-risk-assessment-calculation"
+            name: "Quantitative Risk Analysis"
+            emoji: "📊"
+            short_definition: "Numerical calculation of financial risk using SLE, ARO, and ALE formulas."
+            description: "Objective financial evaluation of asset risk where Annualized Loss Expectancy (ALE) = Single Loss Expectancy (SLE) x Annualized Rate of Occurrence (ARO)."
+            citation: "CompTIA SY0-701 Objective 5.1"
+            prerequisites: []
+        lessons:
+          - title: "Risk Governance & Quantitative Analysis"
+            description: "Calculate expected annual losses and choose appropriate risk response strategies."
+            emoji: "📊"
+            tags: ["governance", "risk-management", "comptia"]
+            citation: "CompTIA SY0-701 Section 5.1"
+            terms:
+              - term: "Single Loss Expectancy (SLE)"
+                definition: "The monetary loss expected each time a specific threat exploits a vulnerability on an asset."
+                example: "An asset worth $100,000 with an Exposure Factor (EF) of 0.25 has an SLE of $25,000."
+                emoji: "💵"
+              - term: "Annualized Rate of Occurrence (ARO)"
+                definition: "The estimated frequency that a given threat event will occur within a one-year period."
+                example: "A power surge occurring on average once every two years has an ARO of 0.5."
+                emoji: "📅"
+              - term: "Annualized Loss Expectancy (ALE)"
+                definition: "The expected annual monetary loss resulting from a specific threat, calculated as SLE * ARO."
+                example: "SLE of $25,000 multiplied by ARO of 0.5 yields an ALE of $12,500."
+                emoji: "📉"
+            concepts:
+              - concept_text: "Organizations choose among four primary risk responses: Risk Mitigation (implementing controls), Risk Avoidance (cancelling the activity), Risk Transference (buying insurance), or Risk Acceptance (tolerating the loss within risk appetite)."
+                example_text: "Purchasing cybersecurity insurance transfers monetary risk; installing a web application firewall mitigates technical risk."
+                key_points:
+                  - "ALE = SLE x ARO calculates objective annual exposure"
+                  - "Security controls should cost less than the annual loss prevented"
+                  - "Transference shifts financial liability (e.g. cyber insurance)"
+                  - "Residual risk remains after all controls are implemented"
+            questions:
+              - question_text: "A web server asset has a Single Loss Expectancy (SLE) of $40,000 from DDoS attacks. Statistical logs indicate the threat occurs twice every year (ARO = 2.0). A DDoS scrubbing countermeasure costs $30,000 annually. Is the countermeasure economically justified?"
+                options:
+                  - "No, because the countermeasure cost exceeds the SLE"
+                  - "Yes, because the ALE is $80,000 and the control costs $30,000, saving $50,000 annually"
+                  - "No, risk should always be avoided by disconnecting servers"
+                  - "Yes, countermeasures should always be purchased regardless of cost"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The Annualized Loss Expectancy (ALE) is $40,000 x 2.0 = $80,000. Spending $30,000 annually to prevent $80,000 in expected annual loss produces a net annual savings of $50,000, which is strongly economically justified."
+                concept_slugs: ["sec-risk-assessment-calculation"]
+                citation: "SY0-701 Blueprint Domain 5.1 Practice Assessment"

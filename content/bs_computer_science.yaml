@@ -1,0 +1,364 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Source Manifest
+# Target: B.S. in Computer Science (Academic Program)
+# ============================================================================
+
+source_release:
+  publisher: "ACM / IEEE Computer Society"
+  title: "Computer Science Curricula 2023 (CS2023): Curriculum Guidelines for Undergraduate Programs in Computer Science"
+  version: "CS2023-Final"
+  source_url: "https://csed.acm.org/cs2023-report"
+  retrieved_at: "2026-10-01T00:00:00Z"
+  license: "Authoritative Undergraduate Curriculum Standard"
+  sha256: "5d41402abc4b2a76b9719d911017c592b21b79fbf576c9ef56e5d0fc0dc95116"
+  metadata:
+    cip_code: "11.0701"
+    cip_title: "Computer Science"
+    degree_level: "Baccalaureate"
+
+target:
+  slug: "program-bs-computer-science"
+  title: "B.S. in Computer Science"
+  version_code: "CS2023"
+  version_title: "B.S. Computer Science Core Academic Curriculum (CS2023)"
+  version_description: "Rigorous 5-tier foundational computer science program spanning discrete mathematics, systems architecture, operating systems, compiler theory, and algorithms."
+
+domains:
+  # --------------------------------------------------------------------------
+  # Unit 1: Mathematical Foundations & Discrete Structures
+  # --------------------------------------------------------------------------
+  - code: "CS-101"
+    title: "Discrete Structures & Algorithmic Logic"
+    description: "Propositional logic, predicate calculus, set theory, combinatorics, proof by mathematical induction, and graph theory."
+    weight: 0.20
+    sort_order: 1
+    importance: "core"
+    citation: "CS2023 Knowledge Area: Mathematical and Foundations of Computing (FND-DS)"
+    objectives:
+      - code: "CS-101.1"
+        title: "Construct formal mathematical proofs and apply induction"
+        description: "Direct proof, proof by contradiction, and weak/strong mathematical induction over recursively defined structures."
+        sort_order: 1
+        importance: "core"
+        citation: "CS2023 Section FND-DS.2: Proof Techniques"
+        concepts:
+          - slug: "cs-mathematical-induction"
+            name: "Mathematical Induction"
+            emoji: "🪜"
+            short_definition: "Fundamental mathematical proof technique verifying that a statement holds for all natural numbers."
+            description: "Proof technique establishing a base case P(0) or P(1) and proving the inductive step that P(k) implies P(k+1)."
+            citation: "CS2023 Foundations"
+            prerequisites: []
+          - slug: "cs-graph-theory-fundamentals"
+            name: "Graph Theory Foundations"
+            emoji: "🕸️"
+            short_definition: "Mathematical study of graphs consisting of vertices and edges representing pairwise relationships."
+            description: "Formal representations of directed and undirected graphs, trees, bipartite graphs, Eulerian/Hamiltonian paths, and topological ordering."
+            citation: "CS2023 Foundations"
+            prerequisites: ["cs-mathematical-induction"]
+        lessons:
+          - title: "Rigorous Proofs & Graph Theory Foundations"
+            description: "Develop inductive proofs for recursive algorithms and model structural networks with graph theory."
+            emoji: "🪜"
+            tags: ["math", "discrete-structures", "computer-science", "academic"]
+            citation: "CS2023 Section FND-DS"
+            terms:
+              - term: "Base Case"
+                definition: "The initial condition in mathematical induction or recursion for which the property is verified directly without hypotheses."
+                example: "Proving P(1) evaluates to 1 = 1(1+1)/2 = 1."
+                emoji: "🎯"
+              - term: "Inductive Hypothesis"
+                definition: "The assumption that the statement P(k) is true for an arbitrary positive integer k, used to deduce P(k+1)."
+                example: "Assuming 1 + 2 + ... + k = k(k+1)/2."
+                emoji: "💡"
+              - term: "Directed Acyclic Graph (DAG)"
+                definition: "A finite directed graph containing no directed closed loops or cycles."
+                example: "A compilation dependency tree or task scheduling topology."
+                emoji: "➡️"
+            concepts:
+              - concept_text: "Mathematical induction is the theoretical mirror of recursive computation. Proving correctness of recursive algorithms (such as divide-and-conquer mergesort) relies directly on structural induction over subproblem sizes."
+                example_text: "The induction hypothesis mirrors the recursive subcall assumption: if subproblems of size n/2 sort correctly, the merge step yields a sorted array of size n."
+                key_points:
+                  - "Induction proves statements for infinite sets of integers"
+                  - "Base case anchors the proof"
+                  - "Inductive step proves truth propagates from k to k+1"
+                  - "DAGs enable topological sorting without circular dependencies"
+            questions:
+              - question_text: "When performing a proof by weak mathematical induction to demonstrate that a formula holds for all integers n >= 1, what must be demonstrated in the inductive step?"
+                options:
+                  - "That P(1) is true for the base case only"
+                  - "That assuming P(k) is true, it necessarily follows that P(k+1) is true"
+                  - "That the formula evaluates to zero for negative numbers"
+                  - "That every graph contains an odd number of vertices"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The inductive step requires assuming the inductive hypothesis P(k) for an arbitrary k >= 1 and rigorously showing that P(k+1) must also hold as a consequence."
+                concept_slugs: ["cs-mathematical-induction"]
+                citation: "CS2023 Foundations Proof Assessment"
+
+  # --------------------------------------------------------------------------
+  # Unit 2: Computer Systems & Architecture
+  # --------------------------------------------------------------------------
+  - code: "CS-201"
+    title: "Computer Architecture & Hardware Organization"
+    description: "Boolean algebra, digital logic gates, Von Neumann architecture, instruction set architectures (RISC/CISC), and pipelining."
+    weight: 0.20
+    sort_order: 2
+    importance: "core"
+    citation: "CS2023 Knowledge Area: Systems and Architecture (SYS-AR)"
+    objectives:
+      - code: "CS-201.1"
+        title: "Analyze instruction pipelining and memory hierarchies"
+        description: "Fetch-decode-execute cycle, hazards (structural, data, control), cache organization (L1/L2/L3), and locality of reference."
+        sort_order: 1
+        importance: "core"
+        citation: "CS2023 Section SYS-AR.3: Processor Design & Pipelining"
+        concepts:
+          - slug: "cs-instruction-pipelining"
+            name: "Instruction Pipelining & Hazards"
+            emoji: "⚙️"
+            short_definition: "Technique that decomposes instruction execution into overlapped sequential stages to maximize processor throughput."
+            description: "Pipelining methodology (IF, ID, EX, MEM, WB) and resolution of data, structural, and control branch hazards via forwarding and branch prediction."
+            citation: "CS2023 Systems Architecture"
+            prerequisites: []
+          - slug: "cs-memory-hierarchy-locality"
+            name: "Memory Hierarchy & Locality of Reference"
+            emoji: "🧠"
+            short_definition: "Hierarchical storage organization leveraging spatial and temporal locality to bridge CPU-DRAM latency gaps."
+            description: "Architecture organizing registers, L1/L2/L3 SRAM caches, DRAM main memory, and NVMe SSD storage by speed, capacity, and cost."
+            citation: "CS2023 Systems Architecture"
+            prerequisites: ["cs-instruction-pipelining"]
+        lessons:
+          - title: "Processor Pipelining & Memory Hierarchy"
+            description: "Explore the 5-stage classic RISC pipeline and analyze cache hit rates under spatial/temporal locality."
+            emoji: "⚙️"
+            tags: ["hardware", "systems", "architecture", "computer-science"]
+            citation: "CS2023 Section SYS-AR"
+            terms:
+              - term: "Spatial Locality"
+                definition: "The principle that memory elements with storage addresses close to recently accessed elements are likely to be accessed soon."
+                example: "Iterating contiguously through an array in memory loading an entire cache line (64 bytes)."
+                emoji: "📍"
+              - term: "Temporal Locality"
+                definition: "The principle that a memory location accessed recently is likely to be accessed again in the near future."
+                example: "Loop index variables or accumulator registers referenced inside a tight loop."
+                emoji: "⏳"
+              - term: "Data Hazard"
+                definition: "Condition where an instruction depends on the result of a previous instruction that is still in flight in the pipeline."
+                example: "Read-After-Write (RAW) dependency resolved by register forwarding or pipeline stalls."
+                emoji: "⚠️"
+            concepts:
+              - concept_text: "CPUs execute instructions at GHz frequencies, but main memory (DRAM) takes hundreds of clock cycles to respond. The memory hierarchy bridges this gap: code with high spatial and temporal locality runs orders of magnitude faster due to high L1/L2 cache hit ratios."
+                example_text: "Row-major vs column-major 2D array traversal: sequential row access achieves 99% cache hits, while column strides trigger continuous cache misses."
+                key_points:
+                  - "5-stage pipeline: Fetch, Decode, Execute, Memory, Write-Back"
+                  - "Hazards require forwarding hardware or pipeline bubble stalls"
+                  - "Spatial locality exploits cache lines; temporal locality keeps frequently used items in cache"
+            questions:
+              - question_text: "An algorithm traverses a 10,000 x 10,000 two-dimensional array stored in C-style row-major format. If the code iterates column-by-column across non-contiguous addresses rather than row-by-row, what architectural inefficiency occurs?"
+                options:
+                  - "An arithmetic overflow in the ALU"
+                  - "Severe cache thrashing due to poor spatial locality, resulting in frequent DRAM cache line misses"
+                  - "An immediate operating system kernel panic"
+                  - "Instruction pipeline structural hazard on the write-back stage"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Row-major layout stores matrix rows contiguously. Traversing by column jumps across memory by stride length (10,000 elements per step), preventing pre-fetched 64-byte cache lines from being utilized and causing constant cache misses."
+                concept_slugs: ["cs-memory-hierarchy-locality"]
+                citation: "CS2023 Systems Assessment"
+
+  # --------------------------------------------------------------------------
+  # Unit 3: Operating Systems & Concurrency
+  # --------------------------------------------------------------------------
+  - code: "CS-301"
+    title: "Operating Systems, Virtual Memory & Concurrency"
+    description: "Process management, virtual memory and paging, synchronization primitives, deadlocks, and file system architecture."
+    weight: 0.20
+    sort_order: 3
+    importance: "core"
+    citation: "CS2023 Knowledge Area: Operating Systems (SYS-OS)"
+    objectives:
+      - code: "CS-301.1"
+        title: "Solve concurrency synchronization and prevent deadlock"
+        description: "Race conditions, mutexes, semaphores, condition variables, and Coffman's four deadlock conditions."
+        sort_order: 1
+        importance: "core"
+        citation: "CS2023 Section SYS-OS.4: Concurrency & Synchronization"
+        concepts:
+          - slug: "cs-concurrency-synchronization"
+            name: "Synchronization & Critical Sections"
+            emoji: "🚦"
+            short_definition: "Techniques ensuring thread safety and mutual exclusion in concurrent multi-threaded execution."
+            description: "Primitives including mutexes, counting semaphores, and atomic CAS (Compare-And-Swap) operations protecting shared memory state."
+            citation: "CS2023 Operating Systems"
+            prerequisites: []
+          - slug: "cs-deadlock-coffman"
+            name: "Deadlock & Coffman Conditions"
+            emoji: "🔒"
+            short_definition: "Permanent circular blocking of processes waiting for resources held by each other."
+            description: "Mathematical conditions required for deadlock: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait."
+            citation: "CS2023 Operating Systems"
+            prerequisites: ["cs-concurrency-synchronization"]
+        lessons:
+          - title: "Operating Systems: Concurrency & Deadlock Prevention"
+            description: "Eliminate race conditions with atomic primitives and break Coffman conditions to prevent deadlock."
+            emoji: "🚦"
+            tags: ["os", "concurrency", "deadlock", "systems"]
+            citation: "CS2023 Section SYS-OS"
+            terms:
+              - term: "Critical Section"
+                definition: "A segment of code accessing shared resources that must not be executed concurrently by more than one thread of execution."
+                example: "Updating a shared bank account balance variable."
+                emoji: "🚧"
+              - term: "Deadlock"
+                definition: "A state in which every member of a set of processes is permanently blocked waiting for an event only another process in the set can cause."
+                example: "Thread 1 holds Mutex A waiting for Mutex B; Thread 2 holds Mutex B waiting for Mutex A."
+                emoji: "🔒"
+              - term: "Circular Wait"
+                definition: "A closed chain of processes in which each process holds one or more resources that are needed by the next process in the chain."
+                example: "Enforcing strict total resource acquisition order breaks this condition."
+                emoji: "🔄"
+            concepts:
+              - concept_text: "Deadlock cannot occur unless all four Coffman conditions hold simultaneously: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait. Operating system architects eliminate deadlock by breaking Circular Wait—enforcing a strict global numbering hierarchy on all lock acquisitions."
+                example_text: "If any thread acquiring locks A and B must always acquire lock ID A before lock ID B, circular wait is mathematically impossible."
+                key_points:
+                  - "Mutual exclusion protects critical sections against data races"
+                  - "Four Coffman conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait"
+                  - "Ordering lock acquisition breaks circular wait unconditionally"
+            questions:
+              - question_text: "Two threads in an operating system need to acquire both Resource 1 and Resource 2. Thread A requests Resource 1 then Resource 2, while Thread B requests Resource 2 then Resource 1. What vulnerability exists, and which Coffman condition is established?"
+                options:
+                  - "Memory fragmentation; No Preemption"
+                  - "Potential deadlock; Circular Wait"
+                  - "Buffer overflow; Mutual Exclusion"
+                  - "Page fault; Hold and Wait"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Opposite lock acquisition orders create a circular dependency where Thread A holds R1 waiting for R2, and Thread B holds R2 waiting for R1. This forms a Circular Wait, resulting in deadlock."
+                concept_slugs: ["cs-deadlock-coffman"]
+                citation: "CS2023 Concurrency Assessment"
+
+  # --------------------------------------------------------------------------
+  # Unit 4: Programming Languages & Compilers
+  # --------------------------------------------------------------------------
+  - code: "CS-401"
+    title: "Programming Languages & Compiler Theory"
+    description: "Lexical analysis, context-free grammars, parsing algorithms, type systems, and intermediate representations."
+    weight: 0.20
+    sort_order: 4
+    importance: "core"
+    citation: "CS2023 Knowledge Area: Programming Languages and Compilers (PL-CMP)"
+    objectives:
+      - code: "CS-401.1"
+        title: "Analyze formal grammars and parse abstract syntax trees"
+        description: "Chomsky hierarchy, BNF specifications, LL/LR parsing, and semantic analysis."
+        sort_order: 1
+        importance: "core"
+        citation: "CS2023 Section PL-CMP.2: Parsing & Syntax"
+        concepts:
+          - slug: "cs-context-free-grammars"
+            name: "Context-Free Grammars & ASTs"
+            emoji: "🌳"
+            short_definition: "Formal mathematical grammars defining programming language syntax and producing Abstract Syntax Trees."
+            description: "Grammars defined as 4-tuples (V, Sigma, R, S) whose production rules map a single nonterminal to arbitrary strings of terminals and nonterminals."
+            citation: "CS2023 Programming Languages"
+            prerequisites: []
+        lessons:
+          - title: "Compiler Front-End: Lexing, Parsing & AST Construction"
+            description: "Trace source text through tokenization, context-free grammar parsing, and Abstract Syntax Tree generation."
+            emoji: "🌳"
+            tags: ["compilers", "programming-languages", "ast", "grammar"]
+            citation: "CS2023 Section PL-CMP"
+            terms:
+              - term: "Abstract Syntax Tree (AST)"
+                definition: "A tree representation of the abstract syntactic structure of source code written in a formal programming language."
+                example: "A binary operator node with left and right expression subtrees representing 'x + 5'."
+                emoji: "🌿"
+              - term: "Context-Free Grammar (CFG)"
+                definition: "A formal grammar in which every production rule has a single nonterminal symbol on its left side."
+                example: "E -> E + T | T defined in Backus-Naur Form (BNF)."
+                emoji: "📜"
+            concepts:
+              - concept_text: "A compiler front-end translates linear source characters into a semantic graph. Lexical analysis converts characters into tokens (keywords, identifiers); syntactic analysis uses a Context-Free Grammar to construct an Abstract Syntax Tree (AST)."
+                example_text: "Compilers discard extraneous whitespace and parentheses once the hierarchical AST node relationships encode operator precedence unambiguously."
+                key_points:
+                  - "Lexers output streams of tokens using regular expressions"
+                  - "Parsers verify grammar rules and construct hierarchical ASTs"
+                  - "ASTs serve as the universal input for semantic analysis and code generation"
+            questions:
+              - question_text: "During compiler front-end compilation, which phase is responsible for taking a stream of lexical tokens and constructing an Abstract Syntax Tree (AST) according to a Context-Free Grammar?"
+                options:
+                  - "Instruction Scheduling"
+                  - "Syntactic Analysis (Parsing)"
+                  - "Register Allocation"
+                  - "Linker relocation"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Parsing (syntactic analysis) ingests tokens from the lexer and verifies conformance to the language's context-free grammar, producing an Abstract Syntax Tree (AST)."
+                concept_slugs: ["cs-context-free-grammars"]
+                citation: "CS2023 Compiler Theory Evaluation"
+
+  # --------------------------------------------------------------------------
+  # Unit 5: Algorithms & Computational Complexity
+  # --------------------------------------------------------------------------
+  - code: "CS-501"
+    title: "Algorithms & Theoretical Computer Science"
+    description: "Divide-and-conquer, dynamic programming, greedy algorithms, P vs NP, NP-completeness, and Turing reducibility."
+    weight: 0.20
+    sort_order: 5
+    importance: "core"
+    citation: "CS2023 Knowledge Area: Algorithms and Complexity (AL-COMP)"
+    objectives:
+      - code: "CS-501.1"
+        title: "Classify problem complexity and NP-completeness"
+        description: "Turing machines, decision problems, polynomial-time reductions, and Cook-Levin theorem (SAT, 3SAT, Clique, Vertex Cover)."
+        sort_order: 1
+        importance: "core"
+        citation: "CS2023 Section AL-COMP.4: Complexity Classes & Intractability"
+        concepts:
+          - slug: "cs-np-completeness"
+            name: "P vs. NP & NP-Completeness"
+            emoji: "🧩"
+            short_definition: "Complexity classification of computational decision problems solvable or verifiable in polynomial time."
+            description: "Class P (solvable in polynomial time on deterministic Turing machines) vs Class NP (verifiable in polynomial time); NP-complete problems are the hardest problems in NP."
+            citation: "CS2023 Theoretical Computer Science"
+            prerequisites: []
+        lessons:
+          - title: "Theoretical Limits: P vs NP & NP-Completeness"
+            description: "Distinguish between polynomial solvability and verification, and construct reductions to prove NP-completeness."
+            emoji: "🧩"
+            tags: ["algorithms", "theory", "np-completeness", "turing"]
+            citation: "CS2023 Section AL-COMP"
+            terms:
+              - term: "Class P"
+                definition: "The class of decision problems solvable by a deterministic Turing machine in polynomial time O(n^k)."
+                example: "Shortest path (Dijkstra's algorithm) running in O(E + V log V)."
+                emoji: "⚡"
+              - term: "Class NP"
+                definition: "The class of decision problems for which a candidate solution can be verified by a deterministic Turing machine in polynomial time."
+                example: "Sudoku or Travelling Salesperson: checking a proposed route takes polynomial time, but finding it takes exponential time."
+                emoji: "🔍"
+              - term: "Polynomial-Time Reduction"
+                definition: "An algorithm transforming instances of problem A into instances of problem B in polynomial time, proving B is at least as hard as A."
+                example: "Reducing 3-SAT to Vertex Cover to prove Vertex Cover is NP-complete."
+                emoji: "🔄"
+            concepts:
+              - concept_text: "A problem is defined as NP-complete if it is in NP and every problem in NP can be reduced to it in polynomial time. If any single NP-complete problem can be solved in polynomial time, then P = NP, revolutionizing all computational cryptography and optimization."
+                example_text: "RSA encryption relies on the presumption that prime factorization and discrete logarithm are intractable in polynomial time on classical hardware."
+                key_points:
+                  - "Class P problems are efficiently solvable in polynomial time"
+                  - "Class NP problems are efficiently verifiable given a certificate"
+                  - "NP-complete problems represent the hardest problems in NP"
+                  - "Cook-Levin Theorem proved Boolean Satisfiability (SAT) is NP-complete"
+            questions:
+              - question_text: "What distinguishes an NP-complete problem from a problem merely known to be in Class NP?"
+                options:
+                  - "NP-complete problems have been proven to require O(1) constant time"
+                  - "An NP-complete problem is in NP, and every other problem in NP can be reduced to it in polynomial time"
+                  - "NP-complete problems can never be checked or verified by any computer"
+                  - "NP-complete problems only apply to sorting algorithms"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "To be NP-complete, a problem must be in NP, and every problem in NP must be polynomial-time reducible to it. Hence, an efficient solution to one would solve all problems in NP."
+                concept_slugs: ["cs-np-completeness"]
+                citation: "CS2023 Theoretical Foundations Assessment"
