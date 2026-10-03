@@ -81,7 +81,7 @@ enum TargetVersionStatus {
   static TargetVersionStatus fromString(String value) {
     return TargetVersionStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => TargetVersionStatus.draft,
+      orElse: () => TargetVersionStatus.retired,
     );
   }
 }

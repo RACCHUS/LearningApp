@@ -127,6 +127,39 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
                       );
                     }
 
+                    if (canEditCurriculum && _searchQuery.isEmpty) {
+                      return ReorderableListView.builder(
+                        padding: const EdgeInsets.all(DesignTokens.space3),
+                        itemCount: filteredNodes.length,
+                        onReorder: (oldIndex, newIndex) async {
+                          if (oldIndex < newIndex) {
+                            newIndex -= 1;
+                          }
+                          final reordered = List<CurriculumNode>.from(filteredNodes);
+                          final item = reordered.removeAt(oldIndex);
+                          reordered.insert(newIndex, item);
+                          final nodeIds = reordered.map((n) => n.id).toList();
+                          await ref
+                              .read(learningTargetServiceProvider)
+                              .reorderCurriculumNodes(nodeIds);
+                          await _invalidateNodeAndScope(ref, version.id);
+                        },
+                        itemBuilder: (context, index) {
+                          final node = filteredNodes[index];
+                          return Padding(
+                            key: ValueKey(node.id),
+                            padding: const EdgeInsets.only(bottom: DesignTokens.space2),
+                            child: _CurriculumNodeCard(
+                              node: node,
+                              onNodeSelected: () => _handleNodeTap(node, canEditCurriculum),
+                              onFocusRequested: () => _setNodeFocus(node),
+                              onDeleteRequested: () => _handleDeleteNode(node, version.id),
+                            ),
+                          );
+                        },
+                      );
+                    }
+
                     return ListView.separated(
                       padding: const EdgeInsets.all(DesignTokens.space3),
                       itemCount: filteredNodes.length,

@@ -89,6 +89,12 @@ void main() {
       expect(retired.isPublished, isFalse);
       expect(retired.isRetired, isTrue);
       expect(retired.isEditable, isFalse);
+
+      // Verify unknown statuses fail closed to retired (immutable)
+      expect(TargetVersionStatus.fromString('unknown_future_status'), TargetVersionStatus.retired);
+      expect(TargetVersionStatus.fromString('archived'), TargetVersionStatus.retired);
+      expect(TargetVersionStatus.fromString('draft'), TargetVersionStatus.draft);
+      expect(TargetVersionStatus.fromString('published'), TargetVersionStatus.published);
     });
   });
 
