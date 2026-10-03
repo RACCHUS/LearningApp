@@ -24,6 +24,17 @@ target:
   version_title: "CompTIA Security+ (SY0-701) Official Blueprint Edition"
   version_description: "Comprehensive curriculum aligned with CompTIA SY0-701 exam objectives across all 5 core security domains."
 
+stimuli:
+  - id: "stim-incident-db-audit"
+    stimulus_type: "scenario"
+    title: "Database Log Tampering Incident"
+    body: "At 02:14 UTC, automated integrity alerts flag a hash mismatch in the financial transaction ledger. Forensic investigation reveals that an administrative session altered record balances and disabled audit logging for 12 minutes."
+    structured_data:
+      incident_id: "SEC-2026-0812"
+      affected_service: "PostgreSQL Core Ledger"
+      audit_gap_duration_minutes: 12
+    citation: "CompTIA SY0-701 Objective 1.1 Practical Scenario"
+
 domains:
   # --------------------------------------------------------------------------
   # Domain 1.0: General Security Concepts (12%)
@@ -48,6 +59,7 @@ domains:
             emoji: "🛡️"
             short_definition: "Core model of information security comprising Confidentiality, Integrity, and Availability."
             description: "The fundamental model guiding information security policies and controls to protect data assets."
+            aliases: ["cia-triad", "confidentiality-integrity-availability"]
             citation: "CompTIA SY0-701 Objective 1.1"
             prerequisites: []
           - slug: "sec-aaa-framework"
@@ -55,6 +67,7 @@ domains:
             emoji: "🔑"
             short_definition: "Authentication, Authorization, and Accounting architecture for identity governance."
             description: "Security architecture framework for controlling access to computer resources, enforcing policies, and auditing usage."
+            aliases: ["authentication-authorization-accounting", "triple-a"]
             citation: "CompTIA SY0-701 Objective 1.1"
             prerequisites: ["sec-cia-triad"]
           - slug: "sec-zero-trust"
@@ -62,6 +75,7 @@ domains:
             emoji: "🧱"
             short_definition: "Security model requiring continuous verification of all identities and devices, never trusting implicitly."
             description: "A strategic cybersecurity architecture based on the principle of 'never trust, always verify', enforcing least privilege dynamically."
+            aliases: ["zero-trust", "zta"]
             citation: "CompTIA SY0-701 Objective 1.1"
             prerequisites: ["sec-aaa-framework"]
         lessons:
@@ -70,6 +84,29 @@ domains:
             emoji: "🛡️"
             tags: ["security", "foundations", "comptia", "sy0-701"]
             citation: "CompTIA SY0-701 Section 1.1"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: "Information security is anchored on balancing Confidentiality, Integrity, and Availability (the CIA Triad). Every control or architectural decision impacts these three pillars."
+              - sort_order: 2
+                block_type: "callout"
+                content:
+                  variant: "warning"
+                  title: "Availability Trade-off"
+                  text: "Over-constraining access with excessive encryption or isolation can inadvertently destroy system Availability."
+              - sort_order: 3
+                block_type: "table"
+                content:
+                  headers: ["Component", "Function", "Operational Example"]
+                  rows:
+                    - ["Authentication", "Verifies claimant identity", "FIDO2 WebAuthn / Passkeys"]
+                    - ["Authorization", "Enforces resource permissions", "RBAC policy grant"]
+                    - ["Accounting", "Records chronological actions", "Tamper-evident audit log"]
+              - sort_order: 4
+                block_type: "practice_prompt"
+                content:
+                  prompt: "Why is non-repudiation dependent on both Authentication and Integrity?"
             terms:
               - term: "Confidentiality"
                 definition: "Ensuring that information is accessible only to those authorized to have access."
@@ -95,6 +132,24 @@ domains:
                   - "Integrity prevents unauthorized alteration"
                   - "Availability guarantees authorized access"
                   - "Non-repudiation binds actions to verified identities"
+            assessment_items:
+              - interaction_type: "multi_select"
+                prompt: "Based on the database incident scenario, which of the following controls should be deployed immediately to enforce non-repudiation and prevent audit log tampering? (Select TWO)."
+                stimulus_id: "stim-incident-db-audit"
+                response_spec:
+                  options:
+                    - "Stream database audit events in real-time to an immutable WORM (Write Once, Read Many) log repository"
+                    - "Cryptographically sign and timestamp each ledger entry using an HSM private key"
+                    - "Increase PostgreSQL buffer pool cache size to 64GB"
+                    - "Issue generic shared administrative accounts to simplify emergency access"
+                scoring_spec:
+                  correct_indices: [0, 1]
+                  scoring_method: "all_or_nothing"
+                explanation: "Streaming logs to an immutable write-once repository prevents retroactive deletion, and cryptographic signing with HSM timestamps ensures non-repudiation."
+                difficulty: "advanced"
+                cognitive_level: "analysis"
+                concept_slugs: ["sec-cia-triad", "sec-aaa-framework"]
+                citation: "SY0-701 Objective 1.1 Scenario Assessment"
             questions:
               - question_text: "A financial organization detects that transaction logs were silently altered after hours. Which pillar of the CIA triad was directly violated?"
                 options:

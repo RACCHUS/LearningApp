@@ -75,14 +75,37 @@ enum TargetStatus {
 
 enum TargetVersionStatus {
   draft,
+  reviewReady,
   published,
   retired;
 
   static TargetVersionStatus fromString(String value) {
-    return TargetVersionStatus.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => TargetVersionStatus.retired,
-    );
+    switch (value) {
+      case 'draft':
+        return TargetVersionStatus.draft;
+      case 'review_ready':
+      case 'reviewReady':
+        return TargetVersionStatus.reviewReady;
+      case 'published':
+        return TargetVersionStatus.published;
+      case 'retired':
+        return TargetVersionStatus.retired;
+      default:
+        return TargetVersionStatus.retired;
+    }
+  }
+
+  String toDbString() {
+    switch (this) {
+      case TargetVersionStatus.draft:
+        return 'draft';
+      case TargetVersionStatus.reviewReady:
+        return 'review_ready';
+      case TargetVersionStatus.published:
+        return 'published';
+      case TargetVersionStatus.retired:
+        return 'retired';
+    }
   }
 }
 
@@ -273,9 +296,10 @@ class TargetVersion {
   });
 
   bool get isDraft => status == TargetVersionStatus.draft;
+  bool get isReviewReady => status == TargetVersionStatus.reviewReady;
   bool get isPublished => status == TargetVersionStatus.published;
   bool get isRetired => status == TargetVersionStatus.retired;
-  bool get isEditable => isDraft;
+  bool get isEditable => isDraft || isReviewReady;
 
   factory TargetVersion.fromJson(Map<String, dynamic> json) {
     return TargetVersion(
@@ -319,7 +343,7 @@ class TargetVersion {
       'source_title': sourceTitle,
       'source_retrieved_at': sourceRetrievedAt?.toIso8601String(),
       'metadata': metadata,
-      'status': status.name,
+      'status': status.toDbString(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

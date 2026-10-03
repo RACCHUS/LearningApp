@@ -1282,6 +1282,157 @@ Old TargetVersion Retired (status = 'retired')
 
 ### 14.4 Ingestion CLI Tooling (`tool/ingest_curriculum.dart`)
 - **`--dry-run`**: Validates manifest schema, entity relationships, integrity, domain weights, and prerequisite references without performing database writes.
-- **`--apply`**: Ingests into draft `TargetVersion`, upserts source releases, curriculum nodes, concepts, public lessons, questions, and provenance mappings using `SUPABASE_SERVICE_ROLE_KEY`.
-- **`--publish`**: Promotes draft version to `published` status, enforcing permanent database immutability. Supports `--retire-previous` to cleanly transition prior published editions.
+- **`--dir <dir>`**: Batch mode validating all manifests in directory transactions (validate all -> plan -> apply).
+- **`--apply`**: Ingests into draft `TargetVersion`, upserts source releases, curriculum nodes, concepts, public lessons, blocks, assessment items, and provenance mappings using `SUPABASE_SERVICE_ROLE_KEY`.
+- **`--stage-review`**: Advances draft version to `review_ready` for verification and QA testing.
+- **`--publish`**: Promotes draft or review_ready version to `published` status, enforcing permanent database immutability. Supports `--retire-previous` to cleanly transition prior published editions.
+
+---
+
+## 15. Content Primitives V2 & Industrialized Ingestion Pipeline
+
+### 15.1 Ordered Lesson Document Model (`lesson_blocks`)
+Rather than constraining lesson content to narrow string columns or flat text, rich lessons are modeled as ordered documents comprising polymorphic instructional blocks:
+
+```
+Lesson
+ ├── Markdown Block (Introduction & Core Exposition)
+ ├── Callout Block (Warning / Caution / Exam Tip)
+ ├── Code Block (Syntax Highlighted Sample with Execution Context)
+ ├── Table Block (Comparison / Matrix / Feature Grid)
+ ├── Image / Diagram Block (Architectural or Clinical Asset)
+ ├── Formula Block (LaTeX / Math Notation)
+ ├── Example Block (Real-world Scenario)
+ └── Practice Prompt Block (Active Retrieval Probe)
+```
+
+**Database Schema:**
+- Table: `public.lesson_blocks`
+- Fields: `id`, `lesson_id`, `sort_order`, `block_type`, `content (jsonb)`, `metadata (jsonb)`, `created_at`, `updated_at`.
+- Supported Types: `'markdown'`, `'callout'`, `'code'`, `'table'`, `'image'`, `'formula'`, `'example'`, `'practice_prompt'`.
+- Row-Level Security: Inherits from parent `lessons(visibility, user_id)`.
+
+### 15.2 Extensible Assessment Architecture (`assessment_items` & `assessment_stimuli`)
+To support complex clinical vignettes, cloud architecture diagrams, multi-select items (SATA), and interactive evaluation without database column proliferation, assessments are partitioned into shared stimuli and polymorphic items:
+
+1. **Shared Stimuli (`public.assessment_stimuli`)**:
+   - Represents the shared scenario, clinical patient case, architecture diagram, data table, or code snippet.
+   - Referenced by multiple assessment items (e.g., 4 questions evaluating a single clinical case or cloud architecture).
+   - Fields: `id`, `stimulus_type`, `title`, `body`, `structured_data (jsonb)`, `asset_refs (jsonb)`, `metadata (jsonb)`.
+   - Types: `'clinical_case'`, `'architecture_diagram'`, `'code_snippet'`, `'data_table'`, `'scenario'`, `'passage'`.
+
+2. **Assessment Items (`public.assessment_items`)**:
+   - Replaces hard-coded `correct_answer: int` with decoupled specifications.
+   - Fields: `id`, `lesson_id`, `stimulus_id`, `interaction_type`, `prompt`, `response_spec (jsonb)`, `scoring_spec (jsonb)`, `explanation`, `difficulty`, `cognitive_level`, `metadata (jsonb)`.
+   - Interaction Types:
+     - `single_choice`: standard MCQ with single selection.
+     - `multi_select`: Select-All-That-Apply (SATA) with `scoring_method` (`all_or_nothing` or `partial_credit`).
+     - `ordered_response`: sequencing tasks (e.g. incident response steps).
+     - `matching`: key-value pairing.
+     - `matrix_grid`: multi-row, multi-column clinical decisions or feature grids.
+     - `numeric_entry`: dosage, subnet, or exact quantitative answers.
+     - `cloze`: fill-in-the-blank or dropdown cloze sentences.
+     - `code_output`: programming prediction questions.
+
+3. **Concept Junction (`public.assessment_item_concepts`)**:
+   - Links items to canonical `knowledge_concepts` with `role ('primary' | 'supporting')` and `weight (0.0 to 1.0)`.
+
+### 15.3 Early Canonical Concept Resolution & Deduplication
+To prevent cross-target concept duplication (e.g., `hash-table` vs `hash-tables` vs `hashing-algorithms`), concept resolution happens at ingestion time before mass content is loaded:
+
+```
+Incoming Manifest Concept
+          ↓
+[1. Exact Slug Match?] ──────────> YES: Reuse Existing Canonical Concept
+          ↓ NO
+[2. Slug in Concept Aliases?] ───> YES: Map to Canonical Concept Slug
+          ↓ NO
+[3. Exact Name Match?] ──────────> YES: Reuse Canonical Concept
+          ↓ NO
+[4. Name in Concept Aliases?] ───> YES: Reuse Canonical Concept
+          ↓ NO
+[Insert New Canonical Concept] with declared aliases array
+```
+
+- Backed by database RPC `public.resolve_canonical_concept(p_slug, p_name)` and GIN index on `knowledge_concepts.aliases`.
+
+### 15.4 Staging Lifecycle & Version Immutability
+Published `TargetVersion` records are strictly immutable. To accommodate quality assurance, editorial review, and beta testing, target versions support a 4-state lifecycle:
+
+$$\text{draft} \longrightarrow \text{review\_ready} \longrightarrow \text{published} \longrightarrow \text{retired}$$
+
+- **`draft`**: Ingestion in progress, editable by target owner / service role.
+- **`review_ready`**: Content complete, eligible for QA, internal testing, and beta verification without public catalog exposure.
+- **`published`**: Final immutable release. Database RLS blocks any updates or deletions.
+- **`retired`**: Deprecated prior edition; preserved for historical user transcript integrity.
+
+### 15.5 Cross-Version Progress Transfer (`target_version_concept_mappings`)
+When an authoritative blueprint updates (e.g., CompTIA Security+ SY0-601 $\to$ SY0-701), learner progress transfers through canonical concepts, not unstable curriculum node IDs:
+
+- Table: `public.target_version_concept_mappings`
+- Fields: `from_target_version_id`, `from_concept_id`, `to_target_version_id`, `to_concept_id`, `mapping_type`, `transfer_weight`.
+- Mapping Types: `'unchanged'`, `'renamed'`, `'expanded'`, `'narrowed'`, `'replaced'`, `'removed'`.
+- Transfer Weight: $0.0 \le w \le 1.0$ controls the fraction of retrieval evidence carried forward.
+
+### 15.6 Pedagogical Diagnostics & Scoring Safeguards
+To maintain scientific credibility and prevent false claims of certification:
+1. **Diagnostic Language**:
+   - **Prohibited**: Overclaiming "Mastered" (e.g., "Domain 1: 90% Mastered").
+   - **Required**: Evidence-based phrasing such as "Strong evidence", "Needs reinforcement", or "Practice readiness: 78%".
+2. **Separation of Official Facts vs. App Estimates**:
+   - **Official Facts**: Published passing standard (e.g. 750/900), time limit, question count range, official domain weights.
+   - **App Estimates**: Statistical readiness projection, practice performance score, Bayesian mastery estimates, remediation recommendations.
+   - These are stored separately and displayed with appropriate certainty framing.
+3. **Adaptive Practice Boundaries**:
+   - Adaptive testing is designated as **"adaptive practice mode"** or **"CAT-style simulation"**.
+   - The app adapts difficulty, domain balance, and uncertainty without claiming to reproduce proprietary operational algorithms (such as the proprietary NCLEX CAT algorithm).
+
+---
+
+## 16. Revised Phased Content & Platform Roadmap
+
+```
+Phase A: Content Primitives (COMPLETED)
+ ├── Generic ordered lesson block model (lesson_blocks)
+ ├── Extensible assessment interaction schema (assessment_items)
+ ├── Shared vignettes & diagrams (assessment_stimuli)
+ ├── Concept junctions (assessment_item_concepts)
+ └── Version concept mapping table (target_version_concept_mappings)
+
+Phase B: Canonical Concept Resolution & Manifest Contract (COMPLETED)
+ ├── Canonical concept alias indexing & RPC resolver (resolve_canonical_concept)
+ ├── Formal JSON Schema contract (curriculum_manifest.schema.json)
+ ├── Manifest validation rules and alias ingestion
+ └── Reference manifest enrichment (content/security_plus_sy0_701.yaml)
+
+Phase C: Ingestion Industrialization (COMPLETED)
+ ├── Batch directory ingestion CLI with 3-phase execution (--dir, --dry-run, --apply)
+ ├── Pedagogical quality linter & diagnostic gate (tool/lint_manifest.dart)
+ ├── Staging lifecycle transition (--stage-review, review_ready)
+ └── AI blueprint extractor boundary & human verification protocol
+
+Phase D: Learning Presentation (NEXT)
+ ├── Rich Lesson Block Reader (markdown, callout, code, table, formula, example, prompt)
+ ├── New assessment interaction renderers (multi-select/SATA, ordered response, matching)
+ ├── Shared case study & exhibit renderer
+ └── Provenance & citation inspector UI
+
+Phase E: Assessment & Readiness Engine
+ ├── Constraint-based weighted mock exam generator (domain weights, difficulty, formats)
+ ├── Domain diagnostic profiling (evidence-based, non-overclaiming wording)
+ ├── Timed exam simulation mode
+ ├── Target-specific passing standard vs. app-estimated readiness models
+ └── Adaptive practice mode (CAT-style practice)
+
+Phase F: Full Taxonomy & Crosswalk Expansion
+ ├── Version/release-driven CIP, SOC, and O*NET importers
+ ├── Cross-target canonical concept sharing (Computer Science BS ↔ Software Engineer ↔ Certs)
+ └── Occupational career crosswalk linking
+
+Phase G: Version Migration & Governance
+ ├── Target version migration tooling & concept transfer evaluation
+ ├── Review-ready staging dashboard & QA workflows
+ └── Publication and retirement pipeline
+```
+
 
