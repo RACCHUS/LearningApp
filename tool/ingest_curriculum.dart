@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:json_schema/json_schema.dart';
 import 'package:yaml/yaml.dart';
 
 /// Content Ingestion & Provenance CLI
@@ -40,11 +41,13 @@ import 'package:yaml/yaml.dart';
 ///     --version SY0-701 \
 ///     --stage-review
 ///
-///   # 6. Promote draft or review_ready TargetVersion to published immutable status:
+///   # 6. Promote review_ready TargetVersion to published immutable status:
 ///   dart run tool/ingest_curriculum.dart \
 ///     --target cert-comptia-security-plus \
 ///     --version SY0-701 \
 ///     --publish
+///
+/// Note: Publication strictly requires "review_ready" staging status.
 
 // ----------------------------------------------------------------------------
 // Environment & CLI Config Resolution
@@ -119,6 +122,25 @@ List<String> _findManifestFiles(String dirPath) {
   }
   files.sort();
   return files;
+}
+
+void _validateJsonSchema(Map<String, dynamic> manifest, {String? filePath}) {
+  final schemaFile = File('content/schema/curriculum_manifest.schema.json');
+  if (!schemaFile.existsSync()) {
+    throw Exception('JSON Schema contract file not found at ${schemaFile.path}');
+  }
+  final schemaJson = jsonDecode(schemaFile.readAsStringSync());
+  final schema = JsonSchema.create(schemaJson);
+  final result = schema.validate(manifest);
+  if (!result.isValid) {
+    print('\n❌ JSON Schema Validation Errors (${filePath ?? "manifest"}):');
+    for (final err in result.errors) {
+      print('  • [${err.schemaPath}] ${err.message}');
+    }
+    throw Exception(
+      'Manifest failed formal JSON Schema validation with ${result.errors.length} error(s).',
+    );
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -309,10 +331,10 @@ void main(List<String> args) async {
   final selectedModes = [isDryRun, isApply, isStageReview, isPublish].where((b) => b).length;
   if (selectedModes != 1) {
     print('Error: You must specify exactly one mode:');
-    print('  --dry-run      : Validate manifest(s) and check blueprint alignment');
+    print('  --dry-run      : Validate manifest(s) against JSON Schema & blueprint alignment');
     print('  --apply        : Ingest manifest(s) into draft TargetVersion(s) (service role)');
     print('  --stage-review : Promote draft TargetVersion to review_ready staging status');
-    print('  --publish      : Promote draft/review_ready TargetVersion to published immutable status');
+    print('  --publish      : Promote review_ready TargetVersion to published immutable status');
     exit(1);
   }
 
@@ -350,7 +372,7 @@ void main(List<String> args) async {
 
     // Phase 1: Validate ALL manifests in batch before writing anything
     print('\n====================================================');
-    print('  Phase 1: Validating All Manifests in Batch');
+    print('  Phase 1: Validating All Manifests in Batch (Schema + Referential)');
     print('====================================================');
     final parsedManifests = <String, Map<String, dynamic>>{};
     final errors = <String>[];
@@ -384,18 +406,20 @@ void main(List<String> args) async {
       final f = entry.key;
       final m = entry.value;
       final targetInfo = m['target'] as Map<String, dynamic>? ?? {};
-      final sRel = m['source_release'] as Map<String, dynamic>? ?? {};
+      final sRel = (m['source_releases'] as List<dynamic>?)?.isNotEmpty == true
+          ? (m['source_releases'] as List<dynamic>).first as Map<String, dynamic>
+          : m['source_release'] as Map<String, dynamic>? ?? {};
       final slug = targetInfo['slug']?.toString() ?? 'unknown-target';
       final vCode = targetInfo['version_code']?.toString() ?? sRel['version']?.toString() ?? 'v1';
       final domains = m['domains'] as List<dynamic>? ?? [];
       final stimuli = m['stimuli'] as List<dynamic>? ?? [];
       print('  Target: $slug (Version: $vCode)');
       print('    File: $f');
-      print('    Domains: ${domains.length} | Stimuli: ${stimuli.length}');
+      print('    Domains: ${domains.length} | Root Stimuli: ${stimuli.length}');
     }
 
     if (isDryRun) {
-      print('\n✅ Batch Dry-Run PASSED! All manifests conform to curriculum specifications.');
+      print('\n✅ Batch Dry-Run PASSED! All manifests conform to JSON Schema and curriculum specifications.');
       print('Run with --apply to execute batch database ingestion:');
       print('  dart run tool/ingest_curriculum.dart --dir $dirPath --apply');
       exit(0);
@@ -416,7 +440,9 @@ void main(List<String> args) async {
       final f = entry.key;
       final m = entry.value;
       final targetInfo = m['target'] as Map<String, dynamic>? ?? {};
-      final sRel = m['source_release'] as Map<String, dynamic>? ?? {};
+      final sRel = (m['source_releases'] as List<dynamic>?)?.isNotEmpty == true
+          ? (m['source_releases'] as List<dynamic>).first as Map<String, dynamic>
+          : m['source_release'] as Map<String, dynamic>? ?? {};
       final slug = targetInfo['slug']?.toString();
       final vCode = targetInfo['version_code']?.toString() ?? sRel['version']?.toString() ?? 'v1';
       if (slug == null || slug.isEmpty) {
@@ -495,7 +521,6 @@ void main(List<String> args) async {
     print('\n✅ Ingestion into draft version completed successfully!');
     print('Next step: Advance to review staging or publish:');
     print('  dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --stage-review');
-    print('  dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --publish');
     exit(0);
   }
 
@@ -504,6 +529,8 @@ void main(List<String> args) async {
     print('\n--- Executing TargetVersion Promotion to Review-Ready ---');
     await _executeStageReview(client, targetArg, versionArg);
     print('\n✅ Staging complete! TargetVersion is now review_ready for QA and beta evaluation.');
+    print('Next step: Promote to published immutable status:');
+    print('  dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --publish');
     exit(0);
   }
 
@@ -526,19 +553,29 @@ void _executeDryRun(
   String? versionCode, {
   String? filePath,
 }) {
-  // 1. Source release
-  final sourceRelease = manifest['source_release'] as Map<String, dynamic>?;
-  if (sourceRelease == null) {
-    throw Exception('Missing "source_release" block in manifest ($filePath)');
+  // 1. JSON Schema validation
+  _validateJsonSchema(manifest, filePath: filePath);
+
+  // 2. Source release(s)
+  final rawReleases = manifest['source_releases'] as List<dynamic>?;
+  final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
+  if (rawReleases == null && singleRelease == null) {
+    throw Exception('Manifest must have "source_releases" or "source_release" ($filePath)');
   }
-  final publisher = sourceRelease['publisher'] as String?;
-  final title = sourceRelease['title'] as String?;
-  final version = sourceRelease['version'] as String?;
-  if (publisher == null || title == null || version == null) {
-    throw Exception('"source_release" must have publisher, title, and version ($filePath)');
+  final releases = rawReleases != null
+      ? rawReleases.cast<Map<String, dynamic>>()
+      : [singleRelease!];
+
+  for (final rel in releases) {
+    final pub = rel['publisher'] as String?;
+    final title = rel['title'] as String?;
+    final ver = rel['version'] as String?;
+    if (pub == null || title == null || ver == null) {
+      throw Exception('Each source_release must have publisher, title, and version ($filePath)');
+    }
   }
 
-  // 2. Target info
+  // 3. Target info
   final target = manifest['target'] as Map<String, dynamic>?;
   if (target == null) {
     throw Exception('Missing "target" block in manifest ($filePath)');
@@ -548,21 +585,25 @@ void _executeDryRun(
     throw Exception('Target must have a "slug" property ($filePath)');
   }
 
-  // 3. Shared Stimuli (if present)
-  final stimuli = manifest['stimuli'] as List<dynamic>? ?? [];
+  // 4. Collect Stimuli from root, domains, and objectives
   final stimuliKeys = <String>{};
-  for (final stim in stimuli) {
-    if (stim is! Map) continue;
-    final sKey = stim['id']?.toString() ?? stim['slug']?.toString();
-    final sTitle = stim['title']?.toString();
-    final sType = stim['stimulus_type']?.toString();
-    if (sKey == null || sTitle == null || sType == null) {
-      throw Exception('Stimulus missing id/slug, title, or stimulus_type');
+  void registerStimuli(List<dynamic>? stimList, String scope) {
+    if (stimList == null) return;
+    for (final stim in stimList) {
+      if (stim is! Map) continue;
+      final sKey = stim['id']?.toString() ?? stim['slug']?.toString();
+      final sTitle = stim['title']?.toString();
+      final sType = stim['stimulus_type']?.toString();
+      if (sKey == null || sTitle == null || sType == null) {
+        throw Exception('Stimulus in $scope missing id, title, or stimulus_type');
+      }
+      stimuliKeys.add(sKey);
     }
-    stimuliKeys.add(sKey);
   }
 
-  // 4. Domains & Objectives hierarchy
+  registerStimuli(manifest['stimuli'] as List<dynamic>?, 'root');
+
+  // 5. Domains & Objectives hierarchy
   final domains = manifest['domains'] as List<dynamic>? ?? [];
   if (domains.isEmpty) {
     throw Exception('Manifest must have at least one domain under "domains" ($filePath)');
@@ -572,6 +613,7 @@ void _executeDryRun(
   int totalConcepts = 0;
   int totalLessons = 0;
   int totalBlocks = 0;
+  int totalFlashcards = 0;
   int totalLegacyQuestions = 0;
   int totalAssessmentItems = 0;
   final declaredConceptSlugs = <String>{};
@@ -582,6 +624,7 @@ void _executeDryRun(
     if (domain['code'] == null) {
       throw Exception('Domain missing code ($filePath)');
     }
+    registerStimuli(domain['stimuli'] as List<dynamic>?, 'domain ${domain['code']}');
 
     final objectives = domain['objectives'] as List<dynamic>? ?? [];
     totalObjectives += objectives.length;
@@ -589,6 +632,7 @@ void _executeDryRun(
     for (final objective in objectives) {
       if (objective is! Map) continue;
       final oCode = objective['code']?.toString() ?? '?';
+      registerStimuli(objective['stimuli'] as List<dynamic>?, 'objective $oCode');
 
       // Concepts
       final concepts = objective['concepts'] as List<dynamic>? ?? [];
@@ -608,11 +652,33 @@ void _executeDryRun(
         }
       }
 
+      // Objective Flashcards
+      final flashcards = objective['flashcards'] as List<dynamic>? ?? [];
+      for (final fc in flashcards) {
+        if (fc is! Map) continue;
+        final front = fc['front']?.toString() ?? '';
+        final back = fc['back']?.toString() ?? '';
+        if (front.isEmpty || back.isEmpty) {
+          throw Exception('Flashcard in objective $oCode missing front or back text');
+        }
+        totalFlashcards++;
+      }
+
       // Lessons
       final lessons = objective['lessons'] as List<dynamic>? ?? [];
       for (final lesson in lessons) {
         if (lesson is! Map) continue;
         totalLessons++;
+
+        // Verify lesson concept slugs if declared
+        final lessonSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
+        if (lessonSlugs != null) {
+          for (final s in lessonSlugs) {
+            if (!declaredConceptSlugs.contains(s)) {
+              print('  ⚠️ Warning: Lesson "${lesson['title']}" references concept "$s" which has not been declared yet.');
+            }
+          }
+        }
 
         // Lesson blocks (ordered document model)
         final blocks = lesson['blocks'] as List<dynamic>? ?? [];
@@ -661,12 +727,13 @@ void _executeDryRun(
   }
 
   print('Manifest Summary (${filePath ?? manifestSlug}):');
-  print('  Publisher        : $publisher ("$title" - $version)');
+  print('  Releases         : ${releases.length} authoritative source release(s)');
   print('  Target           : $manifestSlug');
   print('  Domains          : ${domains.length}');
   print('  Objectives       : $totalObjectives');
   print('  Concepts         : $totalConcepts');
-  print('  Shared Stimuli   : ${stimuli.length}');
+  print('  Shared Stimuli   : ${stimuliKeys.length}');
+  print('  Flashcards       : $totalFlashcards');
   print('  Lessons          : $totalLessons');
   print('  Lesson Blocks    : $totalBlocks');
   print('  Assessment Items : $totalAssessmentItems');
@@ -674,7 +741,7 @@ void _executeDryRun(
 }
 
 // ----------------------------------------------------------------------------
-// Canonical Concept Resolution
+// Ambiguity-Safe Canonical Concept Resolution
 // ----------------------------------------------------------------------------
 
 Future<Map<String, dynamic>> _resolveOrInsertConcept(
@@ -684,19 +751,64 @@ Future<Map<String, dynamic>> _resolveOrInsertConcept(
   String? targetFieldId,
   Map<String, dynamic> conceptData,
 ) async {
-  // 1. Invoke database RPC resolve_canonical_concept
+  // If an explicit canonical_concept slug is declared, query using that slug
+  final explicitCanonical = conceptData['canonical_concept']?.toString();
+  final searchSlug = (explicitCanonical != null && explicitCanonical.isNotEmpty)
+      ? explicitCanonical
+      : slug;
+
+  // 1. Invoke hardened database RPC resolve_canonical_concept
   final rpcRes = await client.restRpc('resolve_canonical_concept', {
-    'p_slug': slug,
+    'p_slug': searchSlug,
     'p_name': name,
+    'p_field_id': targetFieldId,
   });
 
   final matches = asList(rpcRes['body']);
   if (matches.isNotEmpty) {
     final match = matches.first as Map<String, dynamic>;
+    final isAmbiguous = match['is_ambiguous'] == true;
+
+    if (isAmbiguous) {
+      if (explicitCanonical != null && explicitCanonical.isNotEmpty) {
+        // Explicit override was provided, proceed safely
+        final matchedId = match['id'] as String;
+        final canonicalSlug = match['slug'] as String;
+        print('      [Canonical Concept Explicit Override] "$name" ($slug) -> "$canonicalSlug" [ID: $matchedId]');
+
+        if (targetFieldId != null) {
+          await client.restPost(
+            'concept_fields',
+            {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
+            upsert: true,
+            onConflict: 'concept_id,field_id',
+          );
+        }
+        return {'id': matchedId, 'slug': canonicalSlug, 'isNew': false};
+      } else {
+        throw Exception(
+          'Ambiguous canonical concept match for "$name" ($slug). '
+          'Multiple concepts share this name across fields and target field does not disambiguate. '
+          'Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.',
+        );
+      }
+    }
+
     final matchType = match['match_type'] as String;
     final matchedId = match['id'] as String;
     final canonicalSlug = match['slug'] as String;
-    print('      [Canonical Concept Resolved ($matchType)] "$name" ($slug) -> canonical slug "$canonicalSlug" [ID: $matchedId]');
+    print('      [Canonical Concept Resolved ($matchType)] "$name" ($slug) -> "$canonicalSlug" [ID: $matchedId]');
+
+    // Link reused concept to target's field in concept_fields
+    if (targetFieldId != null) {
+      await client.restPost(
+        'concept_fields',
+        {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
+        upsert: true,
+        onConflict: 'concept_id,field_id',
+      );
+    }
+
     return {'id': matchedId, 'slug': canonicalSlug, 'isNew': false};
   }
 
@@ -724,6 +836,17 @@ Future<Map<String, dynamic>> _resolveOrInsertConcept(
   }
   final newId = created.first['id'] as String;
   print('      [Canonical Concept Created] "$name" ($slug) [ID: $newId]');
+
+  // Insert primary concept_fields association
+  if (targetFieldId != null) {
+    await client.restPost(
+      'concept_fields',
+      {'concept_id': newId, 'field_id': targetFieldId, 'is_primary': true},
+      upsert: true,
+      onConflict: 'concept_id,field_id',
+    );
+  }
+
   return {'id': newId, 'slug': slug, 'isNew': true};
 }
 
@@ -737,6 +860,9 @@ Future<void> _executeApply(
   String targetSlug,
   String versionCode,
 ) async {
+  // Pre-flight JSON Schema validation
+  _validateJsonSchema(manifest);
+
   // 1. Locate the target
   print('Locating learning target with slug matching "$targetSlug"...');
   final targetRes = await client.restGet('learning_targets?slug=ilike.*$targetSlug*&limit=1');
@@ -750,7 +876,7 @@ Future<void> _executeApply(
   final targetFieldId = targetRow['field_id'] as String?;
   print('Found target: "${targetRow['title']}" ($canonicalSlug) [ID: $targetId]');
 
-  // 2. Check TargetVersion status
+  // 2. Check TargetVersion status & Idempotently clean draft if re-applying
   print('Checking target_version "$versionCode"...');
   final versionRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$versionCode');
   final versionList = asList(versionRes['body']);
@@ -768,7 +894,21 @@ Future<void> _executeApply(
         'To update curriculum, create a new draft version code (e.g. "$versionCode-draft" or next iteration).',
       );
     }
-    print('Reusing existing $status TargetVersion [ID: $versionId]');
+
+    if (status == 'review_ready') {
+      throw Exception(
+        'TargetVersion "$versionCode" is in "review_ready" status (frozen QA snapshot). '
+        'To modify curriculum or re-apply, set its status back to "draft" first.',
+      );
+    }
+
+    // Version is in 'draft' status: Clean existing draft content idempotently via RPC
+    print('TargetVersion "$versionCode" is in draft status. Resetting draft curriculum for clean idempotent apply...');
+    final cleanRes = await client.restRpc('clean_draft_target_version', {'p_version_id': versionId});
+    if (cleanRes['statusCode'] >= 400) {
+      throw Exception('Failed to clean draft TargetVersion: ${cleanRes['body']}');
+    }
+    print('Draft curriculum reset cleanly. Proceeding with fresh ingestion...');
   } else {
     print('Creating new draft TargetVersion "$versionCode"...');
     final targetInfo = manifest['target'] as Map<String, dynamic>? ?? {};
@@ -790,107 +930,145 @@ Future<void> _executeApply(
     print('Created draft TargetVersion [ID: $versionId]');
   }
 
-  // 3. Upsert content_source_releases
-  final sourceRelease = manifest['source_release'] as Map<String, dynamic>;
-  final publisher = sourceRelease['publisher'] as String;
-  final sTitle = sourceRelease['title'] as String;
-  final sVersion = sourceRelease['version'] as String;
-  final sUrl = sourceRelease['source_url'] as String?;
-  final sLicense = sourceRelease['license'] as String?;
-  final sSha256 = sourceRelease['sha256'] as String?;
-  final sMeta = sourceRelease['metadata'] as Map<String, dynamic>? ?? {};
+  // 3. Upsert content_source_releases (supporting single or multiple releases)
+  final rawReleases = manifest['source_releases'] as List<dynamic>?;
+  final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
+  final releaseListToProcess = rawReleases != null
+      ? rawReleases.cast<Map<String, dynamic>>()
+      : [singleRelease!];
 
-  print('Upserting content_source_releases ("$publisher", "$sTitle", "$sVersion")...');
-  final releaseUpsertRes = await client.restPost(
-    'content_source_releases',
-    {
+  final sourceReleaseIdMap = <String, String>{}; // identifier/index -> uuid
+  String defaultReleaseId = '';
+
+  for (int rIdx = 0; rIdx < releaseListToProcess.length; rIdx++) {
+    final rel = releaseListToProcess[rIdx];
+    final publisher = rel['publisher'] as String;
+    final sTitle = rel['title'] as String;
+    final sVersion = rel['version'] as String;
+    final sUrl = rel['source_url'] as String?;
+    final sLicense = rel['license'] as String?;
+    final sLicenseName = rel['license_name'] as String?;
+    final sRightsNote = rel['rights_note'] as String?;
+    final sSha256 = rel['sha256'] as String?;
+    final sRetrievedAt = rel['retrieved_at'] as String?;
+    final sMeta = (rel['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    if (sLicenseName != null) sMeta['license_name'] = sLicenseName;
+    if (sRightsNote != null) sMeta['rights_note'] = sRightsNote;
+
+    final releasePayload = <String, dynamic>{
       'publisher': publisher,
       'title': sTitle,
       'version': sVersion,
       'source_url': sUrl,
-      'license': sLicense,
+      'license': sLicense ?? sLicenseName,
       'sha256': sSha256,
       'metadata': sMeta,
-    },
-    upsert: true,
-    onConflict: 'publisher,title,version',
-  );
-  final releaseList = asList(releaseUpsertRes['body']);
-  String releaseId;
-  if (releaseList.isNotEmpty) {
-    releaseId = releaseList.first['id'] as String;
-  } else {
-    final qRes = await client.restGet(
-      'content_source_releases?publisher=eq.${Uri.encodeComponent(publisher)}&title=eq.${Uri.encodeComponent(sTitle)}&version=eq.${Uri.encodeComponent(sVersion)}',
-    );
-    releaseId = asList(qRes['body']).first['id'] as String;
-  }
-  print('Source Release verified [ID: $releaseId]');
-
-  // Link target_version to content source release in provenance
-  await client.restPost(
-    'content_source_mappings',
-    {
-      'source_release_id': releaseId,
-      'entity_type': 'target_version',
-      'entity_id': versionId,
-      'relationship': 'official_blueprint',
-      'citation_location': 'Full Blueprint Coverage',
-      'notes': 'Root target version mapping to authoritative source release',
-    },
-    upsert: true,
-    onConflict: 'source_release_id,entity_type,entity_id,relationship',
-  );
-
-  // 4. Ingest Shared Stimuli (if defined)
-  final stimuli = manifest['stimuli'] as List<dynamic>? ?? [];
-  final stimulusIdMap = <String, String>{}; // key -> uuid
-  int stimuliCount = 0;
-
-  for (final stim in stimuli) {
-    if (stim is! Map) continue;
-    final stimKey = stim['id']?.toString() ?? stim['slug']?.toString() ?? 'stim-$stimuliCount';
-    final stimType = stim['stimulus_type']?.toString() ?? 'scenario';
-    final stimTitle = stim['title']?.toString() ?? 'Stimulus';
-    final stimBody = stim['body']?.toString();
-    final stimData = (stim['structured_data'] as Map?)?.cast<String, dynamic>() ?? {};
-    final stimAssets = (stim['asset_refs'] as List?)?.toList() ?? [];
-    final stimMeta = (stim['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
-    final stimCitation = stim['citation']?.toString() ?? 'Official Stimulus';
-
-    final insertStimRes = await client.restPost('assessment_stimuli', {
-      'stimulus_type': stimType,
-      'title': stimTitle,
-      'body': stimBody,
-      'structured_data': stimData,
-      'asset_refs': stimAssets,
-      'metadata': stimMeta,
-      'created_by': null,
-    });
-    final sList = asList(insertStimRes['body']);
-    if (insertStimRes['statusCode'] >= 400 || sList.isEmpty) {
-      throw Exception('Failed to insert assessment_stimuli: ${insertStimRes['body']}');
+    };
+    if (sRetrievedAt != null && sRetrievedAt.isNotEmpty) {
+      releasePayload['retrieved_at'] = sRetrievedAt;
     }
-    final stimId = sList.first['id'] as String;
-    stimulusIdMap[stimKey] = stimId;
-    stimuliCount++;
 
+    print('Upserting content_source_releases ("$publisher", "$sTitle", "$sVersion")...');
+    final releaseUpsertRes = await client.restPost(
+      'content_source_releases',
+      releasePayload,
+      upsert: true,
+      onConflict: 'publisher,title,version',
+    );
+    final upserted = asList(releaseUpsertRes['body']);
+    String currentReleaseId;
+    if (upserted.isNotEmpty) {
+      currentReleaseId = upserted.first['id'] as String;
+    } else {
+      final qRes = await client.restGet(
+        'content_source_releases?publisher=eq.${Uri.encodeComponent(publisher)}&title=eq.${Uri.encodeComponent(sTitle)}&version=eq.${Uri.encodeComponent(sVersion)}',
+      );
+      currentReleaseId = asList(qRes['body']).first['id'] as String;
+    }
+
+    final relCustomId = rel['id']?.toString();
+    if (relCustomId != null) {
+      sourceReleaseIdMap[relCustomId] = currentReleaseId;
+    }
+    sourceReleaseIdMap['$publisher/$sVersion'] = currentReleaseId;
+    sourceReleaseIdMap[rIdx.toString()] = currentReleaseId;
+
+    if (rIdx == 0) {
+      defaultReleaseId = currentReleaseId;
+    }
+
+    // Link target_version to each authoritative source release in provenance
     await client.restPost(
       'content_source_mappings',
       {
-        'source_release_id': releaseId,
-        'entity_type': 'assessment_stimulus',
-        'entity_id': stimId,
+        'source_release_id': currentReleaseId,
+        'entity_type': 'target_version',
+        'entity_id': versionId,
         'relationship': 'official_blueprint',
-        'citation_location': stimCitation,
-        'notes': 'Assessment stimulus vignette mapping',
+        'citation_location': 'Full Blueprint Specification',
+        'notes': 'Root target version mapping to authoritative source release',
       },
       upsert: true,
       onConflict: 'source_release_id,entity_type,entity_id,relationship',
     );
   }
 
-  // 5. Ingest Domains, Objectives, Concepts, Lessons, Blocks & Assessment Items
+  // 4. Ingestion helper for shared stimuli across root, domain, and objective scopes
+  final stimulusIdMap = <String, String>{}; // key/id -> uuid
+  int stimuliCount = 0;
+
+  Future<void> ingestStimulusList(List<dynamic>? stimList, String defaultCitation, String scope) async {
+    if (stimList == null) return;
+    for (final stim in stimList) {
+      if (stim is! Map) continue;
+      final stimKey = stim['id']?.toString() ?? stim['slug']?.toString() ?? 'stim-$stimuliCount';
+      final stimType = stim['stimulus_type']?.toString() ?? 'scenario';
+      final stimTitle = stim['title']?.toString() ?? 'Stimulus';
+      final stimBody = stim['body']?.toString();
+      final stimData = (stim['structured_data'] as Map?)?.cast<String, dynamic>() ?? {};
+      final stimAssets = (stim['asset_refs'] as List?)?.toList() ?? [];
+      final stimMeta = (stim['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
+      final stimCitation = stim['citation']?.toString() ?? defaultCitation;
+      final relId = sourceReleaseIdMap[stim['source_release_id']?.toString()] ?? defaultReleaseId;
+
+      final insertStimRes = await client.restPost('assessment_stimuli', {
+        'stimulus_type': stimType,
+        'title': stimTitle,
+        'body': stimBody,
+        'structured_data': stimData,
+        'asset_refs': stimAssets,
+        'metadata': stimMeta,
+        'created_by': null,
+      });
+      final sList = asList(insertStimRes['body']);
+      if (insertStimRes['statusCode'] >= 400 || sList.isEmpty) {
+        throw Exception('Failed to insert assessment_stimuli ($stimTitle): ${insertStimRes['body']}');
+      }
+      final stimId = sList.first['id'] as String;
+      stimulusIdMap[stimKey] = stimId;
+      stimuliCount++;
+
+      await client.restPost(
+        'content_source_mappings',
+        {
+          'source_release_id': relId,
+          'entity_type': 'assessment_stimulus',
+          'entity_id': stimId,
+          'relationship': 'official_blueprint',
+          'citation_location': stimCitation,
+          'notes': 'Assessment stimulus ($scope) mapping',
+        },
+        upsert: true,
+        onConflict: 'source_release_id,entity_type,entity_id,relationship',
+      );
+    }
+  }
+
+  // Ingest root-level stimuli
+  await ingestStimulusList(manifest['stimuli'] as List<dynamic>?, 'Official Blueprint Stimulus', 'root');
+
+  // 5. Ingest Domains, Objectives, Concepts, Lessons, Blocks & Assessments
   final domains = manifest['domains'] as List<dynamic>? ?? [];
   final conceptMap = <String, String>{}; // declared slug -> resolved concept_id
 
@@ -898,9 +1076,10 @@ Future<void> _executeApply(
   int conceptsCount = 0;
   int lessonsCount = 0;
   int blocksCount = 0;
+  int flashcardsCount = 0;
   int itemsCount = 0;
   int questionsCount = 0;
-  int provenanceCount = 1 + stimuliCount;
+  int provenanceCount = releaseListToProcess.length + stimuliCount;
 
   for (final domain in domains) {
     if (domain is! Map) continue;
@@ -910,33 +1089,29 @@ Future<void> _executeApply(
     final dWeight = (domain['weight'] as num?)?.toDouble() ?? 1.0;
     final dOrder = (domain['sort_order'] as num?)?.toInt() ?? (nodesCount + 1);
     final dCitation = domain['citation']?.toString() ?? 'Domain $dCode';
+    final dRelId = sourceReleaseIdMap[domain['source_release_id']?.toString()] ?? defaultReleaseId;
+
+    // Ingest domain-level stimuli if any
+    await ingestStimulusList(domain['stimuli'] as List<dynamic>?, dCitation, 'domain $dCode');
 
     // Domain curriculum_node
-    final existingDomainRes = await client.restGet(
-      'curriculum_nodes?target_version_id=eq.$versionId&code=eq.$dCode&parent_id=is.null',
-    );
-    String domainNodeId;
-    if (asList(existingDomainRes['body']).isNotEmpty) {
-      domainNodeId = asList(existingDomainRes['body']).first['id'] as String;
-    } else {
-      final insertDomainRes = await client.restPost('curriculum_nodes', {
-        'target_version_id': versionId,
-        'node_type': 'domain',
-        'title': dTitle,
-        'code': dCode,
-        'description': dDesc,
-        'sort_order': dOrder,
-        'importance': domain['importance']?.toString() ?? 'core',
-        'weight': dWeight,
-      });
-      domainNodeId = asList(insertDomainRes['body']).first['id'] as String;
-    }
+    final insertDomainRes = await client.restPost('curriculum_nodes', {
+      'target_version_id': versionId,
+      'node_type': 'domain',
+      'title': dTitle,
+      'code': dCode,
+      'description': dDesc,
+      'sort_order': dOrder,
+      'importance': domain['importance']?.toString() ?? 'core',
+      'weight': dWeight,
+    });
+    final domainNodeId = asList(insertDomainRes['body']).first['id'] as String;
     nodesCount++;
 
     await client.restPost(
       'content_source_mappings',
       {
-        'source_release_id': releaseId,
+        'source_release_id': dRelId,
         'entity_type': 'curriculum_node',
         'entity_id': domainNodeId,
         'relationship': 'official_blueprint',
@@ -957,33 +1132,29 @@ Future<void> _executeApply(
       final oDesc = objective['description']?.toString();
       final oOrder = (objective['sort_order'] as num?)?.toInt() ?? 1;
       final oCitation = objective['citation']?.toString() ?? 'Objective $oCode';
+      final oRelId = sourceReleaseIdMap[objective['source_release_id']?.toString()] ?? dRelId;
 
-      final existingObjRes = await client.restGet(
-        'curriculum_nodes?target_version_id=eq.$versionId&code=eq.$oCode&parent_id=eq.$domainNodeId',
-      );
-      String objectiveNodeId;
-      if (asList(existingObjRes['body']).isNotEmpty) {
-        objectiveNodeId = asList(existingObjRes['body']).first['id'] as String;
-      } else {
-        final insertObjRes = await client.restPost('curriculum_nodes', {
-          'target_version_id': versionId,
-          'parent_id': domainNodeId,
-          'node_type': 'objective',
-          'title': oTitle,
-          'code': oCode,
-          'description': oDesc,
-          'sort_order': oOrder,
-          'importance': objective['importance']?.toString() ?? 'core',
-          'weight': 1.0,
-        });
-        objectiveNodeId = asList(insertObjRes['body']).first['id'] as String;
-      }
+      // Ingest objective-level stimuli if any
+      await ingestStimulusList(objective['stimuli'] as List<dynamic>?, oCitation, 'objective $oCode');
+
+      final insertObjRes = await client.restPost('curriculum_nodes', {
+        'target_version_id': versionId,
+        'parent_id': domainNodeId,
+        'node_type': 'objective',
+        'title': oTitle,
+        'code': oCode,
+        'description': oDesc,
+        'sort_order': oOrder,
+        'importance': objective['importance']?.toString() ?? 'core',
+        'weight': 1.0,
+      });
+      final objectiveNodeId = asList(insertObjRes['body']).first['id'] as String;
       nodesCount++;
 
       await client.restPost(
         'content_source_mappings',
         {
-          'source_release_id': releaseId,
+          'source_release_id': oRelId,
           'entity_type': 'curriculum_node',
           'entity_id': objectiveNodeId,
           'relationship': 'official_blueprint',
@@ -995,6 +1166,9 @@ Future<void> _executeApply(
       );
       provenanceCount++;
 
+      // Track concepts strictly declared within THIS objective
+      final objectiveConceptSlugs = <String>[];
+
       // Canonical Concept Resolution & Linking
       final concepts = objective['concepts'] as List<dynamic>? ?? [];
       for (final concept in concepts) {
@@ -1002,8 +1176,9 @@ Future<void> _executeApply(
         final cSlug = concept['slug']?.toString() ?? '';
         final cName = concept['name']?.toString() ?? '';
         final cCitation = concept['citation']?.toString() ?? oCitation;
+        final cRelId = sourceReleaseIdMap[concept['source_release_id']?.toString()] ?? oRelId;
 
-        // Use canonical concept resolver
+        // Use ambiguity-safe canonical concept resolver
         final resolved = await _resolveOrInsertConcept(
           client,
           cSlug,
@@ -1013,6 +1188,7 @@ Future<void> _executeApply(
         );
         final conceptId = resolved['id'] as String;
         conceptMap[cSlug] = conceptId;
+        objectiveConceptSlugs.add(cSlug);
         conceptsCount++;
 
         // Link curriculum_node_concepts
@@ -1031,7 +1207,7 @@ Future<void> _executeApply(
         await client.restPost(
           'content_source_mappings',
           {
-            'source_release_id': releaseId,
+            'source_release_id': cRelId,
             'entity_type': 'knowledge_concept',
             'entity_id': conceptId,
             'relationship': 'primary_text',
@@ -1044,6 +1220,56 @@ Future<void> _executeApply(
         provenanceCount++;
       }
 
+      // Objective Flashcards (if defined)
+      final flashcards = objective['flashcards'] as List<dynamic>? ?? [];
+      for (final fc in flashcards) {
+        if (fc is! Map) continue;
+        final front = fc['front']?.toString() ?? '';
+        final back = fc['back']?.toString() ?? '';
+        final explanation = fc['explanation']?.toString();
+        final fcCitation = fc['citation']?.toString() ?? oCitation;
+        final fcRelId = sourceReleaseIdMap[fc['source_release_id']?.toString()] ?? oRelId;
+        final fcConceptSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+
+        final insertFcRes = await client.restPost('flashcards', {
+          'lesson_id': null,
+          'front': front,
+          'back': back,
+          'explanation': explanation,
+          'user_id': null,
+        });
+        final fcList = asList(insertFcRes['body']);
+        if (insertFcRes['statusCode'] >= 400 || fcList.isEmpty) {
+          throw Exception('Failed to insert flashcard: ${insertFcRes['body']}');
+        }
+        final fcId = fcList.first['id'] as String;
+        flashcardsCount++;
+
+        // Link flashcard_concepts
+        for (final slug in fcConceptSlugs) {
+          final cid = conceptMap[slug];
+          if (cid != null) {
+            await client.restPost('flashcard_concepts', {
+              'flashcard_id': fcId,
+              'concept_id': cid,
+              'role': 'primary',
+              'weight': 1.0,
+            }, upsert: true);
+          }
+        }
+
+        // Provenance mapping
+        await client.restPost('content_source_mappings', {
+          'source_release_id': fcRelId,
+          'entity_type': 'flashcard',
+          'entity_id': fcId,
+          'relationship': 'derived_from',
+          'citation_location': fcCitation,
+          'notes': 'Curriculum objective flashcard mapping',
+        }, upsert: true, onConflict: 'source_release_id,entity_type,entity_id,relationship');
+        provenanceCount++;
+      }
+
       // Lessons
       final lessons = objective['lessons'] as List<dynamic>? ?? [];
       for (final lesson in lessons) {
@@ -1053,6 +1279,7 @@ Future<void> _executeApply(
         final lEmoji = lesson['emoji']?.toString() ?? '📚';
         final lTags = (lesson['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
         final lCitation = lesson['citation']?.toString() ?? oCitation;
+        final lRelId = sourceReleaseIdMap[lesson['source_release_id']?.toString()] ?? oRelId;
 
         // Insert public official lesson
         final insertLessonRes = await client.restPost('lessons', {
@@ -1080,6 +1307,35 @@ Future<void> _executeApply(
           },
           upsert: true,
         );
+
+        // Lesson Knowledge Concept Junction
+        // CRITICAL BUG FIX: Link ONLY explicit lesson concept_slugs or strictly the current objective's concepts.
+        // Never leak concepts from earlier objectives across the entire manifest.
+        final explicitConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList();
+
+        final slugsToLink = (explicitConceptSlugs != null && explicitConceptSlugs.isNotEmpty)
+            ? explicitConceptSlugs
+            : objectiveConceptSlugs;
+
+        for (final slug in slugsToLink) {
+          final cid = conceptMap[slug];
+          if (cid != null) {
+            await client.restPost(
+              'lesson_concepts',
+              {
+                'lesson_id': lessonId,
+                'concept_id': cid,
+                'role': 'primary',
+                'weight': 1.0,
+              },
+              upsert: true,
+            );
+          } else {
+            print('  ⚠️ Warning: Lesson "$lTitle" referenced undeclared concept slug "$slug"');
+          }
+        }
 
         // Ordered Lesson Blocks (if present)
         final blocks = lesson['blocks'] as List<dynamic>? ?? [];
@@ -1109,7 +1365,7 @@ Future<void> _executeApply(
           await client.restPost(
             'content_source_mappings',
             {
-              'source_release_id': releaseId,
+              'source_release_id': lRelId,
               'entity_type': 'lesson_block',
               'entity_id': blockId,
               'relationship': 'derived_from',
@@ -1136,25 +1392,30 @@ Future<void> _executeApply(
           });
         }
 
-        // Lesson Knowledge Concept Junction
-        for (final entry in conceptMap.entries) {
-          await client.restPost(
-            'lesson_concepts',
-            {
-              'lesson_id': lessonId,
-              'concept_id': entry.value,
-              'role': 'primary',
-              'weight': 1.0,
-            },
-            upsert: true,
-          );
+        // Legacy Snippet Concepts (backward compatibility)
+        final snippetConcepts = lesson['concepts'] as List<dynamic>? ?? [];
+        for (final sc in snippetConcepts) {
+          if (sc is! Map) continue;
+          final cText = sc['concept_text']?.toString() ?? '';
+          final eText = sc['example_text']?.toString();
+          final kp = (sc['key_points'] as List<dynamic>?)?.map((e) => e.toString()).toList();
+          final cEmoji = sc['emoji']?.toString();
+
+          await client.restPost('concepts', {
+            'lesson_id': lessonId,
+            'concept_text': cText,
+            'example_text': eText,
+            'key_points': kp,
+            'emoji': cEmoji,
+            'user_id': null,
+          });
         }
 
         // Lesson Provenance
         await client.restPost(
           'content_source_mappings',
           {
-            'source_release_id': releaseId,
+            'source_release_id': lRelId,
             'entity_type': 'lesson',
             'entity_id': lessonId,
             'relationship': 'derived_from',
@@ -1179,6 +1440,7 @@ Future<void> _executeApply(
           final iCogLevel = item['cognitive_level']?.toString();
           final iMeta = (item['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
           final iCitation = item['citation']?.toString() ?? lCitation;
+          final iRelId = sourceReleaseIdMap[item['source_release_id']?.toString()] ?? lRelId;
           final sKey = item['stimulus_id']?.toString() ?? item['stimulus_key']?.toString();
           final sUuid = sKey != null ? stimulusIdMap[sKey] : null;
 
@@ -1224,7 +1486,7 @@ Future<void> _executeApply(
           await client.restPost(
             'content_source_mappings',
             {
-              'source_release_id': releaseId,
+              'source_release_id': iRelId,
               'entity_type': 'assessment_item',
               'entity_id': itemId,
               'relationship': 'standards_benchmark',
@@ -1247,6 +1509,7 @@ Future<void> _executeApply(
           final qType = q['type']?.toString() ?? 'mcq';
           final explanation = q['explanation']?.toString();
           final qCitation = q['citation']?.toString() ?? lCitation;
+          final qRelId = sourceReleaseIdMap[q['source_release_id']?.toString()] ?? lRelId;
           final qConceptSlugs = (q['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
 
           final insertQRes = await client.restPost('questions', {
@@ -1280,7 +1543,7 @@ Future<void> _executeApply(
           await client.restPost(
             'content_source_mappings',
             {
-              'source_release_id': releaseId,
+              'source_release_id': qRelId,
               'entity_type': 'question',
               'entity_id': questionId,
               'relationship': 'standards_benchmark',
@@ -1336,7 +1599,8 @@ Future<void> _executeApply(
     final toConceptSlug = cm['to_concept_slug']?.toString();
     final mappingType = cm['mapping_type']?.toString() ?? 'unchanged';
     final weight = (cm['transfer_weight'] as num?)?.toDouble() ?? 1.0;
-    if (fromVersionCode != null && fromConceptSlug != null && toConceptSlug != null) {
+
+    if (fromVersionCode != null && fromConceptSlug != null) {
       // Find from_target_version
       final fromVRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$fromVersionCode');
       final fromVList = asList(fromVRes['body']);
@@ -1345,21 +1609,40 @@ Future<void> _executeApply(
         // Find from_concept
         final fromCRes = await client.restGet('knowledge_concepts?slug=eq.$fromConceptSlug');
         final fromCList = asList(fromCRes['body']);
-        final toCid = conceptMap[toConceptSlug];
-        if (fromCList.isNotEmpty && toCid != null) {
+        if (fromCList.isNotEmpty) {
           final fromCid = fromCList.first['id'] as String;
-          await client.restPost(
-            'target_version_concept_mappings',
-            {
-              'from_target_version_id': fromVid,
-              'from_concept_id': fromCid,
-              'to_target_version_id': versionId,
-              'to_concept_id': toCid,
-              'mapping_type': mappingType,
-              'transfer_weight': weight,
-            },
-            upsert: true,
-          );
+
+          if (mappingType == 'removed') {
+            // Removed mapping has nullable to_concept_id
+            await client.restPost(
+              'target_version_concept_mappings',
+              {
+                'from_target_version_id': fromVid,
+                'from_concept_id': fromCid,
+                'to_target_version_id': versionId,
+                'to_concept_id': null,
+                'mapping_type': 'removed',
+                'transfer_weight': 0.0,
+              },
+              upsert: true,
+            );
+          } else if (toConceptSlug != null) {
+            final toCid = conceptMap[toConceptSlug];
+            if (toCid != null) {
+              await client.restPost(
+                'target_version_concept_mappings',
+                {
+                  'from_target_version_id': fromVid,
+                  'from_concept_id': fromCid,
+                  'to_target_version_id': versionId,
+                  'to_concept_id': toCid,
+                  'mapping_type': mappingType,
+                  'transfer_weight': weight,
+                },
+                upsert: true,
+              );
+            }
+          }
         }
       }
     }
@@ -1371,6 +1654,7 @@ Future<void> _executeApply(
   print('  Curriculum Nodes     : $nodesCount');
   print('  Knowledge Concepts   : $conceptsCount');
   print('  Shared Stimuli       : $stimuliCount');
+  print('  Flashcards Ingested  : $flashcardsCount');
   print('  Lessons Ingested     : $lessonsCount');
   print('  Lesson Blocks        : $blocksCount');
   print('  Assessment Items     : $itemsCount');
@@ -1421,7 +1705,7 @@ Future<void> _executeStageReview(
   if (updateRes['statusCode'] >= 400 || asList(updateRes['body']).isEmpty) {
     throw Exception('Failed to promote to review_ready: ${updateRes['body']}');
   }
-  print('TargetVersion "$versionCode" is now staged as REVIEW_READY for QA and verification.');
+  print('TargetVersion "$versionCode" is now staged as REVIEW_READY for QA and beta evaluation.');
 }
 
 Future<void> _executePublish(
@@ -1455,6 +1739,15 @@ Future<void> _executePublish(
   }
   if (currentStatus == 'retired') {
     throw Exception('Cannot publish a retired TargetVersion.');
+  }
+
+  // Publication strictly requires review_ready status
+  if (currentStatus != 'review_ready') {
+    throw Exception(
+      'TargetVersion "$versionCode" is currently in "$currentStatus" status. '
+      'Publication strictly requires "review_ready" staging status to ensure QA verification. '
+      'Run with --stage-review first.',
+    );
   }
 
   // 3. Retire previous published versions if requested

@@ -9,8 +9,10 @@ source_release:
   version: "SY0-701"
   source_url: "https://www.comptia.org/certifications/security"
   retrieved_at: "2026-10-01T00:00:00Z"
-  license: "Authoritative Public Examination Blueprint (Educational Reference)"
-  sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  license: "CompTIA Proprietary (Educational Reference)"
+  license_name: "Proprietary Examination Blueprint"
+  rights_note: "Referenced under fair use for educational curriculum architecture and objective alignment. CompTIA is a registered trademark of CompTIA Properties, LLC."
+  sha256: "7d8f45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94"
   metadata:
     total_domains: 5
     exam_code: "SY0-701"
@@ -78,12 +80,27 @@ domains:
             aliases: ["zero-trust", "zta"]
             citation: "CompTIA SY0-701 Objective 1.1"
             prerequisites: ["sec-aaa-framework"]
+        flashcards:
+          - front: "What does the CIA triad stand for in information security?"
+            back: "Confidentiality, Integrity, and Availability."
+            explanation: "The core benchmark model for balancing security controls and data access."
+            concept_slugs: ["sec-cia-triad"]
+            citation: "CompTIA SY0-701 Objective 1.1 Flashcard Set"
+          - front: "What are the three components of the AAA framework?"
+            back: "Authentication (who you are), Authorization (what you can do), and Accounting (tracking what you did)."
+            explanation: "Fundamental identity and access management architecture."
+            concept_slugs: ["sec-aaa-framework"]
+            citation: "CompTIA SY0-701 Objective 1.1 Flashcard Set"
         lessons:
           - title: "Foundations of the CIA Triad & AAA Framework"
             description: "Master the three core pillars of data protection and the AAA access control sequence."
             emoji: "🛡️"
             tags: ["security", "foundations", "comptia", "sy0-701"]
             citation: "CompTIA SY0-701 Section 1.1"
+            concept_slugs:
+              - "sec-cia-triad"
+              - "sec-aaa-framework"
+              - "sec-zero-trust"
             blocks:
               - sort_order: 1
                 block_type: "markdown"
@@ -138,10 +155,10 @@ domains:
                 stimulus_id: "stim-incident-db-audit"
                 response_spec:
                   options:
-                    - "Stream database audit events in real-time to an immutable WORM (Write Once, Read Many) log repository"
-                    - "Cryptographically sign and timestamp each ledger entry using an HSM private key"
-                    - "Increase PostgreSQL buffer pool cache size to 64GB"
-                    - "Issue generic shared administrative accounts to simplify emergency access"
+                    - "Stream database audit events to a dedicated write-once-read-many (WORM) log repository"
+                    - "Cryptographically sign and timestamp each log entry using a Hardware Security Module (HSM)"
+                    - "Grant the database administrator root access to purge historic audit tables"
+                    - "Disable binary logging on the primary replica to improve write latency"
                 scoring_spec:
                   correct_indices: [0, 1]
                   scoring_method: "all_or_nothing"
@@ -153,11 +170,11 @@ domains:
             questions:
               - question_text: "A financial organization detects that transaction logs were silently altered after hours. Which pillar of the CIA triad was directly violated?"
                 options:
-                  - "Confidentiality"
                   - "Integrity"
+                  - "Confidentiality"
                   - "Availability"
                   - "Accounting"
-                correct_answer: 1
+                correct_answer: 0
                 type: "mcq"
                 explanation: "Integrity ensures that data remains accurate and unaltered by unauthorized parties. Silently changing logs directly breaches integrity."
                 concept_slugs: ["sec-cia-triad"]
@@ -201,11 +218,14 @@ domains:
             emoji: "🔐"
             tags: ["security", "cryptography", "pki", "sy0-701"]
             citation: "CompTIA SY0-701 Section 1.2"
+            concept_slugs:
+              - "sec-symmetric-asymmetric"
+              - "sec-pki-certificates"
             terms:
               - term: "Symmetric Encryption"
-                definition: "Encryption methodology where the exact same key is used to both encrypt and decrypt data."
-                example: "AES-256 GCM used for full disk encryption."
-                emoji: "🗝️"
+                definition: "Encryption algorithm using the exact same secret key for both plaintext encryption and ciphertext decryption."
+                example: "AES-256 in GCM mode providing authenticated encryption."
+                emoji: "🔒"
               - term: "Asymmetric Encryption"
                 definition: "Encryption utilizing mathematically related public and private key pairs."
                 example: "RSA 4096-bit key exchange during TLS handshake."
@@ -226,10 +246,10 @@ domains:
               - question_text: "Why do modern communication protocols like TLS employ a hybrid encryption approach rather than relying exclusively on asymmetric cryptography?"
                 options:
                   - "Asymmetric encryption cannot support digital certificates"
-                  - "Asymmetric algorithms require excessive computational overhead for high-volume data streams"
                   - "Symmetric ciphers are immune to brute-force attacks"
+                  - "Asymmetric algorithms require excessive computational overhead for high-volume data streams"
                   - "Asymmetric key pairs must be changed every 60 seconds"
-                correct_answer: 1
+                correct_answer: 2
                 type: "mcq"
                 explanation: "Asymmetric mathematics involves heavy modular exponentiation or elliptic curve multiplication, making bulk data throughput thousands of times slower than hardware-accelerated symmetric ciphers like AES."
                 concept_slugs: ["sec-symmetric-asymmetric"]
@@ -266,6 +286,8 @@ domains:
             emoji: "🎭"
             tags: ["threats", "adversaries", "comptia"]
             citation: "CompTIA SY0-701 Section 2.1"
+            concept_slugs:
+              - "sec-threat-actors"
             terms:
               - term: "Advanced Persistent Threat (APT)"
                 definition: "Highly sophisticated, well-funded adversary that establishes long-term undetected network access."
@@ -285,11 +307,11 @@ domains:
             questions:
               - question_text: "An organization observes stealthy, highly customized malware maintaining covert persistence across multiple subnetworks for over eight months without extortion demands. What actor type is most likely responsible?"
                 options:
-                  - "Hacktivist group"
-                  - "Advanced Persistent Threat (APT)"
-                  - "Script kiddie"
-                  - "Disgruntled customer"
-                correct_answer: 1
+                  - "Ideologically motivated hacktivist syndicate"
+                  - "Inexperienced opportunist script kiddie"
+                  - "Disgruntled terminated insider operative"
+                  - "Advanced Persistent Threat (APT) actor"
+                correct_answer: 3
                 type: "mcq"
                 explanation: "Long-term stealth, custom tooling, persistence, and non-monetary intelligence goals are hallmark indicators of an Advanced Persistent Threat (APT)."
                 concept_slugs: ["sec-threat-actors"]
@@ -326,6 +348,8 @@ domains:
             emoji: "☁️"
             tags: ["architecture", "cloud", "comptia"]
             citation: "CompTIA SY0-701 Section 3.1"
+            concept_slugs:
+              - "sec-cloud-shared-responsibility"
             terms:
               - term: "IaaS (Infrastructure as a Service)"
                 definition: "Cloud model where provider provisions physical hardware/virtualization; customer manages OS, runtime, and data."
@@ -345,11 +369,11 @@ domains:
             questions:
               - question_text: "Under the Cloud Shared Responsibility Model for an IaaS deployment, which layer is exclusively the customer's responsibility to patch and secure?"
                 options:
-                  - "Physical datacenter entry gates"
                   - "Virtual machine operating system"
+                  - "Physical datacenter entry gates"
                   - "Hypervisor firmware"
                   - "Hardware cooling infrastructure"
-                correct_answer: 1
+                correct_answer: 0
                 type: "mcq"
                 explanation: "In IaaS, the cloud provider manages physical hardware and the hypervisor, while the tenant/customer is fully responsible for installing, configuring, and patching the guest operating system."
                 concept_slugs: ["sec-cloud-shared-responsibility"]
@@ -386,6 +410,8 @@ domains:
             emoji: "🚨"
             tags: ["operations", "incident-response", "comptia"]
             citation: "CompTIA SY0-701 Section 4.1"
+            concept_slugs:
+              - "sec-incident-response-lifecycle"
             terms:
               - term: "Containment"
                 definition: "Isolating infected systems to prevent lateral movement and further damage during an active attack."
@@ -408,10 +434,10 @@ domains:
               - question_text: "A security analyst discovers an active command-and-control connection on a financial server. What is the immediate next step in the incident response process?"
                 options:
                   - "Format the storage drives immediately"
-                  - "Isolate the server from the network (Containment)"
                   - "Issue a press release to shareholders"
+                  - "Isolate the server from the network (Containment)"
                   - "Delete the attacker's executable file"
-                correct_answer: 1
+                correct_answer: 2
                 type: "mcq"
                 explanation: "The analyst must contain the breach by isolating the host from the network, preventing lateral movement or data exfiltration before proceeding to evidence preservation and eradication."
                 concept_slugs: ["sec-incident-response-lifecycle"]
@@ -448,6 +474,8 @@ domains:
             emoji: "📊"
             tags: ["governance", "risk-management", "comptia"]
             citation: "CompTIA SY0-701 Section 5.1"
+            concept_slugs:
+              - "sec-risk-assessment-calculation"
             terms:
               - term: "Single Loss Expectancy (SLE)"
                 definition: "The monetary loss expected each time a specific threat exploits a vulnerability on an asset."
@@ -473,10 +501,10 @@ domains:
               - question_text: "A web server asset has a Single Loss Expectancy (SLE) of $40,000 from DDoS attacks. Statistical logs indicate the threat occurs twice every year (ARO = 2.0). A DDoS scrubbing countermeasure costs $30,000 annually. Is the countermeasure economically justified?"
                 options:
                   - "No, because the countermeasure cost exceeds the SLE"
-                  - "Yes, because the ALE is $80,000 and the control costs $30,000, saving $50,000 annually"
-                  - "No, risk should always be avoided by disconnecting servers"
                   - "Yes, countermeasures should always be purchased regardless of cost"
-                correct_answer: 1
+                  - "No, risk should always be avoided by disconnecting servers"
+                  - "Yes, because the ALE is $80,000 and the control costs $30,000, saving $50,000 annually"
+                correct_answer: 3
                 type: "mcq"
                 explanation: "The Annualized Loss Expectancy (ALE) is $40,000 x 2.0 = $80,000. Spending $30,000 annually to prevent $80,000 in expected annual loss produces a net annual savings of $50,000, which is strongly economically justified."
                 concept_slugs: ["sec-risk-assessment-calculation"]

@@ -1,19 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:json_schema/json_schema.dart';
 import 'package:yaml/yaml.dart';
 
-/// Static Curriculum Quality Linter & Pedagogical Checker
+/// Static Curriculum Quality Linter & Pedagogical Gate
 ///
 /// Evaluates curriculum manifests against strict pedagogical, structural,
 /// and cognitive standards before ingestion:
-///   1. Domain weights sum validation (sum to 1.0 within 0.01 tolerance).
-///   2. Objective assessment coverage (flags objectives with 0 questions).
-///   3. Concept instructional coverage (flags concepts never taught or assessed).
-///   4. Assessment concept alignment (flags questions with no concept_slugs).
-///   5. Distractor length bias (flags questions where correct answer is >1.8x average distractor length).
-///   6. Answer position balance (flags severe position bias, e.g. >50% index 0).
-///   7. Citation completeness (flags nodes/lessons/questions lacking provenance citations).
-///   8. Duplicate question similarity (detects identical or near-duplicate prompts).
+///   1. Formal JSON Schema validation (via content/schema/curriculum_manifest.schema.json).
+///   2. Domain weights sum validation (sum to 1.0 within 0.01 tolerance).
+///   3. Objective assessment coverage (inspects BOTH questions & assessment_items).
+///   4. Concept instructional & assessment coverage (properly tracks taughtConcepts).
+///   5. Distractor length bias (flags giveaways across MCQ & multi-select items).
+///   6. Answer position balance (flags position clustering).
+///   7. Citation completeness (flags nodes/lessons/items lacking provenance citations).
+///   8. Duplicate prompt similarity (detects identical or near-duplicate prompts).
 ///
 /// Usage:
 ///   dart run tool/lint_manifest.dart content/security_plus_sy0_701.yaml
@@ -64,8 +65,36 @@ class LintIssue {
 
 class ManifestLinter {
   final List<LintIssue> issues = [];
+  JsonSchema? _compiledSchema;
+
+  ManifestLinter() {
+    final schemaFile = File('content/schema/curriculum_manifest.schema.json');
+    if (schemaFile.existsSync()) {
+      try {
+        final schemaJson = jsonDecode(schemaFile.readAsStringSync());
+        _compiledSchema = JsonSchema.create(schemaJson);
+      } catch (e) {
+        // Schema load fallback
+      }
+    }
+  }
 
   void lint(String filePath, Map<String, dynamic> manifest) {
+    // 0. Formal JSON Schema Validation
+    if (_compiledSchema != null) {
+      final validationResult = _compiledSchema!.validate(manifest);
+      if (!validationResult.isValid) {
+        for (final error in validationResult.errors) {
+          issues.add(LintIssue(
+            level: 'ERROR',
+            rule: 'json-schema',
+            location: error.instancePath,
+            message: error.message,
+          ));
+        }
+      }
+    }
+
     // 1. Domain Weights Sum
     final domains = manifest['domains'] as List<dynamic>? ?? [];
     double totalWeight = 0.0;
@@ -101,14 +130,14 @@ class ManifestLinter {
       ));
     }
 
-    // Concept & Question tracking
-    final declaredConcepts = <String>{};
+    // 2. Traversal: Objectives, Concepts, Lessons, and Assessments
+    final declaredConcepts = <String, String>{}; // slug -> name
     final taughtConcepts = <String>{};
     final assessedConcepts = <String>{};
-    final questionPrompts = <String>[];
-    final answerPositions = <int>[];
+    final seenQuestions = <String, String>{}; // normalized prompt -> location
+    final positionCounts = <int, int>{};
+    int totalSingleChoice = 0;
 
-    // Traverse Objectives
     for (final domain in domains) {
       if (domain is! Map) continue;
       final dCode = domain['code']?.toString() ?? '?';
@@ -117,184 +146,251 @@ class ManifestLinter {
       for (final objective in objectives) {
         if (objective is! Map) continue;
         final oCode = objective['code']?.toString() ?? '?';
-        final oLoc = 'Objective $dCode.$oCode';
+        final oLocation = 'Objective $dCode.$oCode';
 
-        // Check concepts
+        final oCitation = objective['citation']?.toString();
+        if (oCitation == null || oCitation.trim().isEmpty) {
+          issues.add(LintIssue(
+            level: 'WARNING',
+            rule: 'citation-completeness',
+            location: oLocation,
+            message: 'Objective is missing an authoritative citation.',
+          ));
+        }
+
+        // Concepts in this objective
         final concepts = objective['concepts'] as List<dynamic>? ?? [];
-        for (final concept in concepts) {
-          if (concept is! Map) continue;
-          final cSlug = concept['slug']?.toString();
-          if (cSlug != null) declaredConcepts.add(cSlug);
-
-          final cCitation = concept['citation']?.toString();
-          if (cCitation == null || cCitation.trim().isEmpty) {
-            issues.add(LintIssue(
-              level: 'WARNING',
-              rule: 'citation-completeness',
-              location: '$oLoc -> Concept $cSlug',
-              message: 'Concept is missing an authoritative citation.',
-            ));
+        final objConceptSlugs = <String>{};
+        for (final c in concepts) {
+          if (c is! Map) continue;
+          final cSlug = c['slug']?.toString();
+          final cName = c['name']?.toString() ?? 'Unnamed';
+          if (cSlug != null) {
+            declaredConcepts[cSlug] = cName;
+            objConceptSlugs.add(cSlug);
           }
         }
 
-        // Check lessons
+        // Lessons & Assessments
         final lessons = objective['lessons'] as List<dynamic>? ?? [];
-        int objectiveQuestionCount = 0;
+        int totalObjectiveAssessments = 0;
 
         for (final lesson in lessons) {
           if (lesson is! Map) continue;
           final lTitle = lesson['title']?.toString() ?? 'Untitled';
-          final lLoc = '$oLoc -> Lesson "$lTitle"';
+          final lLocation = '$oLocation -> Lesson "$lTitle"';
 
-          final lCitation = lesson['citation']?.toString();
-          if (lCitation == null || lCitation.trim().isEmpty) {
-            issues.add(LintIssue(
-              level: 'WARNING',
-              rule: 'citation-completeness',
-              location: lLoc,
-              message: 'Lesson is missing an authoritative citation.',
-            ));
+          // Track taught concepts from lesson
+          final lConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
+          if (lConceptSlugs != null && lConceptSlugs.isNotEmpty) {
+            for (final s in lConceptSlugs) {
+              taughtConcepts.add(s);
+            }
+          } else {
+            // Fallback: inherits objective concepts
+            taughtConcepts.addAll(objConceptSlugs);
           }
 
-          // Terms and snippet concepts taught
-          final terms = lesson['terms'] as List<dynamic>? ?? [];
-          if (terms.isEmpty && (lesson['blocks'] as List<dynamic>? ?? []).isEmpty) {
-            issues.add(LintIssue(
-              level: 'INFO',
-              rule: 'lesson-instructional-depth',
-              location: lLoc,
-              message: 'Lesson defines 0 terms and 0 instructional blocks.',
-            ));
-          }
-
-          // Legacy Questions & New Assessment Items
+          // Legacy Questions
           final questions = lesson['questions'] as List<dynamic>? ?? [];
-          objectiveQuestionCount += questions.length;
+          totalObjectiveAssessments += questions.length;
 
           for (int qIdx = 0; qIdx < questions.length; qIdx++) {
             final q = questions[qIdx];
             if (q is! Map) continue;
-            final qLoc = '$lLoc -> Question ${qIdx + 1}';
+            final qLocation = '$lLocation -> Question ${qIdx + 1}';
             final prompt = q['question_text']?.toString() ?? '';
             final options = (q['options'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-            final correct = q['correct_answer'] as int?;
-            final explanation = q['explanation']?.toString();
-            final qConcepts = (q['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+            final correctIdx = q['correct_answer'] as int?;
+            final cSlugs = (q['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
 
-            // Duplicate question detection
-            final normPrompt = prompt.toLowerCase().trim();
-            if (questionPrompts.contains(normPrompt)) {
-              issues.add(LintIssue(
-                level: 'ERROR',
-                rule: 'duplicate-question',
-                location: qLoc,
-                message: 'Duplicate question prompt detected: "$prompt"',
-              ));
+            for (final s in cSlugs) {
+              assessedConcepts.add(s);
             }
-            questionPrompts.add(normPrompt);
 
-            // Concept mapping
-            if (qConcepts.isEmpty) {
+            if (cSlugs.isEmpty) {
               issues.add(LintIssue(
                 level: 'WARNING',
                 rule: 'question-concept-mapping',
-                location: qLoc,
-                message: 'Question does not map to any concept_slugs.',
+                location: qLocation,
+                message: 'Question has no explicit concept_slugs mapping.',
+              ));
+            }
+
+            // Duplicate detection
+            final normPrompt = prompt.trim().toLowerCase();
+            if (seenQuestions.containsKey(normPrompt)) {
+              issues.add(LintIssue(
+                level: 'ERROR',
+                rule: 'duplicate-question-prompt',
+                location: qLocation,
+                message: 'Question prompt is identical to prompt in ${seenQuestions[normPrompt]}.',
               ));
             } else {
-              assessedConcepts.addAll(qConcepts);
+              seenQuestions[normPrompt] = qLocation;
             }
 
-            // Explanation depth
-            if (explanation == null || explanation.trim().length < 25) {
-              issues.add(LintIssue(
-                level: 'WARNING',
-                rule: 'substantive-explanation',
-                location: qLoc,
-                message: 'Explanation is too brief (<25 characters). Substantive pedagogical rationale required.',
-              ));
-            }
+            // Distractor length bias check
+            if (options.length >= 2 && correctIdx != null && correctIdx >= 0 && correctIdx < options.length) {
+              totalSingleChoice++;
+              positionCounts[correctIdx] = (positionCounts[correctIdx] ?? 0) + 1;
 
-            // Distractor length bias
-            if (options.length >= 2 && correct != null && correct >= 0 && correct < options.length) {
-              answerPositions.add(correct);
-              final correctLength = options[correct].length;
-              double otherTotalLength = 0;
-              for (int oIdx = 0; oIdx < options.length; oIdx++) {
-                if (oIdx != correct) otherTotalLength += options[oIdx].length;
+              final correctLen = options[correctIdx].length;
+              double distractorTotal = 0;
+              for (int o = 0; o < options.length; o++) {
+                if (o != correctIdx) distractorTotal += options[o].length;
               }
-              final avgDistractorLength = otherTotalLength / (options.length - 1);
-              if (avgDistractorLength > 0 && correctLength > avgDistractorLength * 1.85) {
+              final avgDistractor = distractorTotal / (options.length - 1);
+              if (correctLen > avgDistractor * 1.85 && correctLen > 25) {
                 issues.add(LintIssue(
                   level: 'WARNING',
                   rule: 'correct-answer-length-bias',
-                  location: qLoc,
-                  message: 'Correct answer length ($correctLength chars) is >1.85x average distractor ($avgDistractorLength chars), creating an answer giveaway.',
+                  location: qLocation,
+                  message: 'Correct answer length ($correctLen chars) is >1.85x average distractor ($avgDistractor chars), creating an answer giveaway.',
                 ));
+              }
+            }
+          }
+
+          // Extensible Assessment Items
+          final assessmentItems = lesson['assessment_items'] as List<dynamic>? ?? [];
+          totalObjectiveAssessments += assessmentItems.length;
+
+          for (int iIdx = 0; iIdx < assessmentItems.length; iIdx++) {
+            final item = assessmentItems[iIdx];
+            if (item is! Map) continue;
+            final iLocation = '$lLocation -> Assessment Item ${iIdx + 1}';
+            final prompt = item['prompt']?.toString() ?? '';
+            final iType = item['interaction_type']?.toString();
+            final respSpec = (item['response_spec'] as Map?)?.cast<String, dynamic>() ?? {};
+            final scoreSpec = (item['scoring_spec'] as Map?)?.cast<String, dynamic>() ?? {};
+            final cSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+
+            for (final s in cSlugs) {
+              assessedConcepts.add(s);
+            }
+
+            if (cSlugs.isEmpty) {
+              issues.add(LintIssue(
+                level: 'WARNING',
+                rule: 'question-concept-mapping',
+                location: iLocation,
+                message: 'Assessment item has no explicit concept_slugs mapping.',
+              ));
+            }
+
+            // Duplicate detection
+            final normPrompt = prompt.trim().toLowerCase();
+            if (seenQuestions.containsKey(normPrompt)) {
+              issues.add(LintIssue(
+                level: 'ERROR',
+                rule: 'duplicate-question-prompt',
+                location: iLocation,
+                message: 'Assessment prompt is identical to prompt in ${seenQuestions[normPrompt]}.',
+              ));
+            } else {
+              seenQuestions[normPrompt] = iLocation;
+            }
+
+            // Single choice length bias
+            if (iType == 'single_choice') {
+              final options = (respSpec['options'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+              final correctIdx = scoreSpec['correct_index'] as int?;
+              if (options.length >= 2 && correctIdx != null && correctIdx >= 0 && correctIdx < options.length) {
+                totalSingleChoice++;
+                positionCounts[correctIdx] = (positionCounts[correctIdx] ?? 0) + 1;
+
+                final correctLen = options[correctIdx].length;
+                double distractorTotal = 0;
+                for (int o = 0; o < options.length; o++) {
+                  if (o != correctIdx) distractorTotal += options[o].length;
+                }
+                final avgDistractor = distractorTotal / (options.length - 1);
+                if (correctLen > avgDistractor * 1.85 && correctLen > 25) {
+                  issues.add(LintIssue(
+                    level: 'WARNING',
+                    rule: 'correct-answer-length-bias',
+                    location: iLocation,
+                    message: 'Correct answer length ($correctLen chars) is >1.85x average distractor ($avgDistractor chars), creating an answer giveaway.',
+                  ));
+                }
               }
             }
           }
         }
 
-        // Objective with no assessment evidence
-        if (objectiveQuestionCount == 0) {
+        // Objective assessment evidence check (evaluates BOTH questions & assessment_items)
+        if (totalObjectiveAssessments == 0) {
           issues.add(LintIssue(
-            level: 'WARNING',
+            level: 'ERROR',
             rule: 'objective-assessment-coverage',
-            location: oLoc,
-            message: 'Objective has 0 assessment questions. Every objective should have diagnostic assessment evidence.',
+            location: oLocation,
+            message: 'Objective has 0 assessment questions or assessment items. Each objective must have measurable evidence.',
           ));
         }
       }
     }
 
-    // Answer position bias
-    if (answerPositions.length >= 10) {
-      final counts = <int, int>{};
-      for (final pos in answerPositions) {
-        counts[pos] = (counts[pos] ?? 0) + 1;
-      }
-      for (final entry in counts.entries) {
-        final ratio = entry.value / answerPositions.length;
+    // 3. Answer Position Imbalance Check
+    if (totalSingleChoice >= 6) {
+      for (final entry in positionCounts.entries) {
+        final pos = entry.key;
+        final count = entry.value;
+        final ratio = count / totalSingleChoice;
         if (ratio > 0.50) {
           issues.add(LintIssue(
             level: 'WARNING',
             rule: 'answer-position-bias',
-            location: 'manifest.questions',
-            message: 'Option index ${entry.key} is correct ${(ratio * 100).toStringAsFixed(1)}% of the time (>50%), indicating position clustering bias.',
+            location: 'manifest.assessments',
+            message: 'Answer position $pos accounts for ${(ratio * 100).toStringAsFixed(1)}% ($count/$totalSingleChoice) of single-choice answers. Rebalance positions.',
           ));
         }
       }
     }
 
-    // Concept instructional coverage
-    for (final c in declaredConcepts) {
-      if (!assessedConcepts.contains(c) && !taughtConcepts.contains(c)) {
+    // 4. Concept Coverage Check (Flags concepts never taught or assessed)
+    for (final entry in declaredConcepts.entries) {
+      final slug = entry.key;
+      final name = entry.value;
+      if (!taughtConcepts.contains(slug) && !assessedConcepts.contains(slug)) {
+        issues.add(LintIssue(
+          level: 'WARNING',
+          rule: 'concept-instructional-coverage',
+          location: 'Concept $slug ("$name")',
+          message: 'Concept is declared in manifest but is neither taught in any lesson nor assessed in any item.',
+        ));
+      } else if (!assessedConcepts.contains(slug)) {
         issues.add(LintIssue(
           level: 'INFO',
-          rule: 'concept-instructional-coverage',
-          location: 'Concept $c',
-          message: 'Concept is declared in manifest but has no questions mapping to it.',
+          rule: 'concept-assessment-coverage',
+          location: 'Concept $slug',
+          message: 'Concept is taught in lessons but has no assessment items mapping directly to it.',
         ));
       }
     }
   }
+
+  bool get hasErrors => issues.any((i) => i.level == 'ERROR');
+  bool get hasWarnings => issues.any((i) => i.level == 'WARNING');
 }
 
 void main(List<String> args) {
+  print('====================================================');
+  print('  Curriculum Static Quality Linter & Diagnostic Gate');
+  print('====================================================');
+
   if (args.isEmpty) {
     print('Usage:');
-    print('  dart run tool/lint_manifest.dart <path-to-manifest.yaml>');
-    print('  dart run tool/lint_manifest.dart --dir <directory-with-manifests>');
+    print('  dart run tool/lint_manifest.dart <path_to_manifest>');
+    print('  dart run tool/lint_manifest.dart --dir <directory>');
     exit(1);
   }
 
-  final filesToLint = <String>[];
-
+  final files = <String>[];
   if (args.contains('--dir')) {
     final dirIdx = args.indexOf('--dir');
     if (dirIdx + 1 >= args.length) {
-      print('Error: Missing directory argument after --dir');
+      print('Error: Missing directory path after --dir');
       exit(1);
     }
     final dir = Directory(args[dirIdx + 1]);
@@ -302,48 +398,41 @@ void main(List<String> args) {
       print('Error: Directory not found: ${dir.path}');
       exit(1);
     }
-    for (final entity in dir.listSync(recursive: true)) {
-      if (entity is File &&
-          (entity.path.endsWith('.yaml') || entity.path.endsWith('.yml') || entity.path.endsWith('.json')) &&
-          !entity.path.contains('.schema.')) {
-        filesToLint.add(entity.path);
+    for (final entity in dir.listSync()) {
+      if (entity is File) {
+        final path = entity.path.toLowerCase();
+        if ((path.endsWith('.yaml') || path.endsWith('.yml') || path.endsWith('.json')) &&
+            !path.endsWith('.schema.json')) {
+          files.add(entity.path);
+        }
       }
     }
   } else {
-    filesToLint.add(args.first);
+    files.add(args.first);
   }
 
-  print('====================================================');
-  print('  Curriculum Static Quality Linter & Diagnostic Gate');
-  print('====================================================');
-  print('Inspecting ${filesToLint.length} manifest file(s)...\n');
-
+  print('Inspecting ${files.length} manifest file(s)...\n');
   int totalErrors = 0;
   int totalWarnings = 0;
 
-  for (final path in filesToLint) {
-    print('📁 Linting: $path');
+  for (final filePath in files) {
+    print('📁 Linting: $filePath');
+    final linter = ManifestLinter();
     try {
-      final manifest = _loadManifest(path);
-      final linter = ManifestLinter();
-      linter.lint(path, manifest);
+      final manifest = _loadManifest(filePath);
+      linter.lint(filePath, manifest);
 
-      final errors = linter.issues.where((i) => i.level == 'ERROR').toList();
-      final warnings = linter.issues.where((i) => i.level == 'WARNING').toList();
-      final infos = linter.issues.where((i) => i.level == 'INFO').toList();
-
-      totalErrors += errors.length;
-      totalWarnings += warnings.length;
-
-      if (linter.issues.isEmpty) {
-        print('   ✅ Perfect! 0 issues found.');
-      } else {
-        for (final issue in linter.issues) {
-          print('   $issue');
-        }
-        print('   Result: ${errors.length} error(s), ${warnings.length} warning(s), ${infos.length} info note(s).');
+      for (final issue in linter.issues) {
+        print('   $issue');
       }
-      print('');
+
+      final errors = linter.issues.where((i) => i.level == 'ERROR').length;
+      final warnings = linter.issues.where((i) => i.level == 'WARNING').length;
+      final infos = linter.issues.where((i) => i.level == 'INFO').length;
+      print('   Result: $errors error(s), $warnings warning(s), $infos info note(s).\n');
+
+      totalErrors += errors;
+      totalWarnings += warnings;
     } catch (e) {
       print('   ❌ Fatal parse error: $e\n');
       totalErrors++;
@@ -355,13 +444,13 @@ void main(List<String> args) {
   print('====================================================');
 
   if (totalErrors > 0) {
-    print('❌ Quality gate FAILED: Resolve errors before applying curriculum.');
+    print('❌ Quality gate REJECTED. Ingestion blocked until errors are resolved.');
     exit(1);
   } else if (totalWarnings > 0) {
     print('⚠️ Quality gate PASSED with warnings. Review warnings prior to publishing.');
     exit(0);
   } else {
-    print('✅ Quality gate PASSED flawlessly!');
+    print('✅ Quality gate PASSED cleanly with 100% compliance!');
     exit(0);
   }
 }

@@ -10,6 +10,8 @@ source_release:
   source_url: "https://csed.acm.org/cs2023-report"
   retrieved_at: "2026-10-01T00:00:00Z"
   license: "Authoritative Undergraduate Curriculum Standard"
+  license_name: "Academic Curriculum Standard"
+  rights_note: "ACM and IEEE-CS joint curriculum guidelines used for undergraduate program taxonomy and learning objective structure."
   sha256: "5d41402abc4b2a76b9719d911017c592b21b79fbf576c9ef56e5d0fc0dc95116"
   metadata:
     cip_code: "11.0701"
@@ -62,6 +64,9 @@ domains:
             emoji: "🪜"
             tags: ["math", "discrete-structures", "computer-science", "academic"]
             citation: "CS2023 Section FND-DS"
+            concept_slugs:
+              - "cs-mathematical-induction"
+              - "cs-graph-theory-fundamentals"
             terms:
               - term: "Base Case"
                 definition: "The initial condition in mathematical induction or recursion for which the property is verified directly without hypotheses."
@@ -86,11 +91,11 @@ domains:
             questions:
               - question_text: "When performing a proof by weak mathematical induction to demonstrate that a formula holds for all integers n >= 1, what must be demonstrated in the inductive step?"
                 options:
-                  - "That P(1) is true for the base case only"
                   - "That assuming P(k) is true, it necessarily follows that P(k+1) is true"
+                  - "That P(1) is true for the base case only"
                   - "That the formula evaluates to zero for negative numbers"
                   - "That every graph contains an odd number of vertices"
-                correct_answer: 1
+                correct_answer: 0
                 type: "mcq"
                 explanation: "The inductive step requires assuming the inductive hypothesis P(k) for an arbitrary k >= 1 and rigorously showing that P(k+1) must also hold as a consequence."
                 concept_slugs: ["cs-mathematical-induction"]
@@ -134,6 +139,9 @@ domains:
             emoji: "⚙️"
             tags: ["hardware", "systems", "architecture", "computer-science"]
             citation: "CS2023 Section SYS-AR"
+            concept_slugs:
+              - "cs-instruction-pipelining"
+              - "cs-memory-hierarchy-locality"
             terms:
               - term: "Spatial Locality"
                 definition: "The principle that memory elements with storage addresses close to recently accessed elements are likely to be accessed soon."
@@ -157,10 +165,10 @@ domains:
             questions:
               - question_text: "An algorithm traverses a 10,000 x 10,000 two-dimensional array stored in C-style row-major format. If the code iterates column-by-column across non-contiguous addresses rather than row-by-row, what architectural inefficiency occurs?"
                 options:
-                  - "An arithmetic overflow in the ALU"
+                  - "Arithmetic execution overflow occurring inside the integer arithmetic logic unit"
                   - "Severe cache thrashing due to poor spatial locality, resulting in frequent DRAM cache line misses"
-                  - "An immediate operating system kernel panic"
-                  - "Instruction pipeline structural hazard on the write-back stage"
+                  - "Immediate operating system kernel panic halt triggered by unauthorized memory boundaries"
+                  - "Instruction pipeline structural hazard stalling processor execution at the write-back stage"
                 correct_answer: 1
                 type: "mcq"
                 explanation: "Row-major layout stores matrix rows contiguously. Traversing by column jumps across memory by stride length (10,000 elements per step), preventing pre-fetched 64-byte cache lines from being utilized and causing constant cache misses."
@@ -205,6 +213,9 @@ domains:
             emoji: "🚦"
             tags: ["os", "concurrency", "deadlock", "systems"]
             citation: "CS2023 Section SYS-OS"
+            concept_slugs:
+              - "cs-concurrency-synchronization"
+              - "cs-deadlock-coffman"
             terms:
               - term: "Critical Section"
                 definition: "A segment of code accessing shared resources that must not be executed concurrently by more than one thread of execution."
@@ -229,10 +240,10 @@ domains:
               - question_text: "Two threads in an operating system need to acquire both Resource 1 and Resource 2. Thread A requests Resource 1 then Resource 2, while Thread B requests Resource 2 then Resource 1. What vulnerability exists, and which Coffman condition is established?"
                 options:
                   - "Memory fragmentation; No Preemption"
-                  - "Potential deadlock; Circular Wait"
                   - "Buffer overflow; Mutual Exclusion"
+                  - "Potential deadlock; Circular Wait"
                   - "Page fault; Hold and Wait"
-                correct_answer: 1
+                correct_answer: 2
                 type: "mcq"
                 explanation: "Opposite lock acquisition orders create a circular dependency where Thread A holds R1 waiting for R2, and Thread B holds R2 waiting for R1. This forms a Circular Wait, resulting in deadlock."
                 concept_slugs: ["cs-deadlock-coffman"]
@@ -269,6 +280,8 @@ domains:
             emoji: "🌳"
             tags: ["compilers", "programming-languages", "ast", "grammar"]
             citation: "CS2023 Section PL-CMP"
+            concept_slugs:
+              - "cs-context-free-grammars"
             terms:
               - term: "Abstract Syntax Tree (AST)"
                 definition: "A tree representation of the abstract syntactic structure of source code written in a formal programming language."
@@ -289,10 +302,10 @@ domains:
               - question_text: "During compiler front-end compilation, which phase is responsible for taking a stream of lexical tokens and constructing an Abstract Syntax Tree (AST) according to a Context-Free Grammar?"
                 options:
                   - "Instruction Scheduling"
-                  - "Syntactic Analysis (Parsing)"
                   - "Register Allocation"
                   - "Linker relocation"
-                correct_answer: 1
+                  - "Syntactic Analysis (Parsing)"
+                correct_answer: 3
                 type: "mcq"
                 explanation: "Parsing (syntactic analysis) ingests tokens from the lexer and verifies conformance to the language's context-free grammar, producing an Abstract Syntax Tree (AST)."
                 concept_slugs: ["cs-context-free-grammars"]
@@ -329,6 +342,8 @@ domains:
             emoji: "🧩"
             tags: ["algorithms", "theory", "np-completeness", "turing"]
             citation: "CS2023 Section AL-COMP"
+            concept_slugs:
+              - "cs-np-completeness"
             terms:
               - term: "Class P"
                 definition: "The class of decision problems solvable by a deterministic Turing machine in polynomial time O(n^k)."

@@ -20,13 +20,20 @@ Map<String, dynamic> loadManifest(String relativePath) {
 }
 
 void validateManifestStructure(Map<String, dynamic> manifest, String expectedTargetSlug) {
-  // 1. Source release
-  final sourceRelease = manifest['source_release'] as Map<String, dynamic>?;
-  expect(sourceRelease, isNotNull);
-  expect(sourceRelease!['publisher'], isNotEmpty);
-  expect(sourceRelease['title'], isNotEmpty);
-  expect(sourceRelease['version'], isNotEmpty);
-  expect(sourceRelease['source_url'], isNotEmpty);
+  // 1. Source release(s)
+  final rawReleases = manifest['source_releases'] as List<dynamic>?;
+  final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
+  expect(rawReleases != null || singleRelease != null, isTrue, reason: 'Manifest must declare source_releases or source_release');
+  final releases = rawReleases != null
+      ? rawReleases.cast<Map<String, dynamic>>()
+      : [singleRelease!];
+  expect(releases, isNotEmpty);
+  for (final rel in releases) {
+    expect(rel['publisher'], isNotEmpty);
+    expect(rel['title'], isNotEmpty);
+    expect(rel['version'], isNotEmpty);
+    expect(rel['source_url'], isNotEmpty);
+  }
 
   // 2. Target info
   final target = manifest['target'] as Map<String, dynamic>?;
@@ -147,6 +154,25 @@ void main() {
 
       final domainCodes = domains.map((d) => (d as Map)['code']).toList();
       expect(domainCodes, equals(['CS-101', 'CS-201', 'CS-301', 'CS-401', 'CS-501']));
+    });
+
+    test('Lesson concept scoping regression test: Objective A concepts do not leak into Objective B lessons', () {
+      final manifest = loadManifest('content/security_plus_sy0_701.yaml');
+      final domains = manifest['domains'] as List<dynamic>;
+
+      // Objective 1.1 concepts
+      final obj11 = ((domains[0] as Map)['objectives'] as List<dynamic>)[0] as Map;
+      final obj11Concepts = ((obj11['concepts'] as List<dynamic>).map((c) => (c as Map)['slug'])).toSet();
+      expect(obj11Concepts, containsAll(['sec-cia-triad', 'sec-aaa-framework', 'sec-zero-trust']));
+
+      // Objective 1.2 lesson
+      final obj12 = ((domains[0] as Map)['objectives'] as List<dynamic>)[1] as Map;
+      final obj12Lesson = (obj12['lessons'] as List<dynamic>)[0] as Map;
+      final obj12LessonConcepts = (obj12Lesson['concept_slugs'] as List<dynamic>).cast<String>().toSet();
+
+      // Regression check: Objective 1.2 lesson must NOT have any concepts from Objective 1.1
+      expect(obj12LessonConcepts.intersection(obj11Concepts), isEmpty);
+      expect(obj12LessonConcepts, containsAll(['sec-symmetric-asymmetric', 'sec-pki-certificates']));
     });
   });
 }

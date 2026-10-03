@@ -3,24 +3,22 @@
   "title": "CurriculumSourceManifest",
   "description": "Formal contract and schema definition for Learning Architecture V2 curriculum manifests.",
   "type": "object",
-  "required": ["source_release", "target", "domains"],
+  "additionalProperties": false,
+  "required": ["target", "domains"],
   "properties": {
     "source_release": {
-      "type": "object",
-      "required": ["publisher", "title", "version"],
-      "properties": {
-        "publisher": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "version": { "type": "string", "minLength": 1 },
-        "source_url": { "type": "string", "format": "uri" },
-        "retrieved_at": { "type": "string" },
-        "license": { "type": "string" },
-        "sha256": { "type": "string" },
-        "metadata": { "type": "object" }
+      "$ref": "#/definitions/SourceRelease"
+    },
+    "source_releases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/SourceRelease"
       }
     },
     "target": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["slug", "version_code"],
       "properties": {
         "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
@@ -39,16 +37,7 @@
     "concept_mappings": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": ["from_version_code", "from_concept_slug", "to_concept_slug", "mapping_type"],
-        "properties": {
-          "from_version_code": { "type": "string" },
-          "from_concept_slug": { "type": "string" },
-          "to_concept_slug": { "type": "string" },
-          "mapping_type": { "type": "string", "enum": ["unchanged", "renamed", "expanded", "narrowed", "replaced", "removed"] },
-          "transfer_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
-          "metadata": { "type": "object" }
-        }
+        "$ref": "#/definitions/TargetVersionConceptMapping"
       }
     },
     "domains": {
@@ -60,8 +49,45 @@
     }
   },
   "definitions": {
+    "SourceRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "title", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "publisher": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "source_url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string" },
+        "license": { "type": "string" },
+        "license_name": { "type": "string" },
+        "rights_note": { "type": "string" },
+        "sha256": { "type": "string" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "TargetVersionConceptMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_version_code", "from_concept_slug", "mapping_type"],
+      "properties": {
+        "from_version_code": { "type": "string", "minLength": 1 },
+        "from_concept_slug": { "type": "string", "minLength": 1 },
+        "to_concept_slug": {
+          "type": ["string", "null"]
+        },
+        "mapping_type": {
+          "type": "string",
+          "enum": ["unchanged", "renamed", "expanded", "narrowed", "replaced", "removed"]
+        },
+        "transfer_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "metadata": { "type": "object" }
+      }
+    },
     "CurriculumDomain": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["code", "title"],
       "properties": {
         "code": { "type": "string", "minLength": 1 },
@@ -71,6 +97,11 @@
         "sort_order": { "type": "integer", "minimum": 1 },
         "importance": { "type": "string", "enum": ["core", "recommended", "optional"] },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
+        "stimuli": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/AssessmentStimulus" }
+        },
         "objectives": {
           "type": "array",
           "items": {
@@ -81,6 +112,7 @@
     },
     "CurriculumObjective": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["code", "title"],
       "properties": {
         "code": { "type": "string", "minLength": 1 },
@@ -89,6 +121,7 @@
         "sort_order": { "type": "integer", "minimum": 1 },
         "importance": { "type": "string", "enum": ["core", "recommended", "optional"] },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "concepts": {
           "type": "array",
           "items": {
@@ -117,10 +150,12 @@
     },
     "KnowledgeConcept": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["slug", "name"],
       "properties": {
         "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
         "name": { "type": "string", "minLength": 1 },
+        "canonical_concept": { "type": "string", "pattern": "^[a-z0-9-]+$" },
         "emoji": { "type": "string" },
         "short_definition": { "type": "string" },
         "description": { "type": "string" },
@@ -130,6 +165,7 @@
         },
         "status": { "type": "string", "enum": ["active", "deprecated", "merged"] },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "prerequisites": {
           "type": "array",
           "items": { "type": "string" }
@@ -138,6 +174,7 @@
     },
     "AssessmentStimulus": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["id", "stimulus_type", "title"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
@@ -148,18 +185,27 @@
         "title": { "type": "string", "minLength": 1 },
         "body": { "type": "string" },
         "structured_data": { "type": "object" },
-        "asset_refs": { "type": "array", "items": { "type": "string" } }
+        "asset_refs": { "type": "array", "items": { "type": "string" } },
+        "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
+        "metadata": { "type": "object" }
       }
     },
     "CurriculumLesson": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["title"],
       "properties": {
         "title": { "type": "string", "minLength": 1 },
         "description": { "type": "string" },
         "emoji": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
+        "concept_slugs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "blocks": {
           "type": "array",
           "items": {
@@ -194,8 +240,10 @@
     },
     "LessonBlock": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["block_type", "content"],
       "properties": {
+        "sort_order": { "type": "integer" },
         "block_type": {
           "type": "string",
           "enum": ["markdown", "callout", "code", "table", "image", "formula", "example", "practice_prompt"]
@@ -206,6 +254,7 @@
     },
     "LessonTerm": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["term", "definition"],
       "properties": {
         "term": { "type": "string", "minLength": 1 },
@@ -216,6 +265,7 @@
     },
     "LessonSnippetConcept": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["concept_text"],
       "properties": {
         "concept_text": { "type": "string", "minLength": 1 },
@@ -226,6 +276,7 @@
     },
     "LegacyQuestion": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["question_text", "options", "correct_answer"],
       "properties": {
         "question_text": { "type": "string", "minLength": 1 },
@@ -234,17 +285,29 @@
         "type": { "type": "string", "enum": ["mcq", "true_false", "short_answer"] },
         "explanation": { "type": "string" },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "concept_slugs": { "type": "array", "items": { "type": "string" } }
       }
     },
     "AssessmentItem": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["prompt", "interaction_type", "response_spec", "scoring_spec"],
       "properties": {
         "stimulus_id": { "type": "string" },
+        "stimulus_key": { "type": "string" },
         "interaction_type": {
           "type": "string",
-          "enum": ["single_choice", "multi_select", "ordered_response", "matching", "matrix_grid", "numeric_entry", "cloze", "code_output"]
+          "enum": [
+            "single_choice",
+            "multi_select",
+            "ordered_response",
+            "matching",
+            "matrix_grid",
+            "numeric_entry",
+            "cloze",
+            "code_output"
+          ]
         },
         "prompt": { "type": "string", "minLength": 1 },
         "response_spec": { "type": "object" },
@@ -253,18 +316,151 @@
         "difficulty": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
         "cognitive_level": { "type": "string", "enum": ["recall", "comprehension", "application", "analysis", "evaluation"] },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "concept_slugs": { "type": "array", "items": { "type": "string" } },
         "metadata": { "type": "object" }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "interaction_type": { "const": "single_choice" },
+            "response_spec": {
+              "type": "object",
+              "required": ["options"],
+              "properties": {
+                "options": { "type": "array", "minItems": 2, "items": { "type": "string" } }
+              }
+            },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["correct_index"],
+              "properties": {
+                "correct_index": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "multi_select" },
+            "response_spec": {
+              "type": "object",
+              "required": ["options"],
+              "properties": {
+                "options": { "type": "array", "minItems": 2, "items": { "type": "string" } }
+              }
+            },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["correct_indices"],
+              "properties": {
+                "correct_indices": { "type": "array", "minItems": 1, "items": { "type": "integer", "minimum": 0 } },
+                "scoring_method": { "type": "string", "enum": ["all_or_nothing", "partial_credit"] }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "ordered_response" },
+            "response_spec": {
+              "type": "object",
+              "required": ["items"],
+              "properties": {
+                "items": { "type": "array", "minItems": 2, "items": { "type": "string" } }
+              }
+            },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["correct_order"],
+              "properties": {
+                "correct_order": { "type": "array", "minItems": 2, "items": { "type": "integer", "minimum": 0 } }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "matching" },
+            "response_spec": {
+              "type": "object",
+              "required": ["left_items", "right_items"],
+              "properties": {
+                "left_items": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+                "right_items": { "type": "array", "minItems": 2, "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "matrix_grid" },
+            "response_spec": {
+              "type": "object",
+              "required": ["rows", "columns"],
+              "properties": {
+                "rows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                "columns": { "type": "array", "minItems": 2, "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "numeric_entry" },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["correct_value"],
+              "properties": {
+                "correct_value": { "type": "number" },
+                "tolerance": { "type": "number", "minimum": 0.0 }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "cloze" },
+            "response_spec": {
+              "type": "object",
+              "required": ["text_template"],
+              "properties": {
+                "text_template": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "interaction_type": { "const": "code_output" },
+            "response_spec": {
+              "type": "object",
+              "required": ["code_snippet"],
+              "properties": {
+                "code_snippet": { "type": "string", "minLength": 1 }
+              }
+            },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["expected_output"],
+              "properties": {
+                "expected_output": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
     },
     "CurriculumFlashcard": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["front", "back"],
       "properties": {
         "front": { "type": "string", "minLength": 1 },
         "back": { "type": "string", "minLength": 1 },
         "explanation": { "type": "string" },
         "citation": { "type": "string" },
+        "source_release_id": { "type": "string" },
         "concept_slugs": { "type": "array", "items": { "type": "string" } }
       }
     }

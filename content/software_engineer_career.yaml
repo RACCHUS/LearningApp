@@ -3,18 +3,32 @@
 # Target: Software Engineer (Career)
 # ============================================================================
 
-source_release:
-  publisher: "IEEE Computer Society & Bureau of Labor Statistics"
-  title: "Guide to the Software Engineering Body of Knowledge (SWEBOK v4) & BLS Standard Occupational Classification (SOC 15-1252)"
-  version: "SWEBOK-v4-SOC2018"
-  source_url: "https://www.computer.org/education/bodies-of-knowledge/software-engineering"
-  retrieved_at: "2026-10-01T00:00:00Z"
-  license: "Professional Standard Curriculum Reference"
-  sha256: "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
-  metadata:
-    soc_code: "15-1252"
-    soc_title: "Software Developers"
-    cip_alignment: ["11.0201", "11.0701"]
+source_releases:
+  - id: "swebok-v4"
+    publisher: "IEEE Computer Society"
+    title: "Guide to the Software Engineering Body of Knowledge (SWEBOK Guide)"
+    version: "v4.0"
+    source_url: "https://www.computer.org/education/bodies-of-knowledge/software-engineering"
+    retrieved_at: "2026-10-01T00:00:00Z"
+    license: "Copyright IEEE (Educational Reference)"
+    license_name: "Proprietary Educational Reference"
+    rights_note: "Referenced for curriculum taxonomy and occupational competence structure under educational fair use."
+    sha256: "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7"
+    metadata:
+      standard: "ISO/IEC TR 19759:2015"
+  - id: "bls-soc-2018"
+    publisher: "U.S. Bureau of Labor Statistics"
+    title: "Standard Occupational Classification (SOC) — 15-1252 Software Developers"
+    version: "2018"
+    source_url: "https://www.bls.gov/soc/2018/major_groups.htm#15-0000"
+    retrieved_at: "2026-10-01T00:00:00Z"
+    license: "Public Domain (U.S. Government Work)"
+    license_name: "Public Domain"
+    rights_note: "U.S. Government work under 17 U.S.C. 105; unrestricted public domain."
+    sha256: "4c52089b2db95cfeb1412586f1e2f7fb7058df553bb89c670868f00dbbe155d8"
+    metadata:
+      soc_code: "15-1252"
+      soc_title: "Software Developers"
 
 target:
   slug: "career-software-engineer"
@@ -33,6 +47,7 @@ domains:
     weight: 0.25
     sort_order: 1
     importance: "core"
+    source_release_id: "swebok-v4"
     citation: "SWEBOK v4 Knowledge Area: Computing Foundations & Algorithms"
     objectives:
       - code: "SWE-1.1"
@@ -40,6 +55,7 @@ domains:
         description: "Asymptotic notation, best/average/worst-case analysis, and memory trade-offs."
         sort_order: 1
         importance: "core"
+        source_release_id: "swebok-v4"
         citation: "SWEBOK v4 Section 1.2: Algorithmic Efficiency"
         concepts:
           - slug: "swe-asymptotic-complexity"
@@ -47,6 +63,7 @@ domains:
             emoji: "⏱️"
             short_definition: "Mathematical characterization of runtime execution time and auxiliary space scaling as input size n approaches infinity."
             description: "Rigorous upper-bound, lower-bound (Omega), and tight-bound (Theta) formalisms describing how resource consumption scales with input size."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Computing Foundations"
             prerequisites: []
           - slug: "swe-hash-tables"
@@ -54,6 +71,7 @@ domains:
             emoji: "🗄️"
             short_definition: "Key-value associative data structure providing amortized O(1) average lookup, insertion, and deletion."
             description: "Data structure utilizing hash functions to map arbitrary keys to array buckets, handling collisions via chaining or open addressing."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Computing Foundations"
             prerequisites: ["swe-asymptotic-complexity"]
         lessons:
@@ -61,7 +79,11 @@ domains:
             description: "Evaluate amortized runtime bounds and collision strategies in associative storage."
             emoji: "⏱️"
             tags: ["algorithms", "data-structures", "complexity", "software-engineering"]
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Chapter 1"
+            concept_slugs:
+              - "swe-asymptotic-complexity"
+              - "swe-hash-tables"
             terms:
               - term: "Big-O Notation"
                 definition: "Mathematical notation describing the limiting behavior of a function when the argument tends towards a particular value or infinity."
@@ -105,6 +127,7 @@ domains:
     weight: 0.25
     sort_order: 2
     importance: "core"
+    source_release_id: "swebok-v4"
     citation: "SWEBOK v4 Knowledge Area: Software Architecture & Design"
     objectives:
       - code: "SWE-2.1"
@@ -112,6 +135,7 @@ domains:
         description: "Consistency, Availability, Partition tolerance trade-offs, and eventual consistency models."
         sort_order: 1
         importance: "core"
+        source_release_id: "swebok-v4"
         citation: "SWEBOK v4 Section 2.3: Distributed Systems Architecture"
         concepts:
           - slug: "swe-cap-theorem"
@@ -119,6 +143,7 @@ domains:
             emoji: "🌐"
             short_definition: "Fundamental theorem proving a distributed data store can guarantee at most two of Consistency, Availability, and Partition Tolerance."
             description: "Formulation by Eric Brewer proving that across an asynchronous network subject to partition faults, a system must choose between CP and AP."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Distributed Architecture"
             prerequisites: []
           - slug: "swe-distributed-caching"
@@ -126,6 +151,7 @@ domains:
             emoji: "⚡"
             short_definition: "Strategies including Cache-Aside, Write-Through, Write-Behind, and eviction algorithms (LRU/LFU)."
             description: "High-performance memory caching layers (e.g. Redis, Memcached) shielding persistent relational storage from read exhaustion."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Software Design"
             prerequisites: ["swe-cap-theorem"]
         lessons:
@@ -133,7 +159,11 @@ domains:
             description: "Navigate network partition trade-offs and implement resilient cache-aside topologies."
             emoji: "🌐"
             tags: ["system-design", "distributed-systems", "architecture", "caching"]
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Chapter 2"
+            concept_slugs:
+              - "swe-cap-theorem"
+              - "swe-distributed-caching"
             terms:
               - term: "Partition Tolerance"
                 definition: "The capability of a distributed cluster to continue operating despite arbitrary dropped or delayed network messages."
@@ -154,11 +184,11 @@ domains:
             questions:
               - question_text: "A globally distributed messaging application experiences a network partition between data centers. The product team requires that all users must still be able to submit posts without errors, even if users on different continents see divergent message feeds temporarily. Which system characteristic is being prioritized?"
                 options:
-                  - "Strict Linearizable Consistency (CP)"
                   - "High Availability under Partition Tolerance (AP)"
+                  - "Strict Linearizable Consistency (CP)"
                   - "Strong Transactional Isolation (ACID)"
                   - "Zero-Latency Synchronous Replication"
-                correct_answer: 1
+                correct_answer: 0
                 type: "mcq"
                 explanation: "Allowing users to write without rejection during a network split prioritizes Availability over immediate Consistency (an AP architecture), relying on eventual consistency once the partition heals."
                 concept_slugs: ["swe-cap-theorem"]
@@ -173,6 +203,7 @@ domains:
     weight: 0.20
     sort_order: 3
     importance: "core"
+    source_release_id: "swebok-v4"
     citation: "SWEBOK v4 Knowledge Area: Software Construction & Interoperability"
     objectives:
       - code: "SWE-3.1"
@@ -180,6 +211,7 @@ domains:
         description: "Idempotency, HTTP verbs, status codes, JWT claims, and OAuth2 authorization code grant."
         sort_order: 1
         importance: "core"
+        source_release_id: "swebok-v4"
         citation: "SWEBOK v4 Section 3.1: Interface Design"
         concepts:
           - slug: "swe-rest-idempotency"
@@ -187,6 +219,7 @@ domains:
             emoji: "🔌"
             short_definition: "Contract where identical repeated requests produce the same side-effect state on the server."
             description: "Adherence to RFC 9110 specifications: GET, PUT, and DELETE must be idempotent; POST is non-idempotent."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 API Construction"
             prerequisites: []
         lessons:
@@ -194,7 +227,10 @@ domains:
             description: "Construct scalable, idempotent HTTP endpoints and authenticate with signed JWTs."
             emoji: "🔌"
             tags: ["api", "rest", "http", "jwt"]
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Section 3.1"
+            concept_slugs:
+              - "swe-rest-idempotency"
             terms:
               - term: "Idempotency"
                 definition: "Property of an HTTP method where making multiple identical requests has the same intended effect as making a single request."
@@ -215,10 +251,10 @@ domains:
               - question_text: "A payment client sends a charge request to a gateway, but the TCP connection times out before the client receives the response. If the gateway endpoint is a standard non-idempotent POST without deduplication headers, what danger occurs if the client naively retries?"
                 options:
                   - "The client will encounter an SSL certificate handshake error"
-                  - "The customer may be double-charged if the initial request completed before the timeout"
                   - "The database will automatically convert the request to a GET"
+                  - "The customer may be double-charged if the initial request completed before the timeout"
                   - "The server will throw a 404 Not Found error"
-                correct_answer: 1
+                correct_answer: 2
                 type: "mcq"
                 explanation: "Because non-idempotent POST operations execute state-mutating actions anew with each delivery, retrying after a dropped network response can execute the charge a second time."
                 concept_slugs: ["swe-rest-idempotency"]
@@ -233,6 +269,7 @@ domains:
     weight: 0.15
     sort_order: 4
     importance: "core"
+    source_release_id: "swebok-v4"
     citation: "SWEBOK v4 Knowledge Area: Software Testing"
     objectives:
       - code: "SWE-4.1"
@@ -240,6 +277,7 @@ domains:
         description: "Unit vs integration vs E2E, mock/stub/fake semantics, and regression safety."
         sort_order: 1
         importance: "core"
+        source_release_id: "swebok-v4"
         citation: "SWEBOK v4 Section 4.2: Test Levels & Automation"
         concepts:
           - slug: "swe-test-pyramid"
@@ -247,6 +285,7 @@ domains:
             emoji: "🔺"
             short_definition: "Testing strategy emphasizing a broad foundation of fast unit tests, fewer integration tests, and minimal end-to-end tests."
             description: "Testing methodology coined by Mike Cohn balancing execution speed, diagnostic precision, and infrastructure maintenance costs."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Testing Foundations"
             prerequisites: []
         lessons:
@@ -254,7 +293,10 @@ domains:
             description: "Structure automated test suites and select appropriate mock, stub, and fake isolation doubles."
             emoji: "🔺"
             tags: ["testing", "quality", "tdd", "software-engineering"]
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Section 4.2"
+            concept_slugs:
+              - "swe-test-pyramid"
             terms:
               - term: "Test Pyramid"
                 definition: "Architectural guideline recommending high numbers of isolated unit tests, moderate integration tests, and few high-level end-to-end UI tests."
@@ -274,11 +316,11 @@ domains:
             questions:
               - question_text: "A development team complains that their continuous integration build takes 90 minutes because all 4,000 test cases spin up a full headless browser and interact with a live cloud database. According to Test Pyramid best practices, what transformation should the team make?"
                 options:
-                  - "Disable all automated tests and rely on manual QA testers"
-                  - "Push business logic testing down into rapid in-memory unit tests using mocks and stubs, reserving E2E tests for critical user journeys"
-                  - "Convert all tests into manual shell scripts run weekly"
-                  - "Run browser tests on developer laptops instead of CI"
-                correct_answer: 1
+                  - "Decommission all automated test suites and migrate entirely to manual human regression QA testing cycles"
+                  - "Convert all automated tests into scheduled batch shell scripts executed periodically on developer machines"
+                  - "Isolate browser test execution exclusively on local engineer laptops rather than central automated pipelines"
+                  - "Push business logic testing down into rapid in-memory unit tests, reserving E2E tests for critical user journeys"
+                correct_answer: 3
                 type: "mcq"
                 explanation: "The Test Pyramid dictates that the vast majority of tests should be fast, isolated unit tests. End-to-end tests should be reserved for a concise set of critical smoke tests."
                 concept_slugs: ["swe-test-pyramid"]
@@ -293,6 +335,7 @@ domains:
     weight: 0.15
     sort_order: 5
     importance: "core"
+    source_release_id: "swebok-v4"
     citation: "SWEBOK v4 Knowledge Area: Software Engineering Management & DevOps"
     objectives:
       - code: "SWE-5.1"
@@ -300,6 +343,7 @@ domains:
         description: "Container virtualization, blue-green / canary deployments, and the three pillars of observability (logs, metrics, traces)."
         sort_order: 1
         importance: "core"
+        source_release_id: "swebok-v4"
         citation: "SWEBOK v4 Section 5.3: Continuous Delivery & Observability"
         concepts:
           - slug: "swe-container-immutability"
@@ -307,6 +351,7 @@ domains:
             emoji: "📦"
             short_definition: "Packaging application code and runtime dependencies into isolated, reproducible image artifacts."
             description: "Deployment philosophy where servers and container images are never modified in-place; all changes require building and deploying a new versioned image."
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 DevOps Architecture"
             prerequisites: []
         lessons:
@@ -314,7 +359,10 @@ domains:
             description: "Build OCI container images and monitor distributed microservices with traces and metrics."
             emoji: "📦"
             tags: ["devops", "containers", "observability", "ci-cd"]
+            source_release_id: "swebok-v4"
             citation: "SWEBOK v4 Section 5.3"
+            concept_slugs:
+              - "swe-container-immutability"
             terms:
               - term: "Immutable Infrastructure"
                 definition: "Infrastructure paradigm where components are replaced rather than modified, ensuring zero configuration drift."
@@ -334,10 +382,10 @@ domains:
             questions:
               - question_text: "An engineer discovers a critical bug in a production microservice. Following immutable infrastructure best practices, which action must the engineer perform?"
                 options:
-                  - "SSH directly into production containers and edit the Python source files in-place"
-                  - "Fix the bug in source control, trigger an automated CI build to produce a new container image tag, and roll out the new image via canary or rolling update"
-                  - "Reboot the physical server host without changing code"
-                  - "Change the database password to lock out users"
+                  - "SSH directly into production compute instances and hot-patch interpreted source files in-place on live file systems"
+                  - "Commit fix to source control, generate a new versioned container image via CI, and deploy deterministically via rolling rollout"
+                  - "Restart bare-metal cluster hypervisors without modifying code to clear volatile execution memory"
+                  - "Rotate all production database master credentials immediately to terminate external active connections"
                 correct_answer: 1
                 type: "mcq"
                 explanation: "Immutable infrastructure strictly prohibits manual, in-place patching on live instances. All fixes must flow through version control, automated CI container builds, and deterministic orchestrator deployments."

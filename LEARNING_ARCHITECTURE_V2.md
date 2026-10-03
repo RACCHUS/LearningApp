@@ -1392,24 +1392,28 @@ To maintain scientific credibility and prevent false claims of certification:
 ## 16. Revised Phased Content & Platform Roadmap
 
 ```
-Phase A: Content Primitives (COMPLETED)
+Phase A: Content Primitives (~85–90% — Hardened)
  ├── Generic ordered lesson block model (lesson_blocks)
  ├── Extensible assessment interaction schema (assessment_items)
  ├── Shared vignettes & diagrams (assessment_stimuli)
  ├── Concept junctions (assessment_item_concepts)
- └── Version concept mapping table (target_version_concept_mappings)
+ ├── Version concept mapping table (target_version_concept_mappings with nullable to_concept_id for removals)
+ └── Hardened assessment & stimulus RLS policies (private items strictly protected from public leaks)
 
-Phase B: Canonical Concept Resolution & Manifest Contract (COMPLETED)
- ├── Canonical concept alias indexing & RPC resolver (resolve_canonical_concept)
- ├── Formal JSON Schema contract (curriculum_manifest.schema.json)
+Phase B: Canonical Concept Resolution & Manifest Contract (~85% — Hardened)
+ ├── Canonical concept alias indexing & RPC resolver (resolve_canonical_concept with field matching & ambiguity detection)
+ ├── Formal JSON Schema contract (curriculum_manifest.schema.json with interaction-specific schemas & additionalProperties: false)
  ├── Manifest validation rules and alias ingestion
- └── Reference manifest enrichment (content/security_plus_sy0_701.yaml)
+ └── Reference manifest enrichment (provenance SHA-256 fix, multi-source releases, explicit concept_slugs)
 
-Phase C: Ingestion Industrialization (COMPLETED)
+Phase C: Ingestion Industrialization & Content Hardening (~85% — Hardened)
  ├── Batch directory ingestion CLI with 3-phase execution (--dir, --dry-run, --apply)
- ├── Pedagogical quality linter & diagnostic gate (tool/lint_manifest.dart)
- ├── Staging lifecycle transition (--stage-review, review_ready)
- └── AI blueprint extractor boundary & human verification protocol
+ ├── Pedagogical quality linter & diagnostic gate (tool/lint_manifest.dart with JSON schema enforcement & dual-assessment validation)
+ ├── Staging lifecycle transition (--stage-review, review_ready freeze & --publish prerequisite gate)
+ ├── Idempotent draft ingestion (clean_draft_target_version atomic cleanup RPC)
+ ├── Strictly scoped lesson concept linking (eliminating cross-objective leakage)
+ ├── Parity for objective-level flashcards & stimuli, and removed concept mappings
+ └── Main CI validation gate (.github/workflows/flutter-ci.yml manifest lint & dry-run)
 
 Phase D: Learning Presentation (NEXT)
  ├── Rich Lesson Block Reader (markdown, callout, code, table, formula, example, prompt)

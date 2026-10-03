@@ -45,6 +45,12 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Validate curriculum manifests (JSON Schema & Quality Linter)
+        run: dart run tool/lint_manifest.dart --dir content/
+
+      - name: Dry-run batch curriculum ingestion
+        run: dart run tool/ingest_curriculum.dart --dir content/ --dry-run
+
       - name: Run tests
         run: flutter test --reporter expanded
 
