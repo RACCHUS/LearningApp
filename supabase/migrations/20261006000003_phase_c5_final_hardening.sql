@@ -815,8 +815,8 @@ begin
   perform public.clean_draft_target_version(v_version_id);
 
   -- 6. Ingest Source Releases
-  if jsonb_typeof(payload->'source_releases') = 'array' then
-    for v_source_rel in select * from jsonb_array_elements(payload->'source_releases')
+  if jsonb_typeof(coalesce(payload->'source_releases', payload->'sources')) = 'array' then
+    for v_source_rel in select * from jsonb_array_elements(coalesce(payload->'source_releases', payload->'sources'))
     loop
       insert into public.content_source_releases (
         publisher, title, version, source_url, license, retrieved_at, sha256, metadata
@@ -850,6 +850,9 @@ begin
 
       if v_source_rel ? 'id' then
         v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'id', v_rel_id::text);
+      end if;
+      if v_source_rel ? 'source_id' then
+        v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'source_id', v_rel_id::text);
       end if;
       v_source_releases_map := v_source_releases_map || jsonb_build_object(
         coalesce(v_source_rel->>'publisher', '') || '/' || coalesce(v_source_rel->>'version', ''), v_rel_id::text
@@ -985,6 +988,8 @@ begin
         v_concept_rel_id := null;
         if v_concept ? 'source_release_id' and v_source_releases_map ? (v_concept->>'source_release_id') then
           v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_release_id'))::uuid;
+        elsif v_concept ? 'source_id' and v_source_releases_map ? (v_concept->>'source_id') then
+          v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_id'))::uuid;
         else
           v_concept_rel_id := v_default_rel_id;
         end if;
@@ -1047,6 +1052,8 @@ begin
         v_entity_rel_id := null;
         if v_stim ? 'source_release_id' and v_source_releases_map ? (v_stim->>'source_release_id') then
           v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_release_id'))::uuid;
+        elsif v_stim ? 'source_id' and v_source_releases_map ? (v_stim->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_id'))::uuid;
         else
           v_entity_rel_id := v_default_rel_id;
         end if;
@@ -1123,6 +1130,8 @@ begin
         v_entity_rel_id := null;
         if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
           v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+        elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
         else
           v_entity_rel_id := v_default_rel_id;
         end if;
@@ -1185,6 +1194,8 @@ begin
         v_entity_rel_id := null;
         if v_domain ? 'source_release_id' and v_source_releases_map ? (v_domain->>'source_release_id') then
           v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid;
+        elsif v_domain ? 'source_id' and v_source_releases_map ? (v_domain->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_id'))::uuid;
         else
           v_entity_rel_id := v_default_rel_id;
         end if;
@@ -1241,8 +1252,14 @@ begin
             v_entity_rel_id := null;
             if v_obj ? 'source_release_id' and v_source_releases_map ? (v_obj->>'source_release_id') then
               v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid;
+            elsif v_obj ? 'source_id' and v_source_releases_map ? (v_obj->>'source_id') then
+              v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_id'))::uuid;
             else
-              v_entity_rel_id := coalesce((v_source_releases_map->>(v_domain->>'source_release_id'))::uuid, v_default_rel_id);
+              v_entity_rel_id := coalesce(
+                (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                v_default_rel_id
+              );
             end if;
 
             v_obj_rel_id := v_entity_rel_id;
@@ -1338,6 +1355,8 @@ begin
                 v_entity_rel_id := null;
                 if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
                   v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+                elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
                 else
                   v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
                 end if;
@@ -1422,6 +1441,8 @@ begin
                 v_entity_rel_id := null;
                 if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
                   v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
                 else
                   v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
                 end if;
@@ -1476,10 +1497,17 @@ begin
                 v_entity_rel_id := null;
                 if v_lesson ? 'source_release_id' and v_source_releases_map ? (v_lesson->>'source_release_id') then
                   v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_release_id'))::uuid;
+                elsif v_lesson ? 'source_id' and v_source_releases_map ? (v_lesson->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_id'))::uuid;
                 else
                   v_entity_rel_id := coalesce(
                     (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid,
-                    coalesce((v_source_releases_map->>(v_domain->>'source_release_id'))::uuid, v_default_rel_id)
+                    (v_source_releases_map->>(v_obj->>'source_id'))::uuid,
+                    coalesce(
+                      (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                      (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                      v_default_rel_id
+                    )
                   );
                 end if;
 
@@ -1560,6 +1588,8 @@ begin
                     v_entity_rel_id := null;
                     if v_block ? 'source_release_id' and v_source_releases_map ? (v_block->>'source_release_id') then
                       v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_release_id'))::uuid;
+                    elsif v_block ? 'source_id' and v_source_releases_map ? (v_block->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_id'))::uuid;
                     else
                       v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
                     end if;
@@ -1672,6 +1702,8 @@ begin
                     v_entity_rel_id := null;
                     if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
                       v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                    elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
                     else
                       v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
                     end if;

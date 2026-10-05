@@ -555,7 +555,7 @@ select isnt_empty(
 select isnt_empty(
   $$select 1 from public.content_source_mappings m
     join public.assessment_stimuli ast on ast.id = m.entity_id
-    where m.entity_type = 'assessment_stimulus' and ast.stimulus_key = 'rpc-stim-1'$$,
+    where m.entity_type = 'assessment_stimulus' and ast.title = 'Exhibit 1'$$,
   'Provenance created for assessment_stimulus in content_source_mappings'
 );
 
