@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(25);
+select plan(26);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
@@ -158,7 +158,21 @@ select is(
   'audit_target_version_readiness counts root and child nodes'
 );
 
--- 13. Unauthorized authenticated user cannot audit another owner's staged version
+-- 13. Non-owner cannot inspect an unpublished migration destination
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $ select public.evaluate_target_version_migration(
+    '77777777-7777-4777-8777-777777777777',
+    '99999999-aaaa-4999-8999-999999999999',
+    '99999999-bbbb-4999-8999-999999999999'
+  ) $,
+  'P0001',
+  'Unauthorized: destination target version is not published for this caller.',
+  'Non-owner cannot evaluate migration into review-ready version'
+);
+
+-- 14. Unauthorized authenticated user cannot audit another owner's staged version
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
@@ -168,7 +182,7 @@ select throws_ok(
   'Non-owner cannot audit staged target version'
 );
 
--- 14. Unauthorized authenticated user cannot publish another owner's version
+-- 15. Unauthorized authenticated user cannot publish another owner's version
 select throws_ok(
   $ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $,
   'P0001',
@@ -179,21 +193,21 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
--- 15. Test publish_target_version with retire_previous = true
+-- 16. Test publish_target_version with retire_previous = true
 select is(
   (public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true)->>'status')::text,
   'published',
   'publish_target_version promotes V2 to published'
 );
 
--- 16. Verify V1 was retired when V2 published with retire_previous
+-- 17. Verify V1 was retired when V2 published with retire_previous
 select is(
   (select status from public.target_versions where id = '99999999-aaaa-4999-8999-999999999999'),
   'retired',
   'V1 status is now retired'
 );
 
--- 17. Verify v_target_version_updates flags the context as outdated and retired
+-- 18. Verify v_target_version_updates flags the context as outdated and retired
 select is(
   (select is_outdated from public.v_target_version_updates where context_id = '99999999-d001-4999-8999-999999999999'),
   true,
@@ -206,7 +220,7 @@ select is(
   'v_target_version_updates detects retired context active version'
 );
 
--- 18. Authenticated caller cannot migrate another user's context
+-- 20. Authenticated caller cannot migrate another user's context
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
@@ -223,7 +237,7 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
--- 19. Test migrate_user_context_target_version execution
+-- 21. Test migrate_user_context_target_version execution
 select is(
   (public.migrate_user_context_target_version(
     '88888888-8888-4888-8888-888888888888',
@@ -234,28 +248,28 @@ select is(
   'migrate_user_context_target_version succeeds'
 );
 
--- 20. Verify learning context target_version_id was updated to V2
+-- 22. Verify learning context target_version_id was updated to V2
 select is(
   (select target_version_id from public.learning_contexts where id = '99999999-d001-4999-8999-999999999999'),
   '99999999-bbbb-4999-8999-999999999999'::uuid,
   'Context target_version_id is updated to V2'
 );
 
--- 21. Verify user_version_migration_logs recorded the migration
+-- 23. Verify user_version_migration_logs recorded the migration
 select is(
   (select count(*) from public.user_version_migration_logs where user_id = '88888888-8888-4888-8888-888888888888')::integer,
   1,
   'user_version_migration_logs recorded migration event'
 );
 
--- 22. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
+-- 24. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
 select is(
   (select evidence_count from public.user_concept_state where user_id = '88888888-8888-4888-8888-888888888888' and concept_id = '99999999-c002-4999-8999-999999999999'),
   8,
   'Target concept c002 received evidence scaled by transfer_weight (8)'
 );
 
--- 23. Unauthorized authenticated user cannot retire another owner's version
+-- 25. Unauthorized authenticated user cannot retire another owner's version
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
@@ -268,7 +282,7 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
--- 24. Test retire_target_version RPC on V2
+-- 26. Test retire_target_version RPC on V2
 select is(
   (public.retire_target_version('99999999-bbbb-4999-8999-999999999999')->>'status')::text,
   'retired',
