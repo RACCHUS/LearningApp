@@ -777,8 +777,11 @@ Map<String, dynamic> _prepareManifestPayload({
   final target = Map<String, dynamic>.from(manifest['target'] as Map? ?? {});
   target['slug'] = targetSlug;
 
-  final targetVersion = Map<String, dynamic>.from(manifest['target_version'] as Map? ?? {});
+  final targetVersionRaw = manifest['target_version'] as Map?;
+  final targetVersion = Map<String, dynamic>.from(targetVersionRaw ?? {});
   targetVersion['version_code'] = versionCode;
+  targetVersion['title'] = targetVersion['title'] ?? target['version_title'] ?? versionCode;
+  targetVersion['description'] = targetVersion['description'] ?? target['version_description'];
 
   // 2. Source Releases
   final rawReleases = manifest['source_releases'] as List<dynamic>?;
@@ -1079,6 +1082,8 @@ Map<String, dynamic> _prepareManifestPayload({
       'source_mappings': manifest['source_mappings'],
     if (manifest['target_version_concept_mappings'] != null)
       'target_version_concept_mappings': manifest['target_version_concept_mappings'],
+    if (manifest['concept_mappings'] != null)
+      'concept_mappings': manifest['concept_mappings'],
   };
 }
 
@@ -1111,40 +1116,45 @@ Future<void> _executeApply(
     }
   }
 
-  // 2. Locate target
-  print('Locating learning target with slug matching "$targetSlug"...');
-  final targetRes = await client.restGet('learning_targets?slug=ilike.*$targetSlug*&limit=1');
+  // 2. Locate target (exact slug match)
+  print('Locating learning target with slug "$targetSlug"...');
+  final targetRes = await client.restGet('learning_targets?slug=eq.$targetSlug&limit=1');
   final targetList = asList(targetRes['body']);
-  if (targetList.isEmpty) {
-    throw Exception('No learning target found matching slug "$targetSlug".');
+  String canonicalSlug = targetSlug;
+  String? targetId;
+  if (targetList.isNotEmpty) {
+    final targetRow = targetList.first as Map<String, dynamic>;
+    targetId = targetRow['id'] as String;
+    canonicalSlug = targetRow['slug'] as String;
+    print('Found existing target: "${targetRow['title']}" ($canonicalSlug) [ID: $targetId]');
+  } else {
+    print('Target "$targetSlug" does not exist yet; will be created during atomic manifest ingestion.');
   }
-  final targetRow = targetList.first as Map<String, dynamic>;
-  final targetId = targetRow['id'] as String;
-  final canonicalSlug = targetRow['slug'] as String;
-  print('Found target: "${targetRow['title']}" ($canonicalSlug) [ID: $targetId]');
 
   // 3. Check TargetVersion status (prevent overwriting published/retired or frozen review_ready)
-  print('Checking target_version "$versionCode"...');
-  final versionRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$versionCode');
-  final versionList = asList(versionRes['body']);
+  if (targetId != null) {
+    print('Checking target_version "$versionCode"...');
+    final versionRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$versionCode');
+    final versionList = asList(versionRes['body']);
 
-  if (versionList.isNotEmpty) {
-    final existingVersion = versionList.first as Map<String, dynamic>;
-    final status = existingVersion['status'] as String;
+    if (versionList.isNotEmpty) {
+      final existingVersion = versionList.first as Map<String, dynamic>;
+      final status = existingVersion['status'] as String;
 
-    if (status == 'published' || status == 'retired') {
-      throw Exception(
-        'TargetVersion "$versionCode" is already "$status". '
-        'Strict database immutability prevents modifying published/retired versions. '
-        'To update curriculum, create a new draft version code (e.g. "$versionCode-draft" or next iteration).',
-      );
-    }
+      if (status == 'published' || status == 'retired') {
+        throw Exception(
+          'TargetVersion "$versionCode" is already "$status". '
+          'Strict database immutability prevents modifying published/retired versions. '
+          'To update curriculum, create a new draft version code (e.g. "$versionCode-draft" or next iteration).',
+        );
+      }
 
-    if (status == 'review_ready') {
-      throw Exception(
-        'TargetVersion "$versionCode" is in "review_ready" status (frozen QA snapshot). '
-        'To modify curriculum or re-apply, set its status back to "draft" first.',
-      );
+      if (status == 'review_ready') {
+        throw Exception(
+          'TargetVersion "$versionCode" is in "review_ready" status (frozen QA snapshot). '
+          'To modify curriculum or re-apply, set its status back to "draft" first.',
+        );
+      }
     }
   }
 
@@ -1189,7 +1199,7 @@ Future<void> _executeStageReview(
   String targetSlug,
   String versionCode,
 ) async {
-  final targetRes = await client.restGet('learning_targets?slug=ilike.*$targetSlug*&limit=1');
+  final targetRes = await client.restGet('learning_targets?slug=eq.$targetSlug&limit=1');
   final targetList = asList(targetRes['body']);
   if (targetList.isEmpty) {
     throw Exception('Target "$targetSlug" not found.');
@@ -1231,8 +1241,8 @@ Future<void> _executePublish(
   String versionCode, {
   bool retirePrevious = false,
 }) async {
-  // 1. Locate target
-  final targetRes = await client.restGet('learning_targets?slug=ilike.*$targetSlug*&limit=1');
+  // 1. Locate target (exact match)
+  final targetRes = await client.restGet('learning_targets?slug=eq.$targetSlug&limit=1');
   final targetList = asList(targetRes['body']);
   if (targetList.isEmpty) {
     throw Exception('Target "$targetSlug" not found.');
@@ -1267,26 +1277,21 @@ Future<void> _executePublish(
     );
   }
 
-  // 3. Retire previous published versions if requested
-  if (retirePrevious) {
-    print('Retiring previous published versions for target "${target['title']}"...');
-    final prevRes = await client.restPatch(
-      'target_versions?target_id=eq.$targetId&status=eq.published&id=neq.$versionId',
-      {'status': 'retired'},
-    );
-    if (prevRes['statusCode'] < 400) {
-      print('Previous versions retired.');
-    }
+  // 3. Atomically publish (and optionally retire previous) via DB transaction RPC
+  print('Promoting TargetVersion "$versionCode" [ID: $versionId] to published (atomic transaction)...');
+  final publishRes = await client.restRpc('publish_target_version', {
+    'p_version_id': versionId,
+    'p_retire_previous': retirePrevious,
+  });
+
+  if (publishRes['statusCode'] >= 400) {
+    throw Exception('Failed to publish version: ${publishRes['body']}');
   }
 
-  // 4. Promote to published
-  print('Promoting TargetVersion "$versionCode" [ID: $versionId] to published...');
-  final publishRes = await client.restPatch(
-    'target_versions?id=eq.$versionId',
-    {'status': 'published'},
-  );
-  if (publishRes['statusCode'] >= 400 || asList(publishRes['body']).isEmpty) {
-    throw Exception('Failed to publish version: ${publishRes['body']}');
+  final resBody = publishRes['body'] as Map<String, dynamic>? ?? {};
+  final retiredCount = resBody['retired_previous_count'] ?? 0;
+  if (retirePrevious && retiredCount > 0) {
+    print('Atomically retired $retiredCount previous published version(s).');
   }
 
   print('TargetVersion "$versionCode" is now PUBLISHED and strictly IMMUTABLE under database RLS.');

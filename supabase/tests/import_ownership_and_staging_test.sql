@@ -14,7 +14,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(44);
+select plan(46);
 
 -- ----------------------------------------------------------------------------
 -- Setup Test Fixtures
@@ -32,6 +32,7 @@ declare
   v_concept uuid := 'cccccccc-1111-1111-1111-cccccccccccc';
   v_lesson_a uuid := 'aaaaaaaa-3333-3333-3333-aaaaaaaaaaaa';
   v_lesson_b uuid := 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb';
+  v_lesson_unowned uuid := '44444444-5555-6666-7777-888888888888';
   v_fc_a uuid := 'aaaaaaaa-4444-4444-4444-aaaaaaaaaaaa';
   v_fc_b uuid := 'bbbbbbbb-4444-4444-4444-bbbbbbbbbbbb';
   v_stim_a uuid := 'aaaaaaaa-5555-5555-5555-aaaaaaaaaaaa';
@@ -77,6 +78,15 @@ begin
 
   insert into public.curriculum_node_lessons (curriculum_node_id, lesson_id, sort_order)
   values (v_node_a, v_lesson_a, 1)
+  on conflict do nothing;
+
+  -- Pre-existing unowned system lesson bound to Target A node (must not be deleted by cleanup)
+  insert into public.lessons (id, title, description, visibility, user_id, origin_target_version_id)
+  values (v_lesson_unowned, 'Unowned Legacy Lesson', 'Global unowned lesson', 'public', null, null)
+  on conflict (id) do nothing;
+
+  insert into public.curriculum_node_lessons (curriculum_node_id, lesson_id, sort_order)
+  values (v_node_a, v_lesson_unowned, 2)
   on conflict do nothing;
 
   insert into public.flashcards (id, front, back, origin_target_version_id)
@@ -214,6 +224,11 @@ select is_empty(
 );
 
 -- Target B items REMAIN INTACT despite sharing concept and despite forged artifact entry!
+select isnt_empty(
+  $$select 1 from public.lessons where id = '44444444-5555-6666-7777-888888888888'$$,
+  'Unowned legacy lesson bound to draft node is NOT deleted by clean_draft_target_version'
+);
+
 select isnt_empty(
   $$select 1 from public.lessons where id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
   'Target B lesson was NOT touched by Target A cleanup'
@@ -594,6 +609,14 @@ select is(
   (select count(*)::int from public.lessons where title = 'RPC Lesson'),
   1,
   'Idempotent replace-the-draft: lesson count is exactly 1 without duplicates'
+);
+
+-- Verify canonical concept provenance is preserved across draft cleanups
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.knowledge_concepts kc on kc.id = m.entity_id
+    where m.entity_type = 'knowledge_concept' and kc.slug = 'rpc-concept-zero-trust'$$,
+  'Global canonical concept provenance is preserved across draft cleanups'
 );
 
 rollback;

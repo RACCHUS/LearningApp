@@ -477,14 +477,7 @@ begin
       end if;
 
       -- Even when transitioning to 'retired', no metadata/title/version_code/etc. can be changed
-      if (
-        new.version_code <> old.version_code or
-        new.title is distinct from old.title or
-        new.description is distinct from old.description or
-        new.metadata is distinct from old.metadata or
-        new.target_id <> old.target_id or
-        new.valid_from is distinct from old.valid_from
-      ) then
+      if (to_jsonb(new) - 'status' - 'updated_at') is distinct from (to_jsonb(old) - 'status' - 'updated_at') then
         raise exception 'Cannot modify TargetVersion attributes when retiring a published version. It must be a status-only transition.';
       end if;
     end if;
@@ -507,15 +500,8 @@ begin
         raise exception 'Invalid status transition: review_ready can only transition to "draft" or "published".';
       end if;
 
-      -- In review_ready or when leaving review_ready (to published or draft), NO metadata/field edits allowed!
-      if (
-        new.version_code <> old.version_code or
-        new.title is distinct from old.title or
-        new.description is distinct from old.description or
-        new.metadata is distinct from old.metadata or
-        new.target_id <> old.target_id or
-        new.valid_from is distinct from old.valid_from
-      ) then
+      -- In review_ready or when leaving review_ready (to published or draft), NO field edits allowed (status-only)!
+      if (to_jsonb(new) - 'status' - 'updated_at') is distinct from (to_jsonb(old) - 'status' - 'updated_at') then
         if new.status = 'published' then
           raise exception 'Cannot modify TargetVersion attributes during publication from "review_ready". Publication must be a status-only transition.';
         elsif new.status = 'review_ready' then
@@ -571,34 +557,32 @@ begin
   end if;
 
   -- 1. Scoped provenance mapping deletion (NO cross-target global orphan deletion!):
+  -- Canonical concept mappings (entity_type = 'knowledge_concept') are durable global provenance and are NEVER deleted.
   delete from public.content_source_mappings
-  where (entity_type = 'target_version' and entity_id = p_version_id)
-     or (entity_type = 'curriculum_node' and entity_id in (
-          select id from public.curriculum_nodes where target_version_id = p_version_id
-        ))
-     or (entity_type = 'lesson' and entity_id in (
-          select id from public.lessons where origin_target_version_id = p_version_id
-        ))
-     or (entity_type = 'assessment_stimulus' and entity_id in (
-          select id from public.assessment_stimuli where origin_target_version_id = p_version_id
-        ))
-     or (entity_type = 'assessment_item' and entity_id in (
-          select id from public.assessment_items where origin_target_version_id = p_version_id
-        ))
-     or (entity_type = 'flashcard' and entity_id in (
-          select id from public.flashcards where origin_target_version_id = p_version_id
-        ))
-     or (entity_type = 'lesson_block' and entity_id in (
-          select lb.id from public.lesson_blocks lb
-          join public.lessons l on l.id = lb.lesson_id
-          where l.origin_target_version_id = p_version_id
-        ))
-     or id in (
-          select entity_id
-          from public.content_import_artifacts
-          where target_version_id = p_version_id
-            and entity_type = 'content_source_mapping'
-        );
+  where entity_type <> 'knowledge_concept'
+    and (
+      (entity_type = 'target_version' and entity_id = p_version_id)
+      or (entity_type = 'curriculum_node' and entity_id in (
+           select id from public.curriculum_nodes where target_version_id = p_version_id
+         ))
+      or (entity_type = 'lesson' and entity_id in (
+           select id from public.lessons where origin_target_version_id = p_version_id
+         ))
+      or (entity_type = 'assessment_stimulus' and entity_id in (
+           select id from public.assessment_stimuli where origin_target_version_id = p_version_id
+         ))
+      or (entity_type = 'assessment_item' and entity_id in (
+           select id from public.assessment_items where origin_target_version_id = p_version_id
+         ))
+      or (entity_type = 'flashcard' and entity_id in (
+           select id from public.flashcards where origin_target_version_id = p_version_id
+         ))
+      or (entity_type = 'lesson_block' and entity_id in (
+           select lb.id from public.lesson_blocks lb
+           join public.lessons l on l.id = lb.lesson_id
+           where l.origin_target_version_id = p_version_id
+         ))
+    );
 
   -- 2. Delete assessment_items: defense-in-depth requires origin_target_version_id = p_version_id
   delete from public.assessment_items
@@ -612,27 +596,9 @@ begin
   delete from public.flashcards
   where origin_target_version_id = p_version_id;
 
-  -- 5. Delete official lessons: defense-in-depth requires origin_target_version_id = p_version_id
-  -- (or unowned legacy lessons uniquely joined to this draft's nodes)
+  -- 5. Delete official lessons: defense-in-depth strictly requires origin_target_version_id = p_version_id
   delete from public.lessons
-  where origin_target_version_id = p_version_id
-     or (
-       user_id is null
-       and origin_target_version_id is null
-       and id in (
-         select cnl.lesson_id
-         from public.curriculum_node_lessons cnl
-         join public.curriculum_nodes cn on cn.id = cnl.curriculum_node_id
-         where cn.target_version_id = p_version_id
-           and not exists (
-             select 1
-             from public.curriculum_node_lessons o_cnl
-             join public.curriculum_nodes o_cn on o_cn.id = o_cnl.curriculum_node_id
-             where o_cnl.lesson_id = cnl.lesson_id
-               and o_cn.target_version_id <> p_version_id
-           )
-       )
-     );
+  where origin_target_version_id = p_version_id;
 
   -- 6. Delete curriculum nodes of this draft: must have target_version_id = p_version_id
   delete from public.curriculum_nodes
@@ -652,6 +618,81 @@ $$;
 
 revoke all on function public.clean_draft_target_version(uuid) from public, anon;
 grant execute on function public.clean_draft_target_version(uuid) to authenticated, service_role;
+
+-- ----------------------------------------------------------------------------
+-- 7b. Atomic Target Version Publication & Retirement RPC
+-- ----------------------------------------------------------------------------
+
+create or replace function public.publish_target_version(
+  p_version_id uuid,
+  p_retire_previous boolean default false
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_status text;
+  v_target_id uuid;
+  v_target_owner uuid;
+  v_retired_count integer := 0;
+begin
+  select tv.status, tv.target_id, lt.created_by
+  into v_status, v_target_id, v_target_owner
+  from public.target_versions tv
+  join public.learning_targets lt on lt.id = tv.target_id
+  where tv.id = p_version_id;
+
+  if v_status is null then
+    raise exception 'TargetVersion % not found', p_version_id;
+  end if;
+
+  if v_status = 'published' then
+    return jsonb_build_object('success', true, 'status', 'published', 'already_published', true, 'retired_previous_count', 0);
+  end if;
+
+  if v_status <> 'review_ready' then
+    raise exception 'Cannot publish TargetVersion with status "%". Publication strictly requires "review_ready" staging status.', v_status;
+  end if;
+
+  -- Authorization check: service_role or target owner only
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and auth.role() <> 'service_role'
+     and (v_target_owner is null or v_target_owner <> auth.uid()) then
+    raise exception 'Unauthorized: only service_role or the target owner can publish a target version';
+  end if;
+
+  -- 1. Atomically retire previous published versions for this target if requested
+  if p_retire_previous then
+    with retired as (
+      update public.target_versions
+      set status = 'retired',
+          updated_at = now()
+      where target_id = v_target_id
+        and status = 'published'
+        and id <> p_version_id
+      returning id
+    )
+    select count(*) into v_retired_count from retired;
+  end if;
+
+  -- 2. Promote target version to published
+  update public.target_versions
+  set status = 'published',
+      updated_at = now()
+  where id = p_version_id;
+
+  return jsonb_build_object(
+    'success', true,
+    'status', 'published',
+    'retired_previous_count', v_retired_count
+  );
+end;
+$$;
+
+revoke all on function public.publish_target_version(uuid, boolean) from public, anon;
+grant execute on function public.publish_target_version(uuid, boolean) to authenticated, service_role;
 
 -- ----------------------------------------------------------------------------
 -- 8. Fully Transactional Ingestion RPC (ingest_curriculum_manifest)
@@ -796,19 +837,29 @@ begin
     ) values (
       v_target_id,
       v_version_code,
-      payload->'target_version'->>'title',
-      payload->'target_version'->>'description',
-      case when payload->'target_version'->>'valid_from' is not null
-           then (payload->'target_version'->>'valid_from')::date
+      coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', v_version_code),
+      coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description'),
+      case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+           then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
            else null end,
       'draft',
       coalesce(payload->'target_version'->'metadata', '{}'::jsonb)
     )
     returning id, status into v_version_id, v_version_status;
-  end if;
+  else
+    if v_version_status <> 'draft' then
+      raise exception 'Cannot ingest into TargetVersion "%" with status "%". Only draft versions may be replaced.', v_version_code, v_version_status;
+    end if;
 
-  if v_version_status <> 'draft' then
-    raise exception 'Cannot ingest into TargetVersion "%" with status "%". Only draft versions may be replaced.', v_version_code, v_version_status;
+    update public.target_versions
+    set title = coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', title),
+        description = coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description', description),
+        valid_from = case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+                          then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
+                          else valid_from end,
+        metadata = coalesce(payload->'target_version'->'metadata', metadata),
+        updated_at = now()
+    where id = v_version_id;
   end if;
 
   -- 5. Atomically Clean Previous Draft Content for this TargetVersion
@@ -1009,13 +1060,9 @@ begin
           on conflict (source_release_id, entity_type, entity_id, relationship) do update
           set citation_location = excluded.citation_location,
               notes = excluded.notes,
-              metadata = excluded.metadata
-          returning id into v_mapping_id;
+              metadata = excluded.metadata;
 
           v_mappings_count := v_mappings_count + 1;
-          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
-          values (v_version_id, 'content_source_mapping', v_mapping_id)
-          on conflict do nothing;
         end if;
       end if;
     end loop;

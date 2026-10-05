@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(17);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
@@ -172,6 +172,56 @@ select throws_ok(
   '42501',
   null,
   'Owner cannot bind lessons to nodes in retired target version'
+);
+
+-- 13. Owner can promote draft version to review_ready
+select lives_ok(
+  $$
+    update public.target_versions
+    set status = 'review_ready'
+    where id = 'bbbbbbbb-1111-4bbb-8bbb-bbbbbbbbbbbb'
+  $$,
+  'Owner can promote draft version to review_ready status'
+);
+
+-- 14. In review_ready, attempting to update valid_until or source_url is rejected
+select throws_ok(
+  $$
+    update public.target_versions
+    set valid_until = '2030-01-01'::date
+    where id = 'bbbbbbbb-1111-4bbb-8bbb-bbbbbbbbbbbb'
+  $$,
+  'TargetVersion is frozen in "review_ready" status. Revert status to "draft" before making edits.',
+  'review_ready rejects modifying valid_until or other metadata columns'
+);
+
+-- 15. publish_target_version RPC atomically publishes review_ready and retires previous published version
+select is(
+  (select public.publish_target_version('bbbbbbbb-1111-4bbb-8bbb-bbbbbbbbbbbb'::uuid, true)->>'status'),
+  'published',
+  'publish_target_version atomically promotes review_ready version to published'
+);
+
+-- 16. Previous published version was atomically retired
+select is(
+  (select status from public.target_versions where id = 'bbbbbbbb-2222-4bbb-8bbb-bbbbbbbbbbbb'),
+  'retired',
+  'publish_target_version atomically retired previous published version'
+);
+
+-- 17. Attempting to update valid_until or source_url when retiring a published version is rejected
+insert into public.target_versions (id, target_id, version_code, title, status)
+values ('bbbbbbbb-4444-4bbb-8bbb-bbbbbbbbbbbb', 'aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa', 'v4', 'Test Published', 'published');
+
+select throws_ok(
+  $$
+    update public.target_versions
+    set status = 'retired',
+        valid_until = '2030-01-01'::date
+    where id = 'bbbbbbbb-4444-4bbb-8bbb-bbbbbbbbbbbb'
+  $$,
+  'Cannot modify TargetVersion attributes when retiring a published version. It must be a status-only transition.',
+  'Retiring published version rejects modifying valid_until'
 );
 
 select * from finish();
