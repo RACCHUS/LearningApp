@@ -339,17 +339,11 @@ begin
     updated_at = now()
   where id = p_context_id;
 
-  update public.resume_pointers
-  set
-    curriculum_node_id = null,
-    updated_at = now()
-  where context_id = p_context_id
-    and curriculum_node_id is not null
-    and not exists (
-      select 1 from public.curriculum_nodes cn
-      where cn.id = resume_pointers.curriculum_node_id
-        and cn.target_version_id = v_to_tv.id
-    );
+  -- Resume pointers are disposable breadcrumbs and carry activity IDs rather
+  -- than curriculum-node foreign keys. A target-version migration can make the
+  -- saved lesson/study-set position stale, so clear the pointer atomically.
+  delete from public.resume_pointers
+  where context_id = p_context_id;
 
   insert into public.user_version_migration_logs (
     user_id,
