@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(26);
+select plan(27);
 
 -- ----------------------------------------------------------------------------
 -- Setup Test Fixtures
@@ -38,6 +38,7 @@ declare
   v_item_priv uuid := '66660001-0000-0000-0000-000000000001';
   v_node_id uuid := '77770001-0000-0000-0000-000000000001';
   v_lesson_id uuid := '88880001-0000-0000-0000-000000000001';
+  v_legacy_lesson_id uuid := '88880002-0000-0000-0000-000000000002';
 begin
   -- Auth users
   insert into auth.users (id, email)
@@ -79,13 +80,22 @@ begin
   values (v_node_id, v_v_draft, 'domain', 'Test Domain', 'D1')
   on conflict (id) do nothing;
 
-  -- Official lesson bound to draft node
-  insert into public.lessons (id, title, visibility, user_id)
-  values (v_lesson_id, 'Official Lesson 1', 'public', null)
+  -- Official lesson created by draft version and bound to draft node
+  insert into public.lessons (id, title, visibility, user_id, origin_target_version_id)
+  values (v_lesson_id, 'Official Lesson 1', 'public', null, v_v_draft)
   on conflict (id) do nothing;
 
   insert into public.curriculum_node_lessons (curriculum_node_id, lesson_id, sort_order)
   values (v_node_id, v_lesson_id, 1)
+  on conflict do nothing;
+
+  -- Legacy lesson with NULL origin_target_version_id bound to draft node
+  insert into public.lessons (id, title, visibility, user_id, origin_target_version_id)
+  values (v_legacy_lesson_id, 'Legacy System Lesson', 'public', null, null)
+  on conflict (id) do nothing;
+
+  insert into public.curriculum_node_lessons (curriculum_node_id, lesson_id, sort_order)
+  values (v_node_id, v_legacy_lesson_id, 2)
   on conflict do nothing;
 
   -- Stimuli
@@ -270,6 +280,11 @@ select is_empty(
 select is_empty(
   'select 1 from public.lessons where id = ''88880001-0000-0000-0000-000000000001''',
   'Official lesson attached to draft node was removed'
+);
+
+select isnt_empty(
+  'select 1 from public.lessons where id = ''88880002-0000-0000-0000-000000000002''',
+  'Legacy lesson with NULL origin_target_version_id is preserved by clean_draft_target_version'
 );
 
 -- Re-running clean is idempotent

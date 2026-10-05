@@ -210,6 +210,10 @@ select is(
 );
 
 -- 17. Attempting to update valid_until or source_url when retiring a published version is rejected
+-- Reset to administrative role so UPDATE targets the published row without RLS filtering it out,
+-- allowing trg_target_versions_lifecycle to enforce published-to-retired attribute immutability.
+reset role;
+
 insert into public.target_versions (id, target_id, version_code, title, status)
 values ('bbbbbbbb-4444-4bbb-8bbb-bbbbbbbbbbbb', 'aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa', 'v4', 'Test Published', 'published');
 
