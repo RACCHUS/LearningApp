@@ -109,7 +109,7 @@ values (
 
 -- Exercise privileged governance functions as service_role unless a test overrides it.
 select set_config('request.jwt.claim.role', 'service_role', true);
-select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 8. Test evaluate_target_version_migration
 select is(
@@ -177,7 +177,7 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.role', 'service_role', true);
-select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 15. Test publish_target_version with retire_previous = true
 select is(
@@ -221,7 +221,7 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.role', 'service_role', true);
-select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 19. Test migrate_user_context_target_version execution
 select is(
@@ -266,7 +266,7 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.role', 'service_role', true);
-select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 24. Test retire_target_version RPC on V2
 select is(
