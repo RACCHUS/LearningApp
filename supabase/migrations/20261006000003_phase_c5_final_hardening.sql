@@ -930,8 +930,8 @@ begin
         end if;
 
         if v_field_id is not null then
-          insert into public.concept_fields (concept_id, field_id, is_primary)
-          values (v_concept_id, v_field_id, false)
+          insert into public.concept_fields (concept_id, field_id, relationship)
+          values (v_concept_id, v_field_id, 'core_concept')
           on conflict (concept_id, field_id) do nothing;
         end if;
       else
@@ -947,8 +947,8 @@ begin
         if v_matched_id is not null then
           v_concept_id := v_matched_id;
           if v_field_id is not null then
-            insert into public.concept_fields (concept_id, field_id, is_primary)
-            values (v_concept_id, v_field_id, false)
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
             on conflict (concept_id, field_id) do nothing;
           end if;
         else
@@ -970,9 +970,9 @@ begin
           returning id into v_concept_id;
 
           if v_field_id is not null then
-            insert into public.concept_fields (concept_id, field_id, is_primary)
-            values (v_concept_id, v_field_id, true)
-            on conflict (concept_id, field_id) do update set is_primary = true;
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
+            on conflict (concept_id, field_id) do nothing;
           end if;
         end if;
       end if;

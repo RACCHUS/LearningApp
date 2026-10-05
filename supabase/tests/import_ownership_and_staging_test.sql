@@ -541,7 +541,7 @@ select isnt_empty(
 select isnt_empty(
   $$select 1 from public.content_source_mappings m
     join public.lesson_blocks lb on lb.id = m.entity_id
-    where m.entity_type = 'lesson_block' and lb.citation_location = 'Block 1.1'$$,
+    where m.entity_type = 'lesson_block' and m.citation_location = 'Block 1.1'$$,
   'Provenance created for lesson_block in content_source_mappings'
 );
 

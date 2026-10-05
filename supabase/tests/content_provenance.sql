@@ -38,6 +38,18 @@ select is(
   'service_role can insert content_source_releases'
 );
 
+insert into public.learning_targets (id, slug, title, target_type, status, is_public)
+values ('88888888-8888-8888-8888-888888888888', 'prov-test-target', 'Prov Test Target', 'certification', 'published', true)
+on conflict do nothing;
+
+insert into public.target_versions (id, target_id, version_code, status)
+values ('77777777-7777-7777-7777-777777777777', '88888888-8888-8888-8888-888888888888', 'v1', 'published')
+on conflict do nothing;
+
+insert into public.curriculum_nodes (id, target_version_id, node_type, code, title, sort_order)
+values ('99999999-9999-9999-9999-999999999999', '77777777-7777-7777-7777-777777777777', 'domain', 'D1', 'Domain 1', 1)
+on conflict do nothing;
+
 insert into public.content_source_mappings (
   source_release_id, entity_type, entity_id, relationship, citation_location
 ) values (
