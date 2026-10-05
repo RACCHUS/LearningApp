@@ -49,9 +49,18 @@ class TaxonomyApiClient {
 
   TaxonomyApiClient(this.url, this.key);
 
-  Future<int> postRows(String table, List<Map<String, dynamic>> rows, {String onConflict = 'do nothing'}) async {
+  Future<int> postRows(
+    String table,
+    List<Map<String, dynamic>> rows, {
+    String? onConflict,
+  }) async {
     if (rows.isEmpty) return 0;
-    final uri = Uri.parse('$url/rest/v1/$table?on_conflict=id');
+
+    final uri = Uri.parse('$url/rest/v1/$table').replace(
+      queryParameters: {
+        if (onConflict != null) 'on_conflict': onConflict,
+      },
+    );
     final req = await _http.postUrl(uri);
     req.headers.set('apikey', key);
     req.headers.set('Authorization', 'Bearer $key');
@@ -60,8 +69,44 @@ class TaxonomyApiClient {
 
     req.add(utf8.encode(jsonEncode(rows)));
     final resp = await req.close();
-    await resp.drain();
-    return resp.statusCode >= 200 && resp.statusCode < 300 ? rows.length : 0;
+    final body = await utf8.decoder.bind(resp).join();
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Taxonomy write to $table failed with HTTP ${resp.statusCode}: $body',
+        uri: uri,
+      );
+    }
+    return rows.length;
+  }
+
+  Future<Map<String, dynamic>?> getSingle(
+    String table, {
+    required Map<String, String> equals,
+    String select = 'id',
+  }) async {
+    final uri = Uri.parse('$url/rest/v1/$table').replace(
+      queryParameters: {
+        'select': select,
+        'limit': '1',
+        for (final entry in equals.entries) entry.key: 'eq.${entry.value}',
+      },
+    );
+    final req = await _http.getUrl(uri);
+    req.headers.set('apikey', key);
+    req.headers.set('Authorization', 'Bearer $key');
+
+    final resp = await req.close();
+    final body = await utf8.decoder.bind(resp).join();
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Taxonomy lookup in $table failed with HTTP ${resp.statusCode}: $body',
+        uri: uri,
+      );
+    }
+
+    final decoded = jsonDecode(body);
+    if (decoded is! List || decoded.isEmpty) return null;
+    return (decoded.first as Map).cast<String, dynamic>();
   }
 }
 
@@ -101,12 +146,18 @@ Future<void> main(List<String> args) async {
   print('====================================================');
 
   final dotenv = _loadDotenv();
-  final url = dotenv['SUPABASE_URL'] ?? Platform.environment['SUPABASE_URL'] ?? 'https://xzvkdwebtbxlrxagtzlv.supabase.co';
+  final url = dotenv['SUPABASE_URL'] ??
+      Platform.environment['SUPABASE_URL'] ??
+      'https://xzvkdwebtbxlrxagtzlv.supabase.co';
   final key = dotenv['SUPABASE_SERVICE_ROLE_KEY'] ??
       Platform.environment['SUPABASE_SERVICE_ROLE_KEY'] ??
-      dotenv['SUPABASE_ANON_KEY'] ??
-      Platform.environment['SUPABASE_ANON_KEY'] ??
       '';
+
+  if (!isDryRun && key.isEmpty) {
+    throw StateError(
+      'SUPABASE_SERVICE_ROLE_KEY is required for taxonomy ingestion writes.',
+    );
+  }
 
   final client = TaxonomyApiClient(url, key);
 
@@ -238,7 +289,57 @@ Future<void> main(List<String> args) async {
       {'cip_code': '14.0901', 'soc_code': '17-2061', 'mapping_kind': 'official_qualitative'},
       {'cip_code': '51.3801', 'soc_code': '29-1141', 'mapping_kind': 'official_qualitative'},
     ];
-    print('  ✓ Verified qualitative alignment mappings: ${rawCrosswalk.length} mappings');
+    print('  ✓ Validated qualitative alignment mappings: ${rawCrosswalk.length} mappings');
+
+    if (!isDryRun) {
+      const sourceReleaseId = 'a1000000-0000-0000-0000-000000000001';
+      final rows = <Map<String, dynamic>>[];
+
+      for (final mapping in rawCrosswalk) {
+        final cipCode = mapping['cip_code']!;
+        final socCode = mapping['soc_code']!;
+
+        final classification = await client.getSingle(
+          'external_classification_nodes',
+          equals: {
+            'system': 'cip',
+            'version': '2020',
+            'code': cipCode,
+          },
+        );
+        final occupation = await client.getSingle(
+          'occupation_nodes',
+          equals: {
+            'taxonomy_system': 'bls_soc',
+            'taxonomy_version': 'soc_2018',
+            'code': socCode,
+          },
+        );
+
+        if (classification == null || occupation == null) {
+          throw StateError(
+            'Cannot ingest CIP-SOC mapping $cipCode -> $socCode because one or both source nodes are missing.',
+          );
+        }
+
+        rows.add({
+          'classification_node_id': classification['id'],
+          'occupation_id': occupation['id'],
+          'source_release_id': sourceReleaseId,
+          'mapping_source': 'nces_bls_crosswalk_2020',
+          'mapping_version': '2020',
+          'mapping_kind': mapping['mapping_kind'],
+        });
+      }
+
+      final written = await client.postRows(
+        'external_classification_occupation_mappings',
+        rows,
+        onConflict:
+            'classification_node_id,occupation_id,source_release_id',
+      );
+      print('  ✓ Ingested $written CIP-SOC crosswalk mappings');
+    }
   }
 
   // 5. Lineage Ingestion
