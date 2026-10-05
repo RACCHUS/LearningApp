@@ -7,12 +7,18 @@ class AssessmentItemRenderer extends StatefulWidget {
   final AssessmentItem item;
   final VoidCallback? onCompleted;
   final Function(bool isCorrect, double score)? onAnswerSubmitted;
+  final bool isExamMode;
+  final dynamic initialResponse;
+  final ValueChanged<dynamic>? onResponseChanged;
 
   const AssessmentItemRenderer({
     super.key,
     required this.item,
     this.onCompleted,
     this.onAnswerSubmitted,
+    this.isExamMode = false,
+    this.initialResponse,
+    this.onResponseChanged,
   });
 
   @override
@@ -48,7 +54,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   @override
   void didUpdateWidget(covariant AssessmentItemRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.id != widget.item.id) {
+    if (oldWidget.item.id != widget.item.id || oldWidget.initialResponse != widget.initialResponse) {
       _resetState();
       _initInteractionState();
     }
@@ -68,8 +74,24 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   void _initInteractionState() {
     final spec = widget.item.responseSpec;
     if (widget.item.interactionType == AssessmentInteractionType.orderedResponse) {
-      final itemsRaw = spec['items'] as List? ?? [];
-      _orderedItems = itemsRaw.map((e) => e.toString()).toList();
+      if (widget.initialResponse is List) {
+        _orderedItems = (widget.initialResponse as List).map((e) => e.toString()).toList();
+      } else {
+        final itemsRaw = spec['items'] as List? ?? [];
+        _orderedItems = itemsRaw.map((e) => e.toString()).toList();
+      }
+    } else if (widget.item.interactionType == AssessmentInteractionType.singleChoice) {
+      if (widget.initialResponse is int) {
+        _selectedSingleChoice = widget.initialResponse as int;
+      }
+    } else if (widget.item.interactionType == AssessmentInteractionType.multiSelect) {
+      if (widget.initialResponse is Iterable) {
+        _selectedMultiIndices.addAll((widget.initialResponse as Iterable).map((e) => (e as num).toInt()));
+      }
+    } else if (widget.item.interactionType == AssessmentInteractionType.matching) {
+      if (widget.initialResponse is Map) {
+        _userMatches.addAll((widget.initialResponse as Map).map((k, v) => MapEntry(k.toString(), v.toString())));
+      }
     }
   }
 
@@ -276,7 +298,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 _buildInteractionContent(context, isDark),
                 const SizedBox(height: 20),
                 // Submit Button
-                if (!_submitted)
+                if (!widget.isExamMode && !_submitted)
                   ElevatedButton(
                     onPressed: _canSubmit() ? _submitAnswer : null,
                     style: ElevatedButton.styleFrom(
@@ -297,7 +319,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     ),
                   ),
                 // Submitted Feedback & Explanations
-                if (_submitted) ...[
+                if (!widget.isExamMode && _submitted) ...[
                   _buildFeedbackBanner(context, isDark),
                   if (item.explanation != null && item.explanation!.isNotEmpty) ...[
                     const SizedBox(height: 14),
@@ -414,7 +436,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 10.0),
           child: InkWell(
-            onTap: _submitted ? null : () => setState(() => _selectedSingleChoice = idx),
+            onTap: _submitted
+                ? null
+                : () {
+                    setState(() => _selectedSingleChoice = idx);
+                    if (widget.isExamMode) {
+                      widget.onResponseChanged?.call(idx);
+                    }
+                  },
             borderRadius: BorderRadius.circular(10),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -544,6 +573,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                           _selectedMultiIndices.add(idx);
                         }
                       });
+                      if (widget.isExamMode) {
+                        widget.onResponseChanged?.call(_selectedMultiIndices.toList());
+                      }
                     },
               borderRadius: BorderRadius.circular(10),
               child: Container(
@@ -614,6 +646,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     final item = _orderedItems.removeAt(oldIndex);
                     _orderedItems.insert(newIndex, item);
                   });
+                  if (widget.isExamMode) {
+                    widget.onResponseChanged?.call(List<String>.from(_orderedItems));
+                  }
                 },
           itemBuilder: (ctx, index) {
             final itemText = _orderedItems[index];
@@ -739,6 +774,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                                 _userMatches[_selectedMatchKey!] = val;
                                 _selectedMatchKey = null;
                               });
+                              if (widget.isExamMode) {
+                                widget.onResponseChanged?.call(Map<String, String>.from(_userMatches));
+                              }
                             },
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
