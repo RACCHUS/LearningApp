@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../models/learning_context.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
 import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
+import '../governance/version_staging_dashboard_screen.dart';
 
 class TargetDetailScreen extends ConsumerWidget {
   final String targetId;
@@ -178,6 +181,15 @@ class TargetDetailScreen extends ConsumerWidget {
                   error: (e, _) => const SizedBox.shrink(),
                   data: (ver) {
                     if (ver == null) return const SizedBox.shrink();
+
+                    final activeCtx = ref.watch(activeLearningContextProvider);
+                    final isContextActive = activeCtx != null &&
+                        activeCtx.rootType == ContextRootType.target &&
+                        activeCtx.rootId == target.id;
+                    final updateInfo = isContextActive
+                        ? ref.watch(contextVersionUpdateProvider(activeCtx.id)).valueOrNull
+                        : null;
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -212,6 +224,59 @@ class TargetDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        if (updateInfo != null && updateInfo.needsUpgrade) ...[
+                          const SizedBox(height: DesignTokens.space3),
+                          Card(
+                            elevation: 0,
+                            color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.upgrade, color: theme.colorScheme.primary),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'New Blueprint Edition Available',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    updateInfo.upgradeReason,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  FilledButton.tonalIcon(
+                                    key: const Key('target-upgrade-version-button'),
+                                    onPressed: () {
+                                      TargetVersionMigrationDialog.show(
+                                        context,
+                                        updateInfo: updateInfo,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.auto_awesome),
+                                    label: Text(
+                                      'Upgrade to ${updateInfo.latestVersionCode ?? "New Edition"}',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: DesignTokens.space4),
                         TargetReadinessCard(targetVersionId: ver.id),
                         const SizedBox(height: DesignTokens.space3),
@@ -228,6 +293,24 @@ class TargetDetailScreen extends ConsumerWidget {
                             },
                             icon: const Icon(Icons.work_outline),
                             label: const Text('Career & Labor Market Pathways'),
+                          ),
+                        ),
+                        const SizedBox(height: DesignTokens.space3),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            key: const Key('target-version-governance-button'),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => VersionStagingDashboardScreen(
+                                    initialVersionId: ver.id,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.verified_outlined),
+                            label: const Text('QA Readiness & Version Governance'),
                           ),
                         ),
                       ],

@@ -268,7 +268,11 @@ final learningContextsProvider =
 });
 
 final activeLearningContextProvider = Provider<LearningContext?>((ref) {
-  return ref.watch(learningContextsProvider).active;
+  try {
+    return ref.watch(learningContextsProvider).active;
+  } catch (_) {
+    return null;
+  }
 });
 
 final resumePointerProvider =
