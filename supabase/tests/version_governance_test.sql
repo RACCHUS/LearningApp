@@ -162,11 +162,11 @@ select is(
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
-  $ select public.evaluate_target_version_migration(
+  $$ select public.evaluate_target_version_migration(
     '77777777-7777-4777-8777-777777777777',
     '99999999-aaaa-4999-8999-999999999999',
     '99999999-bbbb-4999-8999-999999999999'
-  ) $,
+  ) $$,
   'P0001',
   'Unauthorized: destination target version is not published for this caller.',
   'Non-owner cannot evaluate migration into review-ready version'
@@ -176,7 +176,7 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
-  $ select public.audit_target_version_readiness('99999999-bbbb-4999-8999-999999999999') $,
+  $$ select public.audit_target_version_readiness('99999999-bbbb-4999-8999-999999999999') $$,
   'P0001',
   'Unauthorized: only service_role, target owner, or assigned reviewer may audit a target version.',
   'Non-owner cannot audit staged target version'
@@ -184,7 +184,7 @@ select throws_ok(
 
 -- 15. Unauthorized authenticated user cannot publish another owner's version
 select throws_ok(
-  $ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $,
+  $$ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $,
   'P0001',
   'Unauthorized: only service_role or the target owner can publish a target version',
   'Non-owner cannot publish target version'
@@ -224,11 +224,11 @@ select is(
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
-  $ select public.migrate_user_context_target_version(
+  $$ select public.migrate_user_context_target_version(
     '88888888-8888-4888-8888-888888888888',
     '99999999-d001-4999-8999-999999999999',
     '99999999-bbbb-4999-8999-999999999999'
-  ) $,
+  ) $$,
   'P0001',
   'Unauthorized: cannot migrate context for another user.',
   'Non-owner cannot migrate another user context'
@@ -273,7 +273,7 @@ select is(
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
-  $ select public.retire_target_version('99999999-bbbb-4999-8999-999999999999') $,
+  $$ select public.retire_target_version('99999999-bbbb-4999-8999-999999999999') $$,
   'P0001',
   'Unauthorized: only service_role or the target owner can retire a target version',
   'Non-owner cannot retire target version'
