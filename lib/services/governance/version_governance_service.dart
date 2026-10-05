@@ -156,7 +156,7 @@ class VersionGovernanceService {
     final res = await client.rpc(
       'publish_target_version',
       params: {
-        'p_target_version_id': targetVersionId,
+        'p_version_id': targetVersionId,
         'p_retire_previous': retirePrevious,
       },
     );
@@ -178,7 +178,7 @@ class VersionGovernanceService {
 
     final res = await client.rpc(
       'retire_target_version',
-      params: {'p_target_version_id': targetVersionId},
+      params: {'p_version_id': targetVersionId},
     );
 
     return res is Map<String, dynamic> ? res : {'success': true};

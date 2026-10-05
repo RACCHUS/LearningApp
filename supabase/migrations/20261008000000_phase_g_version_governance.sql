@@ -613,7 +613,7 @@ $$;
 -- 6. Target Version Publishing & Retirement RPCs
 -- ----------------------------------------------------------------------------
 create or replace function public.publish_target_version(
-  p_target_version_id uuid,
+  p_version_id uuid,
   p_retire_previous boolean default false
 )
 returns jsonb
@@ -628,19 +628,20 @@ declare
 begin
   select * into v_tv
   from public.target_versions
-  where id = p_target_version_id;
+  where id = p_version_id;
 
   if not found then
-    raise exception 'Target version not found: %', p_target_version_id;
+    raise exception 'Target version not found: %', p_version_id;
   end if;
 
   if v_tv.status = 'published' then
     return jsonb_build_object(
       'success', true,
-      'target_version_id', p_target_version_id,
+      'target_version_id', p_version_id,
       'status', 'published',
       'already_published', true,
-      'retired_version_ids', '[]'::jsonb
+      'retired_version_ids', '[]'::jsonb,
+      'retired_previous_count', 0
     );
   end if;
 
@@ -652,7 +653,7 @@ begin
   if v_tv.status = 'draft' then
     update public.target_versions
     set status = 'review_ready', updated_at = now()
-    where id = p_target_version_id;
+    where id = p_version_id;
   end if;
 
   -- 2. Retire prior published versions if requested
@@ -661,7 +662,7 @@ begin
       select id from public.target_versions
       where target_id = v_tv.target_id
         and status = 'published'
-        and id <> p_target_version_id
+        and id <> p_version_id
     loop
       update public.target_versions
       set status = 'retired', updated_at = now()
@@ -673,7 +674,7 @@ begin
   -- 3. Publish destination version
   update public.target_versions
   set status = 'published', updated_at = now()
-  where id = p_target_version_id;
+  where id = p_version_id;
 
   -- 4. Ensure parent target is published and public
   update public.learning_targets
@@ -682,16 +683,17 @@ begin
 
   return jsonb_build_object(
     'success', true,
-    'target_version_id', p_target_version_id,
+    'target_version_id', p_version_id,
     'status', 'published',
     'already_published', false,
-    'retired_version_ids', to_jsonb(v_retired_ids)
+    'retired_version_ids', to_jsonb(v_retired_ids),
+    'retired_previous_count', coalesce(array_length(v_retired_ids, 1), 0)
   );
 end;
 $$;
 
 create or replace function public.retire_target_version(
-  p_target_version_id uuid
+  p_version_id uuid
 )
 returns jsonb
 language plpgsql
@@ -703,16 +705,16 @@ declare
 begin
   select * into v_tv
   from public.target_versions
-  where id = p_target_version_id;
+  where id = p_version_id;
 
   if not found then
-    raise exception 'Target version not found: %', p_target_version_id;
+    raise exception 'Target version not found: %', p_version_id;
   end if;
 
   if v_tv.status = 'retired' then
     return jsonb_build_object(
       'success', true,
-      'target_version_id', p_target_version_id,
+      'target_version_id', p_version_id,
       'status', 'retired',
       'already_retired', true
     );
@@ -724,11 +726,11 @@ begin
 
   update public.target_versions
   set status = 'retired', updated_at = now()
-  where id = p_target_version_id;
+  where id = p_version_id;
 
   return jsonb_build_object(
     'success', true,
-    'target_version_id', p_target_version_id,
+    'target_version_id', p_version_id,
     'status', 'retired',
     'already_retired', false
   );
