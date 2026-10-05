@@ -200,65 +200,70 @@ class ExamEvaluationService {
   ) {
     switch (item.interactionType) {
       case AssessmentInteractionType.singleChoice:
-        final correctAns = item.responseSpec['answer'] ?? item.responseSpec['correct_answer'];
-        final isMatch = userAns.toString().trim() == correctAns.toString().trim();
+        final correctIndex = (item.scoringSpec['correct_index'] as num?)?.toInt();
+        final userIndex = userAns is num ? userAns.toInt() : int.tryParse(userAns.toString());
+        final isMatch = correctIndex != null && userIndex == correctIndex;
         return (isCorrect: isMatch, isPartial: false, scoreEarned: isMatch ? 1.0 : 0.0);
 
       case AssessmentInteractionType.multiSelect:
-        final correctList = (item.responseSpec['answers'] ??
-                item.responseSpec['correct_answers'] as List? ??
-                [])
-            .map((e) => e.toString().trim())
+        final correctIndices = (item.scoringSpec['correct_indices'] as List? ?? const [])
+            .whereType<num>()
+            .map((e) => e.toInt())
+            .toSet();
+        final userIndices = (userAns is Iterable ? userAns : [userAns])
+            .whereType<num>()
+            .map((e) => e.toInt())
             .toSet();
 
-        final userList = (userAns is List ? userAns : [userAns])
-            .map((e) => e.toString().trim())
-            .toSet();
+        final scoringMode = item.scoringSpec['scoring_method'] as String? ??
+            item.scoringSpec['mode'] as String? ??
+            'all_or_nothing';
 
-        final scoringMode = item.scoringSpec['mode'] as String? ?? 'all_or_nothing';
-
-        if (scoringMode == 'partial_credit' && correctList.isNotEmpty) {
-          int correctSelected = userList.intersection(correctList).length;
-          int incorrectSelected = userList.difference(correctList).length;
-          double score = (correctSelected - incorrectSelected) / correctList.length;
+        if (scoringMode == 'partial_credit' && correctIndices.isNotEmpty) {
+          final correctSelected = userIndices.intersection(correctIndices).length;
+          final incorrectSelected = userIndices.difference(correctIndices).length;
+          double score = (correctSelected - incorrectSelected) / correctIndices.length;
           score = score.clamp(0.0, 1.0);
           final isFull = score >= 0.999;
           final isPart = score > 0.0 && !isFull;
           return (isCorrect: isFull, isPartial: isPart, scoreEarned: score);
-        } else {
-          final isMatch = userList.length == correctList.length &&
-              userList.difference(correctList).isEmpty;
-          return (isCorrect: isMatch, isPartial: false, scoreEarned: isMatch ? 1.0 : 0.0);
         }
 
+        final isMatch = correctIndices.isNotEmpty &&
+            userIndices.length == correctIndices.length &&
+            userIndices.difference(correctIndices).isEmpty;
+        return (isCorrect: isMatch, isPartial: false, scoreEarned: isMatch ? 1.0 : 0.0);
+
       case AssessmentInteractionType.orderedResponse:
-        final correctOrder = (item.responseSpec['correct_order'] as List? ?? [])
-            .map((e) => e.toString().trim())
+        final items = (item.responseSpec['items'] as List? ?? const [])
+            .map((e) => e.toString())
+            .toList();
+        final correctOrder = (item.scoringSpec['correct_order'] as List? ?? const [])
+            .whereType<num>()
+            .map((e) => e.toInt())
             .toList();
 
-        final userOrder = (userAns is List ? userAns : [])
-            .map((e) => e.toString().trim())
-            .toList();
-
-        if (userOrder.length != correctOrder.length) {
+        if (items.isEmpty ||
+            correctOrder.length != items.length ||
+            correctOrder.any((index) => index < 0 || index >= items.length)) {
           return (isCorrect: false, isPartial: false, scoreEarned: 0.0);
         }
 
-        bool match = true;
-        for (int i = 0; i < correctOrder.length; i++) {
-          if (userOrder[i] != correctOrder[i]) {
-            match = false;
-            break;
-          }
-        }
-        return (isCorrect: match, isPartial: false, scoreEarned: match ? 1.0 : 0.0);
+        final expectedOrder = correctOrder.map((index) => items[index]).toList();
+        final userOrder = (userAns is List ? userAns : const [])
+            .map((e) => e.toString())
+            .toList();
+
+        final isMatch = userOrder.length == expectedOrder.length &&
+            List.generate(expectedOrder.length, (i) => userOrder[i] == expectedOrder[i])
+                .every((value) => value);
+        return (isCorrect: isMatch, isPartial: false, scoreEarned: isMatch ? 1.0 : 0.0);
 
       case AssessmentInteractionType.matching:
-        final correctPairs = (item.responseSpec['pairs'] as Map? ?? {}).map(
+        final correctPairs = (item.scoringSpec['correct_pairs'] as Map? ?? const {}).map(
           (k, v) => MapEntry(k.toString().trim(), v.toString().trim()),
         );
-
-        final userPairs = (userAns is Map ? userAns : {}).map(
+        final userPairs = (userAns is Map ? userAns : const {}).map(
           (k, v) => MapEntry(k.toString().trim(), v.toString().trim()),
         );
 
@@ -279,18 +284,24 @@ class ExamEvaluationService {
         return (isCorrect: isFull, isPartial: isPart, scoreEarned: score);
 
       default:
-        // Default string comparison
-        final correctStr = (item.responseSpec['answer'] ?? '').toString().trim();
-        final isMatch = userAns.toString().trim() == correctStr;
-        return (isCorrect: isMatch, isPartial: false, scoreEarned: isMatch ? 1.0 : 0.0);
+        // Unsupported interaction types must fail closed rather than award credit.
+        return (isCorrect: false, isPartial: false, scoreEarned: 0.0);
     }
   }
 
   dynamic _extractCorrectAnswer(AssessmentItem item) {
-    return item.responseSpec['answer'] ??
-        item.responseSpec['answers'] ??
-        item.responseSpec['correct_order'] ??
-        item.responseSpec['pairs'];
+    switch (item.interactionType) {
+      case AssessmentInteractionType.singleChoice:
+        return item.scoringSpec['correct_index'];
+      case AssessmentInteractionType.multiSelect:
+        return item.scoringSpec['correct_indices'];
+      case AssessmentInteractionType.orderedResponse:
+        return item.scoringSpec['correct_order'];
+      case AssessmentInteractionType.matching:
+        return item.scoringSpec['correct_pairs'];
+      default:
+        return null;
+    }
   }
 
   int _calculateScaledScore(double percentage, String scale) {
