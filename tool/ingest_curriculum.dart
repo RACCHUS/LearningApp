@@ -759,119 +759,8 @@ void _executeDryRun(
 }
 
 // ----------------------------------------------------------------------------
-// Ambiguity-Safe Canonical Concept Resolution
+// Ambiguity-Safe Canonical Concept Resolution (Handled Atomically in DB RPC)
 // ----------------------------------------------------------------------------
-
-Future<Map<String, dynamic>> _resolveOrInsertConcept(
-  SupabaseRestClient client,
-  String slug,
-  String name,
-  String? targetFieldId,
-  Map<String, dynamic> conceptData,
-) async {
-  // If an explicit canonical_concept slug is declared, fail closed if not found
-  final explicitCanonical = conceptData['canonical_concept']?.toString();
-  if (explicitCanonical != null && explicitCanonical.trim().isNotEmpty) {
-    final canonSlug = explicitCanonical.trim();
-    final canonRes = await client.restGet('knowledge_concepts?slug=eq.${Uri.encodeComponent(canonSlug)}&select=id,slug,name,field_id');
-    final canonList = asList(canonRes['body']);
-    if (canonList.isEmpty) {
-      throw Exception(
-        'Explicit canonical_concept "$canonSlug" declared for concept "$name" ($slug) does not exist in knowledge_concepts. '
-        'Explicit overrides must fail closed if the target canonical concept is missing.',
-      );
-    }
-    final canonItem = canonList.first as Map<String, dynamic>;
-    final matchedId = canonItem['id'] as String;
-    final matchedSlug = canonItem['slug'] as String;
-    print('      [Explicit Canonical Concept Override] "$name" ($slug) -> "$matchedSlug" [ID: $matchedId]');
-
-    if (targetFieldId != null) {
-      await client.restPost(
-        'concept_fields',
-        {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
-        upsert: true,
-        onConflict: 'concept_id,field_id',
-      );
-    }
-    return {'id': matchedId, 'slug': matchedSlug, 'isNew': false};
-  }
-
-  // 1. Invoke hardened database RPC resolve_canonical_concept
-  final rpcRes = await client.restRpc('resolve_canonical_concept', {
-    'p_slug': slug,
-    'p_name': name,
-    'p_field_id': targetFieldId,
-  });
-
-  final matches = asList(rpcRes['body']);
-  if (matches.isNotEmpty) {
-    final match = matches.first as Map<String, dynamic>;
-    final isAmbiguous = match['is_ambiguous'] == true;
-
-    if (isAmbiguous) {
-      throw Exception(
-        'Ambiguous canonical concept match for "$name" ($slug). '
-        'Multiple concepts share this name across fields and target field does not disambiguate. '
-        'Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.',
-      );
-    }
-
-    final matchType = match['match_type'] as String;
-    final matchedId = match['id'] as String;
-    final canonicalSlug = match['slug'] as String;
-    print('      [Canonical Concept Resolved ($matchType)] "$name" ($slug) -> "$canonicalSlug" [ID: $matchedId]');
-
-    // Link reused concept to target's field in concept_fields
-    if (targetFieldId != null) {
-      await client.restPost(
-        'concept_fields',
-        {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
-        upsert: true,
-        onConflict: 'concept_id,field_id',
-      );
-    }
-
-    return {'id': matchedId, 'slug': canonicalSlug, 'isNew': false};
-  }
-
-  // 2. If not found, insert new knowledge_concept with aliases
-  final cEmoji = conceptData['emoji']?.toString() ?? '💡';
-  final cShort = conceptData['short_definition']?.toString();
-  final cDesc = conceptData['description']?.toString();
-  final rawAliases = conceptData['aliases'] as List<dynamic>? ?? [];
-  final aliases = rawAliases.map((e) => e.toString()).toList();
-
-  final insertConceptRes = await client.restPost('knowledge_concepts', {
-    'field_id': targetFieldId,
-    'slug': slug,
-    'name': name,
-    'short_definition': cShort,
-    'description': cDesc,
-    'emoji': cEmoji,
-    'aliases': aliases,
-    'status': 'active',
-  });
-
-  final created = asList(insertConceptRes['body']);
-  if (insertConceptRes['statusCode'] >= 400 || created.isEmpty) {
-    throw Exception('Failed to insert knowledge concept: ${insertConceptRes['body']}');
-  }
-  final newId = created.first['id'] as String;
-  print('      [Canonical Concept Created] "$name" ($slug) [ID: $newId]');
-
-  // Insert primary concept_fields association
-  if (targetFieldId != null) {
-    await client.restPost(
-      'concept_fields',
-      {'concept_id': newId, 'field_id': targetFieldId, 'is_primary': true},
-      upsert: true,
-      onConflict: 'concept_id,field_id',
-    );
-  }
-
-  return {'id': newId, 'slug': slug, 'isNew': true};
-}
 
 // ----------------------------------------------------------------------------
 // Ingestion (Apply) Logic
@@ -881,8 +770,9 @@ Map<String, dynamic> _prepareManifestPayload({
   required Map<String, dynamic> manifest,
   required String targetSlug,
   required String versionCode,
-  required Map<String, String> conceptMap,
+  Map<String, String>? conceptMap,
 }) {
+  final cMap = conceptMap ?? const {};
   // 1. Target & TargetVersion
   final target = Map<String, dynamic>.from(manifest['target'] as Map? ?? {});
   target['slug'] = targetSlug;
@@ -902,7 +792,35 @@ Map<String, dynamic> _prepareManifestPayload({
     releases.add(Map<String, dynamic>.from(singleRelease));
   }
 
-  // 3. Shared Stimuli (collect from root, domain, and objective scopes)
+  // 3. Collect all declared concepts across manifest (root + domains/objectives)
+  final declaredConcepts = <Map<String, dynamic>>[];
+  final seenConceptSlugs = <String>{};
+
+  void addDeclaredConcept(Map<String, dynamic> c) {
+    final slug = c['slug']?.toString();
+    if (slug == null || slug.isEmpty || seenConceptSlugs.contains(slug)) return;
+    seenConceptSlugs.add(slug);
+    declaredConcepts.add({
+      'slug': slug,
+      'name': c['name'] ?? slug,
+      'canonical_concept': c['canonical_concept'],
+      'short_definition': c['short_definition'],
+      'description': c['description'],
+      'emoji': c['emoji'] ?? '💡',
+      'aliases': c['aliases'] ?? [],
+      'source_release_id': c['source_release_id'],
+      'citation': c['citation'] ?? c['citation_location'],
+      'notes': c['notes'] ?? c['citation_notes'],
+    });
+  }
+
+  if (manifest['concepts'] is List) {
+    for (final c in manifest['concepts'] as List) {
+      if (c is Map) addDeclaredConcept(Map<String, dynamic>.from(c));
+    }
+  }
+
+  // 4. Shared Stimuli (collect from root, domain, and objective scopes)
   final stimuli = <Map<String, dynamic>>[];
   final seenStimKeys = <String>{};
 
@@ -923,29 +841,34 @@ Map<String, dynamic> _prepareManifestPayload({
         'credit': s['credit'],
         'attribution': s['attribution'],
         'source_release_id': s['source_release_id'],
-        'citation': s['citation'],
+        'citation': s['citation'] ?? s['citation_location'],
+        'notes': s['notes'] ?? s['citation_notes'],
       });
     }
   }
 
   collectStimuli(manifest['stimuli'] as List<dynamic>?);
 
-  // 4. Standalone Target Flashcards
+  // 5. Standalone Target Flashcards
   final flashcards = <Map<String, dynamic>>[];
   final rawFlashcards = manifest['flashcards'] as List<dynamic>? ?? [];
   for (final fc in rawFlashcards) {
     if (fc is! Map) continue;
     final cSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-    final cIds = cSlugs.map((s) => conceptMap[s]).whereType<String>().toList();
+    final cIds = cSlugs.map((s) => cMap[s]).whereType<String>().toList();
     flashcards.add({
       'front': fc['front'],
       'back': fc['back'],
       'explanation': fc['explanation'],
       'concept_ids': cIds,
+      'concept_slugs': cSlugs,
+      'source_release_id': fc['source_release_id'],
+      'citation': fc['citation'] ?? fc['citation_location'],
+      'notes': fc['notes'] ?? fc['citation_notes'],
     });
   }
 
-  // 5. Domains & Objectives
+  // 6. Domains & Objectives
   final domains = <Map<String, dynamic>>[];
   final rawDomains = manifest['domains'] as List<dynamic>? ?? [];
 
@@ -965,10 +888,16 @@ Map<String, dynamic> _prepareManifestPayload({
       // Objective concepts
       final objDeclaredConcepts = obj['concepts'] as List<dynamic>? ?? [];
       final objConceptIds = <String>{};
+      final objConceptSlugs = <String>[];
       for (final c in objDeclaredConcepts) {
-        if (c is Map && c['slug'] != null) {
-          final id = conceptMap[c['slug'].toString()];
-          if (id != null) objConceptIds.add(id);
+        if (c is Map) {
+          addDeclaredConcept(Map<String, dynamic>.from(c));
+          if (c['slug'] != null) {
+            final s = c['slug'].toString();
+            objConceptSlugs.add(s);
+            final id = cMap[s];
+            if (id != null) objConceptIds.add(id);
+          }
         }
       }
 
@@ -978,13 +907,17 @@ Map<String, dynamic> _prepareManifestPayload({
         if (fc is! Map) continue;
         final cSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
         final cIds = cSlugs.isNotEmpty
-            ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            ? cSlugs.map((s) => cMap[s]).whereType<String>().toList()
             : objConceptIds.toList();
         objFlashcards.add({
           'front': fc['front'],
           'back': fc['back'],
           'explanation': fc['explanation'],
           'concept_ids': cIds,
+          'concept_slugs': cSlugs.isNotEmpty ? cSlugs : objConceptSlugs,
+          'source_release_id': fc['source_release_id'],
+          'citation': fc['citation'] ?? fc['citation_location'],
+          'notes': fc['notes'] ?? fc['citation_notes'],
         });
       }
 
@@ -994,7 +927,7 @@ Map<String, dynamic> _prepareManifestPayload({
         if (item is! Map) continue;
         final cSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
         final cIds = cSlugs.isNotEmpty
-            ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            ? cSlugs.map((s) => cMap[s]).whereType<String>().toList()
             : objConceptIds.toList();
         objItems.add({
           'stimulus_key': item['stimulus_key'] ?? item['stimulus_id'],
@@ -1004,6 +937,10 @@ Map<String, dynamic> _prepareManifestPayload({
           'scoring_spec': item['scoring_spec'] ?? {},
           'explanation': item['explanation'],
           'concept_ids': cIds,
+          'concept_slugs': cSlugs.isNotEmpty ? cSlugs : objConceptSlugs,
+          'source_release_id': item['source_release_id'],
+          'citation': item['citation'] ?? item['citation_location'],
+          'notes': item['notes'] ?? item['citation_notes'],
         });
       }
 
@@ -1018,7 +955,7 @@ Map<String, dynamic> _prepareManifestPayload({
         // Scoped lesson concept linking (NO global leakage!)
         final lConceptSlugs = (l['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
         final lConceptIds = (lConceptSlugs != null && lConceptSlugs.isNotEmpty)
-            ? lConceptSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            ? lConceptSlugs.map((s) => cMap[s]).whereType<String>().toList()
             : objConceptIds.toList();
 
         // Lesson Blocks
@@ -1030,6 +967,9 @@ Map<String, dynamic> _prepareManifestPayload({
             'block_type': b['block_type'] ?? 'markdown',
             'content': b['content'] ?? {},
             'sort_order': b['sort_order'] ?? (bIdx + 1),
+            'source_release_id': b['source_release_id'],
+            'citation': b['citation'] ?? b['citation_location'],
+            'notes': b['notes'] ?? b['citation_notes'],
           });
         }
 
@@ -1063,7 +1003,7 @@ Map<String, dynamic> _prepareManifestPayload({
           if (item is! Map) continue;
           final cSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
           final cIds = cSlugs.isNotEmpty
-              ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+              ? cSlugs.map((s) => cMap[s]).whereType<String>().toList()
               : lConceptIds;
           lessonItems.add({
             'stimulus_key': item['stimulus_key'] ?? item['stimulus_id'],
@@ -1073,6 +1013,10 @@ Map<String, dynamic> _prepareManifestPayload({
             'scoring_spec': item['scoring_spec'] ?? {},
             'explanation': item['explanation'],
             'concept_ids': cIds,
+            'concept_slugs': cSlugs.isNotEmpty ? cSlugs : (lConceptSlugs ?? objConceptSlugs),
+            'source_release_id': item['source_release_id'],
+            'citation': item['citation'] ?? item['citation_location'],
+            'notes': item['notes'] ?? item['citation_notes'],
           });
         }
 
@@ -1081,8 +1025,10 @@ Map<String, dynamic> _prepareManifestPayload({
           'description': l['description'] ?? l['summary'],
           'order_index': l['order_index'] ?? (lIdx + 1),
           'source_release_id': l['source_release_id'],
-          'citation': l['citation'],
+          'citation': l['citation'] ?? l['citation_location'],
+          'notes': l['notes'] ?? l['citation_notes'],
           'concept_ids': lConceptIds,
+          'concept_slugs': lConceptSlugs ?? objConceptSlugs,
           'blocks': blocks,
           'terms': terms,
           'questions': questions,
@@ -1097,8 +1043,10 @@ Map<String, dynamic> _prepareManifestPayload({
         'sort_order': obj['sort_order'] ?? (oIdx + 1),
         'bloom_level': obj['bloom_level'] ?? 'understand',
         'source_release_id': obj['source_release_id'],
-        'citation': obj['citation'],
+        'citation': obj['citation'] ?? obj['citation_location'],
+        'notes': obj['notes'] ?? obj['citation_notes'],
         'concept_ids': objConceptIds.toList(),
+        'concept_slugs': objConceptSlugs,
         'flashcards': objFlashcards,
         'assessment_items': objItems,
         'lessons': lessons,
@@ -1112,7 +1060,8 @@ Map<String, dynamic> _prepareManifestPayload({
       'sort_order': d['sort_order'] ?? (dIdx + 1),
       'weight': d['weight'],
       'source_release_id': d['source_release_id'],
-      'citation': d['citation'],
+      'citation': d['citation'] ?? d['citation_location'],
+      'notes': d['notes'] ?? d['citation_notes'],
       'objectives': objectives,
     });
   }
@@ -1125,6 +1074,7 @@ Map<String, dynamic> _prepareManifestPayload({
     'stimuli': stimuli,
     'flashcards': flashcards,
     'domains': domains,
+    'concepts': declaredConcepts,
     if (manifest['source_mappings'] != null)
       'source_mappings': manifest['source_mappings'],
     if (manifest['target_version_concept_mappings'] != null)
@@ -1171,7 +1121,6 @@ Future<void> _executeApply(
   final targetRow = targetList.first as Map<String, dynamic>;
   final targetId = targetRow['id'] as String;
   final canonicalSlug = targetRow['slug'] as String;
-  final targetFieldId = targetRow['field_id'] as String?;
   print('Found target: "${targetRow['title']}" ($canonicalSlug) [ID: $targetId]');
 
   // 3. Check TargetVersion status (prevent overwriting published/retired or frozen review_ready)
@@ -1199,45 +1148,15 @@ Future<void> _executeApply(
     }
   }
 
-  // 4. Resolve Canonical Concepts & Aliases Ahead of Transaction
-  print('Resolving canonical concepts with fail-closed explicit override...');
-  final conceptMap = <String, String>{}; // declared slug -> resolved concept_id
-  final rawDomains = manifest['domains'] as List<dynamic>? ?? [];
-
-  for (final domain in rawDomains) {
-    if (domain is! Map) continue;
-    final objectives = domain['objectives'] as List<dynamic>? ?? [];
-    for (final objective in objectives) {
-      if (objective is! Map) continue;
-      final concepts = objective['concepts'] as List<dynamic>? ?? [];
-      for (final concept in concepts) {
-        if (concept is! Map) continue;
-        final cSlug = concept['slug']?.toString();
-        final cName = concept['name']?.toString();
-        if (cSlug != null && cName != null && !conceptMap.containsKey(cSlug)) {
-          final res = await _resolveOrInsertConcept(
-            client,
-            cSlug,
-            cName,
-            targetFieldId,
-            concept.cast<String, dynamic>(),
-          );
-          conceptMap[cSlug] = res['id'] as String;
-        }
-      }
-    }
-  }
-  print('Canonical concepts resolved: ${conceptMap.length} concept(s).');
-
-  // 5. Prepare normalized payload
+  // 4. Prepare normalized payload packaging all declared concepts & provenance
+  print('Packaging curriculum manifest & canonical concepts for atomic transaction...');
   final payload = _prepareManifestPayload(
     manifest: manifest,
     targetSlug: canonicalSlug,
     versionCode: versionCode,
-    conceptMap: conceptMap,
   );
 
-  // 6. Execute atomic transactional ingestion RPC
+  // 5. Execute atomic transactional ingestion RPC
   print('Executing atomic database transaction via RPC "ingest_curriculum_manifest"...');
   final rpcRes = await client.restRpc('ingest_curriculum_manifest', {'payload': payload});
   if (rpcRes['statusCode'] >= 400) {
@@ -1248,6 +1167,7 @@ Future<void> _executeApply(
   print('\n----------------------------------------------------');
   print('Ingestion Results (Atomic Transaction Succeeded):');
   print('  Target Version ID    : ${result['target_version_id']} (draft)');
+  print('  Concepts Resolved    : ${result['concepts_count']}');
   print('  Domains Ingested     : ${result['domains_count']}');
   print('  Objectives Ingested  : ${result['objectives_count']}');
   print('  Lessons Ingested     : ${result['lessons_count']}');

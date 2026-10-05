@@ -78,6 +78,13 @@ void main() {
       expect(draft.isRetired, isFalse);
       expect(draft.isEditable, isTrue);
 
+      final reviewReady = draft.copyWith(status: TargetVersionStatus.reviewReady);
+      expect(reviewReady.isDraft, isFalse);
+      expect(reviewReady.isReviewReady, isTrue);
+      expect(reviewReady.isPublished, isFalse);
+      expect(reviewReady.isRetired, isFalse);
+      expect(reviewReady.isEditable, isFalse);
+
       final published = draft.copyWith(status: TargetVersionStatus.published);
       expect(published.isDraft, isFalse);
       expect(published.isPublished, isTrue);

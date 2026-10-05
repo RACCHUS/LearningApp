@@ -1,20 +1,20 @@
 -- ============================================================================
 -- Test: import_ownership_and_staging_test.sql
--- Description: pgTAP tests for Phase C.5:
+-- Description: pgTAP tests for Phase C.5 Final Hardening:
 --   1. clean_draft_target_version Authorization & Isolation
---   2. Artifact Ownership Protection (No Cross-Target Data Loss)
---   3. Orphan Cleanup (Stimuli & Content Source Mappings)
---   4. Pre-Publication Visibility (Draft & Review Content Hidden)
---   5. Beta Reviewer Authorization (review_ready Preview Access)
---   6. TargetVersion Lifecycle State Machine Trigger
---   7. Atomic Ingestion RPC (ingest_curriculum_manifest)
+--   2. Artifact Ownership Protection (Defense-in-depth, Forged Artifact Defense)
+--   3. Service-role Protection on content_import_artifacts Table
+--   4. Pre-Publication Visibility (Draft & Review Content & Provenance Hidden)
+--   5. Beta Reviewer Authorization (review_ready Preview Across Teaching Junctions)
+--   6. TargetVersion Lifecycle State Machine Trigger (Status-Only Transitions & Published Immutability)
+--   7. Fully Transactional Ingestion RPC (Canonical Concepts & Comprehensive Provenance)
 -- ============================================================================
 
 begin;
 
 create extension if not exists pgtap;
 
-select plan(23);
+select plan(44);
 
 -- ----------------------------------------------------------------------------
 -- Setup Test Fixtures
@@ -121,6 +121,10 @@ begin
   values (v_node_b, v_lesson_b, 1)
   on conflict do nothing;
 
+  insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+  values (v_node_b, v_concept)
+  on conflict do nothing;
+
   insert into public.flashcards (id, front, back, origin_target_version_id)
   values (v_fc_b, 'Front B', 'Back B', v_version_b_draft)
   on conflict (id) do nothing;
@@ -129,12 +133,22 @@ begin
   values (v_fc_b, v_concept)
   on conflict do nothing;
 
+  insert into public.content_source_mappings (source_release_id, entity_type, entity_id, relationship)
+  values (v_rel_a, 'lesson', v_lesson_b, 'derived_from')
+  on conflict do nothing;
+
   -- Register Target B artifacts
   insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
   values
     (v_version_b_draft, 'curriculum_node', v_node_b),
     (v_version_b_draft, 'lesson', v_lesson_b),
     (v_version_b_draft, 'flashcard', v_fc_b)
+  on conflict do nothing;
+
+  -- FORGED / MALICIOUS ARTIFACT SIMULATION:
+  -- Target A's version erroneously or maliciously points to Target B's lesson!
+  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+  values (v_version_a_draft, 'lesson', v_lesson_b)
   on conflict do nothing;
 
   -- Assign Beta Reviewer for Target A
@@ -148,7 +162,7 @@ $$;
 select pg_temp.setup_test_fixtures();
 
 -- ----------------------------------------------------------------------------
--- 1. clean_draft_target_version Authorization
+-- 1. clean_draft_target_version Authorization & content_import_artifacts Protection
 -- ----------------------------------------------------------------------------
 
 -- Other user (not owner, not service_role) CANNOT clean Target A draft
@@ -162,6 +176,14 @@ select throws_ok(
   'Non-owner authenticated user CANNOT execute clean_draft_target_version'
 );
 
+-- Authenticated user CANNOT insert into content_import_artifacts directly (table locked to service_role)
+select throws_ok(
+  $$insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+    values ('aaaaaaaa-2222-2222-2222-aaaaaaaaaaaa', 'lesson', '33333333-3333-3333-3333-333333333333')$$,
+  null,
+  'Authenticated user CANNOT directly insert into content_import_artifacts (permission denied)'
+);
+
 -- Target owner CAN clean Target A draft
 set local "request.jwt.claim.sub" to '11111111-aaaa-bbbb-cccc-111111111111';
 
@@ -171,7 +193,7 @@ select lives_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- 2. Artifact Ownership Protection (Target B Remains Fully Intact)
+-- 2. Artifact Ownership Defense-in-Depth (Target B Remains Fully Intact)
 -- ----------------------------------------------------------------------------
 reset role;
 
@@ -191,10 +213,15 @@ select is_empty(
   'Target A stimulus was deleted by cleanup (no orphan stimulus)'
 );
 
--- Target B items REMAIN INTACT despite sharing concept
+-- Target B items REMAIN INTACT despite sharing concept and despite forged artifact entry!
 select isnt_empty(
   $$select 1 from public.lessons where id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
   'Target B lesson was NOT touched by Target A cleanup'
+);
+
+select isnt_empty(
+  $$select 1 from public.lessons where id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb' and origin_target_version_id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Target B lesson SURVIVES cleanup even with a forged artifact pointing to it'
 );
 
 select isnt_empty(
@@ -208,7 +235,7 @@ select isnt_empty(
 );
 
 -- ----------------------------------------------------------------------------
--- 3. Pre-Publication Visibility (Draft Content Hidden from Anon/Regular Users)
+-- 3. Pre-Publication Visibility (Draft Content & Provenance Hidden from Anon)
 -- ----------------------------------------------------------------------------
 
 -- Anonymous user cannot read Target B draft lesson or flashcard
@@ -224,6 +251,11 @@ select is_empty(
 select is_empty(
   $$select 1 from public.flashcards where id = 'bbbbbbbb-4444-4444-4444-bbbbbbbbbbbb'$$,
   'Anonymous user CANNOT read draft flashcard'
+);
+
+select is_empty(
+  $$select 1 from public.content_source_mappings where entity_type = 'lesson' and entity_id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
+  'Anonymous user CANNOT read content source mapping for draft lesson (no provenance leakage)'
 );
 
 -- ----------------------------------------------------------------------------
@@ -259,10 +291,10 @@ select throws_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- 5. Beta Reviewer Authorization (review_ready Preview Access)
+-- 5. Beta Reviewer Authorization (review_ready Preview Across Teaching Junctions)
 -- ----------------------------------------------------------------------------
 
--- Regular user (other user) CANNOT read Target B review_ready version or lessons
+-- Regular user (other user) CANNOT read Target B review_ready version, lessons, or teaching junctions
 set local role authenticated;
 set local "request.jwt.claim.sub" to '33333333-aaaa-bbbb-cccc-333333333333';
 set local "request.jwt.claim.role" to 'authenticated';
@@ -277,12 +309,17 @@ select is_empty(
   'Unassigned user CANNOT read review_ready lesson'
 );
 
+select is_empty(
+  $$select 1 from public.curriculum_node_lessons where curriculum_node_id = 'bbbbbbbb-7777-7777-7777-bbbbbbbbbbbb'$$,
+  'Unassigned user CANNOT read curriculum_node_lessons junction for review_ready target'
+);
+
 -- Assign beta user to Target B
 reset role;
 insert into public.curriculum_reviewers (target_id, user_id, role)
 values ('bbbbbbbb-1111-1111-1111-bbbbbbbbbbbb', '22222222-aaaa-bbbb-cccc-222222222222', 'reviewer');
 
--- Beta user CAN read Target B review_ready version and lessons
+-- Beta user CAN read Target B review_ready version, lessons, AND teaching junctions
 set local role authenticated;
 set local "request.jwt.claim.sub" to '22222222-aaaa-bbbb-cccc-222222222222';
 set local "request.jwt.claim.role" to 'authenticated';
@@ -297,11 +334,50 @@ select isnt_empty(
   'Designated beta reviewer CAN preview review_ready lesson'
 );
 
--- Publish Target B (transition from review_ready to published)
-reset role;
-update public.target_versions set status = 'published' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb';
+select isnt_empty(
+  $$select 1 from public.curriculum_node_lessons where curriculum_node_id = 'bbbbbbbb-7777-7777-7777-bbbbbbbbbbbb'$$,
+  'Designated beta reviewer CAN read curriculum_node_lessons junction for review_ready target'
+);
 
--- Now anonymous user CAN read published Target B lesson and flashcard
+select isnt_empty(
+  $$select 1 from public.curriculum_node_concepts where curriculum_node_id = 'bbbbbbbb-7777-7777-7777-bbbbbbbbbbbb'$$,
+  'Designated beta reviewer CAN read curriculum_node_concepts junction for review_ready target'
+);
+
+select isnt_empty(
+  $$select 1 from public.content_source_mappings where entity_type = 'lesson' and entity_id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
+  'Designated beta reviewer CAN read content source mapping for review_ready lesson'
+);
+
+-- Anonymous user still CANNOT read provenance mapping of review_ready lesson
+set local role anon;
+set local "request.jwt.claim.sub" to '';
+set local "request.jwt.claim.role" to 'anon';
+
+select is_empty(
+  $$select 1 from public.content_source_mappings where entity_type = 'lesson' and entity_id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
+  'Anonymous user CANNOT read content source mapping for review_ready lesson'
+);
+
+-- ----------------------------------------------------------------------------
+-- 6. Tightened review_ready -> published and Published Immutability
+-- ----------------------------------------------------------------------------
+reset role;
+
+-- Modifying attributes while setting status to published is BLOCKED
+select throws_ok(
+  $$update public.target_versions set status = 'published', title = 'Tampered' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Cannot modify TargetVersion attributes during publication from "review_ready". Publication must be a status-only transition.',
+  'Modifying TargetVersion attributes while publishing from review_ready is blocked by lifecycle trigger'
+);
+
+-- Status-only transition to published SUCCEEDS
+select lives_ok(
+  $$update public.target_versions set status = 'published' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Status-only transition from review_ready to published succeeds'
+);
+
+-- Now anonymous user CAN read published Target B lesson, flashcard, and source mapping
 set local role anon;
 set local "request.jwt.claim.sub" to '';
 set local "request.jwt.claim.role" to 'anon';
@@ -316,8 +392,35 @@ select isnt_empty(
   'Anonymous user CAN read flashcard once target version is published'
 );
 
+select isnt_empty(
+  $$select 1 from public.content_source_mappings where entity_type = 'lesson' and entity_id = 'bbbbbbbb-3333-3333-3333-bbbbbbbbbbbb'$$,
+  'Anonymous user CAN read content source mapping once target version is published'
+);
+
+-- Published immutability is enforced against service_role updates
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+select throws_ok(
+  $$update public.target_versions set title = 'Tampered by Service Role' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Published versions are immutable and cannot be updated. Only transition to "retired" status is permitted.',
+  'Modifying TargetVersion attributes on published version is blocked even for service_role'
+);
+
+select throws_ok(
+  $$update public.target_versions set status = 'retired', title = 'Tampered' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Cannot modify TargetVersion attributes when retiring a published version. It must be a status-only transition.',
+  'Modifying attributes while retiring published version is blocked even for service_role'
+);
+
+select lives_ok(
+  $$update public.target_versions set status = 'retired' where id = 'bbbbbbbb-2222-2222-2222-bbbbbbbbbbbb'$$,
+  'Status-only retirement of published version succeeds under service_role'
+);
+
 -- ----------------------------------------------------------------------------
--- 6. Atomic Ingestion RPC (ingest_curriculum_manifest)
+-- 7. Fully Transactional Ingestion RPC (ingest_curriculum_manifest)
 -- ----------------------------------------------------------------------------
 reset role;
 set local role service_role;
@@ -328,11 +431,36 @@ select lives_ok(
     "field": {"slug": "security-tech", "name": "Security & Tech"},
     "target": {"slug": "rpc-test-target", "title": "RPC Test Target", "target_type": "certification"},
     "target_version": {"version_code": "V-RPC-1", "title": "RPC Version 1"},
+    "sources": [
+      {"source_id": "src-comptia", "publisher": "CompTIA", "title": "Security+", "version": "SY0-701"}
+    ],
+    "concepts": [
+      {
+        "slug": "rpc-concept-zero-trust",
+        "name": "Zero Trust Architecture",
+        "description": "Zero Trust security model",
+        "source_id": "src-comptia",
+        "citation_location": "Domain 2.1"
+      }
+    ],
     "stimuli": [
-      {"stimulus_key": "rpc-stim-1", "title": "Exhibit 1", "body": "Test body", "stimulus_type": "scenario"}
+      {
+        "stimulus_key": "rpc-stim-1",
+        "title": "Exhibit 1",
+        "body": "Test body",
+        "stimulus_type": "scenario",
+        "source_id": "src-comptia",
+        "citation_location": "Exhibit Sec"
+      }
     ],
     "flashcards": [
-      {"front": "RPC Front", "back": "RPC Back", "explanation": "RPC Exp"}
+      {
+        "front": "RPC Front",
+        "back": "RPC Back",
+        "explanation": "RPC Exp",
+        "source_id": "src-comptia",
+        "citation_location": "Flashcard Sec"
+      }
     ],
     "domains": [
       {
@@ -344,17 +472,32 @@ select lives_ok(
             "code": "O-RPC-1.1",
             "title": "Objective 1.1",
             "sort_order": 1,
+            "source_id": "src-comptia",
+            "citation_location": "Objective 1.1",
             "lessons": [
               {
                 "title": "RPC Lesson",
                 "slug": "rpc-lesson-1",
-                "blocks": [{"block_type": "markdown", "content": {"body": "Hello"}}],
+                "source_id": "src-comptia",
+                "citation_location": "Lesson 1.1",
+                "concepts": ["rpc-concept-zero-trust"],
+                "blocks": [
+                  {
+                    "block_type": "markdown",
+                    "content": {"body": "Hello"},
+                    "source_id": "src-comptia",
+                    "citation_location": "Block 1.1"
+                  }
+                ],
                 "assessment_items": [
                   {
                     "prompt": "Test Prompt?",
                     "interaction_type": "single_choice",
                     "response_spec": {"options": ["A", "B"]},
-                    "scoring_spec": {"correct_index": 0}
+                    "scoring_spec": {"correct_index": 0},
+                    "source_id": "src-comptia",
+                    "citation_location": "Item 1.1",
+                    "concepts": ["rpc-concept-zero-trust"]
                   }
                 ]
               }
@@ -365,6 +508,55 @@ select lives_ok(
     ]
   }'::jsonb)$$,
   'ingest_curriculum_manifest executes cleanly and atomically via service_role'
+);
+
+-- Verify canonical concept was resolved/created transactionally
+select isnt_empty(
+  $$select 1 from public.knowledge_concepts where slug = 'rpc-concept-zero-trust'$$,
+  'ingest_curriculum_manifest created canonical concept in knowledge_concepts'
+);
+
+select isnt_empty(
+  $$select 1 from public.concept_fields cf
+    join public.knowledge_concepts kc on kc.id = cf.concept_id
+    where kc.slug = 'rpc-concept-zero-trust'$$,
+  'ingest_curriculum_manifest mapped concept to field in concept_fields'
+);
+
+-- Verify comprehensive provenance mappings for lower-level entities
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.knowledge_concepts kc on kc.id = m.entity_id
+    where m.entity_type = 'knowledge_concept' and kc.slug = 'rpc-concept-zero-trust'$$,
+  'Provenance created for knowledge_concept in content_source_mappings'
+);
+
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.assessment_items ai on ai.id = m.entity_id
+    where m.entity_type = 'assessment_item' and ai.prompt = 'Test Prompt?'$$,
+  'Provenance created for assessment_item in content_source_mappings'
+);
+
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.lesson_blocks lb on lb.id = m.entity_id
+    where m.entity_type = 'lesson_block' and lb.citation_location = 'Block 1.1'$$,
+  'Provenance created for lesson_block in content_source_mappings'
+);
+
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.flashcards f on f.id = m.entity_id
+    where m.entity_type = 'flashcard' and f.front = 'RPC Front'$$,
+  'Provenance created for flashcard in content_source_mappings'
+);
+
+select isnt_empty(
+  $$select 1 from public.content_source_mappings m
+    join public.assessment_stimuli ast on ast.id = m.entity_id
+    where m.entity_type = 'assessment_stimulus' and ast.stimulus_key = 'rpc-stim-1'$$,
+  'Provenance created for assessment_stimulus in content_source_mappings'
 );
 
 -- Re-running ingestion replaces the draft idempotently without duplicates

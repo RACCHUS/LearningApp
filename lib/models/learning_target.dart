@@ -299,7 +299,7 @@ class TargetVersion {
   bool get isReviewReady => status == TargetVersionStatus.reviewReady;
   bool get isPublished => status == TargetVersionStatus.published;
   bool get isRetired => status == TargetVersionStatus.retired;
-  bool get isEditable => isDraft || isReviewReady;
+  bool get isEditable => isDraft;
 
   factory TargetVersion.fromJson(Map<String, dynamic> json) {
     return TargetVersion(
