@@ -1001,7 +1001,7 @@ begin
             v_concept_rel_id,
             'knowledge_concept',
             v_concept_id,
-            'authoritative_definition',
+            coalesce(v_concept->>'relationship', 'official_blueprint'),
             coalesce(v_concept->>'citation', coalesce(v_concept->>'citation_location', 'Concept ' || v_concept_slug)),
             coalesce(v_concept->>'notes', coalesce(v_concept->>'citation_notes', 'Authoritative concept definition from blueprint')),
             '{}'::jsonb
