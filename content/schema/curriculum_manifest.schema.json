@@ -389,6 +389,17 @@
                 "left_items": { "type": "array", "minItems": 2, "items": { "type": "string" } },
                 "right_items": { "type": "array", "minItems": 2, "items": { "type": "string" } }
               }
+            },
+            "scoring_spec": {
+              "type": "object",
+              "required": ["correct_pairs"],
+              "properties": {
+                "correct_pairs": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": { "type": "string" }
+                }
+              }
             }
           }
         },
