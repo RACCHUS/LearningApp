@@ -41,8 +41,10 @@ void main() {
         id: 'item-sc-1',
         interactionType: AssessmentInteractionType.singleChoice,
         prompt: 'Which security goal ensures data has not been modified?',
-        responseSpec: {'answer': 'Integrity', 'options': ['Confidentiality', 'Integrity', 'Availability']},
-        scoringSpec: {'correct_answer': 'Integrity'},
+        responseSpec: {
+          'options': ['Confidentiality', 'Integrity', 'Availability'],
+        },
+        scoringSpec: {'correct_index': 1},
         explanation: 'Integrity prevents unauthorized alteration of information.',
         difficulty: 'beginner',
         createdAt: now,
@@ -54,12 +56,11 @@ void main() {
         interactionType: AssessmentInteractionType.multiSelect,
         prompt: 'Select two core components of AAA:',
         responseSpec: {
-          'answers': ['Authentication', 'Authorization'],
           'options': ['Authentication', 'Authorization', 'Anonymity'],
         },
         scoringSpec: {
-          'mode': 'all_or_nothing',
-          'correct_answers': ['Authentication', 'Authorization'],
+          'scoring_method': 'all_or_nothing',
+          'correct_indices': [0, 1],
         },
         explanation: 'Authentication and Authorization are pillars of AAA.',
         difficulty: 'intermediate',
@@ -72,7 +73,10 @@ void main() {
         interactionType: AssessmentInteractionType.orderedResponse,
         prompt: 'Place incident response phases in chronological sequence:',
         responseSpec: {
-          'correct_order': ['Preparation', 'Detection', 'Containment'],
+          'items': ['Preparation', 'Detection', 'Containment'],
+        },
+        scoringSpec: {
+          'correct_order': [0, 1, 2],
         },
         explanation: 'Standard NIST SP 800-61 sequence.',
         difficulty: 'intermediate',
@@ -85,7 +89,11 @@ void main() {
         interactionType: AssessmentInteractionType.matching,
         prompt: 'Match each protocol with its default port:',
         responseSpec: {
-          'pairs': {'HTTPS': '443', 'SSH': '22'},
+          'left_items': ['HTTPS', 'SSH'],
+          'right_items': ['443', '22'],
+        },
+        scoringSpec: {
+          'correct_pairs': {'HTTPS': '443', 'SSH': '22'},
         },
         explanation: 'Standard IANA port assignments.',
         difficulty: 'advanced',
@@ -108,8 +116,8 @@ void main() {
           'item-match-1': '2.0',
         },
         userResponses: {
-          'item-sc-1': 'Integrity',
-          'item-ms-1': ['Authentication', 'Authorization'],
+          'item-sc-1': 1,
+          'item-ms-1': [0, 1],
           'item-or-1': ['Preparation', 'Detection', 'Containment'],
           'item-match-1': {'HTTPS': '443', 'SSH': '22'},
         },
@@ -161,8 +169,8 @@ void main() {
           'item-match-1': ['concept-network-ports'],
         },
         userResponses: {
-          'item-sc-1': 'Integrity', // Correct
-          'item-ms-1': ['Authentication', 'Anonymity'], // Incorrect
+          'item-sc-1': 1, // Correct
+          'item-ms-1': [0, 2], // Incorrect
           'item-or-1': ['Containment', 'Preparation', 'Detection'], // Incorrect
           'item-match-1': {'HTTPS': '443', 'SSH': '22'}, // Correct
         },
@@ -200,12 +208,11 @@ void main() {
         interactionType: AssessmentInteractionType.multiSelect,
         prompt: 'Select all three protocols using TLS:',
         responseSpec: {
-          'answers': ['HTTPS', 'FTPS', 'SMTPS'],
           'options': ['HTTPS', 'FTPS', 'SMTPS', 'Telnet'],
         },
         scoringSpec: {
-          'mode': 'partial_credit',
-          'correct_answers': ['HTTPS', 'FTPS', 'SMTPS'],
+          'scoring_method': 'partial_credit',
+          'correct_indices': [0, 1, 2],
         },
         difficulty: 'intermediate',
         createdAt: now,
@@ -219,7 +226,7 @@ void main() {
         itemDomainMap: {'item-sata-partial': '1.0'},
         userResponses: {
           // Selected 2 out of 3 correct, no incorrect
-          'item-sata-partial': ['HTTPS', 'FTPS'],
+          'item-sata-partial': [0, 1],
         },
         startedAt: now,
         timeLimit: const Duration(minutes: 90),
