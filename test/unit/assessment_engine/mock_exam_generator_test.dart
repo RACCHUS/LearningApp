@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
+import 'package:learning_pwa/models/assessment_item.dart';
 
 void main() {
   group('Phase E: MockExamBlueprint & Quota Computation Tests', () {
@@ -90,6 +91,47 @@ void main() {
       // Each domain should receive a reasonable proportion
       expect(quotas['dom-1']!, greaterThanOrEqualTo(3));
       expect(quotas['dom-4']!, greaterThanOrEqualTo(quotas['dom-1']!));
+    });
+
+    test('Computes normalized difficulty quotas with exact total', () {
+      final quotas = blueprint.computeDifficultyQuotas(17);
+
+      expect(quotas.values.fold<int>(0, (sum, count) => sum + count), 17);
+      expect(quotas['intermediate'], greaterThan(quotas['beginner']!));
+      expect(quotas['intermediate'], greaterThan(quotas['advanced']!));
+    });
+
+    test('Round-trips assessment constraint metadata', () {
+      final constrained = MockExamBlueprint(
+        targetVersionId: 'tv-constraints',
+        examCode: 'TEST-201',
+        title: 'Constraint Test',
+        domainWeights: comptiaDomains,
+        defaultQuestionCount: 25,
+        difficultyDistribution: const {
+          'beginner': 0.1,
+          'intermediate': 0.7,
+          'advanced': 0.2,
+        },
+        allowedInteractionTypes: const {
+          AssessmentInteractionType.singleChoice,
+          AssessmentInteractionType.multiSelect,
+        },
+        maxStimulusItemsRatio: 0.2,
+      );
+
+      final decoded = MockExamBlueprint.fromJson(constrained.toJson());
+
+      expect(decoded.defaultQuestionCount, 25);
+      expect(decoded.difficultyDistribution['intermediate'], 0.7);
+      expect(
+        decoded.allowedInteractionTypes,
+        {
+          AssessmentInteractionType.singleChoice,
+          AssessmentInteractionType.multiSelect,
+        },
+      );
+      expect(decoded.maxStimulusItemsRatio, 0.2);
     });
 
     test('Normalizes unnormalized domain weights gracefully', () {

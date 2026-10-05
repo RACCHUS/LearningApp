@@ -41,6 +41,40 @@ class MockExamBlueprint {
 
   Duration get timeLimit => Duration(minutes: timeLimitMinutes);
 
+  /// Computes target difficulty quotas for a given exam length using the same
+  /// largest-remainder allocation used for domain weights.
+  Map<String, int> computeDifficultyQuotas(int totalQuestions) {
+    if (difficultyDistribution.isEmpty || totalQuestions <= 0) return {};
+
+    final positive = difficultyDistribution.entries
+        .where((entry) => entry.value > 0)
+        .toList();
+    if (positive.isEmpty) return {};
+
+    final totalWeight =
+        positive.fold<double>(0.0, (sum, entry) => sum + entry.value);
+    final quotas = <String, int>{};
+    final remainders = <({String key, double remainder})>[];
+    int allocated = 0;
+
+    for (final entry in positive) {
+      final exact = totalQuestions * (entry.value / totalWeight);
+      final floorCount = exact.floor();
+      quotas[entry.key] = floorCount;
+      allocated += floorCount;
+      remainders.add((key: entry.key, remainder: exact - floorCount));
+    }
+
+    remainders.sort((a, b) => b.remainder.compareTo(a.remainder));
+    final deficit = totalQuestions - allocated;
+    for (int i = 0; i < deficit; i++) {
+      final key = remainders[i % remainders.length].key;
+      quotas[key] = (quotas[key] ?? 0) + 1;
+    }
+
+    return quotas;
+  }
+
   /// Computes target question quota per domain for a given total item count.
   /// Handles rounding remainders so the sum exactly matches [totalQuestions].
   Map<String, int> computeDomainQuotas(int totalQuestions) {
@@ -83,15 +117,45 @@ class MockExamBlueprint {
         .map((d) => DomainWeightConstraint.fromJson((d as Map).cast<String, dynamic>()))
         .toList();
 
+    final difficultyRaw =
+        (json['difficulty_distribution'] as Map?)?.cast<String, dynamic>();
+    final difficultyDistribution = difficultyRaw == null
+        ? const <String, double>{
+            'beginner': 0.20,
+            'intermediate': 0.60,
+            'advanced': 0.20,
+          }
+        : difficultyRaw.map(
+            (key, value) => MapEntry(key, (value as num).toDouble()),
+          );
+
+    final allowedRaw = (json['allowed_interaction_types'] as List?)
+        ?.map((value) => value.toString())
+        .toSet();
+    final allowedTypes = allowedRaw == null || allowedRaw.isEmpty
+        ? const <AssessmentInteractionType>{
+            AssessmentInteractionType.singleChoice,
+            AssessmentInteractionType.multiSelect,
+            AssessmentInteractionType.orderedResponse,
+            AssessmentInteractionType.matching,
+          }
+        : AssessmentInteractionType.values
+            .where((type) => allowedRaw.contains(type.toDbString()))
+            .toSet();
+
     return MockExamBlueprint(
       targetVersionId: json['target_version_id'] as String? ?? '',
       examCode: json['exam_code'] as String? ?? '',
       title: json['title'] as String? ?? 'Mock Exam',
-      timeLimitMinutes: json['time_limit_minutes'] as int? ?? 90,
-      officialPassingScore: json['official_passing_score'] as int? ?? 750,
+      timeLimitMinutes: (json['time_limit_minutes'] as num?)?.toInt() ?? 90,
+      officialPassingScore: (json['official_passing_score'] as num?)?.toInt() ?? 750,
       officialScoreScale: json['official_score_scale'] as String? ?? '100-900',
-      defaultQuestionCount: json['default_question_count'] as int? ?? 50,
+      defaultQuestionCount: (json['default_question_count'] as num?)?.toInt() ?? 50,
       domainWeights: domainList,
+      difficultyDistribution: difficultyDistribution,
+      allowedInteractionTypes: allowedTypes,
+      maxStimulusItemsRatio:
+          (json['max_stimulus_items_ratio'] as num?)?.toDouble() ?? 0.25,
       metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
@@ -105,6 +169,10 @@ class MockExamBlueprint {
         'official_score_scale': officialScoreScale,
         'default_question_count': defaultQuestionCount,
         'domain_weights': domainWeights.map((d) => d.toJson()).toList(),
+        'difficulty_distribution': difficultyDistribution,
+        'allowed_interaction_types':
+            allowedInteractionTypes.map((type) => type.toDbString()).toList(),
+        'max_stimulus_items_ratio': maxStimulusItemsRatio,
         'metadata': metadata,
       };
 }

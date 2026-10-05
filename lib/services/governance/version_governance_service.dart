@@ -18,23 +18,31 @@ class VersionGovernanceService {
     }
   }
 
-  /// Checks if a learning context is bound to an outdated or retired TargetVersion.
+  /// Checks if an active learning context is bound to an outdated or retired TargetVersion.
+  ///
+  /// Errors intentionally propagate: a governance lookup failure must not be
+  /// indistinguishable from "no update available".
   Future<TargetVersionUpdateInfo?> getContextVersionUpdate(String contextId) async {
+    final client = _requireClient();
+    final res = await client
+        .from('v_target_version_updates')
+        .select()
+        .eq('context_id', contextId)
+        .maybeSingle();
+
+    if (res == null) return null;
+    return TargetVersionUpdateInfo.fromJson(res);
+  }
+
+  SupabaseClient _requireClient() {
     final client = _client;
-    if (client == null) return null;
-
-    try {
-      final res = await client
-          .from('v_target_version_updates')
-          .select()
-          .eq('context_id', contextId)
-          .maybeSingle();
-
-      if (res == null) return null;
-      return TargetVersionUpdateInfo.fromJson(res);
-    } catch (_) {
-      return null;
+    if (client == null) {
+      throw StateError(
+        'Version governance requires an initialized Supabase client. '
+        'Governance operations must not fall back to fabricated data.',
+      );
     }
+    return client;
   }
 
   /// Evaluates progress transfer and concept retention between two versions.
@@ -43,28 +51,25 @@ class VersionGovernanceService {
     required String fromVersionId,
     required String toVersionId,
   }) async {
-    final client = _client;
-    if (client == null) {
-      return _mockMigrationEvaluation(fromVersionId, toVersionId);
-    }
+    final client = _requireClient();
+    final res = await client.rpc(
+      'evaluate_target_version_migration',
+      params: {
+        'p_user_id': userId,
+        'p_from_target_version_id': fromVersionId,
+        'p_to_target_version_id': toVersionId,
+      },
+    );
 
-    try {
-      final res = await client.rpc(
-        'evaluate_target_version_migration',
-        params: {
-          'p_user_id': userId,
-          'p_from_target_version_id': fromVersionId,
-          'p_to_target_version_id': toVersionId,
-        },
+    if (res is Map<String, dynamic>) {
+      return TargetVersionMigrationEvaluation.fromJson(res);
+    }
+    if (res is Map) {
+      return TargetVersionMigrationEvaluation.fromJson(
+        res.cast<String, dynamic>(),
       );
-
-      if (res is Map<String, dynamic>) {
-        return TargetVersionMigrationEvaluation.fromJson(res);
-      }
-      return _mockMigrationEvaluation(fromVersionId, toVersionId);
-    } catch (_) {
-      return _mockMigrationEvaluation(fromVersionId, toVersionId);
     }
+    throw StateError('Unexpected response from evaluate_target_version_migration');
   }
 
   /// Safely migrates a learner's active context to a destination TargetVersion,
@@ -74,18 +79,7 @@ class VersionGovernanceService {
     required String contextId,
     required String toVersionId,
   }) async {
-    final client = _client;
-    if (client == null) {
-      return UserVersionMigrationResult(
-        success: true,
-        contextId: contextId,
-        fromVersionCode: 'v1.0',
-        toVersionCode: 'v2.0',
-        transferredConceptsCount: 14,
-        retainedMasteryPct: 88.5,
-      );
-    }
-
+    final client = _requireClient();
     final res = await client.rpc(
       'migrate_user_context_target_version',
       params: {
@@ -98,7 +92,9 @@ class VersionGovernanceService {
     if (res is Map<String, dynamic>) {
       return UserVersionMigrationResult.fromJson(res);
     }
-
+    if (res is Map) {
+      return UserVersionMigrationResult.fromJson(res.cast<String, dynamic>());
+    }
     throw StateError('Unexpected response from migrate_user_context_target_version');
   }
 
@@ -106,34 +102,31 @@ class VersionGovernanceService {
   Future<TargetVersionAuditReport> auditTargetVersionReadiness(
     String targetVersionId,
   ) async {
-    final client = _client;
-    if (client == null) {
-      return _mockAuditReport(targetVersionId);
-    }
+    final client = _requireClient();
+    final res = await client.rpc(
+      'audit_target_version_readiness',
+      params: {'p_target_version_id': targetVersionId},
+    );
 
-    try {
-      final res = await client.rpc(
-        'audit_target_version_readiness',
-        params: {'p_target_version_id': targetVersionId},
-      );
-
-      if (res is Map<String, dynamic>) {
-        return TargetVersionAuditReport.fromJson(res);
-      }
-      return _mockAuditReport(targetVersionId);
-    } catch (_) {
-      return _mockAuditReport(targetVersionId);
+    if (res is Map<String, dynamic>) {
+      return TargetVersionAuditReport.fromJson(res);
     }
+    if (res is Map) {
+      return TargetVersionAuditReport.fromJson(res.cast<String, dynamic>());
+    }
+    throw StateError('Unexpected response from audit_target_version_readiness');
   }
 
   /// Transitions a draft target version to review_ready status.
   Future<void> stageReview(String targetVersionId) async {
-    final client = _client;
-    if (client == null) return;
+    final client = _requireClient();
 
     await client
         .from('target_versions')
-        .update({'status': 'review_ready', 'updated_at': DateTime.now().toIso8601String()})
+        .update({
+          'status': 'review_ready',
+          'updated_at': DateTime.now().toIso8601String(),
+        })
         .eq('id', targetVersionId);
   }
 
@@ -142,17 +135,7 @@ class VersionGovernanceService {
     String targetVersionId, {
     bool retirePrevious = false,
   }) async {
-    final client = _client;
-    if (client == null) {
-      return {
-        'success': true,
-        'target_version_id': targetVersionId,
-        'status': 'published',
-        'already_published': false,
-        'retired_version_ids': <String>[],
-      };
-    }
-
+    final client = _requireClient();
     final res = await client.rpc(
       'publish_target_version',
       params: {
@@ -161,113 +144,37 @@ class VersionGovernanceService {
       },
     );
 
-    return res is Map<String, dynamic> ? res : {'success': true};
+    if (res is Map<String, dynamic>) return res;
+    if (res is Map) return res.cast<String, dynamic>();
+    throw StateError('Unexpected response from publish_target_version');
   }
 
   /// Deprecates and retires an older published target version.
   Future<Map<String, dynamic>> retireVersion(String targetVersionId) async {
-    final client = _client;
-    if (client == null) {
-      return {
-        'success': true,
-        'target_version_id': targetVersionId,
-        'status': 'retired',
-        'already_retired': false,
-      };
-    }
-
+    final client = _requireClient();
     final res = await client.rpc(
       'retire_target_version',
       params: {'p_version_id': targetVersionId},
     );
 
-    return res is Map<String, dynamic> ? res : {'success': true};
+    if (res is Map<String, dynamic>) return res;
+    if (res is Map) return res.cast<String, dynamic>();
+    throw StateError('Unexpected response from retire_target_version');
   }
 
   /// Queries all versions currently in draft or review_ready staging.
   Future<List<Map<String, dynamic>>> getStagedTargetVersions() async {
-    final client = _client;
-    if (client == null) return const [];
+    final client = _requireClient();
+    final res = await client
+        .from('target_versions')
+        .select(
+          'id, version_code, title, status, created_at, target_id, '
+          'learning_targets(title, target_type)',
+        )
+        .inFilter('status', ['draft', 'review_ready'])
+        .order('created_at', ascending: false);
 
-    try {
-      final res = await client
-          .from('target_versions')
-          .select('id, version_code, title, status, created_at, target_id, learning_targets(title, target_type)')
-          .inFilter('status', ['draft', 'review_ready'])
-          .order('created_at', ascending: false);
-
-      return List<Map<String, dynamic>>.from(res);
-    } catch (_) {
-      return const [];
-    }
+    return List<Map<String, dynamic>>.from(res);
   }
 
-  // --- Fallback Mocks for Offline & Unit Test Isolation ---
-
-  static TargetVersionMigrationEvaluation _mockMigrationEvaluation(
-    String fromId,
-    String toId,
-  ) {
-    return TargetVersionMigrationEvaluation(
-      fromTargetVersionId: fromId,
-      toTargetVersionId: toId,
-      totalSourceConcepts: 32,
-      totalTargetConcepts: 36,
-      mappedConceptsCount: 30,
-      retainedConceptsCount: 28,
-      removedConceptsCount: 2,
-      newConceptsCount: 6,
-      transferRetentionPct: 87.5,
-      userAssessedConceptsCount: 20,
-      projectedRetainedAssessedCount: 17.5,
-      conceptMappings: const [
-        ConceptTransferDiff(
-          fromConceptId: 'c-threat-actors',
-          toConceptId: 'c-threat-actors-modern',
-          mappingType: 'expanded',
-          transferWeight: 0.9,
-          fromConceptName: 'Threat Actors & Motivations',
-          toConceptName: 'Modern Threat Vectors & Actors',
-        ),
-        ConceptTransferDiff(
-          fromConceptId: 'c-des-hashing',
-          toConceptId: null,
-          mappingType: 'removed',
-          transferWeight: 0.0,
-          fromConceptName: 'DES & MD5 Cryptography',
-          toConceptName: null,
-        ),
-      ],
-    );
-  }
-
-  static TargetVersionAuditReport _mockAuditReport(String versionId) {
-    return TargetVersionAuditReport(
-      targetVersionId: versionId,
-      versionCode: 'SY0-701',
-      status: 'review_ready',
-      targetTitle: 'CompTIA Security+ Certification',
-      domainCount: 5,
-      objectiveCount: 28,
-      leafObjectiveCount: 23,
-      domainWeightSum: 100.0,
-      isDomainWeightBalanced: true,
-      lessonCount: 42,
-      lessonBlockCount: 210,
-      stimulusCount: 8,
-      assessmentItemCount: 96,
-      emptyObjectivesCount: 0,
-      conceptCoverageCount: 54,
-      unassessedConceptsCount: 3,
-      provenanceCitationsCount: 28,
-      missingProvenanceCount: 0,
-      crossVersionMappingsCount: 48,
-      canStageReview: true,
-      canPublish: true,
-      blockingIssues: const [],
-      warnings: const [
-        '3 concepts have no direct assessment items.',
-      ],
-    );
-  }
 }

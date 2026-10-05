@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(20);
+select plan(27);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
@@ -13,6 +13,14 @@ values
 insert into public.users (id)
 values
   ('88888888-8888-4888-8888-888888888888');
+
+insert into auth.users (id, is_anonymous)
+values
+  ('77777777-7777-4777-8777-777777777777', false);
+
+insert into public.users (id)
+values
+  ('77777777-7777-4777-8777-777777777777');
 
 -- 1-7: Structure checks
 select has_table('public', 'user_version_migration_logs', 'user_version_migration_logs table exists');
@@ -53,23 +61,23 @@ values
 -- Setup curriculum nodes in V1
 insert into public.curriculum_nodes (id, target_version_id, node_type, title, weight, sort_order)
 values
-  ('99999999-n001-4999-8999-999999999999', '99999999-aaaa-4999-8999-999999999999', 'domain', 'Threats & Attacks', 100.0, 1),
-  ('99999999-n002-4999-8999-999999999999', '99999999-aaaa-4999-8999-999999999999', 'objective', 'Identify Threat Vectors', null, 2);
-update public.curriculum_nodes set parent_id = '99999999-n001-4999-8999-999999999999' where id = '99999999-n002-4999-8999-999999999999';
+  ('99999999-a001-4999-8999-999999999999', '99999999-aaaa-4999-8999-999999999999', 'domain', 'Threats & Attacks', 100.0, 1),
+  ('99999999-a002-4999-8999-999999999999', '99999999-aaaa-4999-8999-999999999999', 'objective', 'Identify Threat Vectors', null, 2);
+update public.curriculum_nodes set parent_id = '99999999-a001-4999-8999-999999999999' where id = '99999999-a002-4999-8999-999999999999';
 
 -- Setup curriculum nodes in V2
 insert into public.curriculum_nodes (id, target_version_id, node_type, title, weight, sort_order)
 values
-  ('99999999-n003-4999-8999-999999999999', '99999999-bbbb-4999-8999-999999999999', 'domain', 'General Security Concepts', 100.0, 1),
-  ('99999999-n004-4999-8999-999999999999', '99999999-bbbb-4999-8999-999999999999', 'objective', 'Mitigate Cloud Threats', null, 2);
-update public.curriculum_nodes set parent_id = '99999999-n003-4999-8999-999999999999' where id = '99999999-n004-4999-8999-999999999999';
+  ('99999999-b003-4999-8999-999999999999', '99999999-bbbb-4999-8999-999999999999', 'domain', 'General Security Concepts', 100.0, 1),
+  ('99999999-b004-4999-8999-999999999999', '99999999-bbbb-4999-8999-999999999999', 'objective', 'Mitigate Cloud Threats', null, 2);
+update public.curriculum_nodes set parent_id = '99999999-b003-4999-8999-999999999999' where id = '99999999-b004-4999-8999-999999999999';
 
 -- Map concepts to nodes
 insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
 values
-  ('99999999-n002-4999-8999-999999999999', '99999999-c001-4999-8999-999999999999'),
-  ('99999999-n002-4999-8999-999999999999', '99999999-c003-4999-8999-999999999999'),
-  ('99999999-n004-4999-8999-999999999999', '99999999-c002-4999-8999-999999999999');
+  ('99999999-a002-4999-8999-999999999999', '99999999-c001-4999-8999-999999999999'),
+  ('99999999-a002-4999-8999-999999999999', '99999999-c003-4999-8999-999999999999'),
+  ('99999999-b004-4999-8999-999999999999', '99999999-c002-4999-8999-999999999999');
 
 -- Add cross-version concept mappings:
 -- c001 -> c002 with transfer_weight = 0.8 (expanded)
@@ -90,7 +98,7 @@ values
 insert into public.learning_contexts
   (id, user_id, label, root_type, root_id, target_version_id, last_active_at)
 values (
-  '99999999-ctx1-4999-8999-999999999999',
+  '99999999-d001-4999-8999-999999999999',
   '88888888-8888-4888-8888-888888888888',
   'Security Cert Prep',
   'target',
@@ -98,6 +106,21 @@ values (
   '99999999-aaaa-4999-8999-999999999999',
   now()
 );
+
+-- Seed a disposable resume pointer that must be cleared by version migration.
+insert into public.resume_pointers
+  (context_id, user_id, kind, activity_id, item_index)
+values (
+  '99999999-d001-4999-8999-999999999999',
+  '88888888-8888-4888-8888-888888888888',
+  'lesson',
+  'legacy-version-lesson',
+  3
+);
+
+-- Exercise privileged governance functions as service_role unless a test overrides it.
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
 -- 8. Test evaluate_target_version_migration
 select is(
@@ -146,66 +169,138 @@ select is(
   'audit_target_version_readiness counts root and child nodes'
 );
 
--- 13. Test publish_target_version with retire_previous = true
+-- 13. Non-owner cannot inspect an unpublished migration destination
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $$ select public.evaluate_target_version_migration(
+    '77777777-7777-4777-8777-777777777777',
+    '99999999-aaaa-4999-8999-999999999999',
+    '99999999-bbbb-4999-8999-999999999999'
+  ) $$,
+  'P0001',
+  'Unauthorized: destination target version is not published for this caller.',
+  'Non-owner cannot evaluate migration into review-ready version'
+);
+
+-- 14. Unauthorized authenticated user cannot audit another owner's staged version
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $$ select public.audit_target_version_readiness('99999999-bbbb-4999-8999-999999999999') $$,
+  'P0001',
+  'Unauthorized: only service_role, target owner, or assigned reviewer may audit a target version.',
+  'Non-owner cannot audit staged target version'
+);
+
+-- 15. Unauthorized authenticated user cannot publish another owner's version
+select throws_ok(
+  $$ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $$,
+  'P0001',
+  'Unauthorized: only service_role or the target owner can publish a target version',
+  'Non-owner cannot publish target version'
+);
+
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
+
+-- 16. Test publish_target_version with retire_previous = true
 select is(
   (public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true)->>'status')::text,
   'published',
   'publish_target_version promotes V2 to published'
 );
 
--- 14. Verify V1 was retired when V2 published with retire_previous
+-- 17. Verify V1 was retired when V2 published with retire_previous
 select is(
   (select status from public.target_versions where id = '99999999-aaaa-4999-8999-999999999999'),
   'retired',
   'V1 status is now retired'
 );
 
--- 15. Verify v_target_version_updates flags the context as outdated and retired
+-- 18. Verify v_target_version_updates flags the context as outdated and retired
 select is(
-  (select is_outdated from public.v_target_version_updates where context_id = '99999999-ctx1-4999-8999-999999999999'),
+  (select is_outdated from public.v_target_version_updates where context_id = '99999999-d001-4999-8999-999999999999'),
   true,
   'v_target_version_updates detects outdated context'
 );
 
 select is(
-  (select is_retired from public.v_target_version_updates where context_id = '99999999-ctx1-4999-8999-999999999999'),
+  (select is_retired from public.v_target_version_updates where context_id = '99999999-d001-4999-8999-999999999999'),
   true,
   'v_target_version_updates detects retired context active version'
 );
 
--- 16. Test migrate_user_context_target_version execution
+-- 20. Authenticated caller cannot migrate another user's context
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $$ select public.migrate_user_context_target_version(
+    '88888888-8888-4888-8888-888888888888',
+    '99999999-d001-4999-8999-999999999999',
+    '99999999-bbbb-4999-8999-999999999999'
+  ) $$,
+  'P0001',
+  'Unauthorized: cannot migrate context for another user.',
+  'Non-owner cannot migrate another user context'
+);
+
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
+
+-- 21. Test migrate_user_context_target_version execution
 select is(
   (public.migrate_user_context_target_version(
     '88888888-8888-4888-8888-888888888888',
-    '99999999-ctx1-4999-8999-999999999999',
+    '99999999-d001-4999-8999-999999999999',
     '99999999-bbbb-4999-8999-999999999999'
   )->>'success')::boolean,
   true,
   'migrate_user_context_target_version succeeds'
 );
 
--- 17. Verify learning context target_version_id was updated to V2
+-- 22. Verify learning context target_version_id was updated to V2
 select is(
-  (select target_version_id from public.learning_contexts where id = '99999999-ctx1-4999-8999-999999999999'),
+  (select target_version_id from public.learning_contexts where id = '99999999-d001-4999-8999-999999999999'),
   '99999999-bbbb-4999-8999-999999999999'::uuid,
   'Context target_version_id is updated to V2'
 );
 
--- 18. Verify user_version_migration_logs recorded the migration
+-- 23. Version migration clears stale resume breadcrumbs.
+select is(
+  (select count(*) from public.resume_pointers where context_id = '99999999-d001-4999-8999-999999999999')::integer,
+  0,
+  'Version migration clears stale resume pointer'
+);
+
+-- 24. Verify user_version_migration_logs recorded the migration
 select is(
   (select count(*) from public.user_version_migration_logs where user_id = '88888888-8888-4888-8888-888888888888')::integer,
   1,
   'user_version_migration_logs recorded migration event'
 );
 
--- 19. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
+-- 25. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
 select is(
   (select evidence_count from public.user_concept_state where user_id = '88888888-8888-4888-8888-888888888888' and concept_id = '99999999-c002-4999-8999-999999999999'),
   8,
   'Target concept c002 received evidence scaled by transfer_weight (8)'
 );
 
--- 20. Test retire_target_version RPC on V2
+-- 25. Unauthorized authenticated user cannot retire another owner's version
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $$ select public.retire_target_version('99999999-bbbb-4999-8999-999999999999') $$,
+  'P0001',
+  'Unauthorized: only service_role or the target owner can retire a target version',
+  'Non-owner cannot retire target version'
+);
+
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
+
+-- 26. Test retire_target_version RPC on V2
 select is(
   (public.retire_target_version('99999999-bbbb-4999-8999-999999999999')->>'status')::text,
   'retired',

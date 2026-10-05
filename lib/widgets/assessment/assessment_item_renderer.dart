@@ -141,20 +141,25 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         break;
 
       case AssessmentInteractionType.orderedResponse:
-        final List<dynamic> correctSequence = scoring['correct_sequence'] as List? ??
-            scoring['correct_order'] as List? ??
-            [];
-        correct = true;
-        if (correctSequence.length == _orderedItems.length) {
-          for (int i = 0; i < correctSequence.length; i++) {
-            if (_orderedItems[i] != correctSequence[i].toString()) {
-              correct = false;
-              break;
-            }
-          }
-        } else {
-          correct = false;
-        }
+        final items = (item.responseSpec['items'] as List? ?? const [])
+            .map((e) => e.toString())
+            .toList();
+        final correctOrder = (scoring['correct_order'] as List? ?? const [])
+            .whereType<num>()
+            .map((e) => e.toInt())
+            .toList();
+        final hasValidOrder = items.isNotEmpty &&
+            correctOrder.length == items.length &&
+            correctOrder.every((index) => index >= 0 && index < items.length);
+        final expectedOrder =
+            hasValidOrder ? correctOrder.map((index) => items[index]).toList() : <String>[];
+
+        correct = hasValidOrder &&
+            _orderedItems.length == expectedOrder.length &&
+            List.generate(
+              expectedOrder.length,
+              (i) => _orderedItems[i] == expectedOrder[i],
+            ).every((value) => value);
         score = correct ? 1.0 : 0.0;
         feedback = correct
             ? 'Practice evidence: Sequential protocol validated'
@@ -178,9 +183,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         break;
 
       default:
-        correct = true;
-        score = 1.0;
-        feedback = 'Response recorded';
+        correct = false;
+        score = 0.0;
+        feedback = 'This interaction type is not yet supported.';
     }
 
     setState(() {
@@ -381,10 +386,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       case AssessmentInteractionType.orderedResponse:
         return true;
       case AssessmentInteractionType.matching:
-        final pairs = widget.item.responseSpec['pairs'] as Map? ?? widget.item.responseSpec['keys'] as List? ?? [];
-        return _userMatches.length >= (pairs is Map ? pairs.length : (pairs as List).length);
+        final leftItems = widget.item.responseSpec['left_items'] as List? ??
+            widget.item.responseSpec['keys'] as List? ??
+            const [];
+        return leftItems.isNotEmpty && _userMatches.length >= leftItems.length;
       default:
-        return true;
+        return false;
     }
   }
 
@@ -399,7 +406,16 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       case AssessmentInteractionType.matching:
         return _buildMatching(context, isDark);
       default:
-        return _buildSingleChoice(context, isDark);
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            'This interaction type is not yet supported in the lesson reader.',
+          ),
+        );
     }
   }
 
@@ -702,8 +718,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   // 4. Matching Renderer
   Widget _buildMatching(BuildContext context, bool isDark) {
-    final keysRaw = widget.item.responseSpec['keys'] as List? ?? [];
-    final valuesRaw = widget.item.responseSpec['values'] as List? ?? [];
+    final keysRaw = widget.item.responseSpec['left_items'] as List? ??
+        widget.item.responseSpec['keys'] as List? ??
+        const [];
+    final valuesRaw = widget.item.responseSpec['right_items'] as List? ??
+        widget.item.responseSpec['values'] as List? ??
+        const [];
     final keys = keysRaw.map((e) => e.toString()).toList();
     final values = valuesRaw.map((e) => e.toString()).toList();
 

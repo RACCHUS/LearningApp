@@ -41,6 +41,35 @@ class TaxonomyImporter {
     return sha256.convert(utf8.encode(content)).toString();
   }
 
+  /// Produces a stable RFC-4122 UUID from a source identity so repeated
+  /// imports resolve to the same primary keys without random IDs.
+  static String deterministicUuid(String identity) {
+    final bytes = sha256.convert(utf8.encode(identity)).bytes.take(16).toList();
+    bytes[6] = (bytes[6] & 0x0f) | 0x50;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    String hex(int value) => value.toRadixString(16).padLeft(2, '0');
+    final raw = bytes.map(hex).join();
+    return '${raw.substring(0, 8)}-'
+        '${raw.substring(8, 12)}-'
+        '${raw.substring(12, 16)}-'
+        '${raw.substring(16, 20)}-'
+        '${raw.substring(20, 32)}';
+  }
+
+  static String _recordId(Object? rawId, String identity) {
+    if (rawId == null) return deterministicUuid(identity);
+    final id = rawId.toString();
+    final uuidPattern = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-'
+      r'[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    if (!uuidPattern.hasMatch(id)) {
+      throw FormatException('Taxonomy record id must be a UUID: "$id"');
+    }
+    return id;
+  }
+
   /// Validates and parses raw CIP records with two-pass parent resolution.
   static List<ExternalClassificationNode> parseCipNodes({
     required List<Map<String, dynamic>> rawRecords,
@@ -75,7 +104,10 @@ class TaxonomyImporter {
                   ? code.split('.').first
                   : null);
 
-      final id = r['id']?.toString() ?? 'ext-cip-$version-$code';
+      final id = _recordId(
+        r['id'],
+        'external|$sourceReleaseId|cip|$version|$code',
+      );
 
       final node = ExternalClassificationNode(
         id: id,
@@ -161,7 +193,11 @@ class TaxonomyImporter {
           : null;
       final releaseId = isOnet ? onetSourceReleaseId : baseSourceReleaseId;
 
-      final id = r['id']?.toString() ?? 'occ-$code';
+      final id = _recordId(
+        r['id'],
+        'occupation|${releaseId ?? 'no-release'}|$taxonomySystem|'
+        '$taxonomyVersion|${dataReleaseVersion ?? ''}|$code',
+      );
 
       nodesByCode[code] = OccupationNode(
         id: id,
@@ -268,7 +304,11 @@ class TaxonomyImporter {
         }
       }
 
-      final id = r['id']?.toString() ?? 'lin-$system-$fromVer-$fromCode-$toVer-$toCode';
+      final id = _recordId(
+        r['id'],
+        'lineage|$system|$fromVer|${fromCode ?? ''}|$toVer|'
+        '${toCode ?? ''}|$transition',
+      );
 
       list.add(TaxonomyNodeLineage(
         id: id,

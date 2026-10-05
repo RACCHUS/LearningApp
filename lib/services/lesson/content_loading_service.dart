@@ -77,7 +77,7 @@ class ContentLoadingService {
     try {
       final List<dynamic> itemsRaw = await _supabase
           .from('assessment_items')
-          .select('*, assessment_stimuli(*), assessment_item_concepts(*)')
+          .select('*, assessment_stimuli(*), concepts:assessment_item_concepts(*)')
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: true);
 

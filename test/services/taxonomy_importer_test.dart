@@ -11,6 +11,21 @@ void main() {
       expect(hash1.length, 64);
     });
 
+    test('deterministicUuid produces stable RFC-4122 database-safe IDs', () {
+      final first = TaxonomyImporter.deterministicUuid('cip|2020|11.0701');
+      final second = TaxonomyImporter.deterministicUuid('cip|2020|11.0701');
+      final other = TaxonomyImporter.deterministicUuid('cip|2020|11.1003');
+
+      expect(first, second);
+      expect(first, isNot(other));
+      expect(
+        RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+        ).hasMatch(first),
+        isTrue,
+      );
+    });
+
     test('parseCipNodes performs two-pass parent resolution', () {
       final raw = [
         {
@@ -51,6 +66,8 @@ void main() {
       expect(program.parentId, group.id);
       expect(program.levelDepth, 3);
       expect(program.crossReferences, contains('11.0101'));
+      expect(RegExp(r'^[0-9a-f-]{36}$').hasMatch(series.id), isTrue);
+      expect(RegExp(r'^[0-9a-f-]{36}$').hasMatch(program.id), isTrue);
     });
 
     test('parseOccupationNodes enforces 5-tier parentage and O*NET segregation', () {
@@ -112,6 +129,8 @@ void main() {
       expect(onet.taxonomyVersion, '2019');
       expect(onet.dataReleaseVersion, 'onet_31_0');
       expect(onet.sourceReleaseId, 'rel-onet-31');
+      expect(RegExp(r'^[0-9a-f-]{36}$').hasMatch(detailed.id), isTrue);
+      expect(RegExp(r'^[0-9a-f-]{36}$').hasMatch(onet.id), isTrue);
     });
 
     test('parseLineageRecords validates transition types and nullable endpoints', () {
