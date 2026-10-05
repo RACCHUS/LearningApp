@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(27);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
@@ -105,6 +105,17 @@ values (
   '99999999-1111-4999-8999-999999999999',
   '99999999-aaaa-4999-8999-999999999999',
   now()
+);
+
+-- Seed a disposable resume pointer that must be cleared by version migration.
+insert into public.resume_pointers
+  (context_id, user_id, kind, activity_id, item_index)
+values (
+  '99999999-d001-4999-8999-999999999999',
+  '88888888-8888-4888-8888-888888888888',
+  'lesson',
+  'legacy-version-lesson',
+  3
 );
 
 -- Exercise privileged governance functions as service_role unless a test overrides it.
@@ -255,14 +266,21 @@ select is(
   'Context target_version_id is updated to V2'
 );
 
--- 23. Verify user_version_migration_logs recorded the migration
+-- 23. Version migration clears stale resume breadcrumbs.
+select is(
+  (select count(*) from public.resume_pointers where context_id = '99999999-d001-4999-8999-999999999999')::integer,
+  0,
+  'Version migration clears stale resume pointer'
+);
+
+-- 24. Verify user_version_migration_logs recorded the migration
 select is(
   (select count(*) from public.user_version_migration_logs where user_id = '88888888-8888-4888-8888-888888888888')::integer,
   1,
   'user_version_migration_logs recorded migration event'
 );
 
--- 24. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
+-- 25. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
 select is(
   (select evidence_count from public.user_concept_state where user_id = '88888888-8888-4888-8888-888888888888' and concept_id = '99999999-c002-4999-8999-999999999999'),
   8,
