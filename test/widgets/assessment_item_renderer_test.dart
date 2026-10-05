@@ -171,6 +171,7 @@ void main() {
 
       expect(isCorrectResult, isTrue);
       expect(find.text('Practice evidence: Sequential protocol validated'), findsOneWidget);
+    });
 
     testWidgets('Matching item uses canonical left/right items and scoring pairs', (tester) async {
       bool? isCorrectResult;
@@ -219,7 +220,6 @@ void main() {
 
       expect(isCorrectResult, isTrue);
       expect(find.text('Practice evidence: All relationships accurately paired'), findsOneWidget);
-    });
     });
   });
 }
