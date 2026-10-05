@@ -30,6 +30,8 @@ import 'package:learning_pwa/providers/timer_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
+import 'package:learning_pwa/providers/unified_lesson_provider.dart';
+import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -420,10 +422,22 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                             ),
                           )
                         : _isLessonMode
-                            ? LessonContentPager(
-                                key: ValueKey(_restartCounter), // Force rebuild on restart
-                                contentList: contentList,
-                                onLessonComplete: _onLessonComplete,
+                            ? Consumer(
+                                builder: (context, ref, _) {
+                                  final unifiedAsync = ref.watch(unifiedLessonProvider(widget.lessonId));
+                                  return unifiedAsync.when(
+                                    data: (unified) => RichLessonReader(
+                                      unifiedLesson: unified,
+                                      onCompleted: _onLessonComplete,
+                                    ),
+                                    loading: () => const Center(child: CircularProgressIndicator()),
+                                    error: (_, __) => LessonContentPager(
+                                      key: ValueKey(_restartCounter),
+                                      contentList: contentList,
+                                      onLessonComplete: _onLessonComplete,
+                                    ),
+                                  );
+                                },
                               )
                             : Center(
                                 child: Column(

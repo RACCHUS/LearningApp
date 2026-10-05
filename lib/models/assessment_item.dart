@@ -1,3 +1,5 @@
+import 'package:learning_pwa/models/assessment_stimulus.dart';
+
 enum AssessmentInteractionType {
   singleChoice,
   multiSelect,
@@ -107,11 +109,13 @@ class AssessmentItem {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<AssessmentItemConcept> concepts;
+  final AssessmentStimulus? stimulus;
 
   const AssessmentItem({
     required this.id,
     this.lessonId,
     this.stimulusId,
+    this.stimulus,
     required this.interactionType,
     required this.prompt,
     this.responseSpec = const {},
@@ -158,6 +162,11 @@ class AssessmentItem {
           ? DateTime.parse(json['updated_at'] as String)
           : DateTime.now(),
       concepts: conceptsList,
+      stimulus: json['assessment_stimuli'] is Map
+          ? AssessmentStimulus.fromJson((json['assessment_stimuli'] as Map).cast<String, dynamic>())
+          : (json['stimulus'] is Map
+              ? AssessmentStimulus.fromJson((json['stimulus'] as Map).cast<String, dynamic>())
+              : null),
     );
   }
 
@@ -198,11 +207,13 @@ class AssessmentItem {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<AssessmentItemConcept>? concepts,
+    AssessmentStimulus? stimulus,
   }) {
     return AssessmentItem(
       id: id ?? this.id,
       lessonId: lessonId ?? this.lessonId,
       stimulusId: stimulusId ?? this.stimulusId,
+      stimulus: stimulus ?? this.stimulus,
       interactionType: interactionType ?? this.interactionType,
       prompt: prompt ?? this.prompt,
       responseSpec: responseSpec ?? this.responseSpec,
