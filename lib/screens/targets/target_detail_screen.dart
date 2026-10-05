@@ -6,6 +6,7 @@ import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/targets/target_readiness_card.dart';
+import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
 
 class TargetDetailScreen extends ConsumerWidget {
   final String targetId;
@@ -213,6 +214,22 @@ class TargetDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: DesignTokens.space4),
                         TargetReadinessCard(targetVersionId: ver.id),
+                        const SizedBox(height: DesignTokens.space3),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            key: const Key('target-career-crosswalk-button'),
+                            onPressed: () {
+                              CareerCrosswalkSheet.show(
+                                context,
+                                targetId: target.id,
+                                targetTitle: target.title,
+                              );
+                            },
+                            icon: const Icon(Icons.work_outline),
+                            label: const Text('Career & Labor Market Pathways'),
+                          ),
+                        ),
                       ],
                     );
                   },
