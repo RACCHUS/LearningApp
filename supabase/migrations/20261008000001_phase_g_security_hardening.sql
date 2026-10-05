@@ -560,16 +560,47 @@ begin
 
   select count(*)
   into v_provenance_citations_count
-  from public.content_source_mappings
-  where target_version_id = p_target_version_id;
+  from public.content_source_mappings csm
+  where
+    (csm.entity_type = 'target_version' and csm.entity_id = p_target_version_id)
+    or (
+      csm.entity_type = 'curriculum_node'
+      and csm.entity_id in (
+        select cn.id
+        from public.curriculum_nodes cn
+        where cn.target_version_id = p_target_version_id
+      )
+    )
+    or (
+      csm.entity_type = 'lesson'
+      and csm.entity_id in (
+        select distinct cnl.lesson_id
+        from public.curriculum_node_lessons cnl
+        join public.curriculum_nodes cn
+          on cn.id = cnl.curriculum_node_id
+        where cn.target_version_id = p_target_version_id
+      )
+    )
+    or (
+      csm.entity_type = 'knowledge_concept'
+      and csm.entity_id in (
+        select distinct cnc.concept_id
+        from public.curriculum_node_concepts cnc
+        join public.curriculum_nodes cn
+          on cn.id = cnc.curriculum_node_id
+        where cn.target_version_id = p_target_version_id
+      )
+    );
 
   select count(*)
   into v_missing_provenance_count
   from public.curriculum_nodes cn
   where cn.target_version_id = p_target_version_id
     and not exists (
-      select 1 from public.content_source_mappings csm
-      where csm.curriculum_node_id = cn.id
+      select 1
+      from public.content_source_mappings csm
+      where csm.entity_type = 'curriculum_node'
+        and csm.entity_id = cn.id
     );
 
   if v_missing_provenance_count > 0 then
