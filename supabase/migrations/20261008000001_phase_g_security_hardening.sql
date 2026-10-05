@@ -40,10 +40,49 @@ declare
   v_user_assessed_count integer;
   v_projected_retained_assessed numeric(5,2);
   v_mappings_json jsonb;
+  v_from_tv record;
+  v_to_tv record;
+  v_target_owner uuid;
+  v_can_preview boolean := false;
 begin
   if coalesce(auth.role(), '') <> 'service_role'
      and (auth.uid() is null or p_user_id is null or auth.uid() <> p_user_id) then
     raise exception 'Unauthorized: cannot evaluate migration evidence for another user.';
+  end if;
+
+  select * into v_from_tv
+  from public.target_versions
+  where id = p_from_target_version_id;
+
+  if not found then
+    raise exception 'Source target version not found.';
+  end if;
+
+  select tv.*, lt.created_by as target_owner
+  into v_to_tv
+  from public.target_versions tv
+  join public.learning_targets lt on lt.id = tv.target_id
+  where tv.id = p_to_target_version_id;
+
+  if not found then
+    raise exception 'Destination target version not found.';
+  end if;
+
+  if v_from_tv.target_id <> v_to_tv.target_id then
+    raise exception 'Cannot evaluate migration across different learning targets.';
+  end if;
+
+  v_target_owner := v_to_tv.target_owner;
+  if coalesce(auth.role(), '') = 'service_role' then
+    v_can_preview := true;
+  elsif auth.uid() is not null then
+    v_can_preview :=
+      v_target_owner = auth.uid()
+      or public.is_target_reviewer(v_to_tv.target_id);
+  end if;
+
+  if v_to_tv.status <> 'published' and not v_can_preview then
+    raise exception 'Unauthorized: destination target version is not published for this caller.';
   end if;
 
   select count(distinct cnc.concept_id)
