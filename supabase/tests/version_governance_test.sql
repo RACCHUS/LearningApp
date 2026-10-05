@@ -184,7 +184,7 @@ select throws_ok(
 
 -- 15. Unauthorized authenticated user cannot publish another owner's version
 select throws_ok(
-  $$ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $,
+  $$ select public.publish_target_version('99999999-bbbb-4999-8999-999999999999', true) $$,
   'P0001',
   'Unauthorized: only service_role or the target owner can publish a target version',
   'Non-owner cannot publish target version'
