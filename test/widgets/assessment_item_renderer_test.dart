@@ -141,7 +141,7 @@ void main() {
           'items': ['Preparation', 'Detection & Analysis', 'Containment', 'Post-Incident Activity'],
         },
         scoringSpec: {
-          'correct_sequence': ['Preparation', 'Detection & Analysis', 'Containment', 'Post-Incident Activity'],
+          'correct_order': [0, 1, 2, 3],
         },
         explanation: 'Standard NIST SP 800-61 Incident Handling process.',
         createdAt: now,
@@ -171,6 +171,55 @@ void main() {
 
       expect(isCorrectResult, isTrue);
       expect(find.text('Practice evidence: Sequential protocol validated'), findsOneWidget);
+
+    testWidgets('Matching item uses canonical left/right items and scoring pairs', (tester) async {
+      bool? isCorrectResult;
+
+      final matchingItem = AssessmentItem(
+        id: 'item-match-1',
+        interactionType: AssessmentInteractionType.matching,
+        prompt: 'Match each protocol to its default port:',
+        responseSpec: {
+          'left_items': ['HTTPS', 'SSH'],
+          'right_items': ['443', '22'],
+        },
+        scoringSpec: {
+          'correct_pairs': {'HTTPS': '443', 'SSH': '22'},
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: matchingItem,
+              onAnswerSubmitted: (correct, score) {
+                isCorrectResult = correct;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('HTTPS'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('443'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('SSH'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('22'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Check Answer'));
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+
+      expect(isCorrectResult, isTrue);
+      expect(find.text('Practice evidence: All relationships accurately paired'), findsOneWidget);
+    });
     });
   });
 }
