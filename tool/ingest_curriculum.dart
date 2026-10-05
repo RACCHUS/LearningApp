@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:json_schema/json_schema.dart';
 import 'package:yaml/yaml.dart';
+import 'lint_manifest.dart';
 
 /// Content Ingestion & Provenance CLI
 ///
@@ -450,7 +451,7 @@ void main(List<String> args) async {
       }
 
       print('\n--- Ingesting: $slug ($vCode) from $f ---');
-      await _executeApply(client, m, slug, vCode);
+      await _executeApply(client, m, slug, vCode, filePath: f);
     }
 
     print('\n====================================================');
@@ -517,7 +518,7 @@ void main(List<String> args) async {
   // MODE 2: APPLY (Ingest into Draft TargetVersion)
   if (isApply) {
     print('\n--- Executing Draft TargetVersion Ingestion ---');
-    await _executeApply(client, manifest!, targetArg, versionArg);
+    await _executeApply(client, manifest!, targetArg, versionArg, filePath: manifestPath);
     print('\n✅ Ingestion into draft version completed successfully!');
     print('Next step: Advance to review staging or publish:');
     print('  dart run tool/ingest_curriculum.dart --target $targetArg --version $versionArg --stage-review');
@@ -555,6 +556,23 @@ void _executeDryRun(
 }) {
   // 1. JSON Schema validation
   _validateJsonSchema(manifest, filePath: filePath);
+
+  // 1.5 Pedagogical Quality & Referential Integrity Linter
+  final linter = ManifestLinter();
+  linter.lint(filePath ?? 'manifest', manifest);
+  if (linter.hasErrors) {
+    print('\n❌ Pedagogical Quality Linter Errors (${filePath ?? "manifest"}):');
+    for (final issue in linter.issues.where((i) => i.level == 'ERROR')) {
+      print('  • $issue');
+    }
+    throw Exception('Manifest failed pedagogical quality linter (${filePath ?? "manifest"}). Ingestion blocked.');
+  }
+  if (linter.hasWarnings) {
+    print('\n⚠️ Pedagogical Quality Linter Warnings (${filePath ?? "manifest"}):');
+    for (final issue in linter.issues.where((i) => i.level == 'WARNING')) {
+      print('  • $issue');
+    }
+  }
 
   // 2. Source release(s)
   final rawReleases = manifest['source_releases'] as List<dynamic>?;
@@ -751,15 +769,37 @@ Future<Map<String, dynamic>> _resolveOrInsertConcept(
   String? targetFieldId,
   Map<String, dynamic> conceptData,
 ) async {
-  // If an explicit canonical_concept slug is declared, query using that slug
+  // If an explicit canonical_concept slug is declared, fail closed if not found
   final explicitCanonical = conceptData['canonical_concept']?.toString();
-  final searchSlug = (explicitCanonical != null && explicitCanonical.isNotEmpty)
-      ? explicitCanonical
-      : slug;
+  if (explicitCanonical != null && explicitCanonical.trim().isNotEmpty) {
+    final canonSlug = explicitCanonical.trim();
+    final canonRes = await client.restGet('knowledge_concepts?slug=eq.${Uri.encodeComponent(canonSlug)}&select=id,slug,name,field_id');
+    final canonList = asList(canonRes['body']);
+    if (canonList.isEmpty) {
+      throw Exception(
+        'Explicit canonical_concept "$canonSlug" declared for concept "$name" ($slug) does not exist in knowledge_concepts. '
+        'Explicit overrides must fail closed if the target canonical concept is missing.',
+      );
+    }
+    final canonItem = canonList.first as Map<String, dynamic>;
+    final matchedId = canonItem['id'] as String;
+    final matchedSlug = canonItem['slug'] as String;
+    print('      [Explicit Canonical Concept Override] "$name" ($slug) -> "$matchedSlug" [ID: $matchedId]');
+
+    if (targetFieldId != null) {
+      await client.restPost(
+        'concept_fields',
+        {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
+        upsert: true,
+        onConflict: 'concept_id,field_id',
+      );
+    }
+    return {'id': matchedId, 'slug': matchedSlug, 'isNew': false};
+  }
 
   // 1. Invoke hardened database RPC resolve_canonical_concept
   final rpcRes = await client.restRpc('resolve_canonical_concept', {
-    'p_slug': searchSlug,
+    'p_slug': slug,
     'p_name': name,
     'p_field_id': targetFieldId,
   });
@@ -770,28 +810,11 @@ Future<Map<String, dynamic>> _resolveOrInsertConcept(
     final isAmbiguous = match['is_ambiguous'] == true;
 
     if (isAmbiguous) {
-      if (explicitCanonical != null && explicitCanonical.isNotEmpty) {
-        // Explicit override was provided, proceed safely
-        final matchedId = match['id'] as String;
-        final canonicalSlug = match['slug'] as String;
-        print('      [Canonical Concept Explicit Override] "$name" ($slug) -> "$canonicalSlug" [ID: $matchedId]');
-
-        if (targetFieldId != null) {
-          await client.restPost(
-            'concept_fields',
-            {'concept_id': matchedId, 'field_id': targetFieldId, 'is_primary': false},
-            upsert: true,
-            onConflict: 'concept_id,field_id',
-          );
-        }
-        return {'id': matchedId, 'slug': canonicalSlug, 'isNew': false};
-      } else {
-        throw Exception(
-          'Ambiguous canonical concept match for "$name" ($slug). '
-          'Multiple concepts share this name across fields and target field does not disambiguate. '
-          'Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.',
-        );
-      }
+      throw Exception(
+        'Ambiguous canonical concept match for "$name" ($slug). '
+        'Multiple concepts share this name across fields and target field does not disambiguate. '
+        'Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.',
+      );
     }
 
     final matchType = match['match_type'] as String;
@@ -854,16 +877,291 @@ Future<Map<String, dynamic>> _resolveOrInsertConcept(
 // Ingestion (Apply) Logic
 // ----------------------------------------------------------------------------
 
+Map<String, dynamic> _prepareManifestPayload({
+  required Map<String, dynamic> manifest,
+  required String targetSlug,
+  required String versionCode,
+  required Map<String, String> conceptMap,
+}) {
+  // 1. Target & TargetVersion
+  final target = Map<String, dynamic>.from(manifest['target'] as Map? ?? {});
+  target['slug'] = targetSlug;
+
+  final targetVersion = Map<String, dynamic>.from(manifest['target_version'] as Map? ?? {});
+  targetVersion['version_code'] = versionCode;
+
+  // 2. Source Releases
+  final rawReleases = manifest['source_releases'] as List<dynamic>?;
+  final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
+  final releases = <Map<String, dynamic>>[];
+  if (rawReleases != null) {
+    for (final r in rawReleases) {
+      if (r is Map) releases.add(Map<String, dynamic>.from(r));
+    }
+  } else if (singleRelease != null) {
+    releases.add(Map<String, dynamic>.from(singleRelease));
+  }
+
+  // 3. Shared Stimuli (collect from root, domain, and objective scopes)
+  final stimuli = <Map<String, dynamic>>[];
+  final seenStimKeys = <String>{};
+
+  void collectStimuli(List<dynamic>? list) {
+    if (list == null) return;
+    for (final s in list) {
+      if (s is! Map) continue;
+      final key = s['id']?.toString() ?? s['slug']?.toString() ?? s['stimulus_key']?.toString() ?? 'stim-${stimuli.length + 1}';
+      if (seenStimKeys.contains(key)) continue;
+      seenStimKeys.add(key);
+
+      stimuli.add({
+        'stimulus_key': key,
+        'title': s['title'],
+        'body': s['body'] ?? s['body_markdown'],
+        'stimulus_type': s['stimulus_type'] ?? 'scenario',
+        'media_url': s['media_url'],
+        'credit': s['credit'],
+        'attribution': s['attribution'],
+        'source_release_id': s['source_release_id'],
+        'citation': s['citation'],
+      });
+    }
+  }
+
+  collectStimuli(manifest['stimuli'] as List<dynamic>?);
+
+  // 4. Standalone Target Flashcards
+  final flashcards = <Map<String, dynamic>>[];
+  final rawFlashcards = manifest['flashcards'] as List<dynamic>? ?? [];
+  for (final fc in rawFlashcards) {
+    if (fc is! Map) continue;
+    final cSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+    final cIds = cSlugs.map((s) => conceptMap[s]).whereType<String>().toList();
+    flashcards.add({
+      'front': fc['front'],
+      'back': fc['back'],
+      'explanation': fc['explanation'],
+      'concept_ids': cIds,
+    });
+  }
+
+  // 5. Domains & Objectives
+  final domains = <Map<String, dynamic>>[];
+  final rawDomains = manifest['domains'] as List<dynamic>? ?? [];
+
+  for (int dIdx = 0; dIdx < rawDomains.length; dIdx++) {
+    final d = rawDomains[dIdx];
+    if (d is! Map) continue;
+    collectStimuli(d['stimuli'] as List<dynamic>?);
+
+    final objectives = <Map<String, dynamic>>[];
+    final rawObjectives = d['objectives'] as List<dynamic>? ?? [];
+
+    for (int oIdx = 0; oIdx < rawObjectives.length; oIdx++) {
+      final obj = rawObjectives[oIdx];
+      if (obj is! Map) continue;
+      collectStimuli(obj['stimuli'] as List<dynamic>?);
+
+      // Objective concepts
+      final objDeclaredConcepts = obj['concepts'] as List<dynamic>? ?? [];
+      final objConceptIds = <String>{};
+      for (final c in objDeclaredConcepts) {
+        if (c is Map && c['slug'] != null) {
+          final id = conceptMap[c['slug'].toString()];
+          if (id != null) objConceptIds.add(id);
+        }
+      }
+
+      // Objective Flashcards
+      final objFlashcards = <Map<String, dynamic>>[];
+      for (final fc in (obj['flashcards'] as List<dynamic>? ?? [])) {
+        if (fc is! Map) continue;
+        final cSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+        final cIds = cSlugs.isNotEmpty
+            ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            : objConceptIds.toList();
+        objFlashcards.add({
+          'front': fc['front'],
+          'back': fc['back'],
+          'explanation': fc['explanation'],
+          'concept_ids': cIds,
+        });
+      }
+
+      // Objective Assessment Items
+      final objItems = <Map<String, dynamic>>[];
+      for (final item in (obj['assessment_items'] as List<dynamic>? ?? [])) {
+        if (item is! Map) continue;
+        final cSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+        final cIds = cSlugs.isNotEmpty
+            ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            : objConceptIds.toList();
+        objItems.add({
+          'stimulus_key': item['stimulus_key'] ?? item['stimulus_id'],
+          'prompt': item['prompt'],
+          'interaction_type': item['interaction_type'] ?? 'single_choice',
+          'response_spec': item['response_spec'] ?? {},
+          'scoring_spec': item['scoring_spec'] ?? {},
+          'explanation': item['explanation'],
+          'concept_ids': cIds,
+        });
+      }
+
+      // Lessons
+      final lessons = <Map<String, dynamic>>[];
+      final rawLessons = obj['lessons'] as List<dynamic>? ?? [];
+
+      for (int lIdx = 0; lIdx < rawLessons.length; lIdx++) {
+        final l = rawLessons[lIdx];
+        if (l is! Map) continue;
+
+        // Scoped lesson concept linking (NO global leakage!)
+        final lConceptSlugs = (l['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
+        final lConceptIds = (lConceptSlugs != null && lConceptSlugs.isNotEmpty)
+            ? lConceptSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+            : objConceptIds.toList();
+
+        // Lesson Blocks
+        final blocks = <Map<String, dynamic>>[];
+        for (int bIdx = 0; bIdx < (l['blocks'] as List<dynamic>? ?? []).length; bIdx++) {
+          final b = (l['blocks'] as List<dynamic>)[bIdx];
+          if (b is! Map) continue;
+          blocks.add({
+            'block_type': b['block_type'] ?? 'markdown',
+            'content': b['content'] ?? {},
+            'sort_order': b['sort_order'] ?? (bIdx + 1),
+          });
+        }
+
+        // Lesson Terms
+        final terms = <Map<String, dynamic>>[];
+        for (final t in (l['terms'] as List<dynamic>? ?? [])) {
+          if (t is! Map) continue;
+          terms.add({
+            'term': t['term'],
+            'definition': t['definition'],
+          });
+        }
+
+        // Lesson Questions
+        final questions = <Map<String, dynamic>>[];
+        for (final q in (l['questions'] as List<dynamic>? ?? [])) {
+          if (q is! Map) continue;
+          questions.add({
+            'question_text': q['question_text'] ?? q['question'],
+            'question': q['question_text'] ?? q['question'],
+            'options': q['options'] ?? [],
+            'correct_answer': q['correct_answer'] ?? q['correct_index'] ?? 0,
+            'correct_index': q['correct_answer'] ?? q['correct_index'] ?? 0,
+            'explanation': q['explanation'],
+          });
+        }
+
+        // Lesson Assessment Items
+        final lessonItems = <Map<String, dynamic>>[];
+        for (final item in (l['assessment_items'] as List<dynamic>? ?? [])) {
+          if (item is! Map) continue;
+          final cSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+          final cIds = cSlugs.isNotEmpty
+              ? cSlugs.map((s) => conceptMap[s]).whereType<String>().toList()
+              : lConceptIds;
+          lessonItems.add({
+            'stimulus_key': item['stimulus_key'] ?? item['stimulus_id'],
+            'prompt': item['prompt'],
+            'interaction_type': item['interaction_type'] ?? 'single_choice',
+            'response_spec': item['response_spec'] ?? {},
+            'scoring_spec': item['scoring_spec'] ?? {},
+            'explanation': item['explanation'],
+            'concept_ids': cIds,
+          });
+        }
+
+        lessons.add({
+          'title': l['title'],
+          'description': l['description'] ?? l['summary'],
+          'order_index': l['order_index'] ?? (lIdx + 1),
+          'source_release_id': l['source_release_id'],
+          'citation': l['citation'],
+          'concept_ids': lConceptIds,
+          'blocks': blocks,
+          'terms': terms,
+          'questions': questions,
+          'assessment_items': lessonItems,
+        });
+      }
+
+      objectives.add({
+        'code': obj['code'],
+        'title': obj['title'],
+        'description': obj['description'],
+        'sort_order': obj['sort_order'] ?? (oIdx + 1),
+        'bloom_level': obj['bloom_level'] ?? 'understand',
+        'source_release_id': obj['source_release_id'],
+        'citation': obj['citation'],
+        'concept_ids': objConceptIds.toList(),
+        'flashcards': objFlashcards,
+        'assessment_items': objItems,
+        'lessons': lessons,
+      });
+    }
+
+    domains.add({
+      'code': d['code'],
+      'title': d['title'],
+      'description': d['description'],
+      'sort_order': d['sort_order'] ?? (dIdx + 1),
+      'weight': d['weight'],
+      'source_release_id': d['source_release_id'],
+      'citation': d['citation'],
+      'objectives': objectives,
+    });
+  }
+
+  return {
+    'field': manifest['field'],
+    'target': target,
+    'target_version': targetVersion,
+    'source_releases': releases,
+    'stimuli': stimuli,
+    'flashcards': flashcards,
+    'domains': domains,
+    if (manifest['source_mappings'] != null)
+      'source_mappings': manifest['source_mappings'],
+    if (manifest['target_version_concept_mappings'] != null)
+      'target_version_concept_mappings': manifest['target_version_concept_mappings'],
+  };
+}
+
 Future<void> _executeApply(
   SupabaseRestClient client,
   Map<String, dynamic> manifest,
   String targetSlug,
-  String versionCode,
-) async {
-  // Pre-flight JSON Schema validation
-  _validateJsonSchema(manifest);
+  String versionCode, {
+  String? filePath,
+}) async {
+  print('====================================================');
+  print('Authoritative Curriculum Ingestion Pipeline (--apply)');
+  print('====================================================');
 
-  // 1. Locate the target
+  // 1. Pre-flight JSON Schema validation & Pedagogical Quality Linter
+  _validateJsonSchema(manifest, filePath: filePath);
+  final linter = ManifestLinter();
+  linter.lint(filePath ?? 'manifest', manifest);
+  if (linter.hasErrors) {
+    print('\n❌ Pedagogical Quality Linter Errors (${filePath ?? "manifest"}):');
+    for (final issue in linter.issues.where((i) => i.level == 'ERROR')) {
+      print('  • $issue');
+    }
+    throw Exception('Manifest failed pedagogical quality linter (${filePath ?? "manifest"}). Ingestion blocked.');
+  }
+  if (linter.hasWarnings) {
+    print('\n⚠️ Pedagogical Quality Linter Warnings (${filePath ?? "manifest"}):');
+    for (final issue in linter.issues.where((i) => i.level == 'WARNING')) {
+      print('  • $issue');
+    }
+  }
+
+  // 2. Locate target
   print('Locating learning target with slug matching "$targetSlug"...');
   final targetRes = await client.restGet('learning_targets?slug=ilike.*$targetSlug*&limit=1');
   final targetList = asList(targetRes['body']);
@@ -876,16 +1174,14 @@ Future<void> _executeApply(
   final targetFieldId = targetRow['field_id'] as String?;
   print('Found target: "${targetRow['title']}" ($canonicalSlug) [ID: $targetId]');
 
-  // 2. Check TargetVersion status & Idempotently clean draft if re-applying
+  // 3. Check TargetVersion status (prevent overwriting published/retired or frozen review_ready)
   print('Checking target_version "$versionCode"...');
   final versionRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$versionCode');
   final versionList = asList(versionRes['body']);
-  String versionId;
 
   if (versionList.isNotEmpty) {
     final existingVersion = versionList.first as Map<String, dynamic>;
     final status = existingVersion['status'] as String;
-    versionId = existingVersion['id'] as String;
 
     if (status == 'published' || status == 'retired') {
       throw Exception(
@@ -901,765 +1197,66 @@ Future<void> _executeApply(
         'To modify curriculum or re-apply, set its status back to "draft" first.',
       );
     }
-
-    // Version is in 'draft' status: Clean existing draft content idempotently via RPC
-    print('TargetVersion "$versionCode" is in draft status. Resetting draft curriculum for clean idempotent apply...');
-    final cleanRes = await client.restRpc('clean_draft_target_version', {'p_version_id': versionId});
-    if (cleanRes['statusCode'] >= 400) {
-      throw Exception('Failed to clean draft TargetVersion: ${cleanRes['body']}');
-    }
-    print('Draft curriculum reset cleanly. Proceeding with fresh ingestion...');
-  } else {
-    print('Creating new draft TargetVersion "$versionCode"...');
-    final targetInfo = manifest['target'] as Map<String, dynamic>? ?? {};
-    final vTitle = targetInfo['version_title'] as String? ?? '${targetRow['title']} ($versionCode)';
-    final vDesc = targetInfo['version_description'] as String? ?? 'Official curriculum blueprint.';
-
-    final createVersionRes = await client.restPost('target_versions', {
-      'target_id': targetId,
-      'version_code': versionCode,
-      'title': vTitle,
-      'description': vDesc,
-      'status': 'draft',
-    });
-    final createdList = asList(createVersionRes['body']);
-    if (createVersionRes['statusCode'] >= 400 || createdList.isEmpty) {
-      throw Exception('Failed to create draft TargetVersion: ${createVersionRes['body']}');
-    }
-    versionId = createdList.first['id'] as String;
-    print('Created draft TargetVersion [ID: $versionId]');
   }
 
-  // 3. Upsert content_source_releases (supporting single or multiple releases)
-  final rawReleases = manifest['source_releases'] as List<dynamic>?;
-  final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
-  final releaseListToProcess = rawReleases != null
-      ? rawReleases.cast<Map<String, dynamic>>()
-      : [singleRelease!];
-
-  final sourceReleaseIdMap = <String, String>{}; // identifier/index -> uuid
-  String defaultReleaseId = '';
-
-  for (int rIdx = 0; rIdx < releaseListToProcess.length; rIdx++) {
-    final rel = releaseListToProcess[rIdx];
-    final publisher = rel['publisher'] as String;
-    final sTitle = rel['title'] as String;
-    final sVersion = rel['version'] as String;
-    final sUrl = rel['source_url'] as String?;
-    final sLicense = rel['license'] as String?;
-    final sLicenseName = rel['license_name'] as String?;
-    final sRightsNote = rel['rights_note'] as String?;
-    final sSha256 = rel['sha256'] as String?;
-    final sRetrievedAt = rel['retrieved_at'] as String?;
-    final sMeta = (rel['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
-
-    if (sLicenseName != null) sMeta['license_name'] = sLicenseName;
-    if (sRightsNote != null) sMeta['rights_note'] = sRightsNote;
-
-    final releasePayload = <String, dynamic>{
-      'publisher': publisher,
-      'title': sTitle,
-      'version': sVersion,
-      'source_url': sUrl,
-      'license': sLicense ?? sLicenseName,
-      'sha256': sSha256,
-      'metadata': sMeta,
-    };
-    if (sRetrievedAt != null && sRetrievedAt.isNotEmpty) {
-      releasePayload['retrieved_at'] = sRetrievedAt;
-    }
-
-    print('Upserting content_source_releases ("$publisher", "$sTitle", "$sVersion")...');
-    final releaseUpsertRes = await client.restPost(
-      'content_source_releases',
-      releasePayload,
-      upsert: true,
-      onConflict: 'publisher,title,version',
-    );
-    final upserted = asList(releaseUpsertRes['body']);
-    String currentReleaseId;
-    if (upserted.isNotEmpty) {
-      currentReleaseId = upserted.first['id'] as String;
-    } else {
-      final qRes = await client.restGet(
-        'content_source_releases?publisher=eq.${Uri.encodeComponent(publisher)}&title=eq.${Uri.encodeComponent(sTitle)}&version=eq.${Uri.encodeComponent(sVersion)}',
-      );
-      currentReleaseId = asList(qRes['body']).first['id'] as String;
-    }
-
-    final relCustomId = rel['id']?.toString();
-    if (relCustomId != null) {
-      sourceReleaseIdMap[relCustomId] = currentReleaseId;
-    }
-    sourceReleaseIdMap['$publisher/$sVersion'] = currentReleaseId;
-    sourceReleaseIdMap[rIdx.toString()] = currentReleaseId;
-
-    if (rIdx == 0) {
-      defaultReleaseId = currentReleaseId;
-    }
-
-    // Link target_version to each authoritative source release in provenance
-    await client.restPost(
-      'content_source_mappings',
-      {
-        'source_release_id': currentReleaseId,
-        'entity_type': 'target_version',
-        'entity_id': versionId,
-        'relationship': 'official_blueprint',
-        'citation_location': 'Full Blueprint Specification',
-        'notes': 'Root target version mapping to authoritative source release',
-      },
-      upsert: true,
-      onConflict: 'source_release_id,entity_type,entity_id,relationship',
-    );
-  }
-
-  // 4. Ingestion helper for shared stimuli across root, domain, and objective scopes
-  final stimulusIdMap = <String, String>{}; // key/id -> uuid
-  int stimuliCount = 0;
-
-  Future<void> ingestStimulusList(List<dynamic>? stimList, String defaultCitation, String scope) async {
-    if (stimList == null) return;
-    for (final stim in stimList) {
-      if (stim is! Map) continue;
-      final stimKey = stim['id']?.toString() ?? stim['slug']?.toString() ?? 'stim-$stimuliCount';
-      final stimType = stim['stimulus_type']?.toString() ?? 'scenario';
-      final stimTitle = stim['title']?.toString() ?? 'Stimulus';
-      final stimBody = stim['body']?.toString();
-      final stimData = (stim['structured_data'] as Map?)?.cast<String, dynamic>() ?? {};
-      final stimAssets = (stim['asset_refs'] as List?)?.toList() ?? [];
-      final stimMeta = (stim['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
-      final stimCitation = stim['citation']?.toString() ?? defaultCitation;
-      final relId = sourceReleaseIdMap[stim['source_release_id']?.toString()] ?? defaultReleaseId;
-
-      final insertStimRes = await client.restPost('assessment_stimuli', {
-        'stimulus_type': stimType,
-        'title': stimTitle,
-        'body': stimBody,
-        'structured_data': stimData,
-        'asset_refs': stimAssets,
-        'metadata': stimMeta,
-        'created_by': null,
-      });
-      final sList = asList(insertStimRes['body']);
-      if (insertStimRes['statusCode'] >= 400 || sList.isEmpty) {
-        throw Exception('Failed to insert assessment_stimuli ($stimTitle): ${insertStimRes['body']}');
-      }
-      final stimId = sList.first['id'] as String;
-      stimulusIdMap[stimKey] = stimId;
-      stimuliCount++;
-
-      await client.restPost(
-        'content_source_mappings',
-        {
-          'source_release_id': relId,
-          'entity_type': 'assessment_stimulus',
-          'entity_id': stimId,
-          'relationship': 'official_blueprint',
-          'citation_location': stimCitation,
-          'notes': 'Assessment stimulus ($scope) mapping',
-        },
-        upsert: true,
-        onConflict: 'source_release_id,entity_type,entity_id,relationship',
-      );
-    }
-  }
-
-  // Ingest root-level stimuli
-  await ingestStimulusList(manifest['stimuli'] as List<dynamic>?, 'Official Blueprint Stimulus', 'root');
-
-  // 5. Ingest Domains, Objectives, Concepts, Lessons, Blocks & Assessments
-  final domains = manifest['domains'] as List<dynamic>? ?? [];
+  // 4. Resolve Canonical Concepts & Aliases Ahead of Transaction
+  print('Resolving canonical concepts with fail-closed explicit override...');
   final conceptMap = <String, String>{}; // declared slug -> resolved concept_id
+  final rawDomains = manifest['domains'] as List<dynamic>? ?? [];
 
-  int nodesCount = 0;
-  int conceptsCount = 0;
-  int lessonsCount = 0;
-  int blocksCount = 0;
-  int flashcardsCount = 0;
-  int itemsCount = 0;
-  int questionsCount = 0;
-  int provenanceCount = releaseListToProcess.length + stimuliCount;
-
-  for (final domain in domains) {
+  for (final domain in rawDomains) {
     if (domain is! Map) continue;
-    final dCode = domain['code']?.toString();
-    final dTitle = domain['title']?.toString() ?? '';
-    final dDesc = domain['description']?.toString();
-    final dWeight = (domain['weight'] as num?)?.toDouble() ?? 1.0;
-    final dOrder = (domain['sort_order'] as num?)?.toInt() ?? (nodesCount + 1);
-    final dCitation = domain['citation']?.toString() ?? 'Domain $dCode';
-    final dRelId = sourceReleaseIdMap[domain['source_release_id']?.toString()] ?? defaultReleaseId;
-
-    // Ingest domain-level stimuli if any
-    await ingestStimulusList(domain['stimuli'] as List<dynamic>?, dCitation, 'domain $dCode');
-
-    // Domain curriculum_node
-    final insertDomainRes = await client.restPost('curriculum_nodes', {
-      'target_version_id': versionId,
-      'node_type': 'domain',
-      'title': dTitle,
-      'code': dCode,
-      'description': dDesc,
-      'sort_order': dOrder,
-      'importance': domain['importance']?.toString() ?? 'core',
-      'weight': dWeight,
-    });
-    final domainNodeId = asList(insertDomainRes['body']).first['id'] as String;
-    nodesCount++;
-
-    await client.restPost(
-      'content_source_mappings',
-      {
-        'source_release_id': dRelId,
-        'entity_type': 'curriculum_node',
-        'entity_id': domainNodeId,
-        'relationship': 'official_blueprint',
-        'citation_location': dCitation,
-        'notes': 'Curriculum domain node citation',
-      },
-      upsert: true,
-      onConflict: 'source_release_id,entity_type,entity_id,relationship',
-    );
-    provenanceCount++;
-
-    // Objectives
     final objectives = domain['objectives'] as List<dynamic>? ?? [];
     for (final objective in objectives) {
       if (objective is! Map) continue;
-      final oCode = objective['code']?.toString();
-      final oTitle = objective['title']?.toString() ?? '';
-      final oDesc = objective['description']?.toString();
-      final oOrder = (objective['sort_order'] as num?)?.toInt() ?? 1;
-      final oCitation = objective['citation']?.toString() ?? 'Objective $oCode';
-      final oRelId = sourceReleaseIdMap[objective['source_release_id']?.toString()] ?? dRelId;
-
-      // Ingest objective-level stimuli if any
-      await ingestStimulusList(objective['stimuli'] as List<dynamic>?, oCitation, 'objective $oCode');
-
-      final insertObjRes = await client.restPost('curriculum_nodes', {
-        'target_version_id': versionId,
-        'parent_id': domainNodeId,
-        'node_type': 'objective',
-        'title': oTitle,
-        'code': oCode,
-        'description': oDesc,
-        'sort_order': oOrder,
-        'importance': objective['importance']?.toString() ?? 'core',
-        'weight': 1.0,
-      });
-      final objectiveNodeId = asList(insertObjRes['body']).first['id'] as String;
-      nodesCount++;
-
-      await client.restPost(
-        'content_source_mappings',
-        {
-          'source_release_id': oRelId,
-          'entity_type': 'curriculum_node',
-          'entity_id': objectiveNodeId,
-          'relationship': 'official_blueprint',
-          'citation_location': oCitation,
-          'notes': 'Curriculum objective node citation',
-        },
-        upsert: true,
-        onConflict: 'source_release_id,entity_type,entity_id,relationship',
-      );
-      provenanceCount++;
-
-      // Track concepts strictly declared within THIS objective
-      final objectiveConceptSlugs = <String>[];
-
-      // Canonical Concept Resolution & Linking
       final concepts = objective['concepts'] as List<dynamic>? ?? [];
       for (final concept in concepts) {
         if (concept is! Map) continue;
-        final cSlug = concept['slug']?.toString() ?? '';
-        final cName = concept['name']?.toString() ?? '';
-        final cCitation = concept['citation']?.toString() ?? oCitation;
-        final cRelId = sourceReleaseIdMap[concept['source_release_id']?.toString()] ?? oRelId;
-
-        // Use ambiguity-safe canonical concept resolver
-        final resolved = await _resolveOrInsertConcept(
-          client,
-          cSlug,
-          cName,
-          targetFieldId,
-          concept.cast<String, dynamic>(),
-        );
-        final conceptId = resolved['id'] as String;
-        conceptMap[cSlug] = conceptId;
-        objectiveConceptSlugs.add(cSlug);
-        conceptsCount++;
-
-        // Link curriculum_node_concepts
-        await client.restPost(
-          'curriculum_node_concepts',
-          {
-            'curriculum_node_id': objectiveNodeId,
-            'concept_id': conceptId,
-            'relevance': 'core',
-            'weight': 1.0,
-          },
-          upsert: true,
-        );
-
-        // Concept provenance mapping
-        await client.restPost(
-          'content_source_mappings',
-          {
-            'source_release_id': cRelId,
-            'entity_type': 'knowledge_concept',
-            'entity_id': conceptId,
-            'relationship': 'primary_text',
-            'citation_location': cCitation,
-            'notes': 'Knowledge concept definition mapping',
-          },
-          upsert: true,
-          onConflict: 'source_release_id,entity_type,entity_id,relationship',
-        );
-        provenanceCount++;
-      }
-
-      // Objective Flashcards (if defined)
-      final flashcards = objective['flashcards'] as List<dynamic>? ?? [];
-      for (final fc in flashcards) {
-        if (fc is! Map) continue;
-        final front = fc['front']?.toString() ?? '';
-        final back = fc['back']?.toString() ?? '';
-        final explanation = fc['explanation']?.toString();
-        final fcCitation = fc['citation']?.toString() ?? oCitation;
-        final fcRelId = sourceReleaseIdMap[fc['source_release_id']?.toString()] ?? oRelId;
-        final fcConceptSlugs = (fc['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-
-        final insertFcRes = await client.restPost('flashcards', {
-          'lesson_id': null,
-          'front': front,
-          'back': back,
-          'explanation': explanation,
-          'user_id': null,
-        });
-        final fcList = asList(insertFcRes['body']);
-        if (insertFcRes['statusCode'] >= 400 || fcList.isEmpty) {
-          throw Exception('Failed to insert flashcard: ${insertFcRes['body']}');
-        }
-        final fcId = fcList.first['id'] as String;
-        flashcardsCount++;
-
-        // Link flashcard_concepts
-        for (final slug in fcConceptSlugs) {
-          final cid = conceptMap[slug];
-          if (cid != null) {
-            await client.restPost('flashcard_concepts', {
-              'flashcard_id': fcId,
-              'concept_id': cid,
-              'role': 'primary',
-              'weight': 1.0,
-            }, upsert: true);
-          }
-        }
-
-        // Provenance mapping
-        await client.restPost('content_source_mappings', {
-          'source_release_id': fcRelId,
-          'entity_type': 'flashcard',
-          'entity_id': fcId,
-          'relationship': 'derived_from',
-          'citation_location': fcCitation,
-          'notes': 'Curriculum objective flashcard mapping',
-        }, upsert: true, onConflict: 'source_release_id,entity_type,entity_id,relationship');
-        provenanceCount++;
-      }
-
-      // Lessons
-      final lessons = objective['lessons'] as List<dynamic>? ?? [];
-      for (final lesson in lessons) {
-        if (lesson is! Map) continue;
-        final lTitle = lesson['title']?.toString() ?? 'Lesson';
-        final lDesc = lesson['description']?.toString();
-        final lEmoji = lesson['emoji']?.toString() ?? '📚';
-        final lTags = (lesson['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-        final lCitation = lesson['citation']?.toString() ?? oCitation;
-        final lRelId = sourceReleaseIdMap[lesson['source_release_id']?.toString()] ?? oRelId;
-
-        // Insert public official lesson
-        final insertLessonRes = await client.restPost('lessons', {
-          'title': lTitle,
-          'description': lDesc,
-          'emoji': lEmoji,
-          'tags': lTags,
-          'visibility': 'public',
-          'user_id': null,
-        });
-        if (insertLessonRes['statusCode'] >= 400 || asList(insertLessonRes['body']).isEmpty) {
-          throw Exception('Failed to insert lesson: ${insertLessonRes['body']}');
-        }
-        final lessonId = asList(insertLessonRes['body']).first['id'] as String;
-        lessonsCount++;
-
-        // Bind curriculum_node_lessons
-        await client.restPost(
-          'curriculum_node_lessons',
-          {
-            'curriculum_node_id': objectiveNodeId,
-            'lesson_id': lessonId,
-            'sort_order': lessonsCount,
-            'is_required': true,
-          },
-          upsert: true,
-        );
-
-        // Lesson Knowledge Concept Junction
-        // CRITICAL BUG FIX: Link ONLY explicit lesson concept_slugs or strictly the current objective's concepts.
-        // Never leak concepts from earlier objectives across the entire manifest.
-        final explicitConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList();
-
-        final slugsToLink = (explicitConceptSlugs != null && explicitConceptSlugs.isNotEmpty)
-            ? explicitConceptSlugs
-            : objectiveConceptSlugs;
-
-        for (final slug in slugsToLink) {
-          final cid = conceptMap[slug];
-          if (cid != null) {
-            await client.restPost(
-              'lesson_concepts',
-              {
-                'lesson_id': lessonId,
-                'concept_id': cid,
-                'role': 'primary',
-                'weight': 1.0,
-              },
-              upsert: true,
-            );
-          } else {
-            print('  ⚠️ Warning: Lesson "$lTitle" referenced undeclared concept slug "$slug"');
-          }
-        }
-
-        // Ordered Lesson Blocks (if present)
-        final blocks = lesson['blocks'] as List<dynamic>? ?? [];
-        int blockOrder = 0;
-        for (final b in blocks) {
-          if (b is! Map) continue;
-          blockOrder++;
-          final bType = b['block_type']?.toString() ?? 'markdown';
-          final bContent = (b['content'] as Map?)?.cast<String, dynamic>() ?? {};
-          final bMeta = (b['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
-          final bOrder = (b['sort_order'] as num?)?.toInt() ?? blockOrder;
-
-          final insertBlockRes = await client.restPost('lesson_blocks', {
-            'lesson_id': lessonId,
-            'sort_order': bOrder,
-            'block_type': bType,
-            'content': bContent,
-            'metadata': bMeta,
-          });
-          final bList = asList(insertBlockRes['body']);
-          if (insertBlockRes['statusCode'] >= 400 || bList.isEmpty) {
-            throw Exception('Failed to insert lesson_block: ${insertBlockRes['body']}');
-          }
-          final blockId = bList.first['id'] as String;
-          blocksCount++;
-
-          await client.restPost(
-            'content_source_mappings',
-            {
-              'source_release_id': lRelId,
-              'entity_type': 'lesson_block',
-              'entity_id': blockId,
-              'relationship': 'derived_from',
-              'citation_location': lCitation,
-              'notes': 'Instructional lesson block document mapping',
-            },
-            upsert: true,
-            onConflict: 'source_release_id,entity_type,entity_id,relationship',
+        final cSlug = concept['slug']?.toString();
+        final cName = concept['name']?.toString();
+        if (cSlug != null && cName != null && !conceptMap.containsKey(cSlug)) {
+          final res = await _resolveOrInsertConcept(
+            client,
+            cSlug,
+            cName,
+            targetFieldId,
+            concept.cast<String, dynamic>(),
           );
-          provenanceCount++;
-        }
-
-        // Legacy Terms (backward compatibility)
-        final terms = lesson['terms'] as List<dynamic>? ?? [];
-        for (final t in terms) {
-          if (t is! Map) continue;
-          await client.restPost('terms', {
-            'lesson_id': lessonId,
-            'term': t['term']?.toString() ?? '',
-            'definition': t['definition']?.toString() ?? '',
-            'example': t['example']?.toString(),
-            'emoji': t['emoji']?.toString(),
-            'user_id': null,
-          });
-        }
-
-        // Legacy Snippet Concepts (backward compatibility)
-        final snippetConcepts = lesson['concepts'] as List<dynamic>? ?? [];
-        for (final sc in snippetConcepts) {
-          if (sc is! Map) continue;
-          final cText = sc['concept_text']?.toString() ?? '';
-          final eText = sc['example_text']?.toString();
-          final kp = (sc['key_points'] as List<dynamic>?)?.map((e) => e.toString()).toList();
-          final cEmoji = sc['emoji']?.toString();
-
-          await client.restPost('concepts', {
-            'lesson_id': lessonId,
-            'concept_text': cText,
-            'example_text': eText,
-            'key_points': kp,
-            'emoji': cEmoji,
-            'user_id': null,
-          });
-        }
-
-        // Lesson Provenance
-        await client.restPost(
-          'content_source_mappings',
-          {
-            'source_release_id': lRelId,
-            'entity_type': 'lesson',
-            'entity_id': lessonId,
-            'relationship': 'derived_from',
-            'citation_location': lCitation,
-            'notes': 'Instructional lesson curriculum mapping',
-          },
-          upsert: true,
-          onConflict: 'source_release_id,entity_type,entity_id,relationship',
-        );
-        provenanceCount++;
-
-        // Extensible Assessment Items
-        final assessmentItems = lesson['assessment_items'] as List<dynamic>? ?? [];
-        for (final item in assessmentItems) {
-          if (item is! Map) continue;
-          final iType = item['interaction_type']?.toString() ?? 'single_choice';
-          final iPrompt = item['prompt']?.toString() ?? '';
-          final iRespSpec = (item['response_spec'] as Map?)?.cast<String, dynamic>() ?? {};
-          final iScoreSpec = (item['scoring_spec'] as Map?)?.cast<String, dynamic>() ?? {};
-          final iExplanation = item['explanation']?.toString();
-          final iDifficulty = item['difficulty']?.toString() ?? 'intermediate';
-          final iCogLevel = item['cognitive_level']?.toString();
-          final iMeta = (item['metadata'] as Map?)?.cast<String, dynamic>() ?? {};
-          final iCitation = item['citation']?.toString() ?? lCitation;
-          final iRelId = sourceReleaseIdMap[item['source_release_id']?.toString()] ?? lRelId;
-          final sKey = item['stimulus_id']?.toString() ?? item['stimulus_key']?.toString();
-          final sUuid = sKey != null ? stimulusIdMap[sKey] : null;
-
-          final insertItemRes = await client.restPost('assessment_items', {
-            'lesson_id': lessonId,
-            'stimulus_id': sUuid,
-            'interaction_type': iType,
-            'prompt': iPrompt,
-            'response_spec': iRespSpec,
-            'scoring_spec': iScoreSpec,
-            'explanation': iExplanation,
-            'difficulty': iDifficulty,
-            'cognitive_level': iCogLevel,
-            'metadata': iMeta,
-            'user_id': null,
-          });
-          final iList = asList(insertItemRes['body']);
-          if (insertItemRes['statusCode'] >= 400 || iList.isEmpty) {
-            throw Exception('Failed to insert assessment_item: ${insertItemRes['body']}');
-          }
-          final itemId = iList.first['id'] as String;
-          itemsCount++;
-
-          // Item concept links
-          final itemConceptSlugs = (item['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-          for (final slug in itemConceptSlugs) {
-            final cid = conceptMap[slug];
-            if (cid != null) {
-              await client.restPost(
-                'assessment_item_concepts',
-                {
-                  'assessment_item_id': itemId,
-                  'concept_id': cid,
-                  'role': 'primary',
-                  'weight': 1.0,
-                },
-                upsert: true,
-              );
-            }
-          }
-
-          // Provenance mapping
-          await client.restPost(
-            'content_source_mappings',
-            {
-              'source_release_id': iRelId,
-              'entity_type': 'assessment_item',
-              'entity_id': itemId,
-              'relationship': 'standards_benchmark',
-              'citation_location': iCitation,
-              'notes': 'Extensible assessment item alignment mapping',
-            },
-            upsert: true,
-            onConflict: 'source_release_id,entity_type,entity_id,relationship',
-          );
-          provenanceCount++;
-        }
-
-        // Legacy Questions (backward compatibility)
-        final questions = lesson['questions'] as List<dynamic>? ?? [];
-        for (final q in questions) {
-          if (q is! Map) continue;
-          final qText = q['question_text']?.toString() ?? '';
-          final options = q['options'] as List<dynamic>;
-          final correct = q['correct_answer'] as int;
-          final qType = q['type']?.toString() ?? 'mcq';
-          final explanation = q['explanation']?.toString();
-          final qCitation = q['citation']?.toString() ?? lCitation;
-          final qRelId = sourceReleaseIdMap[q['source_release_id']?.toString()] ?? lRelId;
-          final qConceptSlugs = (q['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-
-          final insertQRes = await client.restPost('questions', {
-            'lesson_id': lessonId,
-            'question_text': qText,
-            'options': options,
-            'correct_answer': correct,
-            'type': qType,
-            'explanation': explanation,
-            'user_id': null,
-          });
-          final questionId = asList(insertQRes['body']).first['id'] as String;
-          questionsCount++;
-
-          for (final qSlug in qConceptSlugs) {
-            final cid = conceptMap[qSlug];
-            if (cid != null) {
-              await client.restPost(
-                'question_concepts',
-                {
-                  'question_id': questionId,
-                  'concept_id': cid,
-                  'role': 'primary',
-                  'weight': 1.0,
-                },
-                upsert: true,
-              );
-            }
-          }
-
-          await client.restPost(
-            'content_source_mappings',
-            {
-              'source_release_id': qRelId,
-              'entity_type': 'question',
-              'entity_id': questionId,
-              'relationship': 'standards_benchmark',
-              'citation_location': qCitation,
-              'notes': 'Assessment question alignment mapping',
-            },
-            upsert: true,
-            onConflict: 'source_release_id,entity_type,entity_id,relationship',
-          );
-          provenanceCount++;
+          conceptMap[cSlug] = res['id'] as String;
         }
       }
     }
   }
+  print('Canonical concepts resolved: ${conceptMap.length} concept(s).');
 
-  // 6. Connect concept prerequisite relations
-  for (final domain in domains) {
-    final objectives = (domain as Map)['objectives'] as List<dynamic>? ?? [];
-    for (final objective in objectives) {
-      final concepts = (objective as Map)['concepts'] as List<dynamic>? ?? [];
-      for (final concept in concepts) {
-        final cSlug = (concept as Map)['slug']?.toString();
-        final prereqs = concept['prerequisites'] as List<dynamic>? ?? [];
-        if (cSlug != null && conceptMap.containsKey(cSlug)) {
-          final toId = conceptMap[cSlug]!;
-          for (final p in prereqs) {
-            final fromId = conceptMap[p.toString()];
-            if (fromId != null && fromId != toId) {
-              await client.restPost(
-                'concept_relations',
-                {
-                  'from_concept_id': fromId,
-                  'to_concept_id': toId,
-                  'relation_type': 'prerequisite',
-                  'prerequisite_kind': 'required',
-                  'strength': 1.0,
-                },
-                upsert: true,
-              );
-            }
-          }
-        }
-      }
-    }
+  // 5. Prepare normalized payload
+  final payload = _prepareManifestPayload(
+    manifest: manifest,
+    targetSlug: canonicalSlug,
+    versionCode: versionCode,
+    conceptMap: conceptMap,
+  );
+
+  // 6. Execute atomic transactional ingestion RPC
+  print('Executing atomic database transaction via RPC "ingest_curriculum_manifest"...');
+  final rpcRes = await client.restRpc('ingest_curriculum_manifest', {'payload': payload});
+  if (rpcRes['statusCode'] >= 400) {
+    throw Exception('Transactional ingestion RPC failed (${rpcRes['statusCode']}): ${rpcRes['body']}');
   }
 
-  // 7. Version-to-Version Concept Mappings (if declared)
-  final conceptMappings = manifest['concept_mappings'] as List<dynamic>? ?? [];
-  for (final cm in conceptMappings) {
-    if (cm is! Map) continue;
-    final fromVersionCode = cm['from_version_code']?.toString();
-    final fromConceptSlug = cm['from_concept_slug']?.toString();
-    final toConceptSlug = cm['to_concept_slug']?.toString();
-    final mappingType = cm['mapping_type']?.toString() ?? 'unchanged';
-    final weight = (cm['transfer_weight'] as num?)?.toDouble() ?? 1.0;
-
-    if (fromVersionCode != null && fromConceptSlug != null) {
-      // Find from_target_version
-      final fromVRes = await client.restGet('target_versions?target_id=eq.$targetId&version_code=eq.$fromVersionCode');
-      final fromVList = asList(fromVRes['body']);
-      if (fromVList.isNotEmpty) {
-        final fromVid = fromVList.first['id'] as String;
-        // Find from_concept
-        final fromCRes = await client.restGet('knowledge_concepts?slug=eq.$fromConceptSlug');
-        final fromCList = asList(fromCRes['body']);
-        if (fromCList.isNotEmpty) {
-          final fromCid = fromCList.first['id'] as String;
-
-          if (mappingType == 'removed') {
-            // Removed mapping has nullable to_concept_id
-            await client.restPost(
-              'target_version_concept_mappings',
-              {
-                'from_target_version_id': fromVid,
-                'from_concept_id': fromCid,
-                'to_target_version_id': versionId,
-                'to_concept_id': null,
-                'mapping_type': 'removed',
-                'transfer_weight': 0.0,
-              },
-              upsert: true,
-            );
-          } else if (toConceptSlug != null) {
-            final toCid = conceptMap[toConceptSlug];
-            if (toCid != null) {
-              await client.restPost(
-                'target_version_concept_mappings',
-                {
-                  'from_target_version_id': fromVid,
-                  'from_concept_id': fromCid,
-                  'to_target_version_id': versionId,
-                  'to_concept_id': toCid,
-                  'mapping_type': mappingType,
-                  'transfer_weight': weight,
-                },
-                upsert: true,
-              );
-            }
-          }
-        }
-      }
-    }
-  }
-
+  final result = rpcRes['body'] as Map<String, dynamic>;
   print('\n----------------------------------------------------');
-  print('Ingestion Results:');
-  print('  Target Version ID    : $versionId (draft)');
-  print('  Curriculum Nodes     : $nodesCount');
-  print('  Knowledge Concepts   : $conceptsCount');
-  print('  Shared Stimuli       : $stimuliCount');
-  print('  Flashcards Ingested  : $flashcardsCount');
-  print('  Lessons Ingested     : $lessonsCount');
-  print('  Lesson Blocks        : $blocksCount');
-  print('  Assessment Items     : $itemsCount');
-  print('  Legacy Questions     : $questionsCount');
-  print('  Provenance Mappings  : $provenanceCount');
+  print('Ingestion Results (Atomic Transaction Succeeded):');
+  print('  Target Version ID    : ${result['target_version_id']} (draft)');
+  print('  Domains Ingested     : ${result['domains_count']}');
+  print('  Objectives Ingested  : ${result['objectives_count']}');
+  print('  Lessons Ingested     : ${result['lessons_count']}');
+  print('  Lesson Blocks        : ${result['blocks_count']}');
+  print('  Assessment Items     : ${result['assessment_items_count']}');
+  print('  Flashcards Ingested  : ${result['flashcards_count']}');
+  print('  Legacy Questions     : ${result['questions_count']}');
+  print('  Shared Stimuli       : ${result['stimuli_count']}');
+  print('  Provenance Mappings  : ${result['mappings_count']}');
   print('----------------------------------------------------');
 }
 

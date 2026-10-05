@@ -95,6 +95,64 @@ class ManifestLinter {
       }
     }
 
+    // 0.5 Source Releases Referential Validation
+    final validSourceReleaseKeys = <String>{};
+    final rawReleases = manifest['source_releases'] as List<dynamic>?;
+    final singleRelease = manifest['source_release'] as Map<String, dynamic>?;
+    if (rawReleases != null) {
+      for (int i = 0; i < rawReleases.length; i++) {
+        validSourceReleaseKeys.add(i.toString());
+        final r = rawReleases[i];
+        if (r is Map) {
+          if (r['id'] != null) validSourceReleaseKeys.add(r['id'].toString());
+          final pub = r['publisher']?.toString();
+          final ver = r['version']?.toString();
+          if (pub != null && ver != null) validSourceReleaseKeys.add('$pub/$ver');
+        }
+      }
+    } else if (singleRelease != null) {
+      validSourceReleaseKeys.add('0');
+      if (singleRelease['id'] != null) validSourceReleaseKeys.add(singleRelease['id'].toString());
+      final pub = singleRelease['publisher']?.toString();
+      final ver = singleRelease['version']?.toString();
+      if (pub != null && ver != null) validSourceReleaseKeys.add('$pub/$ver');
+    }
+
+    void checkSourceReleaseRef(dynamic relRef, String location) {
+      if (relRef == null) return;
+      final key = relRef.toString().trim();
+      if (key.isNotEmpty && !validSourceReleaseKeys.contains(key)) {
+        issues.add(LintIssue(
+          level: 'ERROR',
+          rule: 'source-release-reference',
+          location: location,
+          message: 'Unknown source_release_id "$key". Declared source release IDs: ${validSourceReleaseKeys.toList()}',
+        ));
+      }
+    }
+
+    void checkStimuliList(List<dynamic>? stimList, String scopeLocation) {
+      if (stimList == null) return;
+      for (int sIdx = 0; sIdx < stimList.length; sIdx++) {
+        final s = stimList[sIdx];
+        if (s is! Map) continue;
+        final sKey = s['id']?.toString() ?? s['slug']?.toString() ?? 'stim-${sIdx + 1}';
+        checkSourceReleaseRef(s['source_release_id'], '$scopeLocation -> Stimulus "$sKey"');
+      }
+    }
+
+    // Check root stimuli
+    checkStimuliList(manifest['stimuli'] as List<dynamic>?, 'manifest.stimuli');
+
+    // Check manifest source mappings
+    if (manifest['source_mappings'] is List) {
+      for (final sm in manifest['source_mappings']) {
+        if (sm is Map) {
+          checkSourceReleaseRef(sm['source_release_id'], 'manifest.source_mappings');
+        }
+      }
+    }
+
     // 1. Domain Weights Sum
     final domains = manifest['domains'] as List<dynamic>? ?? [];
     double totalWeight = 0.0;
@@ -141,12 +199,16 @@ class ManifestLinter {
     for (final domain in domains) {
       if (domain is! Map) continue;
       final dCode = domain['code']?.toString() ?? '?';
+      checkSourceReleaseRef(domain['source_release_id'], 'Domain $dCode');
+      checkStimuliList(domain['stimuli'] as List<dynamic>?, 'Domain $dCode');
       final objectives = domain['objectives'] as List<dynamic>? ?? [];
 
       for (final objective in objectives) {
         if (objective is! Map) continue;
         final oCode = objective['code']?.toString() ?? '?';
         final oLocation = 'Objective $dCode.$oCode';
+        checkSourceReleaseRef(objective['source_release_id'], oLocation);
+        checkStimuliList(objective['stimuli'] as List<dynamic>?, oLocation);
 
         final oCitation = objective['citation']?.toString();
         if (oCitation == null || oCitation.trim().isEmpty) {
@@ -179,6 +241,7 @@ class ManifestLinter {
           if (lesson is! Map) continue;
           final lTitle = lesson['title']?.toString() ?? 'Untitled';
           final lLocation = '$oLocation -> Lesson "$lTitle"';
+          checkSourceReleaseRef(lesson['source_release_id'], lLocation);
 
           // Track taught concepts from lesson
           final lConceptSlugs = (lesson['concept_slugs'] as List<dynamic>?)?.map((e) => e.toString()).toList();
@@ -260,6 +323,7 @@ class ManifestLinter {
             final item = assessmentItems[iIdx];
             if (item is! Map) continue;
             final iLocation = '$lLocation -> Assessment Item ${iIdx + 1}';
+            checkSourceReleaseRef(item['source_release_id'], iLocation);
             final prompt = item['prompt']?.toString() ?? '';
             final iType = item['interaction_type']?.toString();
             final respSpec = (item['response_spec'] as Map?)?.cast<String, dynamic>() ?? {};
