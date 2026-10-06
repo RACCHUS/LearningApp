@@ -27,6 +27,25 @@ alter table public.occupation_nodes
 alter table public.taxonomy_source_artifacts
   add column if not exists retrieval_url text;
 
+-- Create missing content_source_artifacts table referenced by ingest_curriculum_manifest
+create table if not exists public.content_source_artifacts (
+  id uuid primary key default gen_random_uuid(),
+  source_release_id uuid not null references public.content_source_releases(id) on delete cascade,
+  artifact_name text not null,
+  source_url text,
+  sha256 text,
+  file_size_bytes bigint,
+  retrieved_at timestamptz not null default now(),
+  metadata jsonb not null default '{}'::jsonb,
+  unique (source_release_id, artifact_name)
+);
+
+alter table public.content_source_artifacts enable row level security;
+
+create policy "public_read_content_source_artifacts"
+  on public.content_source_artifacts for select
+  using (true);
+
 -- ----------------------------------------------------------------------------
 -- 3. Service-Role-Only Staging Tables for Atomic Taxonomy Ingestion
 -- ----------------------------------------------------------------------------
@@ -511,123 +530,138 @@ begin
           and s.code = o.code
       ))
     );
-
   -- 7. Upsert CIP-SOC Crosswalk
-  create temp table tmp_staged_mappings on commit drop as
-  select
-    c.id as classification_node_id,
-    o.id as occupation_id,
-    v_cip_rel_id as source_release_id,
-    s.mapping_source,
-    s.mapping_version,
-    s.mapping_kind,
-    s.source_notes
-  from public.stg_external_classification_occupation_mappings s
-  join public.external_classification_nodes c
-    on c.system = s.classification_system
-   and c.version = s.classification_version
-   and c.code = s.classification_code
-  join public.occupation_nodes o
-    on o.taxonomy_system = s.occupation_system
-   and o.taxonomy_version = s.occupation_version
-   and o.code = s.occupation_code
-  where s.import_run_id = p_import_run_id;
+  execute $sql$drop table if exists tmp_staged_mappings$sql$;
+  execute $sql$
+    create temp table tmp_staged_mappings on commit drop as
+    select
+      c.id as classification_node_id,
+      o.id as occupation_id,
+      $1::uuid as source_release_id,
+      s.mapping_source,
+      s.mapping_version,
+      s.mapping_kind,
+      s.source_notes
+    from public.stg_external_classification_occupation_mappings s
+    join public.external_classification_nodes c
+      on c.system = s.classification_system
+     and c.version = s.classification_version
+     and c.code = s.classification_code
+    join public.occupation_nodes o
+      on o.taxonomy_system = s.occupation_system
+     and o.taxonomy_version = s.occupation_version
+     and o.code = s.occupation_code
+    where s.import_run_id = $2
+  $sql$ using v_cip_rel_id, p_import_run_id;
 
-  create index tmp_stg_map_idx on tmp_staged_mappings(classification_node_id, occupation_id);
+  execute $sql$create index tmp_stg_map_idx on tmp_staged_mappings(classification_node_id, occupation_id)$sql$;
 
-  insert into public.external_classification_occupation_mappings (
-    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
-  )
-  select
-    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
-  from tmp_staged_mappings
-  on conflict (classification_node_id, occupation_id, source_release_id) do update set
-    mapping_source = excluded.mapping_source,
-    mapping_version = excluded.mapping_version,
-    mapping_kind = excluded.mapping_kind,
-    source_notes = excluded.source_notes;
+  execute $sql$
+    insert into public.external_classification_occupation_mappings (
+      classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
+    )
+    select
+      classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
+    from tmp_staged_mappings
+    on conflict (classification_node_id, occupation_id, source_release_id) do update set
+      mapping_source = excluded.mapping_source,
+      mapping_version = excluded.mapping_version,
+      mapping_kind = excluded.mapping_kind,
+      source_notes = excluded.source_notes
+  $sql$;
 
   -- Reconcile deleted official crosswalk mappings for this release
-  delete from public.external_classification_occupation_mappings m
-  where m.source_release_id = v_cip_rel_id
-    and m.mapping_source = 'nces_bls_crosswalk_2020'
-    and m.mapping_version = '2020'
-    and not exists (
-      select 1
-      from tmp_staged_mappings s
-      where s.classification_node_id = m.classification_node_id
-        and s.occupation_id = m.occupation_id
-    );
+  execute $sql$
+    delete from public.external_classification_occupation_mappings m
+    where m.source_release_id = $1
+      and m.mapping_source = 'nces_bls_crosswalk_2020'
+      and m.mapping_version = '2020'
+      and not exists (
+        select 1
+        from tmp_staged_mappings s
+        where s.classification_node_id = m.classification_node_id
+          and s.occupation_id = m.occupation_id
+      )
+  $sql$ using v_cip_rel_id;
 
   -- 8. Upsert Lineage from staging with exact reconciliation
-  create temp table tmp_staged_lineage on commit drop as
-  select
-    s.source_system,
-    s.from_version,
-    coalesce(s.from_code, '') as from_code_key,
-    s.from_code,
-    s.to_version,
-    coalesce(s.to_code, '') as to_code_key,
-    s.to_code,
-    s.transition_type,
-    s.notes,
-    s.metadata
-  from public.stg_taxonomy_node_lineage s
-  where s.import_run_id = p_import_run_id;
+  execute $sql$drop table if exists tmp_staged_lineage$sql$;
+  execute $sql$
+    create temp table tmp_staged_lineage on commit drop as
+    select
+      s.source_system,
+      s.from_version,
+      coalesce(s.from_code, '') as from_code_key,
+      s.from_code,
+      s.to_version,
+      coalesce(s.to_code, '') as to_code_key,
+      s.to_code,
+      s.transition_type,
+      s.notes,
+      s.metadata
+    from public.stg_taxonomy_node_lineage s
+    where s.import_run_id = $1
+  $sql$ using p_import_run_id;
 
-  create index tmp_stg_lin_idx on tmp_staged_lineage(
+  execute $sql$create index tmp_stg_lin_idx on tmp_staged_lineage(
     source_system, from_version, from_code_key, to_version, to_code_key, transition_type
-  );
+  )$sql$;
 
   -- Reconcile absent lineage edges for official CIP 2010 -> 2020 release
-  delete from public.taxonomy_node_lineage l
-  where l.source_system = 'cip'
-    and l.from_version = '2010'
-    and l.to_version = '2020'
-    and not exists (
-      select 1
-      from tmp_staged_lineage s
-      where s.source_system = 'cip'
-        and s.from_version = '2010'
-        and s.to_version = '2020'
-        and s.from_code_key = coalesce(l.from_code, '')
-        and s.to_code_key = coalesce(l.to_code, '')
-        and s.transition_type = l.transition_type
-    );
+  execute $sql$
+    delete from public.taxonomy_node_lineage l
+    where l.source_system = 'cip'
+      and l.from_version = '2010'
+      and l.to_version = '2020'
+      and not exists (
+        select 1
+        from tmp_staged_lineage s
+        where s.source_system = 'cip'
+          and s.from_version = '2010'
+          and s.to_version = '2020'
+          and s.from_code_key = coalesce(l.from_code, '')
+          and s.to_code_key = coalesce(l.to_code, '')
+          and s.transition_type = l.transition_type
+      )
+  $sql$;
 
   -- Reconcile absent lineage edges for official SOC 2010 -> 2018 release
-  delete from public.taxonomy_node_lineage l
-  where l.source_system = 'bls_soc'
-    and l.from_version = '2010'
-    and l.to_version = '2018'
-    and not exists (
-      select 1
-      from tmp_staged_lineage s
-      where s.source_system = 'bls_soc'
-        and s.from_version = '2010'
-        and s.to_version = '2018'
-        and s.from_code_key = coalesce(l.from_code, '')
-        and s.to_code_key = coalesce(l.to_code, '')
-        and s.transition_type = l.transition_type
-    );
+  execute $sql$
+    delete from public.taxonomy_node_lineage l
+    where l.source_system = 'bls_soc'
+      and l.from_version = '2010'
+      and l.to_version = '2018'
+      and not exists (
+        select 1
+        from tmp_staged_lineage s
+        where s.source_system = 'bls_soc'
+          and s.from_version = '2010'
+          and s.to_version = '2018'
+          and s.from_code_key = coalesce(l.from_code, '')
+          and s.to_code_key = coalesce(l.to_code, '')
+          and s.transition_type = l.transition_type
+      )
+  $sql$;
 
   -- Upsert staged lineage
-  insert into public.taxonomy_node_lineage (
-    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
-  )
-  select
-    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
-  from tmp_staged_lineage
-  on conflict (
-    source_system,
-    from_version,
-    coalesce(from_code, ''),
-    to_version,
-    coalesce(to_code, ''),
-    transition_type
-  ) do update set
-    notes = excluded.notes,
-    metadata = excluded.metadata;
+  execute $sql$
+    insert into public.taxonomy_node_lineage (
+      source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+    )
+    select
+      source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+    from tmp_staged_lineage
+    on conflict (
+      source_system,
+      from_version,
+      coalesce(from_code, ''),
+      to_version,
+      coalesce(to_code, ''),
+      transition_type
+    ) do update set
+      notes = excluded.notes,
+      metadata = excluded.metadata
+  $sql$;
 
   -- 9. Transactional Validation Invariants (Exact Counts & Zero Orphans)
   select count(*) into v_cip_active_count
@@ -830,4 +864,372 @@ end;
 $$ language plpgsql stable security definer;
 
 grant execute on function public.get_target_crosswalk_occupations(uuid) to anon, authenticated, service_role;
+
+-- ----------------------------------------------------------------------------
+-- Strict Database Lint Hardening & Dynamic Resolution
+-- 1. audit_target_version_readiness: Explicit array[]::text[] typing
+-- 2. publish_target_version: Explicit array[]::uuid[] typing
+-- ----------------------------------------------------------------------------
+
+create or replace function public.audit_target_version_readiness(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_tv record;
+  v_domain_count integer := 0;
+  v_objective_count integer := 0;
+  v_leaf_objective_count integer := 0;
+  v_domain_weight_sum numeric(7,3) := 0.0;
+  v_is_weight_balanced boolean := false;
+  v_lesson_count integer := 0;
+  v_lesson_block_count integer := 0;
+  v_stimulus_count integer := 0;
+  v_assessment_item_count integer := 0;
+  v_empty_objectives_count integer := 0;
+  v_concept_count integer := 0;
+  v_unassessed_concept_count integer := 0;
+  v_provenance_citations_count integer := 0;
+  v_missing_provenance_count integer := 0;
+  v_cross_version_mappings_count integer := 0;
+  v_can_stage_review boolean := false;
+  v_can_publish boolean := false;
+  v_blockers text[] := array[]::text[];
+  v_warnings text[] := array[]::text[];
+begin
+  select tv.*, lt.title as target_title, lt.created_by as target_owner
+  into v_tv
+  from public.target_versions tv
+  join public.learning_targets lt on lt.id = tv.target_id
+  where tv.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id;
+  end if;
+
+  if coalesce(auth.role(), '') <> 'service_role'
+     and (
+       auth.uid() is null
+       or (
+         v_tv.target_owner is distinct from auth.uid()
+         and not public.is_target_reviewer(v_tv.target_id)
+       )
+     ) then
+    raise exception 'Unauthorized: only service_role, target owner, or assigned reviewer may audit a target version.';
+  end if;
+
+  select
+    count(*) filter (where cn.parent_id is null),
+    count(*),
+    coalesce(sum(cn.weight) filter (where cn.parent_id is null), 0.0)
+  into
+    v_domain_count,
+    v_objective_count,
+    v_domain_weight_sum
+  from public.curriculum_nodes cn
+  where cn.target_version_id = p_target_version_id;
+
+  select count(*)
+  into v_leaf_objective_count
+  from public.curriculum_nodes cn
+  where cn.target_version_id = p_target_version_id
+    and not exists (
+      select 1 from public.curriculum_nodes child
+      where child.parent_id = cn.id
+    );
+
+  if v_domain_weight_sum = 0.0 then
+    v_is_weight_balanced := true;
+    v_warnings := array_append(v_warnings, 'Domains are unweighted (sum is 0.0).');
+  elsif abs(v_domain_weight_sum - 100.0) < 0.1
+     or abs(v_domain_weight_sum - 1.0) < 0.01 then
+    v_is_weight_balanced := true;
+  else
+    v_is_weight_balanced := false;
+    v_blockers := array_append(
+      v_blockers,
+      format('Domain weights sum to %s%% (expected 100.0%%).', v_domain_weight_sum)
+    );
+  end if;
+
+  select count(distinct cnl.lesson_id)
+  into v_lesson_count
+  from public.curriculum_node_lessons cnl
+  join public.curriculum_nodes cn on cn.id = cnl.curriculum_node_id
+  where cn.target_version_id = p_target_version_id;
+
+  select count(*)
+  into v_lesson_block_count
+  from public.lesson_blocks lb
+  where lb.lesson_id in (
+    select distinct cnl.lesson_id
+    from public.curriculum_node_lessons cnl
+    join public.curriculum_nodes cn on cn.id = cnl.curriculum_node_id
+    where cn.target_version_id = p_target_version_id
+  );
+
+  select count(*)
+  into v_stimulus_count
+  from public.assessment_stimuli
+  where origin_target_version_id = p_target_version_id;
+
+  select count(*)
+  into v_assessment_item_count
+  from public.assessment_items ai
+  where ai.origin_target_version_id = p_target_version_id
+     or ai.lesson_id in (
+       select distinct cnl.lesson_id
+       from public.curriculum_node_lessons cnl
+       join public.curriculum_nodes cn on cn.id = cnl.curriculum_node_id
+       where cn.target_version_id = p_target_version_id
+     );
+
+  select count(*)
+  into v_empty_objectives_count
+  from public.curriculum_nodes cn
+  where cn.target_version_id = p_target_version_id
+    and not exists (
+      select 1 from public.curriculum_nodes child where child.parent_id = cn.id
+    )
+    and not exists (
+      select 1 from public.curriculum_node_lessons cnl
+      where cnl.curriculum_node_id = cn.id
+    )
+    and not exists (
+      select 1
+      from public.curriculum_node_concepts cnc
+      join public.assessment_item_concepts aic
+        on aic.concept_id = cnc.concept_id
+      where cnc.curriculum_node_id = cn.id
+    );
+
+  if v_empty_objectives_count > 0 then
+    v_warnings := array_append(
+      v_warnings,
+      format(
+        '%s leaf objective(s) have no lessons or assessment items bound.',
+        v_empty_objectives_count
+      )
+    );
+  end if;
+
+  select count(distinct cnc.concept_id)
+  into v_concept_count
+  from public.curriculum_node_concepts cnc
+  join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+  where cn.target_version_id = p_target_version_id;
+
+  select count(distinct cnc.concept_id)
+  into v_unassessed_concept_count
+  from public.curriculum_node_concepts cnc
+  join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+  where cn.target_version_id = p_target_version_id
+    and not exists (
+      select 1 from public.assessment_item_concepts aic
+      where aic.concept_id = cnc.concept_id
+    );
+
+  if v_unassessed_concept_count > 0 then
+    v_warnings := array_append(
+      v_warnings,
+      format('%s concept(s) have no direct assessment items.', v_unassessed_concept_count)
+    );
+  end if;
+
+  select count(*)
+  into v_provenance_citations_count
+  from public.content_source_mappings csm
+  where
+    (csm.entity_type = 'target_version' and csm.entity_id = p_target_version_id)
+    or (
+      csm.entity_type = 'curriculum_node'
+      and csm.entity_id in (
+        select cn.id
+        from public.curriculum_nodes cn
+        where cn.target_version_id = p_target_version_id
+      )
+    )
+    or (
+      csm.entity_type = 'lesson'
+      and csm.entity_id in (
+        select distinct cnl.lesson_id
+        from public.curriculum_node_lessons cnl
+        join public.curriculum_nodes cn
+          on cn.id = cnl.curriculum_node_id
+        where cn.target_version_id = p_target_version_id
+      )
+    )
+    or (
+      csm.entity_type = 'knowledge_concept'
+      and csm.entity_id in (
+        select distinct cnc.concept_id
+        from public.curriculum_nodes cn
+        where cn.target_version_id = p_target_version_id
+      )
+    );
+
+  select count(*)
+  into v_missing_provenance_count
+  from public.curriculum_nodes cn
+  where cn.target_version_id = p_target_version_id
+    and not exists (
+      select 1
+      from public.content_source_mappings csm
+      where csm.entity_type = 'curriculum_node'
+        and csm.entity_id = cn.id
+    );
+
+  if v_missing_provenance_count > 0 then
+    v_warnings := array_append(
+      v_warnings,
+      format(
+        '%s curriculum node(s) have no official source citation.',
+        v_missing_provenance_count
+      )
+    );
+  end if;
+
+  select count(*)
+  into v_cross_version_mappings_count
+  from public.target_version_concept_mappings
+  where from_target_version_id = p_target_version_id
+     or to_target_version_id = p_target_version_id;
+
+  if v_domain_count = 0 then
+    v_blockers := array_append(
+      v_blockers,
+      'Target version has no domains (root curriculum nodes).'
+    );
+  end if;
+
+  if v_objective_count = 0 then
+    v_blockers := array_append(v_blockers, 'Target version has no objectives.');
+  end if;
+
+  v_can_stage_review :=
+    (v_domain_count > 0 and v_objective_count > 0
+      and (v_lesson_count > 0 or v_assessment_item_count > 0));
+  v_can_publish :=
+    (v_tv.status = 'review_ready'
+      and v_is_weight_balanced
+      and array_length(v_blockers, 1) is null);
+
+  return jsonb_build_object(
+    'target_version_id', v_tv.id,
+    'version_code', v_tv.version_code,
+    'status', v_tv.status,
+    'target_title', v_tv.target_title,
+    'domain_count', v_domain_count,
+    'objective_count', v_objective_count,
+    'leaf_objective_count', v_leaf_objective_count,
+    'domain_weight_sum', v_domain_weight_sum,
+    'is_domain_weight_balanced', v_is_weight_balanced,
+    'lesson_count', v_lesson_count,
+    'lesson_block_count', v_lesson_block_count,
+    'stimulus_count', v_stimulus_count,
+    'assessment_item_count', v_assessment_item_count,
+    'empty_objectives_count', v_empty_objectives_count,
+    'concept_coverage_count', v_concept_count,
+    'unassessed_concepts_count', v_unassessed_concept_count,
+    'provenance_citations_count', v_provenance_citations_count,
+    'missing_provenance_count', v_missing_provenance_count,
+    'cross_version_mappings_count', v_cross_version_mappings_count,
+    'can_stage_review', v_can_stage_review,
+    'can_publish', v_can_publish,
+    'blocking_issues', to_jsonb(v_blockers),
+    'warnings', to_jsonb(v_warnings)
+  );
+end;
+$$;
+
+revoke all on function public.audit_target_version_readiness(uuid) from public, anon;
+grant execute on function public.audit_target_version_readiness(uuid) to authenticated, service_role;
+
+create or replace function public.publish_target_version(
+  p_version_id uuid,
+  p_retire_previous boolean default false
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_tv record;
+  v_target_owner uuid;
+  v_retired_ids uuid[] := array[]::uuid[];
+  v_ret record;
+begin
+  select tv.*, lt.created_by
+  into v_tv
+  from public.target_versions tv
+  join public.learning_targets lt on lt.id = tv.target_id
+  where tv.id = p_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_version_id;
+  end if;
+
+  v_target_owner := v_tv.created_by;
+
+  if coalesce(auth.role(), '') <> 'service_role'
+     and (auth.uid() is null or v_target_owner is distinct from auth.uid()) then
+    raise exception 'Unauthorized: only service_role or the target owner can publish a target version';
+  end if;
+
+  if v_tv.status = 'published' then
+    return jsonb_build_object(
+      'success', true,
+      'target_version_id', p_version_id,
+      'status', 'published',
+      'already_published', true,
+      'retired_version_ids', '[]'::jsonb,
+      'retired_previous_count', 0
+    );
+  end if;
+
+  if v_tv.status <> 'review_ready' then
+    raise exception 'Cannot publish TargetVersion with status "%". Publication strictly requires "review_ready" staging status.', v_tv.status;
+  end if;
+
+  if p_retire_previous then
+    for v_ret in
+      select id
+      from public.target_versions
+      where target_id = v_tv.target_id
+        and status = 'published'
+        and id <> p_version_id
+    loop
+      update public.target_versions
+      set status = 'retired', updated_at = now()
+      where id = v_ret.id;
+      v_retired_ids := array_append(v_retired_ids, v_ret.id);
+    end loop;
+  end if;
+
+  update public.target_versions
+  set status = 'published', updated_at = now()
+  where id = p_version_id;
+
+  update public.learning_targets
+  set status = 'published', is_public = true, updated_at = now()
+  where id = v_tv.target_id;
+
+  return jsonb_build_object(
+    'success', true,
+    'target_version_id', p_version_id,
+    'status', 'published',
+    'already_published', false,
+    'retired_version_ids', to_jsonb(v_retired_ids),
+    'retired_previous_count', coalesce(array_length(v_retired_ids, 1), 0)
+  );
+end;
+$$;
+
+revoke all on function public.publish_target_version(uuid, boolean) from public, anon;
+grant execute on function public.publish_target_version(uuid, boolean) to authenticated, service_role;
 

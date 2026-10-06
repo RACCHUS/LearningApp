@@ -97,4 +97,4 @@ jobs:
       - name: Verify post-ingestion database integrity and pgTAP tests
         run: |
           supabase test db
-          supabase db lint
+          supabase db lint --fail-on warning
