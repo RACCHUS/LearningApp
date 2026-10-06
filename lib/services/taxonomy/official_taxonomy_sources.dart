@@ -489,7 +489,7 @@ class OfficialTaxonomyParser {
     if (cipSeries != 48) {
       errors.add('CIP 2020 should contain 48 active 2-digit series; found $cipSeries.');
     }
-    if (cipRecords.length < 2000 || cipPrograms.length < 1000) {
+    if (cipRecords.length < 2000 || cipPrograms < 1000) {
       errors.add(
         'CIP 2020 appears truncated: ${cipRecords.length} total nodes / '
         '$cipPrograms six-digit programs.',
