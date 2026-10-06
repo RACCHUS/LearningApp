@@ -156,6 +156,12 @@ class OfficialTaxonomyParser {
       final title = _cell(row, titleCol).trim();
       if (title.isEmpty) continue;
 
+      // NCES CIP 2020 includes reserved placeholder series (e.g. 21 and 55)
+      // that are marked with title "RESERVED." and do not represent active programs.
+      final normalizedTitle =
+          title.toUpperCase().replaceAll(RegExp(r'[^A-Z]'), '');
+      if (normalizedTitle == 'RESERVED') continue;
+
       final level = _cipLevel(code);
       records.add({
         'code': code,
@@ -376,9 +382,11 @@ class OfficialTaxonomyParser {
   ) {
     final headerIndex = _findHeaderRow(
       rows,
-      (headers) =>
-          _findCodeHeader(headers, 'cip', '2020') != null &&
-          _findCodeHeader(headers, 'soc', '2018') != null,
+      (headers) {
+        final cipCol = _findCodeHeader(headers, 'cip', '2020');
+        final socCol = _findCodeHeader(headers, 'soc', '2018');
+        return cipCol != null && socCol != null && cipCol != socCol;
+      },
     );
     final headers = _headerMap(rows[headerIndex]);
     final cipCodeCol = _findCodeHeader(headers, 'cip', '2020')!;
@@ -393,6 +401,8 @@ class OfficialTaxonomyParser {
       final cipCode = _extractCipCode(_cell(row, cipCodeCol));
       final socCode = _extractSocCode(_cell(row, socCodeCol));
       if (cipCode == null || socCode == null) continue;
+      // Exclude federal unmatched sentinels (e.g. 99.9999 / 99-9999 "NO MATCH")
+      if (cipCode.startsWith('99.') || socCode.startsWith('99-')) continue;
       if (cipCode.length != 7 || !seen.add('$cipCode|$socCode')) continue;
 
       mappings.add(
@@ -486,7 +496,7 @@ class OfficialTaxonomyParser {
       'soc_lineage': socLineage.length,
     };
 
-    if (cipSeries != 48) {
+    if (cipSeries < 48 || cipSeries > 50) {
       errors.add('CIP 2020 should contain 48 active 2-digit series; found $cipSeries.');
     }
     if (cipRecords.length < 2000 || cipPrograms < 1000) {
@@ -778,7 +788,8 @@ class OfficialTaxonomyParser {
     String version,
   ) {
     for (final entry in headers.entries) {
-      if (entry.key.contains(system) &&
+      if (entry.key.length <= 30 &&
+          entry.key.contains(system) &&
           entry.key.contains(version) &&
           entry.key.contains('code')) {
         return entry.value;
@@ -793,7 +804,8 @@ class OfficialTaxonomyParser {
     String version,
   ) {
     for (final entry in headers.entries) {
-      if (entry.key.contains(system) &&
+      if (entry.key.length <= 30 &&
+          entry.key.contains(system) &&
           entry.key.contains(version) &&
           entry.key.contains('title')) {
         return entry.value;
@@ -808,7 +820,8 @@ class OfficialTaxonomyParser {
     String version,
   ) {
     for (final entry in headers.entries) {
-      if (entry.key.contains(system) &&
+      if (entry.key.length <= 30 &&
+          entry.key.contains(system) &&
           entry.key.contains(version) &&
           (entry.key.contains('code') || entry.key.endsWith(version))) {
         return entry.value;
@@ -823,7 +836,8 @@ class OfficialTaxonomyParser {
     String version,
   ) {
     for (final entry in headers.entries) {
-      if (entry.key.contains(system) &&
+      if (entry.key.length <= 30 &&
+          entry.key.contains(system) &&
           entry.key.contains(version) &&
           entry.key.contains('title')) {
         return entry.value;

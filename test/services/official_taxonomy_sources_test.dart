@@ -107,6 +107,24 @@ void main() {
       );
     });
 
+    test('parseCip2020Csv ignores reserved placeholder series', () {
+      const csv =
+          'CIPFamily,CIPCode,CIPTitle,CIPDefinition,CrossReferences,Examples,Action,TextChange\n'
+          '11,11,COMPUTER AND INFORMATION SCIENCES.,Broad family,,,No Substantive Changes,\n'
+          '21,21,RESERVED.,,,,No Substantive Changes,\n'
+          '55,55,RESERVED.,,,,No Substantive Changes,\n'
+          '11,11.0701,Computer Science.,Program definition,,,No Substantive Changes,\n';
+
+      final records = OfficialTaxonomyParser.parseCip2020Csv(csv);
+
+      expect(records, hasLength(2));
+      expect(records.map((r) => r['code']), ['11', '11.0701']);
+      expect(
+        records.any((r) => r['code'] == '21' || r['code'] == '55'),
+        isFalse,
+      );
+    });
+
     test('parseCipSocCrosswalkRows deduplicates exact federal mappings', () {
       final rows = [
         ['CIP 2020 Code', 'CIP 2020 Title', 'SOC 2018 Code', 'SOC 2018 Title'],
@@ -126,6 +144,22 @@ void main() {
       expect(mappings, hasLength(2));
       expect(mappings.first.cipCode, '11.0701');
       expect(mappings.first.socCode, '15-1252');
+    });
+
+    test('parseCipSocCrosswalkRows excludes federal NO MATCH sentinels', () {
+      final rows = [
+        ['CIP 2020 Code', 'CIP 2020 Title', 'SOC 2018 Code', 'SOC 2018 Title'],
+        ['11.0701', 'Computer Science', '15-1252', 'Software Developers'],
+        ['01.0508', 'Taxidermy/Taxidermist.', '99-9999', 'NO MATCH'],
+        ['99.9999', 'NO MATCH', '13-1074', 'Farm Labor Contractors'],
+      ];
+
+      final mappings =
+          OfficialTaxonomyParser.parseCipSocCrosswalkRows(rows);
+
+      expect(mappings, hasLength(1));
+      expect(mappings.single.cipCode, '11.0701');
+      expect(mappings.single.socCode, '15-1252');
     });
 
     test('CIP lineage derives splits, merges, additions, and deletions', () {

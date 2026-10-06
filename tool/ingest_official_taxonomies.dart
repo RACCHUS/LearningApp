@@ -313,10 +313,10 @@ class _OfficialBundle {
       return utf8.decode(artifact.bytes, allowMalformed: false);
     }
 
-    List<List<String>> workbook(String name) {
+    List<List<String>> workbook(String name, {String? sheet}) {
       final artifact = artifacts[name];
       if (artifact == null) throw StateError('Missing artifact $name.');
-      return _decodeWorkbookRows(artifact.bytes);
+      return _decodeWorkbookRows(artifact.bytes, targetSheet: sheet);
     }
 
     final cipRecords =
@@ -336,7 +336,7 @@ class _OfficialBundle {
     );
 
     final crosswalk = OfficialTaxonomyParser.parseCipSocCrosswalkRows(
-      workbook('CIP2020_SOC2018_Crosswalk.xlsx'),
+      workbook('CIP2020_SOC2018_Crosswalk.xlsx', sheet: 'CIP-SOC'),
     );
 
     final cipLineage = OfficialTaxonomyParser.parseCip2010To2020Lineage(
@@ -357,11 +357,23 @@ class _OfficialBundle {
   }
 }
 
-List<List<String>> _decodeWorkbookRows(Uint8List bytes) {
+List<List<String>> _decodeWorkbookRows(
+  Uint8List bytes, {
+  String? targetSheet,
+}) {
   final excel = Excel.decodeBytes(bytes);
   final rows = <List<String>>[];
 
   for (final entry in excel.tables.entries) {
+    if (targetSheet != null &&
+        entry.key.trim().toLowerCase() != targetSheet.trim().toLowerCase()) {
+      continue;
+    }
+    final sheetNameLower = entry.key.trim().toLowerCase();
+    if (targetSheet == null &&
+        (sheetNameLower.contains('guide') || sheetNameLower.contains('readme'))) {
+      continue;
+    }
     final sheet = entry.value;
     if (sheet.rows.isEmpty) continue;
     for (final row in sheet.rows) {
