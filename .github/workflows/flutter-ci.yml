@@ -58,22 +58,43 @@ jobs:
         run: flutter build web --release
 
   verify-database:
-    name: Verify clean Supabase migrations from scratch
+    name: Verify clean Supabase migrations and complete official taxonomy ingestion
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: 2.67.1
 
-      - name: Verify migrations from scratch
+      - name: Verify migrations and initial pgTAP tests from scratch
         run: |
           supabase start
           supabase db reset
           supabase test db
-          supabase db lint
+
+      - name: Ingest complete official federal taxonomy bundle into clean Supabase
+        run: |
+          eval $(supabase status -o env)
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          dart run tool/ingest_official_taxonomies.dart --ingest-all
+
+      - name: Verify post-ingestion database integrity and pgTAP tests
+        run: |
+          supabase test db
+          supabase db lint --fail-on warning

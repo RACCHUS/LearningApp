@@ -1,0 +1,68 @@
+name: Official Taxonomy Data
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'lib/services/taxonomy/official_taxonomy_sources.dart'
+      - 'lib/services/taxonomy/taxonomy_importer.dart'
+      - 'tool/ingest_official_taxonomies.dart'
+      - 'pubspec.yaml'
+      - '.github/workflows/taxonomy-official-data.yml'
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Validate official sources or ingest them into Supabase
+        required: true
+        type: choice
+        default: validate
+        options:
+          - validate
+          - ingest
+      refresh:
+        description: Force fresh downloads instead of using the runner cache
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  official-taxonomy:
+    name: Validate official taxonomy sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate pinned official source bundle
+        if: ${{ github.event_name == 'pull_request' || inputs.mode == 'validate' }}
+        run: >-
+          dart run tool/ingest_official_taxonomies.dart
+          --validate
+          ${{ github.event_name == 'workflow_dispatch' && inputs.refresh && '--refresh' || '' }}
+
+      - name: Ingest pinned official source bundle
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'ingest' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: >-
+          dart run tool/ingest_official_taxonomies.dart
+          --ingest-all
+          ${{ inputs.refresh && '--refresh' || '' }}

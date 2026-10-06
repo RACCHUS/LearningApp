@@ -117,6 +117,25 @@ dart run tool/ingest_curriculum.dart \
 dart run tool/verify_hosted_rls.dart
 ```
 
+### `ingest_official_taxonomies.dart`
+**Purpose**: Production Phase F ingestion for the complete authoritative NCES CIP 2020, BLS SOC 2018, and O*NET 31.0 datasets. Downloads the official source artifacts, verifies structural completeness and crosswalk integrity, records SHA-256 provenance, and performs idempotent service-role upserts.
+
+**Usage**:
+```bash
+# Download/cache federal source files only
+dart run tool/ingest_official_taxonomies.dart --download
+
+# Validate the complete bundle without DB writes
+dart run tool/ingest_official_taxonomies.dart --validate
+
+# Ingest only after the validation gate passes
+dart run tool/ingest_official_taxonomies.dart --ingest-all
+```
+
+Downloaded files live under `build/taxonomy-cache/` by default and are not committed. `--ingest-all` requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. See `docs/taxonomy/OFFICIAL_DATA_INGESTION.md` for source versions, expected counts, licensing, and update policy.
+
+> `seed_taxonomy.dart` is a small reference/fixture seeder. It is not the production full-dataset importer.
+
 ### `taxonomy_status.dart`
 **Purpose**: Verify the Canonical Learning Taxonomy status, CIP/SOC classifications, crosswalks, and target coverage.
 

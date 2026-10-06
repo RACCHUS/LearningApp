@@ -38,7 +38,13 @@ class TaxonomyIngestionResult {
 class TaxonomyImporter {
   /// Computes SHA256 checksum for provenance recording in taxonomy_source_artifacts.
   static String calculateChecksum(String content) {
-    return sha256.convert(utf8.encode(content)).toString();
+    return calculateBytesChecksum(utf8.encode(content));
+  }
+
+  /// Computes SHA256 over the exact downloaded artifact bytes. Binary XLSX
+  /// checksums must never be derived from a decoded/re-encoded string.
+  static String calculateBytesChecksum(List<int> bytes) {
+    return sha256.convert(bytes).toString();
   }
 
   /// Produces a stable RFC-4122 UUID from a source identity so repeated

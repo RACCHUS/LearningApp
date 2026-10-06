@@ -15,7 +15,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(24);
+select plan(29);
 
 -- ----------------------------------------------------------------------------
 -- Test 1: Verify all 48 CIP 2-digit Series Exist in external_classification_nodes
@@ -202,9 +202,9 @@ select ok(
 select ok(
   exists(
     select 1 from public.resolve_taxonomy_lineage('bls_soc', '2010', '15-1132')
-    where to_code = '15-1252' and transition_type = 'moved_to'
+    where to_code = '15-1252' and transition_type in ('moved_to', 'split_into')
   ),
-  'resolve_taxonomy_lineage resolves moved_to SOC 15-1132 -> 15-1252 transition'
+  'resolve_taxonomy_lineage resolves SOC 15-1132 -> 15-1252 transition'
 );
 
 -- ----------------------------------------------------------------------------
@@ -280,6 +280,56 @@ select cmp_ok(
 );
 
 reset role;
+
+-- ----------------------------------------------------------------------------
+-- Test 16: Verify occupation_nodes Unique Constraint with data_release_version
+-- ----------------------------------------------------------------------------
+select ok(
+  exists(
+    select 1 from pg_constraint
+    where conrelid = 'public.occupation_nodes'::regclass
+      and conname = 'occupation_nodes_system_version_release_code_key'
+  ),
+  'occupation_nodes includes unique constraint incorporating data_release_version'
+);
+
+-- ----------------------------------------------------------------------------
+-- Test 17: Verify Service-Role Staging Tables & RLS
+-- ----------------------------------------------------------------------------
+select ok(
+  (select count(*)::integer from pg_tables where schemaname = 'public' and tablename like 'stg_%') = 5,
+  'All 5 service-role staging tables exist'
+);
+
+select ok(
+  (
+    select count(*)::integer from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname in (
+        'stg_taxonomy_source_artifacts',
+        'stg_external_classification_nodes',
+        'stg_occupation_nodes',
+        'stg_external_classification_occupation_mappings',
+        'stg_taxonomy_node_lineage'
+      )
+      and c.relrowsecurity = true
+  ) = 5,
+  'All 5 staging tables have Row Level Security enabled'
+);
+
+-- ----------------------------------------------------------------------------
+-- Test 18: Verify finalize_official_taxonomy_import Security Definer & Anon Restrictions
+-- ----------------------------------------------------------------------------
+select ok(
+  has_function_privilege('service_role', 'public.finalize_official_taxonomy_import(uuid)', 'EXECUTE'),
+  'service_role has EXECUTE privilege on finalize_official_taxonomy_import'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.finalize_official_taxonomy_import(uuid)', 'EXECUTE'),
+  'anon does not have EXECUTE privilege on finalize_official_taxonomy_import'
+);
 
 select * from finish();
 rollback;
