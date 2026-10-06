@@ -358,7 +358,7 @@ begin
     updated_at = now();
 
   -- Pass 2: Reconstruct SOC parent_id
-  -- Minor groups -> Major groups
+  -- 2a. Minor groups -> Major groups (e.g. 15-1200 -> 15-0000)
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -371,7 +371,7 @@ begin
     and p.code = substring(o.code from 1 for 2) || '-0000'
     and (o.parent_id is null or o.parent_id <> p.id);
 
-  -- Broad occupations -> Minor groups
+  -- 2b. Broad occupations -> Minor groups (standard 5-char e.g. 15-1250 -> 15-1200)
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -384,7 +384,20 @@ begin
     and p.code = substring(o.code from 1 for 5) || '00'
     and (o.parent_id is null or o.parent_id <> p.id);
 
-  -- Broad occupations fallback -> Major groups (if minor missing)
+  -- 2c. Broad occupations -> Minor groups (overflow 4-char e.g. 11-9110 -> 11-9000, 29-1210 -> 29-1000)
+  update public.occupation_nodes o
+  set parent_id = p.id
+  from public.occupation_nodes p
+  where o.taxonomy_system = 'bls_soc'
+    and o.taxonomy_version = 'soc_2018'
+    and p.taxonomy_system = 'bls_soc'
+    and p.taxonomy_version = 'soc_2018'
+    and o.level = 'broad_occupation'
+    and o.parent_id is null
+    and p.level = 'minor_group'
+    and p.code = substring(o.code from 1 for 4) || '000';
+
+  -- 2c-fallback. Broad occupations fallback -> Major groups (if minor missing)
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -397,7 +410,7 @@ begin
     and p.level = 'major_group'
     and p.code = substring(o.code from 1 for 2) || '-0000';
 
-  -- Detailed occupations -> Broad occupations
+  -- 2d. Detailed occupations -> Broad occupations (standard 6-char e.g. 15-1252 -> 15-1250)
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -410,7 +423,21 @@ begin
     and p.code = substring(o.code from 1 for 6) || '0'
     and (o.parent_id is null or o.parent_id <> p.id);
 
-  -- Detailed occupations fallback -> Minor groups (if broad missing)
+  -- 2e. Detailed occupations -> Broad occupations (Physicians 29-1221..29-1229 -> 29-1210)
+  update public.occupation_nodes o
+  set parent_id = p.id
+  from public.occupation_nodes p
+  where o.taxonomy_system = 'bls_soc'
+    and o.taxonomy_version = 'soc_2018'
+    and p.taxonomy_system = 'bls_soc'
+    and p.taxonomy_version = 'soc_2018'
+    and o.level = 'detailed_occupation'
+    and o.code in ('29-1221', '29-1222', '29-1223', '29-1224', '29-1229')
+    and p.level = 'broad_occupation'
+    and p.code = '29-1210'
+    and (o.parent_id is null or o.parent_id <> p.id);
+
+  -- 2f. Detailed occupations fallback -> Minor groups (if broad missing)
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -421,7 +448,10 @@ begin
     and o.level = 'detailed_occupation'
     and o.parent_id is null
     and p.level = 'minor_group'
-    and p.code = substring(o.code from 1 for 5) || '00';
+    and (
+      p.code = substring(o.code from 1 for 5) || '00' or
+      p.code = substring(o.code from 1 for 4) || '000'
+    );
 
   -- 6. Upsert O*NET Nodes (occupation_nodes)
   insert into public.occupation_nodes (
