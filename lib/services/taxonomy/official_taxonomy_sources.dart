@@ -943,12 +943,16 @@ class OfficialTaxonomySources {
       'https://nces.ed.gov/ipeds/cipcode/Files/Crosswalk2010to2020.csv';
   static const cip2020Soc2018Url =
       'https://nces.ed.gov/ipeds/cipcode/Files/CIP2020_SOC2018_Crosswalk.xlsx';
+  // BLS is the authoritative publisher. GitHub-hosted runners are denied by
+  // bls.gov's edge layer, so machine ingestion uses the official Census-hosted
+  // copies for structure/definitions and a pinned Internet Archive capture of
+  // the BLS-published historical crosswalk. Provenance retains the BLS origin.
   static const soc2018StructureUrl =
-      'https://www.bls.gov/soc/2018/soc_structure_2018.xlsx';
+      'https://www2.census.gov/programs-surveys/demo/guidance/industry-occupation/soc_structure_2018.xlsx';
   static const soc2018DefinitionsUrl =
-      'https://www.bls.gov/soc/2018/soc_2018_definitions.xlsx';
+      'https://www2.census.gov/programs-surveys/demo/guidance/industry-occupation/soc_2018_definitions.xlsx';
   static const soc2010To2018Url =
-      'https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
+      'https://web.archive.org/web/20250101032254if_/https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
   static const onet31OccupationDataUrl =
       'https://www.onetcenter.org/dl_files/database/db_31_0_excel/Occupation%20Data.xlsx';
   static const onet31JobZonesUrl =
