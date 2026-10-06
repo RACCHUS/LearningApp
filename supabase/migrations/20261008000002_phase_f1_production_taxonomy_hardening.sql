@@ -106,12 +106,12 @@ create table if not exists public.stg_taxonomy_node_lineage (
   created_at timestamptz not null default now()
 );
 
--- Indices on import_run_id for high-performance lookup
+-- Indices on import_run_id and search keys for high-performance lookup and finalization
 create index if not exists stg_art_run_idx on public.stg_taxonomy_source_artifacts(import_run_id);
-create index if not exists stg_cip_run_idx on public.stg_external_classification_nodes(import_run_id);
-create index if not exists stg_occ_run_idx on public.stg_occupation_nodes(import_run_id);
+create index if not exists stg_cip_run_idx on public.stg_external_classification_nodes(import_run_id, system, version, code);
+create index if not exists stg_occ_run_idx on public.stg_occupation_nodes(import_run_id, taxonomy_system, taxonomy_version, data_release_version, code);
 create index if not exists stg_map_run_idx on public.stg_external_classification_occupation_mappings(import_run_id);
-create index if not exists stg_lin_run_idx on public.stg_taxonomy_node_lineage(import_run_id);
+create index if not exists stg_lin_run_idx on public.stg_taxonomy_node_lineage(import_run_id, source_system, from_version, to_version);
 
 -- Enable RLS and lock down staging tables strictly to service_role
 alter table public.stg_taxonomy_source_artifacts enable row level security;
@@ -151,7 +151,11 @@ create policy "service_role_manage_stg_lin"
 create or replace function public.finalize_official_taxonomy_import(
   p_import_run_id uuid
 )
-returns jsonb as $$
+returns jsonb
+set statement_timeout = '120s'
+language plpgsql
+security definer
+as $$
 declare
   v_cip_stg_count integer;
   v_soc_stg_count integer;
@@ -172,6 +176,9 @@ declare
   v_soc_rel_id uuid := 'a1000000-0000-0000-0000-000000000002'::uuid;
   v_onet_rel_id uuid := 'a1000000-0000-0000-0000-000000000003'::uuid;
 begin
+  -- Elevate statement timeout within transaction
+  perform set_config('statement_timeout', '120000', true);
+
   -- 1. Verify staged record counts match frozen specifications
   select count(*) into v_cip_stg_count
   from public.stg_external_classification_nodes
@@ -183,7 +190,10 @@ begin
 
   select count(*) into v_onet_stg_count
   from public.stg_occupation_nodes
-  where import_run_id = p_import_run_id and taxonomy_system = 'onet_soc' and taxonomy_version = '2019';
+  where import_run_id = p_import_run_id
+    and taxonomy_system = 'onet_soc'
+    and taxonomy_version = '2019'
+    and data_release_version = 'onet_31_0';
 
   select count(*) into v_map_stg_count
   from public.stg_external_classification_occupation_mappings
@@ -303,14 +313,18 @@ begin
     and (n.parent_id is null or n.parent_id <> p.id);
 
   -- Pass 3: Reconcile absent CIP nodes (deactivate any old rows not present in official release)
-  update public.external_classification_nodes
+  update public.external_classification_nodes n
   set is_active = false
-  where system = 'cip'
-    and version = '2020'
-    and code not in (
-      select code from public.stg_external_classification_nodes where import_run_id = p_import_run_id
-    )
-    and is_active = true;
+  where n.system = 'cip'
+    and n.version = '2020'
+    and n.is_active = true
+    and not exists (
+      select 1 from public.stg_external_classification_nodes s
+      where s.import_run_id = p_import_run_id
+        and s.system = 'cip'
+        and s.version = '2020'
+        and s.code = n.code
+    );
 
   -- 5. Upsert BLS SOC Nodes (occupation_nodes)
   -- Pass 1: Upsert SOC nodes
@@ -357,7 +371,7 @@ begin
     and p.code = substring(o.code from 1 for 2) || '-0000'
     and (o.parent_id is null or o.parent_id <> p.id);
 
-  -- Broad occupations -> Minor groups (fallback to Major group if minor missing)
+  -- Broad occupations -> Minor groups
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -366,18 +380,24 @@ begin
     and p.taxonomy_system = 'bls_soc'
     and p.taxonomy_version = 'soc_2018'
     and o.level = 'broad_occupation'
-    and (
-      (p.level = 'minor_group' and p.code = substring(o.code from 1 for 5) || '00') or
-      (p.level = 'major_group' and p.code = substring(o.code from 1 for 2) || '-0000'
-       and not exists (
-         select 1 from public.occupation_nodes m
-         where m.taxonomy_system = 'bls_soc' and m.taxonomy_version = 'soc_2018'
-           and m.level = 'minor_group' and m.code = substring(o.code from 1 for 5) || '00'
-       ))
-    )
+    and p.level = 'minor_group'
+    and p.code = substring(o.code from 1 for 5) || '00'
     and (o.parent_id is null or o.parent_id <> p.id);
 
-  -- Detailed occupations -> Broad occupations (fallback to Minor group)
+  -- Broad occupations fallback -> Major groups (if minor missing)
+  update public.occupation_nodes o
+  set parent_id = p.id
+  from public.occupation_nodes p
+  where o.taxonomy_system = 'bls_soc'
+    and o.taxonomy_version = 'soc_2018'
+    and p.taxonomy_system = 'bls_soc'
+    and p.taxonomy_version = 'soc_2018'
+    and o.level = 'broad_occupation'
+    and o.parent_id is null
+    and p.level = 'major_group'
+    and p.code = substring(o.code from 1 for 2) || '-0000';
+
+  -- Detailed occupations -> Broad occupations
   update public.occupation_nodes o
   set parent_id = p.id
   from public.occupation_nodes p
@@ -386,16 +406,22 @@ begin
     and p.taxonomy_system = 'bls_soc'
     and p.taxonomy_version = 'soc_2018'
     and o.level = 'detailed_occupation'
-    and (
-      (p.level = 'broad_occupation' and p.code = substring(o.code from 1 for 6) || '0') or
-      (p.level = 'minor_group' and p.code = substring(o.code from 1 for 5) || '00'
-       and not exists (
-         select 1 from public.occupation_nodes b
-         where b.taxonomy_system = 'bls_soc' and b.taxonomy_version = 'soc_2018'
-           and b.level = 'broad_occupation' and b.code = substring(o.code from 1 for 6) || '0'
-       ))
-    )
+    and p.level = 'broad_occupation'
+    and p.code = substring(o.code from 1 for 6) || '0'
     and (o.parent_id is null or o.parent_id <> p.id);
+
+  -- Detailed occupations fallback -> Minor groups (if broad missing)
+  update public.occupation_nodes o
+  set parent_id = p.id
+  from public.occupation_nodes p
+  where o.taxonomy_system = 'bls_soc'
+    and o.taxonomy_version = 'soc_2018'
+    and p.taxonomy_system = 'bls_soc'
+    and p.taxonomy_version = 'soc_2018'
+    and o.level = 'detailed_occupation'
+    and o.parent_id is null
+    and p.level = 'minor_group'
+    and p.code = substring(o.code from 1 for 5) || '00';
 
   -- 6. Upsert O*NET Nodes (occupation_nodes)
   insert into public.occupation_nodes (
@@ -422,6 +448,8 @@ begin
    and p.code = split_part(s.code, '.', 1)
   where s.import_run_id = p_import_run_id
     and s.taxonomy_system = 'onet_soc'
+    and s.taxonomy_version = '2019'
+    and s.data_release_version = 'onet_31_0'
   on conflict (taxonomy_system, taxonomy_version, data_release_version, code) do update set
     title = excluded.title,
     description = excluded.description,
@@ -433,25 +461,33 @@ begin
     updated_at = now();
 
   -- Reconcile absent SOC/O*NET nodes
-  update public.occupation_nodes
+  update public.occupation_nodes o
   set is_active = false
-  where (
-    (taxonomy_system = 'bls_soc' and taxonomy_version = 'soc_2018' and code not in (
-      select code from public.stg_occupation_nodes where import_run_id = p_import_run_id and taxonomy_system = 'bls_soc'
-    )) or
-    (taxonomy_system = 'onet_soc' and taxonomy_version = '2019' and data_release_version = 'onet_31_0' and code not in (
-      select code from public.stg_occupation_nodes where import_run_id = p_import_run_id and taxonomy_system = 'onet_soc'
-    ))
-  ) and is_active = true;
+  where o.is_active = true
+    and (
+      (o.taxonomy_system = 'bls_soc' and o.taxonomy_version = 'soc_2018' and not exists (
+        select 1 from public.stg_occupation_nodes s
+        where s.import_run_id = p_import_run_id
+          and s.taxonomy_system = 'bls_soc'
+          and s.taxonomy_version = 'soc_2018'
+          and s.code = o.code
+      )) or
+      (o.taxonomy_system = 'onet_soc' and o.taxonomy_version = '2019' and o.data_release_version = 'onet_31_0' and not exists (
+        select 1 from public.stg_occupation_nodes s
+        where s.import_run_id = p_import_run_id
+          and s.taxonomy_system = 'onet_soc'
+          and s.taxonomy_version = '2019'
+          and s.data_release_version = 'onet_31_0'
+          and s.code = o.code
+      ))
+    );
 
   -- 7. Upsert CIP-SOC Crosswalk
-  insert into public.external_classification_occupation_mappings (
-    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
-  )
+  create temp table tmp_staged_mappings on commit drop as
   select
-    c.id,
-    o.id,
-    v_cip_rel_id,
+    c.id as classification_node_id,
+    o.id as occupation_id,
+    v_cip_rel_id as source_release_id,
     s.mapping_source,
     s.mapping_version,
     s.mapping_kind,
@@ -465,7 +501,16 @@ begin
     on o.taxonomy_system = s.occupation_system
    and o.taxonomy_version = s.occupation_version
    and o.code = s.occupation_code
-  where s.import_run_id = p_import_run_id
+  where s.import_run_id = p_import_run_id;
+
+  create index tmp_stg_map_idx on tmp_staged_mappings(classification_node_id, occupation_id);
+
+  insert into public.external_classification_occupation_mappings (
+    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
+  )
+  select
+    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
+  from tmp_staged_mappings
   on conflict (classification_node_id, occupation_id, source_release_id) do update set
     mapping_source = excluded.mapping_source,
     mapping_version = excluded.mapping_version,
@@ -479,45 +524,30 @@ begin
     and m.mapping_version = '2020'
     and not exists (
       select 1
-      from public.stg_external_classification_occupation_mappings s
-      join public.external_classification_nodes c
-        on c.system = s.classification_system
-       and c.version = s.classification_version
-       and c.code = s.classification_code
-      join public.occupation_nodes o
-        on o.taxonomy_system = s.occupation_system
-       and o.taxonomy_version = s.occupation_version
-       and o.code = s.occupation_code
-      where s.import_run_id = p_import_run_id
-        and c.id = m.classification_node_id
-        and o.id = m.occupation_id
+      from tmp_staged_mappings s
+      where s.classification_node_id = m.classification_node_id
+        and s.occupation_id = m.occupation_id
     );
 
-  -- 8. Upsert Lineage from staging
-  insert into public.taxonomy_node_lineage (
-    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
-  )
+  -- 8. Upsert Lineage from staging with exact reconciliation
+  create temp table tmp_staged_lineage on commit drop as
   select
     s.source_system,
     s.from_version,
+    coalesce(s.from_code, '') as from_code_key,
     s.from_code,
     s.to_version,
+    coalesce(s.to_code, '') as to_code_key,
     s.to_code,
     s.transition_type,
     s.notes,
     s.metadata
   from public.stg_taxonomy_node_lineage s
-  where s.import_run_id = p_import_run_id
-  on conflict (
-    source_system,
-    from_version,
-    coalesce(from_code, ''),
-    to_version,
-    coalesce(to_code, ''),
-    transition_type
-  ) do update set
-    notes = excluded.notes,
-    metadata = excluded.metadata;
+  where s.import_run_id = p_import_run_id;
+
+  create index tmp_stg_lin_idx on tmp_staged_lineage(
+    source_system, from_version, from_code_key, to_version, to_code_key, transition_type
+  );
 
   -- Reconcile absent lineage edges for official CIP 2010 -> 2020 release
   delete from public.taxonomy_node_lineage l
@@ -526,13 +556,12 @@ begin
     and l.to_version = '2020'
     and not exists (
       select 1
-      from public.stg_taxonomy_node_lineage s
-      where s.import_run_id = p_import_run_id
-        and s.source_system = 'cip'
+      from tmp_staged_lineage s
+      where s.source_system = 'cip'
         and s.from_version = '2010'
         and s.to_version = '2020'
-        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
-        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.from_code_key = coalesce(l.from_code, '')
+        and s.to_code_key = coalesce(l.to_code, '')
         and s.transition_type = l.transition_type
     );
 
@@ -543,15 +572,32 @@ begin
     and l.to_version = '2018'
     and not exists (
       select 1
-      from public.stg_taxonomy_node_lineage s
-      where s.import_run_id = p_import_run_id
-        and s.source_system = 'bls_soc'
+      from tmp_staged_lineage s
+      where s.source_system = 'bls_soc'
         and s.from_version = '2010'
         and s.to_version = '2018'
-        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
-        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.from_code_key = coalesce(l.from_code, '')
+        and s.to_code_key = coalesce(l.to_code, '')
         and s.transition_type = l.transition_type
     );
+
+  -- Upsert staged lineage
+  insert into public.taxonomy_node_lineage (
+    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+  )
+  select
+    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+  from tmp_staged_lineage
+  on conflict (
+    source_system,
+    from_version,
+    coalesce(from_code, ''),
+    to_version,
+    coalesce(to_code, ''),
+    transition_type
+  ) do update set
+    notes = excluded.notes,
+    metadata = excluded.metadata;
 
   -- 9. Transactional Validation Invariants (Exact Counts & Zero Orphans)
   select count(*) into v_cip_active_count
