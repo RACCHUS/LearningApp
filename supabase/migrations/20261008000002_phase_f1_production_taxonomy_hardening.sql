@@ -46,6 +46,11 @@ create policy "public_read_content_source_artifacts"
   on public.content_source_artifacts for select
   using (true);
 
+-- Align target_version_concept_mappings schema with ingest_curriculum_manifest
+alter table public.target_version_concept_mappings
+  add column if not exists confidence numeric,
+  add column if not exists rationale text;
+
 -- ----------------------------------------------------------------------------
 -- 3. Service-Role-Only Staging Tables for Atomic Taxonomy Ingestion
 -- ----------------------------------------------------------------------------
