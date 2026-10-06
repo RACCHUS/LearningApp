@@ -130,7 +130,9 @@ create index if not exists stg_art_run_idx on public.stg_taxonomy_source_artifac
 create index if not exists stg_cip_run_idx on public.stg_external_classification_nodes(import_run_id, system, version, code);
 create index if not exists stg_occ_run_idx on public.stg_occupation_nodes(import_run_id, taxonomy_system, taxonomy_version, data_release_version, code);
 create index if not exists stg_map_run_idx on public.stg_external_classification_occupation_mappings(import_run_id);
+create index if not exists stg_map_join_idx on public.stg_external_classification_occupation_mappings(import_run_id, classification_system, classification_version, classification_code, occupation_system, occupation_version, occupation_code);
 create index if not exists stg_lin_run_idx on public.stg_taxonomy_node_lineage(import_run_id, source_system, from_version, to_version);
+create index if not exists stg_lin_reconcile_idx on public.stg_taxonomy_node_lineage(import_run_id, source_system, from_version, to_version, transition_type);
 
 -- Enable RLS and lock down staging tables strictly to service_role
 alter table public.stg_taxonomy_source_artifacts enable row level security;
@@ -531,137 +533,107 @@ begin
       ))
     );
   -- 7. Upsert CIP-SOC Crosswalk
-  execute $sql$drop table if exists tmp_staged_mappings$sql$;
-  execute $sql$
-    create temp table tmp_staged_mappings on commit drop as
-    select
-      c.id as classification_node_id,
-      o.id as occupation_id,
-      $1::uuid as source_release_id,
-      s.mapping_source,
-      s.mapping_version,
-      s.mapping_kind,
-      s.source_notes
-    from public.stg_external_classification_occupation_mappings s
-    join public.external_classification_nodes c
-      on c.system = s.classification_system
-     and c.version = s.classification_version
-     and c.code = s.classification_code
-    join public.occupation_nodes o
-      on o.taxonomy_system = s.occupation_system
-     and o.taxonomy_version = s.occupation_version
-     and o.code = s.occupation_code
-    where s.import_run_id = $2
-  $sql$ using v_cip_rel_id, p_import_run_id;
-
-  execute $sql$create index tmp_stg_map_idx on tmp_staged_mappings(classification_node_id, occupation_id)$sql$;
-
-  execute $sql$
-    insert into public.external_classification_occupation_mappings (
-      classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
-    )
-    select
-      classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
-    from tmp_staged_mappings
-    on conflict (classification_node_id, occupation_id, source_release_id) do update set
-      mapping_source = excluded.mapping_source,
-      mapping_version = excluded.mapping_version,
-      mapping_kind = excluded.mapping_kind,
-      source_notes = excluded.source_notes
-  $sql$;
+  insert into public.external_classification_occupation_mappings (
+    classification_node_id, occupation_id, source_release_id, mapping_source, mapping_version, mapping_kind, source_notes
+  )
+  select
+    c.id as classification_node_id,
+    o.id as occupation_id,
+    v_cip_rel_id as source_release_id,
+    s.mapping_source,
+    s.mapping_version,
+    s.mapping_kind,
+    s.source_notes
+  from public.stg_external_classification_occupation_mappings s
+  join public.external_classification_nodes c
+    on c.system = s.classification_system
+   and c.version = s.classification_version
+   and c.code = s.classification_code
+  join public.occupation_nodes o
+    on o.taxonomy_system = s.occupation_system
+   and o.taxonomy_version = s.occupation_version
+   and o.code = s.occupation_code
+  where s.import_run_id = p_import_run_id
+  on conflict (classification_node_id, occupation_id, source_release_id) do update set
+    mapping_source = excluded.mapping_source,
+    mapping_version = excluded.mapping_version,
+    mapping_kind = excluded.mapping_kind,
+    source_notes = excluded.source_notes;
 
   -- Reconcile deleted official crosswalk mappings for this release
-  execute $sql$
-    delete from public.external_classification_occupation_mappings m
-    where m.source_release_id = $1
-      and m.mapping_source = 'nces_bls_crosswalk_2020'
-      and m.mapping_version = '2020'
-      and not exists (
-        select 1
-        from tmp_staged_mappings s
-        where s.classification_node_id = m.classification_node_id
-          and s.occupation_id = m.occupation_id
-      )
-  $sql$ using v_cip_rel_id;
+  delete from public.external_classification_occupation_mappings m
+  where m.source_release_id = v_cip_rel_id
+    and m.mapping_source = 'nces_bls_crosswalk_2020'
+    and m.mapping_version = '2020'
+    and not exists (
+      select 1
+      from public.stg_external_classification_occupation_mappings s
+      join public.external_classification_nodes c
+        on c.system = s.classification_system
+       and c.version = s.classification_version
+       and c.code = s.classification_code
+      join public.occupation_nodes o
+        on o.taxonomy_system = s.occupation_system
+       and o.taxonomy_version = s.occupation_version
+       and o.code = s.occupation_code
+      where s.import_run_id = p_import_run_id
+        and c.id = m.classification_node_id
+        and o.id = m.occupation_id
+    );
 
   -- 8. Upsert Lineage from staging with exact reconciliation
-  execute $sql$drop table if exists tmp_staged_lineage$sql$;
-  execute $sql$
-    create temp table tmp_staged_lineage on commit drop as
-    select
-      s.source_system,
-      s.from_version,
-      coalesce(s.from_code, '') as from_code_key,
-      s.from_code,
-      s.to_version,
-      coalesce(s.to_code, '') as to_code_key,
-      s.to_code,
-      s.transition_type,
-      s.notes,
-      s.metadata
-    from public.stg_taxonomy_node_lineage s
-    where s.import_run_id = $1
-  $sql$ using p_import_run_id;
-
-  execute $sql$create index tmp_stg_lin_idx on tmp_staged_lineage(
-    source_system, from_version, from_code_key, to_version, to_code_key, transition_type
-  )$sql$;
-
   -- Reconcile absent lineage edges for official CIP 2010 -> 2020 release
-  execute $sql$
-    delete from public.taxonomy_node_lineage l
-    where l.source_system = 'cip'
-      and l.from_version = '2010'
-      and l.to_version = '2020'
-      and not exists (
-        select 1
-        from tmp_staged_lineage s
-        where s.source_system = 'cip'
-          and s.from_version = '2010'
-          and s.to_version = '2020'
-          and s.from_code_key = coalesce(l.from_code, '')
-          and s.to_code_key = coalesce(l.to_code, '')
-          and s.transition_type = l.transition_type
-      )
-  $sql$;
+  delete from public.taxonomy_node_lineage l
+  where l.source_system = 'cip'
+    and l.from_version = '2010'
+    and l.to_version = '2020'
+    and not exists (
+      select 1
+      from public.stg_taxonomy_node_lineage s
+      where s.import_run_id = p_import_run_id
+        and s.source_system = 'cip'
+        and s.from_version = '2010'
+        and s.to_version = '2020'
+        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
+        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.transition_type = l.transition_type
+    );
 
   -- Reconcile absent lineage edges for official SOC 2010 -> 2018 release
-  execute $sql$
-    delete from public.taxonomy_node_lineage l
-    where l.source_system = 'bls_soc'
-      and l.from_version = '2010'
-      and l.to_version = '2018'
-      and not exists (
-        select 1
-        from tmp_staged_lineage s
-        where s.source_system = 'bls_soc'
-          and s.from_version = '2010'
-          and s.to_version = '2018'
-          and s.from_code_key = coalesce(l.from_code, '')
-          and s.to_code_key = coalesce(l.to_code, '')
-          and s.transition_type = l.transition_type
-      )
-  $sql$;
+  delete from public.taxonomy_node_lineage l
+  where l.source_system = 'bls_soc'
+    and l.from_version = '2010'
+    and l.to_version = '2018'
+    and not exists (
+      select 1
+      from public.stg_taxonomy_node_lineage s
+      where s.import_run_id = p_import_run_id
+        and s.source_system = 'bls_soc'
+        and s.from_version = '2010'
+        and s.to_version = '2018'
+        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
+        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.transition_type = l.transition_type
+    );
 
   -- Upsert staged lineage
-  execute $sql$
-    insert into public.taxonomy_node_lineage (
-      source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
-    )
-    select
-      source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
-    from tmp_staged_lineage
-    on conflict (
-      source_system,
-      from_version,
-      coalesce(from_code, ''),
-      to_version,
-      coalesce(to_code, ''),
-      transition_type
-    ) do update set
-      notes = excluded.notes,
-      metadata = excluded.metadata
-  $sql$;
+  insert into public.taxonomy_node_lineage (
+    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+  )
+  select
+    source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
+  from public.stg_taxonomy_node_lineage s
+  where s.import_run_id = p_import_run_id
+  on conflict (
+    source_system,
+    from_version,
+    coalesce(from_code, ''),
+    to_version,
+    coalesce(to_code, ''),
+    transition_type
+  ) do update set
+    notes = excluded.notes,
+    metadata = excluded.metadata;
 
   -- 9. Transactional Validation Invariants (Exact Counts & Zero Orphans)
   select count(*) into v_cip_active_count
