@@ -1,6 +1,15 @@
 name: Official Taxonomy Data
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'lib/services/taxonomy/official_taxonomy_sources.dart'
+      - 'lib/services/taxonomy/taxonomy_importer.dart'
+      - 'tool/ingest_official_taxonomies.dart'
+      - 'pubspec.yaml'
+      - '.github/workflows/taxonomy-official-data.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -22,7 +31,7 @@ permissions:
 
 jobs:
   official-taxonomy:
-    name: ${{ inputs.mode == 'ingest' && 'Ingest official taxonomy data' || 'Validate official taxonomy data' }}
+    name: Validate official taxonomy sources
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -41,14 +50,14 @@ jobs:
         run: flutter pub get
 
       - name: Validate pinned official source bundle
-        if: ${{ inputs.mode == 'validate' }}
+        if: ${{ github.event_name == 'pull_request' || inputs.mode == 'validate' }}
         run: >-
           dart run tool/ingest_official_taxonomies.dart
           --validate
-          ${{ inputs.refresh && '--refresh' || '' }}
+          ${{ github.event_name == 'workflow_dispatch' && inputs.refresh && '--refresh' || '' }}
 
       - name: Ingest pinned official source bundle
-        if: ${{ inputs.mode == 'ingest' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'ingest' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
