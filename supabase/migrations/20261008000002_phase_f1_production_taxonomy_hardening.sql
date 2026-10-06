@@ -1067,7 +1067,9 @@ begin
       csm.entity_type = 'knowledge_concept'
       and csm.entity_id in (
         select distinct cnc.concept_id
-        from public.curriculum_nodes cn
+        from public.curriculum_node_concepts cnc
+        join public.curriculum_nodes cn
+          on cn.id = cnc.curriculum_node_id
         where cn.target_version_id = p_target_version_id
       )
     );
