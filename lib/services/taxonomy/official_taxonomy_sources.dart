@@ -190,8 +190,9 @@ class OfficialTaxonomyParser {
   /// sheet into string rows. The parser is resilient to title/code placement:
   /// it finds the SOC code in each row and then the nearest descriptive cell.
   static List<Map<String, dynamic>> parseSoc2018Rows(
-    List<List<String>> rows,
-  ) {
+    List<List<String>> rows, {
+    Map<String, String> definitions = const {},
+  }) {
     final recordsByCode = <String, Map<String, dynamic>>{};
 
     for (final row in rows) {
@@ -221,6 +222,7 @@ class OfficialTaxonomyParser {
         recordsByCode[code] = {
           'code': code,
           'title': title,
+          'description': definitions[code],
           'level': _socLevel(code),
           'taxonomy_version': 'soc_2018',
         };
@@ -230,6 +232,74 @@ class OfficialTaxonomyParser {
 
     return recordsByCode.values.toList()
       ..sort((a, b) => (a['code'] as String).compareTo(b['code'] as String));
+  }
+
+  /// Parses the official BLS 2018 SOC Definitions workbook into a code ->
+  /// definition map that can enrich every hierarchy node supported by BLS.
+  static Map<String, String> parseSoc2018DefinitionsRows(
+    List<List<String>> rows,
+  ) {
+    if (rows.isEmpty) return const {};
+
+    int? codeCol;
+    int? definitionCol;
+    try {
+      final headerIndex = _findHeaderRow(rows, (headers) {
+        codeCol = _findHeader(
+          headers,
+          const ['soccode', '2018soccode', 'code'],
+        );
+        definitionCol = _findHeader(
+          headers,
+          const ['definition', 'socdefinition'],
+        );
+        return codeCol != null && definitionCol != null;
+      });
+      final headers = _headerMap(rows[headerIndex]);
+      codeCol = _findHeader(headers, const ['soccode', '2018soccode', 'code']);
+      definitionCol =
+          _findHeader(headers, const ['definition', 'socdefinition']);
+
+      final definitions = <String, String>{};
+      for (final row in rows.skip(headerIndex + 1)) {
+        final code = _extractSocCode(_cell(row, codeCol!));
+        final definition = _nullIfEmpty(_cell(row, definitionCol!));
+        if (code != null && definition != null) {
+          definitions[code] = definition;
+        }
+      }
+      if (definitions.isNotEmpty) return definitions;
+    } on FormatException {
+      // Fall through to the structure-agnostic scan below.
+    }
+
+    final definitions = <String, String>{};
+    for (final row in rows) {
+      String? code;
+      var codeIndex = -1;
+      for (var i = 0; i < row.length; i++) {
+        code = _extractSocCode(row[i]);
+        if (code != null) {
+          codeIndex = i;
+          break;
+        }
+      }
+      if (code == null) continue;
+
+      final candidates = <String>[];
+      for (var i = 0; i < row.length; i++) {
+        if (i == codeIndex) continue;
+        final value = row[i].trim();
+        if (value.length >= 40 && !_socCodePattern.hasMatch(value)) {
+          candidates.add(value);
+        }
+      }
+      if (candidates.isNotEmpty) {
+        candidates.sort((a, b) => b.length.compareTo(a.length));
+        definitions[code] = candidates.first;
+      }
+    }
+    return definitions;
   }
 
   /// Parses O*NET 31.0 Occupation Data.xlsx plus Job Zones.xlsx.
@@ -453,10 +523,12 @@ class OfficialTaxonomyParser {
       );
     }
 
-    if (cipSocMappings.length < 6000) {
+    final mappedCipCodes = cipSocMappings.map((mapping) => mapping.cipCode).toSet();
+    if (cipSocMappings.length < 2000 || mappedCipCodes.length < 1000) {
       errors.add(
         'CIP 2020 -> SOC 2018 crosswalk appears truncated: '
-        '${cipSocMappings.length} mappings.',
+        '${cipSocMappings.length} mappings across '
+        '${mappedCipCodes.length} CIP programs.',
       );
     }
 
@@ -873,6 +945,8 @@ class OfficialTaxonomySources {
       'https://nces.ed.gov/ipeds/cipcode/Files/CIP2020_SOC2018_Crosswalk.xlsx';
   static const soc2018StructureUrl =
       'https://www.bls.gov/soc/2018/soc_structure_2018.xlsx';
+  static const soc2018DefinitionsUrl =
+      'https://www.bls.gov/soc/2018/soc_2018_definitions.xlsx';
   static const soc2010To2018Url =
       'https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
   static const onet31OccupationDataUrl =
@@ -889,6 +963,7 @@ class OfficialTaxonomySources {
     'Crosswalk2010to2020.csv': cip2010To2020Url,
     'CIP2020_SOC2018_Crosswalk.xlsx': cip2020Soc2018Url,
     'soc_structure_2018.xlsx': soc2018StructureUrl,
+    'soc_2018_definitions.xlsx': soc2018DefinitionsUrl,
     'soc_2010_to_2018_crosswalk.xlsx': soc2010To2018Url,
     'Occupation Data.xlsx': onet31OccupationDataUrl,
     'Job Zones.xlsx': onet31JobZonesUrl,
@@ -909,6 +984,7 @@ class OfficialTaxonomySources {
           'license': 'US_Public_Domain',
           'artifacts': {
             'soc_structure_2018.xlsx': soc2018StructureUrl,
+            'soc_2018_definitions.xlsx': soc2018DefinitionsUrl,
             'soc_2010_to_2018_crosswalk.xlsx': soc2010To2018Url,
           },
         },
