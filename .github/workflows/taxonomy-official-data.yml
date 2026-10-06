@@ -10,6 +10,7 @@ on:
       - 'tool/ingest_official_taxonomies.dart'
       - 'pubspec.yaml'
       - '.github/workflows/taxonomy-official-data.yml'
+      - 'supabase/migrations/**'
   workflow_dispatch:
     inputs:
       mode:

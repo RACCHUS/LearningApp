@@ -265,5 +265,33 @@ void main() {
       ]));
       expect(OfficialTaxonomySources.manifestJson(), contains('onet_31_0'));
     });
+
+    test('artifact specs pin cryptographic hashes and file sizes', () {
+      expect(OfficialTaxonomySources.specs.length, 8);
+
+      for (final spec in OfficialTaxonomySources.specs.values) {
+        expect(
+          RegExp(r'^[a-f0-9]{64}$').hasMatch(spec.expectedSha256),
+          isTrue,
+          reason: '${spec.name} must have a valid 64-char lowercase hex sha256',
+        );
+        expect(
+          spec.expectedSizeBytes,
+          greaterThan(10000),
+          reason: '${spec.name} file size should be substantial',
+        );
+        expect(Uri.tryParse(spec.publisherUrl)?.hasScheme, isTrue);
+        expect(Uri.tryParse(spec.retrievalUrl)?.hasScheme, isTrue);
+      }
+
+      // Verify provenance disentangling (BLS publisher vs Census/Archive retrieval)
+      final socStructure = OfficialTaxonomySources.specs['soc_structure_2018.xlsx']!;
+      expect(socStructure.publisherUrl, contains('bls.gov'));
+      expect(socStructure.retrievalUrl, contains('census.gov'));
+
+      final socCrosswalk = OfficialTaxonomySources.specs['soc_2010_to_2018_crosswalk.xlsx']!;
+      expect(socCrosswalk.publisherUrl, contains('bls.gov'));
+      expect(socCrosswalk.retrievalUrl, contains('web.archive.org'));
+    });
   });
 }

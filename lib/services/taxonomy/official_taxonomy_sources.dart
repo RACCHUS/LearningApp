@@ -496,13 +496,19 @@ class OfficialTaxonomyParser {
       'soc_lineage': socLineage.length,
     };
 
-    if (cipSeries < 48 || cipSeries > 50) {
-      errors.add('CIP 2020 should contain 48 active 2-digit series; found $cipSeries.');
+    if (cipSeries != 48) {
+      errors.add('CIP 2020 should contain exactly 48 active 2-digit series; found $cipSeries.');
     }
-    if (cipRecords.length < 2000 || cipPrograms < 1000) {
+    if (cipRecords.length != 2809 || cipPrograms != 2295) {
       errors.add(
-        'CIP 2020 appears truncated: ${cipRecords.length} total nodes / '
-        '$cipPrograms six-digit programs.',
+        'CIP 2020 should contain exactly 2,809 nodes (2,295 six-digit programs); '
+        'found ${cipRecords.length} total nodes ($cipPrograms programs).',
+      );
+    }
+
+    if (socRecords.length != 1447) {
+      errors.add(
+        'SOC 2018 should contain exactly 1,447 total hierarchy nodes; found ${socRecords.length}.',
       );
     }
 
@@ -523,22 +529,21 @@ class OfficialTaxonomyParser {
 
     if (onetRecords.length != 1016) {
       errors.add(
-        'O*NET-SOC 2019 taxonomy should contain 1,016 occupations; '
+        'O*NET-SOC 2019 taxonomy should contain exactly 1,016 occupations; '
         'found ${onetRecords.length}.',
       );
     }
     if (onetWithZone != 923) {
       errors.add(
-        'O*NET 31.0 Job Zones should cover 923 occupations; found $onetWithZone.',
+        'O*NET 31.0 Job Zones should cover exactly 923 occupations; found $onetWithZone.',
       );
     }
 
     final mappedCipCodes = cipSocMappings.map((mapping) => mapping.cipCode).toSet();
-    if (cipSocMappings.length < 2000 || mappedCipCodes.length < 1000) {
+    if (cipSocMappings.length != 5723) {
       errors.add(
-        'CIP 2020 -> SOC 2018 crosswalk appears truncated: '
-        '${cipSocMappings.length} mappings across '
-        '${mappedCipCodes.length} CIP programs.',
+        'CIP 2020 -> SOC 2018 crosswalk should contain exactly 5,723 mappings; '
+        'found ${cipSocMappings.length} mappings across ${mappedCipCodes.length} CIP programs.',
       );
     }
 
@@ -584,16 +589,16 @@ class OfficialTaxonomyParser {
       );
     }
 
-    if (cipLineage.isNotEmpty && cipLineage.length < 1000) {
-      warnings.add(
-        'CIP 2010 -> 2020 lineage contains only ${cipLineage.length} rows; '
-        'verify the NCES crosswalk was complete.',
+    if (cipLineage.isNotEmpty && cipLineage.length != 2699) {
+      errors.add(
+        'CIP 2010 -> 2020 lineage should contain exactly 2,699 transitions; '
+        'found ${cipLineage.length}.',
       );
     }
-    if (socLineage.isNotEmpty && socLineage.length < 500) {
-      warnings.add(
-        'SOC 2010 -> 2018 lineage contains only ${socLineage.length} rows; '
-        'verify the BLS crosswalk was complete.',
+    if (socLineage.isNotEmpty && socLineage.length != 900) {
+      errors.add(
+        'SOC 2010 -> 2018 lineage should contain exactly 900 transitions; '
+        'found ${socLineage.length}.',
       );
     }
 
@@ -949,61 +954,162 @@ class _LineageEdge {
   });
 }
 
+/// Strongly-typed cryptographic and retrieval metadata for one frozen official artifact.
+class OfficialTaxonomyArtifactSpec {
+  final String name;
+  final String publisherUrl;
+  final String retrievalUrl;
+  final String expectedSha256;
+  final int expectedSizeBytes;
+
+  const OfficialTaxonomyArtifactSpec({
+    required this.name,
+    required this.publisherUrl,
+    required this.retrievalUrl,
+    required this.expectedSha256,
+    required this.expectedSizeBytes,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'publisher_url': publisherUrl,
+        'retrieval_url': retrievalUrl,
+        'expected_sha256': expectedSha256,
+        'expected_size_bytes': expectedSizeBytes,
+      };
+}
+
 /// Canonical metadata for the frozen official releases used by Phase F.
 class OfficialTaxonomySources {
-  static const cip2020Url =
+  static const cip2020PublisherUrl =
       'https://nces.ed.gov/ipeds/cipcode/Files/CIPCode2020.csv';
-  static const cip2010To2020Url =
+  static const cip2010To2020PublisherUrl =
       'https://nces.ed.gov/ipeds/cipcode/Files/Crosswalk2010to2020.csv';
-  static const cip2020Soc2018Url =
+  static const cip2020Soc2018PublisherUrl =
       'https://nces.ed.gov/ipeds/cipcode/Files/CIP2020_SOC2018_Crosswalk.xlsx';
+  static const soc2018StructurePublisherUrl =
+      'https://www.bls.gov/soc/2018/soc_structure_2018.xlsx';
+  static const soc2018DefinitionsPublisherUrl =
+      'https://www.bls.gov/soc/2018/soc_2018_definitions.xlsx';
+  static const soc2010To2018PublisherUrl =
+      'https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
+  static const onet31OccupationDataPublisherUrl =
+      'https://www.onetcenter.org/dl_files/database/db_31_0_excel/Occupation%20Data.xlsx';
+  static const onet31JobZonesPublisherUrl =
+      'https://www.onetcenter.org/dl_files/database/db_31_0_excel/Job%20Zones.xlsx';
+
   // BLS is the authoritative publisher. GitHub-hosted runners are denied by
   // bls.gov's edge layer, so machine ingestion uses the official Census-hosted
   // copies for structure/definitions and a pinned Internet Archive capture of
   // the BLS-published historical crosswalk. Provenance retains the BLS origin.
-  static const soc2018StructureUrl =
+  static const soc2018StructureRetrievalUrl =
       'https://www2.census.gov/programs-surveys/demo/guidance/industry-occupation/soc_structure_2018.xlsx';
-  static const soc2018DefinitionsUrl =
+  static const soc2018DefinitionsRetrievalUrl =
       'https://www2.census.gov/programs-surveys/demo/guidance/industry-occupation/soc_2018_definitions.xlsx';
-  static const soc2010To2018Url =
+  static const soc2010To2018RetrievalUrl =
       'https://web.archive.org/web/20250101032254if_/https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
-  static const onet31OccupationDataUrl =
-      'https://www.onetcenter.org/dl_files/database/db_31_0_excel/Occupation%20Data.xlsx';
-  static const onet31JobZonesUrl =
-      'https://www.onetcenter.org/dl_files/database/db_31_0_excel/Job%20Zones.xlsx';
 
   static const cipReleaseId = 'a1000000-0000-0000-0000-000000000001';
   static const socReleaseId = 'a1000000-0000-0000-0000-000000000002';
   static const onetReleaseId = 'a1000000-0000-0000-0000-000000000003';
 
-  static const artifacts = <String, String>{
-    'CIPCode2020.csv': cip2020Url,
-    'Crosswalk2010to2020.csv': cip2010To2020Url,
-    'CIP2020_SOC2018_Crosswalk.xlsx': cip2020Soc2018Url,
-    'soc_structure_2018.xlsx': soc2018StructureUrl,
-    'soc_2018_definitions.xlsx': soc2018DefinitionsUrl,
-    'soc_2010_to_2018_crosswalk.xlsx': soc2010To2018Url,
-    'Occupation Data.xlsx': onet31OccupationDataUrl,
-    'Job Zones.xlsx': onet31JobZonesUrl,
+  static const specs = <String, OfficialTaxonomyArtifactSpec>{
+    'CIPCode2020.csv': OfficialTaxonomyArtifactSpec(
+      name: 'CIPCode2020.csv',
+      publisherUrl: cip2020PublisherUrl,
+      retrievalUrl: cip2020PublisherUrl,
+      expectedSha256:
+          '6cf0882c1f5beb94981d0a1a72285ab5cf633759f45433fb909afbfb6d6b2657',
+      expectedSizeBytes: 1099448,
+    ),
+    'Crosswalk2010to2020.csv': OfficialTaxonomyArtifactSpec(
+      name: 'Crosswalk2010to2020.csv',
+      publisherUrl: cip2010To2020PublisherUrl,
+      retrievalUrl: cip2010To2020PublisherUrl,
+      expectedSha256:
+          '3aa75a01b38169b3093f17a15bc3e72d769192ef3fed8935b12215bc4ca087c7',
+      expectedSizeBytes: 311326,
+    ),
+    'CIP2020_SOC2018_Crosswalk.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'CIP2020_SOC2018_Crosswalk.xlsx',
+      publisherUrl: cip2020Soc2018PublisherUrl,
+      retrievalUrl: cip2020Soc2018PublisherUrl,
+      expectedSha256:
+          'ba3d59a191b9d977a5c457a66b9348c4f2f7963aafacf72c0b80113b46bf0ab8',
+      expectedSizeBytes: 428901,
+    ),
+    'soc_structure_2018.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'soc_structure_2018.xlsx',
+      publisherUrl: soc2018StructurePublisherUrl,
+      retrievalUrl: soc2018StructureRetrievalUrl,
+      expectedSha256:
+          'ade08af40923266f3a854842e888ca3e93c15b26a147c20a2b12a61f4c4f4077',
+      expectedSizeBytes: 51367,
+    ),
+    'soc_2018_definitions.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'soc_2018_definitions.xlsx',
+      publisherUrl: soc2018DefinitionsPublisherUrl,
+      retrievalUrl: soc2018DefinitionsRetrievalUrl,
+      expectedSha256:
+          '7964149d42616b83b5712c8de01fac437dbc88c7372f5713881595ace4760a68',
+      expectedSizeBytes: 143654,
+    ),
+    'soc_2010_to_2018_crosswalk.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'soc_2010_to_2018_crosswalk.xlsx',
+      publisherUrl: soc2010To2018PublisherUrl,
+      retrievalUrl: soc2010To2018RetrievalUrl,
+      expectedSha256:
+          'f3a847561562d3e5a30eb848f2902a5f7b02e9c48b3d7f2cc8879899fbc242a7',
+      expectedSizeBytes: 46630,
+    ),
+    'Occupation Data.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'Occupation Data.xlsx',
+      publisherUrl: onet31OccupationDataPublisherUrl,
+      retrievalUrl: onet31OccupationDataPublisherUrl,
+      expectedSha256:
+          '13b2aa4c08e6c9a3708d5e5ac83e13da5cc184e3798313c8942a266d00593ace',
+      expectedSizeBytes: 102540,
+    ),
+    'Job Zones.xlsx': OfficialTaxonomyArtifactSpec(
+      name: 'Job Zones.xlsx',
+      publisherUrl: onet31JobZonesPublisherUrl,
+      retrievalUrl: onet31JobZonesPublisherUrl,
+      expectedSha256:
+          '6b5559fe95a2b9d6a159b0f62aa2c68962491fafd4cbc1c8e865a96e2b52e79c',
+      expectedSizeBytes: 39540,
+    ),
   };
+
+  static Map<String, String> get artifacts => {
+        for (final entry in specs.entries) entry.key: entry.value.retrievalUrl,
+      };
+
+  static Map<String, String> get publisherUrls => {
+        for (final entry in specs.entries) entry.key: entry.value.publisherUrl,
+      };
 
   static String manifestJson() => const JsonEncoder.withIndent('  ').convert({
         'nces_cip': {
           'release_version': '2020',
           'license': 'US_Public_Domain',
           'artifacts': {
-            'CIPCode2020.csv': cip2020Url,
-            'Crosswalk2010to2020.csv': cip2010To2020Url,
-            'CIP2020_SOC2018_Crosswalk.xlsx': cip2020Soc2018Url,
+            'CIPCode2020.csv': specs['CIPCode2020.csv']!.toJson(),
+            'Crosswalk2010to2020.csv':
+                specs['Crosswalk2010to2020.csv']!.toJson(),
+            'CIP2020_SOC2018_Crosswalk.xlsx':
+                specs['CIP2020_SOC2018_Crosswalk.xlsx']!.toJson(),
           },
         },
         'bls_soc': {
           'release_version': '2018',
           'license': 'US_Public_Domain',
           'artifacts': {
-            'soc_structure_2018.xlsx': soc2018StructureUrl,
-            'soc_2018_definitions.xlsx': soc2018DefinitionsUrl,
-            'soc_2010_to_2018_crosswalk.xlsx': soc2010To2018Url,
+            'soc_structure_2018.xlsx':
+                specs['soc_structure_2018.xlsx']!.toJson(),
+            'soc_2018_definitions.xlsx':
+                specs['soc_2018_definitions.xlsx']!.toJson(),
+            'soc_2010_to_2018_crosswalk.xlsx':
+                specs['soc_2010_to_2018_crosswalk.xlsx']!.toJson(),
           },
         },
         'onet': {
@@ -1011,8 +1117,8 @@ class OfficialTaxonomySources {
           'taxonomy_version': '2019',
           'license': 'CC_BY_4_0',
           'artifacts': {
-            'Occupation Data.xlsx': onet31OccupationDataUrl,
-            'Job Zones.xlsx': onet31JobZonesUrl,
+            'Occupation Data.xlsx': specs['Occupation Data.xlsx']!.toJson(),
+            'Job Zones.xlsx': specs['Job Zones.xlsx']!.toJson(),
           },
         },
       });
