@@ -152,9 +152,9 @@ create or replace function public.finalize_official_taxonomy_import(
   p_import_run_id uuid
 )
 returns jsonb
-set statement_timeout = '120s'
 language plpgsql
 security definer
+set statement_timeout = '120s'
 as $$
 declare
   v_cip_stg_count integer;
@@ -688,7 +688,7 @@ begin
     'soc_lineage', v_soc_lin_count
   );
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- Revoke execute from public/anon and grant to service_role
 revoke execute on function public.finalize_official_taxonomy_import(uuid) from public, anon, authenticated;
