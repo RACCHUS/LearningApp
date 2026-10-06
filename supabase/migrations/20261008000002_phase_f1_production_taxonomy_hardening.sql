@@ -493,7 +493,7 @@ begin
         and o.id = m.occupation_id
     );
 
-  -- 8. Insert Lineage
+  -- 8. Upsert Lineage from staging
   insert into public.taxonomy_node_lineage (
     source_system, from_version, from_code, to_version, to_code, transition_type, notes, metadata
   )
@@ -515,7 +515,43 @@ begin
     to_version,
     coalesce(to_code, ''),
     transition_type
-  ) do nothing;
+  ) do update set
+    notes = excluded.notes,
+    metadata = excluded.metadata;
+
+  -- Reconcile absent lineage edges for official CIP 2010 -> 2020 release
+  delete from public.taxonomy_node_lineage l
+  where l.source_system = 'cip'
+    and l.from_version = '2010'
+    and l.to_version = '2020'
+    and not exists (
+      select 1
+      from public.stg_taxonomy_node_lineage s
+      where s.import_run_id = p_import_run_id
+        and s.source_system = 'cip'
+        and s.from_version = '2010'
+        and s.to_version = '2020'
+        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
+        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.transition_type = l.transition_type
+    );
+
+  -- Reconcile absent lineage edges for official SOC 2010 -> 2018 release
+  delete from public.taxonomy_node_lineage l
+  where l.source_system = 'bls_soc'
+    and l.from_version = '2010'
+    and l.to_version = '2018'
+    and not exists (
+      select 1
+      from public.stg_taxonomy_node_lineage s
+      where s.import_run_id = p_import_run_id
+        and s.source_system = 'bls_soc'
+        and s.from_version = '2010'
+        and s.to_version = '2018'
+        and coalesce(s.from_code, '') = coalesce(l.from_code, '')
+        and coalesce(s.to_code, '') = coalesce(l.to_code, '')
+        and s.transition_type = l.transition_type
+    );
 
   -- 9. Transactional Validation Invariants (Exact Counts & Zero Orphans)
   select count(*) into v_cip_active_count
@@ -528,13 +564,24 @@ begin
 
   select count(*) into v_onet_active_count
   from public.occupation_nodes
-  where taxonomy_system = 'onet_soc' and taxonomy_version = '2019' and is_active = true;
+  where taxonomy_system = 'onet_soc'
+    and taxonomy_version = '2019'
+    and data_release_version = 'onet_31_0'
+    and is_active = true;
 
   select count(*) into v_map_active_count
   from public.external_classification_occupation_mappings
   where source_release_id = v_cip_rel_id
     and mapping_source = 'nces_bls_crosswalk_2020'
     and mapping_version = '2020';
+
+  select count(*) into v_cip_lin_count
+  from public.taxonomy_node_lineage
+  where source_system = 'cip' and from_version = '2010' and to_version = '2020';
+
+  select count(*) into v_soc_lin_count
+  from public.taxonomy_node_lineage
+  where source_system = 'bls_soc' and from_version = '2010' and to_version = '2018';
 
   if v_cip_active_count <> 2809 then
     raise exception 'Final active CIP count (%) does not match exact source count 2809.', v_cip_active_count;
@@ -547,6 +594,12 @@ begin
   end if;
   if v_map_active_count <> 5723 then
     raise exception 'Final official CIP-SOC mappings count (%) does not match exact source count 5723.', v_map_active_count;
+  end if;
+  if v_cip_lin_count <> 2699 then
+    raise exception 'Final active CIP 2010 -> 2020 lineage count (%) does not match exact source count 2699.', v_cip_lin_count;
+  end if;
+  if v_soc_lin_count <> 900 then
+    raise exception 'Final active SOC 2010 -> 2018 lineage count (%) does not match exact source count 900.', v_soc_lin_count;
   end if;
 
   select count(*) into v_orphan_cip from public.external_classification_nodes
@@ -562,7 +615,11 @@ begin
   end if;
 
   select count(*) into v_orphan_onet from public.occupation_nodes
-  where taxonomy_system = 'onet_soc' and taxonomy_version = '2019' and is_active = true and parent_id is null;
+  where taxonomy_system = 'onet_soc'
+    and taxonomy_version = '2019'
+    and data_release_version = 'onet_31_0'
+    and is_active = true
+    and parent_id is null;
   if v_orphan_onet <> 0 then
     raise exception 'Integrity error: % orphan O*NET nodes exist after finalization.', v_orphan_onet;
   end if;

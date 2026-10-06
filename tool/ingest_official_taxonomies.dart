@@ -679,6 +679,7 @@ class _OfficialTaxonomyIngestor {
       filters: {
         'taxonomy_system': 'onet_soc',
         'taxonomy_version': '2019',
+        'data_release_version': 'onet_31_0',
         'is_active': 'true',
       },
     );
@@ -689,18 +690,38 @@ class _OfficialTaxonomyIngestor {
         'mapping_version': '2020',
       },
     );
+    final cipLineageCount = await db.countRows(
+      'taxonomy_node_lineage',
+      filters: {
+        'source_system': 'cip',
+        'from_version': '2010',
+        'to_version': '2020',
+      },
+    );
+    final socLineageCount = await db.countRows(
+      'taxonomy_node_lineage',
+      filters: {
+        'source_system': 'bls_soc',
+        'from_version': '2010',
+        'to_version': '2018',
+      },
+    );
 
     final expected = {
       'CIP 2020 nodes (active)': bundle.cipRecords.length,
       'SOC 2018 nodes (active)': bundle.socRecords.length,
-      'O*NET-SOC 2019 nodes (active)': bundle.onetRecords.length,
+      'O*NET 31.0 nodes (active)': bundle.onetRecords.length,
       'CIP-SOC mappings': bundle.cipSocMappings.length,
+      'CIP 2010 -> 2020 lineage': bundle.cipLineage.length,
+      'SOC 2010 -> 2018 lineage': bundle.socLineage.length,
     };
     final actual = {
       'CIP 2020 nodes (active)': cipCount,
       'SOC 2018 nodes (active)': socCount,
-      'O*NET-SOC 2019 nodes (active)': onetCount,
+      'O*NET 31.0 nodes (active)': onetCount,
       'CIP-SOC mappings': mappingCount,
+      'CIP 2010 -> 2020 lineage': cipLineageCount,
+      'SOC 2010 -> 2018 lineage': socLineageCount,
     };
 
     for (final entry in expected.entries) {
@@ -741,6 +762,7 @@ class _OfficialTaxonomyIngestor {
       filters: {
         'taxonomy_system': 'eq.onet_soc',
         'taxonomy_version': 'eq.2019',
+        'data_release_version': 'eq.onet_31_0',
         'is_active': 'eq.true',
         'parent_id': 'is.null',
       },
