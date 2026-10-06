@@ -202,9 +202,9 @@ select ok(
 select ok(
   exists(
     select 1 from public.resolve_taxonomy_lineage('bls_soc', '2010', '15-1132')
-    where to_code = '15-1252' and transition_type = 'moved_to'
+    where to_code = '15-1252' and transition_type in ('moved_to', 'split_into')
   ),
-  'resolve_taxonomy_lineage resolves moved_to SOC 15-1132 -> 15-1252 transition'
+  'resolve_taxonomy_lineage resolves SOC 15-1132 -> 15-1252 transition'
 );
 
 -- ----------------------------------------------------------------------------

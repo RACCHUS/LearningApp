@@ -723,3 +723,111 @@ $$;
 -- Revoke execute from public/anon and grant to service_role
 revoke execute on function public.finalize_official_taxonomy_import(uuid) from public, anon, authenticated;
 grant execute on function public.finalize_official_taxonomy_import(uuid) to service_role;
+
+-- ----------------------------------------------------------------------------
+-- Hierarchical CIP Crosswalk Views & Target Occupations RPC
+-- Supports arbitrary CIP hierarchy (series, group, program) joining to fields
+-- ----------------------------------------------------------------------------
+create or replace view public.v_field_occupation_mappings as
+  select distinct
+    fec.field_id,
+    ecom.occupation_id,
+    ecn.system as classification_system,
+    ecn.version as classification_version,
+    ecn.code as classification_code,
+    ocn.code as occupation_code,
+    ocn.title as occupation_title,
+    ecom.mapping_kind,
+    ecom.source_release_id
+  from public.external_classification_occupation_mappings ecom
+  join public.external_classification_nodes ecn on ecn.id = ecom.classification_node_id
+  join public.external_classification_nodes fn
+    on fn.system = ecn.system
+   and fn.version = ecn.version
+   and (
+     fn.id = ecn.id or
+     (fn.level_code = 'series' and fn.code = substring(ecn.code from 1 for 2)) or
+     (fn.level_code = 'group' and fn.code = substring(ecn.code from 1 for 5))
+   )
+  join public.field_external_classifications fec on fec.classification_node_id = fn.id
+  join public.occupation_nodes ocn on ocn.id = ecom.occupation_id;
+
+grant select on public.v_field_occupation_mappings to anon, authenticated, service_role;
+
+create or replace view public.v_target_occupation_mappings as
+  select distinct
+    ltf.target_id,
+    lt.slug as target_slug,
+    lt.title as target_title,
+    ltf.field_id,
+    f.name as field_name,
+    f.slug as field_slug,
+    ltf.role as field_role,
+    ltf.display_order as field_display_order,
+    fom.occupation_id,
+    fom.classification_system,
+    fom.classification_version,
+    fom.classification_code,
+    fom.occupation_code,
+    fom.occupation_title,
+    fom.mapping_kind,
+    fom.source_release_id
+  from public.learning_target_fields ltf
+  join public.learning_targets lt on lt.id = ltf.target_id
+  join public.fields f on f.id = ltf.field_id
+  join public.v_field_occupation_mappings fom on fom.field_id = ltf.field_id;
+
+grant select on public.v_target_occupation_mappings to anon, authenticated, service_role;
+
+create or replace function public.get_target_crosswalk_occupations(
+  p_target_id uuid
+)
+returns table (
+  occupation_id uuid,
+  occupation_code text,
+  occupation_title text,
+  occupation_level text,
+  job_zone integer,
+  field_id uuid,
+  field_name text,
+  field_role text,
+  mapping_kind text,
+  classification_code text,
+  classification_title text
+) as $$
+begin
+  return query
+  select distinct
+    ocn.id as occupation_id,
+    ocn.code as occupation_code,
+    ocn.title as occupation_title,
+    ocn.level as occupation_level,
+    ocn.job_zone,
+    ltf.field_id,
+    f.name as field_name,
+    ltf.role as field_role,
+    ecom.mapping_kind,
+    ecn.code as classification_code,
+    ecn.title as classification_title
+  from public.learning_target_fields ltf
+  join public.fields f on f.id = ltf.field_id
+  join public.field_external_classifications fec on fec.field_id = ltf.field_id
+  join public.external_classification_nodes fn on fn.id = fec.classification_node_id
+  join public.external_classification_nodes ecn
+    on ecn.system = fn.system
+   and ecn.version = fn.version
+   and (
+     ecn.id = fn.id or
+     (fn.level_code = 'series' and substring(ecn.code from 1 for 2) = fn.code) or
+     (fn.level_code = 'group' and substring(ecn.code from 1 for 5) = fn.code)
+   )
+  join public.external_classification_occupation_mappings ecom on ecom.classification_node_id = ecn.id
+  join public.occupation_nodes ocn on ocn.id = ecom.occupation_id
+  where ltf.target_id = p_target_id
+    and ocn.is_active = true
+  order by ltf.role asc, ocn.code asc;
+end;
+$$ language plpgsql stable security definer;
+
+grant execute on function public.get_target_crosswalk_occupations(uuid) to anon, authenticated, service_role;
+
