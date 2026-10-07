@@ -18,7 +18,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(35);
+select plan(38);
 
 -- Setup test users upfront under postgres session role
 insert into auth.users (id, is_anonymous)
@@ -707,6 +707,18 @@ values
   ('88888888-0000-4000-8000-000000000022', '88888888-0000-4000-8000-000000000030')
 on conflict do nothing;
 
+-- Insert a published->draft mapping to test target_version_concept_mappings RLS
+insert into public.target_version_concept_mappings (
+  from_target_version_id, from_concept_id, to_target_version_id, to_concept_id, mapping_type, transfer_weight
+) values (
+  '88888888-0000-4000-8000-000000000012',
+  (select id from public.knowledge_concepts where slug = 'sec-test-crypto-foundations'),
+  '88888888-0000-4000-8000-000000000013',
+  '88888888-0000-4000-8000-000000000030',
+  'equivalent',
+  1.00
+) on conflict do nothing;
+
 -- Switch to anon
 set local role anon;
 set local "request.jwt.claim.role" to 'anon';
@@ -751,18 +763,40 @@ select is(
   'get_cross_target_shared_concepts does NOT expose draft-version concepts to anon'
 );
 
+-- Test 32: In target_version_concept_mappings, anon sees mappings between published versions
+select is(
+  (
+    select count(*)::integer
+    from public.target_version_concept_mappings
+    where to_target_version_id = '88888888-0000-4000-8000-000000000012'
+  ),
+  2,
+  'Anon sees concept mappings between published target versions'
+);
+
+-- Test 33: In target_version_concept_mappings, anon CANNOT read published-to-draft mapping
+select is(
+  (
+    select count(*)::integer
+    from public.target_version_concept_mappings
+    where to_target_version_id = '88888888-0000-4000-8000-000000000013'
+  ),
+  0,
+  'target_version_concept_mappings RLS hides published-to-draft mappings from anon'
+);
+
 -- Reset to service_role
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
 
--- Test 32: Service role DOES see draft version in is_target_version_visible
+-- Test 34: Service role DOES see draft version in is_target_version_visible
 select ok(
   public.is_target_version_visible('88888888-0000-4000-8000-000000000013'),
   'Draft target version under public target IS visible to service_role'
 );
 
--- Test 33: Service role DOES see draft-version concept in get_cross_target_shared_concepts
+-- Test 35: Service role DOES see draft-version concept in get_cross_target_shared_concepts
 select is(
   (
     select count(*)::integer
@@ -776,10 +810,21 @@ select is(
   'Service role sees draft-version shared concepts in get_cross_target_shared_concepts'
 );
 
+-- Test 36: Service role DOES see published-to-draft mapping in target_version_concept_mappings
+select is(
+  (
+    select count(*)::integer
+    from public.target_version_concept_mappings
+    where to_target_version_id = '88888888-0000-4000-8000-000000000013'
+  ),
+  1,
+  'target_version_concept_mappings RLS allows service_role to read draft mappings'
+);
+
 -- ----------------------------------------------------------------------------
--- Test 34-35: Target Owner and Reviewer Visibility
+-- Test 37-38: Target Owner and Reviewer Visibility
 -- ----------------------------------------------------------------------------
--- Test 34: Target owner can see their private target
+-- Test 37: Target owner can see their private target
 reset role;
 set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';
@@ -790,7 +835,7 @@ select ok(
   'Target owner can view their private draft target'
 );
 
--- Test 35: Target reviewer can see private target
+-- Test 38: Target reviewer can see private target
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
