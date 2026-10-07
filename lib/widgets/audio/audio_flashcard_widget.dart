@@ -13,6 +13,9 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
   final TextStyle? backStyle;
   final Widget Function(String)? customTextBuilder;
   final bool? autoPlayOverride; // Override autoplay setting
+  final bool? isRevealed; // External control over front/back reveal state
+  final ValueChanged<bool>? onFlipChanged; // Callback when flip state changes
+  final bool showFlipButton; // Whether to show flip button inside card
 
   const AudioFlashcardWidget({
     super.key,
@@ -24,6 +27,9 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
     this.backStyle,
     this.customTextBuilder,
     this.autoPlayOverride,
+    this.isRevealed,
+    this.onFlipChanged,
+    this.showFlipButton = true,
   });
 
   @override
@@ -31,89 +37,102 @@ class AudioFlashcardWidget extends ConsumerStatefulWidget {
 }
 
 class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
-  bool _showBack = false;
+  bool _internalShowBack = false;
+
+  bool get _effectiveShowBack => widget.isRevealed ?? _internalShowBack;
+
+  void _handleFlip() {
+    final nextState = !_effectiveShowBack;
+    setState(() {
+      _internalShowBack = nextState;
+    });
+    widget.onFlipChanged?.call(nextState);
+  }
 
   @override
   Widget build(BuildContext context) {
     final canSpeak = ref.watch(canSpeakProvider);
-    final currentText = _showBack ? widget.backText : widget.frontText;
-    final currentStyle = _showBack ? widget.backStyle : widget.frontStyle;
+    final isBack = _effectiveShowBack;
+    final currentText = isBack ? widget.backText : widget.frontText;
+    final currentStyle = isBack ? widget.backStyle : widget.frontStyle;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Emoji visual anchor (shown on front side only)
-            if (!_showBack && widget.emoji != null) ...[              Text(
-                widget.emoji!,
-                style: const TextStyle(fontSize: 48),
-              ),
-              const SizedBox(height: 16),
-            ],
-            // Main content with audio
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: widget.customTextBuilder?.call(currentText) ?? 
-                         Text(currentText, style: currentStyle, textAlign: TextAlign.center),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _handleFlip,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Emoji visual anchor (shown on front side only)
+              if (!isBack && widget.emoji != null) ...[
+                Text(
+                  widget.emoji!,
+                  style: const TextStyle(fontSize: 48),
                 ),
-                if (canSpeak) ...[
-                  const SizedBox(width: 8),
-                  AudioControlWidget(
-                    text: currentText,
-                    contentType: 'content',
-                    autoPlay: widget.autoPlayOverride ?? (!_showBack), // Respect override or auto-play front side
-                    tooltip: _showBack ? 'Listen to definition' : 'Listen to term',
-                  ),
-                ],
+                const SizedBox(height: 16),
               ],
-            ),
-            
-            // Example text with audio (if exists and showing back)
-            if (_showBack && widget.example != null) ...[
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 16),
+              // Main content with audio
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: widget.customTextBuilder?.call('Example: ${widget.example}') ?? 
-                           Text(
-                             'Example: ${widget.example}',
-                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                               fontStyle: FontStyle.italic,
-                             ),
-                           ),
+                    child: widget.customTextBuilder?.call(currentText) ?? 
+                           Text(currentText, style: currentStyle, textAlign: TextAlign.center),
                   ),
                   if (canSpeak) ...[
                     const SizedBox(width: 8),
                     AudioControlWidget(
-                      text: 'Example: ${widget.example}',
+                      text: currentText,
                       contentType: 'content',
-                      tooltip: 'Listen to example',
+                      autoPlay: widget.autoPlayOverride ?? (!isBack), // Respect override or auto-play front side
+                      tooltip: isBack ? 'Listen to definition' : 'Listen to term',
                     ),
                   ],
                 ],
               ),
+              
+              // Example text with audio (if exists and showing back)
+              if (isBack && widget.example != null) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: widget.customTextBuilder?.call('Example: ${widget.example}') ?? 
+                             Text(
+                               'Example: ${widget.example}',
+                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                 fontStyle: FontStyle.italic,
+                               ),
+                             ),
+                    ),
+                    if (canSpeak) ...[
+                      const SizedBox(width: 8),
+                      AudioControlWidget(
+                        text: 'Example: ${widget.example}',
+                        contentType: 'content',
+                        tooltip: 'Listen to example',
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+              
+              if (widget.showFlipButton) ...[
+                const SizedBox(height: 24),
+                // Flip button
+                ElevatedButton.icon(
+                  onPressed: _handleFlip,
+                  icon: Icon(isBack ? Icons.visibility_off : Icons.visibility),
+                  label: Text(isBack ? 'Show Term' : 'Show Definition'),
+                ),
+              ],
             ],
-            
-            const SizedBox(height: 24),
-            
-            // Flip button
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showBack = !_showBack;
-                });
-              },
-              icon: Icon(_showBack ? Icons.visibility_off : Icons.visibility),
-              label: Text(_showBack ? 'Show Term' : 'Show Definition'),
-            ),
-          ],
+          ),
         ),
       ),
     );

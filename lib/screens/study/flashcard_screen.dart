@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/term.dart';
@@ -15,14 +16,14 @@ class FlashcardScreen extends ConsumerStatefulWidget {
   final List<Term> terms;
   final int initialIndex;
   final VoidCallback? onComplete;
-  final bool isEmbeddedInLesson; // New parameter for lesson mode
+  final bool isEmbeddedInLesson;
 
   const FlashcardScreen({
     super.key,
     required this.terms,
     this.initialIndex = 0,
     this.onComplete,
-    this.isEmbeddedInLesson = false, // Default to false for standalone mode
+    this.isEmbeddedInLesson = false,
   });
 
   @override
@@ -33,30 +34,48 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   late int _currentIndex;
   late PageController _pageController;
   bool _isComplete = false;
+  bool _isBatchComplete = false;
   bool _focusMode = false;
+  bool _isRevealed = false;
+  bool _recallBeforeReveal = true;
+  int _batchSize = 15;
+  int _batchStartIndex = 0;
   final Set<String> _difficultTermIds = {};
+  final Set<String> _currentBatchDifficultIds = {};
   late List<Term> _activeTerms;
   final DateTime _sessionStart = DateTime.now();
+
+  int get _currentBatchNumber =>
+      _batchSize > 0 ? (_batchStartIndex ~/ _batchSize) + 1 : 1;
+
+  int get _totalBatches =>
+      _batchSize > 0 ? (widget.terms.length / _batchSize).ceil() : 1;
 
   @override
   void initState() {
     super.initState();
-    _activeTerms = widget.terms; // default; may be sliced after settings load
+    _activeTerms = widget.terms;
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
-    _loadBatchSize();
+    _loadSettings();
   }
 
-  Future<void> _loadBatchSize() async {
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('settings');
     if (raw != null) {
       final settings = SettingsModel.fromRawJson(raw);
-      if (settings.studyBatchSize > 0 && settings.studyBatchSize < widget.terms.length) {
-        setState(() {
-          _activeTerms = widget.terms.sublist(0, settings.studyBatchSize);
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _recallBeforeReveal = settings.recallBeforeReveal;
+        _batchSize = settings.studyBatchSize;
+        if (_batchSize > 0 && _batchSize < widget.terms.length) {
+          final end = math.min(_batchSize, widget.terms.length);
+          _activeTerms = widget.terms.sublist(0, end);
+        } else {
+          _activeTerms = widget.terms;
+        }
+      });
     }
   }
 
@@ -69,17 +88,33 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
+      _isRevealed = false;
+    });
+  }
+
+  void _revealCurrentCard() {
+    setState(() {
+      _isRevealed = true;
+    });
+  }
+
+  void _hideCurrentCard() {
+    setState(() {
+      _isRevealed = false;
     });
   }
 
   void _onKnowIt() {
-    ref.read(studyProvider.notifier).markTermAsKnown(_activeTerms[_currentIndex].id);
+    final termId = _activeTerms[_currentIndex].id;
+    ref.read(studyProvider.notifier).markTermAsKnown(termId);
     _nextCard();
   }
 
   void _onDontKnow() {
-    _difficultTermIds.add(_activeTerms[_currentIndex].id);
-    ref.read(studyProvider.notifier).markTermAsDifficult(_activeTerms[_currentIndex].id);
+    final termId = _activeTerms[_currentIndex].id;
+    _difficultTermIds.add(termId);
+    _currentBatchDifficultIds.add(termId);
+    ref.read(studyProvider.notifier).markTermAsDifficult(termId);
     _nextCard();
   }
 
@@ -90,14 +125,52 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Reached the end of the deck
-      setState(() {
-        _isComplete = true;
-      });
-      if (widget.onComplete != null) {
-        widget.onComplete!();
+      // Reached the end of this batch
+      if (_batchSize > 0 &&
+          _batchStartIndex + _activeTerms.length < widget.terms.length) {
+        setState(() {
+          _isBatchComplete = true;
+        });
+      } else {
+        setState(() {
+          _isComplete = true;
+        });
+        if (widget.onComplete != null) {
+          widget.onComplete!();
+        }
       }
     }
+  }
+
+  void _continueToNextBatch() {
+    final nextStart = _batchStartIndex + _batchSize;
+    if (nextStart < widget.terms.length) {
+      final nextEnd = math.min(nextStart + _batchSize, widget.terms.length);
+      setState(() {
+        _batchStartIndex = nextStart;
+        _activeTerms = widget.terms.sublist(nextStart, nextEnd);
+        _currentIndex = 0;
+        _isRevealed = false;
+        _isBatchComplete = false;
+        _currentBatchDifficultIds.clear();
+      });
+      _pageController.jumpToPage(0);
+    }
+  }
+
+  void _reviewDifficultInBatch() {
+    if (_currentBatchDifficultIds.isEmpty) return;
+    final difficultTerms = widget.terms
+        .where((t) => _currentBatchDifficultIds.contains(t.id))
+        .toList();
+    setState(() {
+      _activeTerms = difficultTerms;
+      _currentIndex = 0;
+      _isRevealed = false;
+      _isBatchComplete = false;
+      _currentBatchDifficultIds.clear();
+    });
+    _pageController.jumpToPage(0);
   }
 
   Widget _buildActionButton({
@@ -123,23 +196,55 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final totalCards = widget.terms.length;
+    final overallCardNumber = _batchStartIndex + _currentIndex + 1;
+
     return Scaffold(
-      // Only show AppBar when not embedded in lesson mode
-      appBar: widget.isEmbeddedInLesson ? null : _focusMode ? null : AppBar(
-        title: Text('Flashcards (${_currentIndex + 1}/${_activeTerms.length})'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        foregroundColor: theme.colorScheme.onSurface,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility_off_outlined),
-            tooltip: 'Focus mode',
-            onPressed: () => setState(() => _focusMode = true),
-          ),
-        ],
-      ),
+      appBar: widget.isEmbeddedInLesson
+          ? null
+          : _focusMode
+              ? null
+              : AppBar(
+                  title: Text(
+                    _batchSize > 0 && totalCards > _batchSize
+                        ? 'Flashcards ($overallCardNumber/$totalCards • Batch $_currentBatchNumber/$_totalBatches)'
+                        : 'Flashcards (${_currentIndex + 1}/${_activeTerms.length})',
+                  ),
+                  centerTitle: true,
+                  elevation: 0,
+                  backgroundColor: theme.scaffoldBackgroundColor,
+                  foregroundColor: theme.colorScheme.onSurface,
+                  actions: [
+                    IconButton(
+                      icon: Icon(_recallBeforeReveal
+                          ? Icons.psychology
+                          : Icons.psychology_outlined),
+                      tooltip: _recallBeforeReveal
+                          ? 'Recall Practice: Active'
+                          : 'Recall Practice: Instant',
+                      onPressed: () {
+                        setState(() {
+                          _recallBeforeReveal = !_recallBeforeReveal;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              _recallBeforeReveal
+                                  ? 'Active Recall mode enabled'
+                                  : 'Instant Reveal mode enabled',
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.visibility_off_outlined),
+                      tooltip: 'Focus mode',
+                      onPressed: () => setState(() => _focusMode = true),
+                    ),
+                  ],
+                ),
       body: Stack(
         children: [
           Column(
@@ -154,7 +259,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: (_currentIndex + 1) / _activeTerms.length,
+                            value: overallCardNumber / totalCards,
                             backgroundColor: theme.colorScheme.surfaceContainerHighest,
                           ),
                         ),
@@ -171,6 +276,55 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   ),
                 ),
               ],
+
+              // Active recall / self-assessment state indicator banner
+              if (_recallBeforeReveal && _activeTerms.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _isRevealed
+                          ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.4)
+                          : theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _isRevealed
+                            ? theme.colorScheme.secondary.withValues(alpha: 0.3)
+                            : theme.colorScheme.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isRevealed
+                              ? Icons.rate_review_outlined
+                              : Icons.psychology_outlined,
+                          size: 16,
+                          color: _isRevealed
+                              ? theme.colorScheme.secondary
+                              : theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isRevealed
+                              ? 'Self-Assessment: Did you recall it accurately?'
+                              : 'Active Recall: Try to retrieve the answer first',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: _isRevealed
+                                ? theme.colorScheme.secondary
+                                : theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -185,7 +339,14 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                         backText: term.definition,
                         example: term.example,
                         emoji: term.emoji,
-                        autoPlayOverride: widget.isEmbeddedInLesson ? false : null, // Disable autoplay when embedded
+                        isRevealed: index == _currentIndex ? _isRevealed : false,
+                        onFlipChanged: (val) {
+                          if (index == _currentIndex) {
+                            setState(() => _isRevealed = val);
+                          }
+                        },
+                        showFlipButton: !_recallBeforeReveal,
+                        autoPlayOverride: widget.isEmbeddedInLesson ? false : null,
                         frontStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
@@ -195,9 +356,10 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                         customTextBuilder: (text) {
-                          // Check if text contains LaTeX
-                          if (text.contains(r'\(') || text.contains(r'\[') || 
-                              text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                          if (text.contains(r'\(') ||
+                              text.contains(r'\[') ||
+                              text.contains(r'\frac') ||
+                              text.contains(r'\sqrt')) {
                             return Math.tex(
                               text,
                               textStyle: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -218,29 +380,171 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   },
                 ),
               ),
+
+              // Bottom action bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.thumb_down,
-                      label: 'Need Practice',
-                      color: theme.colorScheme.error,
-                      onPressed: _onDontKnow,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildActionButton(
-                      icon: Icons.thumb_up,
-                      label: 'I Know This',
-                      color: theme.colorScheme.primary,
-                      onPressed: _onKnowIt,
-                    ),
-                  ],
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: _recallBeforeReveal && !_isRevealed
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _revealCurrentCard,
+                              icon: const Icon(Icons.visibility),
+                              label: const Text('Reveal Definition'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap button or card to check answer',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildActionButton(
+                                icon: Icons.thumb_down,
+                                label: 'Need Practice',
+                                color: theme.colorScheme.error,
+                                onPressed: _onDontKnow,
+                              ),
+                              const SizedBox(width: 16),
+                              _buildActionButton(
+                                icon: Icons.thumb_up,
+                                label: 'I Know This',
+                                color: theme.colorScheme.primary,
+                                onPressed: _onKnowIt,
+                              ),
+                            ],
+                          ),
+                          if (_recallBeforeReveal) ...[
+                            const SizedBox(height: 4),
+                            TextButton.icon(
+                              onPressed: _hideCurrentCard,
+                              icon: const Icon(Icons.flip_to_front, size: 16),
+                              label: const Text('Hide definition'),
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
               ),
             ],
           ),
+
+          // Batch Checkpoint Overlay
+          if (_isBatchComplete && !widget.isEmbeddedInLesson)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(28),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.task_alt,
+                          size: 56,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Batch $_currentBatchNumber of $_totalBatches Complete!',
+                          style: theme.textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${_batchStartIndex + _activeTerms.length} of $totalCards cards studied.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        LinearProgressIndicator(
+                          value: (_batchStartIndex + _activeTerms.length) / totalCards,
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                          minHeight: 8,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _continueToNextBatch,
+                            icon: const Icon(Icons.arrow_forward),
+                            label: Text('Continue to Batch ${_currentBatchNumber + 1}'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        if (_currentBatchDifficultIds.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _reviewDifficultInBatch,
+                              icon: const Icon(Icons.refresh),
+                              label: Text(
+                                'Review ${_currentBatchDifficultIds.length} Difficult Cards in Batch',
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            final missedTerms = widget.terms
+                                .where((t) => _difficultTermIds.contains(t.id))
+                                .map((t) => MissedTerm(term: t))
+                                .toList();
+                            final result = SessionResult(
+                              mode: SessionMode.flashcards,
+                              correct: (_batchStartIndex + _activeTerms.length) -
+                                  _difficultTermIds.length,
+                              total: _batchStartIndex + _activeTerms.length,
+                              missedTerms: missedTerms,
+                              duration: DateTime.now().difference(_sessionStart),
+                            );
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => SessionResultsScreen(result: result),
+                              ),
+                            );
+                          },
+                          child: const Text('Finish Session Early'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Deck Complete Overlay
           if (_isComplete && !widget.isEmbeddedInLesson)
             Container(
               color: Colors.black54,
@@ -265,7 +569,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${_activeTerms.length - _difficultTermIds.length}/${_activeTerms.length} known',
+                          '${totalCards - _difficultTermIds.length}/$totalCards known',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -278,31 +582,34 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                             TextButton(
                               onPressed: () {
                                 setState(() {
+                                  _batchStartIndex = 0;
+                                  final end = (_batchSize > 0 && _batchSize < widget.terms.length)
+                                      ? _batchSize
+                                      : widget.terms.length;
+                                  _activeTerms = widget.terms.sublist(0, end);
                                   _currentIndex = 0;
                                   _isComplete = false;
+                                  _isBatchComplete = false;
+                                  _isRevealed = false;
                                   _difficultTermIds.clear();
+                                  _currentBatchDifficultIds.clear();
                                 });
-                                _pageController.animateToPage(
-                                  0,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
+                                _pageController.jumpToPage(0);
                               },
                               child: const Text('Study Again'),
                             ),
                             ElevatedButton(
                               onPressed: () {
-                                final missedTerms = _activeTerms
+                                final missedTerms = widget.terms
                                     .where((t) => _difficultTermIds.contains(t.id))
                                     .map((t) => MissedTerm(term: t))
                                     .toList();
                                 final result = SessionResult(
                                   mode: SessionMode.flashcards,
-                                  correct: _activeTerms.length - _difficultTermIds.length,
-                                  total: _activeTerms.length,
+                                  correct: totalCards - _difficultTermIds.length,
+                                  total: totalCards,
                                   missedTerms: missedTerms,
-                                  duration:
-                                      DateTime.now().difference(_sessionStart),
+                                  duration: DateTime.now().difference(_sessionStart),
                                 );
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
@@ -320,12 +627,12 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                 ),
               ),
             ),
-          const BreakOverlay(),
+
+          if (!widget.isEmbeddedInLesson) const BreakOverlay(),
         ],
       ),
-      // Only show GlobalVoiceFAB when not embedded in lesson to avoid conflicts
-      floatingActionButton: widget.isEmbeddedInLesson 
-          ? null 
+      floatingActionButton: widget.isEmbeddedInLesson
+          ? null
           : const GlobalVoiceFAB(heroTag: "flashcardVoiceFAB"),
     );
   }
