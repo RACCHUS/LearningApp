@@ -174,5 +174,28 @@ void main() {
       expect(obj12LessonConcepts.intersection(obj11Concepts), isEmpty);
       expect(obj12LessonConcepts, containsAll(['sec-symmetric-asymmetric', 'sec-pki-certificates']));
     });
+
+    test('Manifest with cross-version concept_mappings loads and validates structure', () {
+      final manifest = loadManifest('test/fixtures/curriculum_manifest_version_upgrade.yaml');
+      expect(manifest['concept_mappings'], isNotNull);
+      final mappings = manifest['concept_mappings'] as List<dynamic>;
+      expect(mappings.length, equals(2));
+
+      final renamed = mappings[0] as Map<String, dynamic>;
+      expect(renamed['from_version_code'], equals('SY0-601'));
+      expect(renamed['from_concept_slug'], equals('sec-symmetric-crypto'));
+      expect(renamed['to_concept_slug'], equals('sec-crypto-fundamentals'));
+      expect(renamed['mapping_type'], equals('renamed'));
+      expect(renamed['transfer_weight'], equals(0.90));
+      expect(renamed['metadata'], isNotNull);
+
+      final removed = mappings[1] as Map<String, dynamic>;
+      expect(removed['from_version_code'], equals('SY0-601'));
+      expect(removed['from_concept_slug'], equals('sec-legacy-md5'));
+      expect(removed['to_concept_slug'], isNull);
+      expect(removed['mapping_type'], equals('removed'));
+      expect(removed['transfer_weight'], equals(0.00));
+    });
   });
 }
+
