@@ -427,26 +427,16 @@ begin
 
   for v_mapping in
     select
+      m.from_concept_id,
       m.to_concept_id,
-      m.transfer_weight,
-      ucs.retrieval_band,
-      ucs.confidence,
-      ucs.evidence_count,
-      ucs.weighted_correct,
-      ucs.weighted_total
+      m.transfer_weight
     from public.target_version_concept_mappings m
-    join public.user_concept_state ucs
-      on ucs.concept_id = m.from_concept_id
-     and ucs.user_id = p_user_id
     where m.from_target_version_id = v_from_tv.id
       and m.to_target_version_id = v_to_tv.id
       and m.to_concept_id is not null
       and m.transfer_weight > 0
   loop
-    if not exists (
-      select 1 from public.user_concept_state
-      where user_id = p_user_id and concept_id = v_mapping.to_concept_id
-    ) then
+    if v_mapping.from_concept_id <> v_mapping.to_concept_id then
       insert into public.user_concept_state (
         user_id,
         concept_id,
@@ -455,27 +445,41 @@ begin
         evidence_count,
         weighted_correct,
         weighted_total,
-        last_evaluated_at
-      ) values (
+        last_evidence_at,
+        updated_at
+      )
+      select
         p_user_id,
         v_mapping.to_concept_id,
-        case
-          when v_mapping.transfer_weight < 0.70 and v_mapping.retrieval_band = 'well_retained'
-            then 'retained'
-          when v_mapping.transfer_weight < 0.50
-            then 'learning'
-          else v_mapping.retrieval_band
-        end,
-        case
-          when v_mapping.transfer_weight < 0.50 then 'low'
-          when v_mapping.transfer_weight < 0.80 and v_mapping.confidence = 'high' then 'medium'
-          else v_mapping.confidence
-        end,
-        greatest(1, round(v_mapping.evidence_count * v_mapping.transfer_weight)::integer),
-        round((v_mapping.weighted_correct * v_mapping.transfer_weight)::numeric, 2),
-        round((v_mapping.weighted_total * v_mapping.transfer_weight)::numeric, 2),
+        ucs.retrieval_band,
+        ucs.confidence,
+        round(ucs.evidence_count * v_mapping.transfer_weight)::integer,
+        ucs.weighted_correct * v_mapping.transfer_weight,
+        ucs.weighted_total * v_mapping.transfer_weight,
+        ucs.last_evidence_at,
         now()
-      );
+      from public.user_concept_state ucs
+      where ucs.user_id = p_user_id
+        and ucs.concept_id = v_mapping.from_concept_id
+        and ucs.evidence_count > 0
+      on conflict (user_id, concept_id) do update set
+        evidence_count = greatest(
+          public.user_concept_state.evidence_count,
+          excluded.evidence_count
+        ),
+        weighted_correct = greatest(
+          public.user_concept_state.weighted_correct,
+          excluded.weighted_correct
+        ),
+        weighted_total = greatest(
+          public.user_concept_state.weighted_total,
+          excluded.weighted_total
+        ),
+        last_evidence_at = coalesce(
+          excluded.last_evidence_at,
+          public.user_concept_state.last_evidence_at
+        ),
+        updated_at = now();
     end if;
 
     v_transferred_count := v_transferred_count + 1;
