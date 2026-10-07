@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(44);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
@@ -300,10 +300,15 @@ select throws_ok(
   'Learner cannot evaluate migration to draft target version'
 );
 
--- 23-25. Test historical-context access helper
+-- 23-26. Test historical-context access helper
 select ok(
   public.has_historical_target_version_access('99999999-aaaa-4999-8999-999999999999', '66666666-6666-4666-8666-666666666666'),
   'has_historical_target_version_access is true for enrolled learner on retired version'
+);
+
+select ok(
+  public.has_historical_target_version_access('99999999-aaaa-4999-8999-999999999999'),
+  'has_historical_target_version_access 1-argument form defaults to caller auth.uid'
 );
 
 select ok(
@@ -316,9 +321,15 @@ select ok(
   'has_historical_target_version_access is false for draft target version'
 );
 
--- 26-31. Test validate_learning_context_target_version trigger controls
+-- 27-32. Test validate_learning_context_target_version trigger controls
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+
+-- User 7777 cannot probe user 6666 enrollment (oracle blocked)
+select ok(
+  not public.has_historical_target_version_access('99999999-aaaa-4999-8999-999999999999', '66666666-6666-4666-8666-666666666666'),
+  'has_historical_target_version_access blocks cross-user probe for non-service callers'
+);
 
 -- Cannot insert context pointing to draft version V3
 select throws_ok(
