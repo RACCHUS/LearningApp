@@ -1454,6 +1454,7 @@ Target versions evolve across lifecycles (`draft` → `review_ready` → `publis
 2. **Historical-Context Access (`public.has_historical_target_version_access`)**:
    - Covers legitimate learners who enrolled in a version before it retired.
    - Requires `target_versions.status = 'retired'` AND an existing `learning_contexts` row referencing `target_version_id` owned by the caller.
+   - Strictly bound to `auth.uid()` for non-service-role callers to prevent cross-user enrollment oracles or privacy leaks.
    - Enforced by `target_versions` read RLS (`versions_read`) and the source version authorization in `evaluate_target_version_migration`.
 
 ### 13.2 Controlled Context Assignment (`validate_learning_context_target_version`)

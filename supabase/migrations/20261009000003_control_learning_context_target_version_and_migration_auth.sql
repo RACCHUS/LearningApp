@@ -62,26 +62,53 @@ grant execute on function public.is_target_version_visible(uuid) to anon, authen
 -- Historical-Context Access:
 -- Returns true ONLY if the target version is retired AND the specified user
 -- has a legitimate learning context referencing it.
--- This separates historical access granted to existing learners from general catalog visibility.
+-- Bound to auth.uid() for ordinary callers to prevent enrollment oracle privacy leaks.
 create or replace function public.has_historical_target_version_access(
   p_target_version_id uuid,
   p_user_id uuid default auth.uid()
 )
 returns boolean
-language sql
+language plpgsql
 stable
 security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
+declare
+  v_effective_user_id uuid;
+begin
+  if p_target_version_id is null then
+    return false;
+  end if;
+
+  -- Prevent enrollment oracle: ordinary callers cannot query whether another user
+  -- has an enrolled context. Non-service-role callers are strictly scoped to auth.uid().
+  if coalesce(auth.role(), '') = 'service_role' then
+    v_effective_user_id := coalesce(p_user_id, auth.uid());
+  else
+    if auth.uid() is null then
+      return false;
+    end if;
+    -- If an explicit user_id was supplied and does not match caller auth.uid(), reject
+    if p_user_id is not null and p_user_id <> auth.uid() then
+      return false;
+    end if;
+    v_effective_user_id := auth.uid();
+  end if;
+
+  if v_effective_user_id is null then
+    return false;
+  end if;
+
+  return exists (
     select 1
     from public.target_versions tv
     join public.learning_contexts lc
       on lc.target_version_id = tv.id
-     and lc.user_id = p_user_id
+     and lc.user_id = v_effective_user_id
     where tv.id = p_target_version_id
       and tv.status = 'retired'
   );
+end;
 $$;
 
 revoke all on function public.has_historical_target_version_access(uuid, uuid) from public;
@@ -207,7 +234,7 @@ begin
     raise exception 'Cannot evaluate migration across different learning targets.';
   end if;
 
-  -- Source version must be normally visible OR the user must have legitimate historical-context access
+  -- Source target version must be normally visible OR accessible via historical context for p_user_id
   if not (
     public.is_target_version_visible(p_from_target_version_id)
     or public.has_historical_target_version_access(p_from_target_version_id, p_user_id)
@@ -250,77 +277,75 @@ begin
   where m.from_target_version_id = p_from_target_version_id
     and m.to_target_version_id = p_to_target_version_id;
 
+  if v_mapped_count = 0 and v_source_concepts_count > 0 then
+    select count(distinct s.concept_id)
+    into v_retained_count
+    from (
+      select distinct cnc.concept_id
+      from public.curriculum_node_concepts cnc
+      join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+      where cn.target_version_id = p_from_target_version_id
+    ) s
+    where s.concept_id in (
+      select distinct cnc2.concept_id
+      from public.curriculum_node_concepts cnc2
+      join public.curriculum_nodes cn2 on cn2.id = cnc2.curriculum_node_id
+      where cn2.target_version_id = p_to_target_version_id
+    );
+
+    v_mapped_count := v_retained_count;
+    v_removed_count := greatest(0, v_source_concepts_count - v_retained_count);
+    v_avg_weight := round(
+      (v_retained_count::numeric / v_source_concepts_count::numeric) * 100,
+      2
+    );
+  end if;
+
+  v_new_concepts_count := greatest(0, v_target_concepts_count - v_retained_count);
+
   select count(distinct ucs.concept_id)
   into v_user_assessed_count
   from public.user_concept_state ucs
-  join public.curriculum_node_concepts cnc on cnc.concept_id = ucs.concept_id
-  join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
   where ucs.user_id = p_user_id
-    and cn.target_version_id = p_from_target_version_id
-    and ucs.evidence_count > 0;
+    and ucs.evidence_count > 0
+    and ucs.concept_id in (
+      select distinct cnc.concept_id
+      from public.curriculum_node_concepts cnc
+      join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+      where cn.target_version_id = p_from_target_version_id
+    );
 
-  if v_user_assessed_count > 0 then
-    select coalesce(
-      round(
-        sum(m.transfer_weight) / v_user_assessed_count * 100,
-        2
-      ),
-      0.00
-    )
-    into v_projected_retained_assessed
-    from public.user_concept_state ucs
-    join public.curriculum_node_concepts cnc on cnc.concept_id = ucs.concept_id
-    join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
-    left join public.target_version_concept_mappings m
-      on m.from_concept_id = ucs.concept_id
-     and m.from_target_version_id = p_from_target_version_id
-     and m.to_target_version_id = p_to_target_version_id
-    where ucs.user_id = p_user_id
-      and cn.target_version_id = p_from_target_version_id
-      and ucs.evidence_count > 0;
-  else
-    v_projected_retained_assessed := 100.00;
-  end if;
+  v_projected_retained_assessed :=
+    round((v_user_assessed_count::numeric * (v_avg_weight / 100.0)), 1);
 
-  v_new_concepts_count := greatest(0, coalesce(v_target_concepts_count, 0) - coalesce(v_retained_count, 0));
-
-  select coalesce(
-    jsonb_agg(
-      jsonb_build_object(
-        'from_concept_id', m.from_concept_id,
-        'to_concept_id', m.to_concept_id,
-        'mapping_type', m.mapping_type,
-        'transfer_weight', m.transfer_weight,
-        'source_name', sc.name,
-        'target_name', tc.name
-      )
-      order by sc.name
-    ),
-    '[]'::jsonb
-  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'from_concept_id', m.from_concept_id,
+    'to_concept_id', m.to_concept_id,
+    'mapping_type', m.mapping_type,
+    'transfer_weight', m.transfer_weight,
+    'from_concept_name', fc.name,
+    'to_concept_name', tc.name
+  )), '[]'::jsonb)
   into v_mappings_json
   from public.target_version_concept_mappings m
-  left join public.knowledge_concepts sc on sc.id = m.from_concept_id
+  left join public.knowledge_concepts fc on fc.id = m.from_concept_id
   left join public.knowledge_concepts tc on tc.id = m.to_concept_id
   where m.from_target_version_id = p_from_target_version_id
     and m.to_target_version_id = p_to_target_version_id;
 
   return jsonb_build_object(
-    'source_version_id', p_from_target_version_id,
-    'source_version_code', v_from_tv.version_code,
-    'destination_version_id', p_to_target_version_id,
-    'destination_version_code', v_to_tv.version_code,
-    'source_concepts_count', coalesce(v_source_concepts_count, 0),
-    'target_concepts_count', coalesce(v_target_concepts_count, 0),
-    'mapped_concepts_count', coalesce(v_mapped_count, 0),
-    'retained_concepts_count', coalesce(v_retained_count, 0),
-    'removed_concepts_count', coalesce(v_removed_count, 0),
+    'from_target_version_id', p_from_target_version_id,
+    'to_target_version_id', p_to_target_version_id,
+    'total_source_concepts', v_source_concepts_count,
+    'total_target_concepts', v_target_concepts_count,
+    'mapped_concepts_count', v_mapped_count,
+    'retained_concepts_count', v_retained_count,
+    'removed_concepts_count', v_removed_count,
     'new_concepts_count', v_new_concepts_count,
-    'average_transfer_weight', v_avg_weight,
-    'user_assessed_concepts_count', coalesce(v_user_assessed_count, 0),
-    'projected_retained_mastery_pct', coalesce(v_projected_retained_assessed, 100.00),
-    'mappings', v_mappings_json,
-    'evaluated_at', now()
+    'transfer_retention_pct', v_avg_weight,
+    'user_assessed_concepts_count', v_user_assessed_count,
+    'projected_retained_assessed_count', v_projected_retained_assessed,
+    'concept_mappings', v_mappings_json
   );
 end;
 $$;
@@ -422,8 +447,8 @@ begin
     v_from_tv.id,
     v_to_tv.id
   );
-
-  v_retention_pct := coalesce((v_evaluation->>'projected_retained_mastery_pct')::numeric, 100.00);
+  v_retention_pct :=
+    coalesce((v_evaluation->>'transfer_retention_pct')::numeric, 100.00);
 
   for v_mapping in
     select
@@ -491,6 +516,9 @@ begin
     updated_at = now()
   where id = p_context_id;
 
+  -- Resume pointers are disposable breadcrumbs and carry activity IDs rather
+  -- than curriculum-node foreign keys. A target-version migration can make the
+  -- saved lesson/study-set position stale, so clear the pointer atomically.
   delete from public.resume_pointers
   where context_id = p_context_id;
 
@@ -502,7 +530,8 @@ begin
     transferred_concepts_count,
     retained_mastery_pct,
     migration_metadata
-  ) values (
+  )
+  values (
     p_user_id,
     p_context_id,
     v_from_tv.id,
@@ -510,23 +539,19 @@ begin
     v_transferred_count,
     v_retention_pct,
     jsonb_build_object(
-      'source_version_code', v_from_tv.version_code,
-      'destination_version_code', v_to_tv.version_code,
-      'evaluation', v_evaluation,
-      'migrated_at', now()
+      'from_version_code', v_from_tv.version_code,
+      'to_version_code', v_to_tv.version_code,
+      'evaluation', v_evaluation
     )
   );
 
   return jsonb_build_object(
     'success', true,
     'context_id', p_context_id,
-    'from_version_id', v_from_tv.id,
     'from_version_code', v_from_tv.version_code,
-    'to_version_id', v_to_tv.id,
     'to_version_code', v_to_tv.version_code,
     'transferred_concepts_count', v_transferred_count,
-    'retained_mastery_pct', v_retention_pct,
-    'evaluation', v_evaluation
+    'retained_mastery_pct', v_retention_pct
   );
 end;
 $$;
