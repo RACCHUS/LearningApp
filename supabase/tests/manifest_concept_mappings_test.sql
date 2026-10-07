@@ -18,6 +18,21 @@ set local search_path = public, extensions;
 
 select plan(22);
 
+-- Setup test users upfront under postgres session role
+insert into auth.users (id, is_anonymous)
+values
+  ('11111111-2222-4333-8444-555555555555', false),
+  ('99999999-9999-4999-8999-999999999999', false),
+  ('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', false)
+on conflict do nothing;
+
+insert into public.users (id)
+values
+  ('11111111-2222-4333-8444-555555555555'),
+  ('99999999-9999-4999-8999-999999999999'),
+  ('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
+on conflict do nothing;
+
 -- ----------------------------------------------------------------------------
 -- Test 1: Verify is_target_visible helper exists
 -- ----------------------------------------------------------------------------
@@ -212,15 +227,7 @@ select ok(
 -- ----------------------------------------------------------------------------
 -- Test 9: Verify evaluate_target_version_migration respects ingested mappings
 -- ----------------------------------------------------------------------------
--- Setup a test user with mastery in v1.0.0
-insert into auth.users (id, is_anonymous)
-values ('11111111-2222-4333-8444-555555555555', false)
-on conflict do nothing;
-
-insert into public.users (id)
-values ('11111111-2222-4333-8444-555555555555')
-on conflict do nothing;
-
+-- Setup a test user concept state in v1.0.0
 insert into public.user_concept_state (
   user_id, concept_id, retrieval_band, confidence, evidence_count, weighted_correct, weighted_total
 )
@@ -287,14 +294,6 @@ select is(
 -- ----------------------------------------------------------------------------
 
 -- Setup a private draft target owned by user-secret
-insert into auth.users (id, is_anonymous)
-values ('99999999-9999-4999-8999-999999999999', false)
-on conflict do nothing;
-
-insert into public.users (id)
-values ('99999999-9999-4999-8999-999999999999')
-on conflict do nothing;
-
 insert into public.learning_targets (
   id, slug, title, target_type, status, is_public, created_by
 ) values (
@@ -495,14 +494,6 @@ select ok(
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
-
-insert into auth.users (id, is_anonymous)
-values ('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', false)
-on conflict do nothing;
-
-insert into public.users (id)
-values ('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee')
-on conflict do nothing;
 
 insert into public.curriculum_reviewers (user_id, target_id)
 values ('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', '88888888-0000-4000-8000-000000000001')
