@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -48,6 +50,9 @@ jobs:
       - name: Validate curriculum manifests (JSON Schema & Quality Linter)
         run: dart run tool/lint_manifest.dart --dir content/
 
+      - name: Verify append-only migration history & immutability
+        run: dart run tool/verify_migration_history.dart --base-ref origin/main
+
       - name: Dry-run batch curriculum ingestion
         run: dart run tool/ingest_curriculum.dart --dir content/ --dry-run
 
@@ -65,6 +70,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -81,9 +88,25 @@ jobs:
         with:
           version: 2.67.1
 
-      - name: Verify migrations and initial pgTAP tests from scratch
+      - name: Verify append-only migration history & immutability
+        run: dart run tool/verify_migration_history.dart --base-ref origin/main
+
+      - name: Verify incremental migration upgrade path from main
         run: |
           supabase start
+          # 1. Isolate any pending migrations to establish origin/main baseline
+          dart run tool/verify_migration_history.dart --base-ref origin/main --isolate-pending build/pending_migrations
+          # 2. Reset database with baseline migrations from origin/main
+          supabase db reset
+          # 3. Restore newly introduced migrations
+          dart run tool/verify_migration_history.dart --base-ref origin/main --restore-pending build/pending_migrations
+          # 4. Apply new migrations incrementally
+          supabase migration up --local
+          # 5. Run pgTAP test suite against incrementally upgraded database
+          supabase test db
+
+      - name: Verify clean-slate migrations and initial pgTAP tests from scratch
+        run: |
           supabase db reset
           supabase test db
 
