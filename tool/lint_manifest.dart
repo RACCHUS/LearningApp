@@ -153,6 +153,46 @@ class ManifestLinter {
       }
     }
 
+    // Check manifest concept mappings
+    if (manifest['concept_mappings'] is List) {
+      for (int i = 0; i < (manifest['concept_mappings'] as List).length; i++) {
+        final cm = (manifest['concept_mappings'] as List)[i];
+        if (cm is! Map) continue;
+        final mType = cm['mapping_type']?.toString();
+        final toSlug = cm['to_concept_slug'];
+        final weight = cm['transfer_weight'];
+        final loc = 'manifest.concept_mappings[$i]';
+
+        if (mType == 'removed') {
+          if (toSlug != null) {
+            issues.add(LintIssue(
+              level: 'ERROR',
+              rule: 'removed-mapping-destination',
+              location: loc,
+              message: 'Concept mapping with mapping_type "removed" must not specify to_concept_slug (got "$toSlug").',
+            ));
+          }
+          if (weight != null && (weight as num) != 0) {
+            issues.add(LintIssue(
+              level: 'ERROR',
+              rule: 'removed-mapping-weight',
+              location: loc,
+              message: 'Concept mapping with mapping_type "removed" must have transfer_weight equal to 0.0 (got $weight).',
+            ));
+          }
+        } else if (mType != null) {
+          if (toSlug == null || toSlug.toString().trim().isEmpty) {
+            issues.add(LintIssue(
+              level: 'ERROR',
+              rule: 'active-mapping-destination',
+              location: loc,
+              message: 'Mapping type "$mType" requires a non-empty to_concept_slug.',
+            ));
+          }
+        }
+      }
+    }
+
     // 1. Domain Weights Sum
     final domains = manifest['domains'] as List<dynamic>? ?? [];
     double totalWeight = 0.0;

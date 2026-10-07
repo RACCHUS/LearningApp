@@ -9,6 +9,8 @@
 --      - get_cross_target_shared_concepts
 --      - v_target_occupation_mappings (security_invoker = true)
 --      - content_source_artifacts RLS (entity-gated)
+--   3. Verify target version visibility and draft leakage prevention in get_cross_target_shared_concepts.
+--   4. Verify concept association validation and removed mapping invariants during ingestion.
 -- ============================================================================
 
 begin;
@@ -16,7 +18,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(22);
+select plan(35);
 
 -- Setup test users upfront under postgres session role
 insert into auth.users (id, is_anonymous)
@@ -34,12 +36,13 @@ values
 on conflict do nothing;
 
 -- ----------------------------------------------------------------------------
--- Test 1: Verify is_target_visible helper exists
+-- Test 1-2: Verify is_target_visible & is_target_version_visible helpers exist
 -- ----------------------------------------------------------------------------
 select has_function('public', 'is_target_visible', ARRAY['uuid'], 'is_target_visible helper exists');
+select has_function('public', 'is_target_version_visible', ARRAY['uuid'], 'is_target_version_visible helper exists');
 
 -- ----------------------------------------------------------------------------
--- Test 2: Ingest Base Version 1.0.0 via ingest_curriculum_manifest
+-- Test 3: Ingest Base Version 1.0.0 via ingest_curriculum_manifest
 -- ----------------------------------------------------------------------------
 reset role;
 set local role service_role;
@@ -105,7 +108,7 @@ where version_code = '1.0.0'
   and target_id = (select id from public.learning_targets where slug = 'cert-sec-test');
 
 -- ----------------------------------------------------------------------------
--- Test 3: Ingest Version 2.0.0 with Canonical concept_mappings
+-- Test 4: Ingest Version 2.0.0 with Canonical concept_mappings
 -- ----------------------------------------------------------------------------
 select lives_ok(
   $$select public.ingest_curriculum_manifest('{
@@ -181,7 +184,7 @@ select lives_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- Test 4-8: Verify Ingested concept_mappings in target_version_concept_mappings
+-- Test 5-7: Verify Ingested concept_mappings in target_version_concept_mappings
 -- ----------------------------------------------------------------------------
 select is(
   (
@@ -225,7 +228,159 @@ select ok(
 );
 
 -- ----------------------------------------------------------------------------
--- Test 9: Verify evaluate_target_version_migration respects ingested mappings
+-- Test 8-13: Ingestion Invariants and Version Provenance Validation
+-- ----------------------------------------------------------------------------
+-- Test 8: Ingesting concept mapping where from_concept is not associated with source version throws
+select throws_ok(
+  $$select public.ingest_curriculum_manifest('{
+    "field": {"slug": "info-sec", "name": "Information Security"},
+    "target": {"slug": "cert-sec-test", "title": "Security Test Cert", "target_type": "certification"},
+    "target_version": {"version_code": "2.1.0-err1", "title": "Error Test 1"},
+    "source_releases": [{"publisher": "CompTIA", "title": "Blueprint", "version": "v2.1", "source_url": "https://example.com/v2.1"}],
+    "concepts": [{"slug": "sec-test-crypto-foundations", "name": "Cryptographic Foundations"}],
+    "concept_mappings": [
+      {
+        "from_version_code": "1.0.0",
+        "from_concept_slug": "sec-test-crypto-foundations",
+        "to_concept_slug": "sec-test-crypto-foundations",
+        "mapping_type": "unchanged"
+      }
+    ],
+    "domains": [
+      {
+        "code": "D1", "title": "Domain 1", "weight": 1.0, "citation": "1.0",
+        "objectives": [{"code": "1.1", "title": "Obj 1.1", "citation": "1.1", "concept_slugs": ["sec-test-crypto-foundations"]}]
+      }
+    ]
+  }'::jsonb)$$,
+  'P0001',
+  'Source concept "sec-test-crypto-foundations" (id: ' || (select id from public.knowledge_concepts where slug = 'sec-test-crypto-foundations') || ') is not associated with source target version "' || (select id from public.target_versions where version_code = '1.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')) || '" (version_code: 1.0.0).',
+  'Ingesting concept mapping where from_concept is not associated with source version throws'
+);
+
+-- Test 9: Ingesting concept mapping where to_concept is not associated with destination version throws
+select throws_ok(
+  $$select public.ingest_curriculum_manifest('{
+    "field": {"slug": "info-sec", "name": "Information Security"},
+    "target": {"slug": "cert-sec-test", "title": "Security Test Cert", "target_type": "certification"},
+    "target_version": {"version_code": "2.1.0-err2", "title": "Error Test 2"},
+    "source_releases": [{"publisher": "CompTIA", "title": "Blueprint", "version": "v2.1", "source_url": "https://example.com/v2.1"}],
+    "concepts": [{"slug": "sec-test-crypto-foundations", "name": "Cryptographic Foundations"}],
+    "concept_mappings": [
+      {
+        "from_version_code": "1.0.0",
+        "from_concept_slug": "sec-test-symmetric",
+        "to_concept_slug": "sec-test-legacy-hash",
+        "mapping_type": "renamed",
+        "transfer_weight": 0.8
+      }
+    ],
+    "domains": [
+      {
+        "code": "D1", "title": "Domain 1", "weight": 1.0, "citation": "1.0",
+        "objectives": [{"code": "1.1", "title": "Obj 1.1", "citation": "1.1", "concept_slugs": ["sec-test-crypto-foundations"]}]
+      }
+    ]
+  }'::jsonb)$$,
+  'P0001',
+  NULL,
+  'Ingesting concept mapping where to_concept is not associated with destination version throws'
+);
+
+-- Test 10: Ingesting removed concept mapping with destination slug throws
+select throws_ok(
+  $$select public.ingest_curriculum_manifest('{
+    "field": {"slug": "info-sec", "name": "Information Security"},
+    "target": {"slug": "cert-sec-test", "title": "Security Test Cert", "target_type": "certification"},
+    "target_version": {"version_code": "2.1.0-err3", "title": "Error Test 3"},
+    "source_releases": [{"publisher": "CompTIA", "title": "Blueprint", "version": "v2.1", "source_url": "https://example.com/v2.1"}],
+    "concepts": [{"slug": "sec-test-crypto-foundations", "name": "Cryptographic Foundations"}],
+    "concept_mappings": [
+      {
+        "from_version_code": "1.0.0",
+        "from_concept_slug": "sec-test-symmetric",
+        "to_concept_slug": "sec-test-crypto-foundations",
+        "mapping_type": "removed",
+        "transfer_weight": 0.0
+      }
+    ],
+    "domains": [
+      {
+        "code": "D1", "title": "Domain 1", "weight": 1.0, "citation": "1.0",
+        "objectives": [{"code": "1.1", "title": "Obj 1.1", "citation": "1.1", "concept_slugs": ["sec-test-crypto-foundations"]}]
+      }
+    ]
+  }'::jsonb)$$,
+  'P0001',
+  'Removed concept mapping for source concept "sec-test-symmetric" cannot specify a destination concept (got "sec-test-crypto-foundations").',
+  'Ingesting removed concept mapping with destination slug throws'
+);
+
+-- Test 11: Ingesting removed concept mapping with positive transfer weight throws
+select throws_ok(
+  $$select public.ingest_curriculum_manifest('{
+    "field": {"slug": "info-sec", "name": "Information Security"},
+    "target": {"slug": "cert-sec-test", "title": "Security Test Cert", "target_type": "certification"},
+    "target_version": {"version_code": "2.1.0-err4", "title": "Error Test 4"},
+    "source_releases": [{"publisher": "CompTIA", "title": "Blueprint", "version": "v2.1", "source_url": "https://example.com/v2.1"}],
+    "concepts": [{"slug": "sec-test-crypto-foundations", "name": "Cryptographic Foundations"}],
+    "concept_mappings": [
+      {
+        "from_version_code": "1.0.0",
+        "from_concept_slug": "sec-test-symmetric",
+        "to_concept_slug": null,
+        "mapping_type": "removed",
+        "transfer_weight": 0.5
+      }
+    ],
+    "domains": [
+      {
+        "code": "D1", "title": "Domain 1", "weight": 1.0, "citation": "1.0",
+        "objectives": [{"code": "1.1", "title": "Obj 1.1", "citation": "1.1", "concept_slugs": ["sec-test-crypto-foundations"]}]
+      }
+    ]
+  }'::jsonb)$$,
+  'P0001',
+  'Removed concept mapping for source concept "sec-test-symmetric" must have transfer_weight = 0 (got 0.5).',
+  'Ingesting removed concept mapping with positive transfer weight throws'
+);
+
+-- Test 12: Check constraint tv_concept_mappings_removed_check rejects removed mapping with transfer_weight > 0
+select throws_ok(
+  $$insert into public.target_version_concept_mappings (
+    from_target_version_id, from_concept_id, to_target_version_id, to_concept_id, mapping_type, transfer_weight
+  ) values (
+    (select id from public.target_versions where version_code = '1.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')),
+    (select id from public.knowledge_concepts where slug = 'sec-test-symmetric'),
+    (select id from public.target_versions where version_code = '2.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')),
+    null,
+    'removed',
+    0.50
+  )$$,
+  '23514',
+  NULL,
+  'Check constraint tv_concept_mappings_removed_check rejects removed mapping with transfer_weight > 0'
+);
+
+-- Test 13: Check constraint tv_concept_mappings_removed_check rejects non-removed mapping with null to_concept_id
+select throws_ok(
+  $$insert into public.target_version_concept_mappings (
+    from_target_version_id, from_concept_id, to_target_version_id, to_concept_id, mapping_type, transfer_weight
+  ) values (
+    (select id from public.target_versions where version_code = '1.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')),
+    (select id from public.knowledge_concepts where slug = 'sec-test-symmetric'),
+    (select id from public.target_versions where version_code = '2.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')),
+    null,
+    'renamed',
+    0.80
+  )$$,
+  '23514',
+  NULL,
+  'Check constraint tv_concept_mappings_removed_check rejects non-removed mapping with null to_concept_id'
+);
+
+-- ----------------------------------------------------------------------------
+-- Test 14-16: Verify evaluate_target_version_migration respects ingested mappings
 -- ----------------------------------------------------------------------------
 -- Setup a test user concept state in v1.0.0
 insert into public.user_concept_state (
@@ -290,7 +445,7 @@ select is(
 );
 
 -- ----------------------------------------------------------------------------
--- Test 10-15: Target Visibility & Security Hardening
+-- Test 17-22: Target Visibility & Security Hardening
 -- ----------------------------------------------------------------------------
 
 -- Setup a private draft target owned by user-secret
@@ -316,7 +471,7 @@ insert into public.target_versions (
   'draft'
 ) on conflict do nothing;
 
--- Public published target
+-- Public published target B
 insert into public.learning_targets (
   id, slug, title, target_type, status, is_public, created_by
 ) values (
@@ -329,7 +484,7 @@ insert into public.learning_targets (
   '99999999-9999-4999-8999-999999999999'
 ) on conflict do nothing;
 
--- Test 10: Verify is_target_visible helper on public target
+-- Test 17: Verify is_target_visible helper on public target
 select ok(
   public.is_target_visible('88888888-0000-4000-8000-000000000002'),
   'Public published target is visible'
@@ -339,13 +494,13 @@ select ok(
 set local role anon;
 set local "request.jwt.claim.role" to 'anon';
 
--- Test 11: Private draft target is NOT visible to anon
+-- Test 18: Private draft target is NOT visible to anon
 select ok(
   not public.is_target_visible('88888888-0000-4000-8000-000000000001'),
   'Private draft target is NOT visible to anon'
 );
 
--- Test 12: Anon cannot execute crosswalk RPC on private target
+-- Test 19: Anon cannot execute crosswalk RPC on private target
 select throws_ok(
   $$select * from public.get_target_crosswalk_occupations('88888888-0000-4000-8000-000000000001')$$,
   'P0001',
@@ -353,7 +508,7 @@ select throws_ok(
   'Anon cannot execute get_target_crosswalk_occupations on private target'
 );
 
--- Test 13: Anon cannot execute shared concepts RPC with private target A
+-- Test 20: Anon cannot execute shared concepts RPC with private target A
 select throws_ok(
   $$select * from public.get_cross_target_shared_concepts('88888888-0000-4000-8000-000000000001', '88888888-0000-4000-8000-000000000002')$$,
   'P0001',
@@ -361,7 +516,7 @@ select throws_ok(
   'Anon cannot execute get_cross_target_shared_concepts with private target A'
 );
 
--- Test 14: Anon cannot execute shared concepts RPC with private target B
+-- Test 21: Anon cannot execute shared concepts RPC with private target B
 select throws_ok(
   $$select * from public.get_cross_target_shared_concepts('88888888-0000-4000-8000-000000000002', '88888888-0000-4000-8000-000000000001')$$,
   'P0001',
@@ -369,7 +524,7 @@ select throws_ok(
   'Anon cannot execute get_cross_target_shared_concepts with private target B'
 );
 
--- Test 15: Verify v_target_occupation_mappings hides private target under anon
+-- Test 22: Verify v_target_occupation_mappings hides private target under anon
 select is(
   (
     select count(*)::integer
@@ -381,7 +536,7 @@ select is(
 );
 
 -- ----------------------------------------------------------------------------
--- Test 16-18: Content Source Artifacts Visibility Hardening
+-- Test 23-25: Content Source Artifacts Visibility Hardening
 -- ----------------------------------------------------------------------------
 -- Reset to service_role to create a draft-only release and artifact
 reset role;
@@ -421,7 +576,7 @@ insert into public.content_source_mappings (
 set local role anon;
 set local "request.jwt.claim.role" to 'anon';
 
--- Test 16: Anon cannot read artifacts linked exclusively to private target
+-- Test 23: Anon cannot read artifacts linked exclusively to private target
 select is(
   (
     select count(*)::integer
@@ -432,7 +587,7 @@ select is(
   'Anon cannot read content_source_artifacts linked exclusively to private/unauthorized content'
 );
 
--- Test 17: Service role CAN read all artifacts
+-- Test 24: Service role CAN read all artifacts
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
@@ -447,7 +602,7 @@ select is(
   'Service role can read content_source_artifacts'
 );
 
--- Test 18: Anon CAN read artifacts linked to public published target
+-- Test 25: Anon CAN read artifacts linked to public published target
 set local role anon;
 set local "request.jwt.claim.role" to 'anon';
 
@@ -461,13 +616,13 @@ select is(
   'Anon can read content_source_artifacts linked to published public target'
 );
 
--- Test 19: Anon CAN execute crosswalk RPC on public published target
+-- Test 26: Anon CAN execute crosswalk RPC on public published target
 select lives_ok(
   $$select * from public.get_target_crosswalk_occupations((select id from public.learning_targets where slug = 'cert-sec-test'))$$,
   'Anon can execute get_target_crosswalk_occupations on public published target'
 );
 
--- Test 20: Anon CAN execute shared concepts RPC on public published targets
+-- Test 27: Anon CAN execute shared concepts RPC on public published targets
 select lives_ok(
   $$select * from public.get_cross_target_shared_concepts(
     (select id from public.learning_targets where slug = 'cert-sec-test'),
@@ -477,9 +632,154 @@ select lives_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- Test 21-22: Target Owner and Reviewer Visibility
+-- Test 28-33: Target Version Visibility and Draft Leakage Isolation
 -- ----------------------------------------------------------------------------
--- Test 21: Target owner can see their private target
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+-- Target A: Add a draft version 3.0.0
+insert into public.target_versions (
+  id, target_id, version_code, title, status
+) values (
+  '88888888-0000-4000-8000-000000000013',
+  (select id from public.learning_targets where slug = 'cert-sec-test'),
+  '3.0.0',
+  'Draft v3.0.0',
+  'draft'
+) on conflict do nothing;
+
+-- Target B: Add a published version 1.0.0
+insert into public.target_versions (
+  id, target_id, version_code, title, status
+) values (
+  '88888888-0000-4000-8000-000000000021',
+  '88888888-0000-4000-8000-000000000002',
+  '1.0.0',
+  'Target B v1.0.0',
+  'published'
+) on conflict do nothing;
+
+-- Concept exclusive to Target A's draft v3.0.0 and Target B's published version
+insert into public.knowledge_concepts (
+  id, slug, name, short_definition, status
+) values (
+  '88888888-0000-4000-8000-000000000030',
+  'sec-test-draft-shared-concept',
+  'Draft Shared Concept',
+  'Concept only present in draft version v3.0.0 of Target A and published version of Target B',
+  'active'
+) on conflict do nothing;
+
+-- Attach draft concept to Target A's draft v3.0.0 curriculum node
+insert into public.curriculum_nodes (
+  id, target_version_id, node_type, code, title, sort_order
+) values (
+  '88888888-0000-4000-8000-000000000031',
+  '88888888-0000-4000-8000-000000000013',
+  'objective',
+  '3.1',
+  'Draft Objective 3.1',
+  1
+) on conflict do nothing;
+
+insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+values (
+  '88888888-0000-4000-8000-000000000031',
+  '88888888-0000-4000-8000-000000000030'
+) on conflict do nothing;
+
+-- Attach both published concept (sec-test-crypto-foundations) and draft concept to Target B's published version
+insert into public.curriculum_nodes (
+  id, target_version_id, node_type, code, title, sort_order
+) values (
+  '88888888-0000-4000-8000-000000000022',
+  '88888888-0000-4000-8000-000000000021',
+  'objective',
+  'B1.1',
+  'Target B Objective 1.1',
+  1
+) on conflict do nothing;
+
+insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+values
+  ('88888888-0000-4000-8000-000000000022', (select id from public.knowledge_concepts where slug = 'sec-test-crypto-foundations')),
+  ('88888888-0000-4000-8000-000000000022', '88888888-0000-4000-8000-000000000030')
+on conflict do nothing;
+
+-- Switch to anon
+set local role anon;
+set local "request.jwt.claim.role" to 'anon';
+
+-- Test 28: Published target version of public target is visible to anon
+select ok(
+  public.is_target_version_visible((select id from public.target_versions where version_code = '1.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test'))),
+  'Published target version of public target is visible to anon'
+);
+
+-- Test 29: Draft target version under public target is NOT visible to anon
+select ok(
+  not public.is_target_version_visible('88888888-0000-4000-8000-000000000013'),
+  'Draft target version under public target is NOT visible to anon'
+);
+
+-- Test 30: In get_cross_target_shared_concepts, anon sees published concept
+select is(
+  (
+    select count(*)::integer
+    from public.get_cross_target_shared_concepts(
+      (select id from public.learning_targets where slug = 'cert-sec-test'),
+      '88888888-0000-4000-8000-000000000002'
+    )
+    where concept_slug = 'sec-test-crypto-foundations'
+  ),
+  1,
+  'Anon sees shared concept from published version v2.0.0'
+);
+
+-- Test 31: In get_cross_target_shared_concepts, anon does NOT leak concept from draft version v3.0.0
+select is(
+  (
+    select count(*)::integer
+    from public.get_cross_target_shared_concepts(
+      (select id from public.learning_targets where slug = 'cert-sec-test'),
+      '88888888-0000-4000-8000-000000000002'
+    )
+    where concept_slug = 'sec-test-draft-shared-concept'
+  ),
+  0,
+  'get_cross_target_shared_concepts does NOT expose draft-version concepts to anon'
+);
+
+-- Reset to service_role
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+-- Test 32: Service role DOES see draft version in is_target_version_visible
+select ok(
+  public.is_target_version_visible('88888888-0000-4000-8000-000000000013'),
+  'Draft target version under public target IS visible to service_role'
+);
+
+-- Test 33: Service role DOES see draft-version concept in get_cross_target_shared_concepts
+select is(
+  (
+    select count(*)::integer
+    from public.get_cross_target_shared_concepts(
+      (select id from public.learning_targets where slug = 'cert-sec-test'),
+      '88888888-0000-4000-8000-000000000002'
+    )
+    where concept_slug = 'sec-test-draft-shared-concept'
+  ),
+  1,
+  'Service role sees draft-version shared concepts in get_cross_target_shared_concepts'
+);
+
+-- ----------------------------------------------------------------------------
+-- Test 34-35: Target Owner and Reviewer Visibility
+-- ----------------------------------------------------------------------------
+-- Test 34: Target owner can see their private target
 reset role;
 set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';
@@ -490,7 +790,7 @@ select ok(
   'Target owner can view their private draft target'
 );
 
--- Test 22: Target reviewer can see private target
+-- Test 35: Target reviewer can see private target
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yaml/yaml.dart';
+import '../../tool/lint_manifest.dart';
 
 dynamic yamlToDart(dynamic node) {
   if (node is YamlMap) {
@@ -195,6 +196,55 @@ void main() {
       expect(removed['to_concept_slug'], isNull);
       expect(removed['mapping_type'], equals('removed'));
       expect(removed['transfer_weight'], equals(0.00));
+    });
+
+    test('Linter enforces concept mapping invariants', () {
+      final baseManifest = loadManifest('test/fixtures/curriculum_manifest_version_upgrade.yaml');
+
+      // 1. Removed mapping cannot specify destination slug
+      final invalidRemovedDest = Map<String, dynamic>.from(baseManifest);
+      invalidRemovedDest['concept_mappings'] = [
+        {
+          'from_version_code': 'SY0-601',
+          'from_concept_slug': 'sec-legacy-md5',
+          'to_concept_slug': 'sec-crypto-fundamentals',
+          'mapping_type': 'removed',
+          'transfer_weight': 0.0,
+        }
+      ];
+      final linter1 = ManifestLinter();
+      linter1.lint('test.yaml', invalidRemovedDest);
+      expect(linter1.issues.any((i) => i.rule == 'removed-mapping-destination'), isTrue);
+
+      // 2. Removed mapping cannot have non-zero transfer weight
+      final invalidRemovedWeight = Map<String, dynamic>.from(baseManifest);
+      invalidRemovedWeight['concept_mappings'] = [
+        {
+          'from_version_code': 'SY0-601',
+          'from_concept_slug': 'sec-legacy-md5',
+          'to_concept_slug': null,
+          'mapping_type': 'removed',
+          'transfer_weight': 0.5,
+        }
+      ];
+      final linter2 = ManifestLinter();
+      linter2.lint('test.yaml', invalidRemovedWeight);
+      expect(linter2.issues.any((i) => i.rule == 'removed-mapping-weight'), isTrue);
+
+      // 3. Active mapping must specify destination slug
+      final invalidActiveDest = Map<String, dynamic>.from(baseManifest);
+      invalidActiveDest['concept_mappings'] = [
+        {
+          'from_version_code': 'SY0-601',
+          'from_concept_slug': 'sec-symmetric-crypto',
+          'to_concept_slug': null,
+          'mapping_type': 'renamed',
+          'transfer_weight': 0.9,
+        }
+      ];
+      final linter3 = ManifestLinter();
+      linter3.lint('test.yaml', invalidActiveDest);
+      expect(linter3.issues.any((i) => i.rule == 'active-mapping-destination'), isTrue);
     });
   });
 }

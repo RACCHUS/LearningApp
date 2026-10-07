@@ -83,7 +83,35 @@
         },
         "transfer_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
         "metadata": { "type": "object" }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "mapping_type": {
+              "enum": ["unchanged", "renamed", "expanded", "narrowed", "replaced"]
+            },
+            "to_concept_slug": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["to_concept_slug"]
+        },
+        {
+          "properties": {
+            "mapping_type": {
+              "const": "removed"
+            },
+            "to_concept_slug": {
+              "type": "null"
+            },
+            "transfer_weight": {
+              "maximum": 0.0,
+              "minimum": 0.0
+            }
+          }
+        }
+      ]
     },
     "CurriculumDomain": {
       "type": "object",
