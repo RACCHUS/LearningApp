@@ -3,24 +3,20 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(27);
+select plan(32);
 
 -- Setup test users
 insert into auth.users (id, is_anonymous)
 values
-  ('88888888-8888-4888-8888-888888888888', false);
+  ('88888888-8888-4888-8888-888888888888', false),
+  ('77777777-7777-4777-8777-777777777777', false),
+  ('66666666-6666-4666-8666-666666666666', false);
 
 insert into public.users (id)
 values
-  ('88888888-8888-4888-8888-888888888888');
-
-insert into auth.users (id, is_anonymous)
-values
-  ('77777777-7777-4777-8777-777777777777', false);
-
-insert into public.users (id)
-values
-  ('77777777-7777-4777-8777-777777777777');
+  ('88888888-8888-4888-8888-888888888888'),
+  ('77777777-7777-4777-8777-777777777777'),
+  ('66666666-6666-4666-8666-666666666666');
 
 -- 1-7: Structure checks
 select has_table('public', 'user_version_migration_logs', 'user_version_migration_logs table exists');
@@ -45,11 +41,12 @@ values (
   true
 );
 
--- Insert 2 target versions: V1 (published) and V2 (review_ready)
+-- Insert 3 target versions: V1 (published), V2 (review_ready), and V3 (draft)
 insert into public.target_versions (id, target_id, version_code, title, status)
 values
   ('99999999-aaaa-4999-8999-999999999999', '99999999-1111-4999-8999-999999999999', 'SY0-601', 'Security Edition 601', 'published'),
-  ('99999999-bbbb-4999-8999-999999999999', '99999999-1111-4999-8999-999999999999', 'SY0-701', 'Security Edition 701', 'review_ready');
+  ('99999999-bbbb-4999-8999-999999999999', '99999999-1111-4999-8999-999999999999', 'SY0-701', 'Security Edition 701', 'review_ready'),
+  ('99999999-cccc-4999-8999-999999999999', '99999999-1111-4999-8999-999999999999', 'SY0-801', 'Security Edition 801 (Draft)', 'draft');
 
 -- Setup canonical concepts
 insert into public.knowledge_concepts (id, slug, name, description)
@@ -117,6 +114,25 @@ values (
   'legacy-version-lesson',
   3
 );
+
+-- Setup ordinary learner context on V1 (learner is NOT the target owner)
+insert into public.learning_contexts
+  (id, user_id, label, root_type, root_id, target_version_id, last_active_at)
+values (
+  '99999999-d002-4999-8999-999999999999',
+  '66666666-6666-4666-8666-666666666666',
+  'Learner Security Cert Prep',
+  'target',
+  '99999999-1111-4999-8999-999999999999',
+  '99999999-aaaa-4999-8999-999999999999',
+  now()
+);
+
+-- Pre-seed user concept state for learner 66666666 on c001
+insert into public.user_concept_state
+  (user_id, concept_id, retrieval_band, confidence, evidence_count, weighted_correct, weighted_total)
+values
+  ('66666666-6666-4666-8666-666666666666', '99999999-c001-4999-8999-999999999999', 'well_retained', 'high', 8, 7.0, 8.0);
 
 -- Exercise privileged governance functions as service_role unless a test overrides it.
 select set_config('request.jwt.claim.role', 'service_role', true);
@@ -231,8 +247,59 @@ select is(
   'v_target_version_updates detects retired context active version'
 );
 
--- 20. Authenticated caller cannot migrate another user's context
+-- 19. Verify an ordinary authenticated learner with a retired version detects updates in v_target_version_updates
 select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+
+select is(
+  (select is_outdated from public.v_target_version_updates where context_id = '99999999-d002-4999-8999-999999999999'),
+  true,
+  'Authenticated learner detects outdated context on retired version'
+);
+
+select is(
+  (select is_retired from public.v_target_version_updates where context_id = '99999999-d002-4999-8999-999999999999'),
+  true,
+  'Authenticated learner detects retired context active version'
+);
+
+-- 20. Authenticated learner can evaluate migration from their own retired version to published V2
+select ok(
+  (public.evaluate_target_version_migration(
+    '66666666-6666-4666-8666-666666666666',
+    '99999999-aaaa-4999-8999-999999999999',
+    '99999999-bbbb-4999-8999-999999999999'
+  ) is not null),
+  'Authenticated learner can evaluate migration from their own retired context version'
+);
+
+-- 21. Authenticated user without context cannot evaluate migration from retired version
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
+select throws_ok(
+  $$ select public.evaluate_target_version_migration(
+    '77777777-7777-4777-8777-777777777777',
+    '99999999-aaaa-4999-8999-999999999999',
+    '99999999-bbbb-4999-8999-999999999999'
+  ) $$,
+  'P0001',
+  'Unauthorized: source target version is not accessible for this caller.',
+  'User without enrolled context cannot evaluate migration from retired version'
+);
+
+-- 22. Authenticated learner cannot evaluate migration to draft target version
+select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+select throws_ok(
+  $$ select public.evaluate_target_version_migration(
+    '66666666-6666-4666-8666-666666666666',
+    '99999999-aaaa-4999-8999-999999999999',
+    '99999999-cccc-4999-8999-999999999999'
+  ) $$,
+  'P0001',
+  'Unauthorized: destination target version is not published for this caller.',
+  'Learner cannot evaluate migration to draft target version'
+);
+
+-- 23. Authenticated caller cannot migrate another user's context
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
   $$ select public.migrate_user_context_target_version(
@@ -248,7 +315,7 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
--- 21. Test migrate_user_context_target_version execution
+-- 24. Test migrate_user_context_target_version execution
 select is(
   (public.migrate_user_context_target_version(
     '88888888-8888-4888-8888-888888888888',
@@ -259,35 +326,35 @@ select is(
   'migrate_user_context_target_version succeeds'
 );
 
--- 22. Verify learning context target_version_id was updated to V2
+-- 25. Verify learning context target_version_id was updated to V2
 select is(
   (select target_version_id from public.learning_contexts where id = '99999999-d001-4999-8999-999999999999'),
   '99999999-bbbb-4999-8999-999999999999'::uuid,
   'Context target_version_id is updated to V2'
 );
 
--- 23. Version migration clears stale resume breadcrumbs.
+-- 26. Version migration clears stale resume breadcrumbs.
 select is(
   (select count(*) from public.resume_pointers where context_id = '99999999-d001-4999-8999-999999999999')::integer,
   0,
   'Version migration clears stale resume pointer'
 );
 
--- 24. Verify user_version_migration_logs recorded the migration
+-- 27. Verify user_version_migration_logs recorded the migration
 select is(
   (select count(*) from public.user_version_migration_logs where user_id = '88888888-8888-4888-8888-888888888888')::integer,
   1,
   'user_version_migration_logs recorded migration event'
 );
 
--- 25. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
+-- 28. Verify user_concept_state carried forward scaled evidence to c002 (10 * 0.8 = 8)
 select is(
   (select evidence_count from public.user_concept_state where user_id = '88888888-8888-4888-8888-888888888888' and concept_id = '99999999-c002-4999-8999-999999999999'),
   8,
   'Target concept c002 received evidence scaled by transfer_weight (8)'
 );
 
--- 25. Unauthorized authenticated user cannot retire another owner's version
+-- 29. Unauthorized authenticated user cannot retire another owner's version
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 select throws_ok(
@@ -300,7 +367,7 @@ select throws_ok(
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
 
--- 26. Test retire_target_version RPC on V2
+-- 30. Test retire_target_version RPC on V2
 select is(
   (public.retire_target_version('99999999-bbbb-4999-8999-999999999999')->>'status')::text,
   'retired',
