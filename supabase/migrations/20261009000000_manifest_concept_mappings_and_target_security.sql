@@ -121,7 +121,7 @@ declare
   v_obj_rel_id uuid;
   v_raw_concept_ref text;
   v_resolved_cid uuid;
-begin
+
   -- Concept mapping resolution variables
   v_from_version_code text;
   v_from_concept_slug text;
@@ -130,6 +130,7 @@ begin
   v_from_tv_id uuid;
   v_transfer_weight numeric;
   v_concept_mappings_count int := 0;
+begin
 
   -- 1. Security Check: Service-role only
   if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
@@ -1522,6 +1523,5 @@ drop policy if exists "content_source_artifacts_service_write" on public.content
 
 create policy "content_source_artifacts_service_write"
   on public.content_source_artifacts for all
-  to authenticated
   using (auth.role() = 'service_role')
   with check (auth.role() = 'service_role');
