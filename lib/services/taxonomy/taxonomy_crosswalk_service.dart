@@ -127,7 +127,13 @@ class TaxonomyCrosswalkService {
     String? parentId,
   }) async {
     final client = _supabase;
-    if (client == null) return const [];
+    if (client == null) {
+      return _fallbackExternalClassificationNodes(
+        system: system,
+        version: version,
+        parentId: parentId,
+      );
+    }
     try {
       var query = client
           .from('external_classification_nodes')
@@ -141,12 +147,59 @@ class TaxonomyCrosswalkService {
       }
 
       final response = await query.order('code', ascending: true);
-      return (response as List<dynamic>)
+      final list = (response as List<dynamic>)
           .map((e) => ExternalClassificationNode.fromJson(e as Map<String, dynamic>))
           .toList();
+      return list.isNotEmpty
+          ? list
+          : _fallbackExternalClassificationNodes(
+              system: system,
+              version: version,
+              parentId: parentId,
+            );
     } catch (e) {
       debugPrint('⚠️ Remote external_classification_nodes fetch failed: $e');
-      return const [];
+      return _fallbackExternalClassificationNodes(
+        system: system,
+        version: version,
+        parentId: parentId,
+      );
+    }
+  }
+
+  Future<ExternalClassificationNode?> getExternalClassificationByCode(
+    String code, {
+    String system = 'cip',
+    String version = '2020',
+  }) async {
+    final client = _supabase;
+    if (client == null) {
+      try {
+        return _fallbackExternalClassificationNodes(system: system, version: version)
+            .firstWhere((n) => n.code == code);
+      } catch (_) {
+        return null;
+      }
+    }
+    try {
+      final res = await client
+          .from('external_classification_nodes')
+          .select()
+          .eq('system', system)
+          .eq('version', version)
+          .eq('code', code)
+          .maybeSingle();
+      if (res != null) {
+        return ExternalClassificationNode.fromJson(res);
+      }
+      return _fallbackExternalClassificationNodes(system: system, version: version)
+          .cast<ExternalClassificationNode?>()
+          .firstWhere((n) => n?.code == code, orElse: () => null);
+    } catch (e) {
+      debugPrint('⚠️ Remote getExternalClassificationByCode failed for $code: $e');
+      return _fallbackExternalClassificationNodes(system: system, version: version)
+          .cast<ExternalClassificationNode?>()
+          .firstWhere((n) => n?.code == code, orElse: () => null);
     }
   }
 
@@ -256,6 +309,152 @@ class TaxonomyCrosswalkService {
       debugPrint('⚠️ Remote getFieldOccupations failed for $fieldId: $e');
       return const [];
     }
+  }
+
+  Future<List<CipProgramCrosswalk>> getCipCrosswalksForOccupation(String occupationCode) async {
+    final client = _supabase;
+    if (client == null) return _fallbackCipCrosswalks(occupationCode);
+    try {
+      final baseSoc = occupationCode.split('.').first;
+      final res = await client
+          .from('v_field_occupation_mappings')
+          .select('classification_code, classification_title, mapping_kind')
+          .or('occupation_code.eq.$occupationCode,occupation_code.eq.$baseSoc');
+
+      final list = (res as List<dynamic>)
+          .map((e) => CipProgramCrosswalk(
+                code: e['classification_code'] as String? ?? '',
+                title: e['classification_title'] as String? ?? '',
+                mappingKind: e['mapping_kind'] as String? ?? 'official_qualitative',
+              ))
+          .where((c) => c.code.isNotEmpty)
+          .fold<Map<String, CipProgramCrosswalk>>({}, (map, item) {
+            map[item.code] = item;
+            return map;
+          })
+          .values
+          .toList();
+
+      return list.isNotEmpty ? list : _fallbackCipCrosswalks(occupationCode);
+    } catch (e) {
+      debugPrint('⚠️ Remote getCipCrosswalksForOccupation failed for $occupationCode: $e');
+      return _fallbackCipCrosswalks(occupationCode);
+    }
+  }
+
+  Future<List<TargetCrosswalkOccupation>> getOccupationsForCip(String cipCode) async {
+    final client = _supabase;
+    if (client == null) return _fallbackOccupationsForCip(cipCode);
+    try {
+      final res = await client
+          .from('v_field_occupation_mappings')
+          .select('occupation_id, occupation_code, occupation_title, mapping_kind, classification_code, classification_title')
+          .eq('classification_code', cipCode);
+
+      final list = (res as List<dynamic>)
+          .map((e) => TargetCrosswalkOccupation(
+                occupationId: e['occupation_id'] as String? ?? '',
+                occupationCode: e['occupation_code'] as String? ?? '',
+                occupationTitle: e['occupation_title'] as String? ?? '',
+                occupationLevel: 'detailed_occupation',
+                fieldId: '',
+                fieldName: '',
+                fieldRole: 'primary',
+                mappingKind: e['mapping_kind'] as String? ?? 'official_qualitative',
+                classificationCode: e['classification_code'] as String?,
+                classificationTitle: e['classification_title'] as String?,
+              ))
+          .toList();
+      return list.isNotEmpty ? list : _fallbackOccupationsForCip(cipCode);
+    } catch (e) {
+      debugPrint('⚠️ Remote getOccupationsForCip failed for $cipCode: $e');
+      return _fallbackOccupationsForCip(cipCode);
+    }
+  }
+
+  Future<List<OccupationTargetLink>> getTargetsForOccupation(String occupationCode) async {
+    final client = _supabase;
+    if (client == null) return _fallbackTargetsForOccupation(occupationCode);
+    try {
+      final baseSoc = occupationCode.split('.').first;
+      final res = await client
+          .from('v_target_occupation_mappings')
+          .select('target_id, target_title, target_slug, field_role')
+          .or('occupation_code.eq.$occupationCode,occupation_code.eq.$baseSoc');
+
+      final list = (res as List<dynamic>)
+          .map((e) => OccupationTargetLink.fromJson(e as Map<String, dynamic>))
+          .fold<Map<String, OccupationTargetLink>>({}, (map, item) {
+            map[item.targetId] = item;
+            return map;
+          })
+          .values
+          .toList();
+
+      return list.isNotEmpty ? list : _fallbackTargetsForOccupation(occupationCode);
+    } catch (e) {
+      debugPrint('⚠️ Remote getTargetsForOccupation failed for $occupationCode: $e');
+      return _fallbackTargetsForOccupation(occupationCode);
+    }
+  }
+
+  Future<List<TaxonomySearchMatch>> searchTaxonomy({required String query}) async {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+
+    final results = <TaxonomySearchMatch>[];
+
+    // 1. Occupations
+    final occupations = await getOccupationNodes();
+    for (final occ in occupations) {
+      if (occ.code.toLowerCase().contains(q) ||
+          occ.title.toLowerCase().contains(q) ||
+          (occ.description?.toLowerCase().contains(q) ?? false)) {
+        results.add(TaxonomySearchMatch(
+          id: occ.id,
+          code: occ.code,
+          title: occ.title,
+          description: occ.description,
+          kind: TaxonomyItemKind.occupation,
+          jobZone: occ.jobZone,
+          level: occ.level,
+          system: occ.taxonomySystem,
+        ));
+      }
+    }
+
+    // 2. CIP Programs
+    final cips = await getExternalClassificationNodes();
+    for (final cip in cips) {
+      if (cip.code.toLowerCase().contains(q) ||
+          cip.title.toLowerCase().contains(q) ||
+          (cip.definition?.toLowerCase().contains(q) ?? false)) {
+        results.add(TaxonomySearchMatch(
+          id: cip.id,
+          code: cip.code,
+          title: cip.title,
+          description: cip.definition,
+          kind: TaxonomyItemKind.cipProgram,
+          level: cip.levelCode,
+          system: cip.system,
+        ));
+      }
+    }
+
+    // 3. Clusters
+    final clusters = await getCatalogClusters();
+    for (final cl in clusters) {
+      if (cl.title.toLowerCase().contains(q) || cl.slug.toLowerCase().contains(q)) {
+        results.add(TaxonomySearchMatch(
+          id: cl.id,
+          code: cl.slug,
+          title: '${cl.emoji ?? "🎯"} ${cl.title}',
+          kind: TaxonomyItemKind.catalogCluster,
+        ));
+      }
+    }
+
+    return results;
   }
 
   // --------------------------------------------------------------------------
@@ -464,6 +663,267 @@ class TaxonomyCrosswalkService {
         fieldRole: 'primary',
         classificationCode: '11.1003',
         classificationTitle: 'Computer and Information Systems Security/Auditing/Information Assurance',
+      ),
+    ];
+  }
+
+  List<ExternalClassificationNode> _fallbackExternalClassificationNodes({
+    String system = 'cip',
+    String version = '2020',
+    String? parentId,
+  }) {
+    final all = <ExternalClassificationNode>[
+      const ExternalClassificationNode(
+        id: 'cip-11',
+        sourceReleaseId: 'rel-cip-2020',
+        system: 'cip',
+        version: '2020',
+        code: '11',
+        levelCode: 'series',
+        levelDepth: 1,
+        title: 'Computer and Information Sciences and Support Services',
+        definition:
+            'Instructional programs that focus on the computer and information sciences and preparing individuals for various occupations in technology.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-11-07',
+        sourceReleaseId: 'rel-cip-2020',
+        parentId: 'cip-11',
+        system: 'cip',
+        version: '2020',
+        code: '11.07',
+        sourceParentCode: '11',
+        levelCode: 'group',
+        levelDepth: 2,
+        title: 'Computer Science',
+        definition:
+            'Instructional programs that focus on computer science and related scientific disciplines.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-11-0701',
+        sourceReleaseId: 'rel-cip-2020',
+        parentId: 'cip-11-07',
+        system: 'cip',
+        version: '2020',
+        code: '11.0701',
+        sourceParentCode: '11.07',
+        levelCode: 'program',
+        levelDepth: 3,
+        title: 'Computer Science',
+        definition:
+            'A program that focuses on computer theory, computing problems and solutions, algorithms, and software design.',
+        illustrativeExamples: [
+          'Computer Science',
+          'Theoretical Computer Science',
+          'Computational Theory'
+        ],
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-11-1003',
+        sourceReleaseId: 'rel-cip-2020',
+        parentId: 'cip-11',
+        system: 'cip',
+        version: '2020',
+        code: '11.1003',
+        sourceParentCode: '11',
+        levelCode: 'program',
+        levelDepth: 3,
+        title:
+            'Computer and Information Systems Security/Auditing/Information Assurance',
+        definition:
+            'A program that prepares individuals to assess the security needs of computer and network systems and manage secure infrastructure.',
+        illustrativeExamples: [
+          'Cybersecurity',
+          'Information Assurance',
+          'Network Security'
+        ],
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-14',
+        sourceReleaseId: 'rel-cip-2020',
+        system: 'cip',
+        version: '2020',
+        code: '14',
+        levelCode: 'series',
+        levelDepth: 1,
+        title: 'Engineering',
+        definition:
+            'Instructional programs that focus on the mathematical and scientific principles applied to the design, construction, and operation of systems.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-14-0901',
+        sourceReleaseId: 'rel-cip-2020',
+        parentId: 'cip-14',
+        system: 'cip',
+        version: '2020',
+        code: '14.0901',
+        levelCode: 'program',
+        levelDepth: 3,
+        title: 'Computer Engineering, General',
+        definition:
+            'A program that prepares individuals to apply mathematical and scientific principles to the design and development of computer hardware and integrated hardware-software systems.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-27',
+        sourceReleaseId: 'rel-cip-2020',
+        system: 'cip',
+        version: '2020',
+        code: '27',
+        levelCode: 'series',
+        levelDepth: 1,
+        title: 'Mathematics and Statistics',
+        definition:
+            'Instructional programs that focus on the systematic study of logical and mathematical quantities, structures, and systems.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-27-0101',
+        sourceReleaseId: 'rel-cip-2020',
+        parentId: 'cip-27',
+        system: 'cip',
+        version: '2020',
+        code: '27.0101',
+        levelCode: 'program',
+        levelDepth: 3,
+        title: 'Mathematics, General',
+        definition:
+            'A general program that focuses on the core principles of mathematics, calculus, and abstract algebra.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-51',
+        sourceReleaseId: 'rel-cip-2020',
+        system: 'cip',
+        version: '2020',
+        code: '51',
+        levelCode: 'series',
+        levelDepth: 1,
+        title: 'Health Professions and Related Programs',
+        definition:
+            'Instructional programs that prepare individuals for careers in medicine, nursing, health informatics, and allied health.',
+      ),
+      const ExternalClassificationNode(
+        id: 'cip-52',
+        sourceReleaseId: 'rel-cip-2020',
+        system: 'cip',
+        version: '2020',
+        code: '52',
+        levelCode: 'series',
+        levelDepth: 1,
+        title: 'Business, Management, Marketing, and Related Support Services',
+        definition:
+            'Instructional programs that focus on business management, accounting, financial planning, and operational leadership.',
+      ),
+    ];
+
+    if (parentId != null) {
+      return all.where((n) => n.parentId == parentId).toList();
+    }
+    return all;
+  }
+
+  List<CipProgramCrosswalk> _fallbackCipCrosswalks(String occupationCode) {
+    if (occupationCode.startsWith('15-1252')) {
+      return const [
+        CipProgramCrosswalk(
+          code: '11.0701',
+          title: 'Computer Science',
+          definition:
+              'A program that focuses on computer theory, computing problems and solutions, algorithms, and software design.',
+          mappingKind: 'official_qualitative',
+        ),
+        CipProgramCrosswalk(
+          code: '11.1003',
+          title: 'Computer and Information Systems Security',
+          definition:
+              'A program that prepares individuals to assess security needs of computer and network systems.',
+          mappingKind: 'official_qualitative',
+        ),
+      ];
+    }
+    if (occupationCode.startsWith('15-1211')) {
+      return const [
+        CipProgramCrosswalk(
+          code: '11.1003',
+          title: 'Computer and Information Systems Security',
+          definition:
+              'A program that prepares individuals to assess security needs of computer and network systems.',
+          mappingKind: 'official_qualitative',
+        ),
+      ];
+    }
+    return const [
+      CipProgramCrosswalk(
+        code: '11.0701',
+        title: 'Computer Science',
+        definition:
+            'A program that focuses on computer theory, computing problems and solutions, algorithms, and software design.',
+        mappingKind: 'official_qualitative',
+      ),
+    ];
+  }
+
+  List<TargetCrosswalkOccupation> _fallbackOccupationsForCip(String cipCode) {
+    if (cipCode.startsWith('11.1003')) {
+      return const [
+        TargetCrosswalkOccupation(
+          occupationId: 'occ-15-1211',
+          occupationCode: '15-1211',
+          occupationTitle: 'Information Security Analysts',
+          occupationLevel: 'detailed_occupation',
+          jobZone: 4,
+          fieldId: 'f-cs',
+          fieldName: 'Computer and Information Sciences',
+          fieldRole: 'primary',
+          classificationCode: '11.1003',
+          classificationTitle: 'Computer and Information Systems Security',
+        ),
+      ];
+    }
+    return const [
+      TargetCrosswalkOccupation(
+        occupationId: 'occ-15-1252',
+        occupationCode: '15-1252',
+        occupationTitle: 'Software Developers',
+        occupationLevel: 'detailed_occupation',
+        jobZone: 4,
+        fieldId: 'f-cs',
+        fieldName: 'Computer and Information Sciences',
+        fieldRole: 'primary',
+        classificationCode: '11.0701',
+        classificationTitle: 'Computer Science',
+      ),
+    ];
+  }
+
+  List<OccupationTargetLink> _fallbackTargetsForOccupation(
+      String occupationCode) {
+    if (occupationCode.startsWith('15-1211')) {
+      return const [
+        OccupationTargetLink(
+          targetId: 'target-sec-plus',
+          targetTitle: 'CompTIA Security+ (SY0-701)',
+          targetSlug: 'security-plus-sy0-701',
+          targetType: 'certification',
+          fieldRole: 'primary',
+          emoji: '🛡️',
+        ),
+      ];
+    }
+    return const [
+      OccupationTargetLink(
+        targetId: 'target-bs-cs',
+        targetTitle: 'B.S. in Computer Science',
+        targetSlug: 'bs-computer-science',
+        targetType: 'academic_program',
+        fieldRole: 'primary',
+        emoji: '🎓',
+      ),
+      OccupationTargetLink(
+        targetId: 'target-swe-career',
+        targetTitle: 'Software Engineer Career Path',
+        targetSlug: 'software-engineer-career',
+        targetType: 'career',
+        fieldRole: 'primary',
+        emoji: '💻',
       ),
     ];
   }

@@ -65,5 +65,55 @@ void main() {
       expect(dev.classificationCode, '11.0701');
       expect(dev.jobZoneLabel, contains('Job Zone 4: Considerable Preparation'));
     });
+
+    test('getExternalClassificationNodes returns CIP series, groups, and programs', () async {
+      final nodes = await service.getExternalClassificationNodes();
+      expect(nodes, isNotEmpty);
+      expect(nodes.any((n) => n.code == '11'), isTrue);
+      expect(nodes.any((n) => n.code == '11.0701'), isTrue);
+      expect(nodes.any((n) => n.code == '14'), isTrue);
+    });
+
+    test('getExternalClassificationByCode resolves exact CIP code', () async {
+      final cip = await service.getExternalClassificationByCode('11.0701');
+      expect(cip, isNotNull);
+      expect(cip!.title, 'Computer Science');
+      expect(cip.levelCode, 'program');
+      expect(cip.illustrativeExamples, contains('Computer Science'));
+    });
+
+    test('getCipCrosswalksForOccupation returns crosswalked CIP programs', () async {
+      final cips = await service.getCipCrosswalksForOccupation('15-1252');
+      expect(cips, isNotEmpty);
+      expect(cips.any((c) => c.code == '11.0701'), isTrue);
+      expect(cips.firstWhere((c) => c.code == '11.0701').title, 'Computer Science');
+    });
+
+    test('getOccupationsForCip returns occupations mapped to CIP program', () async {
+      final occs = await service.getOccupationsForCip('11.0701');
+      expect(occs, isNotEmpty);
+      expect(occs.any((o) => o.occupationCode == '15-1252'), isTrue);
+    });
+
+    test('getTargetsForOccupation returns learning targets for career', () async {
+      final targets = await service.getTargetsForOccupation('15-1252');
+      expect(targets, isNotEmpty);
+      expect(targets.any((t) => t.targetSlug == 'bs-computer-science'), isTrue);
+      expect(targets.any((t) => t.targetSlug == 'software-engineer-career'), isTrue);
+    });
+
+    test('searchTaxonomy matches across occupations, CIP programs, and clusters', () async {
+      final occMatches = await service.searchTaxonomy(query: 'Software');
+      expect(occMatches, isNotEmpty);
+      expect(occMatches.any((m) => m.code == '15-1252'), isTrue);
+
+      final cipMatches = await service.searchTaxonomy(query: '11.0701');
+      expect(cipMatches, isNotEmpty);
+      expect(cipMatches.any((m) => m.title.contains('Computer Science')), isTrue);
+
+      final clusterMatches = await service.searchTaxonomy(query: 'Computing');
+      expect(clusterMatches, isNotEmpty);
+      expect(clusterMatches.any((m) => m.code == 'computing-tech'), isTrue);
+    });
   });
 }

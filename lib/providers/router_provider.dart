@@ -32,6 +32,8 @@ import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
+import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
+import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -372,6 +374,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/my-careers',
         redirect: (context, state) => '/library',
+      ),
+
+      // Canonical Taxonomy & Career Pathway Explorer routes (Phase F.2)
+      GoRoute(
+        path: '/taxonomy',
+        name: 'taxonomy-explorer',
+        builder: (context, state) {
+          final tabParam = state.uri.queryParameters['tab'];
+          final queryParam = state.uri.queryParameters['q'] ??
+              state.uri.queryParameters['search'];
+          int initialTab = 0;
+          if (tabParam == 'cip' || tabParam == 'programs') {
+            initialTab = 1;
+          } else if (tabParam == 'clusters' || tabParam == 'disciplines') {
+            initialTab = 2;
+          }
+          return TaxonomyExplorerScreen(
+            initialTab: initialTab,
+            initialQuery: queryParam,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/pathways',
+        redirect: (context, state) => '/taxonomy',
+      ),
+      GoRoute(
+        path: '/taxonomy/occupation/:code',
+        name: 'occupation-detail',
+        builder: (context, state) {
+          final code = state.pathParameters['code']!;
+          return OccupationDetailScreen(occupationCode: code);
+        },
       ),
 
       // Skills routes

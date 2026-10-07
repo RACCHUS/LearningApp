@@ -9,4 +9,5 @@ export 'learning_target_field.dart';
 export 'occupation_industry.dart';
 export 'occupation_node.dart';
 export 'target_crosswalk_occupation.dart';
+export 'taxonomy_crosswalk_item.dart';
 export 'taxonomy_node_lineage.dart';

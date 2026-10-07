@@ -14,7 +14,7 @@ import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
-
+import 'package:learning_pwa/widgets/taxonomy/taxonomy_banner_card.dart';
 import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
@@ -309,6 +309,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
           const SizedBox(height: DesignTokens.space4),
+
+          if (!isSearching) ...[
+            const TaxonomyBannerCard(),
+            const SizedBox(height: DesignTokens.space4),
+          ],
 
           if (isSearching) ...[
             // MULTI-ENTITY SEARCH RESULTS WITH DISAMBIGUATION TAGS (§11.1 & §11.2)
