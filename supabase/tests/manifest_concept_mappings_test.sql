@@ -715,7 +715,7 @@ insert into public.target_version_concept_mappings (
   (select id from public.knowledge_concepts where slug = 'sec-test-crypto-foundations'),
   '88888888-0000-4000-8000-000000000013',
   '88888888-0000-4000-8000-000000000030',
-  'equivalent',
+  'unchanged',
   1.00
 ) on conflict do nothing;
 
