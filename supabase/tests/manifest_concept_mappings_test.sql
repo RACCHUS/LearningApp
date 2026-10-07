@@ -711,7 +711,7 @@ on conflict do nothing;
 insert into public.target_version_concept_mappings (
   from_target_version_id, from_concept_id, to_target_version_id, to_concept_id, mapping_type, transfer_weight
 ) values (
-  '88888888-0000-4000-8000-000000000012',
+  (select id from public.target_versions where version_code = '2.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test')),
   (select id from public.knowledge_concepts where slug = 'sec-test-crypto-foundations'),
   '88888888-0000-4000-8000-000000000013',
   '88888888-0000-4000-8000-000000000030',
@@ -768,7 +768,7 @@ select is(
   (
     select count(*)::integer
     from public.target_version_concept_mappings
-    where to_target_version_id = '88888888-0000-4000-8000-000000000012'
+    where to_target_version_id = (select id from public.target_versions where version_code = '2.0.0' and target_id = (select id from public.learning_targets where slug = 'cert-sec-test'))
   ),
   2,
   'Anon sees concept mappings between published target versions'

@@ -217,16 +217,16 @@ begin
   return jsonb_build_object(
     'from_target_version_id', p_from_target_version_id,
     'to_target_version_id', p_to_target_version_id,
-    'source_concepts_count', v_source_concepts_count,
-    'target_concepts_count', v_target_concepts_count,
-    'mapped_count', v_mapped_count,
-    'retained_count', v_retained_count,
-    'removed_count', v_removed_count,
+    'total_source_concepts', v_source_concepts_count,
+    'total_target_concepts', v_target_concepts_count,
+    'mapped_concepts_count', v_mapped_count,
+    'retained_concepts_count', v_retained_count,
+    'removed_concepts_count', v_removed_count,
     'new_concepts_count', v_new_concepts_count,
     'transfer_retention_pct', v_avg_weight,
-    'user_assessed_count', v_user_assessed_count,
-    'projected_retained_assessed', v_projected_retained_assessed,
-    'mappings', v_mappings_json
+    'user_assessed_concepts_count', v_user_assessed_count,
+    'projected_retained_assessed_count', v_projected_retained_assessed,
+    'concept_mappings', v_mappings_json
   );
 end;
 $$;
