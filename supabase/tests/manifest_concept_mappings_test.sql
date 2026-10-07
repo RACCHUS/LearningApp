@@ -78,7 +78,12 @@ select lives_ok(
   'Ingest v1.0.0 base curriculum manifest cleanly'
 );
 
--- Publish v1.0.0 target version so it can be mapped from
+-- Stage to review_ready then publish v1.0.0 target version so it can be mapped from
+update public.target_versions
+set status = 'review_ready'
+where version_code = '1.0.0'
+  and target_id = (select id from public.learning_targets where slug = 'cert-sec-test');
+
 update public.target_versions
 set status = 'published'
 where version_code = '1.0.0'
@@ -230,7 +235,12 @@ select
 from public.knowledge_concepts
 where slug = 'sec-test-symmetric';
 
--- Publish v2.0.0 so evaluation is permitted
+-- Stage to review_ready then publish v2.0.0 so evaluation is permitted
+update public.target_versions
+set status = 'review_ready'
+where version_code = '2.0.0'
+  and target_id = (select id from public.learning_targets where slug = 'cert-sec-test');
+
 update public.target_versions
 set status = 'published'
 where version_code = '2.0.0'
