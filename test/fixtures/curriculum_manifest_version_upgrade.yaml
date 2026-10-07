@@ -1,0 +1,101 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Manifest Fixture with Concept Mappings
+# Target: CompTIA Security+ (SY0-701) upgrading from SY0-601
+# ============================================================================
+
+source_release:
+  publisher: "CompTIA"
+  title: "CompTIA Security+ Certification Exam Objectives"
+  version: "SY0-701"
+  source_url: "https://www.comptia.org/certifications/security"
+  retrieved_at: "2026-10-01T00:00:00Z"
+  license: "CompTIA Proprietary (Educational Reference)"
+  license_name: "Proprietary Examination Blueprint"
+  rights_note: "Referenced under fair use for educational curriculum architecture and objective alignment."
+  sha256: "7d8f45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94"
+  metadata:
+    total_domains: 1
+    exam_code: "SY0-701"
+
+target:
+  slug: "cert-comptia-security-plus"
+  title: "CompTIA Security+ (SY0-701)"
+  version_code: "SY0-701"
+  version_title: "CompTIA Security+ (SY0-701) Modernized Blueprint Edition"
+  version_description: "Updated version testing cross-version concept mappings and progress transfer from SY0-601."
+
+concept_mappings:
+  - from_version_code: "SY0-601"
+    from_concept_slug: "sec-symmetric-crypto"
+    to_concept_slug: "sec-crypto-fundamentals"
+    mapping_type: "renamed"
+    transfer_weight: 0.90
+    metadata:
+      rationale: "Broadened symmetric crypto to cover modern cryptographic fundamentals."
+  - from_version_code: "SY0-601"
+    from_concept_slug: "sec-legacy-md5"
+    to_concept_slug: null
+    mapping_type: "removed"
+    transfer_weight: 0.00
+    metadata:
+      rationale: "Obsolete hashing algorithm removed from SY0-701 syllabus."
+
+domains:
+  - code: "1.0"
+    title: "General Security Concepts"
+    description: "Foundational security principles, confidentiality, integrity, availability, and modern cryptography."
+    weight: 1.00
+    sort_order: 1
+    importance: "core"
+    citation: "CompTIA SY0-701 Domain 1.0"
+    objectives:
+      - code: "1.1"
+        title: "Compare and contrast cryptographic types and features"
+        description: "Symmetric and asymmetric primitives, hashing, and authenticated key exchange."
+        sort_order: 1
+        importance: "core"
+        citation: "CompTIA SY0-701 Objective 1.1"
+        concepts:
+          - slug: "sec-crypto-fundamentals"
+            name: "Cryptographic Fundamentals"
+            emoji: "🔐"
+            short_definition: "Foundational mathematical and structural primitives in encryption."
+            description: "Symmetric and asymmetric primitives, hashing, and authenticated key exchange."
+            aliases: ["crypto-fundamentals", "modern-cryptography"]
+            citation: "CompTIA SY0-701 Objective 1.1"
+            prerequisites: []
+        flashcards:
+          - front: "What are the core properties of cryptographic primitives?"
+            back: "Confidentiality, Integrity, Authenticity, and Non-repudiation."
+            explanation: "Core foundations of modern cryptographic architecture."
+            concept_slugs: ["sec-crypto-fundamentals"]
+            citation: "CompTIA SY0-701 Objective 1.1 Flashcard Set"
+        lessons:
+          - title: "Foundations of Modern Cryptography"
+            description: "Master modern cryptographic algorithms and key exchange primitives."
+            emoji: "🔐"
+            tags: ["security", "cryptography", "sy0-701"]
+            citation: "CompTIA SY0-701 Section 1.1"
+            concept_slugs:
+              - "sec-crypto-fundamentals"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: "Modern cryptography combines symmetric and asymmetric algorithms to secure data at rest and in transit."
+            terms:
+              - term: "AES-GCM"
+                definition: "Authenticated encryption mode providing confidentiality and integrity."
+            questions:
+              - question_text: "Which cryptographic mode provides authenticated encryption with associated data?"
+                options:
+                  - "AES-GCM"
+                  - "DES-ECB"
+                  - "RC4"
+                  - "MD5"
+                correct_answer: 0
+                type: "mcq"
+                explanation: "AES in Galois/Counter Mode (GCM) provides both confidentiality and data integrity authentication."
+                concept_slugs:
+                  - "sec-crypto-fundamentals"
+                citation: "CompTIA SY0-701 Section 1.1"

@@ -4,13 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'lib/services/taxonomy/official_taxonomy_sources.dart'
-      - 'lib/services/taxonomy/taxonomy_importer.dart'
-      - 'tool/ingest_official_taxonomies.dart'
-      - 'pubspec.yaml'
-      - '.github/workflows/taxonomy-official-data.yml'
-      - 'supabase/migrations/**'
   workflow_dispatch:
     inputs:
       mode:
