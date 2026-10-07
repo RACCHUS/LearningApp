@@ -1439,4 +1439,30 @@ Phase G: Version Migration & Governance
  └── Publication and retirement pipeline
 ```
 
+---
+
+## 13. Target Version Governance & Security Model
+
+Target versions evolve across lifecycles (`draft` → `review_ready` → `published` → `retired`). To ensure zero leakage of draft curriculum or concept mappings while preserving seamless historical access for learners enrolled prior to retirement, the authorization model enforces a strict two-tier architecture:
+
+### 13.1 Two-Tier Visibility Architecture
+1. **Normal (Catalog) Visibility (`public.is_target_version_visible`)**:
+   - Covers active catalog discovery: published versions of published, public learning targets; target owners; and assigned reviewers when status is `review_ready` (plus `service_role`).
+   - Deliberately excludes retired versions so they cannot be newly browsed, discovered, or selected as destinations.
+   - Enforced by `target_version_concept_mappings` read RLS, destination validation in `evaluate_target_version_migration`, and `migrate_user_context_target_version`.
+
+2. **Historical-Context Access (`public.has_historical_target_version_access`)**:
+   - Covers legitimate learners who enrolled in a version before it retired.
+   - Requires `target_versions.status = 'retired'` AND an existing `learning_contexts` row referencing `target_version_id` owned by the caller.
+   - Enforced by `target_versions` read RLS (`versions_read`) and the source version authorization in `evaluate_target_version_migration`.
+
+### 13.2 Controlled Context Assignment (`validate_learning_context_target_version`)
+To prevent attackers from arbitrarily assigning unpublished draft or retired UUIDs to their own `learning_contexts` to manufacture authorization evidence:
+- A `BEFORE INSERT OR UPDATE` trigger on `public.learning_contexts` enforces that:
+  - On `INSERT` or when `target_version_id` is mutated, the target version must satisfy `public.is_target_version_visible` (unless caller has `service_role`).
+  - For target-root contexts (`root_type = 'target'`), `root_id` must match `target_versions.target_id`.
+  - Non-admin callers cannot reassign context ownership (`user_id`).
+  - Existing context rows pointing to a version that subsequently became retired remain valid and mutable for non-version fields (e.g., `last_active_at`, `label`), granting legitimate historical access without vulnerability to self-assigned elevation.
+
+
 
