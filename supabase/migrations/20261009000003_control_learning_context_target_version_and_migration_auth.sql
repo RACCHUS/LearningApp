@@ -49,8 +49,6 @@ as $$
     where tv.id = p_target_version_id
       and (
         coalesce(auth.role(), '') = 'service_role'
-        or coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role'
-        or current_user in ('postgres', 'supabase_admin')
         or (lt.status = 'published' and lt.is_public = true and tv.status = 'published')
         or (auth.uid() is not null and lt.created_by = auth.uid())
         or (auth.uid() is not null and tv.status = 'review_ready' and public.is_target_reviewer(lt.id))
@@ -113,11 +111,7 @@ declare
   v_target_id uuid;
   v_is_admin boolean;
 begin
-  v_is_admin := (
-    coalesce(auth.role(), '') = 'service_role'
-    or coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role'
-    or current_user in ('postgres', 'supabase_admin')
-  );
+  v_is_admin := coalesce(auth.role(), '') = 'service_role';
 
   -- Prevent non-admins from transferring context ownership to another user
   if tg_op = 'UPDATE' and new.user_id is distinct from old.user_id and not v_is_admin then
