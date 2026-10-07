@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -14,14 +15,14 @@ class McqScreen extends ConsumerStatefulWidget {
   final List<Question> questions;
   final int initialIndex;
   final VoidCallback? onComplete;
-  final bool isEmbeddedInLesson; // New parameter for lesson mode
+  final bool isEmbeddedInLesson;
 
   const McqScreen({
     super.key,
     required this.questions,
     this.initialIndex = 0,
     this.onComplete,
-    this.isEmbeddedInLesson = false, // Default to false for standalone mode
+    this.isEmbeddedInLesson = false,
   });
 
   @override
@@ -34,12 +35,22 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   bool _showFeedback = false;
   bool _isCorrect = false;
   bool _isComplete = false;
+  bool _isBatchComplete = false;
   bool _focusMode = false;
   int _correctAnswers = 0;
-  int? _selectedAnswerIndex; // Track selected answer for state persistence
+  int? _selectedAnswerIndex;
   final Map<String, int> _wrongAnswers = {}; // questionId -> selectedIndex
+  final Map<String, int> _currentBatchWrongAnswers = {};
+  int _batchSize = 15;
+  int _batchStartIndex = 0;
   late List<Question> _activeQuestions;
   final DateTime _sessionStart = DateTime.now();
+
+  int get _currentBatchNumber =>
+      _batchSize > 0 ? (_batchStartIndex ~/ _batchSize) + 1 : 1;
+
+  int get _totalBatches =>
+      _batchSize > 0 ? (widget.questions.length / _batchSize).ceil() : 1;
 
   @override
   void initState() {
@@ -48,8 +59,6 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
     _loadBatchSize();
-    
-    // Check if this question was already answered
     _checkForExistingAnswer();
   }
 
@@ -58,11 +67,16 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     final raw = prefs.getString('settings');
     if (raw != null) {
       final settings = SettingsModel.fromRawJson(raw);
-      if (settings.studyBatchSize > 0 && settings.studyBatchSize < widget.questions.length) {
-        setState(() {
-          _activeQuestions = widget.questions.sublist(0, settings.studyBatchSize);
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _batchSize = settings.studyBatchSize;
+        if (_batchSize > 0 && _batchSize < widget.questions.length) {
+          final end = math.min(_batchSize, widget.questions.length);
+          _activeQuestions = widget.questions.sublist(0, end);
+        } else {
+          _activeQuestions = widget.questions;
+        }
+      });
     }
   }
 
@@ -73,7 +87,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   }
 
   void _checkForExistingAnswer() {
-    if (widget.isEmbeddedInLesson) {
+    if (widget.isEmbeddedInLesson && _activeQuestions.isNotEmpty && _currentIndex < _activeQuestions.length) {
       final studyState = ref.read(studyProvider);
       final currentQuestion = _activeQuestions[_currentIndex];
       final savedAnswer = studyState.questionAnswers[currentQuestion.id];
@@ -95,7 +109,6 @@ class _McqScreenState extends ConsumerState<McqScreen> {
       _isCorrect = false;
       _selectedAnswerIndex = null;
     });
-    // Check for existing answer on the new page
     _checkForExistingAnswer();
   }
 
@@ -110,18 +123,17 @@ class _McqScreenState extends ConsumerState<McqScreen> {
         _correctAnswers++;
       } else {
         _wrongAnswers[currentQuestion.id] = selectedIndex;
+        _currentBatchWrongAnswers[currentQuestion.id] = selectedIndex;
       }
     });
 
-    // Record answer in study provider for lesson mode
     if (widget.isEmbeddedInLesson) {
       ref.read(studyProvider.notifier).recordQuestionAnswer(
         currentQuestion.id, 
-        selectedIndex
+        selectedIndex,
       );
     }
 
-    // Track answer in study provider
     if (_isCorrect) {
       ref.read(studyProvider.notifier).markAnswerCorrect();
     } else {
@@ -136,9 +148,13 @@ class _McqScreenState extends ConsumerState<McqScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // If embedded in lesson, directly call onComplete without showing overlay
       if (widget.isEmbeddedInLesson) {
         widget.onComplete?.call();
+      } else if (_batchSize > 0 &&
+          _batchStartIndex + _activeQuestions.length < widget.questions.length) {
+        setState(() {
+          _isBatchComplete = true;
+        });
       } else {
         setState(() {
           _isComplete = true;
@@ -148,31 +164,74 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     }
   }
 
+  void _continueToNextBatch() {
+    final nextStart = _batchStartIndex + _batchSize;
+    if (nextStart < widget.questions.length) {
+      final nextEnd = math.min(nextStart + _batchSize, widget.questions.length);
+      setState(() {
+        _batchStartIndex = nextStart;
+        _activeQuestions = widget.questions.sublist(nextStart, nextEnd);
+        _currentIndex = 0;
+        _showFeedback = false;
+        _isCorrect = false;
+        _selectedAnswerIndex = null;
+        _isBatchComplete = false;
+        _currentBatchWrongAnswers.clear();
+      });
+      _pageController.jumpToPage(0);
+    }
+  }
+
+  void _reviewIncorrectInBatch() {
+    if (_currentBatchWrongAnswers.isEmpty) return;
+    final incorrectQuestions = widget.questions
+        .where((q) => _currentBatchWrongAnswers.containsKey(q.id))
+        .toList();
+    setState(() {
+      _activeQuestions = incorrectQuestions;
+      _currentIndex = 0;
+      _showFeedback = false;
+      _isCorrect = false;
+      _selectedAnswerIndex = null;
+      _isBatchComplete = false;
+      _currentBatchWrongAnswers.clear();
+    });
+    _pageController.jumpToPage(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final totalQuestions = widget.questions.length;
+    final overallQuestionNumber = _batchStartIndex + _currentIndex + 1;
+
     return Scaffold(
-      // Only show AppBar when not embedded in lesson mode
-      appBar: widget.isEmbeddedInLesson ? null : _focusMode ? null : AppBar(
-        title: Text('MCQ (${_currentIndex + 1}/${_activeQuestions.length})'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        foregroundColor: theme.colorScheme.onSurface,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.visibility_off_outlined),
-            tooltip: 'Focus mode',
-            onPressed: () => setState(() => _focusMode = true),
-          ),
-        ],
-      ),
+      appBar: widget.isEmbeddedInLesson
+          ? null
+          : _focusMode
+              ? null
+              : AppBar(
+                  title: Text(
+                    _batchSize > 0 && totalQuestions > _batchSize
+                        ? 'MCQ ($overallQuestionNumber/$totalQuestions • Batch $_currentBatchNumber/$_totalBatches)'
+                        : 'MCQ (${_currentIndex + 1}/${_activeQuestions.length})',
+                  ),
+                  centerTitle: true,
+                  elevation: 0,
+                  backgroundColor: theme.scaffoldBackgroundColor,
+                  foregroundColor: theme.colorScheme.onSurface,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.visibility_off_outlined),
+                      tooltip: 'Focus mode',
+                      onPressed: () => setState(() => _focusMode = true),
+                    ),
+                  ],
+                ),
       body: Stack(
         children: [
           Column(
             children: [
-              // Minimal progress bar — in focus mode show with exit button, otherwise just the bar
               if (_focusMode && !widget.isEmbeddedInLesson) ...[
                 SafeArea(
                   bottom: false,
@@ -182,7 +241,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                       children: [
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: (_currentIndex + 1) / _activeQuestions.length,
+                            value: overallQuestionNumber / totalQuestions,
                             backgroundColor: theme.colorScheme.surfaceContainerHighest,
                           ),
                         ),
@@ -199,9 +258,10 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                   ),
                 ),
               ] else ...[
-                // Progress indicator (default)
                 LinearProgressIndicator(
-                  value: (_currentIndex + 1) / _activeQuestions.length,
+                  value: _batchSize > 0 && totalQuestions > _batchSize
+                      ? overallQuestionNumber / totalQuestions
+                      : (_currentIndex + 1) / (_activeQuestions.isEmpty ? 1 : _activeQuestions.length),
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
               ],
@@ -227,9 +287,10 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             showResults: _showFeedback,
                             onAnswerSelected: _onAnswerSelected,
                             customTextBuilder: (text) {
-                              // Check if text contains LaTeX
-                              if (text.contains(r'\(') || text.contains(r'\[') || 
-                                  text.contains(r'\frac') || text.contains(r'\sqrt')) {
+                              if (text.contains(r'\(') ||
+                                  text.contains(r'\[') ||
+                                  text.contains(r'\frac') ||
+                                  text.contains(r'\sqrt')) {
                                 return Math.tex(
                                   text,
                                   textStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -246,7 +307,6 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             },
                           ),
                           
-                          // Next button (only shows when feedback is shown and not in lesson mode)
                           if (_showFeedback && !widget.isEmbeddedInLesson) ...[
                             const SizedBox(height: 32),
                             SizedBox(
@@ -260,9 +320,13 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                   ),
                                 ),
                                 child: Text(
-                                  _currentIndex < _activeQuestions.length - 1 
-                                    ? 'Next Question' 
-                                    : 'Finish Quiz',
+                                  _currentIndex < _activeQuestions.length - 1
+                                      ? 'Next Question'
+                                      : (_batchSize > 0 &&
+                                              _batchStartIndex + _activeQuestions.length <
+                                                  widget.questions.length)
+                                          ? 'Finish Batch'
+                                          : 'Finish Quiz',
                                   style: const TextStyle(fontSize: 16),
                                 ),
                               ),
@@ -276,8 +340,103 @@ class _McqScreenState extends ConsumerState<McqScreen> {
               ),
             ],
           ),
+
+          // Batch Checkpoint Overlay
+          if (_isBatchComplete && !widget.isEmbeddedInLesson)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(28),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.task_alt,
+                          size: 56,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Batch $_currentBatchNumber of $_totalBatches Complete!',
+                          style: theme.textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${_batchStartIndex + _activeQuestions.length} of $totalQuestions questions answered.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        LinearProgressIndicator(
+                          value: (_batchStartIndex + _activeQuestions.length) / totalQuestions,
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                          minHeight: 8,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _continueToNextBatch,
+                            icon: const Icon(Icons.arrow_forward),
+                            label: Text('Continue to Batch ${_currentBatchNumber + 1}'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        if (_currentBatchWrongAnswers.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _reviewIncorrectInBatch,
+                              icon: const Icon(Icons.refresh),
+                              label: Text(
+                                'Review ${_currentBatchWrongAnswers.length} Missed Questions in Batch',
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            final missedQuestions = widget.questions
+                                .where((q) => _wrongAnswers.containsKey(q.id))
+                                .map((q) => MissedQuestion(
+                                      question: q,
+                                      selectedAnswer: _wrongAnswers[q.id]!,
+                                    ))
+                                .toList();
+                            final result = SessionResult(
+                              mode: SessionMode.mcq,
+                              correct: _correctAnswers,
+                              total: _batchStartIndex + _activeQuestions.length,
+                              missedQuestions: missedQuestions,
+                              duration: DateTime.now().difference(_sessionStart),
+                            );
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => SessionResultsScreen(result: result),
+                              ),
+                            );
+                          },
+                          child: const Text('Finish Quiz Early'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           
-          // Completion overlay
+          // Final Quiz Completion overlay
           if (_isComplete)
             Container(
               color: Colors.black54,
@@ -302,7 +461,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Score: $_correctAnswers/${_activeQuestions.length}',
+                          'Score: $_correctAnswers/$totalQuestions',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -315,23 +474,26 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             TextButton(
                               onPressed: () {
                                 setState(() {
+                                  _batchStartIndex = 0;
+                                  final end = (_batchSize > 0 && _batchSize < widget.questions.length)
+                                      ? _batchSize
+                                      : widget.questions.length;
+                                  _activeQuestions = widget.questions.sublist(0, end);
                                   _currentIndex = 0;
                                   _isComplete = false;
+                                  _isBatchComplete = false;
                                   _showFeedback = false;
                                   _correctAnswers = 0;
                                   _wrongAnswers.clear();
+                                  _currentBatchWrongAnswers.clear();
                                 });
-                                _pageController.animateToPage(
-                                  0,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
+                                _pageController.jumpToPage(0);
                               },
                               child: const Text('Try Again'),
                             ),
                             ElevatedButton(
                               onPressed: () {
-                                final missedQuestions = _activeQuestions
+                                final missedQuestions = widget.questions
                                     .where((q) => _wrongAnswers.containsKey(q.id))
                                     .map((q) => MissedQuestion(
                                           question: q,
@@ -341,7 +503,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                 final result = SessionResult(
                                   mode: SessionMode.mcq,
                                   correct: _correctAnswers,
-                                  total: _activeQuestions.length,
+                                  total: totalQuestions,
                                   missedQuestions: missedQuestions,
                                   duration:
                                       DateTime.now().difference(_sessionStart),
@@ -362,7 +524,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                 ),
               ),
             ),
-          const BreakOverlay(),
+          if (!widget.isEmbeddedInLesson) const BreakOverlay(),
         ],
       ),
     );

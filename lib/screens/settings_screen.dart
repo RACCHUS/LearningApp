@@ -442,6 +442,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            
+            // Recall Before Reveal
+            SwitchListTile(
+              title: const Text('Recall Before Reveal'),
+              subtitle: const Text(
+                'Prompt active memory retrieval before displaying definitions and answers',
+              ),
+              value: _settings.recallBeforeReveal,
+              onChanged: (value) {
+                setState(() {
+                  _settings.recallBeforeReveal = value;
+                });
+                _saveSettings();
+              },
+            ),
           ],
         ),
       ),

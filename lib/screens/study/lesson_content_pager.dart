@@ -18,6 +18,7 @@ import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
+import 'package:learning_pwa/widgets/study/break_overlay.dart';
 
 class LessonContentPager extends ConsumerStatefulWidget {
   final List<LessonContent> contentList;
@@ -34,6 +35,7 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
   bool _isLastPage = false;
   bool _isFirstPage = true;
   bool _isOrchestratorMode = false;
+  bool _focusMode = false;
 
   @override
   void initState() {
@@ -80,13 +82,11 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
   void dispose() {
     if (kDebugMode) {
       print('🎓 LessonContentPager disposing...');
-      final globalVoiceState = ref.read(globalVoiceProvider);
-      print('🎙️ Global voice state at dispose: enabled=${globalVoiceState.isEnabled}, listening=${globalVoiceState.isListening}');
     }
     
     _pageController.dispose();
-    // Stop orchestrator if active (check if mounted to avoid ref access after disposal)
-    if (_isOrchestratorMode && mounted) {
+    // Stop orchestrator if active
+    if (_isOrchestratorMode) {
       try {
         final orchestrator = ref.read(audioLessonOrchestratorProvider);
         orchestrator.stopLesson();
@@ -267,50 +267,79 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
     if (contentList.isEmpty) {
       return const Center(child: Text('No content available'));
     }
-    return Column(
+    return Stack(
       children: [
-        // Progress bar and page indicator
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            children: [
-              LinearProgressIndicator(
-                value: (_currentPageIndex + 1) / contentList.length,
-                minHeight: 6,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Page ${_currentPageIndex + 1} of ${contentList.length}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Hands-free mode toggle
-                      IconButton(
-                        icon: Icon(_isOrchestratorMode ? Icons.record_voice_over : Icons.touch_app),
-                        tooltip: _isOrchestratorMode ? 'Disable Hands-Free' : 'Enable Hands-Free',
-                        onPressed: _toggleOrchestratorMode,
-                        iconSize: 20,
-                      ),
-                      IconButton(
-                        onPressed: () => _showPageNavigator(context, contentList),
-                        icon: const Icon(Icons.list),
-                        tooltip: 'Jump to page',
-                        iconSize: 20,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        Column(
+          children: [
+            // Progress bar and page indicator
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _focusMode
+                  ? Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: (_currentPageIndex + 1) / contentList.length,
+                            minHeight: 4,
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_outlined, size: 20),
+                          tooltip: 'Exit focus mode',
+                          onPressed: () => setState(() => _focusMode = false),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        LinearProgressIndicator(
+                          value: (_currentPageIndex + 1) / contentList.length,
+                          minHeight: 6,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Page ${_currentPageIndex + 1} of ${contentList.length}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Hands-free mode toggle
+                                IconButton(
+                                  icon: Icon(_isOrchestratorMode ? Icons.record_voice_over : Icons.touch_app),
+                                  tooltip: _isOrchestratorMode ? 'Disable Hands-Free' : 'Enable Hands-Free',
+                                  onPressed: _toggleOrchestratorMode,
+                                  iconSize: 20,
+                                ),
+                                IconButton(
+                                  onPressed: () => _showPageNavigator(context, contentList),
+                                  icon: const Icon(Icons.list),
+                                  tooltip: 'Jump to page',
+                                  iconSize: 20,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.visibility_off_outlined),
+                                  tooltip: 'Focus mode',
+                                  onPressed: () => setState(() => _focusMode = true),
+                                  iconSize: 20,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+            ),
         
         // Hands-free indicator when orchestrator is active
         if (_isOrchestratorMode) const HandsFreeIndicator(),
@@ -461,6 +490,9 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
           ),
         ),
       ],
-    );
+    ),
+    const BreakOverlay(),
+  ],
+);
   }
 }
