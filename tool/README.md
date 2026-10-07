@@ -144,6 +144,24 @@ Downloaded files live under `build/taxonomy-cache/` by default and are not commi
 dart run tool/taxonomy_status.dart
 ```
 
+### `verify_migration_history.dart`
+**Purpose**: Verify append-only migration history, canonical filename timestamp monotonicity, and database upgrade safety against `origin/main`. Prevents in-place edits and deletion of previously merged migrations, and provides pending migration isolation for incremental upgrade testing in CI.
+
+**Usage**:
+```bash
+# Verify migration immutability against origin/main
+dart run tool/verify_migration_history.dart --base-ref origin/main
+
+# List newly introduced pending migrations
+dart run tool/verify_migration_history.dart --list-pending
+
+# Isolate pending migrations for baseline testing
+dart run tool/verify_migration_history.dart --isolate-pending build/pending_migrations
+
+# Restore pending migrations back into supabase/migrations
+dart run tool/verify_migration_history.dart --restore-pending build/pending_migrations
+```
+
 ### Troubleshooting:
 - **Environment Error**: Check `.env` file exists and contains required variables
 - **File Not Found**: Ensure you're running from project root directory
