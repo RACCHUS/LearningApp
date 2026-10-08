@@ -19,6 +19,13 @@ final targetsListProvider = FutureProvider.family<List<LearningTarget>,
   },
 );
 
+/// Eligible official and reviewed community records for goal-form suggestions.
+final targetSuggestionsProvider =
+    FutureProvider.family<List<LearningTarget>, TargetType>((ref, type) async {
+  return ref.watch(learningTargetServiceProvider)
+      .getSuggestionTargets(type: type);
+});
+
 final targetDetailProvider =
     FutureProvider.family<LearningTarget?, String>((ref, id) async {
   final service = ref.watch(learningTargetServiceProvider);
