@@ -25,6 +25,9 @@ The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.m
 - A **canonical concept layer** allows knowledge evidence to be reused across learning contexts while keeping each context's content relevant.
 - **Completion and retention are separate:** finishing content is not the same as remembering it.
 - Lesson creation, courses, saved study sets, content selection, and library/catalog browsing.
+- A collapsible, searchable sidebar on desktop/tablet; searches open the Library.
+- Database-derived goal suggestions for titles, organizations, and purposes, with editable custom values.
+- Catalog provenance labels distinguish platform-official records, curated catalog records, and reviewed community material. Newly created personal targets are private drafts. Owners may request review, but only trusted service-role moderation can approve and publish community targets.
 - Taxonomy and career-path exploration supported by official **CIP, SOC, and O*NET** ingestion and verification tooling.
 
 ### Study and assessment
@@ -46,7 +49,7 @@ The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.m
 
 These goals are **not claims of shipped functionality**:
 
-- Community quality feedback influencing recommended educational resources.
+- Community feedback and recommendation ranking beyond the initial moderation and filtering system.
 - Creator publishing and optional sale of educational materials.
 - Broader first-party content and AI-assisted course generation for exams, certifications, licenses, and other subjects.
 
