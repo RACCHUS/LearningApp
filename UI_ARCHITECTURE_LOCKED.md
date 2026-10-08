@@ -1,12 +1,13 @@
 # UI Architecture — LOCKED BASELINE
 
-**Status:** Locked. **Version 1.4** — implementation baseline. **Architecture frozen; P0 may begin.**
+**Status:** Locked. **Version 1.5** — implementation baseline. **Architecture frozen; P0 may begin.**
 **Supersedes:** the IA sections of `LEARNING_UI_PLAN.md` and `LEARNING_UI_RESEARCH.md`. Those documents remain valid for *study-mechanics* sprints (emoji, focus mode, batch size, recall-before-reveal); this document overrides them wherever they disagree about navigation, screen composition, or what appears on the home screen.
 **Change control:** see [§14](#14-change-control).
 **v1.1 changelog:** six amendments — recommendation policy de-escalated, retrieval bands renamed and re-scoped, Progress question broadened, gamification defaults split into presets, change control widened to four grounds, exclamation-mark rule scoped to urgency framing. See §1.4.
 **v1.2 changelog:** five corrections — four internal contradictions resolved (lesson-rooted contexts, content-neutral Next-Action engine, nav-badge wording, context ordering) plus a verified correction to §6 after reading the actual algorithm. See §1.5.
 **v1.3 changelog:** two corrections — the `ReviewOnly` dead end (a real defect, mirror of B2) and unspecified empty-catalog behaviour in the zero state. See §1.6. Plus five spec-hygiene fixes at freeze: §1.6.1.
 **v1.4 changelog:** one user-evidence amendment — replace opaque three-dot overflow with state-aware account actions (avatar when signed in; Log in + Settings when signed out/guest), with locked local-only device preferences. See §1.7.
+**v1.5 changelog:** first-run simplification under direct user evidence — remove the separate onboarding wizard, make Learn's zero state the onboarding experience, and add persistent searchable Help as quiet utility chrome. See §1.8 and §5.8.
 
 ---
 
@@ -152,6 +153,17 @@ Raised directly from learner testing and discoverability friction. Accepted unde
 |---|---|---|
 | **E1** | **Opaque overflow (`⋯`) hides login status & settings discoverability.** The three-dot menu required tapping blindly just to see whether the user was authenticated. Furthermore, signed-out users lacked a visible route to log in, and settings access was tied up in an ambiguous menu. | **State-aware `AccountActions`** (§3, §5.1): Replaces `⋯` across Learn, Library, and Progress.<br>• **Signed in (non-anonymous):** Displays the account avatar/initial with tooltip; tapping opens Profile and Settings.<br>• **Signed out / guest:** Directly renders a clear "Log in" button and a separate "Settings" icon button.<br>• **Settings persistence:** Locked as **device-local only** (`SharedPreferences` / browser `localStorage`). Preferences (theme, daily goal, notifications, batch size) remain independent per device/browser and must not be overwritten by remote profile synchronization. |
 
+### 1.8 Amendment in v1.5 (Direct User Evidence)
+
+Raised directly by the product owner after using the implemented first-run flow. Accepted under the **User evidence** ground (§14).
+
+| # | Finding | Resolution |
+|---|---|---|
+| **F1** | **The separate first-run wizard asks for commitment before the learner has received value.** Daily-goal setup, feature marketing, and sample-content import happen before the learner reaches the actual product. | **Delete the onboarding gate.** Fresh launch goes directly to Learn. When there is no active learning context, `LearnZeroState` is the onboarding experience: one primary action to find something to learn and one secondary action to create their own. No timer, daily goal, reminders, streaks, sample import, or questionnaire is required before learning. |
+| **F2** | **Optional capabilities still need durable discoverability after onboarding is removed.** Settings alone is too indirect for a learner asking "how do I use the timer?" or "what does retention mean?" | **Searchable Help utility.** A visible `?` Help action appears in Learn, Library, and Progress app bars immediately before account actions. It opens a local/offline searchable Help surface. Help is utility chrome, not a fourth destination, and may never carry a badge or attention treatment. |
+
+The implementation-ready interaction and content contract lives in `docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md`.
+
 ---
 
 ## 2. Locked philosophy
@@ -194,7 +206,7 @@ Five statements. Everything below is derived from these. If a future feature con
 
 **Locked chrome rules:**
 - **No top-level navigation destination control may display a badge, dot, count, animation, or other attention indicator.** (Scoped in B3: this governs the `NavigationBar` / `NavigationRail` items only. Informational counts *inside* Library or Progress are fine — the user opened that screen deliberately. The rule bans summoning, not information.)
-- The app bar on Learn contains: context switcher (conditionally, §1.2b) + `AccountActions` (E1). Nothing else. No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`.
+- The app bar on Learn contains: context switcher (conditionally, §1.2b) + `HelpAction` (F2) + `AccountActions` (E1). No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`. Library and Progress also expose the same quiet `HelpAction` immediately before account actions.
 - `SyncStatusIndicator` and `GlobalVoiceIndicator` render **only when not in the idle/nominal state.** Silent when healthy.
 
 ---
@@ -298,30 +310,37 @@ Hive type IDs: use **10** for `LearningContext`, **11** for `ResumePointer`. (Ve
 
 Content column is **max 720dp wide, centred**. This is a doing screen, not a dashboard; do not let it fill a 27" monitor.
 
-#### A. Zero state (no contexts)
+#### A. Zero state (no contexts) — also the first-run experience (F1)
 
 ```
 ┌──────────────────────────────────────────┐
-│  Learn                     [Account]     │   ← AccountActions (E1)
+│  Learn                     [?] [Account] │
 ├──────────────────────────────────────────┤
 │                                          │
-│   What do you want to learn?             │
+│           What do you want to learn?     │
 │                                          │
-│   ┌────────────────────────────────┐     │
-│   │  Browse courses            →   │     │
-│   ├────────────────────────────────┤     │
-│   │  Import or create content  →   │     │
-│   └────────────────────────────────┘     │
+│  Find an exam, certification, course,    │
+│  or subject and start from there.        │
+│                                          │
+│       [ Find something to learn ]        │
+│                                          │
+│              Create your own →           │
 │                                          │
 └──────────────────────────────────────────┘
 ```
-Two options. No carousel, no featured grid, no onboarding quiz, no "popular this week". Both routes land in Library and, on selection, create a `LearningContext` and return the user to Learn.
-*(Note: `[Account]` renders `AccountActions` — avatar with Profile/Settings menu when signed in; "Log in" + Settings icon when signed out/guest).*
+
+This **is onboarding**. There is no preceding welcome screen, setup wizard, daily-goal picker, feature tour, reminder prompt, or sample-content import.
+
+- Primary: **Find something to learn** → Library.
+- Secondary: **Create your own →** → custom target/goal creation.
+- `[?]` opens searchable Help (§5.8).
+- `[Account]` renders `AccountActions` — avatar with Profile/Settings menu when signed in; "Log in" + Settings icon when signed out/guest.
+- The old `/onboarding` URL redirects to `/learn`; no first-run preference gate remains.
 
 **Neither option may terminate in an empty screen (C2 — locked).**
 
-- **First run seeds the bundled asset lessons** (`assets/lessons/`, currently six) so the catalog is never empty on a fresh install. `Browse courses` always has something to show.
-- If the catalog is nevertheless empty — filtered to nothing, offline with no cache, or a future build shipping no seed content — the options **swap emphasis**: `Import or create content` becomes primary and `Browse courses` is demoted, with a plain one-line reason. The screen never presents a route to nowhere as the recommended path.
+- Bundled lessons under `assets/lessons/` remain discoverable through the normal catalog provider; they are not imported as a first-run side effect.
+- If the catalog is empty — filtered to nothing, offline with no cache, or a future build shipping no seed content — **Create your own** becomes primary and the browse action is demoted with a plain one-line reason.
 - Library's own empty-catalog state must itself offer create/import. A dead end one level down is still a dead end.
 
 #### B. Active state (the screen 95% of sessions see)
@@ -520,6 +539,22 @@ The lesson does not get busier than the screen that launched it.
 - Retrieval before reveal. Immediate, informative feedback. Hints that degrade rather than reveal.
 - Chrome during study: progress-within-lesson indicator + exit. That is all. No XP tickers, no streak, no timer ring.
 - XP/celebration, if enabled, appears **only** on the session summary — never mid-item, where it competes with feedback the learner should be reading.
+
+### 5.8 HELP (F2)
+
+Help is a **searchable utility surface**, not a destination and not onboarding.
+
+- Entry point: `HelpAction` (`Icons.help_outline`) in Learn, Library, and Progress app bars.
+- Available signed in, signed out, and offline.
+- Mobile: near-full-height modal bottom sheet. Wide screens: modal panel/dialog, max 560dp.
+- The first control is `Search help`.
+- v1 search is deterministic and local over typed help topics (title, aliases/keywords, summary, body). No AI or network dependency is required.
+- Initial categories: Getting started; Studying; Practice & exams; Progress; Goals & motivation; Creating content; Account & settings.
+- Topics may expose direct actions such as `Open Library`, `Open Settings`, `Open Motivation settings`, or `Open Progress`.
+- Help never mutates learner state merely by opening or searching.
+- Help never displays badges, urgency, unread counts, or proactive attention cues.
+
+The concrete topic model, initial query mappings, responsive behavior and acceptance tests are locked in `docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md`.
 
 ### 5.7 SETTINGS
 
