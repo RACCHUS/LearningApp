@@ -42,6 +42,16 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant AudioMCQWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.questionText != widget.questionText ||
+        oldWidget.selectedAnswer != widget.selectedAnswer ||
+        (oldWidget.showResults && !widget.showResults)) {
+      _selectedAnswer = widget.selectedAnswer;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final canSpeak = ref.watch(canSpeakProvider);
 
@@ -162,6 +172,8 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
   }
 
   void _handleVoiceAnswer(String voiceInput) {
+    if (widget.showResults) return;
+
     // Use the sophisticated VoiceCommand parsing system
     final command = VoiceCommand.parseCommand(voiceInput);
     int? answerIndex;
