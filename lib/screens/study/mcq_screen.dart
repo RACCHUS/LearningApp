@@ -66,7 +66,9 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   void initState() {
     super.initState();
     _activeQuestions = widget.questions;
-    _currentIndex = widget.initialIndex;
+    _currentIndex = widget.questions.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.questions.length - 1).toInt();
     _pageController = PageController(initialPage: _currentIndex);
     _loadBatchSize();
     _checkForExistingAnswer();
@@ -82,7 +84,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
 
     final safeInitialIndex = widget.questions.isEmpty
         ? 0
-        : widget.initialIndex.clamp(0, widget.questions.length - 1);
+        : widget.initialIndex.clamp(0, widget.questions.length - 1).toInt();
     var batchStart = 0;
     var localIndex = safeInitialIndex;
     var activeQuestions = widget.questions;
