@@ -38,10 +38,13 @@ class _BreakContent extends ConsumerWidget {
     final secondsLeft =
         ref.watch(timerProvider.select((s) => s.breakTimeLeftSeconds));
     final blocks = ref.watch(timerProvider.select((s) => s.blocksCompleted));
+    final isLongBreak =
+        ref.watch(timerProvider.select((s) => s.isLongBreak));
 
     return Semantics(
       liveRegion: true,
-      label: 'Break time. ${_format(secondsLeft)} remaining.',
+      label:
+          '${isLongBreak ? 'Long break' : 'Break'} time. ${_format(secondsLeft)} remaining.',
       child: ColoredBox(
         color: theme.colorScheme.surface.withValues(alpha: 0.97),
         child: Center(
@@ -50,17 +53,22 @@ class _BreakContent extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.self_improvement,
-                    size: 64, color: theme.colorScheme.primary),
+                Icon(
+                  isLongBreak ? Icons.park_outlined : Icons.self_improvement,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(height: 16),
-                Text('Nice work!',
+                Text(isLongBreak ? 'Take a longer break' : 'Nice work!',
                     style: theme.textTheme.headlineSmall,
                     textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 Text(
-                  blocks == 1
-                      ? 'Take a short break — you have earned it.'
-                      : "Take a short break — that's $blocks blocks done.",
+                  isLongBreak
+                      ? 'You completed $blocks focus blocks. Step away, move around, and come back refreshed.'
+                      : blocks == 1
+                          ? 'Take a short break — you have earned it.'
+                          : "Take a short break — that's $blocks blocks done.",
                   style: theme.textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
