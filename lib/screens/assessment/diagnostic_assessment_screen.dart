@@ -36,8 +36,12 @@ class _DiagnosticAssessmentScreenState
   @override
   Widget build(BuildContext context) {
     final targetAsync = ref.watch(targetDetailProvider(widget.targetId));
-    final itemsAsync =
-        ref.watch(diagnosticItemsProvider(widget.targetVersionId));
+    final itemsAsync = ref.watch(
+      diagnosticItemsProvider((
+        targetId: widget.targetId,
+        targetVersionId: widget.targetVersionId,
+      )),
+    );
     final session = ref.watch(diagnosticSessionProvider(_sessionKey));
     final theme = Theme.of(context);
 
