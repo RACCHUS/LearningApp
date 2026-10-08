@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/learning_target.dart';
+import '../../models/taxonomy/taxonomy.dart';
+import '../../providers/taxonomy_provider.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../theme/design_tokens.dart';
 
@@ -30,6 +34,8 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   late final TextEditingController _providerController;
   late TargetType _selectedType;
   LearningTarget? _selectedExample;
+  Timer? _taxonomyDebounce;
+  String _taxonomyQuery = '';
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -44,6 +50,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
 
   @override
   void dispose() {
+    _taxonomyDebounce?.cancel();
     _titleController.dispose();
     _descController.dispose();
     _providerController.dispose();
@@ -57,6 +64,34 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
       _providerController.text = example.providerName ??
           example.institutionName ?? '';
       _descController.text = example.description ?? '';
+    });
+  }
+
+  void _queueTaxonomySearch(String value) {
+    _taxonomyDebounce?.cancel();
+    final query = value.trim();
+    if (query.length < 3 ||
+        (_selectedType != TargetType.career &&
+            _selectedType != TargetType.academicProgram)) {
+      if (_taxonomyQuery.isNotEmpty) {
+        setState(() => _taxonomyQuery = '');
+      }
+      return;
+    }
+    _taxonomyDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) setState(() => _taxonomyQuery = query);
+    });
+  }
+
+  void _applyTaxonomyExample(TaxonomySearchMatch match) {
+    _taxonomyDebounce?.cancel();
+    setState(() {
+      _selectedExample = null; // A classification is not a published course.
+      _taxonomyQuery = '';
+      _titleController.text = match.title;
+      if (match.description != null && match.description!.trim().isNotEmpty) {
+        _descController.text = match.description!;
+      }
     });
   }
 
@@ -183,6 +218,23 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     final theme = Theme.of(context);
     final suggestionsAsync = ref.watch(targetSuggestionsProvider(_selectedType));
     final catalog = suggestionsAsync.valueOrNull ?? const <LearningTarget>[];
+    final taxonomyAsync = _taxonomyQuery.length >= 3
+        ? ref.watch(taxonomySearchProvider(_taxonomyQuery))
+        : null;
+    final taxonomyMatches = (taxonomyAsync?.valueOrNull ??
+            const <TaxonomySearchMatch>[])
+        .where((match) {
+      if (_selectedType == TargetType.career) {
+        return match.kind == TaxonomyItemKind.occupation &&
+            (match.level == 'detailed_occupation' ||
+                match.level == 'onet_extension');
+      }
+      if (_selectedType == TargetType.academicProgram) {
+        return match.kind == TaxonomyItemKind.cipProgram &&
+            match.level == 'program';
+      }
+      return false;
+    }).take(4).toList();
 
     final providerSuggestions = _textSuggestions(
       catalog,
@@ -245,6 +297,8 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       setState(() {
                         _selectedType = type;
                         _selectedExample = null;
+                        _taxonomyQuery = '';
+                        _taxonomyDebounce?.cancel();
                       });
                     }
                   },
@@ -253,7 +307,10 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                 TextFormField(
                   key: const Key('goal-title'),
                   controller: _titleController,
-                  onChanged: (_) => setState(() => _selectedExample = null),
+                  onChanged: (value) {
+                    setState(() => _selectedExample = null);
+                    _queueTaxonomySearch(value);
+                  },
                   decoration: InputDecoration(
                     labelText: 'Title or Target Role',
                     hintText: _selectedType == TargetType.career
@@ -308,6 +365,26 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       style: theme.textTheme.bodySmall,
                     ),
                   ),
+                if (taxonomyMatches.isNotEmpty) ...[
+                  const SizedBox(height: DesignTokens.space2),
+                  Text('Matches from official occupation / program classifications',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      )),
+                  for (final item in taxonomyMatches)
+                    ListTile(
+                      key: Key('goal-taxonomy-suggestion-${item.code}'),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.menu_book_outlined),
+                      title: Text(item.title, maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      subtitle: Text(_selectedType == TargetType.career
+                          ? 'BLS / O*NET SOC reference · ${item.code}'
+                          : 'NCES CIP program reference · ${item.code}'),
+                      onTap: () => _applyTaxonomyExample(item),
+                    ),
+                ],
                 if (_selectedExample != null)
                   Align(
                     alignment: Alignment.centerLeft,
