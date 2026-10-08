@@ -282,7 +282,6 @@ class TargetDetailScreen extends ConsumerWidget {
                         if (ver.isPublished) ...[
                           DiagnosticLaunchBanner(
                             targetId: target.id,
-                            targetTitle: target.title,
                             targetVersionId: ver.id,
                           ),
                           const SizedBox(height: DesignTokens.space3),
