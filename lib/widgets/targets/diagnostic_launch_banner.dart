@@ -7,20 +7,22 @@ import '../../theme/design_tokens.dart';
 
 class DiagnosticLaunchBanner extends ConsumerWidget {
   final String targetId;
-  final String targetTitle;
   final String targetVersionId;
 
   const DiagnosticLaunchBanner({
     super.key,
     required this.targetId,
-    required this.targetTitle,
     required this.targetVersionId,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final availability =
-        ref.watch(diagnosticAvailabilityProvider(targetVersionId));
+    final availability = ref.watch(
+      diagnosticAvailabilityProvider((
+        targetId: targetId,
+        targetVersionId: targetVersionId,
+      )),
+    );
 
     return availability.when(
       loading: () => const SizedBox.shrink(),
