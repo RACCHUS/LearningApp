@@ -473,9 +473,7 @@ class DiagnosticAssessmentService {
   bool _isSupportedDiagnosticItem(AssessmentItem item) {
     final type = item.interactionType;
     final supported = type == AssessmentInteractionType.singleChoice ||
-        type == AssessmentInteractionType.multiSelect ||
-        type == AssessmentInteractionType.orderedResponse ||
-        type == AssessmentInteractionType.matching;
+        type == AssessmentInteractionType.multiSelect;
     if (!supported) return false;
 
     switch (type) {
