@@ -5,8 +5,8 @@ import '../../models/learning_target.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../theme/design_tokens.dart';
 
-/// Interactive dialog allowing the user to create a new Learning Target
-/// (Career, Certification, Standardized Exam, Academic Program, or Curriculum Standard).
+/// Custom learning goals remain private drafts. Catalog examples are reference
+/// suggestions; choosing one never makes a user's copy "official".
 class CreateTargetDialog extends ConsumerStatefulWidget {
   final TargetType? initialType;
 
@@ -29,6 +29,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   late final TextEditingController _descController;
   late final TextEditingController _providerController;
   late TargetType _selectedType;
+  LearningTarget? _selectedExample;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -49,9 +50,26 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     super.dispose();
   }
 
+  void _applyExample(LearningTarget example) {
+    setState(() {
+      _selectedExample = example;
+      _titleController.text = example.title;
+      _providerController.text = example.providerName ??
+          example.institutionName ?? '';
+      _descController.text = example.description ?? '';
+    });
+  }
+
+  Future<void> _openExisting() async {
+    final example = _selectedExample;
+    if (example == null) return;
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.push('/target/${example.id}');
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -70,22 +88,107 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     );
 
     if (!mounted) return;
-
     if (target != null) {
+      final router = GoRouter.of(context);
       ref.invalidate(targetsListProvider);
       Navigator.of(context).pop(target);
-      context.push('/target/${target.id}');
+      router.push('/target/${target.id}');
     } else {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Failed to create learning goal. Please check connection.';
+        _errorMessage =
+            'Could not save a private goal. Please sign in and check your connection.';
       });
     }
+  }
+
+  List<LearningTarget> _titleMatches(List<LearningTarget> targets) {
+    final query = _titleController.text.trim().toLowerCase();
+    final filtered = targets.where((target) =>
+        query.isEmpty || target.title.toLowerCase().contains(query)).toList();
+    return filtered.take(4).toList();
+  }
+
+  List<String> _textSuggestions(
+    List<LearningTarget> targets,
+    String Function(LearningTarget) extract,
+    String current,
+  ) {
+    final filter = current.trim().toLowerCase();
+    final seen = <String>{};
+    final result = <String>[];
+    for (final target in targets) {
+      final value = extract(target).trim();
+      if (value.isEmpty ||
+          !seen.add(value.toLowerCase()) ||
+          (filter.isNotEmpty && !value.toLowerCase().contains(filter))) {
+        continue;
+      }
+      result.add(value);
+      if (result.length == 4) break;
+    }
+    return result;
+  }
+
+  Widget _suggestionChips({
+    required String heading,
+    required List<String> values,
+    required ValueChanged<String> onSelected,
+    required String keyPrefix,
+    int maxLabelLength = 60,
+  }) {
+    if (values.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: DesignTokens.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(heading,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              )),
+          const SizedBox(height: DesignTokens.space1),
+          Wrap(
+            spacing: 6,
+            runSpacing: 2,
+            children: [
+              for (var i = 0; i < values.length; i++)
+                ActionChip(
+                  key: Key('$keyPrefix-$i'),
+                  label: Text(
+                    values[i].length > maxLabelLength
+                        ? '${values[i].substring(0, maxLabelLength)}…'
+                        : values[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  tooltip: values[i],
+                  onPressed: () => onSelected(values[i]),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final suggestionsAsync = ref.watch(targetSuggestionsProvider(_selectedType));
+    final catalog = suggestionsAsync.valueOrNull ?? const <LearningTarget>[];
+
+    final providerSuggestions = _textSuggestions(
+      catalog,
+      (target) => target.providerName ?? target.institutionName ?? '',
+      _providerController.text,
+    );
+    final descriptionSuggestions = _textSuggestions(
+      catalog,
+      (target) => target.description ?? '',
+      _descController.text,
+    );
 
     return AlertDialog(
       title: Row(
@@ -96,109 +199,178 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
               color: theme.colorScheme.primaryContainer,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.flag_outlined,
-              color: theme.colorScheme.primary,
-            ),
+            child: Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
           ),
           const SizedBox(width: DesignTokens.space3),
-          const Text('Create Learning Goal'),
+          const Flexible(child: Text('Create Learning Goal')),
         ],
       ),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(DesignTokens.space3),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_errorMessage != null) ...[
+                  Text(_errorMessage!,
+                      style: TextStyle(color: theme.colorScheme.error)),
+                  const SizedBox(height: DesignTokens.space3),
+                ],
+                DropdownButtonFormField<TargetType>(
+                  key: const Key('goal-type'),
+                  value: _selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Goal Type',
+                    prefixIcon: const Icon(Icons.category_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    ),
                   ),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
+                  // These are the six valid database target types. Catalog
+                  // examples below update whenever the type changes.
+                  items: [
+                    for (final type in TargetType.values)
+                      DropdownMenuItem(value: type, child: Text(type.displayName)),
+                  ],
+                  onChanged: (type) {
+                    if (type != null) {
+                      setState(() {
+                        _selectedType = type;
+                        _selectedExample = null;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: DesignTokens.space3),
+                TextFormField(
+                  key: const Key('goal-title'),
+                  controller: _titleController,
+                  onChanged: (_) => setState(() => _selectedExample = null),
+                  decoration: InputDecoration(
+                    labelText: 'Title or Target Role',
+                    hintText: _selectedType == TargetType.career
+                        ? 'e.g., Senior Full-Stack Engineer'
+                        : _selectedType == TargetType.certification
+                            ? 'e.g., CompTIA Security+'
+                            : _selectedType == TargetType.standardizedExam
+                                ? 'e.g., USMLE Step 1'
+                                : 'What would you like to learn?',
+                    prefixIcon: const Icon(Icons.edit_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    ),
+                  ),
+                  validator: (value) =>
+                      value == null || value.trim().isEmpty
+                          ? 'Please enter a title'
+                          : null,
+                ),
+                if (catalog.isNotEmpty) ...[
+                  const SizedBox(height: DesignTokens.space2),
+                  Text('Suggestions from the learning catalog',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      )),
+                  for (final example in _titleMatches(catalog))
+                    ListTile(
+                      key: Key('goal-title-suggestion-${example.id}'),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        example.isOfficial ? Icons.verified_outlined
+                            : Icons.people_outline,
+                        color: theme.colorScheme.primary,
+                      ),
+                      title: Text(example.title,
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(example.sourceLabel),
+                      trailing: const Icon(Icons.add, size: 18),
+                      onTap: () => _applyExample(example),
+                    ),
+                ] else if (suggestionsAsync.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(DesignTokens.space2),
+                    child: LinearProgressIndicator(),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: DesignTokens.space2),
+                    child: Text(
+                      'No reviewed examples for this type yet. Enter your own.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                if (_selectedExample != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('goal-open-existing'),
+                      onPressed: _openExisting,
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: const Text('Open this existing catalog goal instead'),
+                    ),
+                  ),
+                const SizedBox(height: DesignTokens.space3),
+                TextFormField(
+                  key: const Key('goal-provider'),
+                  controller: _providerController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: _selectedType == TargetType.certification
+                        ? 'Certification Provider / Body (Optional)'
+                        : _selectedType == TargetType.academicProgram
+                            ? 'University / Institution (Optional)'
+                            : 'Authority / Organization (Optional)',
+                    prefixIcon: const Icon(Icons.business_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    ),
+                  ),
+                ),
+                _suggestionChips(
+                  heading: 'Organization suggestions',
+                  values: providerSuggestions,
+                  keyPrefix: 'goal-provider-suggestion',
+                  onSelected: (value) => setState(() =>
+                      _providerController.text = value),
+                ),
+                const SizedBox(height: DesignTokens.space3),
+                TextFormField(
+                  key: const Key('goal-description'),
+                  controller: _descController,
+                  onChanged: (_) => setState(() {}),
+                  minLines: 2,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Description / Purpose (Optional)',
+                    hintText: 'Describe what you want to learn or achieve',
+                    prefixIcon: const Icon(Icons.notes_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                    ),
+                  ),
+                ),
+                _suggestionChips(
+                  heading: 'Purpose ideas from the catalog',
+                  values: descriptionSuggestions,
+                  keyPrefix: 'goal-description-suggestion',
+                  maxLabelLength: 72,
+                  onSelected: (value) => setState(() =>
+                      _descController.text = value),
+                ),
+                const SizedBox(height: DesignTokens.space3),
+                Text(
+                  'Your new goal is a private, editable draft. Selecting an official '
+                  'example does not mark your copy as official.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
-              DropdownButtonFormField<TargetType>(
-                value: _selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Goal Type',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  ),
-                  prefixIcon: const Icon(Icons.category_outlined),
-                ),
-                items: TargetType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type.displayName),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedType = val);
-                },
-              ),
-              const SizedBox(height: DesignTokens.space3),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Title or Target Role',
-                  hintText: _selectedType == TargetType.career
-                      ? 'e.g., Senior Full-Stack Engineer'
-                      : (_selectedType == TargetType.certification
-                          ? 'e.g., CompTIA Security+'
-                          : (_selectedType == TargetType.standardizedExam
-                              ? 'e.g., USMLE Step 1'
-                              : 'e.g., Data Structures & Algorithms')),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  ),
-                  prefixIcon: const Icon(Icons.edit_outlined),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: DesignTokens.space3),
-              TextFormField(
-                controller: _providerController,
-                decoration: InputDecoration(
-                  labelText: _selectedType == TargetType.certification
-                      ? 'Certification Provider / Body'
-                      : (_selectedType == TargetType.academicProgram
-                          ? 'University / Institution'
-                          : 'Authority / Organization (Optional)'),
-                  hintText: 'e.g., CompTIA, AWS, College Board',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  ),
-                  prefixIcon: const Icon(Icons.business_outlined),
-                ),
-              ),
-              const SizedBox(height: DesignTokens.space3),
-              TextFormField(
-                controller: _descController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Description / Purpose (Optional)',
-                  hintText: 'What key milestones or outcomes do you aim to master?',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                  ),
-                  prefixIcon: const Icon(Icons.notes_outlined),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -211,9 +383,8 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
           onPressed: _isLoading ? null : _submit,
           icon: _isLoading
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.check),
           label: const Text('Create Goal'),
