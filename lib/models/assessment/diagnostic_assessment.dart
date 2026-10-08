@@ -73,16 +73,10 @@ class DiagnosticAvailability {
 class DiagnosticAnswerSubmission {
   final String itemId;
   final dynamic response;
-  final bool isCorrect;
-  final bool isPartial;
-  final double scoreEarned;
 
   const DiagnosticAnswerSubmission({
     required this.itemId,
     required this.response,
-    required this.isCorrect,
-    required this.isPartial,
-    required this.scoreEarned,
   });
 }
 
