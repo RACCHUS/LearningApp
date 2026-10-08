@@ -114,6 +114,7 @@ void main() {
       id: 'target-hvac',
       targetType: TargetType.licensureExam,
       title: 'Florida Air Conditioning Contractor Class A',
+      isOfficial: true,
       slug: 'florida-ac-a',
       jurisdiction: 'Florida',
       createdAt: DateTime(2026),
