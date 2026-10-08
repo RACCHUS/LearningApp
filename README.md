@@ -1,218 +1,132 @@
-# Learning PWA
+# LearningApp
 
-A Flutter-based Progressive Web App for creating, organizing, and studying educational content with AI-powered lesson generation and voice interaction.
+A Flutter progressive web app (PWA) for discovering or creating educational material, studying it, and tracking progress across lessons, courses, certifications, licensure exams, academic programs, and career pathways.
 
-## Features
+**Status:** Active development. Features described here are implemented in the repository; that does not guarantee that each feature has production content or is publicly deployed.
 
-### Core Learning
-- **Lesson Management**: Create, view, and organize lessons with terms, questions, and concepts
-- **Courses**: Group related lessons into structured courses with progress tracking
-- **Study Sets**: Create custom study sessions from multiple lessons
-- **Content Picker**: Granular selection of individual terms, questions, or concepts for focused study
+## Learner experience
 
-### Voice Interaction
-- **Speech-to-Text**: Answer questions using voice input
-- **Text-to-Speech**: Audio playback of content for hands-free learning
-- **Voice Commands**: Navigate and control the app using voice commands
-- **Fuzzy Matching**: Smart answer validation that handles speech recognition inaccuracies
+The current app has three primary destinations:
 
-### Offline Support
-- **Local Storage**: Lessons cached using Hive for offline access
-- **Sync Status**: Visual indicators for sync state of each lesson
-- **Background Sync**: Automatic synchronization when connectivity is restored
+- **Learn** — resume the active learning context or choose what to study next.
+- **Library** — discover learning targets, courses, lessons, and concepts; direct selection is always available.
+- **Progress** — review structural completion and retained knowledge without distracting from study.
 
-### AI Integration
-- **Gemini-Powered Generation**: Generate lessons from text, images, or prompts
-- **Smart Content Extraction**: Automatically parse terms, questions, and concepts
+**No forced onboarding:** a new visitor lands directly on Learn. When no learning context exists, the zero state offers **Find something to learn** and **Create your own**. The app does not require timer, goal, reminder, or streak setup on first launch. A searchable, locally available **Help** utility is accessible from Learn, Library, and Progress. Legacy `/onboarding` links redirect to `/learn`.
 
-## Tech Stack
+The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.md) (v1.5); see also the [zero-state and searchable Help specification](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md).
 
-- **Framework**: Flutter 3.x
-- **State Management**: Riverpod
-- **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **Local Storage**: Hive
-- **Routing**: GoRouter
-- **Push Notifications**: Firebase Cloud Messaging
-- **Voice**: flutter_tts, speech_to_text
+## Implemented capabilities
 
-## Project Structure
+### Learning architecture and catalog
 
-```
-lib/
-├── main.dart              # App entry point
-├── components/            # Reusable UI components
-├── config/                # App configuration
-├── core/                  # Core utilities and constants
-├── models/                # Data models (Lesson, Term, Question, etc.)
-├── providers/             # Riverpod providers and state management
-├── screens/               # Screen widgets organized by feature
-│   ├── auth/              # Login, registration
-│   ├── courses/           # Course browsing and details
-│   ├── home/              # Home screen components
-│   ├── lessons/           # Lesson creation and selection
-│   ├── study/             # Study session screens
-│   └── study_sets/        # Study set management
-├── services/              # Business logic and API clients
-├── theme/                 # Design tokens and theming
-├── utils/                 # Utility functions
-└── widgets/               # Shared widgets
-```
+- **Learning contexts** scope the current study experience without requiring a rigid goal/course/module hierarchy for every learner.
+- **Versioned targets and curricula** represent formal learning destinations, curriculum nodes, and related teaching content.
+- A **canonical concept layer** allows knowledge evidence to be reused across learning contexts while keeping each context's content relevant.
+- **Completion and retention are separate:** finishing content is not the same as remembering it.
+- Lesson creation, courses, saved study sets, content selection, and library/catalog browsing.
+- Taxonomy and career-path exploration supported by official **CIP, SOC, and O*NET** ingestion and verification tooling.
 
-## Getting Started
+### Study and assessment
+
+- Lesson study, flashcards, multiple-choice practice, and review.
+- Optional focus mode, recall-before-reveal prompts, session batching, and study/break timers (including longer recovery breaks).
+- **Diagnostic pre-assessments** gated on enough published, canonical assessment items and concept coverage for the selected target version.
+- Diagnostics use established assessment rendering and scoring. Missing content does **not** produce fabricated questions.
+- Diagnostic results can record concept evidence, suggest persistent remedial study material, and activate the correct curriculum context. Initial diagnostic evidence is explicitly distinguished from long-term target readiness.
+
+### Supporting integrations
+
+- Supabase for PostgreSQL content, authentication, and access policies; Hive for local persistence.
+- Voice input, text-to-speech, and hands-free study integration.
+- AI-assisted lesson/content generation where configured, with review of generated educational material.
+- Local/offline storage and synchronization capabilities; availability varies by feature and cached data.
+
+## Future product direction
+
+These goals are **not claims of shipped functionality**:
+
+- Community quality feedback influencing recommended educational resources.
+- Creator publishing and optional sale of educational materials.
+- Broader first-party content and AI-assisted course generation for exams, certifications, licenses, and other subjects.
+
+## Technology stack
+
+| Area | Technology |
+| --- | --- |
+| App | Flutter (CI pinned to **3.32.8**), Dart SDK `>=3.8.0 `<4.0.0 |
+| State/navigation | Riverpod, GoRouter |
+| Backend | Supabase (PostgreSQL, Auth, Storage, Row Level Security) |
+| Local storage | Hive, SharedPreferences |
+| Notifications | Firebase Cloud Messaging and local notifications |
+| Voice | `flutter_tts`, `speech_to_text` |
+| CI/data validation | GitHub Actions, Flutter tests and web build, Supabase/pgTAP, manifest and official taxonomy tooling |
+
+## Getting started
 
 ### Prerequisites
 
-- Flutter SDK 3.0+
-- Dart SDK 3.0+
-- Supabase project (or local instance)
-- Firebase project (for push notifications)
-
-### Environment Setup
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd LearningApp
-   ```
-
-2. Create a `.env` file in the root directory:
-   ```
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   GEMINI_API_KEY=your_gemini_api_key (optional)
-   ```
-
-3. Install dependencies:
-   ```bash
-   flutter pub get
-   ```
-
-4. Generate Hive adapters:
-   ```bash
-   flutter pub run build_runner build --delete-conflicting-outputs
-   ```
-
-### Database Setup
-
-The app uses Supabase as its backend. See [database/README.md](database/README.md) for:
-- Schema documentation
-- Migration instructions
-- Seed data
-
-Key tables:
-- `lessons` - Lesson content with terms, questions, concepts (JSONB)
-- `courses` - Course metadata
-- `course_lessons` - Course-to-lesson relationships
-- `study_sets` - Saved study set configurations
-- `course_progress`, `study_set_progress` - Progress tracking
-
-### Running the App
+- Flutter **3.32.8** (matching CI) and its compatible Dart SDK.
+- Supabase project credentials and configured Firebase options.
+- Optional for local database tests: Supabase CLI and Docker.
 
 ```bash
-# Web (Chrome)
+git clone https://github.com/RACCHUS/LearningApp.git
+cd LearningApp
+cp .env.example .env
+# PowerShell alternative: Copy-Item .env.example .env
+# Fill in the client configuration values in .env
+flutter pub get
 flutter run -d chrome
-
-# Desktop
-flutter run -d windows  # or macos/linux
-
-# Mobile
-flutter run -d <device_id>
 ```
 
-## Architecture
+Copy the variable names from [.env.example](.env.example). Supabase initialization requires valid `SUPABASE_URL` and `SUPABASE_ANON_KEY`; Firebase options are maintained in `lib/config/firebase_options.dart`. If changing generated model code, run `dart run build_runner build --delete-conflicting-outputs`.
 
-### State Management
+**Client secret safety:** never place service-role credentials or other server-only secrets in the Flutter web client's `.env`. Bundled client configuration should be treated as inspectable.
 
-The app uses Riverpod for state management with the following provider patterns:
-
-- **StateNotifierProvider**: For mutable state (study progress, selections)
-- **FutureProvider**: For async data loading (lessons, courses)
-- **Provider**: For services and computed values
-
-### Key Providers
-
-| Provider | Purpose |
-|----------|---------|
-| `authProvider` | Authentication state |
-| `lessonsProvider` | Lesson list and operations |
-| `courseServiceProvider` | Course CRUD operations |
-| `studySetProvider` | Study set state management |
-| `contentSelectionProvider` | Content picker selections |
-
-### Services
-
-| Service | Purpose |
-|---------|---------|
-| `LessonService` | Lesson CRUD with Supabase |
-| `CourseService` | Course management |
-| `SavedStudySetService` | Persisted study sets |
-| `SyncService` | Offline sync management |
-| `VoiceInputService` | Speech recognition |
-| `VoiceFeedbackService` | Text-to-speech |
-
-## Key Screens
-
-### Home Screen
-Three-tab layout for navigating content:
-- **Lessons**: Grid view of all lessons with search and filters
-- **Courses**: User's courses with progress indicators
-- **Study Sets**: Saved study set configurations
-
-### Course Detail
-View course info, lesson list, and study actions:
-- Course metadata (category, difficulty, description)
-- Ordered lesson list with content counts
-- "Study All" for full course study session
-
-### Content Picker
-Granular content selection for custom study:
-- Tabbed view: Terms, Questions, Concepts
-- Select/deselect individual items
-- Shows source lesson for context
-
-### Study Session
-Interactive study with multiple modes:
-- Flashcard view with flip animation
-- Q&A with text or voice input
-- Progress tracking and scoring
-
-## Testing
+### Local verification
 
 ```bash
-# Run all tests
+flutter analyze
 flutter test
+flutter build web --release
 
-# Run specific test file
-flutter test test/lessons_provider_test.dart
-
-# Run with coverage
-flutter test --coverage
+# Curriculum checks
+dart run tool/lint_manifest.dart --dir content/
+dart run tool/ingest_curriculum.dart --dir content/ --dry-run
+dart run tool/verify_migration_history.dart --base-ref origin/main
 ```
 
-See [test/README.md](test/README.md) for testing guidelines.
+For a disposable local Supabase database (requires Docker):
 
-## Deployment
+```bash
+supabase start
+supabase db reset
+supabase test db
+```
 
-See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for:
-- Web deployment (Firebase Hosting, Vercel)
-- Mobile builds (Android, iOS)
-- Environment configuration
+**Do not run `supabase db reset` against production.** Database migrations under `supabase/migrations/` must remain **append-only**: fix previously merged behavior with a new migration, not by editing prior migrations. CI verifies incremental upgrades, clean-slate migrations, database tests, and official taxonomy ingestion. Review the [hosted migration rollout guide](docs/HOSTED_MIGRATION_ROLLOUT.md) before changing a hosted database.
 
-## Contributing
+### Continuous integration
 
-1. Create a feature branch
-2. Follow existing code patterns and naming conventions
-3. Add tests for new functionality
-4. Update relevant documentation
-5. Submit a pull request
+PRs targeting the protected `main` branch run automated Flutter analysis, tests, web build, curriculum manifest checks, migration immutability checks, database upgrade/reset tests, and official taxonomy validation. See [Flutter CI](.github/workflows/flutter-ci.yml) and [Official Taxonomy Data](.github/workflows/taxonomy-official-data.yml).
+
+## Key documentation
+
+- [UI Architecture — Locked Baseline](UI_ARCHITECTURE_LOCKED.md): three-destination navigation, zero states, direct access, and progress UX.
+- [Learning Architecture v2](LEARNING_ARCHITECTURE_V2.md): learning contexts, target versions, global knowledge, assessment evidence, and curriculum ingestion.
+- [Canonical Taxonomy Architecture](CANONICAL_TAXONOMY_ARCHITECTURE.md): education and occupation classification ingestion and mapping.
+- [First-Run Zero State and Help](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md): no-wizard first visit and searchable help behavior.
+- [Hosted Migration Rollout](docs/HOSTED_MIGRATION_ROLLOUT.md): hosted database considerations.
+- [Deployment Guide](DEPLOYMENT_GUIDE.md): older deployment reference; verify steps against the present setup before release.
+- [Testing Guide](test/README.md): test conventions.
+
+The current architecture documents supersede outdated navigation material in `docs/history/`.
+
+## Contributing and branch policy
+
+Create a feature branch, write appropriate regression tests, and submit a PR into `main`. Keep migrations append-only and do not bypass protected CI checks. Once work is merged and verified on `main`, its short-lived branch can be retired. Review unmerged and archival branches before deleting them.
 
 ## License
 
-This project is private and not licensed for public use.
-
----
-
-For additional documentation, see:
-- [CAREER_SKILLS_PLAN.md](CAREER_SKILLS_PLAN.md) - Career paths and skills system implementation plan
-- [EDITOR_BUILDER_PLAN.md](EDITOR_BUILDER_PLAN.md) - Lesson editor and course builder plan
-- [RELIABILITY_FIXES_PLAN.md](RELIABILITY_FIXES_PLAN.md) - Reliability fixes audit trail
+This repository is **public**, but no `LICENSE` file is included. Public visibility by itself does not grant reuse or redistribution permission. A license may be added later.
