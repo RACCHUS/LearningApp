@@ -15,6 +15,7 @@ void main() {
       final service = DiagnosticAssessmentService(supabase: fake);
 
       final items = await service.generatePreAssessment(
+        targetId: 'target-1',
         targetVersionId: 'version-1',
       );
 
@@ -39,7 +40,27 @@ void main() {
       final service = DiagnosticAssessmentService(supabase: fake);
 
       expect(
-        () => service.generatePreAssessment(targetVersionId: 'version-1'),
+        () => service.generatePreAssessment(targetId: 'target-1', targetVersionId: 'version-1'),
+        throwsA(isA<DiagnosticUnavailableException>()),
+      );
+    });
+
+    test('fails closed when the version belongs to a different target', () async {
+      final fake = _canonicalDiagnosticClient(itemCount: 6);
+      final service = DiagnosticAssessmentService(supabase: fake);
+
+      final availability = await service.getAvailability(
+        targetId: 'target-other',
+        targetVersionId: 'version-1',
+      );
+
+      expect(availability.isAvailable, isFalse);
+      expect(availability.isPublishedVersion, isFalse);
+      expect(
+        () => service.generatePreAssessment(
+          targetId: 'target-other',
+          targetVersionId: 'version-1',
+        ),
         throwsA(isA<DiagnosticUnavailableException>()),
       );
     });
@@ -51,7 +72,7 @@ void main() {
       );
       final service = DiagnosticAssessmentService(supabase: fake);
 
-      final availability = await service.getAvailability('version-1');
+      final availability = await service.getAvailability(targetId: 'target-1', targetVersionId: 'version-1');
       expect(availability.isAvailable, isFalse);
       expect(availability.isPublishedVersion, isFalse);
 
@@ -173,7 +194,7 @@ FakeSupabaseClient _canonicalDiagnosticClient({
 }) {
   final fake = FakeSupabaseClient();
   fake.setTableData('target_versions', [
-    {'id': 'version-1', 'status': versionStatus},
+    {'id': 'version-1', 'target_id': 'target-1', 'status': versionStatus},
   ]);
   fake.setTableData('curriculum_nodes', [
     {'id': 'node-1', 'target_version_id': 'version-1'},
