@@ -82,7 +82,12 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
       description: _descController.text.trim().isNotEmpty
           ? _descController.text.trim()
           : null,
-      providerName: _providerController.text.trim().isNotEmpty
+      providerName: _selectedType != TargetType.academicProgram &&
+              _providerController.text.trim().isNotEmpty
+          ? _providerController.text.trim()
+          : null,
+      institutionName: _selectedType == TargetType.academicProgram &&
+              _providerController.text.trim().isNotEmpty
           ? _providerController.text.trim()
           : null,
     );
