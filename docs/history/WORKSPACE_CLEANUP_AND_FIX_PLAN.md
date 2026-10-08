@@ -158,6 +158,7 @@ Not defects — deferred product features. Listed here so nothing is lost when t
   [mcq_screen.dart](lib/screens/study/mcq_screen.dart).
 - ✅ **P6.3** Sprint 2 — **complete.** Pomodoro break system (timer `breakEnabled/isOnBreak/
   blocksCompleted` + auto-transition in [timer_provider.dart](lib/providers/timer_provider.dart),
+  including the documented 20-minute recovery break after every fourth work block;
   [break_overlay.dart](lib/widgets/study/break_overlay.dart) wired into flashcard/mcq screens,
   toggle in [timer_widget.dart](lib/widgets/timer_widget.dart)); **recall-before-reveal** already
   present ([review_content_widgets.dart](lib/widgets/review_content_widgets.dart) `_QualityButtons`);
