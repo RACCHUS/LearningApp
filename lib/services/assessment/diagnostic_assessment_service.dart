@@ -532,8 +532,8 @@ class _ConceptAccumulator {
   final String conceptId;
   final String conceptName;
   int testedItemsCount = 0;
-  double weightedEvidenceEarned = 0.0;
-  double weightedEvidencePossible = 0.0;
+  double weightedEarned = 0.0;
+  double weightedPossible = 0.0;
 
   _ConceptAccumulator({
     required this.conceptId,
