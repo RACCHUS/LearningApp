@@ -52,6 +52,42 @@ class LearningTargetService {
     }
   }
 
+  /// Read-only suggestions: never use private drafts or unreviewed community
+  /// entries as recommended examples, even when the requesting user owns them.
+  Future<List<LearningTarget>> getSuggestionTargets({
+    required TargetType type,
+    int limit = 120,
+  }) async {
+    final visible = await getTargets(type: type, limit: limit);
+    final suggestions = visible.where((t) => t.isTrustedPublic).toList();
+    suggestions.sort((a, b) {
+      if (a.isOfficial != b.isOfficial) return a.isOfficial ? -1 : 1;
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
+    return suggestions;
+  }
+
+  /// Sends an owned private draft into a moderation queue. The backend only
+  /// allows a review request; the client cannot approve or publish the entry.
+  Future<bool> requestCommunityReview(String targetId) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return false;
+    try {
+      final result = await _supabase
+          .from('learning_targets')
+          .update({'review_status': 'pending'})
+          .eq('id', targetId)
+          .eq('created_by', userId)
+          .eq('status', 'draft')
+          .select('id')
+          .maybeSingle();
+      return result != null;
+    } catch (e) {
+      debugPrint('Could not request learning target review: $e');
+      return false;
+    }
+  }
+
   /// Get single learning target by id or slug
   Future<LearningTarget?> getTarget(String idOrSlug) async {
     try {
@@ -241,8 +277,10 @@ class LearningTargetService {
                             : (targetType == TargetType.academicProgram
                                 ? '🎓'
                                 : '🎯')))),
-            'is_public': isPublic,
-            'status': status,
+            'is_public': false,
+            'is_official': false,
+            'review_status': 'unreviewed',
+            'status': 'draft',
             'created_by': userId,
           })
           .select('*')
