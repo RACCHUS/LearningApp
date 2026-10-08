@@ -63,7 +63,9 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   void initState() {
     super.initState();
     _activeTerms = widget.terms;
-    _currentIndex = widget.initialIndex;
+    _currentIndex = widget.terms.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.terms.length - 1).toInt();
     _pageController = PageController(initialPage: _currentIndex);
     _loadSettings();
   }
@@ -78,7 +80,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
     final safeInitialIndex = widget.terms.isEmpty
         ? 0
-        : widget.initialIndex.clamp(0, widget.terms.length - 1);
+        : widget.initialIndex.clamp(0, widget.terms.length - 1).toInt();
     var batchStart = 0;
     var localIndex = safeInitialIndex;
     var activeTerms = widget.terms;
