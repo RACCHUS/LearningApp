@@ -172,12 +172,12 @@ void main() {
       await tester.pumpWidget(buildTestWidget(terms: testTerms));
       await tester.pumpAndSettle();
 
-      expect(find.text('Photosynthesis'), findsOneWidget);
+      expect(find.text('Flashcards (1/3)'), findsOneWidget);
       await tester.drag(find.text('Photosynthesis'), const Offset(-600, 0));
       await tester.pumpAndSettle();
 
+      expect(find.text('Flashcards (1/3)'), findsOneWidget);
       expect(find.text('Photosynthesis'), findsOneWidget);
-      expect(find.text('Cellular Respiration'), findsNothing);
     });
 
     testWidgets('retrying a difficult card can resolve it without corrupting the score',
