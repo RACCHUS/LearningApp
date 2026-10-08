@@ -34,6 +34,59 @@ void main() {
       );
     });
 
+    test('excludes malformed multi-select items from diagnostic coverage',
+        () async {
+      final fake = _canonicalDiagnosticClient(itemCount: 6);
+      fake.setTableData(
+        'assessment_items',
+        List.generate(6, (index) {
+          if (index == 0) {
+            return {
+              'id': 'item-1',
+              'origin_target_version_id': 'version-1',
+              'interaction_type': 'multi_select',
+              'prompt': 'Malformed multi-select',
+              'response_spec': {
+                'options': ['A', 'B', 'C'],
+              },
+              'scoring_spec': {
+                'correct_indices': [0, 4],
+                'scoring_method': 'all_or_nothing',
+              },
+              'difficulty': 'intermediate',
+            };
+          }
+          return {
+            'id': 'item-${index + 1}',
+            'origin_target_version_id': 'version-1',
+            'interaction_type': 'single_choice',
+            'prompt': 'Canonical question ${index + 1}',
+            'response_spec': {
+              'options': ['Correct', 'Distractor'],
+            },
+            'scoring_spec': {'correct_index': 0},
+            'difficulty': 'intermediate',
+          };
+        }),
+      );
+
+      final service = DiagnosticAssessmentService(supabase: fake);
+      final availability = await service.getAvailability(
+        targetId: 'target-1',
+        targetVersionId: 'version-1',
+      );
+
+      expect(availability.availableItemCount, 5);
+      expect(availability.isAvailable, isFalse);
+      expect(
+        () => service.generatePreAssessment(
+          targetId: 'target-1',
+          targetVersionId: 'version-1',
+        ),
+        throwsA(isA<DiagnosticUnavailableException>()),
+      );
+    });
+
     test('fails closed when canonical assessment coverage is insufficient',
         () async {
       final fake = _canonicalDiagnosticClient(itemCount: 5);
