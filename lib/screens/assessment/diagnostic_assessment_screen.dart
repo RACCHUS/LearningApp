@@ -34,6 +34,15 @@ class _DiagnosticAssessmentScreenState
       );
 
   @override
+  void didUpdateWidget(covariant DiagnosticAssessmentScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.targetId != widget.targetId ||
+        oldWidget.targetVersionId != widget.targetVersionId) {
+      _initialized = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final targetAsync = ref.watch(targetDetailProvider(widget.targetId));
     final itemsAsync = ref.watch(
