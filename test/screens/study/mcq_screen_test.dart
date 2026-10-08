@@ -94,6 +94,79 @@ void main() {
       expect(find.byTooltip('Focus mode'), findsOneWidget);
     });
 
+
+    testWidgets('applies the default 15-question batch when no settings are stored',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final manyQuestions = List.generate(
+        16,
+        (index) => Question(
+          id: 'q-$index',
+          questionText: 'Question $index?',
+          options: const ['A', 'B', 'C', 'D'],
+          correctAnswer: 0,
+          type: 'multiple_choice',
+          createdBy: 'test-user',
+        ),
+      );
+
+      await tester.pumpWidget(buildTestWidget(questions: manyQuestions));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Batch 1/2'), findsOneWidget);
+      expect(find.text('Question 0?'), findsOneWidget);
+      expect(find.text('Question 15?'), findsNothing);
+    });
+
+    testWidgets('correcting a missed question on batch review fixes the final score',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      SharedPreferences.setMockInitialValues({
+        'settings': '{"studyBatchSize":2,"recallBeforeReveal":true,"notificationsEnabled":true,"darkMode":true}',
+      });
+
+      await tester.pumpWidget(buildTestWidget(questions: testQuestions));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Ribosome'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next Question'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Thymine'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Finish Batch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review 1 Missed Questions in Batch'), findsOneWidget);
+      await tester.tap(find.text('Review 1 Missed Questions in Batch'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Mitochondria'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Finish Batch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review 1 Missed Questions in Batch'), findsNothing);
+      expect(find.text('2 of 3 questions answered.'), findsOneWidget);
+
+      await tester.tap(find.text('Continue to Batch 2'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Oxygen transport'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Finish Quiz'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quiz Complete!'), findsOneWidget);
+      expect(find.text('Score: 3/3'), findsOneWidget);
+    });
+
     testWidgets('supports cognitive-load batching with checkpoints in MCQ mode', (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
