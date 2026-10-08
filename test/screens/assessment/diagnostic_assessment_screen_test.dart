@@ -34,8 +34,10 @@ void main() {
           overrides: [
             targetDetailProvider('target-1')
                 .overrideWith((ref) => Future.value(target)),
-            diagnosticItemsProvider('version-1')
-                .overrideWith((ref) => Future.value(items)),
+            diagnosticItemsProvider((
+              targetId: 'target-1',
+              targetVersionId: 'version-1',
+            )).overrideWith((ref) => Future.value(items)),
             diagnosticAssessmentServiceProvider.overrideWithValue(service),
             learnerIdProvider.overrideWith((ref) => 'user-1'),
           ],
