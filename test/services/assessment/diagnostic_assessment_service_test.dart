@@ -77,7 +77,7 @@ void main() {
       expect(availability.isPublishedVersion, isFalse);
 
       expect(
-        () => service.generatePreAssessment(targetVersionId: 'version-1'),
+        () => service.generatePreAssessment(targetId: 'target-1', targetVersionId: 'version-1'),
         throwsA(isA<DiagnosticUnavailableException>()),
       );
     });
