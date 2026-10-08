@@ -5,6 +5,7 @@ import '../../models/assessment/diagnostic_assessment.dart';
 import '../../providers/diagnostic_assessment_provider.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../providers/target_readiness_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import 'diagnostic_report_screen.dart';
@@ -234,6 +235,11 @@ class _DiagnosticAssessmentScreenState
                                               userId: learnerId,
                                               targetTitle: target.title,
                                             );
+                                        ref.invalidate(
+                                          targetReadinessProvider(
+                                            widget.targetVersionId,
+                                          ),
+                                        );
                                         if (!context.mounted) return;
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
