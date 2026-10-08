@@ -321,7 +321,6 @@ class _ConceptEvidenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: DesignTokens.space2),
       child: ListTile(
