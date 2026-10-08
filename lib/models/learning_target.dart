@@ -60,6 +60,20 @@ enum TargetType {
   }
 }
 
+enum TargetReviewStatus {
+  unreviewed,
+  pending,
+  approved,
+  rejected;
+
+  static TargetReviewStatus fromString(String? value) {
+    return TargetReviewStatus.values.firstWhere(
+      (status) => status.name == value,
+      orElse: () => TargetReviewStatus.unreviewed,
+    );
+  }
+}
+
 enum TargetStatus {
   draft,
   published,
@@ -123,6 +137,7 @@ class LearningTarget {
   final String? emoji;
   final bool isPublic;
   final bool isOfficial;
+  final TargetReviewStatus reviewStatus;
   final TargetStatus status;
   final String? createdBy;
   final DateTime createdAt;
@@ -142,6 +157,7 @@ class LearningTarget {
     this.emoji,
     this.isPublic = true,
     this.isOfficial = false,
+    this.reviewStatus = TargetReviewStatus.unreviewed,
     this.status = TargetStatus.published,
     this.createdBy,
     required this.createdAt,
@@ -163,6 +179,7 @@ class LearningTarget {
       emoji: json['emoji'] as String?,
       isPublic: json['is_public'] as bool? ?? true,
       isOfficial: json['is_official'] as bool? ?? false,
+      reviewStatus: TargetReviewStatus.fromString(json['review_status'] as String?),
       status: TargetStatus.fromString(json['status'] as String? ?? 'published'),
       createdBy: json['created_by'] as String?,
       createdAt: json['created_at'] != null
@@ -189,6 +206,7 @@ class LearningTarget {
       'emoji': emoji,
       'is_public': isPublic,
       'is_official': isOfficial,
+      'review_status': reviewStatus.name,
       'status': status.name,
       'created_by': createdBy,
       'created_at': createdAt.toIso8601String(),
@@ -210,6 +228,7 @@ class LearningTarget {
     String? emoji,
     bool? isPublic,
     bool? isOfficial,
+    TargetReviewStatus? reviewStatus,
     TargetStatus? status,
     String? createdBy,
     DateTime? createdAt,
@@ -229,11 +248,29 @@ class LearningTarget {
       emoji: emoji ?? this.emoji,
       isPublic: isPublic ?? this.isPublic,
       isOfficial: isOfficial ?? this.isOfficial,
+      reviewStatus: reviewStatus ?? this.reviewStatus,
       status: status ?? this.status,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  /// Only trusted, published entries should be suggested to other learners.
+  bool get isTrustedPublic =>
+      isPublic &&
+      status == TargetStatus.published &&
+      (isOfficial || reviewStatus == TargetReviewStatus.approved);
+
+  /// Source labels distinguish platform verification from community review.
+  String get sourceLabel {
+    if (isOfficial) return 'Official';
+    if (reviewStatus == TargetReviewStatus.approved) {
+      return createdBy == null ? 'Catalog' : 'Community · reviewed';
+    }
+    if (reviewStatus == TargetReviewStatus.pending) return 'Community · pending review';
+    if (reviewStatus == TargetReviewStatus.rejected) return 'Private · not approved';
+    return 'My draft';
   }
 
   String get disambiguationTag {
