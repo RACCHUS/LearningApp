@@ -158,6 +158,11 @@ void main() {
 
       await tester.tap(find.text('Continue to Batch 2'));
       await tester.pumpAndSettle();
+
+      final firstOption =
+          tester.widget<RadioListTile<int>>(find.byType(RadioListTile<int>).first);
+      expect(firstOption.groupValue, isNull);
+
       await tester.tap(find.textContaining('Oxygen transport'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Finish Quiz'));
