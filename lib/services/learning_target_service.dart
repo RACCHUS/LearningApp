@@ -248,8 +248,6 @@ class LearningTargetService {
     String? institutionName,
     String? jurisdiction,
     String? emoji,
-    bool isPublic = false,
-    String status = 'draft',
   }) async {
     try {
       final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '') +
@@ -294,7 +292,7 @@ class LearningTargetService {
         'version_code': 'v1.0',
         'title': '${target.title} (v1.0)',
         'description': 'Initial curriculum version for ${target.title}',
-        'status': status,
+        'status': 'draft',
       });
 
       return target;
