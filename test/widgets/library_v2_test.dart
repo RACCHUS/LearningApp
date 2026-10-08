@@ -156,16 +156,6 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
-            learningBootstrapProvider.overrideWith((ref) async {}),
-            learningContextsProvider.overrideWith(
-              (ref) => LearningContextsNotifier.stub(
-                const LearningContextsState(),
-              ),
-            ),
-            nextActionProvider.overrideWith(
-              (ref) async => const ChooseSomething(),
-            ),
-            activeDueCountProvider.overrideWith((ref) async => 0),
             learningContextsProvider.overrideWith(
               (ref) => LearningContextsNotifier.stub(contextsState),
             ),
@@ -258,6 +248,16 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
+            learningBootstrapProvider.overrideWith((ref) async {}),
+            learningContextsProvider.overrideWith(
+              (ref) => LearningContextsNotifier.stub(
+                const LearningContextsState(),
+              ),
+            ),
+            nextActionProvider.overrideWith(
+              (ref) async => const ChooseSomething(),
+            ),
+            activeDueCountProvider.overrideWith((ref) async => 0),
             targetDetailProvider('career-hvac-123').overrideWith(
               (ref) => Future.value(
                 LearningTarget(
