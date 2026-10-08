@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/assessment/diagnostic_assessment.dart';
 import '../../providers/diagnostic_assessment_provider.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_target_provider.dart';
