@@ -60,7 +60,7 @@ void main() {
       overrides: [
         targetSuggestionsProvider(TargetType.career)
             .overrideWith((ref) async => []),
-        taxonomySearchProvider('engineer').overrideWith((ref) async => [
+        goalTaxonomySuggestionsProvider((type: TargetType.career, query: 'engineer')).overrideWith((ref) async => [
           const TaxonomySearchMatch(
             id: 'soc-1',
             code: '15-1252',
