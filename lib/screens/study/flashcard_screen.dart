@@ -42,6 +42,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   int _batchStartIndex = 0;
   final Set<String> _difficultTermIds = {};
   final Set<String> _currentBatchDifficultIds = {};
+  final Set<String> _studiedTermIds = {};
   late List<Term> _activeTerms;
   final DateTime _sessionStart = DateTime.now();
 
@@ -50,6 +51,13 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
   int get _totalBatches =>
       _batchSize > 0 ? (widget.terms.length / _batchSize).ceil() : 1;
+
+  int get _currentBatchEndIndex => _batchSize > 0
+      ? math.min(_batchStartIndex + _batchSize, widget.terms.length)
+      : widget.terms.length;
+
+  bool get _hasNextBatch =>
+      _batchSize > 0 && _currentBatchEndIndex < widget.terms.length;
 
   @override
   void initState() {
@@ -63,19 +71,38 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('settings');
-    if (raw != null) {
-      final settings = SettingsModel.fromRawJson(raw);
-      if (!mounted) return;
-      setState(() {
-        _recallBeforeReveal = settings.recallBeforeReveal;
-        _batchSize = settings.studyBatchSize;
-        if (_batchSize > 0 && _batchSize < widget.terms.length) {
-          final end = math.min(_batchSize, widget.terms.length);
-          _activeTerms = widget.terms.sublist(0, end);
-        } else {
-          _activeTerms = widget.terms;
-        }
-      });
+    final settings = raw == null
+        ? SettingsModel.defaultSettings()
+        : SettingsModel.fromRawJson(raw);
+    if (!mounted) return;
+
+    final safeInitialIndex = widget.terms.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.terms.length - 1);
+    var batchStart = 0;
+    var localIndex = safeInitialIndex;
+    var activeTerms = widget.terms;
+
+    if (settings.studyBatchSize > 0 &&
+        settings.studyBatchSize < widget.terms.length) {
+      batchStart =
+          (safeInitialIndex ~/ settings.studyBatchSize) * settings.studyBatchSize;
+      final end =
+          math.min(batchStart + settings.studyBatchSize, widget.terms.length);
+      activeTerms = widget.terms.sublist(batchStart, end);
+      localIndex = safeInitialIndex - batchStart;
+    }
+
+    setState(() {
+      _recallBeforeReveal = settings.recallBeforeReveal;
+      _batchSize = settings.studyBatchSize;
+      _batchStartIndex = batchStart;
+      _activeTerms = activeTerms;
+      _currentIndex = localIndex;
+    });
+
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(localIndex);
     }
   }
 
@@ -106,12 +133,16 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
   void _onKnowIt() {
     final termId = _activeTerms[_currentIndex].id;
+    _studiedTermIds.add(termId);
+    _difficultTermIds.remove(termId);
+    _currentBatchDifficultIds.remove(termId);
     ref.read(studyProvider.notifier).markTermAsKnown(termId);
     _nextCard();
   }
 
   void _onDontKnow() {
     final termId = _activeTerms[_currentIndex].id;
+    _studiedTermIds.add(termId);
     _difficultTermIds.add(termId);
     _currentBatchDifficultIds.add(termId);
     ref.read(studyProvider.notifier).markTermAsDifficult(termId);
@@ -126,8 +157,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
       );
     } else {
       // Reached the end of this batch
-      if (_batchSize > 0 &&
-          _batchStartIndex + _activeTerms.length < widget.terms.length) {
+      if (_hasNextBatch) {
         setState(() {
           _isBatchComplete = true;
         });
@@ -143,7 +173,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   }
 
   void _continueToNextBatch() {
-    final nextStart = _batchStartIndex + _batchSize;
+    final nextStart = _currentBatchEndIndex;
     if (nextStart < widget.terms.length) {
       final nextEnd = math.min(nextStart + _batchSize, widget.terms.length);
       setState(() {
@@ -168,7 +198,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
       _currentIndex = 0;
       _isRevealed = false;
       _isBatchComplete = false;
-      _currentBatchDifficultIds.clear();
     });
     _pageController.jumpToPage(0);
   }
@@ -329,6 +358,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: _activeTerms.length,
                   itemBuilder: (context, index) {
                     final term = _activeTerms[index];
@@ -476,7 +506,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${_batchStartIndex + _activeTerms.length} of $totalCards cards studied.',
+                          '${_studiedTermIds.length} of $totalCards cards studied.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -484,7 +514,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                         ),
                         const SizedBox(height: 16),
                         LinearProgressIndicator(
-                          value: (_batchStartIndex + _activeTerms.length) / totalCards,
+                          value: _currentBatchEndIndex / totalCards,
                           backgroundColor: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                           minHeight: 8,
@@ -523,9 +553,9 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                                 .toList();
                             final result = SessionResult(
                               mode: SessionMode.flashcards,
-                              correct: (_batchStartIndex + _activeTerms.length) -
-                                  _difficultTermIds.length,
-                              total: _batchStartIndex + _activeTerms.length,
+                              correct:
+                                  _studiedTermIds.length - _difficultTermIds.length,
+                              total: _studiedTermIds.length,
                               missedTerms: missedTerms,
                               duration: DateTime.now().difference(_sessionStart),
                             );
@@ -593,6 +623,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                                   _isRevealed = false;
                                   _difficultTermIds.clear();
                                   _currentBatchDifficultIds.clear();
+                                  _studiedTermIds.clear();
                                 });
                                 _pageController.jumpToPage(0);
                               },
@@ -631,7 +662,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           if (!widget.isEmbeddedInLesson) const BreakOverlay(),
         ],
       ),
-      floatingActionButton: widget.isEmbeddedInLesson
+      floatingActionButton: widget.isEmbeddedInLesson || _focusMode
           ? null
           : const GlobalVoiceFAB(heroTag: "flashcardVoiceFAB"),
     );
