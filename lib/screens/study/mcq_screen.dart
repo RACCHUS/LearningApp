@@ -211,6 +211,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
         _isCorrect = false;
         _selectedAnswerIndex = null;
         _isBatchComplete = false;
+        _currentBatchWrongAnswers.clear();
       });
       _pageController.jumpToPage(0);
     }
@@ -228,7 +229,6 @@ class _McqScreenState extends ConsumerState<McqScreen> {
       _isCorrect = false;
       _selectedAnswerIndex = null;
       _isBatchComplete = false;
-      _currentBatchWrongAnswers.clear();
     });
     _pageController.jumpToPage(0);
   }
