@@ -8,6 +8,7 @@ import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/models/catalog_cluster.dart';
 import 'package:learning_pwa/providers/canonical_taxonomy_provider.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
@@ -33,12 +34,15 @@ class LibraryScreen extends ConsumerStatefulWidget {
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
+enum _CatalogSource { trusted, official, reviewed, mine }
+
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   late final TextEditingController _search =
       TextEditingController(text: widget.initialQuery ?? '');
   String _query = '';
   String? _selectedCategory;
   bool _isScoped = true;
+  _CatalogSource _source = _CatalogSource.trusted;
 
   @override
   void initState() {
@@ -48,6 +52,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       _selectedCategory = 'exam';
     } else {
       _selectedCategory = widget.initialType;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant LibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Searches launched from the desktop sidebar update this existing page.
+    if (widget.initialQuery != oldWidget.initialQuery) {
+      _search.text = widget.initialQuery ?? '';
+      _query = widget.initialQuery ?? '';
+      _isScoped = false;
     }
   }
 
@@ -101,6 +116,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } else if (_selectedCategory == 'course') {
       targets = const [];
     }
+
+    // Trusted catalog is the default: private or unreviewed personal targets
+    // remain visible only through the explicit "My goals" choice.
+    final authState = ref.watch(authProvider);
+    final userId = authState is AuthSuccess ? authState.user.id : null;
+    targets = targets.where((target) {
+      switch (_source) {
+        case _CatalogSource.trusted:
+          return target.isTrustedPublic;
+        case _CatalogSource.official:
+          return target.isTrustedPublic && target.isOfficial;
+        case _CatalogSource.reviewed:
+          return target.isTrustedPublic &&
+              !target.isOfficial && target.createdBy != null;
+        case _CatalogSource.mine:
+          return userId != null && target.createdBy == userId;
+      }
+    }).toList();
 
     // Query courses (when searching)
     List<Course> courses = const [];
@@ -309,6 +342,26 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ],
             ),
           ),
+          const SizedBox(height: DesignTokens.space2),
+          Wrap(
+            spacing: DesignTokens.space2,
+            runSpacing: DesignTokens.space1,
+            children: [
+              for (final entry in const <(_CatalogSource, String)>[
+                (_CatalogSource.trusted, 'Trusted catalog'),
+                (_CatalogSource.official, 'Official'),
+                (_CatalogSource.reviewed, 'Reviewed community'),
+                (_CatalogSource.mine, 'My goals'),
+              ])
+                ChoiceChip(
+                  key: Key('library-source-${entry.$1.name}'),
+                  label: Text(entry.$2),
+                  selected: _source == entry.$1,
+                  onSelected: (_) =>
+                      setState(() => _source = entry.$1),
+                ),
+            ],
+          ),
           const SizedBox(height: DesignTokens.space4),
 
           if (!isSearching) ...[
@@ -342,7 +395,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   leading: Text(t.emoji ?? '🎯', style: const TextStyle(fontSize: 20)),
                   title: Text(t.title),
                   subtitle: Text(
-                    t.disambiguationTag,
+                    '${t.disambiguationTag} · ${t.sourceLabel}',
                     style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w500,
@@ -611,7 +664,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   key: Key('library-target-${t.id}'),
                   leading: Text(t.emoji ?? '🎯', style: const TextStyle(fontSize: 20)),
                   title: Text(t.title),
-                  subtitle: Text(t.disambiguationTag),
+                  subtitle: Text('${t.disambiguationTag} · ${t.sourceLabel}'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/target/${t.id}'),
                 ),
