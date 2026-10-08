@@ -10,15 +10,17 @@ import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
+import 'package:learning_pwa/providers/next_action_provider.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
+import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({'hasCompletedOnboarding': true});
+    SharedPreferences.setMockInitialValues({});
   });
 
   group('LearningTarget Disambiguation Tags Tests', () {
@@ -246,6 +248,16 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
+            learningBootstrapProvider.overrideWith((ref) async {}),
+            learningContextsProvider.overrideWith(
+              (ref) => LearningContextsNotifier.stub(
+                const LearningContextsState(),
+              ),
+            ),
+            nextActionProvider.overrideWith(
+              (ref) async => const ChooseSomething(),
+            ),
+            activeDueCountProvider.overrideWith((ref) async => 0),
             targetDetailProvider('career-hvac-123').overrideWith(
               (ref) => Future.value(
                 LearningTarget(

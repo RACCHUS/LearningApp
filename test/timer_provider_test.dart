@@ -256,6 +256,38 @@ void main() {
       expect(state.timeLeftSeconds, 1);
     });
 
+    test('uses a long recovery break after every fourth work block', () {
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(1);
+      notifier.setBreak(
+        enabled: true,
+        durationSeconds: 1,
+        longDurationSeconds: 1200,
+        longBreakEveryBlocks: 4,
+      );
+
+      for (var block = 1; block <= 3; block++) {
+        notifier.tick();
+        var state = container.read(timerProvider);
+        expect(state.blocksCompleted, block);
+        expect(state.isOnBreak, isTrue);
+        expect(state.isLongBreak, isFalse);
+        expect(state.breakTimeLeftSeconds, 1);
+
+        notifier.tick();
+        state = container.read(timerProvider);
+        expect(state.isOnBreak, isFalse);
+      }
+
+      notifier.tick();
+      final state = container.read(timerProvider);
+      expect(state.blocksCompleted, 4);
+      expect(state.isOnBreak, isTrue);
+      expect(state.isLongBreak, isTrue);
+      expect(state.breakTimeLeftSeconds, 1200);
+    });
+
     test('pauses at zero when breaks are disabled', () {
       final notifier = container.read(timerProvider.notifier);
       notifier.toggleEnabled(true);

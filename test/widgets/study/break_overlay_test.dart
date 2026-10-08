@@ -28,6 +28,53 @@ void main() {
       expect(find.text('Resume now'), findsNothing);
     });
 
+    testWidgets('renders the longer recovery prompt on the fourth block',
+        (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(timerProvider.notifier);
+      notifier.toggleEnabled(true);
+      notifier.setDuration(1);
+      notifier.setBreak(
+        enabled: true,
+        durationSeconds: 1,
+        longDurationSeconds: 1200,
+        longBreakEveryBlocks: 4,
+      );
+
+      for (var block = 1; block <= 3; block++) {
+        notifier.tick();
+        notifier.tick();
+      }
+      notifier.tick();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Text('Background Content'),
+                  BreakOverlay(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Take a longer break'), findsOneWidget);
+      expect(find.text('20:00'), findsOneWidget);
+      expect(
+        find.textContaining('You completed 4 focus blocks'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('renders full break prompt when timer is on break and resumes on tap', (tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);

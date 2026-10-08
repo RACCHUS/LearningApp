@@ -37,8 +37,9 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   bool _isComplete = false;
   bool _isBatchComplete = false;
   bool _focusMode = false;
-  int _correctAnswers = 0;
   int? _selectedAnswerIndex;
+  final Set<String> _correctQuestionIds = {};
+  final Set<String> _answeredQuestionIds = {};
   final Map<String, int> _wrongAnswers = {}; // questionId -> selectedIndex
   final Map<String, int> _currentBatchWrongAnswers = {};
   int _batchSize = 15;
@@ -52,11 +53,22 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   int get _totalBatches =>
       _batchSize > 0 ? (widget.questions.length / _batchSize).ceil() : 1;
 
+  int get _correctAnswers => _correctQuestionIds.length;
+
+  int get _currentBatchEndIndex => _batchSize > 0
+      ? math.min(_batchStartIndex + _batchSize, widget.questions.length)
+      : widget.questions.length;
+
+  bool get _hasNextBatch =>
+      _batchSize > 0 && _currentBatchEndIndex < widget.questions.length;
+
   @override
   void initState() {
     super.initState();
     _activeQuestions = widget.questions;
-    _currentIndex = widget.initialIndex;
+    _currentIndex = widget.questions.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.questions.length - 1).toInt();
     _pageController = PageController(initialPage: _currentIndex);
     _loadBatchSize();
     _checkForExistingAnswer();
@@ -65,18 +77,37 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   Future<void> _loadBatchSize() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('settings');
-    if (raw != null) {
-      final settings = SettingsModel.fromRawJson(raw);
-      if (!mounted) return;
-      setState(() {
-        _batchSize = settings.studyBatchSize;
-        if (_batchSize > 0 && _batchSize < widget.questions.length) {
-          final end = math.min(_batchSize, widget.questions.length);
-          _activeQuestions = widget.questions.sublist(0, end);
-        } else {
-          _activeQuestions = widget.questions;
-        }
-      });
+    final settings = raw == null
+        ? SettingsModel.defaultSettings()
+        : SettingsModel.fromRawJson(raw);
+    if (!mounted) return;
+
+    final safeInitialIndex = widget.questions.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, widget.questions.length - 1).toInt();
+    var batchStart = 0;
+    var localIndex = safeInitialIndex;
+    var activeQuestions = widget.questions;
+
+    if (settings.studyBatchSize > 0 &&
+        settings.studyBatchSize < widget.questions.length) {
+      batchStart = (safeInitialIndex ~/ settings.studyBatchSize) *
+          settings.studyBatchSize;
+      final end =
+          math.min(batchStart + settings.studyBatchSize, widget.questions.length);
+      activeQuestions = widget.questions.sublist(batchStart, end);
+      localIndex = safeInitialIndex - batchStart;
+    }
+
+    setState(() {
+      _batchSize = settings.studyBatchSize;
+      _batchStartIndex = batchStart;
+      _activeQuestions = activeQuestions;
+      _currentIndex = localIndex;
+    });
+
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(localIndex);
     }
   }
 
@@ -113,15 +144,22 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   }
 
   void _onAnswerSelected(int selectedIndex) {
+    if (_showFeedback) return;
+
     final currentQuestion = _activeQuestions[_currentIndex];
     
     setState(() {
       _selectedAnswerIndex = selectedIndex;
       _showFeedback = true;
       _isCorrect = selectedIndex == currentQuestion.correctAnswer;
+      _answeredQuestionIds.add(currentQuestion.id);
+
       if (_isCorrect) {
-        _correctAnswers++;
+        _correctQuestionIds.add(currentQuestion.id);
+        _wrongAnswers.remove(currentQuestion.id);
+        _currentBatchWrongAnswers.remove(currentQuestion.id);
       } else {
+        _correctQuestionIds.remove(currentQuestion.id);
         _wrongAnswers[currentQuestion.id] = selectedIndex;
         _currentBatchWrongAnswers[currentQuestion.id] = selectedIndex;
       }
@@ -150,8 +188,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
     } else {
       if (widget.isEmbeddedInLesson) {
         widget.onComplete?.call();
-      } else if (_batchSize > 0 &&
-          _batchStartIndex + _activeQuestions.length < widget.questions.length) {
+      } else if (_hasNextBatch) {
         setState(() {
           _isBatchComplete = true;
         });
@@ -165,7 +202,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
   }
 
   void _continueToNextBatch() {
-    final nextStart = _batchStartIndex + _batchSize;
+    final nextStart = _currentBatchEndIndex;
     if (nextStart < widget.questions.length) {
       final nextEnd = math.min(nextStart + _batchSize, widget.questions.length);
       setState(() {
@@ -194,7 +231,6 @@ class _McqScreenState extends ConsumerState<McqScreen> {
       _isCorrect = false;
       _selectedAnswerIndex = null;
       _isBatchComplete = false;
-      _currentBatchWrongAnswers.clear();
     });
     _pageController.jumpToPage(0);
   }
@@ -322,9 +358,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                 child: Text(
                                   _currentIndex < _activeQuestions.length - 1
                                       ? 'Next Question'
-                                      : (_batchSize > 0 &&
-                                              _batchStartIndex + _activeQuestions.length <
-                                                  widget.questions.length)
+                                      : _hasNextBatch
                                           ? 'Finish Batch'
                                           : 'Finish Quiz',
                                   style: const TextStyle(fontSize: 16),
@@ -366,7 +400,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${_batchStartIndex + _activeQuestions.length} of $totalQuestions questions answered.',
+                          '${_answeredQuestionIds.length} of $totalQuestions questions answered.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -374,7 +408,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                         ),
                         const SizedBox(height: 16),
                         LinearProgressIndicator(
-                          value: (_batchStartIndex + _activeQuestions.length) / totalQuestions,
+                          value: _currentBatchEndIndex / totalQuestions,
                           backgroundColor: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                           minHeight: 8,
@@ -417,7 +451,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                             final result = SessionResult(
                               mode: SessionMode.mcq,
                               correct: _correctAnswers,
-                              total: _batchStartIndex + _activeQuestions.length,
+                              total: _answeredQuestionIds.length,
                               missedQuestions: missedQuestions,
                               duration: DateTime.now().difference(_sessionStart),
                             );
@@ -483,7 +517,8 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                                   _isComplete = false;
                                   _isBatchComplete = false;
                                   _showFeedback = false;
-                                  _correctAnswers = 0;
+                                  _correctQuestionIds.clear();
+                                  _answeredQuestionIds.clear();
                                   _wrongAnswers.clear();
                                   _currentBatchWrongAnswers.clear();
                                 });

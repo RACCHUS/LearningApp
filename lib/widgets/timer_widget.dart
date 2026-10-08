@@ -62,8 +62,11 @@ class TimerWidget extends ConsumerWidget {
             ),
             if (timerState.breakEnabled)
               Text(
-                'Break length: ${timerState.breakDurationSeconds ~/ 60} min',
+                'Break length: ${timerState.breakDurationSeconds ~/ 60} min · '
+                'Long break: ${timerState.longBreakDurationSeconds ~/ 60} min '
+                'after every ${timerState.longBreakEveryBlocks} blocks',
                 style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
               ),
             if (timerState.breakEnabled)
               Slider(

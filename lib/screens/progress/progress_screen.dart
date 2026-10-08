@@ -7,6 +7,7 @@ import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
+import 'package:learning_pwa/widgets/help/help_action.dart';
 
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
@@ -54,6 +55,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               ref.invalidate(retentionSummaryProvider);
             },
           ),
+          const HelpAction(),
           const AccountActions(),
         ],
       ),

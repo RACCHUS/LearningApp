@@ -109,6 +109,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Log in'), findsOneWidget);
+    expect(find.byTooltip('Help'), findsOneWidget);
     await tester.tap(find.text('Log in'));
     await tester.pumpAndSettle();
     expect(find.text('LOGIN PAGE'), findsOneWidget);
@@ -179,6 +180,7 @@ void main() {
 
     expect(find.text('Log in'), findsOneWidget);
     expect(find.byTooltip('Settings'), findsOneWidget);
+    expect(find.byTooltip('Help'), findsOneWidget);
   });
 
   testWidgets('signed-in Progress header exposes the account menu',
@@ -190,6 +192,7 @@ void main() {
 
     expect(find.byTooltip('Account: richardgurudeo@gmail.com'),
         findsOneWidget);
+    expect(find.byTooltip('Help'), findsOneWidget);
   });
 }
 

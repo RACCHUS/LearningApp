@@ -8,6 +8,7 @@ import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
+import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/learn/context_switcher.dart';
 import 'package:learning_pwa/widgets/learn/continue_card.dart';
 import 'package:learning_pwa/widgets/learn/review_prompt.dart';
@@ -31,7 +32,7 @@ class LearnScreen extends ConsumerWidget {
       appBar: AppBar(
         titleSpacing: DesignTokens.space4,
         title: ContextSwitcher(state: contextsState),
-        actions: const [AccountActions()],
+        actions: const [HelpAction(), AccountActions()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

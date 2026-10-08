@@ -145,6 +145,75 @@ void main() {
       expect(find.byTooltip('Focus mode'), findsOneWidget);
     });
 
+
+    testWidgets('applies the default 15-card batch when no settings are stored',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final manyTerms = List.generate(
+        16,
+        (index) => Term(
+          id: 'term-$index',
+          term: 'Term $index',
+          definition: 'Definition $index',
+          createdBy: 'test-user',
+        ),
+      );
+
+      await tester.pumpWidget(buildTestWidget(terms: manyTerms));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Batch 1/2'), findsOneWidget);
+      expect(find.text('Term 0'), findsOneWidget);
+      expect(find.text('Term 15'), findsNothing);
+    });
+
+    testWidgets('does not allow passive swipe-to-next in recall flow',
+        (tester) async {
+      await tester.pumpWidget(buildTestWidget(terms: testTerms));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Flashcards (1/3)'), findsOneWidget);
+      await tester.drag(find.text('Photosynthesis'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Flashcards (1/3)'), findsOneWidget);
+      expect(find.text('Photosynthesis'), findsOneWidget);
+    });
+
+    testWidgets('retrying a difficult card can resolve it without corrupting the score',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'settings': '{"studyBatchSize":2,"recallBeforeReveal":false,"notificationsEnabled":true,"darkMode":true}',
+      });
+
+      await tester.pumpWidget(buildTestWidget(terms: testTerms));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Need Practice'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('I Know This'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review 1 Difficult Cards in Batch'), findsOneWidget);
+      await tester.tap(find.text('Review 1 Difficult Cards in Batch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Photosynthesis'), findsOneWidget);
+      await tester.tap(find.text('I Know This'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review 1 Difficult Cards in Batch'), findsNothing);
+      expect(find.text('2 of 3 cards studied.'), findsOneWidget);
+
+      await tester.tap(find.text('Continue to Batch 2'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('I Know This'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Flashcards Complete!'), findsOneWidget);
+      expect(find.text('3/3 known'), findsOneWidget);
+    });
+
     testWidgets('supports cognitive-load batching with batch checkpoints', (tester) async {
       SharedPreferences.setMockInitialValues({
         'settings': '{"studyBatchSize":2,"recallBeforeReveal":false,"notificationsEnabled":true,"darkMode":true}',

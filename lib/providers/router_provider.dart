@@ -23,7 +23,6 @@ import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart';
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart';
-import 'package:learning_pwa/screens/onboarding/onboarding_screen.dart';
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
 import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
@@ -40,14 +39,6 @@ import 'package:learning_pwa/widgets/app_shell.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/learn',
-    redirect: (context, state) async {
-      if (state.matchedLocation == '/onboarding') return null;
-      final onboarded = await hasCompletedOnboarding();
-      if (!onboarded) return '/onboarding';
-      // Legacy entry point: Learn is the home surface now.
-      if (state.matchedLocation == '/') return '/learn';
-      return null;
-    },
     routes: [
       // Persistent three-destination shell: Learn | Library | Progress.
       ShellRoute(
@@ -133,7 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        redirect: (context, state) => '/learn',
       ),
       GoRoute(
         path: '/login',
