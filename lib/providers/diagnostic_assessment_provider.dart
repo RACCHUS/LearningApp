@@ -8,20 +8,29 @@ final diagnosticAssessmentServiceProvider =
   return DiagnosticAssessmentService();
 });
 
-final diagnosticAvailabilityProvider =
-    FutureProvider.autoDispose.family<DiagnosticAvailability, String>(
-  (ref, targetVersionId) async {
+typedef DiagnosticTargetKey = ({
+  String targetId,
+  String targetVersionId,
+});
+
+final diagnosticAvailabilityProvider = FutureProvider.autoDispose
+    .family<DiagnosticAvailability, DiagnosticTargetKey>(
+  (ref, key) async {
     final service = ref.watch(diagnosticAssessmentServiceProvider);
-    return service.getAvailability(targetVersionId);
+    return service.getAvailability(
+      targetId: key.targetId,
+      targetVersionId: key.targetVersionId,
+    );
   },
 );
 
-final diagnosticItemsProvider =
-    FutureProvider.autoDispose.family<List<DiagnosticAssessmentItem>, String>(
-  (ref, targetVersionId) async {
+final diagnosticItemsProvider = FutureProvider.autoDispose
+    .family<List<DiagnosticAssessmentItem>, DiagnosticTargetKey>(
+  (ref, key) async {
     final service = ref.watch(diagnosticAssessmentServiceProvider);
     return service.generatePreAssessment(
-      targetVersionId: targetVersionId,
+      targetId: key.targetId,
+      targetVersionId: key.targetVersionId,
     );
   },
 );
