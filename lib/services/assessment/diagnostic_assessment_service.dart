@@ -501,11 +501,21 @@ class DiagnosticAssessmentService {
             correct.toInt() < options.length;
       case AssessmentInteractionType.multiSelect:
         final options = item.responseSpec['options'] as List?;
-        final correct = item.scoringSpec['correct_indices'] as List?;
+        final correct = (item.scoringSpec['correct_indices'] as List? ?? const [])
+            .whereType<num>()
+            .map((value) => value.toInt())
+            .toList();
+        final scoringMethod =
+            item.scoringSpec['scoring_method']?.toString() ?? 'all_or_nothing';
+        final validScoringMethod = scoringMethod == 'all_or_nothing' ||
+            scoringMethod == 'partial_credit';
+        final uniqueCorrect = correct.toSet();
         return options != null &&
             options.length >= 2 &&
-            correct != null &&
-            correct.isNotEmpty;
+            correct.isNotEmpty &&
+            uniqueCorrect.length == correct.length &&
+            correct.every((index) => index >= 0 && index < options.length) &&
+            validScoringMethod;
       case AssessmentInteractionType.orderedResponse:
         final values = item.responseSpec['items'] as List?;
         final order = item.scoringSpec['correct_order'] as List?;
