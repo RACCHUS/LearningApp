@@ -219,7 +219,8 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     final suggestionsAsync = ref.watch(targetSuggestionsProvider(_selectedType));
     final catalog = suggestionsAsync.valueOrNull ?? const <LearningTarget>[];
     final taxonomyAsync = _taxonomyQuery.length >= 3
-        ? ref.watch(taxonomySearchProvider(_taxonomyQuery))
+        ? ref.watch(goalTaxonomySuggestionsProvider((
+            type: _selectedType, query: _taxonomyQuery)))
         : null;
     final taxonomyMatches = (taxonomyAsync?.valueOrNull ??
             const <TaxonomySearchMatch>[])
