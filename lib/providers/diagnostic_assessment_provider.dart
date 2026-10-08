@@ -109,12 +109,20 @@ class DiagnosticSessionNotifier
 
   void recordResponse(String itemId, dynamic response) {
     final updated = Map<String, dynamic>.from(state.responses);
-    if (response == null) {
+    if (!_hasMeaningfulResponse(response)) {
       updated.remove(itemId);
     } else {
       updated[itemId] = response;
     }
     state = state.copyWith(responses: updated);
+  }
+
+  bool _hasMeaningfulResponse(dynamic response) {
+    if (response == null) return false;
+    if (response is String) return response.trim().isNotEmpty;
+    if (response is Iterable) return response.isNotEmpty;
+    if (response is Map) return response.isNotEmpty;
+    return true;
   }
 
   void nextQuestion() {
