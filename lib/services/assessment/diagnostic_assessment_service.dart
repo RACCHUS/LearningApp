@@ -46,10 +46,14 @@ class DiagnosticAssessmentService {
             studySetService ?? SavedStudySetService(supabase: supabase),
         _evaluationService = evaluationService ?? ExamEvaluationService();
 
-  Future<DiagnosticAvailability> getAvailability(
-    String targetVersionId,
-  ) async {
-    final snapshot = await _loadCandidateSnapshot(targetVersionId);
+  Future<DiagnosticAvailability> getAvailability({
+    required String targetId,
+    required String targetVersionId,
+  }) async {
+    final snapshot = await _loadCandidateSnapshot(
+      targetId: targetId,
+      targetVersionId: targetVersionId,
+    );
     return DiagnosticAvailability(
       targetVersionId: targetVersionId,
       isPublishedVersion: snapshot.isPublishedVersion,
@@ -61,6 +65,7 @@ class DiagnosticAssessmentService {
   }
 
   Future<List<DiagnosticAssessmentItem>> generatePreAssessment({
+    required String targetId,
     required String targetVersionId,
     int itemCount = defaultItemCount,
   }) async {
@@ -68,7 +73,10 @@ class DiagnosticAssessmentService {
       throw ArgumentError.value(itemCount, 'itemCount', 'Must be positive.');
     }
 
-    final snapshot = await _loadCandidateSnapshot(targetVersionId);
+    final snapshot = await _loadCandidateSnapshot(
+      targetId: targetId,
+      targetVersionId: targetVersionId,
+    );
     if (!snapshot.isPublishedVersion) {
       throw const DiagnosticUnavailableException(
         'Diagnostic pre-assessment is available only for published target versions.',
@@ -254,9 +262,10 @@ class DiagnosticAssessmentService {
     );
   }
 
-  Future<_CandidateSnapshot> _loadCandidateSnapshot(
-    String targetVersionId,
-  ) async {
+  Future<_CandidateSnapshot> _loadCandidateSnapshot({
+    required String targetId,
+    required String targetVersionId,
+  }) async {
     if (targetVersionId.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: false,
@@ -267,10 +276,12 @@ class DiagnosticAssessmentService {
 
     final version = await _supabase
         .from('target_versions')
-        .select('id, status')
+        .select('id, target_id, status')
         .eq('id', targetVersionId)
         .maybeSingle();
-    final isPublished = version != null && version['status'] == 'published';
+    final isPublished = version != null &&
+        version['target_id'] == targetId &&
+        version['status'] == 'published';
     if (!isPublished) {
       return const _CandidateSnapshot(
         isPublishedVersion: false,
