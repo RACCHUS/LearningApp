@@ -52,11 +52,21 @@ begin
        and new.review_status = 'unreviewed' then
       new.review_status := 'approved';
     end if;
+    if tg_op = 'DELETE' then return old; end if;
     return new;
   end if;
 
   if auth.uid() is null then
     raise exception 'Sign in before changing learning goals.' using errcode = '42501';
+  end if;
+
+  if tg_op = 'DELETE' then
+    if old.created_by is distinct from auth.uid()
+       or old.is_official or old.review_status = 'approved' then
+      raise exception 'Only trusted reviewers may delete verified goals.'
+        using errcode = '42501';
+    end if;
+    return old;
   end if;
 
   if tg_op = 'INSERT' then
@@ -87,7 +97,7 @@ $$;
 drop trigger if exists enforce_learning_target_catalog_provenance
   on public.learning_targets;
 create trigger enforce_learning_target_catalog_provenance
-before insert or update on public.learning_targets
+before insert or update or delete on public.learning_targets
 for each row execute function public.enforce_learning_target_catalog_provenance();
 
 -- Explicit catalog read contract, while preserving owner access.
