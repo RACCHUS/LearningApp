@@ -32,7 +32,7 @@ class LearnScreen extends ConsumerWidget {
       appBar: AppBar(
         titleSpacing: DesignTokens.space4,
         title: ContextSwitcher(state: contextsState),
-        actions: const [HelpAction(), AccountActions()],
+        actions: const [AccountActions(), HelpAction()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
