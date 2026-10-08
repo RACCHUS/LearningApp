@@ -454,10 +454,13 @@ class DiagnosticAssessmentService {
       var addedThisRound = false;
       for (final conceptId in conceptIds) {
         final bucket = buckets[conceptId]!;
-        final next = bucket.cast<DiagnosticAssessmentItem?>().firstWhere(
-              (item) => item != null && !selectedIds.contains(item.item.id),
-              orElse: () => null,
-            );
+        DiagnosticAssessmentItem? next;
+        for (final candidate in bucket) {
+          if (!selectedIds.contains(candidate.item.id)) {
+            next = candidate;
+            break;
+          }
+        }
         if (next == null) continue;
         selected.add(next);
         selectedIds.add(next.item.id);
