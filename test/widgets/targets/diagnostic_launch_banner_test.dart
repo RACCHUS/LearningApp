@@ -11,7 +11,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          diagnosticAvailabilityProvider('version-1').overrideWith(
+          diagnosticAvailabilityProvider((targetId: 'target-1', targetVersionId: 'version-1')).overrideWith(
             (ref) async => const DiagnosticAvailability(
               targetVersionId: 'version-1',
               isPublishedVersion: true,
@@ -26,7 +26,6 @@ void main() {
           home: Scaffold(
             body: DiagnosticLaunchBanner(
               targetId: 'target-1',
-              targetTitle: 'Target',
               targetVersionId: 'version-1',
             ),
           ),
@@ -43,7 +42,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          diagnosticAvailabilityProvider('version-1').overrideWith(
+          diagnosticAvailabilityProvider((targetId: 'target-1', targetVersionId: 'version-1')).overrideWith(
             (ref) async => const DiagnosticAvailability(
               targetVersionId: 'version-1',
               isPublishedVersion: true,
@@ -58,7 +57,6 @@ void main() {
           home: Scaffold(
             body: DiagnosticLaunchBanner(
               targetId: 'target-1',
-              targetTitle: 'Target',
               targetVersionId: 'version-1',
             ),
           ),
