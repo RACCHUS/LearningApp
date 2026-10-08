@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment/diagnostic_assessment.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/models/user_concept_state.dart';
 import 'package:learning_pwa/services/assessment/diagnostic_assessment_service.dart';
 import 'package:learning_pwa/services/concept_evidence_service.dart';
 import 'package:learning_pwa/services/saved_study_set_service.dart';
-import '../test_helpers/fake_supabase_client.dart';
+import '../../test_helpers/fake_supabase_client.dart';
 
 void main() {
   group('DiagnosticAssessmentService canonical content', () {
