@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(10);
 
 select has_column('public', 'learning_targets', 'review_status',
   'learning targets record moderation status');
@@ -98,6 +98,14 @@ select is(
    where slug = 'private-goal-990'),
   0::bigint,
   'another account cannot see an unreviewed private goal'
+);
+
+select throws_ok(
+  $delete from public.learning_targets
+    where slug = 'community-career-990'$,
+  '42501',
+  'Only trusted reviewers may delete verified goals.',
+  'approved public community entries cannot be silently deleted by owner'
 );
 
 reset role;
