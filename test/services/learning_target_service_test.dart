@@ -31,6 +31,47 @@ void main() {
     expect(exams.map((e) => e.id), ['exam-1']);
   });
 
+  test('goal suggestions exclude unreviewed drafts and rank official first',
+      () async {
+    final fake = FakeSupabaseClient();
+    fake.setTableData('learning_targets', [
+      {
+        'id': 'community-1',
+        'target_type': 'career',
+        'title': 'Community Engineer',
+        'slug': 'community-engineer',
+        'status': 'published',
+        'is_public': true,
+        'review_status': 'approved',
+        'created_by': 'creator',
+      },
+      {
+        'id': 'draft-1',
+        'target_type': 'career',
+        'title': 'Random Unreviewed Goal',
+        'slug': 'random-unreviewed',
+        'status': 'published',
+        'is_public': true,
+        'review_status': 'unreviewed',
+      },
+      {
+        'id': 'official-1',
+        'target_type': 'career',
+        'title': 'Official Engineer',
+        'slug': 'official-engineer',
+        'status': 'published',
+        'is_public': true,
+        'is_official': true,
+      },
+    ]);
+
+    final suggestions = await LearningTargetService(supabase: fake)
+        .getSuggestionTargets(type: TargetType.career);
+
+    expect(suggestions.map((target) => target.id),
+        ['official-1', 'community-1']);
+  });
+
   test('cluster includes a published target linked through a supporting field', () async {
     final fake = FakeSupabaseClient();
     fake.setTableData('catalog_cluster_fields', [
