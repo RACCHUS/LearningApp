@@ -171,7 +171,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
-        actions: const [HelpAction(), AccountActions()],
+        actions: const [AccountActions(), HelpAction()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(DesignTokens.space4),
