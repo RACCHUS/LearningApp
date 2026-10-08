@@ -20,6 +20,7 @@ import 'package:learning_pwa/screens/progress/progress_screen.dart';
 import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
 import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
+import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart';
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart';
@@ -87,6 +88,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'target-outline',
         builder: (context, state) => TargetOutlineScreen(
           targetId: state.pathParameters['targetId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/target/:targetId/diagnostic/:targetVersionId',
+        name: 'target-diagnostic',
+        builder: (context, state) => DiagnosticAssessmentScreen(
+          targetId: state.pathParameters['targetId']!,
+          targetVersionId: state.pathParameters['targetVersionId']!,
         ),
       ),
       GoRoute(

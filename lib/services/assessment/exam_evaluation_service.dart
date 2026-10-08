@@ -54,7 +54,7 @@ class ExamEvaluationService {
       }
 
       // Evaluate interaction polymorphic types
-      final evaluation = _evaluateItemResponse(item, userAns);
+      final evaluation = evaluateItemResponse(item, userAns);
       if (evaluation.isCorrect) {
         correctCount++;
       } else if (evaluation.isPartial) {
@@ -193,8 +193,11 @@ class ExamEvaluationService {
     );
   }
 
-  /// Internal evaluator for polymorphic interaction response formats.
-  ({bool isCorrect, bool isPartial, double scoreEarned}) _evaluateItemResponse(
+  /// Canonical evaluator for polymorphic assessment responses.
+  ///
+  /// Shared by mock exams, diagnostics, and other assessment surfaces so
+  /// response scoring cannot drift between presentation modes.
+  ({bool isCorrect, bool isPartial, double scoreEarned}) evaluateItemResponse(
     AssessmentItem item,
     dynamic userAns,
   ) {

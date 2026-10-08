@@ -38,51 +38,106 @@ class ConceptEvidenceService {
 
       if (mappedConcepts.isEmpty) return;
 
-      final now = DateTime.now();
-
-      for (final mapping in mappedConcepts) {
-        final conceptId = mapping.conceptId;
-        final weight = mapping.weight.clamp(0.0, 1.0);
-
-        // Fetch existing concept state
-        final existingRes = await _supabase
-            .from('user_concept_state')
-            .select()
-            .eq('user_id', userId)
-            .eq('concept_id', conceptId)
-            .maybeSingle();
-
-        final existing = existingRes != null ? UserConceptState.fromJson(existingRes) : null;
-
-        final newWeightedTotal = (existing?.weightedTotal ?? 0.0) + weight;
-        final newWeightedCorrect =
-            (existing?.weightedCorrect ?? 0.0) + (normalizedEvidence * weight);
-        final newEvidenceCount = (existing?.evidenceCount ?? 0) + 1;
-        final accuracy = newWeightedTotal > 0
-            ? (newWeightedCorrect / newWeightedTotal).clamp(0.0, 1.0)
-            : 0.0;
-
-        final computed = UserConceptState.computeBandAndConfidence(
-          accuracy: accuracy,
-          evidenceCount: newEvidenceCount,
-        );
-
-        final updatedState = UserConceptState(
-          userId: userId,
-          conceptId: conceptId,
-          retrievalBand: computed.band,
-          confidence: computed.confidence,
-          evidenceCount: newEvidenceCount,
-          weightedCorrect: newWeightedCorrect,
-          weightedTotal: newWeightedTotal,
-          lastEvidenceAt: now,
-          updatedAt: now,
-        );
-
-        await _supabase.from('user_concept_state').upsert(updatedState.toJson());
-      }
+      await _applyMappedEvidence(
+        userId: userId,
+        evidenceValue: normalizedEvidence,
+        mappedConcepts: mappedConcepts,
+      );
     } catch (e) {
       debugPrint('⚠️ Error propagating concept evidence for content $contentId: $e');
+    }
+  }
+
+  /// Records evidence produced by a canonical v2 assessment item.
+  ///
+  /// Returns true only when at least one canonical assessment_item_concepts
+  /// mapping was resolved and all concept-state upserts completed. Diagnostic
+  /// and exam flows can use this to distinguish a report computed in memory
+  /// from evidence that actually reached the learner's concept model.
+  Future<bool> recordAssessmentItemEvidence({
+    required String userId,
+    required String assessmentItemId,
+    required double evidenceValue,
+  }) async {
+    if (userId.isEmpty || assessmentItemId.isEmpty) return false;
+
+    try {
+      final res = await _supabase
+          .from('assessment_item_concepts')
+          .select('concept_id, weight')
+          .eq('assessment_item_id', assessmentItemId);
+
+      final mappedConcepts = <({String conceptId, double weight})>[];
+      for (final row in res as List) {
+        mappedConcepts.add((
+          conceptId: row['concept_id'] as String,
+          weight: (row['weight'] as num?)?.toDouble() ?? 1.0,
+        ));
+      }
+
+      if (mappedConcepts.isEmpty) return false;
+
+      await _applyMappedEvidence(
+        userId: userId,
+        evidenceValue: evidenceValue.clamp(0.0, 1.0),
+        mappedConcepts: mappedConcepts,
+      );
+      return true;
+    } catch (e) {
+      debugPrint(
+        '⚠️ Error propagating assessment-item evidence for '
+        '$assessmentItemId: $e',
+      );
+      return false;
+    }
+  }
+
+  Future<void> _applyMappedEvidence({
+    required String userId,
+    required double evidenceValue,
+    required List<({String conceptId, double weight})> mappedConcepts,
+  }) async {
+    final now = DateTime.now();
+
+    for (final mapping in mappedConcepts) {
+      final conceptId = mapping.conceptId;
+      final weight = mapping.weight.clamp(0.0, 1.0);
+
+      final existingRes = await _supabase
+          .from('user_concept_state')
+          .select()
+          .eq('user_id', userId)
+          .eq('concept_id', conceptId)
+          .maybeSingle();
+
+      final existing =
+          existingRes != null ? UserConceptState.fromJson(existingRes) : null;
+      final newWeightedTotal = (existing?.weightedTotal ?? 0.0) + weight;
+      final newWeightedCorrect =
+          (existing?.weightedCorrect ?? 0.0) + (evidenceValue * weight);
+      final newEvidenceCount = (existing?.evidenceCount ?? 0) + 1;
+      final accuracy = newWeightedTotal > 0
+          ? (newWeightedCorrect / newWeightedTotal).clamp(0.0, 1.0)
+          : 0.0;
+
+      final computed = UserConceptState.computeBandAndConfidence(
+        accuracy: accuracy,
+        evidenceCount: newEvidenceCount,
+      );
+
+      final updatedState = UserConceptState(
+        userId: userId,
+        conceptId: conceptId,
+        retrievalBand: computed.band,
+        confidence: computed.confidence,
+        evidenceCount: newEvidenceCount,
+        weightedCorrect: newWeightedCorrect,
+        weightedTotal: newWeightedTotal,
+        lastEvidenceAt: now,
+        updatedAt: now,
+      );
+
+      await _supabase.from('user_concept_state').upsert(updatedState.toJson());
     }
   }
 

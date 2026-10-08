@@ -8,6 +8,7 @@ import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
+import '../../widgets/targets/diagnostic_launch_banner.dart';
 import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
 import '../governance/version_staging_dashboard_screen.dart';
 
@@ -278,6 +279,13 @@ class TargetDetailScreen extends ConsumerWidget {
                           ),
                         ],
                         const SizedBox(height: DesignTokens.space4),
+                        if (ver.isPublished) ...[
+                          DiagnosticLaunchBanner(
+                            targetId: target.id,
+                            targetVersionId: ver.id,
+                          ),
+                          const SizedBox(height: DesignTokens.space3),
+                        ],
                         TargetReadinessCard(targetVersionId: ver.id),
                         const SizedBox(height: DesignTokens.space3),
                         SizedBox(

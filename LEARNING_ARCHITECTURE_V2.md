@@ -1387,6 +1387,28 @@ To maintain scientific credibility and prevent false claims of certification:
    - Adaptive testing is designated as **"adaptive practice mode"** or **"CAT-style simulation"**.
    - The app adapts difficulty, domain balance, and uncertainty without claiming to reproduce proprietary operational algorithms (such as the proprietary NCLEX CAT algorithm).
 
+### 15.7 Diagnostic Pre-Assessment Contract
+
+Optional target diagnostics are a presentation over the canonical assessment and evidence systems, not a second assessment architecture.
+
+1. **Canonical content only**:
+   - Production diagnostics may select only persisted `assessment_items` belonging to the exact published `target_version`.
+   - Items must be mapped through `assessment_item_concepts` to core concepts of that same version.
+   - The client must not fabricate fallback questions when reviewed coverage is insufficient; the diagnostic is simply unavailable.
+2. **Shared scoring and rendering**:
+   - Diagnostic items use `AssessmentItemRenderer` and the canonical assessment scoring contract so answer semantics cannot drift from mock exams or practice.
+3. **Canonical evidence propagation**:
+   - Completed diagnostic responses propagate normalized evidence through `assessment_item_concepts` into `user_concept_state`.
+   - A diagnostic report must distinguish a successfully scored snapshot from evidence that failed to persist.
+4. **Evidence language, not readiness substitution**:
+   - Immediate results are labeled **Diagnostic Evidence** (Strong / Developing / Needs Reinforcement).
+   - Long-term `TargetReadiness` remains a separate weighted projection over accumulated canonical concept evidence and is refreshed after persisted diagnostic evidence.
+5. **Exact version and fail-closed lifecycle**:
+   - Session state is scoped to the exact `target_id + target_version_id`.
+   - Draft, review-ready, retired, cross-target, malformed, or insufficiently covered versions cannot launch a production diagnostic.
+6. **Truthful remediation**:
+   - A reinforcement study set is reported as created only after persistence succeeds. Failure must surface to the learner and may not be represented with a synthetic/local success ID.
+
 ---
 
 ## 16. Revised Phased Content & Platform Roadmap
