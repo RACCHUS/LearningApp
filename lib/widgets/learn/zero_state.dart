@@ -6,8 +6,8 @@ import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 /// Calm, restrained First-Run & Selection Surface.
 ///
 /// Keeps Learn quiet and focused:
-/// "What do you want to learn?" -> [ Explore learning ] -> /library
-/// with a subtle "Create your own goal →" action.
+/// "What do you want to learn?" -> [ Find something to learn ] -> /library
+/// with a subtle "Create your own →" action.
 /// The rich multi-destination taxonomy lives cleanly in Library, keeping Learn
 /// free of cognitive overload and distracting lists.
 class LearnZeroState extends StatelessWidget {
@@ -55,7 +55,7 @@ class LearnZeroState extends StatelessWidget {
               ),
               const SizedBox(height: DesignTokens.space2),
               Text(
-                'Create a career milestone, certification, exam goal, or subject syllabus.',
+                'Create your own exam, course, certification, or subject to start learning.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -114,7 +114,7 @@ class LearnZeroState extends StatelessWidget {
             ),
             const SizedBox(height: DesignTokens.space2),
             Text(
-              'Explore careers, professional certifications, standardized exams, and academic disciplines.',
+              'Find an exam, certification, course, or subject and start from there.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -125,13 +125,13 @@ class LearnZeroState extends StatelessWidget {
               key: const Key('zero-explore-learning-btn'),
               onPressed: () => context.go('/library'),
               icon: const Icon(Icons.explore_outlined),
-              label: const Text('Explore learning'),
+              label: const Text('Find something to learn'),
             ),
             const SizedBox(height: DesignTokens.space3),
             TextButton(
               key: const Key('zero-create-own-link'),
               onPressed: () => CreateTargetDialog.show(context),
-              child: const Text('Create your own goal →'),
+              child: const Text('Create your own →'),
             ),
           ],
         ),
