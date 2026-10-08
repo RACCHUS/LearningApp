@@ -44,6 +44,14 @@ begin
   -- therefore is NOT granted this exception.
   if v_role = 'service_role' or
      (v_role = '' and current_user in ('postgres', 'supabase_admin')) then
+    -- Trusted ingestion of system-authored catalog records keeps working
+    -- without pretending that all such records are "official".
+    if tg_op = 'INSERT'
+       and new.created_by is null
+       and new.is_public and new.status = 'published'
+       and new.review_status = 'unreviewed' then
+      new.review_status := 'approved';
+    end if;
     return new;
   end if;
 
