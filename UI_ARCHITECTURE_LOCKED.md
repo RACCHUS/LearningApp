@@ -1,6 +1,6 @@
 # UI Architecture — LOCKED BASELINE
 
-**Status:** Locked. **Version 1.5** — implementation baseline. **Architecture frozen; P0 may begin.**
+**Status:** Locked. **Version 1.6** — implementation baseline. **Architecture frozen; P0 may begin.**
 **Supersedes:** the IA sections of `LEARNING_UI_PLAN.md` and `LEARNING_UI_RESEARCH.md`. Those documents remain valid for *study-mechanics* sprints (emoji, focus mode, batch size, recall-before-reveal); this document overrides them wherever they disagree about navigation, screen composition, or what appears on the home screen.
 **Change control:** see [§14](#14-change-control).
 **v1.1 changelog:** six amendments — recommendation policy de-escalated, retrieval bands renamed and re-scoped, Progress question broadened, gamification defaults split into presets, change control widened to four grounds, exclamation-mark rule scoped to urgency framing. See §1.4.
@@ -8,6 +8,7 @@
 **v1.3 changelog:** two corrections — the `ReviewOnly` dead end (a real defect, mirror of B2) and unspecified empty-catalog behaviour in the zero state. See §1.6. Plus five spec-hygiene fixes at freeze: §1.6.1.
 **v1.4 changelog:** one user-evidence amendment — replace opaque three-dot overflow with state-aware account actions (avatar when signed in; Log in + Settings when signed out/guest), with locked local-only device preferences. See §1.7.
 **v1.5 changelog:** first-run simplification under direct user evidence — remove the separate onboarding wizard, make Learn's zero state the onboarding experience, and add persistent searchable Help as quiet utility chrome. See §1.8 and §5.8.
+**v1.6 changelog:** collapsible searchable desktop rail, required Help placement beside account actions, goal-creation suggestions with custom input preserved, and trusted-catalog provenance filters. See §1.9, §3, §5.4, and §5.8.
 
 ---
 
@@ -164,6 +165,16 @@ Raised directly by the product owner after using the implemented first-run flow.
 
 The implementation-ready interaction and content contract lives in `docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md`.
 
+### 1.9 Amendment in v1.6 (Direct User Evidence)
+
+Raised by the product owner against the shipped Learn home, Create Goal flow, and Library catalog. Accepted under the **User evidence** ground (§14).
+
+| # | Finding | Resolution |
+|---|---|---|
+| **G1** | **Desktop/tablet home needs a collapsible, searchable sidebar.** The learning rail at ≥900dp was not specified as collapsible, and search lived only inside Library. | **Collapsible `NavigationRail`** on desktop/tablet (§3, §7.2). A rail search field routes to Library with the entered query. Phone layouts keep the bottom `NavigationBar` and do not gain a rail. |
+| **G2** | **Help disappeared from the top-right account row.** Learners expect `?` immediately before Settings and Log in on Learn, Library, and Progress. | **Required `HelpAction` then `AccountActions`** in those app bars (§5.1, §5.8). Help is not optional chrome and must remain when the context switcher is present. |
+| **G3** | **Create your own goal needed database suggestions without blocking custom input, plus a way to hide nonsense user content while still promoting useful community goals later.** | **Four-section Create Goal form** with catalog (and SOC/CIP) suggestions, always-editable fields, trusted-catalog default in Library, source labels, and database-enforced provenance (§5.4). Owners may request review; they cannot self-approve or forge official flags. |
+
 ---
 
 ## 2. Locked philosophy
@@ -188,7 +199,8 @@ Five statements. Everything below is derived from these. If a future feature con
 ```
 ┌─ App shell (persistent) ────────────────────────────────────┐
 │  Mobile: bottom NavigationBar (3)                           │
-│  Desktop/tablet ≥900dp: NavigationRail (3), extended ≥1200dp│
+│  Desktop/tablet ≥900dp: collapsible NavigationRail (3),     │
+│  extended ≥1200dp when expanded; rail search → Library      │
 │                                                             │
 │   ●  Learn        ○  Library        ○  Progress             │
 └─────────────────────────────────────────────────────────────┘
@@ -197,7 +209,7 @@ Five statements. Everything below is derived from these. If a future feature con
 | Destination | Answers | Contains |
 |---|---|---|
 | **Learn** | "What do I do next?" | Learning Context switcher, one primary action, conditional review prompt, one line of orientation. Nothing else. |
-| **Library** | "What exists? What do I want?" | Your Learning (contexts, paths, courses, lessons, study sets), Discover (catalog, search, filters, categories), Create (study set, lesson, import), Pinned/Recent. |
+| **Library** | "What exists? What do I want?" | Your Learning (contexts, paths, courses, lessons, study sets), Discover (trusted catalog by default, search, destination and source filters), Create (goal, study set, lesson, import), Pinned/Recent. |
 | **Progress** | "How am I progressing?" | Retention, structural completion, activity, motivation metrics — in that order. Progressively disclosed. |
 
 **Not top-level destinations** (and this is a change from today's `Lessons | Courses | Study Sets` tabs): Lessons, Courses, Study Sets, Careers, Skills, Create, Search. These are *content types and actions*, not *intentions*. They all live inside Library.
@@ -206,7 +218,7 @@ Five statements. Everything below is derived from these. If a future feature con
 
 **Locked chrome rules:**
 - **No top-level navigation destination control may display a badge, dot, count, animation, or other attention indicator.** (Scoped in B3: this governs the `NavigationBar` / `NavigationRail` items only. Informational counts *inside* Library or Progress are fine — the user opened that screen deliberately. The rule bans summoning, not information.)
-- The app bar on Learn contains: context switcher (conditionally, §1.2b) + `HelpAction` (F2) + `AccountActions` (E1). No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`. Library and Progress also expose the same quiet `HelpAction` immediately before account actions.
+- The app bar on Learn contains: context switcher (conditionally, §1.2b) + `HelpAction` (F2, G2) + `AccountActions` (E1), in that order, top right. No `LevelBadge`, no `DailyGoalRing`, no `StreakBadge`, no `ReviewBadge`. Library and Progress use the same trailing pair: `HelpAction` immediately before `AccountActions`.
 - `SyncStatusIndicator` and `GlobalVoiceIndicator` render **only when not in the idle/nominal state.** Silent when healthy.
 
 ---
@@ -333,8 +345,8 @@ This **is onboarding**. There is no preceding welcome screen, setup wizard, dail
 
 - Primary: **Find something to learn** → Library.
 - Secondary: **Create your own →** → custom target/goal creation.
-- `[?]` opens searchable Help (§5.8).
-- `[Account]` renders `AccountActions` — avatar with Profile/Settings menu when signed in; "Log in" + Settings icon when signed out/guest.
+- `[?]` opens searchable Help (§5.8). Required on zero-state and active Learn.
+- `[Account]` renders `AccountActions` — avatar with Profile/Settings menu when signed in; "Log in" + Settings icon when signed out/guest. Help sits immediately to its left.
 - The old `/onboarding` URL redirects to `/learn`; no first-run preference gate remains.
 
 **Neither option may terminate in an empty screen (C2 — locked).**
@@ -347,7 +359,7 @@ This **is onboarding**. There is no preceding welcome screen, setup wizard, dail
 
 ```
 ┌──────────────────────────────────────────┐
-│  Software Engineering  ▾   [Account]     │   ← switcher (plain text if 1 context)
+│  Software Engineering  ▾  [?] [Account]  │   ← switcher (plain text if 1 context)
 ├──────────────────────────────────────────┤
 │                                          │
 │  Continue                                │   ← section label, muted, small
@@ -497,7 +509,9 @@ Flutter Path
 The screen where complexity is *invited*. Higher information density is correct here.
 
 ```
-Library                                    [ 🔍 Search ]
+Library                                    [?] [Account]
+
+  [ 🔍 Search ]
 
   Your Learning
     ▸ Contexts        4      ▸ Paths          2
@@ -506,15 +520,20 @@ Library                                    [ 🔍 Search ]
     ▸ Recent
 
   Discover
-    [ Categories ] [ Languages ] [ Difficulty ] [ Duration ]
-    ...results grid...
+    [ Trusted catalog ] [ Official ] [ Reviewed community ] [ My goals ]
+    [ Categories ]
+    ...results with source labels...
 
   Create
-    + Study set    + Lesson    ↑ Import
+    + Goal    + Study set    + Lesson    ↑ Import
 ```
 
-- Search and all filter chips live here and **only** here.
-- Create lives here and **only** here. It is a normal-weight button, not the loudest element on the screen.
+- Search and all filter chips live here and **only** here, except the desktop/tablet rail search, which is a shortcut that lands on this same Library search (G1).
+- Default Discover source is **Trusted catalog**. Unreviewed personal goals are hidden until the learner chooses **My goals**.
+- Source labels distinguish Official, Catalog, reviewed community, pending/rejected community, and personal drafts. They are backed by `review_status` / `is_official` in the database, not by UI-only badges.
+- Create lives here and **only** here (plus the Learn zero-state **Create your own** path into the same dialog). It is a normal-weight button, not the loudest element on the screen.
+- **Create Goal** fields: Goal type, Title, Organization, Description/purpose. All remain editable. Title, organization, and purpose suggest trusted catalog values for the selected type. Career and academic titles also suggest bounded SOC and CIP matches; selecting a classification still creates a private draft, never an official catalog row. Selecting an existing catalog target may open that target instead of duplicating it.
+- Owners of unreviewed or rejected personal goals may request community review from the target detail screen. Approval and public publication are service-role only.
 - Absorbs today's `Lessons | Courses | Study Sets` tabs plus `/careers`, `/my-careers`, `/course-management`, `/lesson-selection`, `/content-picker`.
 - Any **path, course, module, lesson or study set** can be turned into a Learning Context via a "Start learning this" action — matching `ContextRootType` exactly (B1). Concepts cannot; they are measurement atoms, not destinations.
 
@@ -544,7 +563,7 @@ The lesson does not get busier than the screen that launched it.
 
 Help is a **searchable utility surface**, not a destination and not onboarding.
 
-- Entry point: `HelpAction` (`Icons.help_outline`) in Learn, Library, and Progress app bars.
+- Entry point: `HelpAction` (`Icons.help_outline`) in Learn, Library, and Progress app bars, **top right, immediately before** `AccountActions` (G2). Do not omit it from the active Learn app bar.
 - Available signed in, signed out, and offline.
 - Mobile: near-full-height modal bottom sheet. Wide screens: modal panel/dialog, max 560dp.
 - The first control is `Search help`.
@@ -664,8 +683,8 @@ The raw double stays internal and is never rendered.
 |---|---|---|
 | `< 600dp` | bottom `NavigationBar` | full width, 16dp gutters |
 | `600–899dp` | bottom `NavigationBar` | centred, max 560dp |
-| `900–1199dp` | `NavigationRail` (icons) | centred, max 720dp |
-| `≥ 1200dp` | `NavigationRail` (extended) | centred, max 720dp |
+| `900–1199dp` | collapsible `NavigationRail` (icons when collapsed) | centred, max 720dp |
+| `≥ 1200dp` | collapsible `NavigationRail` (extended when expanded) | centred, max 720dp |
 
 A wider window gets **more whitespace, not more widgets.** Library is the only destination that adds columns with width. This rule exists because desktop layouts habitually fill space simply because the pixels are there — doing that here would reassemble the dashboard this architecture removed.
 
@@ -804,7 +823,7 @@ By contrast **P4 is now the easiest phase**, which is counterintuitive: after B5
 - `test/widgets/direct_access_rule_test.dart` (§7.3).
 
 **P2 — Library + Course outline**
-- `LibraryScreen` absorbing the three old tabs, search, filters, create.
+- `LibraryScreen` absorbing the three old tabs, search, destination/source filters, create goal.
 - `CourseOutlineScreen` with direct lesson access.
 - "Start learning this" → creates a `LearningContext`.
 
@@ -832,7 +851,11 @@ Ship gate. Every box must be checked.
 - [ ] Learn shows **exactly one** filled/primary button.
 - [ ] `dueCount == 0` ⇒ no review section, no divider, no placeholder in the widget tree.
 - [ ] No XP / level / streak / rank / daily-ring widget exists anywhere on Learn or in its app bar.
-- [ ] No search field or filter chip exists on Learn.
+- [ ] No search field or filter chip exists on Learn (rail search is shell chrome and must open Library).
+- [ ] Desktop/tablet rail is collapsible; rail search opens Library with the query (G1).
+- [ ] Learn, Library, and Progress app bars show Help immediately before account/settings/login (G2).
+- [ ] Library defaults to trusted catalog; source labels and My goals remain available (G3).
+- [ ] Create Goal suggestions never prevent custom type, title, organization, or purpose text (G3).
 - [ ] No Create button exists on Learn.
 - [ ] Context switcher renders as plain text when `contexts.length <= 1`.
 - [ ] **No top-level navigation destination control displays a badge, dot, count, animation, or attention indicator** (B3). Informational counts inside Library/Progress are permitted.

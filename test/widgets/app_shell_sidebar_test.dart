@@ -6,8 +6,10 @@ import 'package:learning_pwa/widgets/app_shell.dart';
 void main() {
   testWidgets('desktop sidebar collapses and expands without changing tab',
       (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1280, 820));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.view.physicalSize = const Size(1280, 820);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     final router = GoRouter(
       initialLocation: '/learn',

@@ -12,9 +12,9 @@ The current app has three primary destinations:
 - **Library** — discover learning targets, courses, lessons, and concepts; direct selection is always available.
 - **Progress** — review structural completion and retained knowledge without distracting from study.
 
-**No forced onboarding:** a new visitor lands directly on Learn. When no learning context exists, the zero state offers **Find something to learn** and **Create your own**. The app does not require timer, goal, reminder, or streak setup on first launch. A searchable, locally available **Help** utility is accessible from Learn, Library, and Progress. Legacy `/onboarding` links redirect to `/learn`.
+**No forced onboarding:** a new visitor lands directly on Learn (the home destination). When no learning context exists, the zero state offers **Find something to learn** and **Create your own**. The app does not require timer, goal, reminder, or streak setup on first launch. A searchable, locally available **Help** (`?`) control sits at the **top right** of Learn, Library, and Progress, immediately before Settings and Log in (or the signed-in account avatar). Legacy `/onboarding` links redirect to `/learn`.
 
-The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.md) (v1.5); see also the [zero-state and searchable Help specification](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md).
+The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.md) (v1.6); see also the [zero-state and searchable Help specification](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md).
 
 ## Implemented capabilities
 
@@ -25,10 +25,42 @@ The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.m
 - A **canonical concept layer** allows knowledge evidence to be reused across learning contexts while keeping each context's content relevant.
 - **Completion and retention are separate:** finishing content is not the same as remembering it.
 - Lesson creation, courses, saved study sets, content selection, and library/catalog browsing.
-- A collapsible, searchable sidebar on desktop/tablet; searches open the Library.
-- Database-derived goal suggestions for titles, organizations, and purposes, with editable custom values.
-- Catalog provenance labels distinguish platform-official records, curated catalog records, and reviewed community material. Newly created personal targets are private drafts. Owners may request review, but only trusted service-role moderation can approve and publish community targets.
 - Taxonomy and career-path exploration supported by official **CIP, SOC, and O*NET** ingestion and verification tooling.
+
+### Navigation and Help
+
+- On desktop and tablet (**≥900dp**), the three destinations use a **collapsible `NavigationRail`**. The rail can expand or collapse; a search field on the rail opens **Library** with that query. Phone layouts keep the bottom navigation bar and do not use the rail.
+- **Help** is required chrome on Learn, Library, and Progress: top-right `HelpAction`, then `AccountActions` (Log in + Settings when signed out or guest; account avatar when signed in). Help must not disappear when the learning-context switcher is visible.
+
+### Create your own goal
+
+**Create your own** keeps all fields editable. Suggestions never block custom text.
+
+The form has four sections:
+
+| Section | What is suggested | What the learner may still type |
+| --- | --- | --- |
+| **Goal type** | The six stored target types (career, academic program, certification, licensure exam, standardized exam, curriculum standard). | Any of those types. Type is a dropdown, not free text. |
+| **Title** | Trusted catalog titles for the selected type. Career titles also match **BLS/O\*NET SOC** occupations; academic titles also match **NCES CIP** programs. Taxonomy search is bounded in the database (typically after three characters). | Any custom title. |
+| **Organization** | Provider or institution names from trusted catalog rows of that type. Academic programs store the value in `institution_name`; other types use `provider_name`. | Any custom organization. |
+| **Description / purpose** | Purpose text from trusted catalog rows of that type. | Any custom description. |
+
+Choosing an existing **catalog** goal can open that record instead of creating a duplicate. Choosing a **SOC or CIP** classification copies reference text into the form and still creates a **private personal draft**. It does not mark the new row official and does not publish it into the trusted catalog.
+
+### Catalog trust and provenance
+
+Library default browsing is the **trusted catalog** (published official records and approved community records). Unreviewed personal goals stay out of that default list. Learners can still switch filters:
+
+- Trusted catalog
+- Official
+- Reviewed community
+- My goals
+
+Source labels on targets and Library rows: **Official**, **Catalog**, **Community · reviewed**, **Community · pending review**, **Private · not approved**, **My draft**.
+
+Client-created goals always start as **private, unreviewed drafts**. Owners may **Submit for community review**. They cannot set `is_official`, publish publicly, or approve their own entries. Only a **service-role** moderation or ingestion workflow can approve and publish a useful community goal. Creators cannot delete official or already-approved public records.
+
+Hosted databases must apply `supabase/migrations/20261009000005_learning_target_catalog_provenance.sql` **before** deploying the app that depends on these labels and policies. See [Hosted Migration Rollout](docs/HOSTED_MIGRATION_ROLLOUT.md).
 
 ### Study and assessment
 
@@ -100,6 +132,15 @@ dart run tool/ingest_curriculum.dart --dir content/ --dry-run
 dart run tool/verify_migration_history.dart --base-ref origin/main
 ```
 
+### Browser automation & MCP tooling
+
+Model Context Protocol (MCP) servers are configured for developers and AI agents to inspect and automate browser verification of the Flutter PWA:
+
+- **`chrome-devtools` (`chrome-devtools-mcp`)**: Inspect console errors, track network traffic, evaluate JavaScript in the running client, and audit PWA/performance metrics.
+- **`playwright` (`@playwright/mcp`)**: Automate end-to-end user journeys (navigation rail, search, quizzes, onboarding redirects) across Chrome browser tabs.
+
+See [AGENTS.md](AGENTS.md) for full MCP server details and workflows.
+
 For a disposable local Supabase database (requires Docker):
 
 ```bash
@@ -116,7 +157,8 @@ PRs targeting the protected `main` branch run automated Flutter analysis, tests,
 
 ## Key documentation
 
-- [UI Architecture — Locked Baseline](UI_ARCHITECTURE_LOCKED.md): three-destination navigation, zero states, direct access, and progress UX.
+- [Agent & MCP Guidelines](AGENTS.md): Model Context Protocol servers (Chrome DevTools, Playwright) and architectural rules for AI agents and automated testing.
+- [UI Architecture — Locked Baseline](UI_ARCHITECTURE_LOCKED.md): three-destination navigation, collapsible searchable rail, Help chrome, catalog filters, zero states, direct access, and progress UX.
 - [Learning Architecture v2](LEARNING_ARCHITECTURE_V2.md): learning contexts, target versions, global knowledge, assessment evidence, and curriculum ingestion.
 - [Canonical Taxonomy Architecture](CANONICAL_TAXONOMY_ARCHITECTURE.md): education and occupation classification ingestion and mapping.
 - [First-Run Zero State and Help](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md): no-wizard first visit and searchable help behavior.

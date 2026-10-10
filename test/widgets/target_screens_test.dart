@@ -94,6 +94,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            authProvider.overrideWith((ref) => _GuestAuthNotifier()),
             targetDetailProvider(
               'target-hvac',
             ).overrideWith((ref) => Future.value(sampleTarget)),

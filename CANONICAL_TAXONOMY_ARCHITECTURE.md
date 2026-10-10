@@ -23,6 +23,17 @@ To permanently solve this, LearningApp implements a **True Dual-Layer Model**:
 3. **Crosswalk Layer:** The `field_external_classifications` junction links our permanent internal fields to one or more external classification nodes without altering internal identity.
 4. **Labor Crosswalk Layer:** The official NCES/BLS crosswalk is stored at the external layer (`external_classification_occupation_mappings`) linking CIP nodes directly to SOC occupations. An application view (`v_field_occupation_mappings`) exposes these relationships to internal fields transparently.
 
+### 1.1.1 Goal-creation autocomplete (implemented)
+
+Official CIP and SOC records are also used as **reference suggestions** when a learner creates a personal goal:
+
+- Career titles can match **BLS/O\*NET SOC** occupation nodes.
+- Academic program titles can match **NCES CIP** program nodes.
+- Queries are filtered in the database with a bounded result set; they are not a full client-side dump of the taxonomy.
+- Selecting a classification copies title (and description when present) into the Create Goal form. The resulting `learning_targets` row remains a **private, unreviewed personal draft**. It does **not** inherit official catalog provenance and is not treated as a platform course.
+
+This preserves the dual-layer rule: government codes seed and suggest; they do not become the identity of a user-created target.
+
 ```
                  INTERNAL ONTOLOGY                           EXTERNAL CLASSIFICATIONS
              ┌─────────────────────────┐                    ┌─────────────────────────┐
