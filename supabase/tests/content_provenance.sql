@@ -20,6 +20,7 @@ select has_column('public', 'content_source_mappings', 'citation_location', 'con
 
 -- 3. Insert and read as service_role
 set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
 
 insert into public.content_source_releases (id, publisher, title, version, source_url, license, sha256)
 values (
@@ -38,8 +39,8 @@ select is(
   'service_role can insert content_source_releases'
 );
 
-insert into public.learning_targets (id, slug, title, target_type, status, is_public)
-values ('88888888-8888-8888-8888-888888888888', 'prov-test-target', 'Prov Test Target', 'certification', 'published', true)
+insert into public.learning_targets (id, slug, title, target_type, status, is_public, review_status)
+values ('88888888-8888-8888-8888-888888888888', 'prov-test-target', 'Prov Test Target', 'certification', 'published', true, 'approved')
 on conflict do nothing;
 
 insert into public.target_versions (id, target_id, version_code, status)

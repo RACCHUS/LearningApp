@@ -101,8 +101,8 @@ select is(
 );
 
 select throws_ok(
-  $delete from public.learning_targets
-    where slug = 'community-career-990'$,
+  $$delete from public.learning_targets
+    where slug = 'community-career-990'$$,
   '42501',
   'Only trusted reviewers may delete verified goals.',
   'approved public community entries cannot be silently deleted by owner'

@@ -43,7 +43,7 @@ begin
   -- A security-definer RPC called by an API client retains the caller JWT and
   -- therefore is NOT granted this exception.
   if v_role = 'service_role' or
-     (v_role = '' and current_user in ('postgres', 'supabase_admin')) then
+     (v_role = '' and current_user in ('postgres', 'supabase_admin', 'service_role')) then
     -- Trusted ingestion of system-authored catalog records keeps working
     -- without pretending that all such records are "official".
     if tg_op = 'INSERT'
