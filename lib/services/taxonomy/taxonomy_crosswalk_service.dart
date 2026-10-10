@@ -398,6 +398,100 @@ class TaxonomyCrosswalkService {
     }
   }
 
+  /// Server-filtered suggestions for the personal learning-goal form.
+  ///
+  /// Unlike broad explorer search, this queries the *authoritative* SOC/CIP
+  /// tables directly so API row limits do not hide alphabetical matches.
+  /// Classification records are reference material, not official goals.
+  Future<List<TaxonomySearchMatch>> suggestGoalTaxonomy({
+    required String query,
+    required String targetType,
+  }) async {
+    final q = query.trim();
+    if (q.length < 3) return const [];
+    if (targetType != 'career' && targetType != 'academic_program') {
+      return const [];
+    }
+
+    final client = _supabase;
+    if (client == null) {
+      if (targetType == 'career') {
+        return _fallbackOccupationNodes()
+            .where((o) => o.title.toLowerCase().contains(q.toLowerCase()) &&
+                (o.level == 'detailed_occupation' ||
+                    o.level == 'onet_extension'))
+            .take(8)
+            .map((o) => TaxonomySearchMatch(
+                  id: o.id, code: o.code, title: o.title,
+                  description: o.description,
+                  kind: TaxonomyItemKind.occupation,
+                  level: o.level, system: o.taxonomySystem,
+                ))
+            .toList();
+      }
+      return _fallbackExternalClassificationNodes(system: 'cip', version: '2020')
+          .where((c) => c.levelCode == 'program' &&
+              c.title.toLowerCase().contains(q.toLowerCase()))
+          .take(8)
+          .map((c) => TaxonomySearchMatch(
+                id: c.id, code: c.code, title: c.title,
+                description: c.definition,
+                kind: TaxonomyItemKind.cipProgram,
+                level: c.levelCode, system: c.system,
+              ))
+          .toList();
+    }
+
+    try {
+      if (targetType == 'career') {
+        final rows = await client.from('occupation_nodes')
+            .select('id,code,title,description,level,taxonomy_system')
+            .eq('is_active', true)
+            .inFilter('level', ['detailed_occupation', 'onet_extension'])
+            .ilike('title', '%$q%')
+            .order('title')
+            .limit(8);
+        return (rows as List).map((row) {
+          final m = row as Map<String, dynamic>;
+          return TaxonomySearchMatch(
+            id: m['id'] as String,
+            code: m['code'] as String,
+            title: m['title'] as String,
+            description: m['description'] as String?,
+            kind: TaxonomyItemKind.occupation,
+            level: m['level'] as String?,
+            system: m['taxonomy_system'] as String?,
+          );
+        }).toList();
+      }
+
+      final rows = await client.from('external_classification_nodes')
+          .select('id,code,title,definition,level_code,system')
+          .eq('is_active', true)
+          .eq('system', 'cip')
+          .eq('version', '2020')
+          .eq('level_code', 'program')
+          .ilike('title', '%$q%')
+          .order('title')
+          .limit(8);
+      return (rows as List).map((row) {
+        final m = row as Map<String, dynamic>;
+        return TaxonomySearchMatch(
+          id: m['id'] as String,
+          code: m['code'] as String,
+          title: m['title'] as String,
+          description: m['definition'] as String?,
+          kind: TaxonomyItemKind.cipProgram,
+          level: m['level_code'] as String?,
+          system: m['system'] as String?,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Goal taxonomy suggestions unavailable: $e');
+      return const [];
+    }
+  }
+
   Future<List<TaxonomySearchMatch>> searchTaxonomy({required String query}) async {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];

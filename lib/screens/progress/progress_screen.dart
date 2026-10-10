@@ -55,8 +55,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               ref.invalidate(retentionSummaryProvider);
             },
           ),
-          const HelpAction(),
           const AccountActions(),
+          const HelpAction(),
         ],
       ),
       body: ListView(

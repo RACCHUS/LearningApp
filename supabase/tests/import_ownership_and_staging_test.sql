@@ -49,10 +49,10 @@ begin
   on conflict (id) do nothing;
 
   -- Targets
-  insert into public.learning_targets (id, slug, title, target_type, created_by, status, is_public)
+  insert into public.learning_targets (id, slug, title, target_type, created_by, status, is_public, is_official, review_status)
   values
-    (v_target_a, 'target-a', 'Target A', 'certification', v_user_owner, 'published', true),
-    (v_target_b, 'target-b', 'Target B', 'certification', v_user_owner, 'published', true)
+    (v_target_a, 'target-a', 'Target A', 'certification', v_user_owner, 'published', true, true, 'approved'),
+    (v_target_b, 'target-b', 'Target B', 'certification', v_user_owner, 'published', true, true, 'approved')
   on conflict (id) do nothing;
 
   -- Versions (both start as draft)

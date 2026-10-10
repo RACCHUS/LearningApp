@@ -60,7 +60,36 @@ Because `20241228000000_legacy_base_tables.sql` is timestamped earlier than migr
    Confirm that:
    - `user_curriculum_resources` table exists with RLS enabled.
    - `lessons.visibility` column is present and defaulted to `'private'`.
-   - Anonymous access can view public official targets and public lessons, but cannot read private lessons or insert personal overlays on unowned targets.
+   - `learning_targets.review_status` exists with values `unreviewed`, `pending`, `approved`, `rejected`.
+   - Anonymous access can view public official or approved catalog targets and public lessons, but cannot read private drafts or insert personal overlays on unowned targets.
+   - Authenticated clients cannot insert or update a target with `is_official`, `is_public`, `status = published`, or `review_status = approved`.
 
 5. **Staged Deployment Order**:
-   Always apply and verify database migrations **before** deploying the compiled web app release (`build/web`).
+   Always apply and verify database migrations **before** deploying the compiled web app release (`build/web`). The Flutter catalog labels, Library source filters, and Create Goal suggestions depend on `20261009000005_learning_target_catalog_provenance.sql`. Deploying the app without that migration will fail or show an untrusted catalog.
+
+---
+
+## 3. Learning-target catalog provenance (`20261009000005`)
+
+Append-only migration: `supabase/migrations/20261009000005_learning_target_catalog_provenance.sql`.
+
+### Intent
+
+Separate user-created goals from official and curated catalog records so unreviewed nonsense is not discoverable, while still allowing a later trusted process to publish useful community goals.
+
+### Behaviour
+
+- Adds `learning_targets.review_status` (`unreviewed` | `pending` | `approved` | `rejected`).
+- Trigger `enforce_learning_target_catalog_provenance` strips client-forged official, public, and approved flags. User inserts must be owner-owned private drafts with `review_status = unreviewed`.
+- Public read RLS allows owner access, plus published public rows that are official **or** `review_status = approved`.
+- Owners may move their own unreviewed/rejected drafts to `pending` (request review). They cannot approve, publish, or delete official/approved public records.
+- Approval and public publication are reserved to `service_role` (or a privileged migration/ingestion session). There is no in-app moderator console in this change; operators use a trusted service-role workflow.
+
+### Backfill
+
+- Existing official or system-authored published public rows become `approved` and stay catalog-visible.
+- Existing **user-created** published public rows that were never vetted become **private drafts** with `review_status = pending`. Owners keep access; other learners no longer see them in the trusted catalog until a trusted reviewer approves them.
+
+### After applying
+
+Re-run `supabase test db` (includes `supabase/tests/learning_target_catalog_provenance.sql`) on a disposable database. Do not `db reset` production.

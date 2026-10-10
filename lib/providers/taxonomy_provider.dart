@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/taxonomy/taxonomy.dart';
+import '../models/learning_target.dart';
 import '../services/taxonomy/taxonomy_crosswalk_service.dart';
 
 /// Taxonomy Crosswalk Service Provider
@@ -109,6 +110,15 @@ final taxonomySearchProvider =
   final service = ref.watch(taxonomyServiceProvider);
   return service.searchTaxonomy(query: query);
 });
+
+/// Bounded server-side SOC/CIP reference suggestions for learner-created goals.
+final goalTaxonomySuggestionsProvider = FutureProvider.family<
+    List<TaxonomySearchMatch>, ({TargetType type, String query})>(
+  (ref, args) => ref.watch(taxonomyServiceProvider).suggestGoalTaxonomy(
+        query: args.query,
+        targetType: args.type.toDbString(),
+      ),
+);
 
 /// Taxonomy Lineage Transition Provider
 final taxonomyLineageProvider =

@@ -181,6 +181,15 @@ create index if not exists learning_targets_field_idx on public.learning_targets
 create index if not exists learning_targets_catalog_idx on public.learning_targets(status, is_public);
 ```
 
+The SQL above is the original v2 snapshot. Catalog trust was later tightened by append-only migration `supabase/migrations/20261009000005_learning_target_catalog_provenance.sql`:
+
+- `review_status` (`unreviewed`, `pending`, `approved`, `rejected`) is required.
+- Client-authored targets must start as private unreviewed drafts. `is_official`, public publication, and `approved` cannot be set by the anon/authenticated client.
+- Public catalog reads are owners plus published rows that are official or `review_status = approved`.
+- Previously public unreviewed user targets were backfilled to private pending review so they drop out of default discovery until a service-role workflow approves them.
+
+Do not edit the historical snapshot in place. Follow that migration and `docs/HOSTED_MIGRATION_ROLLOUT.md`.
+
 ### 5.3 Target Versions
 ```sql
 create table if not exists public.target_versions (
@@ -592,6 +601,8 @@ create policy "targets_read" on public.learning_targets
     (status = 'published' and is_public = true)
     or (auth.uid() = created_by)
   );
+-- Later: 20261009000005 restricts public rows to official or review_status = approved.
+-- See docs/HOSTED_MIGRATION_ROLLOUT.md §3.
 create policy "targets_write" on public.learning_targets
   for all using (auth.uid() = created_by)
   with check (auth.uid() = created_by);

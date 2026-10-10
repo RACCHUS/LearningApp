@@ -115,6 +115,24 @@ void main() {
     expect(find.text('LOGIN PAGE'), findsOneWidget);
   });
 
+  testWidgets('Help stays at the top right beside Settings and Log in',
+      (tester) async {
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    final help = find.byKey(const Key('help-action'));
+    final settings = find.byTooltip('Settings');
+    expect(find.text('Log in'), findsOneWidget);
+    expect(settings, findsOneWidget);
+    expect(help, findsOneWidget);
+    expect(tester.getTopLeft(help).dx,
+        greaterThan(tester.getTopLeft(settings).dx));
+
+    await tester.tap(help);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('help-search')), findsOneWidget);
+  });
+
   testWidgets('signed-out Settings choice survives leaving and returning',
       (tester) async {
     await tester.pumpWidget(app());

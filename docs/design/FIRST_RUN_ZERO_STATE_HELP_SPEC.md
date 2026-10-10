@@ -186,6 +186,8 @@ actions: const [
 
 The Help icon appears immediately before account/settings actions.
 
+This trailing pair is required on Learn (zero state and active context), Library, and Progress. Help must remain visible when the learning-context switcher is present. On signed-out/guest chrome the order is `Help`, then `Log in`, then `Settings`.
+
 ---
 
 ## 5. Searchable Help surface
@@ -413,11 +415,11 @@ Primary zero-state CTA opens Library with the bundled/catalog content discoverab
 
 ### Signed-out user
 
-The same zero state is usable. Account UI still renders:
+The same zero state is usable. Top-right chrome still renders:
 
-`Log in · Settings`
+`Help · Log in · Settings`
 
-and Help remains available.
+Help remains available offline and before login.
 
 ### Returning user with context
 

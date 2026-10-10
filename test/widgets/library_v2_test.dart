@@ -114,6 +114,7 @@ void main() {
       id: 'target-hvac',
       targetType: TargetType.licensureExam,
       title: 'Florida Air Conditioning Contractor Class A',
+      isOfficial: true,
       slug: 'florida-ac-a',
       jurisdiction: 'Florida',
       createdAt: DateTime(2026),
@@ -230,7 +231,7 @@ void main() {
 
       expect(find.text('Search Results'), findsOneWidget);
       expect(find.text('Florida Air Conditioning Contractor Class A'), findsOneWidget);
-      expect(find.text('Licensure Exam (Florida)'), findsOneWidget);
+      expect(find.text('Licensure Exam (Florida) · Official'), findsOneWidget);
 
       expect(find.text('Thermodynamics of Cooling'), findsOneWidget);
       expect(find.text('Course'), findsOneWidget);

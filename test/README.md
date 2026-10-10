@@ -162,6 +162,13 @@ flutter test --coverage
 dart test/integration/test_lesson_creation.dart
 ```
 
+### **Browser Automation & End-to-End Testing (MCP):**
+The environment is configured with Model Context Protocol (MCP) servers enabling developers and AI agents to perform live browser testing against the Flutter PWA:
+- **`chrome-devtools` (`chrome-devtools-mcp`)**: Connects to the running web client to inspect browser console errors, inspect network traffic, run Lighthouse audits, and evaluate JavaScript state.
+- **`playwright` (`@playwright/mcp`)**: Automates browser interactions (clicking, filling forms, verifying responsive navigation rail, zero states, and Help dialogs) via Chrome.
+
+See [AGENTS.md](../AGENTS.md) for full MCP server details and workflows.
+
 ---
 
 ## 📈 Test Coverage Areas

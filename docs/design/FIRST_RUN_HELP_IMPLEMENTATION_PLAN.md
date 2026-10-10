@@ -1,7 +1,7 @@
 # Implementation Plan — Remove First-Run Wizard + Add Searchable Help
 
 **Depends on:** `docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md`  
-**Architecture baseline:** `UI_ARCHITECTURE_LOCKED.md` v1.5
+**Architecture baseline:** `UI_ARCHITECTURE_LOCKED.md` v1.6 (Help placement beside account actions was later locked in §1.9 / G2).
 
 This plan is intentionally implementation-oriented. It is not another design round.
 

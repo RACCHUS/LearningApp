@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/learning_context.dart';
 import '../../providers/learning_context_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/learning_target.dart';
 import '../../providers/learning_target_provider.dart';
 import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
@@ -83,6 +85,51 @@ class TargetDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: DesignTokens.space3),
+
+                const SizedBox(height: DesignTokens.space2),
+                Row(
+                  children: [
+                    Icon(target.isOfficial
+                        ? Icons.verified_outlined
+                        : target.reviewStatus == TargetReviewStatus.approved
+                            ? Icons.fact_check_outlined
+                            : Icons.person_outline,
+                      size: 16,
+                      color: theme.colorScheme.primary),
+                    const SizedBox(width: DesignTokens.space1),
+                    Text(target.sourceLabel,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant)),
+                  ],
+                ),
+                if (ref.watch(authProvider) is AuthSuccess &&
+                    (ref.watch(authProvider) as AuthSuccess).user.id ==
+                        target.createdBy &&
+                    !target.isOfficial &&
+                    (target.reviewStatus == TargetReviewStatus.unreviewed ||
+                        target.reviewStatus == TargetReviewStatus.rejected))
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('request-community-review'),
+                      onPressed: () async {
+                        final ok = await ref
+                            .read(learningTargetServiceProvider)
+                            .requestCommunityReview(target.id);
+                        ref.invalidate(targetDetailProvider(target.id));
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(ok
+                              ? 'Submitted for community catalog review. '
+                                  'Your goal remains private until approved.'
+                              : 'Could not submit your goal for review.'),
+                        ));
+                      },
+                      icon: const Icon(Icons.rate_review_outlined),
+                      label: const Text('Submit for community review'),
+                    ),
+                  ),
+                const SizedBox(height: DesignTokens.space1),
 
                 // Subtitle metadata
                 if (target.providerName != null || target.jurisdiction != null) ...[
