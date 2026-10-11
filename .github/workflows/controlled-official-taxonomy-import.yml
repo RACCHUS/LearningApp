@@ -121,6 +121,19 @@ jobs:
           set -euo pipefail
           dart run tool/ingest_official_taxonomies.dart --ingest-all --offline
           dart run tool/taxonomy_coverage.dart --json --strict > build/taxonomy-reports/after.json
+          # A reference-taxonomy import must not add/remove learner-facing
+          # targets, versions, authored lessons, courses or target types.
+          jq -n -e \
+            --slurpfile before build/taxonomy-reports/before.json \
+            --slurpfile after build/taxonomy-reports/after.json \
+            '($before[0].target_types == $after[0].target_types) and
+             ($before[0].catalog.learning_targets_total == $after[0].catalog.learning_targets_total) and
+             ($before[0].catalog.published_target_versions == $after[0].catalog.published_target_versions) and
+             ($before[0].catalog.courses_total == $after[0].catalog.courses_total) and
+             ($before[0].catalog.lessons_total == $after[0].catalog.lessons_total)' >/dev/null || {
+              echo "::error::The import unexpectedly changed learner-facing content counts. Stop and investigate before any retry."
+              exit 1
+            }
           jq -r '"Post-import pinned-release mismatches: " + (.mismatches|tostring)' build/taxonomy-reports/after.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload aggregate-only coverage checks
