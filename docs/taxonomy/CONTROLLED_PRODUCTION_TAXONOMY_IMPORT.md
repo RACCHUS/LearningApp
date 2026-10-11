@@ -55,7 +55,7 @@ For a CLI alternative, consult [Supabase's current Database Backups guidance](ht
 In the `RACCHUS/LearningApp` GitHub repository, configure Actions secrets (never put secret values into workflow inputs):
 
 - `SUPABASE_URL`: the Learning App hosted REST API root (`https://xzvkdwebtbxlrxagtzlv.supabase.co`).
-- `SUPABASE_SERVICE_ROLE_KEY`: the hosted Supabase service-role secret available only to approved maintainers. It bypasses RLS: keep it off the client.
+- `SUPABASE_SERVICE_ROLE_KEY`: use the modern **`sb_secret_...`** key from Supabase **Settings → API Keys → Publishable and secret API keys**. The environment variable retains its old name for compatibility with the scripts. A legacy service-role JWT only works on projects where legacy keys remain enabled. Do not use `sb_publishable_` or an anon key for this privileged import. Secret keys bypass RLS: keep them off the client.
 
 Strongly restrict repository write access, workflow dispatch, secrets access and who can modify `main`. If using GitHub Environments with manual approvals, enforce a production review rule before import.
 
@@ -101,3 +101,7 @@ Compare `before.json` and `after.json` artifacts, ensure no import validation or
 - The backup attestation fields validate format only; the operator must actually create and verify a backup.
 - A Free-plan Supabase project has no managed daily database backup to fall back on.
 - The importer is **not** an exam/credential/license/degree/course catalog. Phase H2/H3 relationship/source work remains.
+
+## Current hosted credential compatibility (2026-10-11)
+
+The first production import attempt failed because the repository Actions key was absent; the second authenticated to GitHub but received **401 Legacy API keys are disabled** from hosted Supabase before any import writes. The database project has disabled legacy JWT-based API keys. The importer and coverage tooling now send modern `sb_secret_` keys **only via `apikey`** (never as `Authorization: Bearer`, which would cause an Invalid JWT failure). Before dispatching again, **replace the existing GitHub Actions secret value** named `SUPABASE_SERVICE_ROLE_KEY` with a current `sb_secret_` key from that same Learning App project. Do not share or log the key.

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'supabase_rest_auth.dart';
+
 /// Read-only, release-scoped catalog coverage report.
 ///
 /// This is NOT the seed smoke test in taxonomy_status.dart. It reports live
@@ -47,8 +49,7 @@ class CoverageClient {
     final uri = Uri.parse('${url.replaceFirst(RegExp(r"/+$"), "")}/rest/v1/$table')
         .replace(queryParameters: {'select': 'id', ...filters});
     final request = await _client.getUrl(uri);
-    request.headers.set('apikey', key);
-    request.headers.set('Authorization', 'Bearer $key');
+    setSupabaseRestAuth(request, key);
     request.headers.set('Range-Unit', 'items');
     request.headers.set('Range', '0-0');
     request.headers.set('Prefer', 'count=exact');
@@ -79,7 +80,8 @@ Future<void> main(List<String> args) async {
       'Usage: dart run tool/taxonomy_coverage.dart '
       '[--registry-only] [--json] [--strict]\n'
       'Reads $registryPath. Live queries require SUPABASE_URL and '
-      'SUPABASE_SERVICE_ROLE_KEY (preferred) or SUPABASE_ANON_KEY.\n'
+      'SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT or modern sb_secret_) '
+      'or SUPABASE_ANON_KEY.\n'
       '--strict exits nonzero for missing pinned-release coverage.',
     );
     return;
@@ -141,7 +143,8 @@ Future<void> main(List<String> args) async {
   final url = setting('SUPABASE_URL');
   final serviceKey = setting('SUPABASE_SERVICE_ROLE_KEY');
   final anonKey = setting('SUPABASE_ANON_KEY');
-  final key = serviceKey ?? anonKey;
+  final key = serviceKey?.isNotEmpty == true ? serviceKey : anonKey;
+  if (serviceKey?.isNotEmpty == true) assertSupabaseAdminKey(serviceKey!);
   if (url == null || url.isEmpty || key == null || key.isEmpty) {
     stderr.writeln('Missing SUPABASE_URL and an authorized Supabase API key. '
         'Use --registry-only for offline validation.');
