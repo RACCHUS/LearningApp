@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-11",
+  "notice": "This is a review queue, not a license grant or a permission to bulk ingest. All third-party reproduction must receive explicit approval.",
+  "sources": [
+    {
+      "id": "nces_cip_2020",
+      "priority": "P0",
+      "owner": "taxonomy",
+      "access": "existing_importer",
+      "publication_rights": "review_required",
+      "blocker": "Verify current official dataset release/attribution, source license, and if full import is hosted",
+      "evidence": "https://nces.ed.gov/ipeds/cipcode/",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "bls_soc_2018",
+      "priority": "P0",
+      "owner": "taxonomy",
+      "access": "existing_importer",
+      "publication_rights": "review_required",
+      "blocker": "Verify official source and if full 2018 import is hosted",
+      "evidence": "https://www.bls.gov/soc/2018/",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "onet_31_0",
+      "priority": "P0",
+      "owner": "taxonomy",
+      "access": "existing_importer",
+      "publication_rights": "attribution_review_required",
+      "blocker": "Confirm CC BY 4.0 attribution, third-party exclusions and hosted release",
+      "evidence": "https://www.onetonline.org/help/license",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "careeronestop_licenses",
+      "priority": "P1",
+      "owner": "credentialing",
+      "access": "token_required",
+      "publication_rights": "terms_and_regulator_review",
+      "blocker": "Request API token, inspect licensing/reuse terms, confirm each state board; submissions may be incomplete",
+      "evidence": "https://api.careeronestop.org/api-explorer/",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "credential_registry",
+      "priority": "P2",
+      "owner": "credentialing",
+      "access": "developer_agreement_required",
+      "publication_rights": "blocked_without_agreement",
+      "blocker": "Developer agreement or permission required for external product distribution",
+      "evidence": "https://credentialengine.org/terms-of-use/",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "college_scorecard",
+      "priority": "P1",
+      "owner": "providers",
+      "access": "key_or_bulk_download",
+      "publication_rights": "terms_review_required",
+      "blocker": "Review API key policy and scope; Scorecard is not a current course/seat availability source",
+      "evidence": "https://collegescorecard.ed.gov/data/api-documentation/",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "nces_ipeds",
+      "priority": "P1",
+      "owner": "providers",
+      "access": "bulk_download",
+      "publication_rights": "terms_review_required",
+      "blocker": "Assess data year, reporting coverage, and identifiable institution/program IDs",
+      "evidence": "https://nces.ed.gov/ipeds/use-the-data",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "ncsbn_nclex",
+      "priority": "P1",
+      "owner": "assessments",
+      "access": "manual_blueprint_review",
+      "publication_rights": "issuer_rights_review",
+      "blocker": "Review test-plan use permissions; never reproduce proprietary real exam questions",
+      "evidence": "https://www.nclex.com/test-plans.page",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "certification_issuers",
+      "priority": "P1",
+      "owner": "credentialing",
+      "access": "per_issuer",
+      "publication_rights": "issuer_rights_review",
+      "blocker": "List issuers/versions and rights independently; this umbrella item is not a single bulk dataset",
+      "evidence": "https://www.comptia.org/certifications",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "case_1edtech",
+      "priority": "P2",
+      "owner": "standards",
+      "access": "issuer_api_or_download",
+      "publication_rights": "framework_rights_review",
+      "blocker": "CASE API standard does not grant redistribution rights to every content publisher",
+      "evidence": "https://www.1edtech.org/standards/case",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "unesco_isced",
+      "priority": "P3",
+      "owner": "international",
+      "access": "future_import",
+      "publication_rights": "rights_review_required",
+      "blocker": "Validate dataset edition, country differences, attribution and translation licenses",
+      "evidence": "https://uis.unesco.org/en/topic/international-standard-classification-education-isced",
+      "ingestion_approved_for_new_sources": false
+    },
+    {
+      "id": "eu_esco",
+      "priority": "P3",
+      "owner": "international",
+      "access": "future_import",
+      "publication_rights": "rights_review_required",
+      "blocker": "Check download usage terms, version, languages and mappings without overwriting US taxonomy",
+      "evidence": "https://esco.ec.europa.eu/en/use-esco/download",
+      "ingestion_approved_for_new_sources": false
+    }
+  ]
+}

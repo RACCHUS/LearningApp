@@ -47,6 +47,11 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Validate catalog source registry and rights review
+        run: |
+          dart run tool/taxonomy_coverage.dart --registry-only
+          dart run tool/verify_taxonomy_source_review.dart
+
       - name: Validate curriculum manifests (JSON Schema & Quality Linter)
         run: dart run tool/lint_manifest.dart --dir content/
 
@@ -116,6 +121,13 @@ jobs:
           export SUPABASE_URL="$API_URL"
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
           dart run tool/ingest_official_taxonomies.dart --ingest-all
+
+      - name: Check release-level catalog coverage after local official ingestion
+        run: |
+          eval $(supabase status -o env)
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          dart run tool/taxonomy_coverage.dart --strict
 
       - name: Verify post-ingestion database integrity and pgTAP tests
         run: |

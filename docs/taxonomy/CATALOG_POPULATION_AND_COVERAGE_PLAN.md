@@ -1,6 +1,6 @@
 # Catalog Population and Coverage Plan — Phase H
 
-**Status:** Phase H0 in progress (source registry + read-only coverage CLI). Other phases are proposals, not deployed capabilities.  
+**Status:** Phase H0 merged; Phase H1 tooling implemented. The hosted classification/catalog baseline was directly verified 2026-10-11 and is documented in [the verified snapshot](HOSTED_CATALOG_BASELINE_2026-10-11.md). Source rights approvals and production bulk ingestion are still pending.  
 **As of:** 2026-10-11  
 **Owner:** LearningApp taxonomy/catalog  
 **Authoritative references:** [Learning Architecture V2](../../LEARNING_ARCHITECTURE_V2.md), [Canonical Taxonomy Architecture](../../CANONICAL_TAXONOMY_ARCHITECTURE.md), [Official Taxonomy Data Ingestion](OFFICIAL_DATA_INGESTION.md), [Hosted Migration Rollout](../HOSTED_MIGRATION_ROLLOUT.md)
@@ -87,7 +87,7 @@ Publication rules: no provider's nonpublic data is scraped; no automatic approva
 
 ## 6. Coverage measurement and operational targets
 
-### Coverage report v0 (included in this PR)
+### Coverage report v0 (merged in Phase H0; CI gate added in Phase H1)
 
 Run:
 
@@ -124,7 +124,7 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... dart run tool/taxonomy_coverage.d
 
 | Phase | Deliverable | Completion gate |
 | --- | --- | --- |
-| **H0 — now** | This plan, source registry, safe baseline coverage CLI, architecture/README integration | Registry validates offline; code reviewed; CI green; no live coverage claims |
+| **H0 — merged** | This plan, source registry, safe baseline coverage CLI, architecture/README integration | Registry validates offline; code reviewed; CI green; no live coverage claims |
 | **H1 — inventory** | Secure hosted baseline, source entitlement matrix, source refresh owner, sampled provider/credential gaps | Document production row counts and usage rights; approve P1 dataset list |
 | **H2 — graph contract** | Additive schema + typed relationship semantics, jurisdiction, provenance, versioning and RLS/pgTAP tests | Idempotent migrations, no public forgery, no plan-regression; upstream diff test |
 | **H3 — first expansion** | Florida licensure/admissions/credential pilot; issuer source adapters; search badges/unknown states | >=90% evidence-backed requirements in defined pilot subset; zero fabricated links |
@@ -142,3 +142,7 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... dart run tool/taxonomy_coverage.d
 - **Human review:** publisher rights and regulatory claims must be reviewed independently of the model that suggested them.
 
 **Known Phase H0 limitations:** source-rights matrix is a decision queue, not legal clearance; no new dataset has been bulk-imported; no hosted Supabase audit was executed; there is no live relationship graph for the new categories yet; the current count CLI does not calculate evidence-backed career-to-license coverage until H2 tables exist.
+
+### Phase H1 operator verification
+
+The [Hosted Baseline and Source Review Runbook](HOSTED_BASELINE_AND_SOURCE_REVIEW.md) separates local CI taxonomy validation from **unverified hosted** production coverage. It documents the manual, secret-backed, read-only GitHub Actions audit, the source rights/approval queue in [`data/taxonomy/source_access_review.json`](../../data/taxonomy/source_access_review.json), and pilot data-gap sampling. Green disposable CI does not establish that hosted migrations were applied or that new third-party data is licensed for public distribution.
