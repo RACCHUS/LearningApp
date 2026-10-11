@@ -25,6 +25,9 @@ The Supabase organization is on the **Free** plan. Daily automatic recoverable b
 
 ## Phase 2 — Make an off-site backup of the **real** hosted database
 
+For Windows users with a second SSD, use the tested-by-CI syntax (not yet executed on the user's PC) in [Windows SSD Backup](WINDOWS_SSD_BACKUP.md), which verifies the separate physical drive, full archive decompression, necessary database tables and SHA-256. A local SSD backup is a first recovery copy, **not** off-site. Store a second independently encrypted copy away from that PC before authorizing the live import. The script does not claim that a full restoration was rehearsed.
+
+
 From an authorized, trusted computer, use a Postgres client matching or newer than the server version (currently PostgreSQL 17). Obtain a direct/session-pooler database connection string from **Supabase Dashboard → Project → Connect**. Keep it out of chat, source control, screenshots and command history wherever possible.
 
 For example, in **PowerShell** with a securely supplied environment variable:
