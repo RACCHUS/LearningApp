@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'supabase_rest_auth.dart';
+
 /// Read-only, release-scoped catalog coverage report.
 ///
 /// This is NOT the seed smoke test in taxonomy_status.dart. It reports live
@@ -47,8 +49,7 @@ class CoverageClient {
     final uri = Uri.parse('${url.replaceFirst(RegExp(r"/+$"), "")}/rest/v1/$table')
         .replace(queryParameters: {'select': 'id', ...filters});
     final request = await _client.getUrl(uri);
-    request.headers.set('apikey', key);
-    request.headers.set('Authorization', 'Bearer $key');
+    setSupabaseRestAuth(request, key);
     request.headers.set('Range-Unit', 'items');
     request.headers.set('Range', '0-0');
     request.headers.set('Prefer', 'count=exact');
