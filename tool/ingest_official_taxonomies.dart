@@ -9,6 +9,7 @@ import '../lib/models/taxonomy/external_classification_node.dart';
 import '../lib/models/taxonomy/occupation_node.dart';
 import '../lib/services/taxonomy/official_taxonomy_sources.dart';
 import '../lib/services/taxonomy/taxonomy_importer.dart';
+import 'supabase_rest_auth.dart';
 
 /// Downloads, validates, and optionally ingests the complete authoritative
 /// Phase F taxonomy sources.
@@ -89,6 +90,8 @@ Future<void> main(List<String> args) async {
       'Validation/download modes never require database credentials.',
     );
   }
+
+  assertSupabaseAdminKey(serviceRoleKey);
 
   final db = _PostgrestAdmin(
     baseUrl: supabaseUrl,
@@ -950,8 +953,7 @@ class _PostgrestAdmin {
   }
 
   void _auth(HttpClientRequest request) {
-    request.headers.set('apikey', serviceRoleKey);
-    request.headers.set('Authorization', 'Bearer $serviceRoleKey');
+    setSupabaseRestAuth(request, serviceRoleKey);
   }
 
   Future<void> _expectSuccess(
