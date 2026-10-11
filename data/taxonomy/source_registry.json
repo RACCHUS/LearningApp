@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-11",
+  "notes": "Registry of proposed source integrations and release-scoped coverage checks; listed sources are NOT automatically ingested, licensed, or deployed. Null target means baseline to establish.",
+  "sources": [
+    {
+      "id": "nces_cip_2020",
+      "category": "academic_fields",
+      "publisher": "NCES",
+      "url": "https://nces.ed.gov/ipeds/cipcode/",
+      "acquisition": "Existing pinned official bulk importer",
+      "scope": "US; CIP 2020",
+      "cadence": "annual check; new edition as immutable release",
+      "status": "implemented_importer_execution_unverified",
+      "rights": "US federal source; verify artifact-specific rights",
+      "owner": "taxonomy"
+    },
+    {
+      "id": "bls_soc_2018",
+      "category": "careers",
+      "publisher": "BLS",
+      "url": "https://www.bls.gov/soc/2018/",
+      "acquisition": "Existing pinned official bulk importer",
+      "scope": "US; SOC 2018",
+      "cadence": "annual edition check and official revision monitoring",
+      "status": "implemented_importer_execution_unverified",
+      "rights": "US federal source; verify artifact-specific rights",
+      "owner": "taxonomy"
+    },
+    {
+      "id": "onet_31_0",
+      "category": "occupation_skills",
+      "publisher": "USDOL/ETA O*NET",
+      "url": "https://www.onetcenter.org/db_releases.html",
+      "acquisition": "Existing pinned official bulk importer",
+      "scope": "US; O*NET-SOC 2019 / database 31.0",
+      "cadence": "each published release; separate version",
+      "status": "implemented_importer_execution_unverified",
+      "rights": "CC BY 4.0 with required attribution; exceptions for other O*NET products",
+      "owner": "taxonomy"
+    },
+    {
+      "id": "careeronestop_licenses",
+      "category": "professional_licenses",
+      "publisher": "CareerOneStop / state licensing agencies",
+      "url": "https://www.careeronestop.org/Developers/WebAPI/web-api.aspx",
+      "acquisition": "Tokened API or downloadable licensed occupations dataset, followed by regulator verification",
+      "scope": "US states and territories where provided",
+      "cadence": "monthly delta checks; high-impact changes urgently",
+      "status": "discovery_required",
+      "rights": "API agreement/terms review before caching and redistribution",
+      "owner": "credentialing"
+    },
+    {
+      "id": "credential_registry",
+      "category": "certifications_credentials",
+      "publisher": "Credential Engine",
+      "url": "https://credentialengine.org/develop-solutions/apis/",
+      "acquisition": "Authenticated CTDL registry API subject to account and agreement",
+      "scope": "Participating credential issuers; coverage not exhaustive",
+      "cadence": "weekly updates after authorization",
+      "status": "blocked_agreement",
+      "rights": "Developer agreement, key, and permitted reuse required",
+      "owner": "credentialing"
+    },
+    {
+      "id": "college_scorecard",
+      "category": "higher_education_providers",
+      "publisher": "US Department of Education",
+      "url": "https://collegescorecard.ed.gov/data/api-documentation/",
+      "acquisition": "Official API / bulk files; join stable institution and CIP identifiers",
+      "scope": "US higher education institutions/programs",
+      "cadence": "annual release and quarterly metadata check",
+      "status": "discovery_required",
+      "rights": "API key/terms and dataset field policies to review",
+      "owner": "providers"
+    },
+    {
+      "id": "nces_ipeds",
+      "category": "higher_education_providers",
+      "publisher": "NCES IPEDS",
+      "url": "https://nces.ed.gov/ipeds/use-the-data",
+      "acquisition": "Bulk survey downloads, not a provider course catalog",
+      "scope": "US reporting institutions",
+      "cadence": "annual",
+      "status": "discovery_required",
+      "rights": "Source terms and disclosure rules to review",
+      "owner": "providers"
+    },
+    {
+      "id": "ncsbn_nclex",
+      "category": "licensure_exams",
+      "publisher": "NCSBN",
+      "url": "https://www.nclex.com/test-plans.page",
+      "acquisition": "Publisher blueprint metadata; original lessons and assessment items only",
+      "scope": "US nursing licensure preparation; boards control licensure",
+      "cadence": "each test plan cycle (typically 3 years) and notices",
+      "status": "curation_required",
+      "rights": "Do not copy protected exam questions or assume permission to reproduce full blueprint",
+      "owner": "assessments"
+    },
+    {
+      "id": "certification_issuers",
+      "category": "certifications_exams",
+      "publisher": "Individual issuers (e.g. CompTIA, AWS)",
+      "url": "https://www.comptia.org/certifications",
+      "acquisition": "Per-issuer reviewed exam objectives, version, validity, prerequisites and links",
+      "scope": "Issuer-defined/global",
+      "cadence": "monthly watch and upon version changes",
+      "status": "curation_required",
+      "rights": "Issuer-specific copyright, trademark and automated access review",
+      "owner": "credentialing"
+    },
+    {
+      "id": "case_1edtech",
+      "category": "k12_standards",
+      "publisher": "1EdTech CASE issuers / education departments",
+      "url": "https://www.1edtech.org/standards/case",
+      "acquisition": "CASE 1.1 provider/API where licensed/registered",
+      "scope": "Issuer/jurisdiction specific",
+      "cadence": "per framework revision; quarterly checks",
+      "status": "blocked_rights_access",
+      "rights": "CASE interoperability specification is not a blanket license to redistribute each state's standards; confirm rights and access",
+      "owner": "standards"
+    },
+    {
+      "id": "unesco_isced",
+      "category": "international_education",
+      "publisher": "UNESCO UIS",
+      "url": "https://uis.unesco.org/en/topic/international-standard-classification-education-isced",
+      "acquisition": "Approved classification release and crosswalk import",
+      "scope": "International",
+      "cadence": "per new official revision",
+      "status": "future",
+      "rights": "Validate license and translation rights",
+      "owner": "international"
+    },
+    {
+      "id": "eu_esco",
+      "category": "international_occupations",
+      "publisher": "European Commission ESCO",
+      "url": "https://esco.ec.europa.eu/en/use-esco/download",
+      "acquisition": "Official structured bulk datasets, separate namespace and language",
+      "scope": "EU/multilingual; NOT US licensing authority",
+      "cadence": "per ESCO release",
+      "status": "future",
+      "rights": "Verify reuse license, attribution and multilingual rights",
+      "owner": "international"
+    }
+  ],
+  "coverage_checks": [
+    {
+      "id": "cip_2020_series",
+      "source_id": "nces_cip_2020",
+      "table": "external_classification_nodes",
+      "filters": {
+        "system": "eq.cip",
+        "version": "eq.2020",
+        "level_code": "eq.series"
+      },
+      "expected": 48
+    },
+    {
+      "id": "soc_2018_major",
+      "source_id": "bls_soc_2018",
+      "table": "occupation_nodes",
+      "filters": {
+        "taxonomy_system": "eq.bls_soc",
+        "taxonomy_version": "eq.soc_2018",
+        "level": "eq.major_group"
+      },
+      "expected": 23
+    },
+    {
+      "id": "soc_2018_minor",
+      "source_id": "bls_soc_2018",
+      "table": "occupation_nodes",
+      "filters": {
+        "taxonomy_system": "eq.bls_soc",
+        "taxonomy_version": "eq.soc_2018",
+        "level": "eq.minor_group"
+      },
+      "expected": 98
+    },
+    {
+      "id": "soc_2018_broad",
+      "source_id": "bls_soc_2018",
+      "table": "occupation_nodes",
+      "filters": {
+        "taxonomy_system": "eq.bls_soc",
+        "taxonomy_version": "eq.soc_2018",
+        "level": "eq.broad_occupation"
+      },
+      "expected": 459
+    },
+    {
+      "id": "soc_2018_detailed",
+      "source_id": "bls_soc_2018",
+      "table": "occupation_nodes",
+      "filters": {
+        "taxonomy_system": "eq.bls_soc",
+        "taxonomy_version": "eq.soc_2018",
+        "level": "eq.detailed_occupation"
+      },
+      "expected": 867
+    },
+    {
+      "id": "onet_31_0_extensions",
+      "source_id": "onet_31_0",
+      "table": "occupation_nodes",
+      "filters": {
+        "taxonomy_system": "eq.onet_soc",
+        "taxonomy_version": "eq.2019",
+        "data_release_version": "eq.onet_31_0",
+        "level": "eq.onet_extension"
+      },
+      "expected": 1016
+    },
+    {
+      "id": "cip_soc_mapping",
+      "source_id": "nces_cip_2020",
+      "table": "external_classification_occupation_mappings",
+      "filters": {
+        "mapping_source": "eq.nces_bls_crosswalk_2020"
+      },
+      "expected": null
+    }
+  ],
+  "target_types": [
+    "career",
+    "academic_program",
+    "certification",
+    "licensure_exam",
+    "standardized_exam",
+    "curriculum_standard"
+  ]
+}
