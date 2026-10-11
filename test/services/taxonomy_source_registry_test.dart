@@ -68,6 +68,30 @@ void main() {
         containsAll(expectedCounts.keys));
   });
 
+  test('source access reviews cover every source without blanket approval', () {
+    final review = Map<String, dynamic>.from(
+      jsonDecode(File('data/taxonomy/source_access_review.json')
+          .readAsStringSync()) as Map,
+    );
+    final ids = (registry['sources'] as List)
+        .cast<Map<String, dynamic>>()
+        .map((entry) => entry['id'])
+        .toSet();
+    final entries =
+        (review['sources'] as List).cast<Map<String, dynamic>>();
+    expect(entries.map((entry) => entry['id']).toSet(), ids);
+    expect(entries.length, ids.length);
+    expect(
+      entries.every(
+        (entry) =>
+            entry['ingestion_approved_for_new_sources'] == false &&
+            (entry['publication_rights'] as String).isNotEmpty &&
+            (entry['blocker'] as String).isNotEmpty,
+      ),
+      isTrue,
+    );
+  });
+
   test('all six learnable target types are included in the baseline', () {
     expect(
       (registry['target_types'] as List).cast<String>().toSet(),
