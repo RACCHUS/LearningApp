@@ -1,0 +1,146 @@
+# Explicitly operator-triggered. Does NOT import on push, PR, or deploy.
+# Never include service-role credentials in a mobile/web application.
+name: Controlled Official Taxonomy Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        description: 'preflight (read-only) or production import'
+        required: true
+        default: preflight
+        options:
+          - preflight
+          - import
+      project_ref:
+        description: 'Type the hosted Supabase project ref to confirm the destination'
+        type: string
+        required: true
+        default: ''
+      external_backup_reference:
+        description: 'Import only: external, recoverable database backup reference (not in this repository)'
+        type: string
+        required: false
+        default: ''
+      external_backup_sha256:
+        description: 'Import only: SHA-256 hex digest of that off-site backup'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learningapp-production-taxonomy-import
+  cancel-in-progress: false
+
+jobs:
+  controlled-import:
+    # Pinned to the repository owner and default branch only.
+    if: ${{ github.ref == 'refs/heads/main' && github.actor == 'RACCHUS' }}
+    name: Manual official source validation and optional hosted import
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Flutter and Dart
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install locked dependencies
+        run: flutter pub get
+
+      - name: Reject wrong destination and unverified import approvals
+        env:
+          OPERATION: ${{ inputs.operation }}
+          CONFIRMED_REF: ${{ inputs.project_ref }}
+          BACKUP_REFERENCE: ${{ inputs.external_backup_reference }}
+          BACKUP_HASH: ${{ inputs.external_backup_sha256 }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          readonly expected_ref='xzvkdwebtbxlrxagtzlv'
+          readonly expected_url="https://${expected_ref}.supabase.co"
+          if [[ "${CONFIRMED_REF}" != "${expected_ref}" ]]; then
+            echo "::error::The manually confirmed project ref does not match the Learning App hosted project."
+            exit 2
+          fi
+          if [[ "${SUPABASE_URL%/}" != "${expected_url}" ]]; then
+            echo "::error::SUPABASE_URL is absent or points at the wrong project."
+            exit 2
+          fi
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY secret is not configured."
+            exit 2
+          fi
+          if [[ "${OPERATION}" != "preflight" && "${OPERATION}" != "import" ]]; then
+            echo "::error::Unsupported operation."
+            exit 2
+          fi
+          if [[ "${OPERATION}" == "import" ]]; then
+            if [[ "${#BACKUP_REFERENCE}" -lt 12 ]] || [[ ! "${BACKUP_HASH}" =~ ^[0-9a-fA-F]{64}$ ]]; then
+              echo "::error::Import requires an off-site backup reference and SHA-256. This is an operator attestation, not an automated proof of backup recoverability."
+              exit 2
+            fi
+            echo "::notice::Backup attested by operator. The workflow cannot independently verify that the external backup is restorable."
+          fi
+
+      - name: Validate official pinned source bundle with checksums
+        run: |
+          set -euo pipefail
+          dart run tool/taxonomy_coverage.dart --registry-only
+          dart run tool/ingest_official_taxonomies.dart --validate --refresh
+
+      - name: Read-only hosted baseline before potential import
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/taxonomy-reports
+          dart run tool/taxonomy_coverage.dart --json > build/taxonomy-reports/before.json
+          jq -r '"Project: Learning App", ("Preflight complete. Pinned-release mismatches: " + (.mismatches|tostring))' build/taxonomy-reports/before.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Controlled atomic ingestion of already validated cached artifacts
+        if: ${{ inputs.operation == 'import' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          dart run tool/ingest_official_taxonomies.dart --ingest-all --offline
+          dart run tool/taxonomy_coverage.dart --json --strict > build/taxonomy-reports/after.json
+          # A reference-taxonomy import must not add/remove learner-facing
+          # targets, versions, authored lessons, courses or target types.
+          jq -n -e \
+            --slurpfile before build/taxonomy-reports/before.json \
+            --slurpfile after build/taxonomy-reports/after.json \
+            '($before[0].target_types == $after[0].target_types) and
+             ($before[0].catalog.learning_targets_total == $after[0].catalog.learning_targets_total) and
+             ($before[0].catalog.published_target_versions == $after[0].catalog.published_target_versions) and
+             ($before[0].catalog.courses_total == $after[0].catalog.courses_total) and
+             ($before[0].catalog.lessons_total == $after[0].catalog.lessons_total)' >/dev/null || {
+              echo "::error::The import unexpectedly changed learner-facing content counts. Stop and investigate before any retry."
+              exit 1
+            }
+          jq -r '"Post-import pinned-release mismatches: " + (.mismatches|tostring)' build/taxonomy-reports/after.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload aggregate-only coverage checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxonomy-counts-${{ github.run_id }}
+          path: build/taxonomy-reports/*.json
+          if-no-files-found: ignore
+          retention-days: 14

@@ -126,3 +126,7 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... dart run tool/taxonomy_coverage.d
 ```
 
 Use a service-role key only in a secure operator environment; an anonymous key measures what RLS permits, not the complete stored dataset. The older `tool/taxonomy_status.dart` checks seed examples and one hierarchy path only, so its sample-scale thresholds are **not a production coverage gate**.
+
+## Production import on hosted Free plan
+
+For live hosted Supabase, use the **manual-only**, owner-gated [Controlled Production Taxonomy Import runbook](CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md). It requires an independently created, verified, off-site logical backup, pinned source validation, exact project-ref and URL checks, and post-import release/count verification. On the Free plan there is no automatic downloadable daily backup. Do **not** run the importer on production just because disposable CI is green; do not run `supabase db reset --linked`.
