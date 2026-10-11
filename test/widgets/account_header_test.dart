@@ -142,16 +142,22 @@ void main() {
     await tester.pumpAndSettle();
     final notifications =
         find.widgetWithText(SwitchListTile, 'Enable Notifications');
-    expect(tester.widget<SwitchListTile>(notifications).value, isTrue);
+    expect(tester.widget<SwitchListTile>(notifications).value, isFalse);
 
-    await tester.tap(notifications);
+    final darkMode =
+        find.widgetWithText(SwitchListTile, 'Dark Mode');
+    await tester.ensureVisible(darkMode);
+    expect(tester.widget<SwitchListTile>(darkMode).value, isTrue);
+
+    await tester.tap(darkMode);
     await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    expect(tester.widget<SwitchListTile>(notifications).value, isFalse);
+    await tester.ensureVisible(darkMode);
+    expect(tester.widget<SwitchListTile>(darkMode).value, isFalse);
   });
 
   testWidgets('signed-in avatar opens Profile and Settings', (tester) async {

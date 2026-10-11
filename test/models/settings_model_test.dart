@@ -7,7 +7,7 @@ void main() {
       final settings = SettingsModel.defaultSettings();
       expect(settings.studyBatchSize, 15);
       expect(settings.recallBeforeReveal, isTrue);
-      expect(settings.notificationsEnabled, isTrue);
+      expect(settings.notificationsEnabled, isFalse);
       expect(settings.darkMode, isTrue);
       expect(settings.notificationTimes, containsAll(['10:00', '18:00']));
     });
@@ -38,6 +38,15 @@ void main() {
       final settings = SettingsModel.fromRawJson(legacyJson);
       expect(settings.studyBatchSize, 10);
       expect(settings.recallBeforeReveal, isTrue); // Defaults to true
+    });
+
+    test('settings without a notification preference keep notifications disabled', () {
+      final settings = SettingsModel.fromJson({
+        'notificationTimes': <String>[],
+        'darkMode': true,
+      });
+
+      expect(settings.notificationsEnabled, isFalse);
     });
   });
 }

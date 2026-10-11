@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/utils/constants.dart';
 import 'package:learning_pwa/utils/pwa_install_utils.dart';
+import 'package:learning_pwa/services/push_notification_service.dart';
 
 const String _dailyGoalKey = 'dailyGoalMinutes';
 
@@ -28,6 +29,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _dailyGoalMinutes = StudyConstants.defaultStudyGoalMinutes;
   bool _dailyGoalSet = false;
   bool _canInstallPwa = false;
+  bool _requestingNotificationsPermission = false;
 
   @override
   void initState() {
@@ -140,11 +142,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _saveSettings();
   }
 
-  void _toggleNotifications(bool value) {
+  Future<void> _toggleNotifications(bool value) async {
+    if (!value) {
+      setState(() {
+        _settings.notificationsEnabled = false;
+      });
+      await _saveSettings();
+      return;
+    }
+
     setState(() {
-      _settings.notificationsEnabled = value;
+      _requestingNotificationsPermission = true;
     });
-    _saveSettings();
+
+    try {
+      final granted = await PushNotificationService().requestPermission();
+      if (!mounted) return;
+
+      setState(() {
+        _requestingNotificationsPermission = false;
+        _settings.notificationsEnabled = granted;
+      });
+      if (granted) {
+        await _saveSettings();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Notifications were not enabled. You can allow them later in browser settings.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _requestingNotificationsPermission = false;
+        _settings.notificationsEnabled = false;
+      });
+      debugPrint('Failed to request notification permission: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not enable notifications. Please try again.'),
+        ),
+      );
+    }
   }
 
   void _toggleTheme(bool value) {
@@ -253,8 +295,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             SwitchListTile(
               title: const Text('Enable Notifications'),
+              subtitle: const Text('Permission is requested only when enabled'),
               value: _settings.notificationsEnabled,
-              onChanged: _toggleNotifications,
+              onChanged: _requestingNotificationsPermission
+                  ? null
+                  : _toggleNotifications,
             ),
             if (_settings.notificationsEnabled) ...[
               const SizedBox(height: 8),
@@ -298,7 +343,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
             const Divider(height: 32),
-            
+
             // Audio Settings Navigation
             ListTile(
               leading: const Icon(Icons.volume_up),
@@ -313,7 +358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 );
               },
             ),
-            
+
             // Reset Center Navigation
             ListTile(
               leading: const Icon(Icons.restart_alt, color: Colors.orange),
@@ -404,17 +449,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
-            
+
             const Divider(height: 32),
-            
+
             SwitchListTile(
               title: const Text('Dark Mode'),
               value: _settings.darkMode,
               onChanged: _toggleTheme,
             ),
-            
+
             const Divider(height: 32),
-            
+
             // Study Batch Size
             ListTile(
               title: const Text('Cards per Study Session'),
@@ -442,7 +487,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            
+
             // Recall Before Reveal
             SwitchListTile(
               title: const Text('Recall Before Reveal'),
