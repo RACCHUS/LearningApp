@@ -15,7 +15,7 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File tool\backup_hosted_learningapp.ps1 -DriveLetter E
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File tool\backup_hosted_learningapp.ps1 -DriveLetter E -SecondaryFolder "C:\Users\you\OneDrive\PrivateBackups"
+  powershell -ExecutionPolicy Bypass -File tool\backup_hosted_learningapp.ps1 -DriveLetter E -SecondaryFolder "F:\SecureOfflineBackups"
 #>
 [CmdletBinding()]
 param(
@@ -155,6 +155,9 @@ try {
 
   if ($SecondaryFolder) {
     $secondRoot = [IO.Path]::GetFullPath($SecondaryFolder)
+    if ($secondRoot -match '(?i)onedrive|dropbox|google[ _-]?drive|icloud') {
+      throw "Refusing to copy an unencrypted database dump directly into a cloud-sync folder. Encrypt the archive with a separate, trustworthy tool first."
+    }
     if (-not (Test-Path -LiteralPath $secondRoot)) {
       throw "Secondary folder not found: $secondRoot. Backup on SSD exists, but cloud/second-copy verification was NOT completed."
     }
@@ -168,7 +171,7 @@ try {
     if ($copyHash -ne $hash) { throw 'Secondary copy checksum mismatch. Do not import.' }
     $manifest.offsite_copy_verified = $true
     $manifest.secondary_copy_verified_at_utc = (Get-Date).ToUniversalTime().ToString('o')
-    $manifest.secondary_copy_notice = 'Checksum checked locally; cloud upload or off-site storage is NOT verified.'
+    $manifest.secondary_copy_notice = 'Checksum checked locally; encryption and physical off-site location are NOT verified.'
     $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
     Copy-Item -LiteralPath $manifestPath -Destination $secondaryManifest -Force
     Write-Host "Second copy checksum verified at: $secondaryArchive"
