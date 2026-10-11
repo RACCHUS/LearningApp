@@ -78,6 +78,13 @@ try {
     throw 'Database host and username are required.'
   }
 
+  # Direct database host contains project ref; session-pooler usernames are
+  # usually postgres.<project-ref>. Reject a likely wrong Supabase project.
+  if (($DbHost -notlike "*$expectedProjectRef*") -and
+      ($DbUser -notlike "*$expectedProjectRef*")) {
+    throw "Neither host nor username identifies the Learning App project ($expectedProjectRef). Recheck Supabase Dashboard > Connect; refusing to back up a different project."
+  }
+
   $pgDump = Resolve-PgTool 'pg_dump'
   $pgRestore = Resolve-PgTool 'pg_restore'
   $versionOutput = (& $pgDump --version) -join ' '
