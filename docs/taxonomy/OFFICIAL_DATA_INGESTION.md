@@ -112,3 +112,17 @@ CIP/SOC/O*NET edition should be treated as a new source release:
 
 This keeps historical targets reproducible and prevents a current federal
 download from changing the meaning of previously published learning content.
+
+## Population and release coverage follow-up
+
+The official importer above solves a **pinned US classification import**, not the full learning destination catalog. The additional [Catalog Population and Coverage Plan](CATALOG_POPULATION_AND_COVERAGE_PLAN.md) defines credential, exam, licensure, provider, standards and geographic acquisition, with rights/verification gates. The proposed inventory lives in [`data/taxonomy/source_registry.json`](../../data/taxonomy/source_registry.json).
+
+The release-scoped read-only count tool is:
+
+```bash
+dart run tool/taxonomy_coverage.dart --registry-only
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... dart run tool/taxonomy_coverage.dart --json
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... dart run tool/taxonomy_coverage.dart --strict
+```
+
+Use a service-role key only in a secure operator environment; an anonymous key measures what RLS permits, not the complete stored dataset. The older `tool/taxonomy_status.dart` checks seed examples and one hierarchy path only, so its sample-scale thresholds are **not a production coverage gate**.
