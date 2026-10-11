@@ -1,6 +1,6 @@
 # Phase H1 — Catalog Inventory & Source Access Runbook
 
-**Status:** Operator tooling committed; hosted verification **not yet run**.  
+**Status:** Operator tooling committed; direct read-only hosted verification completed 2026-10-11 (see [verified baseline](HOSTED_CATALOG_BASELINE_2026-10-11.md)). Manual GitHub Actions repeat-audit remains available if credentials are configured.  
 **Date:** 2026-10-11  
 **Related:** [Phase H catalog plan](CATALOG_POPULATION_AND_COVERAGE_PLAN.md), [Official taxonomy ingestion](OFFICIAL_DATA_INGESTION.md), [Hosted migration rollout](../HOSTED_MIGRATION_ROLLOUT.md)
 
@@ -85,9 +85,13 @@ For each pilot, capture `source_uri`, `issuer_or_regulator`, `jurisdiction`, `so
 - [x] Full pinned taxonomy counts now checked in disposable Supabase CI using the coverage CLI.
 - [x] Manual secret-backed hosted audit workflow authored (execution depends on configured secrets and dispatch).
 - [x] Versioned source-access/rights decision queue created and validated by code.
-- [ ] Confirm production migration alignment and execute hosted audit; capture aggregate baseline.
+- [x] Confirm hosted migration record alignment and capture direct, read-only aggregate counts (2026-10-11; see verified baseline).
 - [ ] Review actual external-source rights, access, and refresh cadence with appropriate owners. No third-party rights approvals are assumed.
 - [ ] Sample each pilot destination against published sources and record evidence plus explicit unknowns.
 - [ ] Approve the H2 catalog entity/relationship/RLS contract before adding migrations.
 
 The final three items need access and review outside the repository. A green CI run alone must never close them.
+
+## 7. Verified observation (2026-10-11)
+
+Read-only Supabase integration confirmed 48 top-level CIP series, just 24 SOC/O*NET occupation nodes, 17 published learning targets, 7 public lessons, zero courses, zero assessment items and zero taxonomy source artifacts. The catalog-provenance migration was recorded as applied. See [hosted baseline snapshot](HOSTED_CATALOG_BASELINE_2026-10-11.md) for release-specific gaps and a Supabase advisor warning. This observed snapshot replaces earlier *unknown* hosted-count assumptions, without granting rights to bulk ingest.
