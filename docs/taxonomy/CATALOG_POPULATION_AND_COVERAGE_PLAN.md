@@ -1,6 +1,6 @@
 # Catalog Population and Coverage Plan — Phase H
 
-**Status:** Phase H0 merged. Phase H1 audit tooling implemented on a feature branch; hosted inventory and external rights approvals remain unverified.  
+**Status:** Phase H0 merged; Phase H1 tooling implemented. The hosted classification/catalog baseline was directly verified 2026-10-11 and is documented in [the verified snapshot](HOSTED_CATALOG_BASELINE_2026-10-11.md). Source rights approvals and production bulk ingestion are still pending.  
 **As of:** 2026-10-11  
 **Owner:** LearningApp taxonomy/catalog  
 **Authoritative references:** [Learning Architecture V2](../../LEARNING_ARCHITECTURE_V2.md), [Canonical Taxonomy Architecture](../../CANONICAL_TAXONOMY_ARCHITECTURE.md), [Official Taxonomy Data Ingestion](OFFICIAL_DATA_INGESTION.md), [Hosted Migration Rollout](../HOSTED_MIGRATION_ROLLOUT.md)
