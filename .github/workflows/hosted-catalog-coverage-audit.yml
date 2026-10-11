@@ -1,0 +1,72 @@
+# Manual, read-only audit of the HOSTED Supabase catalog.
+# Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY as repository Actions
+# secrets before dispatching. Do NOT use a database URL from local CI.
+name: Hosted Catalog Coverage Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      strict_release_counts:
+        description: 'Fail when pinned CIP/SOC/O*NET releases differ from expected counts'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hosted-catalog-coverage-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Read-only hosted catalog inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Install Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.8.1'
+
+      - name: Validate checked-in source registry offline
+        run: dart run tool/taxonomy_coverage.dart --registry-only
+
+      - name: Validate source-review decision queue
+        run: dart run tool/verify_taxonomy_source_review.dart
+
+      - name: Count hosted taxonomy and catalog rows (read-only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRICT_COUNTS: ${{ inputs.strict_release_counts }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "::error::Configure both SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY as GitHub Actions secrets. No database was queried."
+            exit 2
+          fi
+          mkdir -p build
+          # Counts only: no table rows, IDs, learner data, or credentials are logged.
+          if [ "${STRICT_COUNTS}" = "true" ]; then
+            dart run tool/taxonomy_coverage.dart --json --strict > build/hosted-taxonomy-coverage.json
+          else
+            dart run tool/taxonomy_coverage.dart --json > build/hosted-taxonomy-coverage.json
+          fi
+          jq -r '"Scope: " + .scope, ("Pinned release mismatches: " + (.mismatches|tostring)), ("Published target versions: " + (.catalog.published_target_versions|tostring))' build/hosted-taxonomy-coverage.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload aggregate coverage report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-taxonomy-coverage
+          path: build/hosted-taxonomy-coverage.json
+          if-no-files-found: error
+          retention-days: 14
