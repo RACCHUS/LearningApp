@@ -52,6 +52,17 @@ jobs:
           dart run tool/taxonomy_coverage.dart --registry-only
           dart run tool/verify_taxonomy_source_review.dart
 
+      - name: Parse Windows backup script (no database connection)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('tool/backup_hosted_learningapp.ps1', [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+
       - name: Validate curriculum manifests (JSON Schema & Quality Linter)
         run: dart run tool/lint_manifest.dart --dir content/
 
