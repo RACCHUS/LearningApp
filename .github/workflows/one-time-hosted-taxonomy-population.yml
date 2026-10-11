@@ -1,0 +1,112 @@
+# Authorized one-time full official taxonomy ingestion, requested 2026-10-11.
+# This workflow will NOT run for future commits or on pull_request.
+name: One-Time Hosted Official Taxonomy Population
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-time-hosted-taxonomy-population.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learningapp-one-time-production-taxonomy
+  cancel-in-progress: false
+
+jobs:
+  populate:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.event_name == 'push' && contains(github.event.head_commit.message, 'ONE-TIME OFFICIAL TAXONOMY IMPORT 20261011') }}
+    name: Validate and atomically populate hosted official classification releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out reviewed release
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Flutter and Dart
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check target and connection before changes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          expected='https://xzvkdwebtbxlrxagtzlv.supabase.co'
+          if [[ "${SUPABASE_URL%/}" != "$expected" ]]; then
+            echo "::error::Configured SUPABASE_URL missing or does not identify the intended Learning App project; no writes performed."
+            exit 2
+          fi
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured in GitHub Actions secrets; no writes performed."
+            exit 2
+          fi
+          echo "Correct hosted project target verified."
+
+      - name: Verify complete official source bundle before DB writes
+        run: |
+          set -euo pipefail
+          dart run tool/taxonomy_coverage.dart --registry-only
+          dart run tool/ingest_official_taxonomies.dart --validate --refresh
+
+      - name: Export baseline aggregate counters
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/taxonomy-import-report
+          dart run tool/taxonomy_coverage.dart --json > build/taxonomy-import-report/before.json
+          jq -r '"Before import pinned-release mismatches: " + (.mismatches|tostring)' build/taxonomy-import-report/before.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply vetted, pinned official classification bundle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          # The importer stages every dataset and performs an atomic,
+          # validation-guarded finalize RPC; no production reset.
+          dart run tool/ingest_official_taxonomies.dart --ingest-all --offline
+
+      - name: Verify complete releases and protect existing authored content
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          dart run tool/taxonomy_coverage.dart --json --strict > build/taxonomy-import-report/after.json
+          jq -n -e \
+            --slurpfile before build/taxonomy-import-report/before.json \
+            --slurpfile after build/taxonomy-import-report/after.json \
+            '($before[0].target_types == $after[0].target_types) and
+             ($before[0].catalog.learning_targets_total == $after[0].catalog.learning_targets_total) and
+             ($before[0].catalog.published_target_versions == $after[0].catalog.published_target_versions) and
+             ($before[0].catalog.courses_total == $after[0].catalog.courses_total) and
+             ($before[0].catalog.lessons_total == $after[0].catalog.lessons_total)' > /dev/null || {
+              echo "::error::Unexpected authored catalog count changes. Investigate before any new import."
+              exit 1
+            }
+          jq -r '"After import pinned-release mismatches: " + (.mismatches|tostring)' build/taxonomy-import-report/after.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload aggregate verification (no credentials or learner records)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: learningapp-taxonomy-import-counts
+          path: build/taxonomy-import-report/*.json
+          if-no-files-found: ignore
+          retention-days: 7
