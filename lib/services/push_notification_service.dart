@@ -8,13 +8,12 @@ class PushNotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   bool _initialized = false;
-  
+
   // Global key for accessing ScaffoldMessenger without context
   static GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey;
 
   Future<void> init() async {
     if (_initialized) return;
-    await _messaging.requestPermission();
     await _messaging.setAutoInitEnabled(true);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -23,14 +22,20 @@ class PushNotificationService {
 
     _initialized = true;
   }
-  
+
+  Future<bool> requestPermission() async {
+    final settings = await _messaging.requestPermission();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
   /// Handle push notifications received while app is in foreground
   void _handleForegroundNotification(RemoteMessage message) {
     debugPrint('Push notification received: ${message.notification?.title}');
-    
+
     final notification = message.notification;
     if (notification == null) return;
-    
+
     // Show in-app snackbar notification
     final messenger = scaffoldMessengerKey?.currentState;
     if (messenger != null) {

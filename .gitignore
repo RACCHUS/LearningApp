@@ -29,3 +29,8 @@ supabase/.temp/
 # macOS / Windows
 .DS_Store
 Thumbs.db
+
+# MCP / Playwright artifacts and screenshots
+.playwright-mcp/
+/*.png
+screenshot-*.png

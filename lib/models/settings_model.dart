@@ -17,7 +17,7 @@ class SettingsModel {
 
   factory SettingsModel.defaultSettings() => SettingsModel(
         notificationTimes: ["10:00", "18:00"],
-        notificationsEnabled: true,
+        notificationsEnabled: false,
         darkMode: true,
         studyBatchSize: 15,
         recallBeforeReveal: true,
@@ -25,7 +25,7 @@ class SettingsModel {
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) => SettingsModel(
         notificationTimes: List<String>.from(json['notificationTimes'] ?? []),
-        notificationsEnabled: json['notificationsEnabled'] ?? true,
+        notificationsEnabled: json['notificationsEnabled'] ?? false,
         darkMode: json['darkMode'] ?? true,
         studyBatchSize: json['studyBatchSize'] ?? 15,
         recallBeforeReveal: json['recallBeforeReveal'] ?? true,
