@@ -47,6 +47,11 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Validate catalog source registry and rights review
+        run: |
+          dart run tool/taxonomy_coverage.dart --registry-only
+          dart run tool/verify_taxonomy_source_review.dart
+
       - name: Validate curriculum manifests (JSON Schema & Quality Linter)
         run: dart run tool/lint_manifest.dart --dir content/
 
