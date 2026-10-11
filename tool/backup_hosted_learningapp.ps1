@@ -29,8 +29,7 @@ param(
   [int] $DbPort = 5432,
   [string] $Database = 'postgres',
 
-  [string] $SecondaryFolder,
-  [switch] $AllowSamePhysicalDisk
+  [string] $SecondaryFolder
 )
 
 Set-StrictMode -Version Latest
@@ -63,8 +62,8 @@ try {
 
   Write-Host "Destination: $destinationRoot"
   Write-Host "SSD location: disk $($targetDisk.Number) ($($targetDisk.FriendlyName))"
-  if ($targetDisk.Number -eq $systemDisk.Number -and -not $AllowSamePhysicalDisk) {
-    throw "Drive $drive is on the SAME physical disk as Windows ($systemDrive). Choose a separate physical SSD, or explicitly use -AllowSamePhysicalDisk only for non-production testing."
+  if ($targetDisk.Number -eq $systemDisk.Number) {
+    throw "Drive $drive is on the SAME physical disk as Windows ($systemDrive). Choose a separate physical SSD."
   }
 
   $freeSpace = (Get-Volume -DriveLetter $drive).SizeRemaining
