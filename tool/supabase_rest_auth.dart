@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 /// Supabase REST gateway authentication for server-side Dart clients.
@@ -39,12 +40,23 @@ void setSupabaseRestAuth(HttpClientRequest request, String rawKey) {
 void assertSupabaseAdminKey(String key) {
   final normalized = key.trim();
   if (normalized.startsWith('sb_secret_')) return;
-  final bearer = supabaseBearerValueForApiKey(normalized);
-  if (bearer == null ||
-      !normalized.startsWith('eyJ')) {
+  // Decode the payload only to refuse obvious anon JWTs. The gateway still
+  // validates the JWT signature for real requests.
+  try {
+    final parts = normalized.split('.');
+    if (parts.length != 3) {
+      throw const FormatException('Invalid legacy key.');
+    }
+    final payload = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+    ) as Map<String, dynamic>;
+    if (payload['role'] != 'service_role') {
+      throw const FormatException('Legacy key is not service_role.');
+    }
+  } catch (_) {
     throw const FormatException(
-      'Admin import requires sb_secret_ or a legacy JWT-based service-role '
-      'key; publishable keys are not privileged.',
+      'Admin import requires sb_secret_ or a valid-shaped legacy '
+      'service_role JWT. Anon/publishable keys are not allowed.',
     );
   }
 }
