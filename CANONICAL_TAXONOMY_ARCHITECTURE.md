@@ -854,3 +854,9 @@ This table certifies how all feedback items across all review cycles have been r
 | **Provenance DDL Missing** | Medium | Added `public.taxonomy_source_releases` table tracking release version, date, SHA256 checksum, URL, and license text. |
 | **RLS Leak on User Junctions** | Security | Enforced visibility inheritance on `learning_target_fields` and `concept_fields` checking parent `is_public` or `created_by = auth.uid()`. |
 | **Learner Analytics Privacy** | Privacy | Enforced `privacy_threshold_met = true` RLS check and $N \ge 50$ aggregation threshold on learner-derived metrics. |
+
+---
+
+## Implementation extension: destination and credential population (Phase H)
+
+The CIP/SOC/O*NET taxonomy is an authoritative *classification* layer, not a catalog of actual schools, available courses, credentials, examinations or jurisdictional license requirements. Follow [the Phase H Catalog Population and Coverage Plan](docs/taxonomy/CATALOG_POPULATION_AND_COVERAGE_PLAN.md) for source rights, distinct provider/credential/exam records, versioned and evidenced pathway relationships, release-scoped counts, and staged national/international expansion. Do not modify the frozen v2.4 schema baseline above in place; introduce any implementation with reviewed additive migrations.

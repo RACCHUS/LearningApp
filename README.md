@@ -25,7 +25,7 @@ The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.m
 - A **canonical concept layer** allows knowledge evidence to be reused across learning contexts while keeping each context's content relevant.
 - **Completion and retention are separate:** finishing content is not the same as remembering it.
 - Lesson creation, courses, saved study sets, content selection, and library/catalog browsing.
-- Taxonomy and career-path exploration supported by official **CIP, SOC, and O*NET** ingestion and verification tooling.
+- Taxonomy and career-path exploration supported by official **CIP, SOC, and O*NET** ingestion and verification tooling. The new [Catalog Population and Coverage Plan](docs/taxonomy/CATALOG_POPULATION_AND_COVERAGE_PLAN.md) separates this implemented infrastructure from the still-needed comprehensive real-world destination catalog.
 
 ### Navigation and Help
 

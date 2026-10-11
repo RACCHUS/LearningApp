@@ -1,6 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+/// Legacy seed/hierarchy smoke test — NOT a production coverage gate.
+///
+/// This tool intentionally checks small example counts and one sample SOC
+/// parent chain. For release-specific full structural counts and destination
+/// category counts, use tool/taxonomy_coverage.dart instead.
+///
 /// Canonical Taxonomy Status and Verification CLI
 ///
 /// Standalone pure-Dart CLI that inspects and verifies the Canonical Taxonomy

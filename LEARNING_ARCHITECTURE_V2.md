@@ -1498,5 +1498,12 @@ To prevent attackers from arbitrarily assigning unpublished draft or retired UUI
   - Non-admin callers cannot reassign context ownership (`user_id`).
   - Existing context rows pointing to a version that subsequently became retired remain valid and mutable for non-version fields (e.g., `last_active_at`, `label`), granting legitimate historical access without vulnerability to self-assigned elevation.
 
+---
 
+## 17. Phase H — Real-World Catalog Population & Coverage (new, in progress)
 
+**Scope and source of truth:** [Catalog Population and Coverage Plan](docs/taxonomy/CATALOG_POPULATION_AND_COVERAGE_PLAN.md), backed by the machine-readable [source registry](data/taxonomy/source_registry.json). This extends the architecture without replacing CIP/SOC/O*NET or the scoped learning/evidence model.
+
+Phase H separates statistical classifications from actual provider offerings, exam editions, certifications, licensure requirements, jurisdictional authorities, and evidence-backed alternative routes. A career-to-academic classification crosswalk must not be treated as a legal requirement or promised credential outcome. Public destinations may exist before any curriculum is authored.
+
+The initial implementation adds a read-only release-specific coverage CLI (`tool/taxonomy_coverage.dart`) and source inventory. Later phases require reviewed source licenses, versioned relationship records, typed jurisdiction and prerequisite/alternative semantics, service-role-only publishing, freshness checks, and coverage dashboards. **No new comprehensive catalog ingestion, hosted database population, or official relationship graph is claimed to exist at Phase H0.**
