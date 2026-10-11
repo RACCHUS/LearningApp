@@ -175,3 +175,9 @@ Create a feature branch, write appropriate regression tests, and submit a PR int
 ## License
 
 This repository is **public**, but no `LICENSE` file is included. Public visibility by itself does not grant reuse or redistribution permission. A license may be added later.
+
+### Catalog population and hosted coverage audits
+
+- [Phase H Catalog Population & Coverage Plan](docs/taxonomy/CATALOG_POPULATION_AND_COVERAGE_PLAN.md) covers real-world credentials, programs, institutions, exams, licensure jurisdictions and verified alternative pathways (the full catalog is **not** populated yet).
+- [Phase H1 Hosted Baseline & Source Review](docs/taxonomy/HOSTED_BASELINE_AND_SOURCE_REVIEW.md) describes the **manual** read-only audit of hosted Supabase and the external-source access queue. A CI import of complete CIP/SOC/O*NET data is a disposable test database, **not** proof of hosted data population.
+- The hosted audit requires protected GitHub Actions secrets and produces aggregate counts only; do not commit production credentials or unreviewed source material.
