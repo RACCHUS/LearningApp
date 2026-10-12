@@ -1,0 +1,21 @@
+name: Probe NCES IPEDS Official Download URL
+on:
+  push:
+    branches:
+      - feat/catalog-p1-bls-reporting-crosswalk-and-ipeds-acquisition
+    paths:
+      - tool/catalog_ipeds_official_url_probe.py
+      - .github/workflows/catalog-ipeds-url-probe.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Inspect official NCES links and candidate download buttons
+        run: python tool/catalog_ipeds_official_url_probe.py
