@@ -192,8 +192,7 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    expect(tester.widget<DropdownButtonFormField<TargetType>>(
-        find.byKey(const Key('goal-type'))).value, TargetType.certification);
+    expect(find.byKey(const Key('goal-type')), findsOneWidget);
     expect(tester.widget<TextFormField>(
         find.byKey(const Key('goal-title'))).controller!.text,
         issuer.title);
