@@ -594,8 +594,9 @@ class _TaxonomyExplorerScreenState
           const SizedBox(height: 8),
           Text(
             'These listings verify the issuing organization and its official '
-            'website only. Exam eligibility, license requirements, fees and '
-            'popularity have not been verified. They are not Learning App courses.',
+            'website only. Complete license requirements, fees and popularity '
+            'have not been verified. Some licenses show selected sourced steps, ' 
+            'not a full eligibility decision or Learning App course.',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -634,7 +635,7 @@ class _TaxonomyExplorerScreenState
             Text('${destination.issuerName} · ${destination.displayType} · ${destination.jurisdiction}'),
             const SizedBox(height: 4),
             const Text(
-              'Issuer identity and link checked · Requirements not verified · Not popularity-ranked',
+              'Issuer link checked · No full eligibility review · Not popularity-ranked',
               style: TextStyle(fontSize: 11),
             ),
             Text(destination.officialUrl.toString(),
@@ -685,6 +686,13 @@ class _TaxonomyExplorerScreenState
                   icon: const Icon(Icons.menu_book_outlined, size: 17),
                   label: const Text('Issuer study links'),
                 ),
+                if (destination.destinationType == 'professional_license')
+                  OutlinedButton.icon(
+                    key: Key('destination-pathway-${destination.sourceKey}'),
+                    onPressed: () => _showReviewedLicensePathway(destination),
+                    icon: const Icon(Icons.account_tree_outlined, size: 17),
+                    label: const Text('Regulator steps'),
+                  ),
                 if (destination.supportedPrivateGoalType != null)
                   FilledButton.tonalIcon(
                     key: Key('destination-goal-${destination.sourceKey}'),
@@ -699,6 +707,114 @@ class _TaxonomyExplorerScreenState
         ],
       ),
     );
+  }
+
+
+  Future<void> _showReviewedLicensePathway(
+      VerifiedDestination destination) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.76,
+          child: Consumer(builder: (context, ref, _) {
+            final pathway = ref.watch(reviewedLicensePathwayProvider((
+              namespace: destination.sourceNamespace,
+              key: destination.sourceKey,
+            )));
+            return pathway.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Text('Could not load regulator steps: $error')),
+              data: (reviewed) {
+                if (reviewed == null) {
+                  return const Center(child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('No reviewed pathway available for this '
+                      'license yet. Consult its official regulator page.'),
+                  ));
+                }
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 36),
+                  children: [
+                    Text(reviewed.title,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    const Text('Selected regulator-sourced steps only. '
+                        'Not a full eligibility determination, license award '
+                        'or a required Learning App course.'),
+                    const SizedBox(height: 8),
+                    Text('Source checked '
+                        '${reviewed.sourceCheckedAt.toIso8601String().substring(0, 10)}'
+                        ' · Revision ${reviewed.revision}',
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 12),
+                    Text(reviewed.overview),
+                    const SizedBox(height: 14),
+                    _renderReviewedPathwayNode(
+                        context, reviewed.pathwayTree, 0),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _openRegulatorSource(context, reviewed.sourceUrl),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Current official requirements'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _renderReviewedPathwayNode(
+      BuildContext context, Map<String, dynamic> node, int depth) {
+    if (depth > 8) return const SizedBox.shrink();
+    if (node['op'] == 'step') {
+      final condition = node['condition'] as String?;
+      return ListTile(
+        dense: true,
+        leading: const Icon(Icons.check_circle_outline, size: 19),
+        title: Text(node['label'] as String),
+        subtitle: condition == null ? null : Text('Applies when: $condition'),
+        onTap: () {
+          final source = Uri.tryParse(node['source_url'] as String? ?? '');
+          if (source != null && source.scheme == 'https') {
+            _openRegulatorSource(context, source);
+          }
+        },
+      );
+    }
+    final children = (node['children'] as List)
+        .map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return Padding(
+      padding: EdgeInsets.only(left: depth == 0 ? 0 : 10, bottom: 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(node['op'] == 'any'
+            ? 'Alternative routes — one applicable option'
+            : 'Applicable stages — review each',
+            style: Theme.of(context).textTheme.titleSmall),
+        for (final child in children)
+          _renderReviewedPathwayNode(context, child, depth + 1),
+      ]),
+    );
+  }
+
+  Future<void> _openRegulatorSource(BuildContext context, Uri uri) async {
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw StateError('Regulator URL could not open');
+      }
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: uri.toString()));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Regulator link could not open; URL copied')));
+    }
   }
 
   Future<void> _showPreparationLinks(VerifiedDestination destination) async {
