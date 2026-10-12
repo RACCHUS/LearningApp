@@ -4,12 +4,56 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/phonics_item.dart';
 import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
+import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
+import 'package:learning_pwa/services/pre_reader_audio_service.dart';
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:learning_pwa/widgets/literacy/audio_phonics_widget.dart';
 import 'package:learning_pwa/widgets/literacy/letter_tracing_canvas.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_entry_banner.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_track_picker_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FakePreReaderAudioService implements PreReaderAudioService {
+  final List<String> spoken = [];
+
+  @override
+  Future<void> speak(
+    String text, {
+    PreReaderTrack track = PreReaderTrack.adult,
+    double? customRate,
+  }) async {
+    spoken.add(text);
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> enablePreReaderDefaults({
+    PreReaderTrack track = PreReaderTrack.adult,
+  }) async {
+    spoken.add('enabled_defaults');
+  }
+
+  @override
+  Future<void> speakPhoneme(
+    String letter,
+    String phonemeSound,
+    String anchorWord, {
+    PreReaderTrack track = PreReaderTrack.adult,
+  }) async {
+    spoken.add('phoneme:$letter:$phonemeSound:$anchorWord');
+  }
+
+  @override
+  Future<void> speakLetterName(
+    String letter, {
+    PreReaderTrack track = PreReaderTrack.adult,
+  }) async {
+    spoken.add('letter:$letter');
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -196,6 +240,115 @@ void main() {
       // Tap reset
       await tester.tap(find.byKey(const Key('tracing-reset-btn')));
       await tester.pump(const Duration(milliseconds: 100));
+    });
+  });
+
+  group('Non-Reader Audio Actionability & Layout Clarity', () {
+    testWidgets('AudioPhonicsWidget speaks clear actionable instructions and provides audio feedback',
+        (tester) async {
+      final fakeAudio = _FakePreReaderAudioService();
+      final item = foundationalPhonicsCatalog.firstWhere((i) => i.letter == 'A');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preReaderAudioServiceProvider.overrideWithValue(fakeAudio),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme(),
+            home: Scaffold(
+              body: AudioPhonicsWidget(item: item),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap the speaker button on the letter card
+      final speakerBtn = find.byKey(const Key('phonics-listen-sound-btn'));
+      expect(speakerBtn, findsOneWidget);
+      await tester.tap(speakerBtn);
+      await tester.pumpAndSettle();
+
+      expect(
+        fakeAudio.spoken.any((s) => s.contains('Tap the picture that starts with A!')),
+        isTrue,
+      );
+
+      // Tap the prompt repeat icon
+      final promptSpeaker = find.byTooltip('Listen to instruction');
+      expect(promptSpeaker, findsOneWidget);
+      await tester.tap(promptSpeaker);
+      await tester.pumpAndSettle();
+
+      expect(
+        fakeAudio.spoken.any((s) => s == 'Tap the picture that starts with A!'),
+        isTrue,
+      );
+
+      // Tap an incorrect anchor (e.g., Hammer or Door)
+      final wrongAnchor = find.text('Hammer');
+      if (wrongAnchor.evaluate().isNotEmpty) {
+        await tester.tap(wrongAnchor);
+        await tester.pumpAndSettle();
+        expect(
+          fakeAudio.spoken.any((s) => s.contains('Hammer does not start with A. Tap the picture that starts with A!')),
+          isTrue,
+        );
+      }
+
+      // Tap correct anchor (Apple)
+      final correctAnchor = find.text('Apple');
+      expect(correctAnchor, findsOneWidget);
+      await tester.tap(correctAnchor);
+      await tester.pumpAndSettle();
+
+      expect(
+        fakeAudio.spoken.any((s) => s.contains('Yes! Apple starts with A! Great job!')),
+        isTrue,
+      );
+    });
+
+    testWidgets('FoundationalLiteracyScreen eliminates bottom banner clutter and renders Life Topics picture grid',
+        (tester) async {
+      final fakeAudio = _FakePreReaderAudioService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preReaderAudioServiceProvider.overrideWithValue(fakeAudio),
+          ],
+          child: const MaterialApp(
+            home: FoundationalLiteracyScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Invariant: Banners that clutter the letter screen are NOT present
+      expect(find.text('High-Stakes US Life Goals'), findsNothing);
+      expect(find.text('Everyday Life & Survival Domains'), findsNothing);
+
+      // Replay instruction button exists in AppBar
+      final replayBtn = find.byTooltip('Hear page instructions');
+      expect(replayBtn, findsOneWidget);
+      await tester.tap(replayBtn);
+      await tester.pumpAndSettle();
+      expect(fakeAudio.spoken.isNotEmpty, isTrue);
+
+      // Non-reader visual catalog tab is present
+      final topicsChip = find.widgetWithText(ChoiceChip, '🌟 Life Topics');
+      expect(topicsChip, findsOneWidget);
+      await tester.ensureVisible(topicsChip);
+      await tester.tap(topicsChip);
+      await tester.pumpAndSettle();
+
+      // Renders PreReaderPictureGridWidget
+      expect(find.byType(PreReaderPictureGridWidget), findsOneWidget);
+      expect(
+        fakeAudio.spoken.any((s) => s.contains('Life Topics. Tap any picture card to explore')),
+        isTrue,
+      );
     });
   });
 }

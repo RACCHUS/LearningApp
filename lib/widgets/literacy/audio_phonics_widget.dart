@@ -62,12 +62,12 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
       });
       _confettiController.play();
       await notifier.speak(
-        'Yes! ${widget.item.letter} makes the sound ${widget.item.phonemeSound}! As in ${anchor.label}!',
+        'Yes! ${anchor.label} starts with ${widget.item.letter}! Great job!',
       );
       widget.onCompleted?.call();
     } else {
       await notifier.speak(
-        'That is ${anchor.label}. Listen again for the sound ${widget.item.phonemeSound}.',
+        '${anchor.label}. ${anchor.label} does not start with ${widget.item.letter}. Tap the picture that starts with ${widget.item.letter}!',
       );
     }
   }
@@ -102,53 +102,62 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius:
-                                BorderRadius.circular(DesignTokens.radiusLg),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            widget.item.letter,
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onPrimaryContainer,
+                    InkWell(
+                      onTap: () {
+                        ref.read(preReaderProvider.notifier).speak(
+                              'The letter ${widget.item.letter} makes the "${widget.item.phonemeSound}" sound. Tap the picture that starts with ${widget.item.letter}!',
+                            );
+                      },
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusLg),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusLg),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: DesignTokens.space4),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Sound: "${widget.item.phonemeSound}"',
-                              style: theme.textTheme.titleMedium?.copyWith(
+                            alignment: Alignment.center,
+                            child: Text(
+                              widget.item.letter,
+                              style: theme.textTheme.displaySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: colorScheme.onPrimaryContainer,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.item.explanation,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: DesignTokens.space4),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sound: "${widget.item.phonemeSound}"',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.item.explanation,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    IconButton.filledTonal(
+                    IconButton.filled(
                       key: const Key('phonics-listen-sound-btn'),
                       icon: const Icon(Icons.volume_up, size: 28),
-                      tooltip: 'Listen to sound',
+                      tooltip: 'Listen to instructions',
                       onPressed: () {
                         ref.read(preReaderProvider.notifier).speak(
-                              'The letter ${widget.item.letter} makes the ${widget.item.phonemeSound} sound.',
+                              'The letter ${widget.item.letter} makes the "${widget.item.phonemeSound}" sound. Tap the picture that starts with ${widget.item.letter}!',
                             );
                       },
                     ),
@@ -158,11 +167,29 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                 const Divider(),
                 const SizedBox(height: DesignTokens.space4),
 
-                Text(
-                  'Tap the picture that starts with ${widget.item.letter}:',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.touch_app,
+                        size: 22, color: colorScheme.primary),
+                    const SizedBox(width: DesignTokens.space2),
+                    Expanded(
+                      child: Text(
+                        'Tap the picture that starts with ${widget.item.letter}:',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.volume_up, size: 22),
+                      tooltip: 'Listen to instruction',
+                      onPressed: () {
+                        ref.read(preReaderProvider.notifier).speak(
+                              'Tap the picture that starts with ${widget.item.letter}!',
+                            );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: DesignTokens.space4),
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/phonics_item.dart';
 import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
@@ -14,6 +13,7 @@ import 'package:learning_pwa/widgets/literacy/survival_words_widget.dart';
 import 'package:learning_pwa/widgets/literacy/karaoke_story_reader_widget.dart';
 import 'package:learning_pwa/widgets/literacy/oral_diagnostic_widget.dart';
 import 'package:learning_pwa/widgets/literacy/caseworker_setup_dialog.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
 
 enum LiteracyHubSection {
   letters,
@@ -22,6 +22,7 @@ enum LiteracyHubSection {
   personalId,
   stories,
   diagnostic,
+  topics,
 }
 
 class FoundationalLiteracyScreen extends ConsumerStatefulWidget {
@@ -91,6 +92,11 @@ class _FoundationalLiteracyScreenState
           'Placement Check. Answer three quick visual questions to find your personalized starting point.',
         );
         break;
+      case LiteracyHubSection.topics:
+        notifier.speak(
+          'Life Topics. Tap any picture card to explore citizenship, driver rules, safety, and money skills.',
+        );
+        break;
     }
   }
 
@@ -140,6 +146,11 @@ class _FoundationalLiteracyScreenState
             onPressed: () => PreReaderTrackPickerDialog.show(context),
           ),
           IconButton(
+            tooltip: 'Hear page instructions',
+            icon: const Icon(Icons.volume_up, size: 26),
+            onPressed: _announceCurrentActivity,
+          ),
+          IconButton(
             tooltip:
                 profile.autoSpeakScreens ? 'Auto-speak ON' : 'Auto-speak OFF',
             icon: Icon(
@@ -160,6 +171,7 @@ class _FoundationalLiteracyScreenState
               // Top Category Navigation Bar
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space1),
                 child: Row(
                   children: [
                     _buildHubNavChip(
@@ -195,6 +207,12 @@ class _FoundationalLiteracyScreenState
                     _buildHubNavChip(
                       label: '🎯 Placement Check',
                       section: LiteracyHubSection.diagnostic,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(width: DesignTokens.space2),
+                    _buildHubNavChip(
+                      label: '🌟 Life Topics',
+                      section: LiteracyHubSection.topics,
                       colorScheme: colorScheme,
                     ),
                   ],
@@ -302,94 +320,9 @@ class _FoundationalLiteracyScreenState
                 const KaraokeStoryReaderWidget(),
               ] else if (_activeSection == LiteracyHubSection.diagnostic) ...[
                 const OralDiagnosticWidget(),
+              ] else if (_activeSection == LiteracyHubSection.topics) ...[
+                const PreReaderPictureGridWidget(),
               ],
-
-              const SizedBox(height: DesignTokens.space5),
-              const Divider(),
-              const SizedBox(height: DesignTokens.space3),
-
-              // Direct Access Milestone Banner (Direct Access Rule: <=2 taps)
-              InkWell(
-                onTap: () => context.go('/milestones'),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                child: Container(
-                  padding: const EdgeInsets.all(DesignTokens.space4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('🏛️', style: TextStyle(fontSize: 28)),
-                      const SizedBox(width: DesignTokens.space3),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'High-Stakes US Life Goals',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: DesignTokens.space1),
-                            Text(
-                              'US Citizenship (2025 Test) • Driver\'s License • GED Bridge',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios, size: 16),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: DesignTokens.space3),
-
-              // Direct Access Everyday Survival Domains Banner
-              InkWell(
-                onTap: () => context.go('/domains'),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                child: Container(
-                  padding: const EdgeInsets.all(DesignTokens.space4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text('🦺', style: TextStyle(fontSize: 28)),
-                      const SizedBox(width: DesignTokens.space3),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Everyday Life & Survival Domains',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: DesignTokens.space1),
-                            Text(
-                              'Workplace Safety (OSHA) • Food Prep • Health & Rx • Cash & ATM',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios, size: 16),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -405,9 +338,14 @@ class _FoundationalLiteracyScreenState
     final isSelected = _activeSection == section;
     return ChoiceChip(
       selected: isSelected,
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       label: Text(
         label,
+        softWrap: false,
+        overflow: TextOverflow.visible,
         style: TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.bold,
           color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
         ),
