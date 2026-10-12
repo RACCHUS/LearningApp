@@ -110,13 +110,21 @@ class AudioService {
       ));
 
       _isInitialized = true;
+
+      // Select a natural, gentle educational voice if none explicitly chosen
+      if (_settings.preferredVoice == null && voiceInfos.isNotEmpty) {
+        final bestVoice = findBestNaturalVoice(voiceInfos, _settings.language);
+        if (bestVoice != null) {
+          _settings = _settings.copyWith(preferredVoice: bestVoice);
+        }
+      }
       
       // Apply default settings
       await updateSettings(_settings);
       
       if (kDebugMode) {
         print('✅ AudioService initialized successfully');
-        print('Available voices: ${voiceInfos.length}');
+        print('Available voices: ${voiceInfos.length}, Selected: ${_settings.preferredVoice}');
       }
       
     } catch (e) {
@@ -131,6 +139,62 @@ class AudioService {
       // Still mark as initialized (graceful degradation)
       _isInitialized = true;
     }
+  }
+
+  /// Heuristically identifies the most natural, human-sounding voice available
+  /// from the platform (preferring Google Natural, Microsoft Online/Neural,
+  /// or Apple enhanced voices over robotic legacy synthesizers).
+  static String? findBestNaturalVoice(List<VoiceInfo> voices, String languageCode) {
+    if (voices.isEmpty) return null;
+
+    final langPrefix = languageCode.split('-').first.toLowerCase();
+    final matching = voices.where((v) {
+      final loc = v.locale.toLowerCase();
+      return loc.startsWith(langPrefix) || loc.isEmpty;
+    }).toList();
+
+    final candidatePool = matching.isNotEmpty ? matching : voices;
+
+    // 1. Google Chrome High-Quality Web Voices (soft, natural educator tone)
+    final googleVoice = candidatePool.firstWhere(
+      (v) =>
+          v.name.contains('Google') &&
+          (v.name.contains('US English') ||
+              v.name.contains('UK English Female') ||
+              v.name.contains('English')),
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (googleVoice.name.isNotEmpty) return googleVoice.name;
+
+    // 2. Microsoft / Edge Neural & Natural Online Voices
+    final neuralVoice = candidatePool.firstWhere(
+      (v) =>
+          v.name.toLowerCase().contains('natural') ||
+          v.name.toLowerCase().contains('neural') ||
+          v.name.toLowerCase().contains('online'),
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (neuralVoice.name.isNotEmpty) return neuralVoice.name;
+
+    // 3. Known warm & gentle voices (Zira, Samantha, Ava, Karen, Victoria)
+    final warmVoice = candidatePool.firstWhere(
+      (v) =>
+          v.name.contains('Zira') ||
+          v.name.contains('Samantha') ||
+          v.name.contains('Ava') ||
+          v.name.contains('Karen') ||
+          v.name.contains('Victoria') ||
+          v.name.contains('Serena'),
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (warmVoice.name.isNotEmpty) return warmVoice.name;
+
+    // 4. Any English voice that is NOT the robotic Microsoft David Desktop
+    final nonDavid = candidatePool.firstWhere(
+      (v) => !v.name.contains('David'),
+      orElse: () => candidatePool.first,
+    );
+    return nonDavid.name;
   }
 
   Future<List<VoiceInfo>> _getAvailableVoiceInfos() async {
@@ -167,8 +231,11 @@ class AudioService {
       await _flutterTts!.setPitch(_settings.pitch);
       await _flutterTts!.setLanguage(_settings.language);
       
-      if (_settings.preferredVoice != null && _state.availableVoices.contains(_settings.preferredVoice)) {
-        await _flutterTts!.setVoice({'name': _settings.preferredVoice!, 'locale': _settings.language});
+      final voiceToUse = _settings.preferredVoice ??
+          findBestNaturalVoice(_state.availableVoiceInfos, _settings.language);
+
+      if (voiceToUse != null && _state.availableVoices.contains(voiceToUse)) {
+        await _flutterTts!.setVoice({'name': voiceToUse, 'locale': _settings.language});
       }
     } catch (e) {
       if (kDebugMode) {
