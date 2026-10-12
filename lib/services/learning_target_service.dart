@@ -302,6 +302,27 @@ class LearningTargetService {
     }
   }
 
+  /// Attach a newly created *private user draft* to an issuer-reviewed
+  /// destination. RLS checks ownership and exact credential type. A failure
+  /// must not imply the user received an official credential.
+  Future<bool> linkPrivateGoalToDestination({
+    required String targetId,
+    required String sourceNamespace,
+    required String sourceKey,
+  }) async {
+    try {
+      await _supabase.from('catalog_destination_goal_links').insert({
+        'target_id': targetId,
+        'source_namespace': sourceNamespace,
+        'source_key': sourceKey,
+      });
+      return true;
+    } catch (e) {
+      debugPrint('Could not associate private goal with issuer: $e');
+      return false;
+    }
+  }
+
   /// Add a curriculum node to a target version
   Future<CurriculumNode?> addCurriculumNode({
     required String targetVersionId,
