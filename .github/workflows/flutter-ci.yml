@@ -52,6 +52,12 @@ jobs:
           dart run tool/taxonomy_coverage.dart --registry-only
           dart run tool/verify_taxonomy_source_review.dart
 
+      - name: Validate private credential candidate intake and measured-demand rules
+        run: |
+          python3 tool/catalog_intake.py validate
+          python3 tool/catalog_intake.py rank
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_*.py' -v
+
       - name: Parse Windows backup script (no database connection)
         shell: pwsh
         run: |
