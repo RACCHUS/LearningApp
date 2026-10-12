@@ -208,4 +208,52 @@ void main() {
     expect(find.textContaining('private, editable draft'), findsOneWidget);
   });
 
+  testWidgets('Florida regulator-linked goal keeps license type and jurisdiction',
+      (tester) async {
+    final license = VerifiedDestination.fromJson({
+      'source_namespace': 'dbpr_fl',
+      'source_key': 'real-estate-sales-associate',
+      'title': 'Florida Real Estate Sales Associate License',
+      'issuer_name': 'Florida Department of Business and Professional Regulation',
+      'destination_type': 'professional_license',
+      'jurisdiction': 'US-FL',
+      'official_url': 'https://www.myfloridalicense.com/intentions2.asp?boardid=25',
+      'requirements_status': 'not_verified',
+      'popularity_status': 'not_measured',
+      'verified_at': '2026-10-12T12:00:00Z',
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        targetSuggestionsProvider(TargetType.professionalLicense)
+            .overrideWith((ref) async => []),
+        verifiedDestinationsProvider.overrideWith((ref) async => [license]),
+      ],
+      child: MaterialApp(home: Scaffold(
+        body: CreateTargetDialog(initialDestination: license),
+      )),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('goal-jurisdiction')), findsOneWidget);
+    expect(tester.widget<TextFormField>(find.byKey(const Key('goal-title')))
+        .controller!.text, license.title);
+    expect(tester.widget<TextFormField>(find.byKey(const Key('goal-jurisdiction')))
+        .controller!.text, 'US-FL');
+    expect(find.textContaining('not an issuer-issued credential'), findsOneWidget);
+    expect(find.textContaining('private, editable draft'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('goal-jurisdiction')));
+    await tester.enterText(find.byKey(const Key('goal-jurisdiction')), 'US-GA');
+    await tester.pump();
+    expect(find.textContaining('not an issuer-issued credential'), findsNothing);
+  });
+
+  test('professional license is not a licensure exam', () {
+    expect(TargetType.fromString('professional_license'),
+        TargetType.professionalLicense);
+    expect(TargetType.professionalLicense.toDbString(), 'professional_license');
+    expect(TargetType.professionalLicense.displayName, 'Professional License');
+    expect(TargetType.licensureExam, isNot(TargetType.professionalLicense));
+  });
+
 }
