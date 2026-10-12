@@ -208,3 +208,68 @@ final reviewedIssuerForGoalProvider =
       ? null
       : VerifiedDestination.fromJson(Map<String, dynamic>.from(published));
 });
+
+/// One immutable, externally reviewed set of *selected* regulator-sourced steps.
+/// Its AND/OR tree is informational, not a determination of legal eligibility.
+class ReviewedLicensePathway {
+  final String title;
+  final String overview;
+  final String coverage;
+  final int revision;
+  final DateTime sourceCheckedAt;
+  final Uri sourceUrl;
+  final Map<String, dynamic> pathwayTree;
+
+  const ReviewedLicensePathway({
+    required this.title,
+    required this.overview,
+    required this.coverage,
+    required this.revision,
+    required this.sourceCheckedAt,
+    required this.sourceUrl,
+    required this.pathwayTree,
+  });
+
+  factory ReviewedLicensePathway.fromJson(Map<String, dynamic> row) {
+    final uri = Uri.parse(row['source_url'] as String);
+    if (uri.scheme != 'https' || !uri.hasAuthority) {
+      throw const FormatException('Regulator evidence URL must use HTTPS');
+    }
+    if (row['coverage'] != 'selected_steps_only' ||
+        row['publication_status'] != 'published' ||
+        row['review_status'] != 'approved') {
+      throw const FormatException('Only selected approved pathways may display');
+    }
+    final tree = Map<String, dynamic>.from(row['pathway_tree'] as Map);
+    if (tree['op'] != 'all' && tree['op'] != 'any') {
+      throw const FormatException('Pathway must contain an AND/OR root');
+    }
+    return ReviewedLicensePathway(
+      title: row['title'] as String,
+      overview: row['overview'] as String,
+      coverage: row['coverage'] as String,
+      revision: row['revision'] as int,
+      sourceCheckedAt: DateTime.parse(row['source_checked_at'] as String),
+      sourceUrl: uri,
+      pathwayTree: tree,
+    );
+  }
+}
+
+/// Public RLS returns only current reviewed versions whose issuer remains
+/// published. Null means no reviewed partial pathway is available yet.
+final reviewedLicensePathwayProvider =
+    FutureProvider.family<ReviewedLicensePathway?,
+        ({String namespace, String key})>((ref, identity) async {
+  final row = await Supabase.instance.client
+      .from('catalog_license_pathway_versions')
+      .select('title,overview,coverage,revision,source_url,source_checked_at,'
+          'pathway_tree,publication_status,review_status')
+      .eq('source_namespace', identity.namespace)
+      .eq('source_key', identity.key)
+      .eq('publication_status', 'published')
+      .maybeSingle();
+  return row == null
+      ? null
+      : ReviewedLicensePathway.fromJson(Map<String, dynamic>.from(row));
+});
