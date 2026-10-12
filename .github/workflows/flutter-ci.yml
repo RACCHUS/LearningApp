@@ -127,6 +127,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Cache cryptographically pinned taxonomy source files
+        uses: actions/cache@v4
+        with:
+          path: build/taxonomy-cache
+          key: taxonomy-source-bundle-v1-${{ runner.os }}-${{ hashFiles('lib/services/taxonomy/official_taxonomy_sources.dart') }}
+
       - name: Install dependencies
         run: flutter pub get
 
