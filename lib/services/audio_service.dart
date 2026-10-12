@@ -198,7 +198,11 @@ class AudioService {
         errorMessage: null,
       ));
 
-      final result = await _flutterTts!.speak(text);
+      // On Web, SpeechSynthesisUtterance.onboundary can report charIndex past string length
+      // at sentence boundaries, causing flutter_tts_web to throw RangeError on substring().
+      // Appending safe trailing whitespace prevents charIndex out-of-bounds while preserving audio.
+      final safeText = kIsWeb ? text.padRight(text.length + 16) : text;
+      final result = await _flutterTts!.speak(safeText);
       return result == 1; // 1 indicates success
       
     } catch (e) {
@@ -229,7 +233,9 @@ class AudioService {
       await stop();
       await _flutterTts!.setVoice({'name': voice.name, 'locale': voice.locale});
       _speakCompleter = Completer<void>();
-      await _flutterTts!.speak('Hello! This is how I sound when reading your lessons.');
+      const previewText = 'Hello! This is how I sound when reading your lessons.';
+      final safePreview = kIsWeb ? previewText.padRight(previewText.length + 16) : previewText;
+      await _flutterTts!.speak(safePreview);
       await speakCompletion;
       // Restore the user's preferred voice
       await updateSettings(_settings);

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/course_models.dart';
 import '../models/lesson.dart';
+import '../utils/uuid_validator.dart';
 import 'lesson_service.dart';
 
 /// Service for managing courses, lesson associations, and course organization
@@ -70,6 +71,9 @@ class CourseService {
 
   /// Get a course by ID
   Future<Course> getCourse(String courseId) async {
+    if (!isValidUuid(courseId)) {
+      throw ArgumentError('Invalid UUID courseId: "$courseId"');
+    }
     try {
       final response = await _supabase
           .from('courses')
@@ -240,6 +244,9 @@ class CourseService {
 
   /// Get all lesson associations for a course
   Future<List<CourseLessonAssociation>> getCourseLessons(String courseId) async {
+    if (!isValidUuid(courseId)) {
+      return [];
+    }
     try {
       final response = await _supabase
           .from('course_lessons')
@@ -256,6 +263,9 @@ class CourseService {
 
   /// Get course with all its lessons
   Future<CourseWithContent> getCourseWithContent(String courseId) async {
+    if (!isValidUuid(courseId)) {
+      throw ArgumentError('Invalid UUID courseId: "$courseId"');
+    }
     try {
       final course = await getCourse(courseId);
       final associations = await getCourseLessons(courseId);

@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/learning_context.dart';
 import '../models/scope.dart';
+import '../utils/uuid_validator.dart';
 
 /// Resolves the bounded learning scope and deterministic activity sequence
 /// for any active [LearningContext] per Learning Architecture v2 §7.
@@ -115,7 +116,7 @@ class ScopeResolver {
     String? configHash,
   }) async {
     final client = _supabase;
-    if (client == null) {
+    if (client == null || !isValidUuid(context.rootId)) {
       return ResolvedScope(
         contextId: context.id,
         resolvedAt: DateTime.now(),

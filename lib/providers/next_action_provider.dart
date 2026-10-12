@@ -14,6 +14,7 @@ import 'package:learning_pwa/services/scope_resolver.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/utils/uuid_validator.dart';
 
 final courseServiceProvider = Provider<CourseService>((ref) => CourseService());
 
@@ -109,7 +110,7 @@ class ContextSnapshotResolver {
 
     // 2. Supplement with remote Supabase user_progress if signed in
     try {
-      if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+      if (effectiveUserId != null && isValidUuid(effectiveUserId)) {
         final res = await Supabase.instance.client
             .from('user_progress')
             .select('lesson_id')
@@ -263,6 +264,19 @@ class ContextSnapshotResolver {
     LearningContext context,
     Set<String> completedLessons,
   ) async {
+    if (context.rootId == 'foundational-literacy' || !isValidUuid(context.rootId)) {
+      return (
+        next: LessonActivity(
+          lessonId: 'literacy',
+          title: context.label,
+          courseId: context.rootId,
+          courseTitle: context.label,
+        ),
+        resume: null,
+        resumeItemCount: 0,
+      );
+    }
+
     try {
       final content = await _courses.getCourseWithContent(context.rootId);
       final lessons = content.orderedLessons;

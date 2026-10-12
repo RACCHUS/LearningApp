@@ -228,7 +228,12 @@ class _ContinueView {
   }
 
   static String _route(LearningActivity activity) {
-    if (activity is LessonActivity) return '/lesson/${activity.lessonId}';
+    if (activity is LessonActivity) {
+      if (activity.lessonId == 'literacy' || activity.courseId == 'foundational-literacy') {
+        return '/literacy';
+      }
+      return '/lesson/${activity.lessonId}';
+    }
     if (activity is StudySetActivity) {
       return '/study-set?setId=${activity.studySetId}';
     }
@@ -236,6 +241,12 @@ class _ContinueView {
   }
 
   static String _secondaryLabel(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootId == 'foundational-literacy' ||
+        (activity is LessonActivity &&
+            (activity.lessonId == 'literacy' ||
+                activity.courseId == 'foundational-literacy'))) {
+      return 'Literacy Hub';
+    }
     if (context?.rootType == ContextRootType.target) return 'Exam outline →';
     if (activity is StudySetActivity) return 'Browse set';
     if (activity is LessonActivity && activity.courseId == null) {
@@ -245,6 +256,12 @@ class _ContinueView {
   }
 
   static String _secondaryRoute(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootId == 'foundational-literacy' ||
+        (activity is LessonActivity &&
+            (activity.lessonId == 'literacy' ||
+                activity.courseId == 'foundational-literacy'))) {
+      return '/literacy';
+    }
     if (context?.rootType == ContextRootType.target) {
       return '/target/${context!.rootId}/outline';
     }
