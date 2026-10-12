@@ -68,6 +68,11 @@ jobs:
           python3 tool/catalog_p2_resources.py validate
           python3 -m unittest discover -s tool/tests -p 'test_catalog_p2_resources.py' -v
 
+      - name: Validate P2d Florida professional license and checklist identities
+        run: |
+          python3 tool/catalog_p2d_florida_licenses.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2d_florida_licenses.py' -v
+
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
           python3 -m pip install 'openpyxl==3.1.5'
