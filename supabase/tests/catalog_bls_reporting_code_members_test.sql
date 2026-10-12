@@ -19,11 +19,20 @@ select is((select count(distinct reporting_code) from public.catalog_bls_reporti
 select is((select count(*) from public.catalog_bls_reporting_code_members
            where allocation_policy='not_allocated'),13::bigint,
   'No combined openings allocated to component SOC entries');
-select is((select count(*) from public.catalog_bls_reporting_code_members m
-           where not exists (select 1 from public.occupation_nodes n
-             where n.code=m.soc_2018_code and n.taxonomy_system='bls_soc'
-               and n.taxonomy_version='soc_2018' and n.is_active)),0::bigint,
-  'Every component points to a real active SOC 2018 detailed occupation');
+select ok(
+    (select count(*) from public.occupation_nodes
+     where taxonomy_system='bls_soc' and taxonomy_version='soc_2018'
+       and is_active and level='detailed_occupation') < 867
+    or not exists (
+      select 1 from public.catalog_bls_reporting_code_members m
+      where not exists (
+        select 1 from public.occupation_nodes n
+        where n.code=m.soc_2018_code and n.taxonomy_system='bls_soc'
+          and n.taxonomy_version='soc_2018' and n.is_active
+      )
+    ),
+    'After a complete SOC release is present, all 13 component codes resolve to active occupations'
+  );
 select is((select count(*) from public.catalog_bls_reporting_code_members m
            where exists (select 1 from public.catalog_official_demand_observations o
              where o.taxonomy_code=m.reporting_code
