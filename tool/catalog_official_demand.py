@@ -80,7 +80,7 @@ def parse_bls(blob: bytes) -> list[dict]:
     sheet = book["Table 1.2"]
     iterator = sheet.iter_rows(values_only=True)
     heading = next(iterator)
-    if "2025" not in str(heading[0]) or "2035" not in str(heading[0]):
+    if "2025" not in str(heading[0]) or not any(x in str(heading[0]) for x in ("2025–35","2025-35","2025–2035","2025-2035")):
         raise ValueError("BLS projection window changed: update reviewed parser")
     cols = [str(v or "").strip() for v in next(iterator)]
     required = ["2025 National Employment Matrix code", "Occupation type",
