@@ -7,19 +7,25 @@ import '../../models/learning_target.dart';
 import '../../models/taxonomy/taxonomy.dart';
 import '../../providers/taxonomy_provider.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../providers/verified_destinations_provider.dart';
 import '../../theme/design_tokens.dart';
 
 /// Custom learning goals remain private drafts. Catalog examples are reference
 /// suggestions; choosing one never makes a user's copy "official".
 class CreateTargetDialog extends ConsumerStatefulWidget {
   final TargetType? initialType;
+  final VerifiedDestination? initialDestination;
 
-  const CreateTargetDialog({super.key, this.initialType});
+  const CreateTargetDialog({super.key, this.initialType, this.initialDestination});
 
-  static Future<LearningTarget?> show(BuildContext context, {TargetType? initialType}) {
+  static Future<LearningTarget?> show(BuildContext context, {
+    TargetType? initialType,
+    VerifiedDestination? initialDestination,
+  }) {
     return showDialog<LearningTarget>(
       context: context,
-      builder: (context) => CreateTargetDialog(initialType: initialType),
+      builder: (context) => CreateTargetDialog(
+        initialType: initialType, initialDestination: initialDestination),
     );
   }
 
@@ -34,6 +40,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   late final TextEditingController _providerController;
   late TargetType _selectedType;
   LearningTarget? _selectedExample;
+  VerifiedDestination? _selectedVerifiedDestination;
   Timer? _taxonomyDebounce;
   String _taxonomyQuery = '';
   bool _isLoading = false;
@@ -42,10 +49,17 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedType = widget.initialType ?? TargetType.career;
+    _selectedType = widget.initialDestination?.supportedPrivateGoalType ??
+        widget.initialType ?? TargetType.career;
     _titleController = TextEditingController();
     _descController = TextEditingController();
     _providerController = TextEditingController();
+    if (widget.initialDestination != null &&
+        widget.initialDestination!.supportedPrivateGoalType != null) {
+      _selectedVerifiedDestination = widget.initialDestination;
+      _titleController.text = widget.initialDestination!.title;
+      _providerController.text = widget.initialDestination!.issuerName;
+    }
   }
 
   @override
@@ -60,6 +74,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   void _applyExample(LearningTarget example) {
     setState(() {
       _selectedExample = example;
+      _selectedVerifiedDestination = null;
       _titleController.text = example.title;
       _providerController.text = example.providerName ??
           example.institutionName ?? '';
@@ -87,6 +102,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     _taxonomyDebounce?.cancel();
     setState(() {
       _selectedExample = null; // A classification is not a published course.
+      _selectedVerifiedDestination = null;
       _taxonomyQuery = '';
       _titleController.text = match.title;
       if (match.description != null && match.description!.trim().isNotEmpty) {
@@ -129,10 +145,24 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
 
     if (!mounted) return;
     if (target != null) {
+      final reviewed = _selectedVerifiedDestination;
+      final linked = reviewed == null ||
+          await service.linkPrivateGoalToDestination(
+            targetId: target.id,
+            sourceNamespace: reviewed.sourceNamespace,
+            sourceKey: reviewed.sourceKey,
+          );
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
       final router = GoRouter.of(context);
       ref.invalidate(targetsListProvider);
       Navigator.of(context).pop(target);
       router.push('/target/${target.id}');
+      if (!linked) {
+        messenger.showSnackBar(const SnackBar(
+          content: Text('Private goal created, but the issuer link could not be saved.'),
+        ));
+      }
     } else {
       setState(() {
         _isLoading = false;
@@ -218,6 +248,12 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     final theme = Theme.of(context);
     final suggestionsAsync = ref.watch(targetSuggestionsProvider(_selectedType));
     final catalog = suggestionsAsync.valueOrNull ?? const <LearningTarget>[];
+    final issuerList = ref.watch(verifiedDestinationsProvider).valueOrNull ??
+        const <VerifiedDestination>[];
+    final verifiedMatches = issuerList
+        .where((entry) => entry.supportedPrivateGoalType == _selectedType)
+        .where((entry) => entry.matches(_titleController.text))
+        .take(4).toList();
     final taxonomyAsync = _taxonomyQuery.length >= 3
         ? ref.watch(goalTaxonomySuggestionsProvider((
             type: _selectedType, query: _taxonomyQuery)))
@@ -298,6 +334,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       setState(() {
                         _selectedType = type;
                         _selectedExample = null;
+                        _selectedVerifiedDestination = null;
                         _taxonomyQuery = '';
                         _taxonomyDebounce?.cancel();
                       });
@@ -309,7 +346,10 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                   key: const Key('goal-title'),
                   controller: _titleController,
                   onChanged: (value) {
-                    setState(() => _selectedExample = null);
+                    setState(() {
+                      _selectedExample = null;
+                      _selectedVerifiedDestination = null;
+                    });
                     _queueTaxonomySearch(value);
                   },
                   decoration: InputDecoration(
@@ -366,6 +406,36 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       style: theme.textTheme.bodySmall,
                     ),
                   ),
+                if (verifiedMatches.isNotEmpty) ...[
+                  const SizedBox(height: DesignTokens.space2),
+                  Text('Verified issuer names and links',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant)),
+                  for (final entry in verifiedMatches)
+                    ListTile(
+                      key: Key('goal-issuer-suggestion-${entry.sourceNamespace}-${entry.sourceKey}'),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.verified_outlined),
+                      title: Text(entry.title, maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        '${entry.issuerName} · Identity checked, requirements not verified',
+                        maxLines: 2),
+                      onTap: () => setState(() {
+                        _selectedExample = null;
+                        _selectedVerifiedDestination = entry;
+                        _titleController.text = entry.title;
+                        _providerController.text = entry.issuerName;
+                      }),
+                    ),
+                ],
+                if (_selectedVerifiedDestination != null)
+                  Text(
+                    'Linked to a reviewed issuer identity. This remains YOUR '
+                    'private draft, not an issuer-issued credential or completed course.',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 if (taxonomyMatches.isNotEmpty) ...[
                   const SizedBox(height: DesignTokens.space2),
                   Text('Matches from official occupation / program classifications',
@@ -400,7 +470,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                 TextFormField(
                   key: const Key('goal-provider'),
                   controller: _providerController,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => _selectedVerifiedDestination = null),
                   decoration: InputDecoration(
                     labelText: _selectedType == TargetType.certification
                         ? 'Certification Provider / Body (Optional)'

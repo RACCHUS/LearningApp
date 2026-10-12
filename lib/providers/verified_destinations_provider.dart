@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/learning_target.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A deliberately narrow issuer-verified destination. This is NOT a
@@ -45,6 +46,23 @@ class VerifiedDestination {
       popularityStatus: value['popularity_status'] as String,
       verifiedAt: DateTime.parse(value['verified_at'] as String),
     );
+  }
+
+  /// Professional licenses are deliberately excluded: the current goal
+  /// taxonomy does not have a professional_license type yet.
+  TargetType? get supportedPrivateGoalType {
+    switch (destinationType) {
+      case 'certification':
+        return TargetType.certification;
+      case 'licensure_exam':
+        return TargetType.licensureExam;
+      case 'standardized_exam':
+        return TargetType.standardizedExam;
+      case 'academic_program':
+        return TargetType.academicProgram;
+      default:
+        return null;
+    }
   }
 
   String get displayType {
@@ -94,5 +112,68 @@ final verifiedDestinationsProvider =
   return [
     for (final raw in response)
       VerifiedDestination.fromJson(Map<String, dynamic>.from(raw)),
+  ];
+});
+
+
+/// Outbound, issuer-owned resources only. Not Learning App lessons or courses.
+class OfficialPreparationLink {
+  final String resourceKey;
+  final String title;
+  final String resourceKind;
+  final Uri resourceUrl;
+  final String publisher;
+
+  const OfficialPreparationLink({
+    required this.resourceKey,
+    required this.title,
+    required this.resourceKind,
+    required this.resourceUrl,
+    required this.publisher,
+  });
+
+  factory OfficialPreparationLink.fromJson(Map<String, dynamic> row) {
+    final uri = Uri.parse(row['resource_url'] as String);
+    if (uri.scheme != 'https' || !uri.hasAuthority) {
+      throw const FormatException('Preparation URL must use HTTPS');
+    }
+    return OfficialPreparationLink(
+      resourceKey: row['resource_key'] as String,
+      title: row['title'] as String,
+      resourceKind: row['resource_kind'] as String,
+      resourceUrl: uri,
+      publisher: row['source_publisher'] as String,
+    );
+  }
+
+  String get resourceTypeLabel {
+    switch (resourceKind) {
+      case 'official_study_guide':
+        return 'Official study guide';
+      case 'issuer_training':
+        return 'Issuer training';
+      case 'official_exam_plan':
+        return 'Official exam plan';
+      case 'issuer_prep_directory':
+        return 'Issuer preparation options';
+      default:
+        return 'Issuer resource';
+    }
+  }
+}
+
+final officialPreparationLinksProvider = FutureProvider.family<
+    List<OfficialPreparationLink>, ({String namespace, String key})>((ref, identity) async {
+  final rows = await Supabase.instance.client
+      .from('catalog_destination_resources')
+      .select('resource_key,title,resource_kind,resource_url,source_publisher')
+      .eq('source_namespace', identity.namespace)
+      .eq('source_key', identity.key)
+      .eq('status', 'published')
+      .order('sort_order')
+      .limit(30);
+  return [
+    for (final row in rows)
+      OfficialPreparationLink.fromJson(Map<String, dynamic>.from(row)),
   ];
 });

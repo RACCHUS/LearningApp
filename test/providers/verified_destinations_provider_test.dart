@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/providers/verified_destinations_provider.dart';
 
 void main() {
@@ -39,4 +40,43 @@ void main() {
     data['official_url'] = 'not a URL';
     expect(() => VerifiedDestination.fromJson(data), throwsFormatException);
   });
+  test('supported reviewed credentials map to correct private-goal types', () {
+    final entry = VerifiedDestination.fromJson(sample());
+    expect(entry.supportedPrivateGoalType, TargetType.certification);
+
+    final rn = sample()..['destination_type'] = 'licensure_exam';
+    expect(VerifiedDestination.fromJson(rn).supportedPrivateGoalType,
+        TargetType.licensureExam);
+
+    final license = sample()..['destination_type'] = 'professional_license';
+    expect(VerifiedDestination.fromJson(license).supportedPrivateGoalType,
+        isNull); // Never disguise a professional license as a certification.
+  });
+
+  test('official preparation resource parses issuer-owned link metadata', () {
+    final link = OfficialPreparationLink.fromJson({
+      'resource_key': 'az900-guide',
+      'title': 'Microsoft AZ-900 Study Guide',
+      'resource_kind': 'official_study_guide',
+      'resource_url':
+          'https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-900',
+      'source_publisher': 'Microsoft Learn',
+    });
+    expect(link.resourceTypeLabel, 'Official study guide');
+    expect(link.resourceUrl.scheme, 'https');
+  });
+
+  test('refuse non-HTTPS preparation resources', () {
+    expect(
+      () => OfficialPreparationLink.fromJson({
+        'resource_key': 'invalid',
+        'title': 'Untrusted',
+        'resource_kind': 'issuer_training',
+        'resource_url': 'http://unsafe.test/',
+        'source_publisher': 'Unknown',
+      }),
+      throwsFormatException,
+    );
+  });
+
 }

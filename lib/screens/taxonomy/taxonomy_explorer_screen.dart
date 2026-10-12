@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_pwa/models/taxonomy/taxonomy.dart';
 import '../../providers/taxonomy_provider.dart';
 import '../../providers/verified_destinations_provider.dart';
+import '../../widgets/targets/create_target_dialog.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/taxonomy/cip_detail_sheet.dart';
 
@@ -620,7 +621,10 @@ class _TaxonomyExplorerScreenState
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.6)),
       ),
-      child: ListTile(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
         leading: const Icon(Icons.verified_outlined),
         title: Text(destination.title,
             style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -667,6 +671,103 @@ class _TaxonomyExplorerScreenState
               const SnackBar(content: Text('Official issuer URL copied')),
             );
           },
+        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  key: Key('destination-prep-${destination.sourceKey}'),
+                  onPressed: () => _showPreparationLinks(destination),
+                  icon: const Icon(Icons.menu_book_outlined, size: 17),
+                  label: const Text('Issuer study links'),
+                ),
+                if (destination.supportedPrivateGoalType != null)
+                  FilledButton.tonalIcon(
+                    key: Key('destination-goal-${destination.sourceKey}'),
+                    onPressed: () => CreateTargetDialog.show(context,
+                        initialDestination: destination),
+                    icon: const Icon(Icons.flag_outlined, size: 17),
+                    label: const Text('Create private goal'),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPreparationLinks(VerifiedDestination destination) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.65,
+          child: Consumer(builder: (context, ref, _) {
+            final resources = ref.watch(officialPreparationLinksProvider((
+              namespace: destination.sourceNamespace,
+              key: destination.sourceKey,
+            )));
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Official resources: ${destination.title}',
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'External issuer resources only. Availability and pricing '
+                    'may change; these are not Learning App courses or '
+                    'verified exam eligibility requirements.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(child: resources.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator()),
+                  error: (error, _) => Center(
+                    child: Text('Could not load issuer resources: $error')),
+                  data: (links) => links.isEmpty
+                      ? const Center(child: Text(
+                          'No reviewed preparation links yet.'))
+                      : ListView.builder(
+                          itemCount: links.length,
+                          itemBuilder: (context, index) {
+                            final link = links[index];
+                            return ListTile(
+                              title: Text(link.title),
+                              subtitle: Text(
+                                '${link.publisher} · ${link.resourceTypeLabel}'),
+                              trailing: const Icon(Icons.open_in_new),
+                              onTap: () async {
+                                try {
+                                  final opened = await launchUrl(link.resourceUrl,
+                                    mode: LaunchMode.externalApplication);
+                                  if (!opened) throw StateError('Link unavailable');
+                                } catch (_) {
+                                  await Clipboard.setData(ClipboardData(
+                                    text: link.resourceUrl.toString()));
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text(
+                                      'Issuer link could not open; URL copied')));
+                                }
+                              },
+                            );
+                          },
+                        ),
+                )),
+              ],
+            );
+          }),
         ),
       ),
     );
