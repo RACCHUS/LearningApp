@@ -50,7 +50,7 @@ void main() {
 
     final license = sample()..['destination_type'] = 'professional_license';
     expect(VerifiedDestination.fromJson(license).supportedPrivateGoalType,
-        isNull); // Never disguise a professional license as a certification.
+        TargetType.professionalLicense); // Never disguise a license as an exam.
   });
 
   test('official preparation resource parses issuer-owned link metadata', () {
@@ -64,6 +64,17 @@ void main() {
     });
     expect(link.resourceTypeLabel, 'Official study guide');
     expect(link.resourceUrl.scheme, 'https');
+  });
+
+  test('regulator checklist is not a preparation course', () {
+    final source = OfficialPreparationLink.fromJson({
+      'resource_key': 'fl-sales-associate-re1-checklist',
+      'title': 'DBPR real estate license checklist',
+      'resource_kind': 'regulator_license_checklist',
+      'resource_url': 'https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=744',
+      'source_publisher': 'Florida DBPR',
+    });
+    expect(source.resourceTypeLabel, 'Regulator licensing checklist');
   });
 
   test('refuse non-HTTPS preparation resources', () {
