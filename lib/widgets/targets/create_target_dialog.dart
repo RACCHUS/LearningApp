@@ -38,6 +38,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
   late final TextEditingController _providerController;
+  late final TextEditingController _jurisdictionController;
   late TargetType _selectedType;
   LearningTarget? _selectedExample;
   VerifiedDestination? _selectedVerifiedDestination;
@@ -54,6 +55,11 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     _titleController = TextEditingController();
     _descController = TextEditingController();
     _providerController = TextEditingController();
+    _jurisdictionController = TextEditingController(
+        text: widget.initialDestination?.supportedPrivateGoalType ==
+                TargetType.professionalLicense
+            ? widget.initialDestination!.jurisdiction
+            : '');
     if (widget.initialDestination != null &&
         widget.initialDestination!.supportedPrivateGoalType != null) {
       _selectedVerifiedDestination = widget.initialDestination;
@@ -68,6 +74,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     _titleController.dispose();
     _descController.dispose();
     _providerController.dispose();
+    _jurisdictionController.dispose();
     super.dispose();
   }
 
@@ -78,6 +85,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
       _titleController.text = example.title;
       _providerController.text = example.providerName ??
           example.institutionName ?? '';
+      _jurisdictionController.text = example.jurisdiction ?? '';
       _descController.text = example.description ?? '';
     });
   }
@@ -140,6 +148,9 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
       institutionName: _selectedType == TargetType.academicProgram &&
               _providerController.text.trim().isNotEmpty
           ? _providerController.text.trim()
+          : null,
+      jurisdiction: _selectedType == TargetType.professionalLicense
+          ? _jurisdictionController.text.trim().toUpperCase()
           : null,
     );
 
@@ -323,7 +334,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                   ),
-                  // These are the six valid database target types. Catalog
+                  // Supported database target types, including real professional licenses. Catalog
                   // examples below update whenever the type changes.
                   items: [
                     for (final type in TargetType.values)
@@ -336,6 +347,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                         _selectedExample = null;
                         _selectedVerifiedDestination = null;
                         _taxonomyQuery = '';
+                        _jurisdictionController.clear();
                         _taxonomyDebounce?.cancel();
                       });
                     }
@@ -360,7 +372,9 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                             ? 'e.g., CompTIA Security+'
                             : _selectedType == TargetType.standardizedExam
                                 ? 'e.g., USMLE Step 1'
-                                : 'What would you like to learn?',
+                                : _selectedType == TargetType.professionalLicense
+                                    ? 'e.g., Florida Real Estate Sales Associate License'
+                                    : 'What would you like to learn?',
                     prefixIcon: const Icon(Icons.edit_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
@@ -427,6 +441,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                         _selectedVerifiedDestination = entry;
                         _titleController.text = entry.title;
                         _providerController.text = entry.issuerName;
+                        _jurisdictionController.text = entry.jurisdiction;
                       }),
                     ),
                 ],
@@ -483,6 +498,33 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                     ),
                   ),
                 ),
+                if (_selectedType == TargetType.professionalLicense) ...[
+                  const SizedBox(height: DesignTokens.space3),
+                  TextFormField(
+                    key: const Key('goal-jurisdiction'),
+                    controller: _jurisdictionController,
+                    decoration: InputDecoration(
+                      labelText: 'License jurisdiction (Required)',
+                      hintText: 'US-FL',
+                      helperText: 'Use the regulator territory code, e.g. US-FL for Florida. '
+                          'A license is not the same as its qualifying exam.',
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+                      ),
+                    ),
+                    validator: (value) {
+                      final jurisdiction = (value ?? '').trim().toUpperCase();
+                      if (!RegExp(r'^[A-Z]{2}(-[A-Z0-9]{2,8})?$')
+                          .hasMatch(jurisdiction)) {
+                        return 'Enter a jurisdiction code such as US-FL';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) =>
+                        setState(() => _selectedVerifiedDestination = null),
+                  ),
+                ],
                 _suggestionChips(
                   heading: 'Organization suggestions',
                   values: providerSuggestions,

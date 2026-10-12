@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/learning_target.dart';
+import 'auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A deliberately narrow issuer-verified destination. This is NOT a
@@ -48,12 +49,13 @@ class VerifiedDestination {
     );
   }
 
-  /// Professional licenses are deliberately excluded: the current goal
-  /// taxonomy does not have a professional_license type yet.
+  /// A regulator-issued professional license is distinct from its exam.
   TargetType? get supportedPrivateGoalType {
     switch (destinationType) {
       case 'certification':
         return TargetType.certification;
+      case 'professional_license':
+        return TargetType.professionalLicense;
       case 'licensure_exam':
         return TargetType.licensureExam;
       case 'standardized_exam':
@@ -156,6 +158,8 @@ class OfficialPreparationLink {
         return 'Official exam plan';
       case 'issuer_prep_directory':
         return 'Issuer preparation options';
+      case 'regulator_license_checklist':
+        return 'Regulator licensing checklist';
       default:
         return 'Issuer resource';
     }
@@ -176,4 +180,31 @@ final officialPreparationLinksProvider = FutureProvider.family<
     for (final row in rows)
       OfficialPreparationLink.fromJson(Map<String, dynamic>.from(row)),
   ];
+});
+
+
+/// Only the signed-in owner can read a private goal-to-issuer source link.
+/// No admin-only candidate data or restricted eligibility records are queried.
+final reviewedIssuerForGoalProvider =
+    FutureProvider.family<VerifiedDestination?, String>((ref, targetId) async {
+  final auth = ref.watch(authProvider); // Invalidate when account changes.
+  if (auth is! AuthSuccess) return null;
+  final client = Supabase.instance.client;
+  final identity = await client
+      .from('catalog_destination_goal_links')
+      .select('source_namespace,source_key')
+      .eq('target_id', targetId)
+      .maybeSingle();
+  if (identity == null) return null;
+  final published = await client
+      .from('catalog_verified_destinations')
+      .select('source_namespace,source_key,destination_type,title,issuer_name,'
+          'jurisdiction,official_url,requirements_status,popularity_status,verified_at')
+      .eq('source_namespace', identity['source_namespace'] as String)
+      .eq('source_key', identity['source_key'] as String)
+      .eq('publication_status', 'published')
+      .maybeSingle();
+  return published == null
+      ? null
+      : VerifiedDestination.fromJson(Map<String, dynamic>.from(published));
 });

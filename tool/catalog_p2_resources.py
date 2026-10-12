@@ -21,9 +21,11 @@ ALLOW={
     "microsoft":{"learn.microsoft.com"},
     "pmi":{"www.pmi.org"},
     "ncsbn":{"www.nclex.com"},
+    "dbpr_fl":{"www.myfloridalicense.com"},
 }
 KINDS={"official_study_guide","issuer_training",
-       "official_exam_plan","issuer_prep_directory"}
+       "official_exam_plan","issuer_prep_directory",
+       "regulator_license_checklist"}
 
 def validate()->list[dict]:
     pilot=json.loads(SEED.read_text(encoding="utf-8"))

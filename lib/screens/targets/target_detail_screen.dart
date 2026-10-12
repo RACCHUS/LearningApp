@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import '../../models/learning_context.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/learning_target.dart';
 import '../../providers/learning_target_provider.dart';
+import '../../providers/verified_destinations_provider.dart';
 import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
@@ -38,6 +41,10 @@ class TargetDetailScreen extends ConsumerWidget {
           if (target == null) {
             return const Center(child: Text('Target not found'));
           }
+
+          final currentAuth = ref.watch(authProvider);
+          final viewerOwnsGoal = currentAuth is AuthSuccess &&
+              currentAuth.user.id == target.createdBy;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(DesignTokens.space4),
@@ -102,6 +109,14 @@ class TargetDetailScreen extends ConsumerWidget {
                             color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
+                if (viewerOwnsGoal)
+                  ref.watch(reviewedIssuerForGoalProvider(target.id)).when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (issuer) => issuer == null
+                        ? const SizedBox.shrink()
+                        : _buildIssuerSourceCard(context, issuer),
+                  ),
                 if (ref.watch(authProvider) is AuthSuccess &&
                     (ref.watch(authProvider) as AuthSuccess).user.id ==
                         target.createdBy &&
@@ -376,6 +391,55 @@ class TargetDetailScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildIssuerSourceCard(
+      BuildContext context, VerifiedDestination issuer) {
+    final theme = Theme.of(context);
+    return Card(
+      key: const Key('goal-reviewed-issuer-source'),
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.space3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Reviewed issuer source', style: theme.textTheme.titleSmall),
+            const SizedBox(height: DesignTokens.space1),
+            Text(issuer.issuerName,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text('${issuer.displayType} · ${issuer.jurisdiction}'),
+            const SizedBox(height: DesignTokens.space1),
+            Text(
+              'Only the issuer identity and link were reviewed. Requirements, '
+              'eligibility, costs and popularity are not verified. Your '
+              'learning goal does not represent a license or certification award.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: DesignTokens.space2),
+            OutlinedButton.icon(
+              key: const Key('goal-view-official-source'),
+              onPressed: () async {
+                try {
+                  final opened = await launchUrl(
+                      issuer.officialUrl, mode: LaunchMode.externalApplication);
+                  if (!opened) throw StateError('Link cannot be opened');
+                } catch (_) {
+                  await Clipboard.setData(
+                      ClipboardData(text: issuer.officialUrl.toString()));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text(
+                        'Source site could not open; official URL copied')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('Official issuer or regulator page'),
+            ),
+          ],
+        ),
       ),
     );
   }

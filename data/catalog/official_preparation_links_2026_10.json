@@ -6,7 +6,7 @@
     "no_verified_prices_or_fees": true,
     "no_inferred_credential_eligibility": true
   },
-  "total": 8,
+  "total": 9,
   "resources": [
     {
       "source_namespace": "aws",
@@ -118,6 +118,20 @@
       "rights_scope": "external_link_only",
       "reviewed_on": "2026-10-12",
       "sort_order": 8,
+      "status": "published"
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "real-estate-sales-associate",
+      "resource_key": "fl-sales-associate-re1-checklist",
+      "title": "Florida DBPR Sales Associate Initial Application (RE 1) Checklist",
+      "resource_kind": "regulator_license_checklist",
+      "resource_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=744&clientCode=2501&sub_id=undefined&xactCode=1010",
+      "source_publisher": "Florida Department of Business and Professional Regulation",
+      "rights_scope": "external_link_only",
+      "review_note": "Official Florida DBPR RE 1 initial sales associate license checklist; direct regulator reference only, not independent verification of eligibility, fees or curriculum.",
+      "reviewed_on": "2026-10-12",
+      "sort_order": 9,
       "status": "published"
     }
   ]
