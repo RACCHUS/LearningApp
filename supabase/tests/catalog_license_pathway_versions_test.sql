@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(16);
+select plan(15);
 
 select has_table('public','catalog_license_pathway_versions',
   'Versioned state license pathway facts have a separate table');
