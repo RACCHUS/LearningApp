@@ -39,7 +39,7 @@ Always distinguish **occupation**, **academic classification**, **institutional 
 
 **IPEDS completions:** prioritize the current 2025 C2025_A release, which measures awards by six-digit CIP and degree/certificate award level during July 2024–June 2025. Parse the official data dictionary, ignore suppressed/missing figures, retain CIP edition, institution UNITID, geography, award level and release. Do not equate completions with enrollments or available course seats.
 
-**BLS employment projections:** version a public-use Employment Projections dataset with SOC-based annual openings, employment and time period. SOC opportunities do not establish a required credential. Store the original source and observation period.
+**BLS employment projections:** use the currently listed 2025–2035 Occupational Projections dataset (not stale 2024–2034 tables), with SOC-based annual openings, employment and publication period. Recheck the BLS release when imported; pin and record its exact download version. SOC opportunities do not establish a required credential. Store the original source and observation period.
 
 **O*NET labor signals:** job posting and technical-skill demand only where reuse rights permit, distinguished from the existing occupational classification graph.
 
