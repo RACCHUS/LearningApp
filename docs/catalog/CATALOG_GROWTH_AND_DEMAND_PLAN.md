@@ -72,6 +72,12 @@ NCES lists the 2025 provisional C2025_A release, but the historical guessed dire
 
 **P2 targets:** 250 individually reviewed destination pages, 50 validated pathways. These are future product milestones, not current live records.
 
+### P2 first issuer-link pilot (October 2026)
+
+The first P2 slice adds a narrow **issuer identity + official outbound URL** review for ten destinations: two AWS certifications, three Microsoft certifications, PMI PMP/CAPM, NCSBN NCLEX-RN/PN, and Florida real estate sales associate licensing. The public directory is separate from the `learning_targets` goal catalog, and is surfaced in the taxonomy explorer under **Credentials & exams**, including global search matches. This is a first verified directory, **not** a published course, learner pathway, comprehensive licensing requirements record, or measured popularity ranking.
+
+The remaining 21 intake entries stay unpublished. Hard database gates require verified reviewer state; public records are immediately retired on source revocation. See [P2 reviewed issuer directory runbook](P2_ISSUER_VERIFIED_DIRECTORY.md). Next work is individual legal/exam requirement provenance, service/provider APIs under terms, real learning-target mappings, and original study content.
+
 ## 6. P3 — Experience, community and content
 
 - Search/filter by destination type, issuer, subject, jurisdiction, approval status and freshness. Unreviewed intake must not appear in public search.
