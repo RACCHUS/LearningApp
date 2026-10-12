@@ -29,6 +29,7 @@ begin
   elsif kind = 'step' then
     return (select count(*) from jsonb_object_keys(node)) between 4 and 5
        and node ? 'label' and node ? 'stage' and node ? 'source_url'
+       and ((select count(*) from jsonb_object_keys(node)) = 4 or node ? 'condition')
        and length(btrim(node->>'label')) between 8 and 280
        and node->>'stage' in (
          'education','training','experience','examination',
@@ -43,6 +44,7 @@ begin
 end
 $$;
 revoke all on function public.catalog_license_tree_valid(jsonb,integer) from public,anon,authenticated;
+grant execute on function public.catalog_license_tree_valid(jsonb,integer) to service_role;
 comment on function public.catalog_license_tree_valid(jsonb,integer) is
  'Reject unsupported or malformed nested AND/OR pathway expressions. Source domain and legal accuracy require separate reviewer checks.';
 
