@@ -2,6 +2,7 @@ enum TargetType {
   career,
   academicProgram,
   certification,
+  professionalLicense,
   licensureExam,
   standardizedExam,
   curriculumStandard;
@@ -14,6 +15,8 @@ enum TargetType {
         return TargetType.academicProgram;
       case 'certification':
         return TargetType.certification;
+      case 'professional_license':
+        return TargetType.professionalLicense;
       case 'licensure_exam':
         return TargetType.licensureExam;
       case 'standardized_exam':
@@ -33,6 +36,8 @@ enum TargetType {
         return 'academic_program';
       case TargetType.certification:
         return 'certification';
+      case TargetType.professionalLicense:
+        return 'professional_license';
       case TargetType.licensureExam:
         return 'licensure_exam';
       case TargetType.standardizedExam:
@@ -50,6 +55,8 @@ enum TargetType {
         return 'Academic Program';
       case TargetType.certification:
         return 'Certification';
+      case TargetType.professionalLicense:
+        return 'Professional License';
       case TargetType.licensureExam:
         return 'Licensure Exam';
       case TargetType.standardizedExam:
@@ -275,6 +282,10 @@ class LearningTarget {
 
   String get disambiguationTag {
     switch (targetType) {
+      case TargetType.professionalLicense:
+        return jurisdiction != null && jurisdiction!.trim().isNotEmpty
+            ? 'Professional License ($jurisdiction)'
+            : 'Professional License';
       case TargetType.licensureExam:
         return jurisdiction != null && jurisdiction!.trim().isNotEmpty
             ? 'Licensure Exam ($jurisdiction)'
