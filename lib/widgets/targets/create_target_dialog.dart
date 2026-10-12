@@ -334,7 +334,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                       borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                     ),
                   ),
-                  // Supported database target types, including real professional licenses.
+                  // Supported database target types, including real professional licenses. Catalog
                   // examples below update whenever the type changes.
                   items: [
                     for (final type in TargetType.values)
@@ -515,69 +515,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                     ),
                     validator: (value) {
                       final jurisdiction = (value ?? '').trim().toUpperCase();
-                      if (!RegExp(r'^[A-Z]{2}(-[A-Z0-9]{2,8})?
-                  values: providerSuggestions,
-                  keyPrefix: 'goal-provider-suggestion',
-                  onSelected: (value) => setState(() =>
-                      _providerController.text = value),
-                ),
-                const SizedBox(height: DesignTokens.space3),
-                TextFormField(
-                  key: const Key('goal-description'),
-                  controller: _descController,
-                  onChanged: (_) => setState(() {}),
-                  minLines: 2,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Description / Purpose (Optional)',
-                    hintText: 'Describe what you want to learn or achieve',
-                    prefixIcon: const Icon(Icons.notes_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                    ),
-                  ),
-                ),
-                _suggestionChips(
-                  heading: 'Purpose ideas from the catalog',
-                  values: descriptionSuggestions,
-                  keyPrefix: 'goal-description-suggestion',
-                  maxLabelLength: 72,
-                  onSelected: (value) => setState(() =>
-                      _descController.text = value),
-                ),
-                const SizedBox(height: DesignTokens.space3),
-                Text(
-                  'Your new goal is a private, editable draft. Selecting an official '
-                  'example does not mark your copy as official.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton.icon(
-          onPressed: _isLoading ? null : _submit,
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.check),
-          label: const Text('Create Goal'),
-        ),
-      ],
-    );
-  }
-}
-)
+                      if (!RegExp(r'^[A-Z]{2}(-[A-Z0-9]{2,8})?$')
                           .hasMatch(jurisdiction)) {
                         return 'Enter a jurisdiction code such as US-FL';
                       }
