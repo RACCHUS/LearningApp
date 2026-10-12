@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/learning_target.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A deliberately narrow issuer-verified destination. This is NOT a
@@ -45,6 +46,23 @@ class VerifiedDestination {
       popularityStatus: value['popularity_status'] as String,
       verifiedAt: DateTime.parse(value['verified_at'] as String),
     );
+  }
+
+  /// Professional licenses are deliberately excluded: the current goal
+  /// taxonomy does not have a professional_license type yet.
+  TargetType? get supportedPrivateGoalType {
+    switch (destinationType) {
+      case 'certification':
+        return TargetType.certification;
+      case 'licensure_exam':
+        return TargetType.licensureExam;
+      case 'standardized_exam':
+        return TargetType.standardizedExam;
+      case 'academic_program':
+        return TargetType.academicProgram;
+      default:
+        return null;
+    }
   }
 
   String get displayType {
