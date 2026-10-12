@@ -52,7 +52,7 @@ select throws_ok(
     '{"op":"all","children":[{"op":"step","label":"Complete approved education","stage":"education","source_url":"https://example.org/edu"},{"op":"step","label":"Complete background screening","stage":"background_screening","source_url":"https://example.org/check"}]}',
     'pending','published'
   )$fixture$,
-  '23514',null,'Draft or unreviewed pathways cannot be published');
+  'P0001',null,'Draft or unreviewed pathways cannot be published');
 
 select lives_ok(
   $fixture$insert into public.catalog_license_pathway_versions (
