@@ -65,7 +65,7 @@ begin
       and (new.target_type is distinct from d.destination_type
         or (d.destination_type='professional_license'
            and new.jurisdiction is distinct from d.jurisdiction)
-        or new.is_official or new.is_public)
+        or new.is_official)
   ) then
     raise exception 'Linked goal type, jurisdiction and private status must match reviewed destination';
   end if;
@@ -74,7 +74,7 @@ end $$;
 revoke all on function public.guard_destination_goal_target_identity()
   from public,anon,authenticated;
 create trigger trg_guard_destination_goal_target_identity
-  before update of target_type,jurisdiction,is_official,is_public
+  before update of target_type,jurisdiction,is_official
   on public.learning_targets
   for each row execute function public.guard_destination_goal_target_identity();
 
