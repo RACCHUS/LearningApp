@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_pwa/models/taxonomy/taxonomy.dart';
 import '../../providers/taxonomy_provider.dart';
 import '../../providers/verified_destinations_provider.dart';
@@ -638,6 +639,23 @@ class _TaxonomyExplorerScreenState
           ],
         ),
         isThreeLine: true,
+        onTap: () async {
+          try {
+            final launched = await launchUrl(destination.officialUrl,
+                mode: LaunchMode.externalApplication);
+            if (!launched) {
+              throw StateError('Cannot open issuer website');
+            }
+          } catch (_) {
+            await Clipboard.setData(
+                ClipboardData(text: destination.officialUrl.toString()));
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Could not open the issuer site; URL copied instead')),
+            );
+          }
+        },
         trailing: IconButton(
           tooltip: 'Copy official issuer link',
           icon: const Icon(Icons.copy_outlined),
