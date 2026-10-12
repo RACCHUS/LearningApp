@@ -34,7 +34,7 @@ def valid_url(value: str, namespace: str) -> bool:
     return (
         p.scheme == "https" and p.hostname in ALLOW[namespace]
         and p.username is None and p.password is None and not p.fragment
-        and not re.search(r"\\s", value)
+        and not any(ch.isspace() for ch in value)
     )
 
 def validate_payload(data: dict, candidates: dict) -> list[dict]:
@@ -56,7 +56,7 @@ def validate_payload(data: dict, candidates: dict) -> list[dict]:
         assert r["reviewed_on"] == data["reviewed_on"]
         assert len(r["verification_note"].strip()) >= 40
         assert 1 <= r["editorial_order"] <= 9999
-        assert valid_url(r["issuer_url"], ns) or (ns == "fl_bon" and valid_url(r["issuer_url"], ns))
+        assert valid_url(r["issuer_url"], ns)
         assert valid_url(r["official_url"], ns)
         if r["seed_candidate"]:
             assert identity not in existing
