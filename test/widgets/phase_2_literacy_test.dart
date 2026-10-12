@@ -72,8 +72,8 @@ void main() {
     test('each phonics item has letter name, pure phoneme sound, and 3 anchors per track', () {
       for (final item in foundationalPhonicsCatalog) {
         expect(item.letterName.isNotEmpty, isTrue);
-        expect(item.phonemeSound.startsWith('/'), isTrue);
-        expect(item.phonemeSound.endsWith('/'), isTrue);
+        expect(item.phonemeSound.isNotEmpty, isTrue);
+        expect(item.phonemeSound.contains('/'), isFalse);
         expect(item.adultAnchors.length, 3);
         expect(item.youthAnchors.length, 3);
 

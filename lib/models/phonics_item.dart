@@ -48,9 +48,9 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'A',
     letterName: 'Ay',
-    phonemeSound: '/æ/',
+    phonemeSound: 'ah',
     isVowel: true,
-    explanation: 'A makes the short /æ/ sound.',
+    explanation: 'A makes the short "ah" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Apple', emoji: '🍎', isCorrect: true),
       PhonicsAnchor(label: 'Door', emoji: '🚪', isCorrect: false),
@@ -65,8 +65,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'B',
     letterName: 'Bee',
-    phonemeSound: '/b/',
-    explanation: 'B makes the /b/ sound.',
+    phonemeSound: 'b',
+    explanation: 'B makes the "b" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Bus', emoji: '🚌', isCorrect: true),
       PhonicsAnchor(label: 'Key', emoji: '🔑', isCorrect: false),
@@ -81,8 +81,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'C',
     letterName: 'See',
-    phonemeSound: '/k/',
-    explanation: 'C makes the /k/ sound.',
+    phonemeSound: 'k',
+    explanation: 'C makes the "k" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Car', emoji: '🚗', isCorrect: true),
       PhonicsAnchor(label: 'Phone', emoji: '📱', isCorrect: false),
@@ -97,8 +97,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'D',
     letterName: 'Dee',
-    phonemeSound: '/d/',
-    explanation: 'D makes the /d/ sound.',
+    phonemeSound: 'd',
+    explanation: 'D makes the "d" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Door', emoji: '🚪', isCorrect: true),
       PhonicsAnchor(label: 'Cup', emoji: '☕', isCorrect: false),
@@ -113,9 +113,9 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'E',
     letterName: 'Ee',
-    phonemeSound: '/ɛ/',
+    phonemeSound: 'eh',
     isVowel: true,
-    explanation: 'E makes the short /ɛ/ sound.',
+    explanation: 'E makes the short "eh" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Egg', emoji: '🥚', isCorrect: true),
       PhonicsAnchor(label: 'Clock', emoji: '⏰', isCorrect: false),
@@ -130,8 +130,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'F',
     letterName: 'Ef',
-    phonemeSound: '/f/',
-    explanation: 'F makes the /f/ sound.',
+    phonemeSound: 'f',
+    explanation: 'F makes the "f" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Fork', emoji: '🍴', isCorrect: true),
       PhonicsAnchor(label: 'Box', emoji: '📦', isCorrect: false),
@@ -146,8 +146,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'G',
     letterName: 'Gee',
-    phonemeSound: '/ɡ/',
-    explanation: 'G makes the hard /ɡ/ sound.',
+    phonemeSound: 'g',
+    explanation: 'G makes the hard "g" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Gas pump', emoji: '⛽', isCorrect: true),
       PhonicsAnchor(label: 'Watch', emoji: '⌚', isCorrect: false),
@@ -162,8 +162,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'H',
     letterName: 'Aytch',
-    phonemeSound: '/h/',
-    explanation: 'H makes the /h/ sound.',
+    phonemeSound: 'h',
+    explanation: 'H makes the "h" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Hat', emoji: '🎩', isCorrect: true),
       PhonicsAnchor(label: 'Shoe', emoji: '👟', isCorrect: false),
@@ -178,9 +178,9 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'I',
     letterName: 'Eye',
-    phonemeSound: '/ɪ/',
+    phonemeSound: 'ih',
     isVowel: true,
-    explanation: 'I makes the short /ɪ/ sound.',
+    explanation: 'I makes the short "ih" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Ink pen', emoji: '✒️', isCorrect: true),
       PhonicsAnchor(label: 'Bag', emoji: '👜', isCorrect: false),
@@ -195,8 +195,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'J',
     letterName: 'Jay',
-    phonemeSound: '/dʒ/',
-    explanation: 'J makes the /dʒ/ sound.',
+    phonemeSound: 'j',
+    explanation: 'J makes the "j" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Jacket', emoji: '🧥', isCorrect: true),
       PhonicsAnchor(label: 'Book', emoji: '📖', isCorrect: false),
@@ -211,8 +211,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'K',
     letterName: 'Kay',
-    phonemeSound: '/k/',
-    explanation: 'K makes the /k/ sound.',
+    phonemeSound: 'k',
+    explanation: 'K makes the "k" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Key', emoji: '🔑', isCorrect: true),
       PhonicsAnchor(label: 'Lamp', emoji: '💡', isCorrect: false),
@@ -227,8 +227,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'L',
     letterName: 'El',
-    phonemeSound: '/l/',
-    explanation: 'L makes the /l/ sound.',
+    phonemeSound: 'l',
+    explanation: 'L makes the "l" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Lock', emoji: '🔒', isCorrect: true),
       PhonicsAnchor(label: 'Bed', emoji: '🛏️', isCorrect: false),
@@ -243,8 +243,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'M',
     letterName: 'Em',
-    phonemeSound: '/m/',
-    explanation: 'M makes the /m/ sound.',
+    phonemeSound: 'm',
+    explanation: 'M makes the "m" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Money', emoji: '💵', isCorrect: true),
       PhonicsAnchor(label: 'Car', emoji: '🚗', isCorrect: false),
@@ -259,8 +259,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'N',
     letterName: 'En',
-    phonemeSound: '/n/',
-    explanation: 'N makes the /n/ sound.',
+    phonemeSound: 'n',
+    explanation: 'N makes the "n" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Nail', emoji: '🔩', isCorrect: true),
       PhonicsAnchor(label: 'Cup', emoji: '🥤', isCorrect: false),
@@ -275,9 +275,9 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'O',
     letterName: 'Oh',
-    phonemeSound: '/ɒ/',
+    phonemeSound: 'ah',
     isVowel: true,
-    explanation: 'O makes the short /ɒ/ sound.',
+    explanation: 'O makes the short "ah" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'On/Off button', emoji: '🔘', isCorrect: true),
       PhonicsAnchor(label: 'Truck', emoji: '🚚', isCorrect: false),
@@ -292,8 +292,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'P',
     letterName: 'Pee',
-    phonemeSound: '/p/',
-    explanation: 'P makes the /p/ sound.',
+    phonemeSound: 'p',
+    explanation: 'P makes the "p" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Phone', emoji: '📱', isCorrect: true),
       PhonicsAnchor(label: 'Car', emoji: '🚗', isCorrect: false),
@@ -308,8 +308,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'Q',
     letterName: 'Cue',
-    phonemeSound: '/kw/',
-    explanation: 'Q makes the /kw/ sound.',
+    phonemeSound: 'kw',
+    explanation: 'Q makes the "kw" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Quarter coin', emoji: '🪙', isCorrect: true),
       PhonicsAnchor(label: 'Map', emoji: '🗺️', isCorrect: false),
@@ -324,8 +324,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'R',
     letterName: 'Ar',
-    phonemeSound: '/r/',
-    explanation: 'R makes the /r/ sound.',
+    phonemeSound: 'r',
+    explanation: 'R makes the "r" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Radio', emoji: '📻', isCorrect: true),
       PhonicsAnchor(label: 'Clock', emoji: '⏰', isCorrect: false),
@@ -340,8 +340,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'S',
     letterName: 'Ess',
-    phonemeSound: '/s/',
-    explanation: 'S makes the /s/ sound.',
+    phonemeSound: 's',
+    explanation: 'S makes the "s" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Stop sign', emoji: '🛑', isCorrect: true),
       PhonicsAnchor(label: 'Water', emoji: '💧', isCorrect: false),
@@ -356,8 +356,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'T',
     letterName: 'Tee',
-    phonemeSound: '/t/',
-    explanation: 'T makes the /t/ sound.',
+    phonemeSound: 't',
+    explanation: 'T makes the "t" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Truck', emoji: '🚚', isCorrect: true),
       PhonicsAnchor(label: 'Coffee', emoji: '☕', isCorrect: false),
@@ -372,9 +372,9 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'U',
     letterName: 'You',
-    phonemeSound: '/ʌ/',
+    phonemeSound: 'uh',
     isVowel: true,
-    explanation: 'U makes the short /ʌ/ sound.',
+    explanation: 'U makes the short "uh" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Umbrella', emoji: '☂️', isCorrect: true),
       PhonicsAnchor(label: 'Key', emoji: '🔑', isCorrect: false),
@@ -389,8 +389,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'V',
     letterName: 'Vee',
-    phonemeSound: '/v/',
-    explanation: 'V makes the /v/ sound.',
+    phonemeSound: 'v',
+    explanation: 'V makes the "v" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Van', emoji: '🚐', isCorrect: true),
       PhonicsAnchor(label: 'Cup', emoji: '🥤', isCorrect: false),
@@ -405,8 +405,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'W',
     letterName: 'Double-you',
-    phonemeSound: '/w/',
-    explanation: 'W makes the /w/ sound.',
+    phonemeSound: 'w',
+    explanation: 'W makes the "w" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Water bottle', emoji: '🧴', isCorrect: true),
       PhonicsAnchor(label: 'Bed', emoji: '🛏️', isCorrect: false),
@@ -421,8 +421,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'X',
     letterName: 'Ex',
-    phonemeSound: '/ks/',
-    explanation: 'X makes the /ks/ sound (as in box).',
+    phonemeSound: 'ks',
+    explanation: 'X makes the "ks" sound (as in box).',
     adultAnchors: [
       PhonicsAnchor(label: 'Exit sign', emoji: '🚪', isCorrect: true),
       PhonicsAnchor(label: 'Phone', emoji: '📱', isCorrect: false),
@@ -437,8 +437,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'Y',
     letterName: 'Why',
-    phonemeSound: '/j/',
-    explanation: 'Y makes the /j/ sound.',
+    phonemeSound: 'y',
+    explanation: 'Y makes the "y" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Yellow light', emoji: '🟡', isCorrect: true),
       PhonicsAnchor(label: 'Fork', emoji: '🍴', isCorrect: false),
@@ -453,8 +453,8 @@ final List<PhonicsItem> foundationalPhonicsCatalog = [
   const PhonicsItem(
     letter: 'Z',
     letterName: 'Zee',
-    phonemeSound: '/z/',
-    explanation: 'Z makes the /z/ sound.',
+    phonemeSound: 'z',
+    explanation: 'Z makes the "z" sound.',
     adultAnchors: [
       PhonicsAnchor(label: 'Zipper', emoji: '🤐', isCorrect: true),
       PhonicsAnchor(label: 'Hat', emoji: '🎩', isCorrect: false),

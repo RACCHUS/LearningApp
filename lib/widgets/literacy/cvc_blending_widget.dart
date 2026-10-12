@@ -294,7 +294,7 @@ class _CvcBlendingWidgetState extends ConsumerState<CvcBlendingWidget> {
             ),
             const SizedBox(height: DesignTokens.space1),
             Text(
-              sound,
+              '"$sound"',
               style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

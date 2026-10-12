@@ -126,7 +126,7 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Sound: ${widget.item.phonemeSound}',
+                              'Sound: "${widget.item.phonemeSound}"',
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -148,7 +148,7 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                       tooltip: 'Listen to sound',
                       onPressed: () {
                         ref.read(preReaderProvider.notifier).speak(
-                              'The letter ${widget.item.letter} makes the sound ${widget.item.phonemeSound}.',
+                              'The letter ${widget.item.letter} makes the ${widget.item.phonemeSound} sound.',
                             );
                       },
                     ),
@@ -159,7 +159,7 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                 const SizedBox(height: DesignTokens.space4),
 
                 Text(
-                  'Tap the picture that starts with ${widget.item.phonemeSound}:',
+                  'Tap the picture that starts with ${widget.item.letter}:',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

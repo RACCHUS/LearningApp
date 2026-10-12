@@ -125,7 +125,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('M'), findsOneWidget);
-      expect(find.text('Sound: /m/'), findsOneWidget);
+      expect(find.text('Sound: "m"'), findsOneWidget);
       expect(find.byKey(const Key('phonics-listen-sound-btn')), findsOneWidget);
 
       // Default adult anchors include 'Money'
