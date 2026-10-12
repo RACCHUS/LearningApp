@@ -1009,6 +1009,15 @@ class OfficialTaxonomySources {
   static const soc2010To2018RetrievalUrl =
       'https://web.archive.org/web/20250101032254if_/https://www.bls.gov/soc/2018/soc_2010_to_2018_crosswalk.xlsx';
 
+  // Exact BLS-published bytes are also mirrored at this immutable commit.
+  // SHA-256 and byte-length checks remain mandatory for every retrieval.
+  // BLS remains the canonical publisher in all provenance records.
+  static const fallbackRetrievalUrls = <String, List<String>>{
+    'soc_2010_to_2018_crosswalk.xlsx': <String>[
+      'https://raw.githubusercontent.com/theis188/us-jobs-data/c8d6ade6f007f5b3d546d6b4857b160fdd0405ce/soc_2010_to_2018_crosswalk.xlsx',
+    ],
+  };
+
   static const cipReleaseId = 'a1000000-0000-0000-0000-000000000001';
   static const socReleaseId = 'a1000000-0000-0000-0000-000000000002';
   static const onetReleaseId = 'a1000000-0000-0000-0000-000000000003';
