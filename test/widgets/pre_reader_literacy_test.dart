@@ -110,7 +110,7 @@ void main() {
   group('AudioPhonicsWidget', () {
     testWidgets('renders target letter, listen button, and track anchors',
         (tester) async {
-      final item = foundationalPhonicsCatalog.first; // Letter 'M'
+      final item = foundationalPhonicsCatalog.firstWhere((i) => i.letter == 'M');
 
       await tester.pumpWidget(
         ProviderScope(
@@ -139,7 +139,7 @@ void main() {
 
     testWidgets('displays youth anchors when youth track is active',
         (tester) async {
-      final item = foundationalPhonicsCatalog.first; // Letter 'M'
+      final item = foundationalPhonicsCatalog.firstWhere((i) => i.letter == 'M');
 
       await tester.pumpWidget(
         ProviderScope(

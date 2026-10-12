@@ -4,72 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
-/// A template stroke defined in normalized coordinates (0.0 to 1.0).
-class NormalizedStroke {
-  final List<Offset> points;
-  const NormalizedStroke(this.points);
-}
+import 'package:learning_pwa/models/letter_stroke_data.dart';
 
-/// Vector paths for foundational letters.
+/// Accessor for hand-verified penmanship stroke templates.
 class LetterStrokeTemplates {
-  static final Map<String, List<NormalizedStroke>> templates = {
-    'M': [
-      // Left vertical: bottom to top
-      const NormalizedStroke([Offset(0.2, 0.85), Offset(0.2, 0.15)]),
-      // Down to center
-      const NormalizedStroke([Offset(0.2, 0.15), Offset(0.5, 0.55)]),
-      // Up to right
-      const NormalizedStroke([Offset(0.5, 0.55), Offset(0.8, 0.15)]),
-      // Right vertical down
-      const NormalizedStroke([Offset(0.8, 0.15), Offset(0.8, 0.85)]),
-    ],
-    'A': [
-      // Left diagonal down
-      const NormalizedStroke([Offset(0.5, 0.15), Offset(0.2, 0.85)]),
-      // Right diagonal down
-      const NormalizedStroke([Offset(0.5, 0.15), Offset(0.8, 0.85)]),
-      // Crossbar left to right
-      const NormalizedStroke([Offset(0.32, 0.55), Offset(0.68, 0.55)]),
-    ],
-    'S': [
-      // Curving S shape
-      const NormalizedStroke([
-        Offset(0.75, 0.25),
-        Offset(0.5, 0.15),
-        Offset(0.3, 0.28),
-        Offset(0.5, 0.5),
-        Offset(0.7, 0.72),
-        Offset(0.45, 0.85),
-        Offset(0.25, 0.75),
-      ]),
-    ],
-    'T': [
-      // Top bar left to right
-      const NormalizedStroke([Offset(0.2, 0.18), Offset(0.8, 0.18)]),
-      // Stem top to bottom
-      const NormalizedStroke([Offset(0.5, 0.18), Offset(0.5, 0.85)]),
-    ],
-    'B': [
-      // Left vertical stem
-      const NormalizedStroke([Offset(0.25, 0.15), Offset(0.25, 0.85)]),
-      // Top curve
-      const NormalizedStroke([
-        Offset(0.25, 0.15),
-        Offset(0.65, 0.15),
-        Offset(0.75, 0.32),
-        Offset(0.65, 0.5),
-        Offset(0.25, 0.5),
-      ]),
-      // Bottom curve
-      const NormalizedStroke([
-        Offset(0.25, 0.5),
-        Offset(0.7, 0.5),
-        Offset(0.8, 0.68),
-        Offset(0.7, 0.85),
-        Offset(0.25, 0.85),
-      ]),
-    ],
-  };
+  static List<NormalizedStroke> getTemplate(String letter) {
+    return LetterStrokeData.forChar(letter) ?? [];
+  }
 }
 
 class LetterTracingCanvas extends ConsumerStatefulWidget {
@@ -129,8 +70,8 @@ class _LetterTracingCanvasState extends ConsumerState<LetterTracingCanvas>
   }
 
   void _evaluateCompletion(Size size) {
-    final template = LetterStrokeTemplates.templates[widget.letter];
-    if (template == null || _drawnStrokes.isEmpty) return;
+    final template = LetterStrokeTemplates.getTemplate(widget.letter);
+    if (template.isEmpty || _drawnStrokes.isEmpty) return;
 
     // Sample all points along template strokes in screen space
     final samplePoints = <Offset>[];
@@ -189,7 +130,7 @@ class _LetterTracingCanvasState extends ConsumerState<LetterTracingCanvas>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final template = LetterStrokeTemplates.templates[widget.letter] ?? [];
+    final template = LetterStrokeTemplates.getTemplate(widget.letter);
 
     return Stack(
       alignment: Alignment.topCenter,

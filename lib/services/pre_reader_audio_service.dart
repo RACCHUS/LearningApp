@@ -86,6 +86,14 @@ class PreReaderAudioService {
     await speak(text, track: track);
   }
 
+  /// Speaks the official letter name for spelling personal data on forms.
+  Future<void> speakLetterName(
+    String letter, {
+    PreReaderTrack track = PreReaderTrack.adult,
+  }) async {
+    await speak('Letter $letter.', track: track);
+  }
+
   /// Cancels any ongoing speech.
   Future<void> stop() async {
     try {
