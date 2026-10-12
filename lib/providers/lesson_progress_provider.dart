@@ -1,5 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/lesson_progress.dart' as progress_model;
+import '../screens/progress/progress_dashboard_screen.dart';
+import '../services/hive_service.dart';
+import 'next_action_provider.dart';
 
 /// Highest SM-2 repetition level treated as fully mastered.
 const int kMaxMasteryLevel = 6;
@@ -168,4 +173,57 @@ class ContinueLearningSuggestion {
     }
     return 'Just now';
   }
+}
+
+/// Toggle or set a lesson's completion state manually
+Future<void> toggleLessonCompletion(
+  WidgetRef ref, {
+  required String lessonId,
+  required bool currentCompleted,
+}) async {
+  final newCompleted = !currentCompleted;
+  final supabase = Supabase.instance.client;
+  final userId = supabase.auth.currentUser?.id;
+
+  final now = DateTime.now();
+  if (userId != null) {
+    try {
+      await supabase.from('user_progress').upsert({
+        'user_id': userId,
+        'lesson_id': lessonId,
+        'date': now.toIso8601String().split('T')[0],
+        'lesson_completed': newCompleted,
+        'questions_answered': newCompleted ? 1 : 0,
+        'correct_count': newCompleted ? 1 : 0,
+        'study_time_minutes': 0,
+        'is_synced': true,
+      });
+    } catch (e) {
+      debugPrint('⚠️ Failed to sync lesson progress to Supabase: $e');
+    }
+  }
+
+  try {
+    final hive = HiveService();
+    await hive.init();
+    final progress = progress_model.UserProgress(
+      id: '${userId ?? "local"}_${lessonId}_${now.millisecondsSinceEpoch}',
+      userId: userId ?? 'local',
+      lessonId: lessonId,
+      studyMode: progress_model.StudyMode.lesson,
+      date: now,
+      questionsAnswered: newCompleted ? 1 : 0,
+      correctCount: newCompleted ? 1 : 0,
+      lessonCompleted: newCompleted,
+      studyTimeSeconds: 0,
+      isSynced: false,
+    );
+    await hive.cacheProgress(progress);
+  } catch (e) {
+    debugPrint('⚠️ Failed to cache lesson progress in Hive: $e');
+  }
+
+  ref.invalidate(lessonProgressProvider(lessonId));
+  ref.invalidate(nextActionProvider);
+  ref.invalidate(dashboardProgressProvider);
 }

@@ -78,9 +78,8 @@ class _LessonCardState extends ConsumerState<LessonCard> {
           child: InkWell(
             borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
             onTap: widget.onTap ?? () => context.push('/lesson/${lesson.id}'),
-            child: Stack(
-              children: [
-                Row(
+            child: IntrinsicHeight(
+              child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Left accent stripe with progress overlay
@@ -98,10 +97,7 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                           ),
                         ),
                         // Progress fill on accent stripe
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
+                        Positioned.fill(
                           child: FractionallySizedBox(
                             heightFactor: progress,
                             alignment: Alignment.bottomCenter,
@@ -156,8 +152,43 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const SizedBox(width: DesignTokens.space2),
-                                _buildOverflowMenu(context, colorScheme),
+                                IconButton(
+                                  icon: Icon(
+                                    progress >= 1.0
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    size: 20,
+                                    color: progress >= 1.0
+                                        ? Colors.green
+                                        : colorScheme.onSurface
+                                            .withValues(alpha: 0.4),
+                                  ),
+                                  tooltip: progress >= 1.0
+                                      ? 'Mark as incomplete'
+                                      : 'Mark as completed',
+                                  onPressed: () async {
+                                    final isCompleted = progress >= 1.0;
+                                    await toggleLessonCompletion(
+                                      ref,
+                                      lessonId: lesson.id,
+                                      currentCompleted: isCompleted,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            isCompleted
+                                                ? 'Marked "${lesson.title}" as incomplete'
+                                                : 'Marked "${lesson.title}" as completed',
+                                          ),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                _buildOverflowMenu(
+                                    context, colorScheme, progress),
                               ],
                             ),
 
@@ -246,15 +277,15 @@ class _LessonCardState extends ConsumerState<LessonCard> {
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildOverflowMenu(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildOverflowMenu(
+      BuildContext context, ColorScheme colorScheme, double progress) {
     return SizedBox(
       width: 32,
       height: 32,
@@ -267,30 +298,79 @@ class _LessonCardState extends ConsumerState<LessonCard> {
         padding: EdgeInsets.zero,
         splashRadius: 16,
         tooltip: 'More options',
-        onSelected: (value) {
-          if (value == 'delete' && widget.onDelete != null) {
+        onSelected: (value) async {
+          if (value == 'toggle_complete') {
+            final isCompleted = progress >= 1.0;
+            await toggleLessonCompletion(
+              ref,
+              lessonId: widget.lesson.id,
+              currentCompleted: isCompleted,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isCompleted
+                        ? 'Marked "${widget.lesson.title}" as incomplete'
+                        : 'Marked "${widget.lesson.title}" as completed',
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } else if (value == 'delete' && widget.onDelete != null) {
             _showDeleteConfirmation(context);
           }
         },
-        itemBuilder: (context) => [
-          PopupMenuItem<String>(
-            value: 'delete',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.delete_outline,
-                  size: 20,
-                  color: colorScheme.error,
-                ),
-                const SizedBox(width: DesignTokens.space2),
-                Text(
-                  'Delete',
-                  style: TextStyle(color: colorScheme.error),
-                ),
-              ],
+        itemBuilder: (context) {
+          final isCompleted = progress >= 1.0;
+          return [
+            PopupMenuItem<String>(
+              value: 'toggle_complete',
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isCompleted
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    size: 20,
+                    color: isCompleted ? Colors.green : colorScheme.primary,
+                  ),
+                  const SizedBox(width: DesignTokens.space2),
+                  Expanded(
+                    child: Text(
+                      isCompleted
+                          ? 'Mark as incomplete'
+                          : 'Mark as completed',
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            if (widget.onDelete != null)
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(width: DesignTokens.space2),
+                    Expanded(
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ];
+        },
       ),
     );
   }

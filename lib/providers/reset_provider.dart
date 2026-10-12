@@ -5,6 +5,7 @@ import '../models/career_path.dart';
 import '../services/reset_service.dart';
 import 'skill_stats_provider.dart';
 import 'career_path_provider.dart';
+import 'learning_context_provider.dart';
 
 /// Service provider
 final resetServiceProvider = Provider<ResetService>((ref) {
@@ -168,6 +169,35 @@ class ResetNotifier extends StateNotifier<ResetState> {
       );
 
       // Refresh related providers
+      _ref.read(availableRevertsProvider.notifier).refresh();
+
+      return snapshotId;
+    } catch (e) {
+      state = state.copyWith(
+        isResetting: false,
+        error: e.toString(),
+      );
+      return null;
+    }
+  }
+
+  /// Reset a learning target/goal's progress
+  Future<String?> resetLearningTarget(String targetId, {String? reason}) async {
+    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+
+    try {
+      final snapshotId =
+          await _service.resetLearningTarget(targetId, reason: reason);
+
+      state = state.copyWith(
+        isResetting: false,
+        lastSnapshotId: snapshotId,
+        successMessage:
+            'Learning goal reset successfully. You can revert within 30 days.',
+      );
+
+      // Refresh related providers
+      _ref.read(learningContextsProvider.notifier).load();
       _ref.read(availableRevertsProvider.notifier).refresh();
 
       return snapshotId;

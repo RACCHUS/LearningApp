@@ -34,6 +34,7 @@ import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
+import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -151,6 +152,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/',
         name: 'home',
         redirect: (context, state) => '/learn',
+      ),
+
+      // Foundational literacy route for pre-readers
+      GoRoute(
+        path: '/literacy',
+        name: 'literacy',
+        builder: (context, state) => const FoundationalLiteracyScreen(),
       ),
 
       // Create lesson route

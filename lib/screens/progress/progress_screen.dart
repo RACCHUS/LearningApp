@@ -16,6 +16,7 @@ import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
 import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
+import 'package:learning_pwa/providers/reset_provider.dart';
 
 final contextScopeProvider = FutureProvider.family<ResolvedScope, LearningContext>((ref, context) async {
   return ref.watch(scopeResolverProvider).resolveScope(context);
@@ -160,6 +161,75 @@ class _CurrentContextSection extends ConsumerWidget {
                     ],
                   ),
                 ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'Goal options',
+                  onSelected: (val) async {
+                    if (val == 'archive') {
+                      await ref
+                          .read(learningContextsProvider.notifier)
+                          .archive(activeContext.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Paused "${activeContext.label}". Your progress is saved.',
+                            ),
+                          ),
+                        );
+                      }
+                    } else if (val == 'reset') {
+                      _showResetConfirmation(context, ref, activeContext);
+                    } else if (val == 'delete') {
+                      await ref
+                          .read(learningContextsProvider.notifier)
+                          .delete(activeContext.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Removed "${activeContext.label}".',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'archive',
+                      child: Row(
+                        children: [
+                          Icon(Icons.pause_circle_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Pause & Save Goal'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'reset',
+                      child: Row(
+                        children: [
+                          Icon(Icons.restart_alt, size: 18),
+                          SizedBox(width: 8),
+                          Text('Reset Goal Progress'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 18, color: theme.colorScheme.error),
+                          const SizedBox(width: 8),
+                          Text('Remove Goal',
+                              style: TextStyle(color: theme.colorScheme.error)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -216,6 +286,54 @@ class _CurrentContextSection extends ConsumerWidget {
       ],
     );
   }
+
+  void _showResetConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    LearningContext activeContext,
+  ) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Reset Goal Progress'),
+          ],
+        ),
+        content: Text(
+          'This will reset your progress in "${activeContext.label}" back to the beginning.\n\nA safety snapshot will be created so you can revert this reset within 30 days.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Reset Goal'),
+          ),
+        ],
+      ),
+    ).then((confirmed) async {
+      if (confirmed == true) {
+        await ref
+            .read(resetProvider.notifier)
+            .resetLearningTarget(activeContext.rootId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Goal reset! You can revert anytime within 30 days in Reset Center.',
+              ),
+            ),
+          );
+        }
+      }
+    });
+  }
 }
 
 class _StatColumn extends StatelessWidget {
@@ -248,36 +366,80 @@ class _StatColumn extends StatelessWidget {
   }
 }
 
-class _NoActiveContextCard extends StatelessWidget {
+class _NoActiveContextCard extends ConsumerWidget {
   const _NoActiveContextCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.space5),
-        child: Column(
-          children: [
-            const Icon(Icons.track_changes_outlined, size: 40),
-            const SizedBox(height: DesignTokens.space3),
-            Text(
-              'No Active Learning Context',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+    final archived = ref.watch(learningContextsProvider).archivedContexts;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(DesignTokens.space5),
+            child: Column(
+              children: [
+                const Icon(Icons.track_changes_outlined, size: 40),
+                const SizedBox(height: DesignTokens.space3),
+                Text(
+                  'No Active Learning Context',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: DesignTokens.space2),
+                Text(
+                  'Select an active target, career, or exam from the Learn screen to view scoped knowledge readiness.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: DesignTokens.space2),
-            Text(
-              'Select an active target, career, or exam from the Learn screen to view scoped knowledge readiness.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        if (archived.isNotEmpty) ...[
+          const SizedBox(height: DesignTokens.space3),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(DesignTokens.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Paused & Completed Goals',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: DesignTokens.space2),
+                  for (final c in archived)
+                    ListTile(
+                      leading: Text(
+                        c.emoji ?? '🎯',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      title: Text(c.label),
+                      subtitle: const Text('Saved where you left off'),
+                      trailing: FilledButton.tonal(
+                        child: const Text('Resume'),
+                        onPressed: () async {
+                          await ref
+                              .read(learningContextsProvider.notifier)
+                              .unarchive(c.id);
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

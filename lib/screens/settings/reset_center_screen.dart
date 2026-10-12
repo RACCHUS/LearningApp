@@ -93,6 +93,15 @@ class ResetCenterScreen extends ConsumerWidget {
           const SizedBox(height: 8),
 
           _ResetOptionCard(
+            icon: Icons.track_changes,
+            title: 'Reset a Learning Goal',
+            description:
+                'Reset all progress for a specific learning goal, career, or certification.',
+            onTap: () => _showResetTargetDialog(context, ref),
+          ),
+          const SizedBox(height: 8),
+
+          _ResetOptionCard(
             icon: Icons.restart_alt,
             title: 'Reset All Progress',
             description:
@@ -226,6 +235,32 @@ class ResetCenterScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Career path reset! You can revert within 30 days.')),
+        );
+        ref.invalidate(availableRevertsProvider);
+      }
+    }
+  }
+
+  Future<void> _showResetTargetDialog(
+      BuildContext context, WidgetRef ref) async {
+    final targetId = await showLearningTargetPicker(context);
+    if (targetId == null || !context.mounted) return;
+
+    final confirmed = await _showResetConfirmation(
+      context,
+      title: 'Reset Learning Goal',
+      message:
+          'All progress for this learning goal and its mapped lessons will be reset back to the beginning.',
+    );
+
+    if (confirmed == true) {
+      await ref.read(resetProvider.notifier).resetLearningTarget(targetId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Learning goal reset! You can revert within 30 days.'),
+          ),
         );
         ref.invalidate(availableRevertsProvider);
       }
@@ -536,6 +571,8 @@ class _RevertCard extends ConsumerWidget {
         return Icons.school;
       case SnapshotType.fullReset:
         return Icons.restart_alt;
+      case SnapshotType.targetReset:
+        return Icons.track_changes;
     }
   }
 
@@ -549,6 +586,8 @@ class _RevertCard extends ConsumerWidget {
         return 'Course Reset';
       case SnapshotType.fullReset:
         return 'Full Reset';
+      case SnapshotType.targetReset:
+        return 'Learning Goal Reset';
     }
   }
 

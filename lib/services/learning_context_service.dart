@@ -27,6 +27,12 @@ class LearningContextService {
         .toList();
   }
 
+  List<LearningContext> archived({required String userId}) {
+    return _contexts.values
+        .where((c) => c.userId == userId && c.isArchived)
+        .toList();
+  }
+
   LearningContext? byId(String id) => _contexts.get(id);
 
   /// Creates a context, or returns the existing one for the same root.
@@ -122,6 +128,11 @@ class LearningContextService {
     final existing = _contexts.get(contextId);
     if (existing == null || label.trim().isEmpty) return;
     await _contexts.put(contextId, existing.copyWith(label: label.trim()));
+  }
+
+  Future<void> deleteContext(String contextId) async {
+    await _pointers.delete(contextId);
+    await _contexts.delete(contextId);
   }
 
   // -- Resume pointers ------------------------------------------------------

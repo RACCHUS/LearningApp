@@ -1,161 +1,108 @@
-# 🚀 Learning PWA Deployment Guide
+# 🚀 LearningApp Production Deployment Guide
 
-## Build Status: ✅ Complete
-**Build Location:** `build/web/`  
-**Build Type:** Production Release  
-**Generated:** April 3, 2026
+This guide details the canonical, production deployment workflow for **LearningApp**.
 
-## 📁 Build Contents
-- `index.html` - Main app entry point
-- `main.dart.js` - Compiled Flutter app (56.7s compile time)
-- `assets/` - App assets and resources
-- `canvaskit/` - Flutter web renderer
-- `firebase-messaging-sw.js` - Firebase service worker
-- `flutter_service_worker.js` - Flutter PWA service worker
-- `manifest.json` - PWA manifest
-- Icons and other static assets
+**Architecture:** Flutter Progressive Web App (PWA) on **Firebase Hosting** backed by **Supabase** (PostgreSQL, Auth, Storage, and Row Level Security).
 
-## 🌐 Deployment Options
+---
 
-### Option 1: Firebase Hosting (Recommended)
-**Best for:** Production deployment with CDN, HTTPS, and Firebase integration
+## 📋 Pre-Deployment Checklist
+
+Before building or deploying the client web bundle:
+
+1. **Verify Static Analysis & Automated Tests:**
+   ```bash
+   dart analyze
+   flutter test
+   ```
+2. **Apply Pending Database Migrations to Hosted Supabase:**
+   - Any new migration files in `supabase/migrations/` (such as `20261009000005_learning_target_catalog_provenance.sql`) must be applied to the remote Supabase project **before** deploying the web client that depends on them.
+   - See [Hosted Migration Rollout](docs/HOSTED_MIGRATION_ROLLOUT.md) for execution details.
+3. **Verify Environment Variables:**
+   - Ensure production `.env` contains valid public keys:
+     - `SUPABASE_URL`
+     - `SUPABASE_ANON_KEY`
+   - *Never* place `SUPABASE_SERVICE_ROLE_KEY` or secret credentials into `.env` or client bundles.
+
+---
+
+## 🛠️ Step-by-Step Deployment Workflow
+
+### Step 1: Compile the Production Release Web Build
+
+Run the Flutter release compiler:
 
 ```bash
-# Install Firebase CLI (if not already installed)
-npm install -g firebase-tools
-
-# Login to Firebase
-firebase login
-
-# Initialize Firebase Hosting in your project
-firebase init hosting
-
-# When prompted:
-# - Select your Firebase project
-# - Set public directory to: build/web
-# - Configure as single-page app: Yes
-# - Don't overwrite index.html
-
-# Deploy to Firebase Hosting
-firebase deploy --only hosting
+flutter build web --release
 ```
 
-### Option 2: GitHub Pages
-**Best for:** Free hosting with automatic deployments
+*Output Directory:* `build/web/`  
+*Contents:*
+- `index.html` — HTML5 entrypoint with PWA shell
+- `main.dart.js` / `flutter_bootstrap.js` — Compiled, tree-shaken Dart web bundle
+- `flutter_service_worker.js` — Offline cache manager
+- `manifest.json` — PWA installation metadata and icons
+- `assets/` — Application images, fonts, and data catalogs
 
-1. Create a new repository on GitHub
-2. Push your code to GitHub
-3. Copy build/web contents to a `gh-pages` branch
-4. Enable GitHub Pages in repository settings
+---
 
-### Option 3: Netlify
-**Best for:** Easy drag-and-drop deployment
+### Step 2: Verify the Build Locally (Optional Smoke Test)
 
-1. Go to [netlify.com](https://netlify.com)
-2. Sign up/Login
-3. Drag the `build/web` folder to Netlify
-4. Your app will be live instantly
-
-### Option 4: Vercel
-**Best for:** Performance-optimized hosting
+Before pushing to production, serve the compiled bundle locally to verify headers and offline caching:
 
 ```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy from build/web directory
-cd build/web
-vercel --prod
-```
-
-### Option 5: Local Testing
-**For testing before deployment:**
-
-```bash
-# Serve locally on port 8080
+# Using Python
 cd build/web
 python -m http.server 8080
-# OR
-npx serve -s . -p 8080
+
+# OR using Firebase local emulator
+firebase emulators:start --only hosting
 ```
 
-## 🔧 Firebase Hosting Setup (Detailed)
+Open `http://localhost:8080` in Chrome:
+- Check DevTools Console for missing asset 404s or unhandled exceptions.
+- Verify Network calls connect to the Supabase endpoint.
 
-Since your app uses Firebase, this is the recommended option:
+---
 
-### Step 1: Initialize Firebase Hosting
+### Step 3: Deploy to Firebase Hosting
+
+Deploy the production build using the Firebase CLI:
+
 ```bash
-firebase init hosting
-```
+# Ensure you are logged into Firebase
+firebase login
 
-### Step 2: Configure firebase.json
-```json
-{
-  "hosting": {
-    "public": "build/web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/service-worker.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### Step 3: Deploy
-```bash
+# Deploy directly to Firebase Hosting
 firebase deploy --only hosting
 ```
 
-## 📱 PWA Features Included
-- ✅ Service Worker for offline functionality
-- ✅ Web App Manifest for installability
-- ✅ Firebase messaging for push notifications
-- ✅ Responsive design for all devices
-- ✅ Tree-shaken assets for optimal performance
+*Target Project:* `learningpwa-928be` (configured in `.firebaserc`)  
+*Hosting Config:* Defined in `firebase.json` with cache-control headers on `flutter_service_worker.js`, `index.html`, and `version.json`.
 
-## 🎯 Performance Optimizations Applied
-- **Font Tree-Shaking:** CupertinoIcons reduced by 99.4%
-- **Icon Optimization:** MaterialIcons reduced by 98.8%
-- **Code Splitting:** Optimized JavaScript bundles
-- **Asset Compression:** Minimized file sizes
+---
 
-## 🔐 Security Notes
-- Ensure your Firebase configuration is properly secured
-- Review your Supabase RLS policies
-- Check CORS settings for your domain
-- Verify API keys are properly restricted
+## 📱 PWA & Caching Verification
 
-## 🌍 Post-Deployment Steps
+Once the deployment completes:
 
-1. **Test the deployment** on multiple devices
-2. **Verify Firebase integration** works in production
-3. **Test PWA installation** on mobile devices
-4. **Check offline functionality** with service worker
-5. **Validate push notifications** if enabled
-6. **Monitor performance** with Firebase Analytics
+1. **Cache Control Verification:**
+   - `flutter_service_worker.js` and `index.html` are configured with `Cache-Control: no-cache, no-store, must-revalidate` to guarantee learners receive new app versions immediately on reload.
+2. **Offline Support:**
+   - Service worker caches core assets for offline usage.
+3. **PWA Installability:**
+   - Verify the install prompt appears on mobile and desktop Chrome ("Install LearningApp").
+4. **Supabase Connectivity:**
+   - Test user login, target browsing, and lesson progress sync in production.
 
-## 📊 Expected Performance
-- **First Contentful Paint:** < 1.5s
-- **Largest Contentful Paint:** < 2.5s
-- **Time to Interactive:** < 3.5s
-- **Cumulative Layout Shift:** < 0.1
+---
 
-Your Learning PWA is now ready for production deployment! 🎉
+## 🔄 Rollback Procedure
+
+If a production defect is discovered:
+
+```bash
+# Roll back to previous Firebase Hosting release via Firebase CLI
+firebase hosting:clone learningpwa-928be:previous-release learningpwa-928be:live
+```
+Or open the [Firebase Console](https://console.firebase.google.com/) $\rightarrow$ **Hosting** $\rightarrow$ select the previous release and click **Rollback**.

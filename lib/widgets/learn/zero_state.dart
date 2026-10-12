@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_entry_banner.dart';
 import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 
 /// Calm, restrained First-Run & Selection Surface.
@@ -74,6 +75,10 @@ class LearnZeroState extends StatelessWidget {
                 onPressed: () => context.go('/library'),
                 child: const Text('Explore library →'),
               ),
+              const SizedBox(height: DesignTokens.space5),
+              const Divider(),
+              const SizedBox(height: DesignTokens.space4),
+              const PreReaderEntryBanner(),
             ],
           ),
         ),
@@ -133,6 +138,10 @@ class LearnZeroState extends StatelessWidget {
               onPressed: () => CreateTargetDialog.show(context),
               child: const Text('Create your own →'),
             ),
+            const SizedBox(height: DesignTokens.space5),
+            const Divider(),
+            const SizedBox(height: DesignTokens.space4),
+            const PreReaderEntryBanner(),
           ],
         ),
       ),

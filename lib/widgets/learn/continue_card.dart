@@ -60,6 +60,19 @@ class ContinueCard extends ConsumerWidget {
             ),
           ],
         ),
+        if (action is ContextComplete && activeContext != null) ...[
+          const SizedBox(height: DesignTokens.space2),
+          TextButton.icon(
+            key: const Key('learn-archive-goal-action'),
+            icon: const Icon(Icons.archive_outlined, size: 18),
+            label: const Text('Archive completed goal'),
+            onPressed: () async {
+              await ref
+                  .read(learningContextsProvider.notifier)
+                  .archive(activeContext.id);
+            },
+          ),
+        ],
       ],
     );
   }

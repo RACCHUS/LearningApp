@@ -256,5 +256,61 @@ void main() {
       await service.setPinned(c.id, sortOrder: 0);
       expect(service.byId(c.id)!.isPinned, isTrue);
     });
+
+    test('archived() returns only archived contexts and preserves progress pointer', () async {
+      final c = await service.createOrGet(
+        userId: 'u1',
+        label: 'Career Goal',
+        rootType: ContextRootType.target,
+        rootId: 'target-1',
+      );
+
+      final pointer = ResumePointer(
+        contextId: c.id,
+        kind: ResumableKind.lesson,
+        activityId: 'lesson-42',
+        updatedAt: DateTime.now(),
+      );
+      await service.saveResume(pointer);
+
+      // Archive / pause the goal
+      await service.setArchived(c.id, archived: true);
+
+      expect(service.all(userId: 'u1').length, 0);
+      expect(service.archived(userId: 'u1').length, 1);
+      expect(service.archived(userId: 'u1').first.id, c.id);
+
+      // Verify resume pointer is preserved where learner left off
+      final savedPointer = service.resumeFor(c.id);
+      expect(savedPointer, isNotNull);
+      expect(savedPointer!.activityId, 'lesson-42');
+
+      // Unarchive and verify pointer is still intact
+      await service.setArchived(c.id, archived: false);
+      expect(service.all(userId: 'u1').length, 1);
+      expect(service.resumeFor(c.id)?.activityId, 'lesson-42');
+    });
+
+    test('deleteContext removes both the context and its resume pointer', () async {
+      final c = await service.createOrGet(
+        userId: 'u1',
+        label: 'Mistaken Goal',
+        rootType: ContextRootType.target,
+        rootId: 'mistake-1',
+      );
+
+      await service.saveResume(ResumePointer(
+        contextId: c.id,
+        kind: ResumableKind.lesson,
+        activityId: 'lesson-1',
+        updatedAt: DateTime.now(),
+      ));
+
+      await service.deleteContext(c.id);
+
+      expect(service.byId(c.id), isNull);
+      expect(service.resumeFor(c.id), isNull);
+      expect(service.all(userId: 'u1', includeArchived: true), isEmpty);
+    });
   });
 }

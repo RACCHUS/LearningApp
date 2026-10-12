@@ -78,6 +78,8 @@ class UserDataSnapshot {
         return 'Career path reset: $target';
       case SnapshotType.courseReset:
         return 'Course reset: $target';
+      case SnapshotType.targetReset:
+        return 'Goal reset: $target';
       case SnapshotType.fullReset:
         return 'Full progress reset';
     }
@@ -125,6 +127,7 @@ enum SnapshotType {
   skillReset('skill_reset', 'Skill Reset', '🎯'),
   careerReset('career_reset', 'Career Reset', '🛤️'),
   courseReset('course_reset', 'Course Reset', '📚'),
+  targetReset('target_reset', 'Goal Reset', '🎯'),
   fullReset('full_reset', 'Full Reset', '💥');
 
   final String value;

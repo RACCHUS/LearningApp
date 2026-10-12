@@ -33,4 +33,6 @@ Thumbs.db
 # MCP / Playwright artifacts and screenshots
 .playwright-mcp/
 /*.png
-screenshot-*.png
+screenshot-*.png
+test_hive/
+
