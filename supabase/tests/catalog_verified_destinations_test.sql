@@ -51,7 +51,7 @@ select is(
  where source_namespace='pgfixture' and source_key='approved-test'),
  'not_verified','Published link does not claim that exam eligibility was reviewed');
 
-update public.catalog_intake_candidates set review_status='rejected'
+update public.catalog_intake_candidates set review_status='rejected',publication_status='retired'
 where source_namespace='pgfixture' and source_key='approved-test';
 
 select is(
