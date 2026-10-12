@@ -1,0 +1,25 @@
+name: Probe Official IPEDS and BLS Demand Sources
+on:
+  push:
+    branches:
+      - feat/catalog-p1-official-demand-evidence
+    paths:
+      - tool/catalog_p1_source_probe.py
+      - .github/workflows/catalog-p1-source-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'openpyxl==3.1.5'
+      - name: Probe official downloadable releases and print schema only
+        run: python tool/catalog_p1_source_probe.py
