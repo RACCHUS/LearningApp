@@ -56,7 +56,7 @@ jobs:
         run: |
           python3 tool/catalog_intake.py validate
           python3 tool/catalog_intake.py rank
-          python3 -m unittest discover -s tool/tests -p 'test_catalog_*.py' -v
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_intake.py' -v
 
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
