@@ -75,8 +75,10 @@ class OfficialDemandTests(unittest.TestCase):
         self.assertEqual(parsed[0]["period"],"2024-2025")
 
     def test_ipeds_no_unchecked_archive_member(self):
+        empty=io.BytesIO()
+        with zipfile.ZipFile(empty,"w") as z: z.writestr("unrelated.csv","x,y\n1,2")
         with self.assertRaisesRegex(ValueError,"exactly one C2025_A"):
-            mod.parse_ipeds(b"PK"+b"bad",mod.IPEDS_INFO)
+            mod.parse_ipeds(empty.getvalue(),mod.IPEDS_INFO)
 
     def test_wrong_project_blocks_live_import(self):
         with self.assertRaisesRegex(ValueError,"Wrong target project"):
