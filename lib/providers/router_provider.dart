@@ -160,7 +160,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/literacy',
         name: 'literacy',
-        builder: (context, state) => const FoundationalLiteracyScreen(),
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'] ??
+              state.uri.queryParameters['section'];
+          LiteracyHubSection? initialSection;
+          if (tab == 'stories') {
+            initialSection = LiteracyHubSection.stories;
+          } else if (tab == 'diagnostic' || tab == 'placement') {
+            initialSection = LiteracyHubSection.diagnostic;
+          } else if (tab == 'blending' || tab == 'cvc') {
+            initialSection = LiteracyHubSection.blending;
+          } else if (tab == 'survival') {
+            initialSection = LiteracyHubSection.survival;
+          } else if (tab == 'id' || tab == 'personal') {
+            initialSection = LiteracyHubSection.personalId;
+          }
+          return FoundationalLiteracyScreen(initialSection: initialSection);
+        },
       ),
 
       // High-stakes US life milestones route (USCIS 2025, Florida DMV, GED Bridge)

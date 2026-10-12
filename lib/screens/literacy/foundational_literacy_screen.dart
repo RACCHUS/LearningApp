@@ -11,16 +11,23 @@ import 'package:learning_pwa/widgets/literacy/letter_tracing_canvas.dart';
 import 'package:learning_pwa/widgets/literacy/personal_id_form_widget.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_track_picker_dialog.dart';
 import 'package:learning_pwa/widgets/literacy/survival_words_widget.dart';
+import 'package:learning_pwa/widgets/literacy/karaoke_story_reader_widget.dart';
+import 'package:learning_pwa/widgets/literacy/oral_diagnostic_widget.dart';
+import 'package:learning_pwa/widgets/literacy/caseworker_setup_dialog.dart';
 
 enum LiteracyHubSection {
   letters,
   blending,
   survival,
   personalId,
+  stories,
+  diagnostic,
 }
 
 class FoundationalLiteracyScreen extends ConsumerStatefulWidget {
-  const FoundationalLiteracyScreen({super.key});
+  final LiteracyHubSection? initialSection;
+
+  const FoundationalLiteracyScreen({super.key, this.initialSection});
 
   @override
   ConsumerState<FoundationalLiteracyScreen> createState() =>
@@ -36,6 +43,9 @@ class _FoundationalLiteracyScreenState
   @override
   void initState() {
     super.initState();
+    if (widget.initialSection != null) {
+      _activeSection = widget.initialSection!;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _announceCurrentActivity();
     });
@@ -69,6 +79,16 @@ class _FoundationalLiteracyScreenState
       case LiteracyHubSection.personalId:
         notifier.speak(
           'My Name and Info. Practice writing and orally spelling your own personal information.',
+        );
+        break;
+      case LiteracyHubSection.stories:
+        notifier.speak(
+          'Connected Stories. Read along line by line with karaoke highlighting, or tap any word to hear it pronounced.',
+        );
+        break;
+      case LiteracyHubSection.diagnostic:
+        notifier.speak(
+          'Placement Check. Answer three quick visual questions to find your personalized starting point.',
         );
         break;
     }
@@ -108,6 +128,12 @@ class _FoundationalLiteracyScreenState
           ],
         ),
         actions: [
+          IconButton(
+            key: const Key('literacy-caseworker-btn'),
+            tooltip: 'Caseworker & Tutor Setup',
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () => CaseworkerSetupDialog.show(context),
+          ),
           IconButton(
             tooltip: 'Switch between Adult and Youth tracks',
             icon: const Icon(Icons.swap_horiz),
@@ -157,6 +183,18 @@ class _FoundationalLiteracyScreenState
                     _buildHubNavChip(
                       label: '📝 My Name & Info',
                       section: LiteracyHubSection.personalId,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(width: DesignTokens.space2),
+                    _buildHubNavChip(
+                      label: '📖 Stories',
+                      section: LiteracyHubSection.stories,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(width: DesignTokens.space2),
+                    _buildHubNavChip(
+                      label: '🎯 Placement Check',
+                      section: LiteracyHubSection.diagnostic,
                       colorScheme: colorScheme,
                     ),
                   ],
@@ -260,6 +298,10 @@ class _FoundationalLiteracyScreenState
                 const SurvivalWordsWidget(),
               ] else if (_activeSection == LiteracyHubSection.personalId) ...[
                 const PersonalIdFormWidget(),
+              ] else if (_activeSection == LiteracyHubSection.stories) ...[
+                const KaraokeStoryReaderWidget(),
+              ] else if (_activeSection == LiteracyHubSection.diagnostic) ...[
+                const OralDiagnosticWidget(),
               ],
 
               const SizedBox(height: DesignTokens.space5),
