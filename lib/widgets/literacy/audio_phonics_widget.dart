@@ -42,10 +42,22 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(AudioPhonicsWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.letter != widget.item.letter) {
+      setState(() {
+        _selectedLabel = null;
+        _isSuccess = false;
+      });
+      _announcePrompt();
+    }
+  }
+
   void _announcePrompt() {
     final notifier = ref.read(preReaderProvider.notifier);
     notifier.speak(
-      'Listen to the sound: ${widget.item.phonemeSound}. Which picture starts with ${widget.item.phonemeSound}?',
+      'The letter ${widget.item.letter} makes the "${widget.item.phonemeSound}" sound. Tap the picture that starts with ${widget.item.letter}!',
     );
   }
 
@@ -204,9 +216,11 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                       children: anchors.map((anchor) {
                         final isSelected = _selectedLabel == anchor.label;
                         final isCorrectCard = isSelected && anchor.isCorrect;
+                        final isRevealed =
+                            (_isSuccess && anchor.isCorrect) || isCorrectCard;
 
                         return SizedBox(
-                          width: isNarrow ? (constraints.maxWidth - 20) / 2 : 120,
+                          width: isNarrow ? (constraints.maxWidth - 20) / 2 : 124,
                           child: Material(
                             color: isCorrectCard
                                 ? Colors.green.withValues(alpha: 0.15)
@@ -217,38 +231,104 @@ class _AudioPhonicsWidgetState extends ConsumerState<AudioPhonicsWidget> {
                               side: BorderSide(
                                 color: isCorrectCard
                                     ? Colors.green
-                                    : (isSelected
-                                        ? colorScheme.primary
+                                    : (isSelected && !anchor.isCorrect
+                                        ? colorScheme.error
                                         : colorScheme.outlineVariant),
                                 width: isSelected ? 2 : 1,
                               ),
                             ),
                             child: InkWell(
+                              key: Key('anchor-card-${anchor.label}'),
                               borderRadius:
                                   BorderRadius.circular(DesignTokens.radiusLg),
                               onTap: () => _onCardTapped(anchor),
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.all(DesignTokens.space4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: DesignTokens.space2,
+                                  vertical: DesignTokens.space2,
+                                ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    Align(
+                                      alignment: Alignment.topRight,
+                                      child: IconButton(
+                                        key: Key('anchor-listen-${anchor.label}'),
+                                        icon: const Icon(Icons.volume_up, size: 20),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 28,
+                                          minHeight: 28,
+                                        ),
+                                        tooltip: 'Hear "${anchor.label}"',
+                                        onPressed: () {
+                                          ref
+                                              .read(preReaderProvider.notifier)
+                                              .speak(anchor.label);
+                                        },
+                                      ),
+                                    ),
                                     Text(
                                       anchor.emoji,
                                       style: const TextStyle(fontSize: 44),
                                     ),
                                     const SizedBox(height: DesignTokens.space2),
-                                    Text(
-                                      anchor.label,
-                                      style: theme.textTheme.labelLarge
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: isCorrectCard
-                                            ? Colors.green
-                                            : colorScheme.onSurface,
+                                    if (isRevealed)
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.check_circle,
+                                              size: 15, color: Colors.green),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              anchor.label,
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme
+                                              .surfaceContainerHighest
+                                              .withValues(alpha: 0.6),
+                                          borderRadius: BorderRadius.circular(
+                                              DesignTokens.radiusSm),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.touch_app,
+                                              size: 13,
+                                              color: colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'Tap',
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      textAlign: TextAlign.center,
-                                    ),
+                                    const SizedBox(height: DesignTokens.space1),
                                   ],
                                 ),
                               ),

@@ -172,13 +172,16 @@ void main() {
       expect(find.text('Sound: "m"'), findsOneWidget);
       expect(find.byKey(const Key('phonics-listen-sound-btn')), findsOneWidget);
 
-      // Default adult anchors include 'Money'
-      expect(find.text('Money'), findsOneWidget);
+      // Default adult anchors include cash emoji '💵'
       expect(find.text('💵'), findsOneWidget);
+      expect(find.byKey(const Key('anchor-card-Money')), findsOneWidget);
 
-      // Tap correct anchor
-      await tester.tap(find.text('Money'));
+      // Tap correct anchor card
+      await tester.tap(find.byKey(const Key('anchor-card-Money')));
       await tester.pumpAndSettle();
+
+      // Word 'Money' is revealed upon matching
+      expect(find.text('Money'), findsOneWidget);
     });
 
     testWidgets('displays youth anchors when youth track is active',
@@ -205,9 +208,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Youth anchors include 'Monkey'
-      expect(find.text('Monkey'), findsOneWidget);
+      // Youth anchors include '🐵'
       expect(find.text('🐵'), findsOneWidget);
+      expect(find.byKey(const Key('anchor-card-Monkey')), findsOneWidget);
+
+      // Tap youth anchor card
+      await tester.tap(find.byKey(const Key('anchor-card-Monkey')));
+      await tester.pumpAndSettle();
+
+      // Word 'Monkey' is revealed upon matching
+      expect(find.text('Monkey'), findsOneWidget);
     });
   });
 
@@ -286,23 +296,33 @@ void main() {
         isTrue,
       );
 
-      // Tap an incorrect anchor (e.g., Hammer or Door)
-      final wrongAnchor = find.text('Hammer');
-      if (wrongAnchor.evaluate().isNotEmpty) {
-        await tester.tap(wrongAnchor);
+      // Listen to Hammer using individual anchor speaker
+      final hammerSpeaker = find.byKey(const Key('anchor-listen-Hammer'));
+      if (hammerSpeaker.evaluate().isNotEmpty) {
+        await tester.tap(hammerSpeaker);
+        await tester.pumpAndSettle();
+        expect(fakeAudio.spoken.contains('Hammer'), isTrue);
+      }
+
+      // Tap an incorrect anchor card (Hammer)
+      final wrongCard = find.byKey(const Key('anchor-card-Hammer'));
+      if (wrongCard.evaluate().isNotEmpty) {
+        await tester.tap(wrongCard);
         await tester.pumpAndSettle();
         expect(
-          fakeAudio.spoken.any((s) => s.contains('Hammer does not start with A. Tap the picture that starts with A!')),
+          fakeAudio.spoken.any((s) => s.contains('Hammer does not start with A')),
           isTrue,
         );
       }
 
-      // Tap correct anchor (Apple)
-      final correctAnchor = find.text('Apple');
-      expect(correctAnchor, findsOneWidget);
-      await tester.tap(correctAnchor);
+      // Tap correct anchor card (Apple)
+      final appleCard = find.byKey(const Key('anchor-card-Apple'));
+      expect(appleCard, findsOneWidget);
+      await tester.tap(appleCard);
       await tester.pumpAndSettle();
 
+      // Word 'Apple' is revealed upon matching
+      expect(find.text('Apple'), findsOneWidget);
       expect(
         fakeAudio.spoken.any((s) => s.contains('Yes! Apple starts with A! Great job!')),
         isTrue,
