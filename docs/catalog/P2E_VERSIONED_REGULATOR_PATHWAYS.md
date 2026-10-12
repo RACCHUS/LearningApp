@@ -49,3 +49,11 @@ The official page includes other conditions and separate paths such as examinati
 - Add first-party or permissioned creator course preparation content as separate pathways, never as an automatic substitute for statutory qualification.
 - Build a reviewer-facing promotion and supersession workflow with a real reviewer identity and audit log before declaring **complete** eligibility guidance.
 
+
+## Source-availability safeguard for taxonomy CI
+
+The historical BLS 2010→2018 SOC crosswalk is a federally published public-domain resource. The original Internet Archive retrieval path intermittently returned HTTP 500/503 in GitHub Actions. An **immutable** public GitHub mirror is now available at [theis188/us-jobs-data commit c8d6ade](https://github.com/theis188/us-jobs-data/blob/c8d6ade6f007f5b3d546d6b4857b160fdd0405ce/soc_2010_to_2018_crosswalk.xlsx). The file was independently compared byte-for-byte via pinned SHA-256: `f3a847561562d3e5a30eb848f2902a5f7b02e9c48b3d7f2cc8879899fbc242a7`, exactly 46,630 bytes, matching the previously approved BLS release.
+
+The taxonomy ingestor always prefers the original retrieval URL and only tries the pinned fallback on network/download failure. It cryptographically validates **before writing** either result to disk; a successful-but-mismatched primary file fails closed instead of quietly using the mirror. The effective retrieval URL is recorded in a sidecar and carried into import artifact provenance, while the original BLS publisher URL remains canonical. GitHub Actions caches only successful validated bundles keyed by the source-spec code hash. The taxonomy content, source edition and downstream import counts remain unchanged.
+
+Issue #43 documents the incident and long-term reliability rationale; the fallback test preserves checksum and exact immutable commit URL. A production/hosted re-import of the federal taxonomy is **not** required for this change.
