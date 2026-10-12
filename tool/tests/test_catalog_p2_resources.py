@@ -22,8 +22,8 @@ class PreparationLinksTests(unittest.TestCase):
             p.write_text(json.dumps(value),encoding="utf-8")
             subject.DATA=p
             return subject.validate()
-    def test_eight_verified_external_links(self):
-        self.assertEqual(len(subject.validate()),8)
+    def test_nine_verified_external_links(self):
+        self.assertEqual(len(subject.validate()),9)
         self.assertTrue(all(x["rights_scope"]=="external_link_only"
                             for x in subject.validate()))
     def test_off_domain_url_rejected(self):
@@ -44,7 +44,7 @@ class PreparationLinksTests(unittest.TestCase):
         sql=subject.sql()
         self.assertTrue(sql.startswith("begin;"))
         self.assertTrue(sql.endswith("commit;"))
-        self.assertEqual(sql.count("insert into public.catalog_destination_resources"),8)
+        self.assertEqual(sql.count("insert into public.catalog_destination_resources"),9)
         self.assertNotIn("insert into public.courses",sql)
         self.assertNotIn("insert into public.learning_targets",sql)
     def test_unverified_access_cost_cannot_be_asserted(self):
