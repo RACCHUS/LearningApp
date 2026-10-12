@@ -36,6 +36,7 @@ import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
 import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
 import 'package:learning_pwa/screens/literacy/life_milestones_screen.dart';
+import 'package:learning_pwa/screens/literacy/life_domains_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -176,6 +177,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialCategory = LifeMilestoneCategory.gedBridge;
           }
           return LifeMilestonesScreen(initialCategory: initialCategory);
+        },
+      ),
+
+      // Practical life domains route (OSHA safety, FDA food, Healthcare, Cash & ATM)
+      GoRoute(
+        path: '/domains',
+        name: 'domains',
+        builder: (context, state) {
+          final categoryParam = state.uri.queryParameters['category'];
+          LifeDomainCategory initialCategory =
+              LifeDomainCategory.workplaceSafety;
+          if (categoryParam == 'food') {
+            initialCategory = LifeDomainCategory.foodSafety;
+          } else if (categoryParam == 'health' ||
+              categoryParam == 'firstaid') {
+            initialCategory = LifeDomainCategory.healthcareFirstAid;
+          } else if (categoryParam == 'cash' || categoryParam == 'atm') {
+            initialCategory = LifeDomainCategory.financialAtm;
+          }
+          return LifeDomainsScreen(initialCategory: initialCategory);
         },
       ),
 

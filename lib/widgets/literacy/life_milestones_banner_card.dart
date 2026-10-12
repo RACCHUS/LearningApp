@@ -129,6 +129,12 @@ class LifeMilestonesBannerCard extends StatelessWidget {
                       route: '/milestones?category=ged',
                     ),
                     _buildPill(
+                      label: '🛡️ Safety & Cash Skills',
+                      color: Colors.orange,
+                      context: context,
+                      route: '/domains',
+                    ),
+                    _buildPill(
                       label: '🔤 ABCs & Phonics',
                       color: Colors.purple,
                       context: context,

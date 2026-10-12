@@ -152,6 +152,49 @@ class _LifeMilestonesScreenState extends ConsumerState<LifeMilestonesScreen> {
 
               const SizedBox(height: DesignTokens.space5),
 
+              // Link to Life Survival Skills (Workplace, Food Safety, Health, Cash)
+              InkWell(
+                onTap: () => context.go('/domains'),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                child: Container(
+                  padding: const EdgeInsets.all(DesignTokens.space4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🛡️', style: TextStyle(fontSize: 28)),
+                      const SizedBox(width: DesignTokens.space3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Workplace, Food, Health & Cash Survival',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: DesignTokens.space1),
+                            Text(
+                              'OSHA safety, FDA food temps, prescription labels, burn first aid, coins & ATM practice.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: DesignTokens.space3),
+
               // Return to Foundational Literacy Hub
               InkWell(
                 onTap: () => context.go('/literacy'),
