@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   populate:
-    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.event_name == 'push' && contains(github.event.head_commit.message, 'ONE-TIME OFFICIAL TAXONOMY IMPORT 20261011') }}
+    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.event_name == 'push' && contains(github.event.head_commit.message, 'ONE-TIME OFFICIAL TAXONOMY IMPORT RETRY2 20261011') }}
     name: Validate and atomically populate hosted official classification releases
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -54,7 +54,13 @@ jobs:
             echo "::error::SUPABASE_SERVICE_ROLE_KEY is not configured in GitHub Actions secrets; no writes performed."
             exit 2
           fi
-          echo "Correct hosted project target verified."
+          # The user has migrated to current API keys. Do not accidentally
+          # attempt the retired legacy JWT-based service_role key again.
+          if [[ "${SUPABASE_SERVICE_ROLE_KEY}" != sb_secret_* ]]; then
+            echo "::error::Expected an enabled modern sb_secret_ key. No writes performed."
+            exit 2
+          fi
+          echo "Correct hosted project and modern secret key format verified."
 
       - name: Verify complete official source bundle before DB writes
         run: |
