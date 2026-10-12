@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "reviewed_on": "2026-10-11",
-  "notes": "Registry of proposed source integrations and release-scoped coverage checks; listed sources are NOT automatically ingested, licensed, or deployed. Null target means baseline to establish.",
+  "notes": "National CIP/SOC/O*NET sources were imported and verified in hosted Supabase on 2026-10-11. All additional sources remain separately gated by access, licensing, regulatory review and catalog moderation. See docs/catalog/CATALOG_GROWTH_AND_DEMAND_PLAN.md.",
   "sources": [
     {
       "id": "nces_cip_2020",
       "category": "academic_fields",
       "publisher": "NCES",
       "url": "https://nces.ed.gov/ipeds/cipcode/",
-      "acquisition": "Existing pinned official bulk importer",
+      "acquisition": "Pinned official full importer completed and independently verified in Learning App hosted Supabase",
       "scope": "US; CIP 2020",
       "cadence": "annual check; new edition as immutable release",
-      "status": "implemented_importer_execution_unverified",
+      "status": "hosted_release_verified_2026_10_11",
       "rights": "US federal source; verify artifact-specific rights",
       "owner": "taxonomy"
     },
@@ -20,10 +20,10 @@
       "category": "careers",
       "publisher": "BLS",
       "url": "https://www.bls.gov/soc/2018/",
-      "acquisition": "Existing pinned official bulk importer",
+      "acquisition": "Pinned official full importer completed and independently verified in Learning App hosted Supabase",
       "scope": "US; SOC 2018",
       "cadence": "annual edition check and official revision monitoring",
-      "status": "implemented_importer_execution_unverified",
+      "status": "hosted_release_verified_2026_10_11",
       "rights": "US federal source; verify artifact-specific rights",
       "owner": "taxonomy"
     },
@@ -32,10 +32,10 @@
       "category": "occupation_skills",
       "publisher": "USDOL/ETA O*NET",
       "url": "https://www.onetcenter.org/db_releases.html",
-      "acquisition": "Existing pinned official bulk importer",
+      "acquisition": "Pinned official full importer completed and independently verified in Learning App hosted Supabase",
       "scope": "US; O*NET-SOC 2019 / database 31.0",
       "cadence": "each published release; separate version",
-      "status": "implemented_importer_execution_unverified",
+      "status": "hosted_release_verified_2026_10_11",
       "rights": "CC BY 4.0 with required attribution; exceptions for other O*NET products",
       "owner": "taxonomy"
     },
