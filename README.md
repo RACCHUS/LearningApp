@@ -25,7 +25,7 @@ The interaction baseline is [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.m
 - A **canonical concept layer** allows knowledge evidence to be reused across learning contexts while keeping each context's content relevant.
 - **Completion and retention are separate:** finishing content is not the same as remembering it.
 - Lesson creation, courses, saved study sets, content selection, and library/catalog browsing.
-- Taxonomy and career-path exploration supported by **fully imported and verified** CIP 2020, SOC 2018, and O*NET 31.0 releases. The [Catalog Growth and Demand Plan](docs/catalog/CATALOG_GROWTH_AND_DEMAND_PLAN.md) supersedes the retired taxonomy roadmap and guides verified licenses, certifications, courses and measured popularity. The first catalog phase stages private, **unreviewed** credential/license candidates only; it does not make them public or claim popularity.
+- Taxonomy and career-path exploration supported by **fully imported and verified** CIP 2020, SOC 2018, and O*NET 31.0 releases. The [Catalog Growth and Demand Plan](docs/catalog/CATALOG_GROWTH_AND_DEMAND_PLAN.md) supersedes the retired taxonomy roadmap and guides verified licenses, certifications, courses and measured popularity. The catalog now has 31 privately staged issuer candidates; a first pilot separately publishes ten **issuer identity + official URL only** listings under Pathways → Credentials & exams after narrow source review. No popularity ranking, exam eligibility, course content, or license prerequisites are claimed. See [P2 Issuer-Verified Directory](docs/catalog/P2_ISSUER_VERIFIED_DIRECTORY.md).
 
 ### Navigation and Help
 
