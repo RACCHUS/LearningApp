@@ -34,3 +34,10 @@ Validate observed exact 6-digit CIP, AWLEVEL and CTOTALT fields, exclusions of s
 - BLS projected job openings **do not** establish demand for a particular paid certificate or legal requirement.
 - One dataset is not sufficient to assign trustworthy credential popularity scores; demand remains unranked until independent relevant measures are collected.
 - Issuer certification exam volumes, credential awards, approved provider catalogs and community usage still need separately verified rights and sourcing.
+
+## P1 BLS code reconciliation (2026-10-11)
+
+The five nonmatching rows have been verified as **combined BLS reporting categories** rather than absent SOC 2018 classifications. The [BLS reporting-code reconciliation](P1_BLS_REPORTING_CODE_RECONCILIATION.md) defines all 13 source-backed component relationships and a private one-row-per-original-observation view. The acceptance target after deployment is **826 exact matches, 5 combined reporting codes, 0 unexplained, and 831 total**. These are explanatory links, not an allocation of 50.5k openings or other combined totals among the components.
+
+An exploratory GitHub Actions runner requesting the live NCES Complete Data Files page encountered a redirect loop; the guessed historical C2025_A direct ZIP still returns 404. This is an access issue, **not** evidence the officially listed provisional dataset is absent. Keep IPEDS import blocked until the exact official ZIP and dictionary are acquired and validated.
+
