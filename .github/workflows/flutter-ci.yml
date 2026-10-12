@@ -56,7 +56,12 @@ jobs:
         run: |
           python3 tool/catalog_intake.py validate
           python3 tool/catalog_intake.py rank
-          python3 -m unittest discover -s tool/tests -p 'test_catalog_*.py' -v
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_intake.py' -v
+
+      - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
+        run: |
+          python3 -m pip install 'openpyxl==3.1.5'
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_official_demand.py' -v
 
       - name: Parse Windows backup script (no database connection)
         shell: pwsh

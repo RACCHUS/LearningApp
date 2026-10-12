@@ -53,6 +53,14 @@ Always distinguish **occupation**, **academic classification**, **institutional 
 
 **P1 exit:** pinned, reproducible IPEDS and BLS adapters and evidence rows with national aggregates plus clear source, unit and time window, not hypothetical rankings.
 
+### P1 implementation evidence (2026-10-11)
+
+The first official numerical source was independently read on an ephemeral GitHub runner: BLS Table 1.2, Employment Projections 2025–2035, with **831 detailed SOC line-item rows** and pinned source hash. The private schema and guarded uploader are in [P1 Official Demand Runbook](P1_OFFICIAL_DEMAND_RUNBOOK.md). These are occupation-opening estimates *in thousands*, not individual certification popularity, and no source-driven license ranking is published.
+
+NCES lists the 2025 provisional C2025_A release, but the historical guessed direct ZIP link returned HTTP 404. The parser is implemented against the documented C2025_A data fields, but **no real IPEDS award counts have been imported** until the authentic current download and dictionary can be verified.
+
+**Remaining:** independent hosted BLS import verification; acquisition of current official NCES ZIP; issuer-specific participation data or user usage for actual certification/license/course popularity.
+
 ## 5. P2 — Real credential, license and provider records
 
 - **National issuer pilot:** verify each current certification, exam ID, syllabus edition, renewal, issuing body and fees on current issuer pages (CompTIA, AWS, Microsoft, PMI, NCSBN). Avoid copyrighted real exam questions.
