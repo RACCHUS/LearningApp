@@ -235,6 +235,48 @@ class _LifeMilestonesScreenState extends ConsumerState<LifeMilestonesScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: DesignTokens.space3),
+
+              // Direct Access Everyday Survival Domains
+              InkWell(
+                onTap: () => context.go('/domains'),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                child: Container(
+                  padding: const EdgeInsets.all(DesignTokens.space4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                    border: Border.all(color: colorScheme.outlineVariant),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🦺', style: TextStyle(fontSize: 28)),
+                      const SizedBox(width: DesignTokens.space3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Everyday Life & Survival Domains',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: DesignTokens.space1),
+                            Text(
+                              'Workplace Safety (OSHA) • Food Prep • Health & Rx • Cash & ATM',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
