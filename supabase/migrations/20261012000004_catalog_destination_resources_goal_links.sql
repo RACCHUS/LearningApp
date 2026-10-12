@@ -31,7 +31,8 @@ create policy destination_goal_links_owner_insert
       and t.status='draft' and t.review_status='unreviewed')
     and exists (select 1 from public.catalog_verified_destinations d
       join public.learning_targets t on t.id=target_id
-      where d.source_namespace=source_namespace and d.source_key=source_key
+      where d.source_namespace=public.catalog_destination_goal_links.source_namespace
+        and d.source_key=public.catalog_destination_goal_links.source_key
         and d.publication_status='published'
         and d.destination_type=t.target_type
         and d.destination_type in ('certification','licensure_exam','standardized_exam','academic_program'))
@@ -76,6 +77,7 @@ create policy destination_resource_published_parent
   on public.catalog_destination_resources for select to anon,authenticated
   using (status='published' and exists(
     select 1 from public.catalog_verified_destinations d
-    where d.source_namespace=source_namespace and d.source_key=source_key
+    where d.source_namespace=public.catalog_destination_resources.source_namespace
+      and d.source_key=public.catalog_destination_resources.source_key
       and d.publication_status='published'
   ));
