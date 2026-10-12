@@ -76,7 +76,6 @@ def validate_payload(payload: dict) -> list[dict]:
                     walk(child)
         walk(r["pathway_tree"])
         assert len(labels) == len(set(labels))
-        assert all("pass the nclex" not in x.lower() or "nclex" in x.lower() for x in labels)
     return rows
 
 
@@ -94,6 +93,7 @@ def sql() -> str:
     for r in rows:
         ns, key = q(r["source_namespace"]), q(r["source_key"])
         tree = q(json.dumps(r["pathway_tree"], ensure_ascii=False, separators=(",", ":")))
+        checked_at = q(r["source_checked_on"] + "T18:08:00Z")
         title, overview = q(r["title"]), q(r["overview"])
         source = q(r["source_url"])
         reviewer = q("Learning App source review")
@@ -106,13 +106,13 @@ def sql() -> str:
             "(source_namespace,source_key,revision,jurisdiction,route_kind,title,overview,coverage,"
             "source_url,source_checked_at,reviewed_at,reviewer,review_status,publication_status,pathway_tree) "
             f"values ({ns},{key},1,'US-FL','examination',{title},{overview},'selected_steps_only',"
-            f"{source},now(),now(),{reviewer},'approved','published',{tree}::jsonb) "
+            f"{source},{checked_at}::timestamptz,{checked_at}::timestamptz,{reviewer},'approved','published',{tree}::jsonb) "
             "on conflict (source_namespace,source_key,revision) do nothing;",
             "do $verify$ begin if not exists (select 1 from public.catalog_license_pathway_versions "
             f"where source_namespace={ns} and source_key={key} and revision=1 "
             f"and source_url={source} and jurisdiction='US-FL' and title={title} "
             "and route_kind='examination' and coverage='selected_steps_only' "
-            f"and pathway_tree={tree}::jsonb "
+            f"and pathway_tree={tree}::jsonb and source_checked_at={checked_at}::timestamptz "
             "and review_status='approved' and publication_status='published' "
             "and reviewer='Learning App source review') "
             f"then raise exception 'P2e reviewed pathway mismatch: {r['source_key']}'; "
