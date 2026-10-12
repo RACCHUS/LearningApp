@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/data/help_topics.dart';
 import 'package:learning_pwa/models/help_topic.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/help_search_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/help/help_topic_view.dart';
@@ -39,19 +41,35 @@ Future<void> showHelpCenter(BuildContext context) {
   );
 }
 
-class HelpCenterSheet extends StatefulWidget {
+class HelpCenterSheet extends ConsumerStatefulWidget {
   const HelpCenterSheet({super.key});
 
   @override
-  State<HelpCenterSheet> createState() => _HelpCenterSheetState();
+  ConsumerState<HelpCenterSheet> createState() => _HelpCenterSheetState();
 }
 
-class _HelpCenterSheetState extends State<HelpCenterSheet> {
+class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   static const _searchService = HelpSearchService();
 
   final _searchController = TextEditingController();
   String _query = '';
   HelpTopic? _selectedTopic;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(preReaderProvider);
+      if (profile.enabled && profile.autoSpeakScreens) {
+        _speakHelpPrompt();
+      }
+    });
+  }
+
+  void _speakHelpPrompt() {
+    ref.read(preReaderAudioServiceProvider).speak(
+        'Need help? Tap the ear to hear instructions again, or tap any card to listen.');
+  }
 
   @override
   void dispose() {
@@ -147,13 +165,13 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
   }
 }
 
-class _HelpHeader extends StatelessWidget {
+class _HelpHeader extends ConsumerWidget {
   final VoidCallback onClose;
 
   const _HelpHeader({required this.onClose});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         DesignTokens.space4,
@@ -170,6 +188,15 @@ class _HelpHeader extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
             ),
+          ),
+          IconButton(
+            key: const Key('help-audio-guide'),
+            tooltip: 'Hear instructions',
+            onPressed: () {
+              ref.read(preReaderAudioServiceProvider).speak(
+                  'Need help? Tap the ear to hear instructions again, or tap any card to listen.');
+            },
+            icon: const Icon(Icons.volume_up),
           ),
           IconButton(
             key: const Key('help-close'),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
@@ -16,6 +17,7 @@ class ContinueCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeContext = ref.watch(learningContextsProvider).active;
+    final isPreReader = ref.watch(preReaderProvider).enabled;
     final view = _ContinueView.from(action, activeContext);
 
     return Column(
@@ -27,7 +29,25 @@ class ContinueCard extends ConsumerWidget {
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: DesignTokens.space3),
-        Text(view.title, style: theme.textTheme.headlineSmall),
+        Row(
+          children: [
+            Expanded(
+              child: Text(view.title, style: theme.textTheme.headlineSmall),
+            ),
+            if (isPreReader)
+              IconButton(
+                key: const Key('learn-action-audio-readout'),
+                icon: const Icon(Icons.volume_up_rounded),
+                tooltip: 'Listen to next step',
+                onPressed: () {
+                  final audio = ref.read(preReaderAudioServiceProvider);
+                  final textToSpeak =
+                      '${view.title}. ${view.rationale ?? ''}. Tap ${view.primaryLabel} to begin.';
+                  audio.speak(textToSpeak);
+                },
+              ),
+          ],
+        ),
         if (view.orientation != null) ...[
           const SizedBox(height: DesignTokens.space1),
           Text(

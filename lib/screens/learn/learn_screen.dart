@@ -13,6 +13,7 @@ import 'package:learning_pwa/widgets/learn/context_switcher.dart';
 import 'package:learning_pwa/widgets/learn/continue_card.dart';
 import 'package:learning_pwa/widgets/learn/review_prompt.dart';
 import 'package:learning_pwa/widgets/learn/zero_state.dart';
+import 'package:learning_pwa/widgets/literacy/pwa_audio_unlock_banner.dart';
 
 /// Doing, not managing. One primary action, one secondary, and a review prompt
 /// only when there is something to review.
@@ -41,6 +42,7 @@ class LearnScreen extends ConsumerWidget {
         },
         child: ListView(
           children: [
+            const PwaAudioUnlockBanner(),
             LearnColumn(
               child: action.when(
                 loading: () => const _LearnLoading(),
