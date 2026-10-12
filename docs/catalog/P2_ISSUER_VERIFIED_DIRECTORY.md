@@ -34,7 +34,7 @@ Only the ten records listed in `data/catalog/issuer_verified_pilot_2026_10.json`
 - `requirements_status='not_verified'` and `popularity_status='not_measured'` are hard database constraints. Editorial display order is **not** a popularity ranking.
 - `tool/catalog_verified_pilot.py validate` checks all reviewed manifest identities, HTTPS issuer-domain allowlist and claims. `render-sql` creates an idempotent *transactional admin SQL* review/approval script; this script must never be run as an anonymous client.
 - Flutter taxonomy explorer has a fourth **Credentials & exams** tab and includes the approved links in its search. It deliberately does not query any private candidates, exam-question tables, demand evidence or admin source metadata.
-- For portability with the current Flutter dependency graph, users can copy an official issuer URL from the listing; a direct outbound browser-opening dependency can be added in a separate review when the app's existing cross-platform URL strategy is confirmed.
+- Issuer links open in the device's default external browser through the existing locked `url_launcher` package (now a direct dependency). Every card also offers copy-link; if opening the URL fails, the UI copies it as a fallback.
 
 ## Release acceptance
 
