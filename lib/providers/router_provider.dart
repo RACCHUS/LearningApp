@@ -35,6 +35,7 @@ import 'package:learning_pwa/screens/review_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
 import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
+import 'package:learning_pwa/screens/literacy/life_milestones_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -159,6 +160,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/literacy',
         name: 'literacy',
         builder: (context, state) => const FoundationalLiteracyScreen(),
+      ),
+
+      // High-stakes US life milestones route (USCIS 2025, Florida DMV, GED Bridge)
+      GoRoute(
+        path: '/milestones',
+        name: 'milestones',
+        builder: (context, state) {
+          final categoryParam = state.uri.queryParameters['category'];
+          LifeMilestoneCategory initialCategory =
+              LifeMilestoneCategory.citizenship;
+          if (categoryParam == 'driver' || categoryParam == 'dmv') {
+            initialCategory = LifeMilestoneCategory.driverLicense;
+          } else if (categoryParam == 'ged') {
+            initialCategory = LifeMilestoneCategory.gedBridge;
+          }
+          return LifeMilestonesScreen(initialCategory: initialCategory);
+        },
       ),
 
       // Create lesson route

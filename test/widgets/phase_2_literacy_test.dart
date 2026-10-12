@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/cvc_word_item.dart';
 import 'package:learning_pwa/models/letter_stroke_data.dart';
 import 'package:learning_pwa/models/phonics_item.dart';
-import 'package:learning_pwa/models/survival_word_item.dart';
 import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
 import 'package:learning_pwa/widgets/literacy/cvc_blending_widget.dart';
 import 'package:learning_pwa/widgets/literacy/personal_id_form_widget.dart';

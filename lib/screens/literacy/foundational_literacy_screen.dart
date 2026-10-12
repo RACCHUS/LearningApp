@@ -268,7 +268,7 @@ class _FoundationalLiteracyScreenState
 
               // Direct Access Milestone Banner (Direct Access Rule: <=2 taps)
               InkWell(
-                onTap: () => context.go('/library'),
+                onTap: () => context.go('/milestones'),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
                 child: Container(
                   padding: const EdgeInsets.all(DesignTokens.space4),
