@@ -50,6 +50,11 @@ set search_path = public, pg_temp
 as $$
 declare c record;
 begin
+  -- Retirement must work even when an issuer record has been revoked or
+  -- its official link changes; otherwise the revoke transaction would fail.
+  if new.publication_status='retired' then
+    return new;
+  end if;
   select destination_type,title,issuer_name,jurisdiction,source_url,
          review_status,publication_status,source_rights,verified_at
     into c from public.catalog_intake_candidates
