@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "records": [
+    {
+      "source_namespace": "fl_bon",
+      "source_key": "registered-nurse",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida RN initial licensure: selected examination-path steps",
+      "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+      "source_checked_on": "2026-10-12",
+      "reviewed_on": "2026-10-12",
+      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Graduate from a Florida-approved or accredited nursing education program",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN-issued NCLEX code",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from a recognized nursing program in another jurisdiction that has an NCSBN-issued NCLEX code",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from an international or non-NCSBN program that the Board determines equivalent",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                "condition": "Requires a Board equivalency determination and additional documentation"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from a pre-licensure MSN or higher program with an NCSBN-issued NCLEX code",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                "condition": "RN-specific alternative"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Provide the applicable education documentation to the Florida Board of Nursing",
+            "stage": "application",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Complete the required electronic fingerprinting and Level 2 background screening",
+            "stage": "background_screening",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Submit the initial licensure-by-examination application and required fees",
+            "stage": "application",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Obtain the Board's approval for NCLEX eligibility and take the NCLEX examination",
+            "stage": "examination",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+            "condition": "Applicable to applicants who have not previously passed the NCLEX"
+          },
+          {
+            "op": "step",
+            "label": "Receive the state nursing license only after passing the NCLEX and meeting all licensing criteria",
+            "stage": "authorization",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          }
+        ]
+      }
+    },
+    {
+      "source_namespace": "fl_bon",
+      "source_key": "licensed-practical-nurse",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida LPN initial licensure: selected examination-path steps",
+      "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+      "source_checked_on": "2026-10-12",
+      "reviewed_on": "2026-10-12",
+      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Graduate from a Florida-approved or accredited nursing education program",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN-issued NCLEX code",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from a recognized nursing program in another jurisdiction that has an NCSBN-issued NCLEX code",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+              },
+              {
+                "op": "step",
+                "label": "Graduate from an international or non-NCSBN program that the Board determines equivalent",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                "condition": "Requires a Board equivalency determination and additional documentation"
+              },
+              {
+                "op": "step",
+                "label": "Meet Practical Nursing Equivalency criteria while enrolled in an RN program",
+                "stage": "education",
+                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                "condition": "LPN applicants; additional equivalency documentation is required"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Provide the applicable education documentation to the Florida Board of Nursing",
+            "stage": "application",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Complete the required electronic fingerprinting and Level 2 background screening",
+            "stage": "background_screening",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Submit the initial licensure-by-examination application and required fees",
+            "stage": "application",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          },
+          {
+            "op": "step",
+            "label": "Obtain the Board's approval for NCLEX eligibility and take the NCLEX examination",
+            "stage": "examination",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+            "condition": "Applicable to applicants who have not previously passed the NCLEX"
+          },
+          {
+            "op": "step",
+            "label": "Receive the state nursing license only after passing the NCLEX and meeting all licensing criteria",
+            "stage": "authorization",
+            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+          }
+        ]
+      }
+    }
+  ]
+}

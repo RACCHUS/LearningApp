@@ -52,6 +52,37 @@ jobs:
           dart run tool/taxonomy_coverage.dart --registry-only
           dart run tool/verify_taxonomy_source_review.dart
 
+      - name: Validate private credential candidate intake and measured-demand rules
+        run: |
+          python3 tool/catalog_intake.py validate
+          python3 tool/catalog_intake.py rank
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_intake.py' -v
+
+      - name: Validate P2 reviewed issuer-link manifest and safe SQL promotion
+        run: |
+          python3 tool/catalog_verified_pilot.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_verified_pilot.py' -v
+
+      - name: Validate official issuer preparation links and guard against unsourced content
+        run: |
+          python3 tool/catalog_p2_resources.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2_resources.py' -v
+
+      - name: Validate P2d Florida professional license and checklist identities
+        run: |
+          python3 tool/catalog_p2d_florida_licenses.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2d_florida_licenses.py' -v
+
+      - name: Validate P2e regulator-sourced conditional pathway manifest
+        run: |
+          python3 tool/catalog_p2e_pathways.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2e_pathways.py' -v
+
+      - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
+        run: |
+          python3 -m pip install 'openpyxl==3.1.5'
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_official_demand.py' -v
+
       - name: Parse Windows backup script (no database connection)
         shell: pwsh
         run: |
@@ -95,6 +126,12 @@ jobs:
           flutter-version: '3.32.8'
           channel: stable
           cache: true
+
+      - name: Cache cryptographically pinned taxonomy source files
+        uses: actions/cache@v4
+        with:
+          path: build/taxonomy-cache
+          key: taxonomy-source-bundle-v1-${{ runner.os }}-${{ hashFiles('lib/services/taxonomy/official_taxonomy_sources.dart') }}
 
       - name: Install dependencies
         run: flutter pub get

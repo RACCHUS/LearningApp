@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/models/taxonomy/taxonomy.dart';
 import 'package:learning_pwa/providers/taxonomy_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
+import 'package:learning_pwa/providers/verified_destinations_provider.dart';
 import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 
 void main() {
@@ -163,7 +164,6 @@ void main() {
     expect(find.byKey(const Key('goal-open-existing')), findsNothing);
     expect(find.textContaining('private, editable draft'), findsOneWidget);
   });
-
   testWidgets('suggestion chips render with readable text color in dark theme',
       (tester) async {
     final data = [
@@ -193,5 +193,97 @@ void main() {
 
     final chipWidget = tester.widget<ActionChip>(chipFinder);
     expect(chipWidget.labelStyle?.color, isNotNull);
+  });
+
+  testWidgets('reviewed certification prefills a private, non-official goal',
+      (tester) async {
+    final issuer = VerifiedDestination.fromJson({
+      'source_namespace': 'microsoft',
+      'source_key': 'azure-fundamentals',
+      'title': 'Microsoft Certified: Azure Fundamentals',
+      'issuer_name': 'Microsoft',
+      'destination_type': 'certification',
+      'jurisdiction': 'Global',
+      'official_url':
+          'https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/',
+      'requirements_status': 'not_verified',
+      'popularity_status': 'not_measured',
+      'verified_at': '2026-10-12T00:00:00Z',
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        targetSuggestionsProvider(TargetType.certification)
+            .overrideWith((ref) async => []),
+        verifiedDestinationsProvider.overrideWith((ref) async => [issuer]),
+      ],
+      child: MaterialApp(
+        home: Scaffold(body: CreateTargetDialog(
+          initialDestination: issuer,
+        )),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('goal-type')), findsOneWidget);
+    expect(tester.widget<TextFormField>(
+        find.byKey(const Key('goal-title'))).controller!.text,
+        issuer.title);
+    expect(tester.widget<TextFormField>(
+        find.byKey(const Key('goal-provider'))).controller!.text,
+        issuer.issuerName);
+    expect(find.textContaining('private draft'), findsWidgets);
+    expect(find.textContaining('not an issuer-issued credential'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('goal-title')), 'My own plan');
+    await tester.pump();
+    expect(find.textContaining('not an issuer-issued credential'), findsNothing);
+    expect(find.textContaining('private, editable draft'), findsOneWidget);
+  });
+
+  testWidgets('Florida regulator-linked goal keeps license type and jurisdiction',
+      (tester) async {
+    final license = VerifiedDestination.fromJson({
+      'source_namespace': 'dbpr_fl',
+      'source_key': 'real-estate-sales-associate',
+      'title': 'Florida Real Estate Sales Associate License',
+      'issuer_name': 'Florida Department of Business and Professional Regulation',
+      'destination_type': 'professional_license',
+      'jurisdiction': 'US-FL',
+      'official_url': 'https://www.myfloridalicense.com/intentions2.asp?boardid=25',
+      'requirements_status': 'not_verified',
+      'popularity_status': 'not_measured',
+      'verified_at': '2026-10-12T12:00:00Z',
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        targetSuggestionsProvider(TargetType.professionalLicense)
+            .overrideWith((ref) async => []),
+        verifiedDestinationsProvider.overrideWith((ref) async => [license]),
+      ],
+      child: MaterialApp(home: Scaffold(
+        body: CreateTargetDialog(initialDestination: license),
+      )),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('goal-jurisdiction')), findsOneWidget);
+    expect(tester.widget<TextFormField>(find.byKey(const Key('goal-title')))
+        .controller!.text, license.title);
+    expect(tester.widget<TextFormField>(find.byKey(const Key('goal-jurisdiction')))
+        .controller!.text, 'US-FL');
+    expect(find.textContaining('not an issuer-issued credential'), findsOneWidget);
+    expect(find.textContaining('private, editable draft'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('goal-jurisdiction')));
+    await tester.enterText(find.byKey(const Key('goal-jurisdiction')), 'US-GA');
+    await tester.pump();
+    expect(find.textContaining('not an issuer-issued credential'), findsNothing);
+  });
+
+  test('professional license is not a licensure exam', () {
+    expect(TargetType.fromString('professional_license'),
+        TargetType.professionalLicense);
+    expect(TargetType.professionalLicense.toDbString(), 'professional_license');
+    expect(TargetType.professionalLicense.displayName, 'Professional License');
+    expect(TargetType.licensureExam, isNot(TargetType.professionalLicense));
   });
 }

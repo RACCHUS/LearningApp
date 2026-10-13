@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "review_scope": "issuer_identity_and_link_only",
+  "rights": "Issuer identification and outbound hyperlinks only; do not copy third-party lesson text or examinations.",
+  "popularity_claim": false,
+  "total": 10,
+  "records": [
+    {
+      "source_namespace": "aws",
+      "source_key": "cloud-practitioner",
+      "official_url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+      "verification_note": "AWS certifies the named Cloud Practitioner credential on this page; identity and official link only.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 1,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "aws",
+      "source_key": "solutions-architect-associate",
+      "official_url": "https://aws.amazon.com/certification/certified-solutions-architect-associate/",
+      "verification_note": "AWS certifies the named Solutions Architect - Associate credential; no personal prerequisites asserted.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 2,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "azure-fundamentals",
+      "official_url": "https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/",
+      "verification_note": "Microsoft Learn explicitly lists Azure Fundamentals; exam editions and prices are not asserted.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 3,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "azure-data-fundamentals",
+      "official_url": "https://learn.microsoft.com/en-us/credentials/certifications/azure-data-fundamentals/",
+      "verification_note": "Microsoft Learn explicitly lists Azure Data Fundamentals; no eligibility guarantee asserted.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 4,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "power-bi-data-analyst-associate",
+      "official_url": "https://learn.microsoft.com/en-us/credentials/certifications/data-analyst-associate/",
+      "verification_note": "Microsoft Learn explicitly lists Power BI Data Analyst Associate; renewal policy needs separate verification.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 5,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "pmi",
+      "source_key": "pmp",
+      "official_url": "https://www.pmi.org/certifications/project-management-pmp",
+      "verification_note": "PMI names its Project Management Professional certification; exam was revised in July 2026, detailed eligibility not included.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 6,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "pmi",
+      "source_key": "capm",
+      "official_url": "https://www.pmi.org/certifications/certified-associate-capm",
+      "verification_note": "PMI lists Certified Associate in Project Management; detailed eligibility is not reproduced.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 7,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "ncsbn",
+      "source_key": "nclex-rn",
+      "official_url": "https://www.nclex.com/test-plans.page",
+      "verification_note": "NCSBN lists the NCLEX-RN 2026 test plan, effective April 2026-March 2029; state authorization is separate.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 8,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "ncsbn",
+      "source_key": "nclex-pn",
+      "official_url": "https://www.nclex.com/test-plans.page",
+      "verification_note": "NCSBN lists the NCLEX-PN 2026 test plan, effective April 2026-March 2029; state authorization is separate.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 9,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "real-estate-sales-associate",
+      "official_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=25&chBoard=true&div=Real+Estate",
+      "verification_note": "Florida DBPR licensing application portal lists real estate sales associates; individual application conditions need separate review.",
+      "reviewed_on": "2026-10-11",
+      "editorial_order": 10,
+      "verification_scope": "issuer_identity_and_link",
+      "requirements_status": "not_verified",
+      "popularity_status": "not_measured"
+    }
+  ]
+}

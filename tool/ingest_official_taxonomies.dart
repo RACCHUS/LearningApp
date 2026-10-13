@@ -244,9 +244,24 @@ class _ArtifactDownloader {
     for (final spec in OfficialTaxonomySources.specs.values) {
       final file = File('${sourceDir.path}/${spec.name}');
       Uint8List bytes;
+      var effectiveRetrievalUrl = spec.retrievalUrl;
+      final originFile = File('${file.path}.retrieval-url.txt');
+      final approvedUrls = <String>[
+        spec.retrievalUrl,
+        ...?OfficialTaxonomySources.fallbackRetrievalUrls[spec.name],
+      ];
 
       if (file.existsSync() && !refresh) {
         bytes = await file.readAsBytes();
+        if (originFile.existsSync()) {
+          final cachedOrigin = (await originFile.readAsString()).trim();
+          if (!approvedUrls.contains(cachedOrigin)) {
+            throw StateError(
+              'Unapproved cached provenance URL for ${spec.name}; refusing cache.',
+            );
+          }
+          effectiveRetrievalUrl = cachedOrigin;
+        }
         stdout.writeln('• cache ${spec.name} (${bytes.length} bytes)');
       } else {
         if (offline) {
@@ -254,9 +269,12 @@ class _ArtifactDownloader {
             'Missing cached artifact ${spec.name} while --offline is enabled.',
           );
         }
-        stdout.writeln('↓ ${spec.name} (from ${spec.retrievalUrl})');
-        bytes = await _download(spec.retrievalUrl);
+        final downloaded = await _downloadVerified(spec, approvedUrls);
+        bytes = downloaded.bytes;
+        effectiveRetrievalUrl = downloaded.url;
+        // Never cache bytes until the exact pin is cryptographically verified.
         await file.writeAsBytes(bytes, flush: true);
+        await originFile.writeAsString(effectiveRetrievalUrl, flush: true);
       }
 
       if (bytes.isEmpty) {
@@ -283,7 +301,7 @@ class _ArtifactDownloader {
       resolved[spec.name] = _Artifact(
         name: spec.name,
         sourceUrl: spec.publisherUrl,
-        retrievalUrl: spec.retrievalUrl,
+        retrievalUrl: effectiveRetrievalUrl,
         bytes: bytes,
         sha256: sha256,
         file: file,
@@ -292,6 +310,46 @@ class _ArtifactDownloader {
     }
     _http.close(force: true);
     return resolved;
+  }
+
+  /// Try only reviewed, immutable retrieval URLs. A 4xx/5xx or network
+  /// problem can use a mirror; a successful but tampered download cannot.
+  /// The canonical publisher, SHA-256 and file size never change.
+  Future<({Uint8List bytes, String url})> _downloadVerified(
+    OfficialTaxonomyArtifactSpec spec,
+    List<String> urls,
+  ) async {
+    Object? lastNetworkError;
+    for (final url in urls) {
+      try {
+        stdout.writeln('↓ ${spec.name} (from $url)');
+        final bytes = await _download(url);
+        final checksum = TaxonomyImporter.calculateBytesChecksum(bytes);
+        if (checksum != spec.expectedSha256 ||
+            bytes.length != spec.expectedSizeBytes) {
+          throw StateError(
+            'Pinned source mismatch for ${spec.name} at $url. '
+            'Expected ${spec.expectedSizeBytes} bytes and '
+            '${spec.expectedSha256}; received ${bytes.length} bytes '
+            'and $checksum. No mirror substitution is allowed for '
+            'a successful but mismatched source.',
+          );
+        }
+        return (bytes: bytes, url: url);
+      } on HttpException catch (error) {
+        lastNetworkError = error;
+        stderr.writeln('Source unavailable at $url: $error');
+      } on SocketException catch (error) {
+        lastNetworkError = error;
+        stderr.writeln('Source unavailable at $url: $error');
+      } on HandshakeException catch (error) {
+        lastNetworkError = error;
+        stderr.writeln('Source unavailable at $url: $error');
+      }
+    }
+    throw StateError(
+      'All approved retrieval URLs failed for ${spec.name}: $lastNetworkError',
+    );
   }
 
   Future<Uint8List> _download(String url) async {

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_pwa/models/taxonomy/taxonomy.dart';
 import '../../providers/taxonomy_provider.dart';
+import '../../providers/verified_destinations_provider.dart';
+import '../../widgets/targets/create_target_dialog.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/taxonomy/cip_detail_sheet.dart';
 
@@ -11,6 +15,7 @@ import '../../widgets/taxonomy/cip_detail_sheet.dart';
 /// 1. BLS SOC & O*NET Labor Market Occupations & Job Zones
 /// 2. NCES CIP 2020 Instructional Programs & Disciplines
 /// 3. Catalog Clusters & Internal Canonical Fields
+/// 4. Reviewed issuer-name and official-URL destinations (not full courses)
 class TaxonomyExplorerScreen extends ConsumerStatefulWidget {
   final int initialTab;
   final String? initialQuery;
@@ -38,9 +43,9 @@ class _TaxonomyExplorerScreenState
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 2),
+      initialIndex: widget.initialTab.clamp(0, 3),
     );
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
     _searchQuery = widget.initialQuery ?? '';
@@ -76,7 +81,7 @@ class _TaxonomyExplorerScreenState
                   controller: _searchController,
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
-                    hintText: 'Search SOC, O*NET, CIP codes, titles...',
+                    hintText: 'Search credentials, exams, careers, subjects...',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -108,6 +113,8 @@ class _TaxonomyExplorerScreenState
               if (!isSearching)
                 TabBar(
                   controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   tabs: const [
                     Tab(
                       icon: Icon(Icons.work_outline, size: 18),
@@ -120,6 +127,10 @@ class _TaxonomyExplorerScreenState
                     Tab(
                       icon: Icon(Icons.category_outlined, size: 18),
                       text: 'Disciplines',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.verified_outlined, size: 18),
+                      text: 'Credentials & exams',
                     ),
                   ],
                 )
@@ -150,6 +161,7 @@ class _TaxonomyExplorerScreenState
                 _buildOccupationsTab(theme),
                 _buildCipTab(theme),
                 _buildClustersTab(theme),
+                _buildVerifiedDestinationsTab(theme),
               ],
             ),
     );
@@ -559,16 +571,358 @@ class _TaxonomyExplorerScreenState
   }
 
   // --------------------------------------------------------------------------
+  // Tab 4: Official issuer-linked credentials and exams
+  // --------------------------------------------------------------------------
+
+  Widget _buildVerifiedDestinationsTab(ThemeData theme) {
+    final destinationsAsync = ref.watch(verifiedDestinationsProvider);
+    return destinationsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('Could not load reviewed destinations: $error'),
+        ),
+      ),
+      data: (destinations) => ListView(
+        padding: const EdgeInsets.all(DesignTokens.space4),
+        children: [
+          const Text(
+            'Issuer-reviewed credentials and exams',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'These listings verify the issuing organization and its official '
+            'website only. Complete license requirements, fees and popularity '
+            'have not been verified. Some licenses show selected sourced steps, ' 
+            'not a full eligibility decision or Learning App course.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          if (destinations.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('No issuer-reviewed destinations published yet.'),
+            ),
+          for (final destination in destinations)
+            _buildVerifiedDestinationCard(theme, destination),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerifiedDestinationCard(
+      ThemeData theme, VerifiedDestination destination) {
+    return Card(
+      key: ValueKey('verified-${destination.sourceNamespace}-${destination.sourceKey}'),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+        leading: const Icon(Icons.verified_outlined),
+        title: Text(destination.title,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${destination.issuerName} · ${destination.displayType} · ${destination.jurisdiction}'),
+            const SizedBox(height: 4),
+            const Text(
+              'Issuer link checked · No full eligibility review · Not popularity-ranked',
+              style: TextStyle(fontSize: 11),
+            ),
+            Text(destination.officialUrl.toString(),
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall),
+          ],
+        ),
+        isThreeLine: true,
+        onTap: () async {
+          try {
+            final launched = await launchUrl(destination.officialUrl,
+                mode: LaunchMode.externalApplication);
+            if (!launched) {
+              throw StateError('Cannot open issuer website');
+            }
+          } catch (_) {
+            await Clipboard.setData(
+                ClipboardData(text: destination.officialUrl.toString()));
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Could not open the issuer site; URL copied instead')),
+            );
+          }
+        },
+        trailing: IconButton(
+          tooltip: 'Copy official issuer link',
+          icon: const Icon(Icons.copy_outlined),
+          onPressed: () async {
+            await Clipboard.setData(
+                ClipboardData(text: destination.officialUrl.toString()));
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Official issuer URL copied')),
+            );
+          },
+        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  key: Key('destination-prep-${destination.sourceKey}'),
+                  onPressed: () => _showPreparationLinks(destination),
+                  icon: const Icon(Icons.menu_book_outlined, size: 17),
+                  label: const Text('Issuer study links'),
+                ),
+                if (destination.destinationType == 'professional_license')
+                  OutlinedButton.icon(
+                    key: Key('destination-pathway-${destination.sourceKey}'),
+                    onPressed: () => _showReviewedLicensePathway(destination),
+                    icon: const Icon(Icons.account_tree_outlined, size: 17),
+                    label: const Text('Regulator steps'),
+                  ),
+                if (destination.supportedPrivateGoalType != null)
+                  FilledButton.tonalIcon(
+                    key: Key('destination-goal-${destination.sourceKey}'),
+                    onPressed: () => CreateTargetDialog.show(context,
+                        initialDestination: destination),
+                    icon: const Icon(Icons.flag_outlined, size: 17),
+                    label: const Text('Create private goal'),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Future<void> _showReviewedLicensePathway(
+      VerifiedDestination destination) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.76,
+          child: Consumer(builder: (context, ref, _) {
+            final pathway = ref.watch(reviewedLicensePathwayProvider((
+              namespace: destination.sourceNamespace,
+              key: destination.sourceKey,
+            )));
+            return pathway.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Text('Could not load regulator steps: $error')),
+              data: (reviewed) {
+                if (reviewed == null) {
+                  return const Center(child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('No reviewed pathway available for this '
+                      'license yet. Consult its official regulator page.'),
+                  ));
+                }
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 36),
+                  children: [
+                    Text(reviewed.title,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    const Text('Selected regulator-sourced steps only. '
+                        'Not a full eligibility determination, license award '
+                        'or a required Learning App course.'),
+                    const SizedBox(height: 8),
+                    Text('Source checked '
+                        '${reviewed.sourceCheckedAt.toIso8601String().substring(0, 10)}'
+                        ' · Revision ${reviewed.revision}',
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 12),
+                    Text(reviewed.overview),
+                    const SizedBox(height: 14),
+                    _renderReviewedPathwayNode(
+                        context, reviewed.pathwayTree, 0),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _openRegulatorSource(context, reviewed.sourceUrl),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Current official requirements'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _renderReviewedPathwayNode(
+      BuildContext context, Map<String, dynamic> node, int depth) {
+    if (depth > 8) return const SizedBox.shrink();
+    if (node['op'] == 'step') {
+      final condition = node['condition'] as String?;
+      return ListTile(
+        dense: true,
+        leading: const Icon(Icons.check_circle_outline, size: 19),
+        title: Text(node['label'] as String),
+        subtitle: condition == null ? null : Text('Applies when: $condition'),
+        onTap: () {
+          final source = Uri.tryParse(node['source_url'] as String? ?? '');
+          if (source != null && source.scheme == 'https') {
+            _openRegulatorSource(context, source);
+          }
+        },
+      );
+    }
+    final children = (node['children'] as List)
+        .map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    return Padding(
+      padding: EdgeInsets.only(left: depth == 0 ? 0 : 10, bottom: 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(node['op'] == 'any'
+            ? 'Alternative routes — one applicable option'
+            : 'Applicable stages — review each',
+            style: Theme.of(context).textTheme.titleSmall),
+        for (final child in children)
+          _renderReviewedPathwayNode(context, child, depth + 1),
+      ]),
+    );
+  }
+
+  Future<void> _openRegulatorSource(BuildContext context, Uri uri) async {
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw StateError('Regulator URL could not open');
+      }
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: uri.toString()));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Regulator link could not open; URL copied')));
+    }
+  }
+
+  Future<void> _showPreparationLinks(VerifiedDestination destination) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.65,
+          child: Consumer(builder: (context, ref, _) {
+            final resources = ref.watch(officialPreparationLinksProvider((
+              namespace: destination.sourceNamespace,
+              key: destination.sourceKey,
+            )));
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Official resources: ${destination.title}',
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'External issuer resources only. Availability and pricing '
+                    'may change; these are not Learning App courses or '
+                    'verified exam eligibility requirements.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(child: resources.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator()),
+                  error: (error, _) => Center(
+                    child: Text('Could not load issuer resources: $error')),
+                  data: (links) => links.isEmpty
+                      ? const Center(child: Text(
+                          'No reviewed preparation links yet.'))
+                      : ListView.builder(
+                          itemCount: links.length,
+                          itemBuilder: (context, index) {
+                            final link = links[index];
+                            return ListTile(
+                              title: Text(link.title),
+                              subtitle: Text(
+                                '${link.publisher} · ${link.resourceTypeLabel}'),
+                              trailing: const Icon(Icons.open_in_new),
+                              onTap: () async {
+                                try {
+                                  final opened = await launchUrl(link.resourceUrl,
+                                    mode: LaunchMode.externalApplication);
+                                  if (!opened) throw StateError('Link unavailable');
+                                } catch (_) {
+                                  await Clipboard.setData(ClipboardData(
+                                    text: link.resourceUrl.toString()));
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text(
+                                      'Issuer link could not open; URL copied')));
+                                }
+                              },
+                            );
+                          },
+                        ),
+                )),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
   // Unified Search Results View
   // --------------------------------------------------------------------------
 
   Widget _buildSearchResults(ThemeData theme) {
     final searchAsync = ref.watch(taxonomySearchProvider(_searchQuery));
+    final reviewed = ref.watch(verifiedDestinationsProvider).asData?.value ?? [];
+    final matched = reviewed.where((d) => d.matches(_searchQuery)).take(12).toList();
 
-    return searchAsync.when(
+    return Column(
+      children: [
+        if (matched.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 300),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text('Issuer-reviewed credentials and exams',
+                    style: theme.textTheme.titleSmall),
+                ),
+                for (final destination in matched)
+                  _buildVerifiedDestinationCard(theme, destination),
+              ],
+            ),
+          ),
+        Expanded(child: searchAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Search error: $err')),
       data: (results) {
+        if (results.isEmpty && matched.isNotEmpty) {
+          return const SizedBox.shrink();
+        }
         if (results.isEmpty) {
           return Center(
             child: Column(
@@ -656,6 +1010,8 @@ class _TaxonomyExplorerScreenState
           },
         );
       },
+    )),
+      ],
     );
   }
 }

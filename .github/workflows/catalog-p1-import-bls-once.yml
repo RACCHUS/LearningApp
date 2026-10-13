@@ -1,0 +1,81 @@
+# Owner-authorized P1: ingest observed BLS 2025–2035 statistics into
+# admin-only evidence tables. It does NOT publish licenses or certifications.
+# Intentionally non-recurring, exact merge-marker gated and source-pinned.
+name: One-Time BLS 2025-2035 Demand Evidence Import
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/catalog-p1-import-bls-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learningapp-p1-bls-official-demand-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.event_name == 'push' && contains(github.event.head_commit.message, 'P1 BLS EVIDENCE IMPORT ONCE 20261012') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install exact workbook decoder
+        run: python -m pip install 'openpyxl==3.1.5'
+      - name: Fail closed if project or privileged key differs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUPABASE_URL%/}" != 'https://xzvkdwebtbxlrxagtzlv.supabase.co' ]]; then
+            echo "::error::Wrong or missing Learning App Supabase URL"
+            exit 2
+          fi
+          if [[ "$SUPABASE_SERVICE_ROLE_KEY" != sb_secret_* ]]; then
+            echo "::error::Expected modern sb_secret_ backend key"
+            exit 2
+          fi
+      - name: Re-fetch, checksum and validate real BLS 2025–2035 official workbook
+        run: python tool/catalog_official_demand.py bls --validate
+      - name: Stage read-only audience-private BLS demand observations
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          python tool/catalog_official_demand.py bls --import --confirm-project xzvkdwebtbxlrxagtzlv
+      - name: Verify checked release manifest via REST, no public data exposure
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          base = os.environ['SUPABASE_URL'].rstrip('/')
+          key = os.environ['SUPABASE_SERVICE_ROLE_KEY']
+          url = base + '/rest/v1/catalog_official_demand_imports?select=source_release,sha256,observations&source_release=eq.BLS_EMP_2025_2035'
+          req = urllib.request.Request(url, headers={'apikey': key})
+          with urllib.request.urlopen(req, timeout=30) as result:
+              rows = json.load(result)
+          expected_hash = 'a7d060f0576f7d4f5b829b9a0bb4a6c11a12766d159ebb0e07aab5bd2e7583c5'
+          if len(rows) != 1 or rows[0]['sha256'] != expected_hash or rows[0]['observations'] != 831:
+              raise SystemExit('Source release manifest differs from the independently validated BLS source')
+          url = base + '/rest/v1/catalog_official_demand_observations?select=id&source_release=eq.BLS_EMP_2025_2035'
+          req = urllib.request.Request(url, headers={
+              'apikey': key, 'Prefer':'count=exact', 'Range-Unit':'items', 'Range':'0-0'})
+          with urllib.request.urlopen(req, timeout=30) as result:
+              count = int(result.headers['Content-Range'].split('/')[-1])
+          if count != 831:
+              raise SystemExit(f'Expected 831 BLS detail observations; found {count}')
+          print('BLS source manifest SHA and all 831 private demand observations verified.')
+          PY

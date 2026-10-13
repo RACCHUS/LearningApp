@@ -1,0 +1,601 @@
+{
+  "schema_version": 1,
+  "created_on": "2026-10-11",
+  "notice": "Curated examples pending verification. These are not a popularity ranking, not published credentials, and not live courses. Revalidate issuer, current credential versions, exact regulator page, and rights before approval.",
+  "candidate_count": 31,
+  "candidates": [
+    {
+      "source_namespace": "comptia",
+      "source_key": "a-plus",
+      "destination_type": "certification",
+      "title": "CompTIA A+",
+      "issuer_name": "CompTIA",
+      "issuer_url": "https://www.comptia.org/certifications",
+      "source_url": "https://www.comptia.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "comptia",
+      "source_key": "network-plus",
+      "destination_type": "certification",
+      "title": "CompTIA Network+",
+      "issuer_name": "CompTIA",
+      "issuer_url": "https://www.comptia.org/certifications",
+      "source_url": "https://www.comptia.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "comptia",
+      "source_key": "security-plus",
+      "destination_type": "certification",
+      "title": "CompTIA Security+",
+      "issuer_name": "CompTIA",
+      "issuer_url": "https://www.comptia.org/certifications",
+      "source_url": "https://www.comptia.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "comptia",
+      "source_key": "cysa-plus",
+      "destination_type": "certification",
+      "title": "CompTIA CySA+",
+      "issuer_name": "CompTIA",
+      "issuer_url": "https://www.comptia.org/certifications",
+      "source_url": "https://www.comptia.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "comptia",
+      "source_key": "pentest-plus",
+      "destination_type": "certification",
+      "title": "CompTIA PenTest+",
+      "issuer_name": "CompTIA",
+      "issuer_url": "https://www.comptia.org/certifications",
+      "source_url": "https://www.comptia.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "aws",
+      "source_key": "cloud-practitioner",
+      "destination_type": "certification",
+      "title": "AWS Certified Cloud Practitioner",
+      "issuer_name": "Amazon Web Services",
+      "issuer_url": "https://aws.amazon.com/certification/",
+      "source_url": "https://aws.amazon.com/certification/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "aws",
+      "source_key": "solutions-architect-associate",
+      "destination_type": "certification",
+      "title": "AWS Certified Solutions Architect - Associate",
+      "issuer_name": "Amazon Web Services",
+      "issuer_url": "https://aws.amazon.com/certification/",
+      "source_url": "https://aws.amazon.com/certification/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "aws",
+      "source_key": "developer-associate",
+      "destination_type": "certification",
+      "title": "AWS Certified Developer - Associate",
+      "issuer_name": "Amazon Web Services",
+      "issuer_url": "https://aws.amazon.com/certification/",
+      "source_url": "https://aws.amazon.com/certification/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "azure-fundamentals",
+      "destination_type": "certification",
+      "title": "Microsoft Certified: Azure Fundamentals",
+      "issuer_name": "Microsoft",
+      "issuer_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "source_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "azure-data-fundamentals",
+      "destination_type": "certification",
+      "title": "Microsoft Certified: Azure Data Fundamentals",
+      "issuer_name": "Microsoft",
+      "issuer_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "source_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "microsoft",
+      "source_key": "power-bi-data-analyst-associate",
+      "destination_type": "certification",
+      "title": "Microsoft Certified: Power BI Data Analyst Associate",
+      "issuer_name": "Microsoft",
+      "issuer_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "source_url": "https://learn.microsoft.com/en-us/credentials/certifications/",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "pmi",
+      "source_key": "pmp",
+      "destination_type": "certification",
+      "title": "Project Management Professional (PMP)",
+      "issuer_name": "Project Management Institute",
+      "issuer_url": "https://www.pmi.org/certifications",
+      "source_url": "https://www.pmi.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "pmi",
+      "source_key": "capm",
+      "destination_type": "certification",
+      "title": "Certified Associate in Project Management (CAPM)",
+      "issuer_name": "Project Management Institute",
+      "issuer_url": "https://www.pmi.org/certifications",
+      "source_url": "https://www.pmi.org/certifications",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "ncsbn",
+      "source_key": "nclex-rn",
+      "destination_type": "licensure_exam",
+      "title": "NCLEX-RN",
+      "issuer_name": "National Council of State Boards of Nursing",
+      "issuer_url": "https://www.nclex.com/test-plans",
+      "source_url": "https://www.nclex.com/test-plans",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "ncsbn",
+      "source_key": "nclex-pn",
+      "destination_type": "licensure_exam",
+      "title": "NCLEX-PN",
+      "issuer_name": "National Council of State Boards of Nursing",
+      "issuer_url": "https://www.nclex.com/test-plans",
+      "source_url": "https://www.nclex.com/test-plans",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "real-estate-sales-associate",
+      "destination_type": "professional_license",
+      "title": "Florida Real Estate Sales Associate License",
+      "issuer_name": "Florida Department of Business and Professional Regulation",
+      "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "source_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "real-estate-broker",
+      "destination_type": "professional_license",
+      "title": "Florida Real Estate Broker License",
+      "issuer_name": "Florida Department of Business and Professional Regulation",
+      "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "source_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "cosmetologist",
+      "destination_type": "professional_license",
+      "title": "Florida Cosmetologist License",
+      "issuer_name": "Florida Department of Business and Professional Regulation",
+      "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "source_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "community-association-manager",
+      "destination_type": "professional_license",
+      "title": "Florida Community Association Manager License",
+      "issuer_name": "Florida Department of Business and Professional Regulation",
+      "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "source_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "certified-general-contractor",
+      "destination_type": "professional_license",
+      "title": "Florida Certified General Contractor License",
+      "issuer_name": "Florida Department of Business and Professional Regulation",
+      "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "source_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "fl_dfs",
+      "source_key": "general-lines-2-20",
+      "destination_type": "professional_license",
+      "title": "Florida General Lines (2-20) Insurance Agent License",
+      "issuer_name": "Florida Department of Financial Services",
+      "issuer_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "fl_dfs",
+      "source_key": "life-health-2-15",
+      "destination_type": "professional_license",
+      "title": "Florida Life, Health and Variable Annuity (2-15) Agent License",
+      "issuer_name": "Florida Department of Financial Services",
+      "issuer_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "jurisdiction": "US-FL",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "ged",
+      "source_key": "ged",
+      "destination_type": "standardized_exam",
+      "title": "GED Test",
+      "issuer_name": "GED Testing Service",
+      "issuer_url": "https://www.ged.com/",
+      "source_url": "https://www.ged.com/",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "sat",
+      "destination_type": "standardized_exam",
+      "title": "SAT",
+      "issuer_name": "College Board",
+      "issuer_url": "https://satsuite.collegeboard.org/sat",
+      "source_url": "https://satsuite.collegeboard.org/sat",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "act",
+      "source_key": "act",
+      "destination_type": "standardized_exam",
+      "title": "ACT Test",
+      "issuer_name": "ACT",
+      "issuer_url": "https://www.act.org/content/act/en/products-and-services/the-act.html",
+      "source_url": "https://www.act.org/content/act/en/products-and-services/the-act.html",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "ets",
+      "source_key": "gre",
+      "destination_type": "standardized_exam",
+      "title": "GRE General Test",
+      "issuer_name": "ETS",
+      "issuer_url": "https://www.ets.org/gre.html",
+      "source_url": "https://www.ets.org/gre.html",
+      "jurisdiction": "Global",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "us_dod",
+      "source_key": "asvab",
+      "destination_type": "standardized_exam",
+      "title": "ASVAB",
+      "issuer_name": "U.S. Department of Defense",
+      "issuer_url": "https://www.officialasvab.com/",
+      "source_url": "https://www.officialasvab.com/",
+      "jurisdiction": "US",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "nces_cip",
+      "source_key": "51.3801",
+      "destination_type": "academic_program",
+      "title": "Registered Nursing academic program category",
+      "issuer_name": "National Center for Education Statistics",
+      "issuer_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "source_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "jurisdiction": "US",
+      "cip_code": "51.3801",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "nces_cip",
+      "source_key": "11.0701",
+      "destination_type": "academic_program",
+      "title": "Computer Science academic program category",
+      "issuer_name": "National Center for Education Statistics",
+      "issuer_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "source_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "jurisdiction": "US",
+      "cip_code": "11.0701",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "nces_cip",
+      "source_key": "52.0201",
+      "destination_type": "academic_program",
+      "title": "Business Administration academic program category",
+      "issuer_name": "National Center for Education Statistics",
+      "issuer_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "source_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "jurisdiction": "US",
+      "cip_code": "52.0201",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    },
+    {
+      "source_namespace": "nces_cip",
+      "source_key": "52.0301",
+      "destination_type": "academic_program",
+      "title": "Accounting academic program category",
+      "issuer_name": "National Center for Education Statistics",
+      "issuer_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "source_url": "https://nces.ed.gov/ipeds/cipcode/",
+      "jurisdiction": "US",
+      "cip_code": "52.0301",
+      "review_status": "pending",
+      "publication_status": "draft",
+      "source_rights": "link_metadata_only",
+      "metadata": {
+        "origin": "editorial_candidate_seed",
+        "verification": "issuer_link_review_pending",
+        "popularity_measured": false,
+        "description_is_not_licensing_advice": true
+      }
+    }
+  ]
+}
