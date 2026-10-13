@@ -37,7 +37,7 @@ class PreReaderAudioService {
       );
 
       // Speak immediately, preempting any previous utterance
-      await _audioService.speak(text);
+      await _audioService.speak(text, interrupt: true);
     } catch (e) {
       if (kDebugMode) {
         print('PreReaderAudioService error speaking "$text": $e');

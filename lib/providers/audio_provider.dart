@@ -25,6 +25,18 @@ class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
 
   Future<void> _initializeAudioService() async {
     await _audioService.initialize();
+    if (state.preferredVoice == null && _audioService.currentSettings.preferredVoice != null) {
+      state = state.copyWith(preferredVoice: _audioService.currentSettings.preferredVoice);
+    }
+    await _audioService.updateSettings(state);
+  }
+
+  @override
+  Future<void> loadSettings() async {
+    await super.loadSettings();
+    if (state.preferredVoice == null && _audioService.currentSettings.preferredVoice != null) {
+      state = state.copyWith(preferredVoice: _audioService.currentSettings.preferredVoice);
+    }
     await _audioService.updateSettings(state);
   }
 
