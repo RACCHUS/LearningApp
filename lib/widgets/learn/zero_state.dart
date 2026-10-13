@@ -75,9 +75,7 @@ class LearnZeroState extends StatelessWidget {
                 onPressed: () => context.go('/library'),
                 child: const Text('Explore library →'),
               ),
-              const SizedBox(height: DesignTokens.space5),
-              const Divider(),
-              const SizedBox(height: DesignTokens.space4),
+              _buildAccessibleTrackDivider(theme, colorScheme),
               const PreReaderEntryBanner(),
             ],
           ),
@@ -138,12 +136,47 @@ class LearnZeroState extends StatelessWidget {
               onPressed: () => CreateTargetDialog.show(context),
               child: const Text('Create your own →'),
             ),
-            const SizedBox(height: DesignTokens.space5),
-            const Divider(),
-            const SizedBox(height: DesignTokens.space4),
+            _buildAccessibleTrackDivider(theme, colorScheme),
             const PreReaderEntryBanner(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccessibleTrackDivider(ThemeData theme, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: DesignTokens.space5,
+        bottom: DesignTokens.space4,
+      ),
+      child: Row(
+        children: [
+          const Expanded(child: Divider()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space3),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.hearing,
+                  size: 15,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'ACCESSIBLE LEARNING TRACK',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Expanded(child: Divider()),
+        ],
       ),
     );
   }

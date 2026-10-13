@@ -18,11 +18,11 @@ class PreReaderEntryBanner extends ConsumerWidget {
     final profile = ref.watch(preReaderProvider);
 
     return Material(
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
         side: BorderSide(
-          color: colorScheme.primary.withValues(alpha: 0.4),
+          color: colorScheme.primary.withValues(alpha: 0.5),
           width: 1.5,
         ),
       ),
@@ -43,20 +43,27 @@ class PreReaderEntryBanner extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              // Pulsing audio icon
+              // High-visibility audio emblem
               Container(
-                width: 52,
-                height: 52,
+                width: 54,
+                height: 54,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       colorScheme.primary,
-                      colorScheme.primary.withValues(alpha: 0.7),
+                      colorScheme.primary.withValues(alpha: 0.75),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.hearing,
@@ -69,36 +76,67 @@ class PreReaderEntryBanner extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Distinguishing category badge to prevent learner confusion
                     Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            profile.enabled
-                                ? 'Continue Reading & Writing'
-                                : 'Start Here: Learn to Read & Write',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusFull,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.record_voice_over_outlined,
+                                size: 12,
+                                color: colorScheme.onPrimaryContainer,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                profile.enabled
+                                    ? (profile.track == PreReaderTrack.youth
+                                        ? 'ACTIVE: YOUTH TRACK 🎒'
+                                        : 'ACTIVE: ADULT TRACK 💼')
+                                    : 'NON-READER & SPOKEN TRACK',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: DesignTokens.space1),
-                        Text(
-                          profile.track == PreReaderTrack.youth ? '🎒' : '💼',
-                          style: const TextStyle(fontSize: 16),
-                        ),
                       ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      profile.enabled
+                          ? 'Continue Reading & Writing'
+                          : 'Start Here: Learn to Read & Write',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       profile.enabled
-                          ? 'Sound-to-letter matching, finger tracing & math'
-                          : 'Tap to listen • No reading needed • Step-by-step',
+                          ? 'Letter sounds, finger tracing & everyday numbers'
+                          : 'No reading required • 100% voice & picture guided',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -106,12 +144,25 @@ class PreReaderEntryBanner extends ConsumerWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.volume_up),
-                tooltip: 'Listen to description',
+              const SizedBox(width: DesignTokens.space2),
+              // Prominent dedicated Listen button
+              FilledButton.tonalIcon(
+                key: const Key('pre-reader-listen-button'),
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusFull),
+                  ),
+                ),
+                icon: const Icon(Icons.volume_up, size: 18),
+                label: const Text('Listen'),
                 onPressed: () {
                   ref.read(preReaderProvider.notifier).speak(
-                        'Welcome! Tap this card to learn how to read, write, and count from the very beginning.',
+                        'Welcome! This is the spoken learning track. Tap anywhere on this card to learn how to read, write, and count using pictures and voice, with no reading required.',
                       );
                 },
               ),
