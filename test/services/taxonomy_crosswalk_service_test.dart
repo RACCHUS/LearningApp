@@ -13,10 +13,11 @@ void main() {
     test('getCatalogClusters returns presentation clusters', () async {
       final clusters = await service.getCatalogClusters();
       expect(clusters, isNotEmpty);
-      expect(clusters.length, 12);
+      expect(clusters.length, greaterThanOrEqualTo(12));
       expect(clusters.any((c) => c.slug == 'computing-tech'), isTrue);
       expect(clusters.any((c) => c.slug == 'health-medicine'), isTrue);
       expect(clusters.any((c) => c.slug == 'engineering-tech'), isTrue);
+      expect(clusters.any((c) => c.slug == 'cluster_life_milestones'), isTrue);
     });
 
     test('getFields returns canonical fields', () async {

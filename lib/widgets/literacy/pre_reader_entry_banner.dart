@@ -77,29 +77,30 @@ class PreReaderEntryBanner extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Distinguishing category badge to prevent learner confusion
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(
+                            DesignTokens.radiusFull,
                           ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(
-                              DesignTokens.radiusFull,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.record_voice_over_outlined,
+                              size: 12,
+                              color: colorScheme.onPrimaryContainer,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.record_voice_over_outlined,
-                                size: 12,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
                                 profile.enabled
                                     ? (profile.track == PreReaderTrack.youth
                                         ? 'ACTIVE: YOUTH TRACK 🎒'
@@ -111,11 +112,12 @@ class PreReaderEntryBanner extends ConsumerWidget {
                                   fontSize: 10,
                                   letterSpacing: 0.6,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
