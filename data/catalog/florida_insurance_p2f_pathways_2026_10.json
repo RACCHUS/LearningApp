@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "reviewed_jurisdiction": "US-FL",
+  "regulator_name": "Florida Department of Financial Services",
+  "regulator_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "records": [
+    {
+      "source_namespace": "fl_dfs",
+      "source_key": "general-lines-2-20",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida General Lines (2-20) Agent: selected examination-route steps",
+      "overview": "Selected regulator-sourced qualification and licensing steps for Florida resident General Lines (2-20) property and casualty agents. Statutory qualification alternatives include approved coursework, practical experience, degree, or professional designations. Individual criminal or disciplinary background reviews, reciprocity determinations, and non-resident rules are not fully covered. Always consult the Department of Financial Services directly. Learning App cannot issue an insurance license or determine eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "source_checked_on": "2026-10-13",
+      "reviewed_on": "2026-10-13",
+      "review_note": "Reviewed against the Florida Department of Financial Services (DFS) qualifications page and resident qualification guide on October 13, 2026. DFS establishes distinct qualification alternatives under Florida Statutes § 626.732, fingerprinting, application, examination, and insurer appointment stages. Selected steps only; individual exceptions are not fully covered.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Complete a 200-hour state-approved property and casualty pre-licensing qualification course",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+              },
+              {
+                "op": "step",
+                "label": "Complete 1 year of full-time insurance experience under a licensed agent plus a 40-hour approved course",
+                "stage": "experience",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+                "condition": "Experience as a licensed customer representative (4-40) or personal lines agent (20-44)"
+              },
+              {
+                "op": "step",
+                "label": "Earn an accredited college degree with at least 18 semester hours in insurance and risk management",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+                "condition": "Must include property, casualty, and commercial insurance coursework"
+              },
+              {
+                "op": "step",
+                "label": "Hold an active Chartered Property Casualty Underwriter (CPCU) or Certified Insurance Counselor (CIC) designation",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+                "condition": "Industry professional designation alternative recognized under DFS rules"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Submit the resident agent application and state licensing fees through the MyFloridaCFO portal",
+            "stage": "application",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Complete live-scan digital fingerprinting through an approved vendor for FDLE and FBI background checks",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Pass the Florida General Lines (2-20) state licensing examination administered by Pearson VUE",
+            "stage": "examination",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+            "condition": "Passing score of 70% or higher is required"
+          },
+          {
+            "op": "step",
+            "label": "Receive the official resident license from the Florida Department of Financial Services",
+            "stage": "authorization",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Secure an appointment with an authorized insurance company or agency within 48 months to maintain authority",
+            "stage": "appointment",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+            "condition": "Unappointed licenses expire after 48 months pursuant to Florida law"
+          }
+        ]
+      }
+    },
+    {
+      "source_namespace": "fl_dfs",
+      "source_key": "life-health-2-15",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Life, Health and Variable Annuity (2-15) Agent: selected examination-route steps",
+      "overview": "Selected regulator-sourced qualification and licensing steps for Florida resident Life, Health and Variable Annuity (2-15) agents. Statutory qualification alternatives include approved 60-hour coursework, degree, or professional designation. Does not determine individual background or statutory eligibility. Always consult the Department of Financial Services directly. Learning App cannot issue an insurance license or determine eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+      "source_checked_on": "2026-10-13",
+      "reviewed_on": "2026-10-13",
+      "review_note": "Reviewed against the Florida Department of Financial Services (DFS) qualifications page and resident qualification guide on October 13, 2026. DFS establishes qualification alternatives under Florida Statutes § 626.785 and § 626.831, fingerprinting, application, examination, and appointment stages. Selected steps only; individual exceptions are not fully covered.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Complete a 60-hour state-approved life, health, and variable annuity pre-licensing qualification course",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+              },
+              {
+                "op": "step",
+                "label": "Earn an accredited college degree with substantial coursework in life, health, and annuities",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+                "condition": "Minimum 9 semester hours in life and health insurance"
+              },
+              {
+                "op": "step",
+                "label": "Hold an active Chartered Life Underwriter (CLU) professional designation",
+                "stage": "education",
+                "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+                "condition": "Designation conferred by The American College"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Submit the resident agent application and state licensing fees through the MyFloridaCFO portal",
+            "stage": "application",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Complete live-scan digital fingerprinting through an approved vendor for FDLE and FBI background checks",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Pass the Florida Life, Health and Variable Annuity (2-15) state licensing examination via Pearson VUE",
+            "stage": "examination",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+            "condition": "Passing score of 70% or higher is required"
+          },
+          {
+            "op": "step",
+            "label": "Receive the official resident license from the Florida Department of Financial Services",
+            "stage": "authorization",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications"
+          },
+          {
+            "op": "step",
+            "label": "Secure an appointment with an authorized life or health insurance company within 48 months",
+            "stage": "appointment",
+            "source_url": "https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications",
+            "condition": "Unappointed licenses expire after 48 months pursuant to Florida law"
+          }
+        ]
+      }
+    }
+  ]
+}
