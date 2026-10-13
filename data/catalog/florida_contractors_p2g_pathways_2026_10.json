@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "reviewed_jurisdiction": "US-FL",
+  "regulator_name": "Florida Construction Industry Licensing Board (DBPR CILB)",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "records": [
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "certified-general-contractor",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Certified General Contractor (CGC): selected examination-route steps",
+      "overview": "Selected regulator-sourced qualification and licensing steps for Florida Certified General Contractors (CGC). Florida Statutes § 489.111 establishes alternative experience-and-education matrices, three examination divisions, financial responsibility, and board review. Individual criminal background exceptions, business entity qualifications, and local permitting requirements are not fully covered. Always consult the DBPR directly. Learning App cannot issue a contractor license or determine legal eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
+      "source_checked_on": "2026-10-13",
+      "reviewed_on": "2026-10-13",
+      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-A checklist on October 13, 2026. The board models experience/education combinations, 3-part examinations, credit verification, and board approval as distinct stages.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Document 4 years of active construction experience in the trade with at least 1 year as a foreman",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
+                "condition": "Experience must be verified by licensed general contractor references"
+              },
+              {
+                "op": "step",
+                "label": "Document 3 years of verified field experience plus 1 year of accredited college-level education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+              },
+              {
+                "op": "step",
+                "label": "Document 2 years of verified field experience plus 2 years of accredited college construction education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+              },
+              {
+                "op": "step",
+                "label": "Document 1 year of experience as a foreman plus 3 years of accredited college-level education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+              },
+              {
+                "op": "step",
+                "label": "Graduate with a 4-year accredited degree in construction, architecture, or engineering plus 1 year as foreman",
+                "stage": "education",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+              },
+              {
+                "op": "step",
+                "label": "Qualify through verified military service construction experience evaluated by the Board",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
+                "condition": "Subject to CILB military equivalency review guidelines"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Pass all three parts of the Florida state contractor exam: Business & Finance, Contract Admin, and Project Mgmt",
+            "stage": "examination",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
+            "condition": "Passing score of 70% or higher required on each exam part"
+          },
+          {
+            "op": "step",
+            "label": "Demonstrate financial responsibility with a credit report showing a score of 660 or higher or approved bond",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
+            "condition": "Applicants below 660 must post a licensing bond and complete a 14-hour financial course"
+          },
+          {
+            "op": "step",
+            "label": "Obtain required public liability, property damage, and workers' compensation coverage or valid exemption",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+          },
+          {
+            "op": "step",
+            "label": "Complete electronic fingerprinting through a Florida Livescan service provider for background screening",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+          },
+          {
+            "op": "step",
+            "label": "Submit the completed DBPR CILB 5-A application form and required state processing fees",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+          },
+          {
+            "op": "step",
+            "label": "Receive the Certified General Contractor state license following Construction Industry Board review",
+            "stage": "authorization",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605"
+          }
+        ]
+      }
+    },
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "certified-building-contractor",
+      "revision": 1,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Certified Building Contractor (CBC): selected examination-route steps",
+      "overview": "Selected regulator-sourced qualification and licensing steps for Florida Certified Building Contractors (CBC). Scope covers commercial and residential construction up to three stories. Statutory qualification alternatives include trade experience, college degrees, examinations, credit verification, and CILB board approval. Always consult the DBPR directly. Learning App cannot issue a contractor license or determine legal eligibility.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
+      "source_checked_on": "2026-10-13",
+      "reviewed_on": "2026-10-13",
+      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-B checklist on October 13, 2026. Models experience/education alternatives, 3-part examinations, financial responsibility, and board approval as distinct stages.",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Document 4 years of active construction experience in the trade with at least 1 year as a foreman",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
+                "condition": "Experience must be verified by licensed general or building contractor references"
+              },
+              {
+                "op": "step",
+                "label": "Document 3 years of verified field experience plus 1 year of accredited college-level education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+              },
+              {
+                "op": "step",
+                "label": "Document 2 years of verified field experience plus 2 years of accredited college construction education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+              },
+              {
+                "op": "step",
+                "label": "Document 1 year of experience as a foreman plus 3 years of accredited college-level education",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+              },
+              {
+                "op": "step",
+                "label": "Graduate with a 4-year accredited degree in construction, architecture, or engineering plus 1 year as foreman",
+                "stage": "education",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+              },
+              {
+                "op": "step",
+                "label": "Qualify through verified military service construction experience evaluated by the Board",
+                "stage": "experience",
+                "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
+                "condition": "Subject to CILB military equivalency review guidelines"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Pass all three parts of the Florida state contractor exam: Business & Finance, Contract Admin, and Project Mgmt",
+            "stage": "examination",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
+            "condition": "Passing score of 70% or higher required on each exam part"
+          },
+          {
+            "op": "step",
+            "label": "Demonstrate financial responsibility with a credit report showing a score of 660 or higher or approved bond",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
+            "condition": "Applicants below 660 must post a licensing bond and complete a 14-hour financial course"
+          },
+          {
+            "op": "step",
+            "label": "Obtain required public liability, property damage, and workers' compensation coverage or valid exemption",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+          },
+          {
+            "op": "step",
+            "label": "Complete electronic fingerprinting through a Florida Livescan service provider for background screening",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+          },
+          {
+            "op": "step",
+            "label": "Submit the completed DBPR CILB 5-B application form and required state processing fees",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+          },
+          {
+            "op": "step",
+            "label": "Receive the Certified Building Contractor state license following Construction Industry Board review",
+            "stage": "authorization",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602"
+          }
+        ]
+      }
+    }
+  ]
+}
