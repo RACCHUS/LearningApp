@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
@@ -16,6 +17,7 @@ class ContinueCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeContext = ref.watch(learningContextsProvider).active;
+    final isPreReader = ref.watch(preReaderProvider).enabled;
     final view = _ContinueView.from(action, activeContext);
 
     return Column(
@@ -27,7 +29,25 @@ class ContinueCard extends ConsumerWidget {
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: DesignTokens.space3),
-        Text(view.title, style: theme.textTheme.headlineSmall),
+        Row(
+          children: [
+            Expanded(
+              child: Text(view.title, style: theme.textTheme.headlineSmall),
+            ),
+            if (isPreReader)
+              IconButton(
+                key: const Key('learn-action-audio-readout'),
+                icon: const Icon(Icons.volume_up_rounded),
+                tooltip: 'Listen to next step',
+                onPressed: () {
+                  final audio = ref.read(preReaderAudioServiceProvider);
+                  final textToSpeak =
+                      '${view.title}. ${view.rationale ?? ''}. Tap ${view.primaryLabel} to begin.';
+                  audio.speak(textToSpeak);
+                },
+              ),
+          ],
+        ),
         if (view.orientation != null) ...[
           const SizedBox(height: DesignTokens.space1),
           Text(
@@ -60,6 +80,19 @@ class ContinueCard extends ConsumerWidget {
             ),
           ],
         ),
+        if (action is ContextComplete && activeContext != null) ...[
+          const SizedBox(height: DesignTokens.space2),
+          TextButton.icon(
+            key: const Key('learn-archive-goal-action'),
+            icon: const Icon(Icons.archive_outlined, size: 18),
+            label: const Text('Archive completed goal'),
+            onPressed: () async {
+              await ref
+                  .read(learningContextsProvider.notifier)
+                  .archive(activeContext.id);
+            },
+          ),
+        ],
       ],
     );
   }
@@ -195,7 +228,12 @@ class _ContinueView {
   }
 
   static String _route(LearningActivity activity) {
-    if (activity is LessonActivity) return '/lesson/${activity.lessonId}';
+    if (activity is LessonActivity) {
+      if (activity.lessonId == 'literacy' || activity.courseId == 'foundational-literacy') {
+        return '/literacy';
+      }
+      return '/lesson/${activity.lessonId}';
+    }
     if (activity is StudySetActivity) {
       return '/study-set?setId=${activity.studySetId}';
     }
@@ -203,6 +241,12 @@ class _ContinueView {
   }
 
   static String _secondaryLabel(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootId == 'foundational-literacy' ||
+        (activity is LessonActivity &&
+            (activity.lessonId == 'literacy' ||
+                activity.courseId == 'foundational-literacy'))) {
+      return 'Literacy Hub';
+    }
     if (context?.rootType == ContextRootType.target) return 'Exam outline →';
     if (activity is StudySetActivity) return 'Browse set';
     if (activity is LessonActivity && activity.courseId == null) {
@@ -212,6 +256,12 @@ class _ContinueView {
   }
 
   static String _secondaryRoute(LearningActivity activity, [LearningContext? context]) {
+    if (context?.rootId == 'foundational-literacy' ||
+        (activity is LessonActivity &&
+            (activity.lessonId == 'literacy' ||
+                activity.courseId == 'foundational-literacy'))) {
+      return '/literacy';
+    }
     if (context?.rootType == ContextRootType.target) {
       return '/target/${context!.rootId}/outline';
     }

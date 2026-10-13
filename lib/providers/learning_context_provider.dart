@@ -46,40 +46,47 @@ final learnerIdProvider = Provider<String>((ref) {
 
 class LearningContextsState {
   final List<LearningContext> contexts;
+  final List<LearningContext> archivedContexts;
   final String? activeId;
   final bool isLoading;
   final String? error;
 
   const LearningContextsState({
     this.contexts = const [],
+    this.archivedContexts = const [],
     this.activeId,
     this.isLoading = false,
     this.error,
   });
 
   LearningContext? get active {
-    if (contexts.isEmpty) return null;
-    for (final c in contexts) {
-      if (c.id == activeId) return c;
+    if (contexts.isEmpty || activeId == '') return null;
+    if (activeId != null) {
+      for (final c in contexts) {
+        if (c.id == activeId) return c;
+      }
     }
-    return contexts.first;
+    return contexts.isNotEmpty ? contexts.first : null;
   }
 
-  bool get hasAny => contexts.isNotEmpty;
+  bool get hasAny => contexts.isNotEmpty || archivedContexts.isNotEmpty;
 
-  /// A one-item switcher is noise; render the label as plain text instead.
-  bool get showSwitcherControl => contexts.length >= 2;
+  /// A single context with no other archived goals is rendered as plain text (spec §1.2b).
+  bool get showSwitcherControl => (contexts.length + archivedContexts.length) >= 2;
 
   LearningContextsState copyWith({
     List<LearningContext>? contexts,
+    List<LearningContext>? archivedContexts,
     String? activeId,
+    bool clearActiveId = false,
     bool? isLoading,
     String? error,
     bool clearError = false,
   }) {
     return LearningContextsState(
       contexts: contexts ?? this.contexts,
-      activeId: activeId ?? this.activeId,
+      archivedContexts: archivedContexts ?? this.archivedContexts,
+      activeId: clearActiveId ? null : (activeId ?? this.activeId),
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
     );
@@ -121,11 +128,18 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     try {
       await _sync?.sync(_userId);
       final ordered = _engine.orderForSwitcher(service.all(userId: _userId));
+      final archived = service.archived(userId: _userId);
       final savedId = await _readDefaultContextId();
-      final activeId = ordered.any((c) => c.id == savedId)
-          ? savedId
-          : (ordered.isNotEmpty ? ordered.first.id : null);
-      state = LearningContextsState(contexts: ordered, activeId: activeId);
+      final activeId = savedId == ''
+          ? ''
+          : (ordered.any((c) => c.id == savedId)
+              ? savedId
+              : (ordered.isNotEmpty ? ordered.first.id : null));
+      state = LearningContextsState(
+        contexts: ordered,
+        archivedContexts: archived,
+        activeId: activeId,
+      );
     } catch (e, stack) {
       debugPrint('❌ Failed to load learning contexts: $e\n$stack');
       state = state.copyWith(
@@ -216,12 +230,51 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     }
   }
 
+  Future<void> clearActive() async {
+    state = state.copyWith(activeId: '');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kDefaultContext, '');
+    } catch (e) {
+      debugPrint('⚠️ Could not clear active context: $e');
+    }
+  }
+
   Future<void> archive(String contextId) async {
     try {
       await _service?.setArchived(contextId, archived: true);
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString(_kDefaultContext);
+      if (savedId == contextId) {
+        await prefs.remove(_kDefaultContext);
+      }
       await load();
     } catch (e) {
       debugPrint('⚠️ Could not archive context: $e');
+    }
+  }
+
+  Future<void> unarchive(String contextId) async {
+    try {
+      await _service?.setArchived(contextId, archived: false);
+      await load();
+      await setActive(contextId);
+    } catch (e) {
+      debugPrint('⚠️ Could not unarchive context: $e');
+    }
+  }
+
+  Future<void> delete(String contextId) async {
+    try {
+      await _service?.deleteContext(contextId);
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString(_kDefaultContext);
+      if (savedId == contextId) {
+        await prefs.remove(_kDefaultContext);
+      }
+      await load();
+    } catch (e) {
+      debugPrint('⚠️ Could not delete context: $e');
     }
   }
 

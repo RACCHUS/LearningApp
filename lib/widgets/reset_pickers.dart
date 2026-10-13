@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/skill_stats_provider.dart';
 import '../providers/career_path_provider.dart';
+import '../providers/learning_context_provider.dart';
 import '../screens/home/home_courses_list.dart';
 
 /// Dialog to pick a skill for reset
@@ -282,5 +283,89 @@ Future<String?> showCareerPathPicker(BuildContext context) async {
   return showDialog<String>(
     context: context,
     builder: (context) => const CareerPathPickerDialog(),
+  );
+}
+
+/// Dialog to pick a learning goal/target for reset
+class LearningTargetPickerDialog extends ConsumerStatefulWidget {
+  const LearningTargetPickerDialog({super.key});
+
+  @override
+  ConsumerState<LearningTargetPickerDialog> createState() =>
+      _LearningTargetPickerDialogState();
+}
+
+class _LearningTargetPickerDialogState
+    extends ConsumerState<LearningTargetPickerDialog> {
+  String? _selectedTargetId;
+
+  @override
+  Widget build(BuildContext context) {
+    final contextsState = ref.watch(learningContextsProvider);
+    final allGoals = [
+      ...contextsState.contexts,
+      ...contextsState.archivedContexts,
+    ];
+
+    return AlertDialog(
+      title: const Text('Select Learning Goal to Reset'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: allGoals.isEmpty
+            ? const Center(
+                child: Text('No active or saved goals to reset'),
+              )
+            : ListView.builder(
+                itemCount: allGoals.length,
+                itemBuilder: (context, index) {
+                  final goal = allGoals[index];
+                  final isSelected = _selectedTargetId == goal.rootId;
+
+                  return RadioListTile<String>(
+                    value: goal.rootId,
+                    groupValue: _selectedTargetId,
+                    onChanged: (value) =>
+                        setState(() => _selectedTargetId = value),
+                    title: Text(goal.label),
+                    subtitle: Text(
+                      goal.isArchived
+                          ? 'Paused / Archived'
+                          : 'Active · ${goal.rootType.name.toUpperCase()}',
+                    ),
+                    secondary: CircleAvatar(
+                      backgroundColor: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey.shade200,
+                      child: Text(
+                        goal.emoji ?? '🎯',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _selectedTargetId == null
+              ? null
+              : () => Navigator.of(context).pop(_selectedTargetId),
+          child: const Text('Select'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Helper function to show learning target picker and return selected target ID
+Future<String?> showLearningTargetPicker(BuildContext context) async {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => const LearningTargetPickerDialog(),
   );
 }

@@ -217,9 +217,11 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     required ValueChanged<String> onSelected,
     required String keyPrefix,
     int maxLabelLength = 60,
+    String? selectedValue,
   }) {
     if (values.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final normalizedSelected = selectedValue?.trim().toLowerCase();
     return Padding(
       padding: const EdgeInsets.only(top: DesignTokens.space2),
       child: Column(
@@ -234,19 +236,40 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
             spacing: 6,
             runSpacing: 2,
             children: [
-              for (var i = 0; i < values.length; i++)
-                ActionChip(
-                  key: Key('$keyPrefix-$i'),
-                  label: Text(
-                    values[i].length > maxLabelLength
-                        ? '${values[i].substring(0, maxLabelLength)}…'
-                        : values[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  tooltip: values[i],
-                  onPressed: () => onSelected(values[i]),
-                ),
+              for (var i = 0; i < values.length; i++) ...[
+                () {
+                  final isSelected = normalizedSelected != null &&
+                      normalizedSelected == values[i].trim().toLowerCase();
+                  return ActionChip(
+                    key: Key('$keyPrefix-$i'),
+                    avatar: isSelected
+                        ? Icon(Icons.check, size: 14, color: theme.colorScheme.primary)
+                        : null,
+                    label: Text(
+                      values[i].length > maxLabelLength
+                          ? '${values[i].substring(0, maxLabelLength)}…'
+                          : values[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    labelStyle: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                    backgroundColor: isSelected
+                        ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                        : null,
+                    side: isSelected
+                        ? BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5))
+                        : null,
+                    tooltip: values[i],
+                    onPressed: () => onSelected(values[i]),
+                  );
+                }(),
+              ],
             ],
           ),
         ],
@@ -529,6 +552,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                   heading: 'Organization suggestions',
                   values: providerSuggestions,
                   keyPrefix: 'goal-provider-suggestion',
+                  selectedValue: _providerController.text,
                   onSelected: (value) => setState(() =>
                       _providerController.text = value),
                 ),
@@ -553,6 +577,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                   values: descriptionSuggestions,
                   keyPrefix: 'goal-description-suggestion',
                   maxLabelLength: 72,
+                  selectedValue: _descController.text,
                   onSelected: (value) => setState(() =>
                       _descController.text = value),
                 ),

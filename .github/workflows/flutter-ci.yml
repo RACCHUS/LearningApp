@@ -78,6 +78,16 @@ jobs:
           python3 tool/catalog_p2e_pathways.py validate
           python3 -m unittest discover -s tool/tests -p 'test_catalog_p2e_pathways.py' -v
 
+      - name: Validate P2f Florida DFS insurance pathway manifest
+        run: |
+          python3 tool/catalog_p2f_insurance_pathways.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2f_insurance_pathways.py' -v
+
+      - name: Validate P2g Florida DBPR contractor pathway manifest
+        run: |
+          python3 tool/catalog_p2g_contractor_pathways.py validate
+          python3 -m unittest discover -s tool/tests -p 'test_catalog_p2g_contractor_pathways.py' -v
+
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
           python3 -m pip install 'openpyxl==3.1.5'

@@ -34,6 +34,9 @@ import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
 import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
+import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
+import 'package:learning_pwa/screens/literacy/life_milestones_screen.dart';
+import 'package:learning_pwa/screens/literacy/life_domains_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 
@@ -151,6 +154,66 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/',
         name: 'home',
         redirect: (context, state) => '/learn',
+      ),
+
+      // Foundational literacy route for pre-readers
+      GoRoute(
+        path: '/literacy',
+        name: 'literacy',
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'] ??
+              state.uri.queryParameters['section'];
+          LiteracyHubSection? initialSection;
+          if (tab == 'stories') {
+            initialSection = LiteracyHubSection.stories;
+          } else if (tab == 'diagnostic' || tab == 'placement') {
+            initialSection = LiteracyHubSection.diagnostic;
+          } else if (tab == 'blending' || tab == 'cvc') {
+            initialSection = LiteracyHubSection.blending;
+          } else if (tab == 'survival') {
+            initialSection = LiteracyHubSection.survival;
+          } else if (tab == 'id' || tab == 'personal') {
+            initialSection = LiteracyHubSection.personalId;
+          }
+          return FoundationalLiteracyScreen(initialSection: initialSection);
+        },
+      ),
+
+      // High-stakes US life milestones route (USCIS 2025, Florida DMV, GED Bridge)
+      GoRoute(
+        path: '/milestones',
+        name: 'milestones',
+        builder: (context, state) {
+          final categoryParam = state.uri.queryParameters['category'];
+          LifeMilestoneCategory initialCategory =
+              LifeMilestoneCategory.citizenship;
+          if (categoryParam == 'driver' || categoryParam == 'dmv') {
+            initialCategory = LifeMilestoneCategory.driverLicense;
+          } else if (categoryParam == 'ged') {
+            initialCategory = LifeMilestoneCategory.gedBridge;
+          }
+          return LifeMilestonesScreen(initialCategory: initialCategory);
+        },
+      ),
+
+      // Practical life domains route (OSHA safety, FDA food, Healthcare, Cash & ATM)
+      GoRoute(
+        path: '/domains',
+        name: 'domains',
+        builder: (context, state) {
+          final categoryParam = state.uri.queryParameters['category'];
+          LifeDomainCategory initialCategory =
+              LifeDomainCategory.workplaceSafety;
+          if (categoryParam == 'food') {
+            initialCategory = LifeDomainCategory.foodSafety;
+          } else if (categoryParam == 'health' ||
+              categoryParam == 'firstaid') {
+            initialCategory = LifeDomainCategory.healthcareFirstAid;
+          } else if (categoryParam == 'cash' || categoryParam == 'atm') {
+            initialCategory = LifeDomainCategory.financialAtm;
+          }
+          return LifeDomainsScreen(initialCategory: initialCategory);
+        },
       ),
 
       // Create lesson route

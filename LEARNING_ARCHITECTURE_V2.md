@@ -1252,6 +1252,32 @@ P6: Legacy Retirement
 
 ---
 
+## 13. Target Version Governance & Security Model
+
+Target versions evolve across lifecycles (`draft` → `review_ready` → `published` → `retired`). To ensure zero leakage of draft curriculum or concept mappings while preserving seamless historical access for learners enrolled prior to retirement, the authorization model enforces a strict two-tier architecture:
+
+### 13.1 Two-Tier Visibility Architecture
+1. **Normal (Catalog) Visibility (`public.is_target_version_visible`)**:
+   - Covers active catalog discovery: published versions of published, public learning targets; target owners; and assigned reviewers when status is `review_ready` (plus `service_role`).
+   - Deliberately excludes retired versions so they cannot be newly browsed, discovered, or selected as destinations.
+   - Enforced by `target_version_concept_mappings` read RLS, destination validation in `evaluate_target_version_migration`, and `migrate_user_context_target_version`.
+
+2. **Historical-Context Access (`public.has_historical_target_version_access`)**:
+   - Covers legitimate learners who enrolled in a version before it retired.
+   - Requires `target_versions.status = 'retired'` AND an existing `learning_contexts` row referencing `target_version_id` owned by the caller.
+   - Strictly bound to `auth.uid()` for non-service-role callers to prevent cross-user enrollment oracles or privacy leaks.
+   - Enforced by `target_versions` read RLS (`versions_read`) and the source version authorization in `evaluate_target_version_migration`.
+
+### 13.2 Controlled Context Assignment (`validate_learning_context_target_version`)
+To prevent attackers from arbitrarily assigning unpublished draft or retired UUIDs to their own `learning_contexts` to manufacture authorization evidence:
+- A `BEFORE INSERT OR UPDATE` trigger on `public.learning_contexts` enforces that:
+  - On `INSERT` or when `target_version_id` is mutated, the target version must satisfy `public.is_target_version_visible` (unless caller has `service_role`).
+  - For target-root contexts (`root_type = 'target'`), `root_id` must match `target_versions.target_id`.
+  - Non-admin callers cannot reassign context ownership (`user_id`).
+  - Existing context rows pointing to a version that subsequently became retired remain valid and mutable for non-version fields (e.g., `last_active_at`, `label`), granting legitimate historical access without vulnerability to self-assigned elevation.
+
+---
+
 ## 14. Content Ingestion Pipeline & Traceable Content Provenance Layer
 
 ### 14.1 The Safe Ingestion Pipeline
@@ -1425,7 +1451,7 @@ Optional target diagnostics are a presentation over the canonical assessment and
 ## 16. Revised Phased Content & Platform Roadmap
 
 ```
-Phase A: Content Primitives (~85–90% — Hardened)
+Phase A: Content Primitives (✅ COMPLETED & HARDENED)
  ├── Generic ordered lesson block model (lesson_blocks)
  ├── Extensible assessment interaction schema (assessment_items)
  ├── Shared vignettes & diagrams (assessment_stimuli)
@@ -1433,13 +1459,13 @@ Phase A: Content Primitives (~85–90% — Hardened)
  ├── Version concept mapping table (target_version_concept_mappings with nullable to_concept_id for removals)
  └── Hardened assessment & stimulus RLS policies (private items strictly protected from public leaks)
 
-Phase B: Canonical Concept Resolution & Manifest Contract (~85% — Hardened)
+Phase B: Canonical Concept Resolution & Manifest Contract (✅ COMPLETED & HARDENED)
  ├── Canonical concept alias indexing & RPC resolver (resolve_canonical_concept with field matching & ambiguity detection)
  ├── Formal JSON Schema contract (curriculum_manifest.schema.json with interaction-specific schemas & additionalProperties: false)
  ├── Manifest validation rules and alias ingestion
  └── Reference manifest enrichment (provenance SHA-256 fix, multi-source releases, explicit concept_slugs)
 
-Phase C: Ingestion Industrialization & Content Hardening (~85% — Hardened)
+Phase C: Ingestion Industrialization & Content Hardening (✅ COMPLETED & HARDENED)
  ├── Batch directory ingestion CLI with 3-phase execution (--dir, --dry-run, --apply)
  ├── Pedagogical quality linter & diagnostic gate (tool/lint_manifest.dart with JSON schema enforcement & dual-assessment validation)
  ├── Staging lifecycle transition (--stage-review, review_ready freeze & --publish prerequisite gate)
@@ -1448,56 +1474,28 @@ Phase C: Ingestion Industrialization & Content Hardening (~85% — Hardened)
  ├── Parity for objective-level flashcards & stimuli, and removed concept mappings
  └── Main CI validation gate (.github/workflows/flutter-ci.yml manifest lint & dry-run)
 
-Phase D: Learning Presentation (NEXT)
+Phase D: Learning Presentation (🚀 ACTIVE / NEXT)
  ├── Rich Lesson Block Reader (markdown, callout, code, table, formula, example, prompt)
  ├── New assessment interaction renderers (multi-select/SATA, ordered response, matching)
  ├── Shared case study & exhibit renderer
  └── Provenance & citation inspector UI
 
-Phase E: Assessment & Readiness Engine
+Phase E: Assessment & Readiness Engine (PLANNED)
  ├── Constraint-based weighted mock exam generator (domain weights, difficulty, formats)
  ├── Domain diagnostic profiling (evidence-based, non-overclaiming wording)
  ├── Timed exam simulation mode
  ├── Target-specific passing standard vs. app-estimated readiness models
  └── Adaptive practice mode (CAT-style practice)
 
-Phase F: Full Taxonomy & Crosswalk Expansion
+Phase F: Full Taxonomy & Crosswalk Expansion (PLANNED)
  ├── Version/release-driven CIP, SOC, and O*NET importers
  ├── Cross-target canonical concept sharing (Computer Science BS ↔ Software Engineer ↔ Certs)
  └── Occupational career crosswalk linking
 
-Phase G: Version Migration & Governance
+Phase G: Version Migration & Governance (PLANNED)
  ├── Target version migration tooling & concept transfer evaluation
  ├── Review-ready staging dashboard & QA workflows
  └── Publication and retirement pipeline
-```
-
----
-
-## 13. Target Version Governance & Security Model
-
-Target versions evolve across lifecycles (`draft` → `review_ready` → `published` → `retired`). To ensure zero leakage of draft curriculum or concept mappings while preserving seamless historical access for learners enrolled prior to retirement, the authorization model enforces a strict two-tier architecture:
-
-### 13.1 Two-Tier Visibility Architecture
-1. **Normal (Catalog) Visibility (`public.is_target_version_visible`)**:
-   - Covers active catalog discovery: published versions of published, public learning targets; target owners; and assigned reviewers when status is `review_ready` (plus `service_role`).
-   - Deliberately excludes retired versions so they cannot be newly browsed, discovered, or selected as destinations.
-   - Enforced by `target_version_concept_mappings` read RLS, destination validation in `evaluate_target_version_migration`, and `migrate_user_context_target_version`.
-
-2. **Historical-Context Access (`public.has_historical_target_version_access`)**:
-   - Covers legitimate learners who enrolled in a version before it retired.
-   - Requires `target_versions.status = 'retired'` AND an existing `learning_contexts` row referencing `target_version_id` owned by the caller.
-   - Strictly bound to `auth.uid()` for non-service-role callers to prevent cross-user enrollment oracles or privacy leaks.
-   - Enforced by `target_versions` read RLS (`versions_read`) and the source version authorization in `evaluate_target_version_migration`.
-
-### 13.2 Controlled Context Assignment (`validate_learning_context_target_version`)
-To prevent attackers from arbitrarily assigning unpublished draft or retired UUIDs to their own `learning_contexts` to manufacture authorization evidence:
-- A `BEFORE INSERT OR UPDATE` trigger on `public.learning_contexts` enforces that:
-  - On `INSERT` or when `target_version_id` is mutated, the target version must satisfy `public.is_target_version_visible` (unless caller has `service_role`).
-  - For target-root contexts (`root_type = 'target'`), `root_id` must match `target_versions.target_id`.
-  - Non-admin callers cannot reassign context ownership (`user_id`).
-  - Existing context rows pointing to a version that subsequently became retired remain valid and mutable for non-version fields (e.g., `last_active_at`, `label`), granting legitimate historical access without vulnerability to self-assigned elevation.
-
 ---
 
 ## 17. Phase H — Real-World Catalog Population & Coverage (new, in progress)

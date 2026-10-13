@@ -164,6 +164,37 @@ void main() {
     expect(find.byKey(const Key('goal-open-existing')), findsNothing);
     expect(find.textContaining('private, editable draft'), findsOneWidget);
   });
+  testWidgets('suggestion chips render with readable text color in dark theme',
+      (tester) async {
+    final data = [
+      example(
+        id: 'software',
+        title: 'Software Engineer',
+        official: true,
+        provider: 'Tech Industry',
+        description: 'Build applications.',
+      ),
+    ];
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        targetSuggestionsProvider(TargetType.career)
+            .overrideWith((ref) async => data),
+      ],
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: const Scaffold(body: CreateTargetDialog()),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final chipFinder = find.byKey(const Key('goal-description-suggestion-0'));
+    expect(chipFinder, findsOneWidget);
+
+    final chipWidget = tester.widget<ActionChip>(chipFinder);
+    expect(chipWidget.labelStyle?.color, isNotNull);
+  });
+
   testWidgets('reviewed certification prefills a private, non-official goal',
       (tester) async {
     final issuer = VerifiedDestination.fromJson({
@@ -255,5 +286,4 @@ void main() {
     expect(TargetType.professionalLicense.displayName, 'Professional License');
     expect(TargetType.licensureExam, isNot(TargetType.professionalLicense));
   });
-
 }

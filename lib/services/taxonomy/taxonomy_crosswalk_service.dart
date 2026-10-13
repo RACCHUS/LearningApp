@@ -676,6 +676,7 @@ class TaxonomyCrosswalkService {
       CatalogCluster(id: 'c10', slug: 'humanities-languages', title: 'Humanities, Languages & Literature', emoji: '📚', accentColor: '#B45309', sortOrder: 10),
       CatalogCluster(id: 'c11', slug: 'skilled-trades', title: 'Skilled Construction & Mechanical Trades', emoji: '🔨', accentColor: '#EA580C', sortOrder: 11),
       CatalogCluster(id: 'c12', slug: 'agriculture-environment', title: 'Agriculture, Natural Resources & Environment', emoji: '🌾', accentColor: '#16A34A', sortOrder: 12),
+      CatalogCluster(id: 'c13', slug: 'cluster_life_milestones', title: 'Life Milestones & Survival Literacy', description: 'Oral-first preparation for US Citizenship, Driver\'s License, GED® ABE, and life safety.', emoji: '🏛️', accentColor: '#4338CA', sortOrder: 13),
     ];
   }
 

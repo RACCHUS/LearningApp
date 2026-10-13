@@ -99,8 +99,15 @@ class AudioService {
         }
       });
 
-      // Get available voices
-      final voiceInfos = await _getAvailableVoiceInfos();
+      // Get available voices (Chromium Web loads SpeechSynthesis voices asynchronously, so retry briefly if empty)
+      var voiceInfos = await _getAvailableVoiceInfos();
+      if (kIsWeb && voiceInfos.isEmpty) {
+        for (int i = 0; i < 10; i++) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          voiceInfos = await _getAvailableVoiceInfos();
+          if (voiceInfos.isNotEmpty) break;
+        }
+      }
       final voiceNames = voiceInfos.map((v) => v.name).toList();
       
       _updateState(_state.copyWith(
@@ -110,13 +117,21 @@ class AudioService {
       ));
 
       _isInitialized = true;
+
+      // Select a natural, gentle educational voice if none explicitly chosen
+      if (_settings.preferredVoice == null && voiceInfos.isNotEmpty) {
+        final bestVoice = findBestNaturalVoice(voiceInfos, _settings.language);
+        if (bestVoice != null) {
+          _settings = _settings.copyWith(preferredVoice: bestVoice);
+        }
+      }
       
       // Apply default settings
       await updateSettings(_settings);
       
       if (kDebugMode) {
         print('✅ AudioService initialized successfully');
-        print('Available voices: ${voiceInfos.length}');
+        print('Available voices: ${voiceInfos.length}, Selected: ${_settings.preferredVoice}');
       }
       
     } catch (e) {
@@ -130,6 +145,103 @@ class AudioService {
       
       // Still mark as initialized (graceful degradation)
       _isInitialized = true;
+    }
+  }
+
+  /// Heuristically identifies the most natural, human-sounding voice available
+  /// from the platform (preferring Google Natural, Microsoft Online/Neural,
+  /// or Apple enhanced voices over robotic legacy synthesizers).
+  static String? findBestNaturalVoice(List<VoiceInfo> voices, String languageCode) {
+    if (voices.isEmpty) return null;
+
+    final langPrefix = languageCode.split('-').first.toLowerCase();
+    final matching = voices.where((v) {
+      final loc = v.locale.toLowerCase();
+      return loc.startsWith(langPrefix) || loc.isEmpty;
+    }).toList();
+
+    final candidatePool = matching.isNotEmpty ? matching : voices;
+
+    // 1. Google Chrome High-Quality Web Voices (soft, natural educator tone)
+    final googleVoice = candidatePool.firstWhere(
+      (v) =>
+          v.name.contains('Google') &&
+          (v.name.contains('US English') ||
+              v.name.contains('UK English Female') ||
+              v.name.contains('English')),
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (googleVoice.name.isNotEmpty) return googleVoice.name;
+
+    // 2. Microsoft / Edge Neural & Natural Online Voices
+    final neuralVoice = candidatePool.firstWhere(
+      (v) =>
+          v.name.toLowerCase().contains('natural') ||
+          v.name.toLowerCase().contains('neural') ||
+          v.name.toLowerCase().contains('online'),
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (neuralVoice.name.isNotEmpty) return neuralVoice.name;
+
+    // 3. Known warm & gentle voices (Zira, Jenny, Aria, Samantha, Ava, Karen, Victoria, Serena, Hazel)
+    final warmVoice = candidatePool.firstWhere(
+      (v) {
+        final n = v.name.toLowerCase();
+        return n.contains('zira') ||
+            n.contains('jenny') ||
+            n.contains('aria') ||
+            n.contains('samantha') ||
+            n.contains('ava') ||
+            n.contains('karen') ||
+            n.contains('victoria') ||
+            n.contains('serena') ||
+            n.contains('hazel') ||
+            n.contains('susan') ||
+            n.contains('catherine');
+      },
+      orElse: () => const VoiceInfo(name: '', locale: ''),
+    );
+    if (warmVoice.name.isNotEmpty) return warmVoice.name;
+
+    // 4. Any English voice that is NOT the robotic Microsoft David Desktop / Mark
+    final nonRobotic = candidatePool.firstWhere(
+      (v) => !v.name.contains('David') && !v.name.contains('Mark'),
+      orElse: () => candidatePool.first,
+    );
+    return nonRobotic.name;
+  }
+
+  /// Ensures available voices are discovered and cached.
+  /// Chromium Web loads voices asynchronously after page startup; this
+  /// retries discovery if the cache is initially empty.
+  Future<void> _ensureVoicesLoaded() async {
+    if (_state.availableVoices.isNotEmpty) return;
+    try {
+      var voiceInfos = await _getAvailableVoiceInfos();
+      if (kIsWeb && voiceInfos.isEmpty) {
+        for (int i = 0; i < 8; i++) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          voiceInfos = await _getAvailableVoiceInfos();
+          if (voiceInfos.isNotEmpty) break;
+        }
+      }
+      if (voiceInfos.isNotEmpty) {
+        final voiceNames = voiceInfos.map((v) => v.name).toList();
+        _updateState(_state.copyWith(
+          availableVoices: voiceNames,
+          availableVoiceInfos: voiceInfos,
+        ));
+        if (_settings.preferredVoice == null) {
+          final bestVoice = findBestNaturalVoice(voiceInfos, _settings.language);
+          if (bestVoice != null) {
+            _settings = _settings.copyWith(preferredVoice: bestVoice);
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in _ensureVoicesLoaded: $e');
+      }
     }
   }
 
@@ -156,19 +268,57 @@ class AudioService {
     }
   }
 
+  /// Applies a specific voice to the TTS engine.
+  /// On Web, flutter_tts_web matches exact {name: e.name, locale: e.lang}.
+  /// Passing the exact VoiceInfo.locale guarantees targetList in flutter_tts_web
+  /// finds the speech voice instead of silently failing.
+  Future<void> _applyVoice(String voiceName) async {
+    if (_flutterTts == null) return;
+    try {
+      final match = _state.availableVoiceInfos.firstWhere(
+        (v) => v.name == voiceName,
+        orElse: () => VoiceInfo(name: voiceName, locale: _settings.language),
+      );
+      final voiceMap = {
+        'name': match.name,
+        'locale': match.locale.isNotEmpty ? match.locale : _settings.language,
+      };
+      await _flutterTts!.setVoice(voiceMap);
+      if (kDebugMode) {
+        print('🔊 TTS voice applied: ${match.name} (${voiceMap['locale']})');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error applying voice $voiceName: $e');
+      }
+    }
+  }
+
   Future<void> updateSettings(AudioSettings settings) async {
     _settings = settings;
     
     if (_flutterTts == null || !_settings.isEnabled) return;
 
     try {
+      if (_state.availableVoices.isEmpty) {
+        await _ensureVoicesLoaded();
+      }
+
       await _flutterTts!.setSpeechRate(_settings.speechRate);
       await _flutterTts!.setVolume(_settings.volume);
       await _flutterTts!.setPitch(_settings.pitch);
+      // Set language first. Note: on web flutter_tts_web setLanguage resets utterance.voice,
+      // so setVoice MUST be executed immediately after setLanguage.
       await _flutterTts!.setLanguage(_settings.language);
       
-      if (_settings.preferredVoice != null && _state.availableVoices.contains(_settings.preferredVoice)) {
-        await _flutterTts!.setVoice({'name': _settings.preferredVoice!, 'locale': _settings.language});
+      final voiceToUse = _settings.preferredVoice ??
+          findBestNaturalVoice(_state.availableVoiceInfos, _settings.language);
+
+      if (voiceToUse != null) {
+        if (_settings.preferredVoice == null) {
+          _settings = _settings.copyWith(preferredVoice: voiceToUse);
+        }
+        await _applyVoice(voiceToUse);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -183,6 +333,21 @@ class AudioService {
     }
 
     try {
+      if (_state.availableVoices.isEmpty) {
+        await _ensureVoicesLoaded();
+      }
+
+      // Re-apply preferred or best natural voice before speaking to guarantee
+      // that flutter_tts_web utterance.voice is explicitly bound to our chosen voice
+      final voiceToUse = _settings.preferredVoice ??
+          findBestNaturalVoice(_state.availableVoiceInfos, _settings.language);
+      if (voiceToUse != null) {
+        if (_settings.preferredVoice == null) {
+          _settings = _settings.copyWith(preferredVoice: voiceToUse);
+        }
+        await _applyVoice(voiceToUse);
+      }
+
       if (interrupt && _state.isPlaying) {
         await stop();
       }
@@ -198,7 +363,11 @@ class AudioService {
         errorMessage: null,
       ));
 
-      final result = await _flutterTts!.speak(text);
+      // On Web, SpeechSynthesisUtterance.onboundary can report charIndex past string length
+      // at sentence boundaries, causing flutter_tts_web to throw RangeError on substring().
+      // Appending safe trailing whitespace prevents charIndex out-of-bounds while preserving audio.
+      final safeText = kIsWeb ? text.padRight(text.length + 16) : text;
+      final result = await _flutterTts!.speak(safeText);
       return result == 1; // 1 indicates success
       
     } catch (e) {
@@ -229,7 +398,9 @@ class AudioService {
       await stop();
       await _flutterTts!.setVoice({'name': voice.name, 'locale': voice.locale});
       _speakCompleter = Completer<void>();
-      await _flutterTts!.speak('Hello! This is how I sound when reading your lessons.');
+      const previewText = 'Hello! This is how I sound when reading your lessons.';
+      final safePreview = kIsWeb ? previewText.padRight(previewText.length + 16) : previewText;
+      await _flutterTts!.speak(safePreview);
       await speakCompletion;
       // Restore the user's preferred voice
       await updateSettings(_settings);

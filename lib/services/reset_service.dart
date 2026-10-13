@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/data_snapshot.dart';
+import 'hive_service.dart';
 
 /// Service for reset/revert functionality with snapshot management
 class ResetService {
@@ -335,6 +336,158 @@ class ResetService {
   }
 
   // ============================================================================
+  // LEARNING TARGET / GOAL RESET
+  // ============================================================================
+
+  /// Reset a learning target/goal's progress
+  Future<String> resetLearningTarget(String targetId, {String? reason}) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw Exception('User must be authenticated');
+    }
+
+    try {
+      // Get target title
+      String targetTitle = 'Learning Goal';
+      try {
+        final targetResponse = await _supabase
+            .from('learning_targets')
+            .select('title')
+            .eq('id', targetId)
+            .maybeSingle();
+        if (targetResponse != null && targetResponse['title'] != null) {
+          targetTitle = targetResponse['title'] as String;
+        }
+      } catch (_) {}
+
+      // Gather current state for snapshot
+      final snapshotData = await _gatherLearningTargetData(targetId);
+
+      // Create snapshot
+      final snapshotId = await _createSnapshot(
+        type: SnapshotType.targetReset,
+        targetId: targetId,
+        targetName: targetTitle,
+        data: snapshotData,
+        reason: reason,
+      );
+
+      // 1. Clear resume pointer and reset focus for contexts matching this target
+      try {
+        await _supabase
+            .from('learning_contexts')
+            .update({
+              'last_action_route': null,
+              'last_lesson_id': null,
+              'active_focus_id': null,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', userId)
+            .eq('root_id', targetId);
+      } catch (_) {}
+
+      // Also reset Hive resume pointer locally
+      try {
+        final hive = HiveService();
+        await hive.init();
+        final matchingKeys = hive.resumePointerBox.keys.where((k) {
+          final pointer = hive.resumePointerBox.get(k);
+          return pointer?.contextId == targetId;
+        }).toList();
+        for (final k in matchingKeys) {
+          await hive.resumePointerBox.delete(k);
+        }
+      } catch (_) {}
+
+      // 2. Reset user_progress for any lessons mapped to this target
+      final lessonIds = (snapshotData['lesson_ids'] as List?)?.cast<String>() ?? [];
+      if (lessonIds.isNotEmpty) {
+        await _supabase
+            .from('user_progress')
+            .update({
+              'questions_answered': 0,
+              'correct_count': 0,
+              'lesson_completed': false,
+              'study_time_minutes': 0,
+            })
+            .eq('user_id', userId)
+            .inFilter('lesson_id', lessonIds);
+      }
+
+      debugPrint('✅ Learning target reset: $targetTitle (snapshot: $snapshotId)');
+      return snapshotId;
+    } catch (e) {
+      debugPrint('❌ Error resetting learning target: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> _gatherLearningTargetData(String targetId) async {
+    final userId = _userId!;
+
+    // Get context records
+    List<dynamic> contexts = [];
+    try {
+      final res = await _supabase
+          .from('learning_contexts')
+          .select()
+          .eq('user_id', userId)
+          .eq('root_id', targetId);
+      contexts = res as List;
+    } catch (_) {}
+
+    // Get target versions to find curriculum nodes and lessons
+    final lessonIds = <String>{};
+    try {
+      final versions = await _supabase
+          .from('target_versions')
+          .select('id')
+          .eq('target_id', targetId);
+
+      final versionIds = (versions as List).map((v) => v['id'] as String).toList();
+
+      if (versionIds.isNotEmpty) {
+        final nodes = await _supabase
+            .from('curriculum_nodes')
+            .select('id')
+            .inFilter('target_version_id', versionIds);
+        final nodeIds = (nodes as List).map((n) => n['id'] as String).toList();
+
+        if (nodeIds.isNotEmpty) {
+          final bindings = await _supabase
+              .from('curriculum_node_lessons')
+              .select('lesson_id')
+              .inFilter('curriculum_node_id', nodeIds);
+          for (final b in (bindings as List)) {
+            if (b['lesson_id'] != null) {
+              lessonIds.add(b['lesson_id'] as String);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Gather user_progress for those lessons
+    final userProgress = <Map<String, dynamic>>[];
+    if (lessonIds.isNotEmpty) {
+      try {
+        final progress = await _supabase
+            .from('user_progress')
+            .select()
+            .eq('user_id', userId)
+            .inFilter('lesson_id', lessonIds.toList());
+        userProgress.addAll((progress as List).cast<Map<String, dynamic>>());
+      } catch (_) {}
+    }
+
+    return {
+      'contexts': contexts,
+      'lesson_ids': lessonIds.toList(),
+      'user_progress': userProgress,
+    };
+  }
+
+  // ============================================================================
   // FULL RESET
   // ============================================================================
 
@@ -519,6 +672,9 @@ class ResetService {
         case SnapshotType.fullReset:
           await _revertFullReset(snapshot);
           break;
+        case SnapshotType.targetReset:
+          await _revertTargetReset(snapshot);
+          break;
       }
 
       // Mark snapshot as reverted
@@ -612,6 +768,32 @@ class ResetService {
         progress as Map<String, dynamic>,
         onConflict: 'user_id,lesson_id,date',
       );
+    }
+  }
+
+  Future<void> _revertTargetReset(UserDataSnapshot snapshot) async {
+    final data = snapshot.snapshotData;
+
+    // Restore contexts
+    final contexts = (data['contexts'] as List?) ?? [];
+    for (final ctx in contexts) {
+      try {
+        await _supabase.from('learning_contexts').upsert(
+          ctx as Map<String, dynamic>,
+          onConflict: 'id',
+        );
+      } catch (_) {}
+    }
+
+    // Restore user_progress
+    final userProgress = (data['user_progress'] as List?) ?? [];
+    for (final prog in userProgress) {
+      try {
+        await _supabase.from('user_progress').upsert(
+          prog as Map<String, dynamic>,
+          onConflict: 'user_id,lesson_id,date',
+        );
+      } catch (_) {}
     }
   }
 

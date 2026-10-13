@@ -17,6 +17,9 @@ import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/taxonomy/taxonomy_banner_card.dart';
+import 'package:learning_pwa/widgets/literacy/life_milestones_banner_card.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
@@ -79,6 +82,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final activeContext = contexts.active;
     final activeScopeAsync = ref.watch(activeResolvedScopeProvider);
     final activeScope = activeScopeAsync.valueOrNull;
+    final isPreReader = ref.watch(preReaderProvider).enabled;
 
     final catalogAsync = ref.watch(availableLessonsCatalogProvider);
     final catalog = catalogAsync.valueOrNull;
@@ -113,7 +117,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               t.targetType == TargetType.standardizedExam ||
               t.targetType == TargetType.licensureExam)
           .toList();
-    } else if (_selectedCategory == 'course') {
+    } else if (_selectedCategory == 'course' || _selectedCategory == 'milestones') {
       targets = const [];
     }
 
@@ -339,6 +343,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     setState(() => _selectedCategory = selected ? 'course' : null);
                   },
                 ),
+                const SizedBox(width: DesignTokens.space2),
+                FilterChip(
+                  key: const Key('library-filter-milestones'),
+                  avatar: const Text('🏛️'),
+                  label: const Text('Life Milestones & Literacy'),
+                  selected: _selectedCategory == 'milestones',
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? 'milestones' : null);
+                  },
+                ),
               ],
             ),
           ),
@@ -364,8 +378,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
           const SizedBox(height: DesignTokens.space4),
 
+          if (!isSearching && (isPreReader || _selectedCategory == 'milestones')) ...[
+            const PreReaderPictureGridWidget(),
+            const SizedBox(height: DesignTokens.space4),
+          ],
+
           if (!isSearching) ...[
             const TaxonomyBannerCard(),
+            const SizedBox(height: DesignTokens.space3),
+            const LifeMilestonesBannerCard(),
             const SizedBox(height: DesignTokens.space4),
           ],
 

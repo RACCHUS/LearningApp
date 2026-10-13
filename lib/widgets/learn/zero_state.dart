@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_entry_banner.dart';
 import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
 
 /// Calm, restrained First-Run & Selection Surface.
@@ -74,6 +75,8 @@ class LearnZeroState extends StatelessWidget {
                 onPressed: () => context.go('/library'),
                 child: const Text('Explore library →'),
               ),
+              _buildAccessibleTrackDivider(theme, colorScheme),
+              const PreReaderEntryBanner(),
             ],
           ),
         ),
@@ -133,8 +136,47 @@ class LearnZeroState extends StatelessWidget {
               onPressed: () => CreateTargetDialog.show(context),
               child: const Text('Create your own →'),
             ),
+            _buildAccessibleTrackDivider(theme, colorScheme),
+            const PreReaderEntryBanner(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccessibleTrackDivider(ThemeData theme, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: DesignTokens.space5,
+        bottom: DesignTokens.space4,
+      ),
+      child: Row(
+        children: [
+          const Expanded(child: Divider()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space3),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.hearing,
+                  size: 15,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'ACCESSIBLE LEARNING TRACK',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Expanded(child: Divider()),
+        ],
       ),
     );
   }

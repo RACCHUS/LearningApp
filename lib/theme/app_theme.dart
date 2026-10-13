@@ -75,6 +75,22 @@ class AppTheme {
           vertical: DesignTokens.space4,
         ),
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: colorScheme.surfaceContainerHigh,
+        selectedColor: colorScheme.primaryContainer,
+        labelStyle: TextStyle(
+          fontSize: 13,
+          color: colorScheme.onSurface,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontSize: 13,
+          color: colorScheme.onPrimaryContainer,
+        ),
+        side: BorderSide(color: colorScheme.outlineVariant),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+        ),
+      ),
     );
   }
 
@@ -190,7 +206,14 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: _darkSurfaceContainerHigh,
         selectedColor: _darkPrimary,
-        labelStyle: const TextStyle(fontSize: 13),
+        labelStyle: TextStyle(
+          fontSize: 13,
+          color: colorScheme.onSurface,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontSize: 13,
+          color: colorScheme.onPrimary,
+        ),
         side: const BorderSide(color: _darkCardBorder),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
