@@ -89,7 +89,7 @@ These goals are **not claims of shipped functionality**:
 
 | Area | Technology |
 | --- | --- |
-| App | Flutter (CI pinned to **3.32.8**), Dart SDK `>=3.8.0 `<4.0.0 |
+| App | Flutter (CI pinned to **3.47.7**), Dart SDK `>=3.8.0 <4.0.0` |
 | State/navigation | Riverpod, GoRouter |
 | Backend | Supabase (PostgreSQL, Auth, Storage, Row Level Security) |
 | Local storage | Hive, SharedPreferences |
@@ -101,7 +101,7 @@ These goals are **not claims of shipped functionality**:
 
 ### Prerequisites
 
-- Flutter **3.32.8** (matching CI) and its compatible Dart SDK.
+- Flutter **3.47.7** (matching CI) and its compatible Dart SDK.
 - Supabase project credentials and configured Firebase options.
 - Optional for local database tests: Supabase CLI and Docker.
 

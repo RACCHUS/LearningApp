@@ -111,7 +111,7 @@ class LearningTargetService {
 
       if (mapRes != null && mapRes['v2_id'] != null) {
         final mappedTargetId = mapRes['v2_id'] as String;
-        return getTarget(mappedTargetId);
+        return await getTarget(mappedTargetId);
       }
 
       return null;
