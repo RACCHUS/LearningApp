@@ -79,12 +79,14 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
         if (_prefs == null) {
           _prefs = await SharedPreferences.getInstance();
         }
+        if (!mounted) return;
         final data = serialize(state);
         await _prefs?.setString(storageKey, data);
       } else {
         if (_hiveBox == null) {
           _hiveBox = await Hive.openBox<T>(storageKey);
         }
+        if (!mounted) return;
         await _hiveBox?.put('settings', state);
       }
       debugPrint('✅ Saved settings for $storageKey');

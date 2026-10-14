@@ -35,4 +35,10 @@ Thumbs.db
 /*.png
 screenshot-*.png
 test_hive/
+
+# Python & Local Deploy
+__pycache__/
+*.py[cod]
+deploy_p2*.sql
+
 
