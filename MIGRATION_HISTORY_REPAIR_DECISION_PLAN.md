@@ -427,7 +427,7 @@ and the
        audit; prioritize permanent safeguards and accept optional routine
        development backups at the current data-value stage.
 - [x] Finalize Option A: Phase 1 comparison (100% statement match, raw hashes verified),
-      Phase 2 live schema/RLS access audit (12/12 tables, RLS enabled, REST access boundaries verified),
+      Phase 2 live schema/RLS access audit (9/9 tables, RLS enabled, learner-owned goal links & private intake restrictions verified),
       and Phase 4 permanent prevention controls (preflight/postflight gates, guarded deploy tool, negative unit tests, agent guidance) fully verified.
 - [ ] Require recovery of the original comparison evidence before acceptance.
 - [ ] If a concrete mismatch is found, authorize a separate forward-only fix
@@ -464,19 +464,21 @@ and the
 
 ### 2. Phase 2 — Live Schema, Access Boundaries, and Invariants Audit (Read-Only)
 - **Schema Audit:** Dumped live schema catalog (`information_schema` and `pg_catalog`) read-only.
-- **Table Verification:** All 12 tables created across the 7 migrations exist in the hosted database with RLS enabled:
-  1. `catalog_intake_candidates` (RLS: Enabled, strict provenance, permissions revoked from `anon` & `authenticated`)
-  2. `catalog_intake_demand_signals` (RLS: Enabled, service-role only)
-  3. `catalog_official_demand_observations` (RLS: Enabled, service-role only)
-  4. `catalog_official_demand_imports` (RLS: Enabled, service-role only)
-  5. `catalog_bls_reporting_code_members` (RLS: Enabled, service-role only)
-  6. `catalog_verified_destinations` (RLS: Enabled, public read allowed)
-  7. `catalog_destination_resources` (RLS: Enabled, public read allowed)
-  8. `catalog_destination_goal_links` (RLS: Enabled, public read allowed)
-  9. `professional_license_goals` (RLS: Enabled, public read allowed)
-  10. `professional_license_regulator_links` (RLS: Enabled, public read allowed)
-  11. `catalog_license_pathway_versions` (RLS: Enabled, public read allowed)
-  12. `catalog_license_pathway_version_history` (RLS: Enabled, public read allowed)
+- **Table Verification:** All 9 new tables created across the 7 migrations exist in the hosted database with RLS enabled:
+  1. `catalog_intake_candidates` (`20261012000000` — RLS: Enabled, strict provenance, permissions revoked from `anon` & `authenticated`, service-role only)
+  2. `catalog_intake_demand_signals` (`20261012000000` — RLS: Enabled, service-role only)
+  3. `catalog_official_demand_observations` (`20261012000001` — RLS: Enabled, service-role only)
+  4. `catalog_official_demand_imports` (`20261012000001` — RLS: Enabled, service-role only)
+  5. `catalog_bls_reporting_code_members` (`20261012000002` — RLS: Enabled, service-role only)
+  6. `catalog_verified_destinations` (`20261012000003` — RLS: Enabled, public read allowed for published destinations)
+  7. `catalog_destination_resources` (`20261012000004` — RLS: Enabled, public read allowed for published resources under published destinations)
+  8. `catalog_destination_goal_links` (`20261012000004` — RLS: Enabled, learner-owned private links only; `destination_goal_links_owner_select` restricts access to authenticated owners matching `learning_targets.created_by = auth.uid()`; unreadable by anon or other learners)
+  9. `catalog_license_pathway_versions` (`20261012000006` — RLS: Enabled, public read allowed for published pathways)
+
+- **Schema Alterations & Invariants Verified (`20261012000005`):**
+  - `learning_targets`: added `professional_license` to `learning_targets_target_type_check` enum constraint, added `learning_targets_professional_license_jurisdiction_check` regex format constraint, and attached trigger `trg_guard_destination_goal_target_identity` executing `guard_destination_goal_target_identity()` to prevent tampering with linked goal type, jurisdiction, or official status.
+  - `catalog_destination_resources`: updated `resource_kind` constraint to include `regulator_license_checklist`.
+  - `catalog_destination_goal_links`: updated `destination_goal_links_owner_insert` RLS policy requiring jurisdiction match for professional licenses (`d.jurisdiction = t.jurisdiction`).
 
 - **Live REST Access Boundary Verification (Anon / Public Client):**
   - Executed read-only REST probe queries against `https://xzvkdwebtbxlrxagtzlv.supabase.co/rest/v1`:
@@ -484,12 +486,12 @@ and the
     - `catalog_intake_demand_signals`: HTTP 401 Permission Denied (**Passed** — private demand signals unreadable)
     - `catalog_official_demand_observations`: HTTP 401 Permission Denied (**Passed** — official demand unreadable)
     - `catalog_bls_reporting_code_members`: HTTP 401 Permission Denied (**Passed** — internal crosswalks unreadable)
+    - `catalog_destination_goal_links`: HTTP 401 Permission Denied to anon (**Passed** — learner-owned goal links protected by RLS; anon cannot read)
     - `catalog_verified_destinations`: HTTP 200 OK (**Passed** — public verified catalog destinations readable)
-    - `catalog_destination_resources`: HTTP 200 OK (**Passed** — destination resources readable)
-    - `professional_license_goals`: HTTP 200 OK (**Passed** — public license goals readable)
+    - `catalog_destination_resources`: HTTP 200 OK (**Passed** — public destination resources readable)
     - `catalog_license_pathway_versions`: HTTP 200 OK (**Passed** — public license pathways readable)
     - Anon mutation probe (`POST` to `catalog_verified_destinations`): Blocked / 401 (**Passed** — writes rejected)
-- **Conclusion:** Schema objects, constraints, and Row Level Security access controls are intact and active.
+- **Conclusion:** Schema objects, constraints, triggers, and Row Level Security access controls are intact, active, and correctly configured.
 
 ---
 
