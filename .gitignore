@@ -37,6 +37,8 @@ screenshot-*.png
 test_hive/
 
 # Python & Local Deploy
+.venv/
+venv/
 __pycache__/
 *.py[cod]
 deploy_p2*.sql
