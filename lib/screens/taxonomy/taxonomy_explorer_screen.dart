@@ -512,7 +512,7 @@ class _TaxonomyExplorerScreenState
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         subtitle: Text(
-          'Academic Cluster ${cluster.sortOrder}',
+          'Catalog category ${cluster.sortOrder}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -543,7 +543,7 @@ class _TaxonomyExplorerScreenState
                     const Divider(),
                     const SizedBox(height: 8),
                     Text(
-                      'Canonical Fields & Disciplines',
+                      'Fields and learning areas',
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,

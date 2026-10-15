@@ -26,6 +26,28 @@ void main() {
       expect(fields, isNotEmpty);
       expect(fields.any((f) => f.slug == 'computer-sciences'), isTrue);
       expect(fields.any((f) => f.slug == 'mathematics-statistics-series'), isTrue);
+      expect(fields.any((f) => f.slug == 'foundational-literacy'), isTrue);
+      expect(fields.any((f) => f.slug == 'practical-life-skills'), isTrue);
+    });
+
+    test('life milestones cluster exposes native roots and children offline', () async {
+      final fields = await service.getFields(clusterSlug: 'cluster_life_milestones');
+      expect(fields.map((field) => field.slug), containsAll([
+        'foundational-literacy',
+        'civic-and-community-literacy',
+        'practical-life-skills',
+      ]));
+
+      final literacyRoot = fields.firstWhere(
+        (field) => field.slug == 'foundational-literacy',
+      );
+      final children = await service.getChildFields(literacyRoot.id);
+      expect(children.fields.map((field) => field.slug), containsAll([
+        'phonics-and-word-decoding',
+        'supported-reading-and-comprehension',
+        'oral-language-and-listening',
+        'adult-basic-education-reading',
+      ]));
     });
 
     test('getChildFields walks broad -> subfield -> program offline', () async {

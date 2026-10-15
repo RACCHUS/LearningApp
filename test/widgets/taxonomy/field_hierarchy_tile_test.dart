@@ -44,6 +44,19 @@ const _program = CanonicalField(
   slug: 'computer-science-cip-11-0701',
   fieldKind: 'program_classification',
 );
+const _nativeRoot = CanonicalField(
+  id: 'native-foundational-literacy',
+  name: 'Foundational Literacy',
+  slug: 'foundational-literacy',
+  fieldKind: 'native_field',
+);
+const _nativeChild = CanonicalField(
+  id: 'native-phonics',
+  parentId: 'native-foundational-literacy',
+  name: 'Phonics and Word Decoding',
+  slug: 'phonics-and-word-decoding',
+  fieldKind: 'native_field',
+);
 
 Future<void> _pump(WidgetTester tester, _FakeTaxonomyService service) {
   return tester.pumpWidget(
@@ -90,6 +103,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.requested, ['broad-11', 'sub-11-07']);
     expect(find.byKey(const ValueKey('field-tile-prog-11-0701')), findsOneWidget);
+  });
+
+  testWidgets('native learning areas use the same lazy hierarchy browser',
+      (tester) async {
+    final service = _FakeTaxonomyService({
+      _nativeRoot.id: const FieldChildrenPage(fields: [_nativeChild]),
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [taxonomyServiceProvider.overrideWithValue(service)],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FieldHierarchyTile(field: _nativeRoot),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Learning area'), findsOneWidget);
+    expect(find.text(_nativeChild.name), findsNothing);
+    await tester.tap(find.text(_nativeRoot.name));
+    await tester.pumpAndSettle();
+
+    expect(service.requested, [_nativeRoot.id]);
+    expect(find.text(_nativeChild.name), findsOneWidget);
+    expect(find.text('Learning area'), findsNWidgets(2));
   });
 
   testWidgets('tells the learner when a level is truncated', (tester) async {
