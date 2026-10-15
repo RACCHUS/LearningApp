@@ -144,6 +144,8 @@ CIP 2020 contains **48 primary two-digit series**, not 47. Crucially, the non-de
 **Architectural Rule:** The application code and database migration scripts must **never hardcode** the series list. The ingestion engine reads `CIPCode2020.csv` directly and dynamically materializes all 48 series.
 
 ### 3.2 Dual-Layer Model Implementation (Bootstrap Once, Map Permanently)
+
+> **Implementation status (2026-10-15):** Steps 1 and the broad-field part of step 2 shipped earlier. Subfield and program-field bootstrap is implemented by `public.bootstrap_cip_internal_fields('2020')` (migration `20261015000000_cip_internal_field_bootstrap.sql`): reused exact mappings keep their IDs, generated slugs are code-qualified (`<title>-cip-<code>`) so repeated CIP titles never merge, and broken parents, ambiguous mappings or slug collisions abort the run. `public.taxonomy_internal_coverage()` reports internal completeness separately from external import counts. Hosted deployment is tracked in the [controlled import runbook](docs/taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#internal-cip-field-hierarchy-deployment).
 1. **Bootstrap Phase (CIP 2020):**
    - Ingests all 48 series, groups, and programs into `external_classification_nodes`, resolving parent-child links into `parent_id`.
    - Seeds initial `fields` rows with clean slugs and names. Each generated `fields` row receives a permanent UUID.

@@ -568,6 +568,15 @@ class _OfficialTaxonomyIngestor {
       {'p_import_run_id': runId},
     );
     stdout.writeln('Finalize RPC completed: $finalizeResult');
+
+    // External import alone does not create internal fields. Bootstrap is
+    // idempotent: it reuses existing field IDs and only fills gaps.
+    stdout.writeln('\n[Internal Fields] Bootstrapping CIP 2020 field hierarchy...');
+    final bootstrapResult = await db.rpc(
+      'bootstrap_cip_internal_fields',
+      {'p_version': '2020'},
+    );
+    stdout.writeln('Internal field bootstrap completed: $bootstrapResult');
   }
 
   Future<void> _stageArtifacts(
@@ -834,6 +843,22 @@ class _OfficialTaxonomyIngestor {
       throw StateError(
         'Hierarchy verification failed: orphan CIP=$orphanCip, '
         'SOC=$orphanSoc, O*NET=$orphanOnet.',
+      );
+    }
+
+    final internal = await db.rpc(
+      'taxonomy_internal_coverage',
+      {'p_version': '2020'},
+    );
+    final levels = Map<String, dynamic>.from(internal['levels'] as Map? ?? {});
+    for (final level in ['series', 'group', 'program']) {
+      final row = Map<String, dynamic>.from(levels[level] as Map? ?? {});
+      stdout.writeln('  Internal CIP $level fields: ${row['exact_mapped'] ?? 0} '
+          'of ${row['active_nodes'] ?? 0} nodes');
+    }
+    if (internal['complete'] != true) {
+      throw StateError(
+        'Internal field hierarchy is incomplete: ${jsonEncode(internal)}',
       );
     }
   }

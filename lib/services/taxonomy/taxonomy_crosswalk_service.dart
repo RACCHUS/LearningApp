@@ -78,11 +78,16 @@ class TaxonomyCrosswalkService {
         }
       }
 
+      // Unscoped requests return only top-level roots. Nested CIP subfields and
+      // program fields (thousands of rows) are loaded per parent instead.
       final response = await client
           .from('fields')
           .select()
           .eq('is_active', true)
-          .order('sort_order', ascending: true);
+          .isFilter('parent_id', null)
+          .inFilter('field_kind', ['broad_field', 'native_field'])
+          .order('sort_order', ascending: true)
+          .limit(rootFieldLimit);
 
       return (response as List<dynamic>)
           .map((e) => CanonicalField.fromJson(e as Map<String, dynamic>))
@@ -91,6 +96,38 @@ class TaxonomyCrosswalkService {
       debugPrint('⚠️ Remote fields fetch failed: $e');
       return _fallbackFields();
     }
+  }
+
+  static const int rootFieldLimit = 500;
+  static const int childFieldPageSize = 200;
+
+  /// Direct children of [parentId], for lazy hierarchy browsing.
+  ///
+  /// Requests [childFieldPageSize] + 1 rows so callers can tell whether the
+  /// result was truncated without loading an unbounded list.
+  Future<FieldChildrenPage> getChildFields(String parentId) async {
+    final client = _supabase;
+    if (client == null) {
+      return FieldChildrenPage.fromRows(
+        _fallbackChildFields().where((f) => f.parentId == parentId).toList(),
+        pageSize: childFieldPageSize,
+      );
+    }
+    final response = await client
+        .from('fields')
+        .select(
+            'id,name,slug,description,icon,field_kind,parent_id,sort_order,is_active')
+        .eq('is_active', true)
+        .eq('parent_id', parentId)
+        .order('sort_order', ascending: true)
+        .order('name', ascending: true)
+        .limit(childFieldPageSize + 1);
+    return FieldChildrenPage.fromRows(
+      (response as List<dynamic>)
+          .map((e) => CanonicalField.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      pageSize: childFieldPageSize,
+    );
   }
 
   Future<CanonicalField?> getFieldBySlug(String slug) async {
@@ -686,6 +723,16 @@ class TaxonomyCrosswalkService {
       CanonicalField(id: 'f-math', name: 'Mathematics and Statistics', slug: 'mathematics-statistics-series', fieldKind: 'broad_field', sortOrder: 27),
       CanonicalField(id: 'f-eng', name: 'Engineering', slug: 'engineering-disciplines', fieldKind: 'broad_field', sortOrder: 14),
       CanonicalField(id: 'f-health', name: 'Health Professions and Related Programs', slug: 'health-professions-series', fieldKind: 'broad_field', sortOrder: 51),
+    ];
+  }
+
+  /// Offline sample of the CIP 2020-backed hierarchy under CIP 11.
+  List<CanonicalField> _fallbackChildFields() {
+    return const [
+      CanonicalField(id: 'f-cs-11-01', parentId: 'f-cs', name: 'Computer and Information Sciences, General', slug: 'computer-and-information-sciences-general-cip-11-01', fieldKind: 'subfield', sortOrder: 1),
+      CanonicalField(id: 'f-cs-11-07', parentId: 'f-cs', name: 'Computer Science', slug: 'computer-science-cip-11-07', fieldKind: 'subfield', sortOrder: 7),
+      CanonicalField(id: 'f-cs-11-0101', parentId: 'f-cs-11-01', name: 'Computer and Information Sciences, General', slug: 'computer-and-information-sciences-general-cip-11-0101', fieldKind: 'program_classification', sortOrder: 101),
+      CanonicalField(id: 'f-cs-11-0701', parentId: 'f-cs-11-07', name: 'Computer Science', slug: 'computer-science-cip-11-0701', fieldKind: 'program_classification', sortOrder: 701),
     ];
   }
 

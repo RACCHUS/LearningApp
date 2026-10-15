@@ -46,4 +46,27 @@ class CanonicalField {
     'sort_order': sortOrder,
     'is_active': isActive,
   };
+
+  /// Program classifications are leaves of the CIP-backed hierarchy.
+  bool get canHaveChildren => fieldKind != 'program_classification';
+}
+
+/// A bounded page of a field's direct children.
+class FieldChildrenPage {
+  final List<CanonicalField> fields;
+  final bool hasMore;
+
+  const FieldChildrenPage({required this.fields, this.hasMore = false});
+
+  /// [rows] may contain one extra row beyond [pageSize] to signal truncation.
+  factory FieldChildrenPage.fromRows(
+    List<CanonicalField> rows, {
+    required int pageSize,
+  }) {
+    final hasMore = rows.length > pageSize;
+    return FieldChildrenPage(
+      fields: hasMore ? rows.sublist(0, pageSize) : rows,
+      hasMore: hasMore,
+    );
+  }
 }

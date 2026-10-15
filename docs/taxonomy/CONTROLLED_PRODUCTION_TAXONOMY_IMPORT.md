@@ -95,6 +95,21 @@ Compare `before.json` and `after.json` artifacts, ensure no import validation or
 
 **If any check fails:** stop new runs and investigate; keep backup safe. Avoid `supabase db reset --linked`, schema rewrites, deleting current rows, or blindly re-running imports until root cause is understood. Recovery may require restoring your off-site logical backup to a separate database and carefully reconciling affected records with newer user changes, not automatically replacing the entire live project.
 
+## Internal CIP field hierarchy deployment
+
+Importing CIP nodes does not create internal `fields`. After every official import, `ingest_official_taxonomies.dart --ingest-all` calls the idempotent, service-role-only `bootstrap_cip_internal_fields('2020')` RPC and fails verification unless `taxonomy_internal_coverage('2020')` reports `complete: true`. `taxonomy_coverage.dart` prints the internal hierarchy separately from external counts, reports it as UNKNOWN (never zero) when unavailable, and `--strict` fails when it is incomplete.
+
+To deploy migration `20261015000000_cip_internal_field_bootstrap.sql` to hosted (status 2026-10-15: **not deployed**; hosted has 48 broad fields, 0 subfields, 0 program fields):
+
+1. Confirm CI is green (clean and incremental `supabase db reset` + `supabase test db`, including `cip_internal_field_bootstrap_test.sql`).
+2. Take and verify an off-site backup (Phase 2 above).
+3. Run a read-only baseline: `dart run tool/taxonomy_coverage.dart --json > before.json`.
+4. Preview with `supabase db push --dry-run`, then apply with `supabase db push`. The migration is append-only, creates only new `fields` and `field_external_classifications` rows, and fails closed (rolling back the whole migration) on broken CIP parents, ambiguous exact mappings or slug collisions.
+5. Verify: `dart run tool/taxonomy_coverage.dart --strict` shows series 48/48, group 466/466, program 2,295/2,295 exact-mapped with all hierarchy checks at 0, and learner-facing catalog counts are unchanged from `before.json`.
+6. In the app, open Pathways & Taxonomy → Disciplines and expand a broad field, a subfield and a program field.
+
+Rerunning the bootstrap is safe: it reuses existing field IDs and only fills gaps. Later CIP editions are refused; map them to existing fields through reviewed lineage instead.
+
 ## Open operational limits
 
 - This workflow cannot be triggered or have its secrets configured by this document.

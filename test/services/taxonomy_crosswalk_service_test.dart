@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/canonical_field.dart';
 import 'package:learning_pwa/services/taxonomy/taxonomy_crosswalk_service.dart';
 
 void main() {
@@ -25,6 +26,34 @@ void main() {
       expect(fields, isNotEmpty);
       expect(fields.any((f) => f.slug == 'computer-sciences'), isTrue);
       expect(fields.any((f) => f.slug == 'mathematics-statistics-series'), isTrue);
+    });
+
+    test('getChildFields walks broad -> subfield -> program offline', () async {
+      final subfields = await service.getChildFields('f-cs');
+      expect(subfields.hasMore, isFalse);
+      expect(subfields.fields.map((f) => f.fieldKind).toSet(), {'subfield'});
+      expect(subfields.fields.every((f) => f.parentId == 'f-cs'), isTrue);
+
+      final group = subfields.fields.firstWhere((f) => f.name == 'Computer Science');
+      final programs = await service.getChildFields(group.id);
+      expect(programs.fields.single.fieldKind, 'program_classification');
+      expect(programs.fields.single.canHaveChildren, isFalse);
+      expect(programs.fields.single.id, isNot(group.id),
+          reason: 'repeated CIP titles are distinct fields');
+    });
+
+    test('FieldChildrenPage bounds rows and flags truncation', () {
+      final rows = List.generate(
+        4,
+        (i) => CanonicalField(id: 'f$i', name: 'F$i', slug: 'f$i'),
+      );
+      final truncated = FieldChildrenPage.fromRows(rows, pageSize: 3);
+      expect(truncated.fields.length, 3);
+      expect(truncated.hasMore, isTrue);
+
+      final exact = FieldChildrenPage.fromRows(rows.take(3).toList(), pageSize: 3);
+      expect(exact.fields.length, 3);
+      expect(exact.hasMore, isFalse);
     });
 
     test('getFieldBySlug resolves field properly', () async {

@@ -71,6 +71,25 @@ class CoverageClient {
     return int.parse(total);
   }
 
+  Future<Object?> rpc(String function, Map<String, dynamic> params) async {
+    final uri = Uri.parse(
+        '${url.replaceFirst(RegExp(r"/+$"), "")}/rest/v1/rpc/$function');
+    final request = await _client.postUrl(uri);
+    setSupabaseRestAuth(request, key);
+    request.headers.contentType = ContentType.json;
+    request.write(jsonEncode(params));
+    final response = await request.close();
+    final body = await response.transform(utf8.decoder).join();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HttpException(
+        'RPC $function failed (HTTP ${response.statusCode}): '
+        '${body.length > 180 ? body.substring(0, 180) : body}',
+        uri: uri,
+      );
+    }
+    return body.isEmpty ? null : jsonDecode(body);
+  }
+
   void close() => _client.close(force: true);
 }
 
@@ -82,7 +101,8 @@ Future<void> main(List<String> args) async {
       'Reads $registryPath. Live queries require SUPABASE_URL and '
       'SUPABASE_SERVICE_ROLE_KEY (legacy service_role JWT or modern sb_secret_) '
       'or SUPABASE_ANON_KEY.\n'
-      '--strict exits nonzero for missing pinned-release coverage.',
+      '--strict exits nonzero for missing pinned-release coverage or an '
+      'incomplete internal CIP field hierarchy.',
     );
     return;
   }
@@ -159,6 +179,8 @@ Future<void> main(List<String> args) async {
   final observations = <Map<String, dynamic>>[];
   final targetCounts = <String, int>{};
   final catalogCounts = <String, int>{};
+  Map<String, dynamic>? internalHierarchy;
+  String? internalHierarchyError;
   var mismatches = 0;
 
   try {
@@ -205,6 +227,14 @@ Future<void> main(List<String> args) async {
     }.entries) {
       catalogCounts[entry.key] = await client.count(entry.value.$1, entry.value.$2);
     }
+    // Internal field hierarchy is reported separately: importing CIP nodes
+    // does not by itself create the internal subfields/program fields.
+    try {
+      final result = await client.rpc('taxonomy_internal_coverage', {'p_version': '2020'});
+      internalHierarchy = Map<String, dynamic>.from(result as Map);
+    } catch (error) {
+      internalHierarchyError = '$error';
+    }
   } catch (error) {
     // An inaccessible table is UNKNOWN, not a count of zero.
     stderr.writeln('Coverage report incomplete: $error');
@@ -214,6 +244,7 @@ Future<void> main(List<String> args) async {
     client.close();
   }
 
+  final internalComplete = internalHierarchy?['complete'] == true;
   final report = {
     'generated_at': DateTime.now().toUtc().toIso8601String(),
     'scope': scope,
@@ -222,10 +253,13 @@ Future<void> main(List<String> args) async {
     'target_types': targetCounts,
     'catalog': catalogCounts,
     'mismatches': mismatches,
+    'internal_hierarchy': internalHierarchy ??
+        {'complete': null, 'unavailable': internalHierarchyError},
     'limitations': [
       'Counts are database observations, not proof of source rights or current requirements.',
       'CIP/SOC taxonomies do not imply validated licenses, exams or training pathways.',
       'Target and course counts are not completion or verified-relationship measures.',
+      'A complete internal CIP hierarchy is not native-field, concept or curriculum coverage.',
       if (serviceKey == null) 'Anon counts are restricted by RLS and may undercount.',
     ],
   };
@@ -240,7 +274,19 @@ Future<void> main(List<String> args) async {
     stdout.writeln('Targets by type: $targetCounts');
     stdout.writeln('Catalog: $catalogCounts');
     stdout.writeln('Release mismatches: $mismatches');
+    if (internalHierarchy == null) {
+      stdout.writeln('Internal CIP field hierarchy: UNKNOWN ($internalHierarchyError)');
+    } else {
+      final levels = Map<String, dynamic>.from(internalHierarchy['levels'] as Map? ?? {});
+      for (final level in ['series', 'group', 'program']) {
+        final row = Map<String, dynamic>.from(levels[level] as Map? ?? {});
+        stdout.writeln('  internal CIP $level fields: ${row['exact_mapped'] ?? 0} '
+            'of ${row['active_nodes'] ?? 0} nodes (unmapped ${row['unmapped'] ?? 0})');
+      }
+      stdout.writeln('  hierarchy checks: ${internalHierarchy['hierarchy']}');
+      stdout.writeln('Internal CIP field hierarchy complete: $internalComplete');
+    }
     stdout.writeln('Note: counts do not verify career-to-license relationships.');
   }
-  if (strict && mismatches > 0) exitCode = 1;
+  if (strict && (mismatches > 0 || !internalComplete)) exitCode = 1;
 }

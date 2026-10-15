@@ -9,6 +9,7 @@ import '../../providers/verified_destinations_provider.dart';
 import '../../widgets/targets/create_target_dialog.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/taxonomy/cip_detail_sheet.dart';
+import '../../widgets/taxonomy/field_hierarchy_tile.dart';
 
 /// Primary Interactive Taxonomy & Career Pathway Explorer
 /// Allows learners to browse and discover:
@@ -549,17 +550,7 @@ class _TaxonomyExplorerScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ...fields.map((f) => ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.arrow_right, size: 20),
-                          title: Text(f.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: Text(
-                            f.fieldKind.replaceAll('_', ' '),
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        )),
+                    ...fields.map((f) => FieldHierarchyTile(field: f)),
                   ],
                 ),
               );
