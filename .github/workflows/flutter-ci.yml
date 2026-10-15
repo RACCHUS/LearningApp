@@ -116,6 +116,9 @@ jobs:
       - name: Dry-run batch curriculum ingestion
         run: dart run tool/ingest_curriculum.dart --dir content/ --dry-run
 
+      - name: Verify migration governance & deployment test suite
+        run: flutter test test/services/governance/
+
       - name: Run tests
         run: flutter test --reporter expanded
 

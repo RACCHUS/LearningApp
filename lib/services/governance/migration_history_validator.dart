@@ -299,11 +299,15 @@ class MigrationHistoryValidator {
         lower.contains('failed to') ||
         lower.contains('fatal:') ||
         lower.contains('cannot find') ||
-        lower.contains('connection refused')) {
-      throw FormatException('Supabase migration list command failed: $output');
+        lower.contains('connection refused') ||
+        lower.contains('permission denied') ||
+        lower.contains('timed out') ||
+        lower.contains('timeout')) {
+      throw FormatException('Supabase migration list command failed with error: $output');
     }
 
-    final lines = output.split('\n').map((l) => l.trim()).toList();
+    final rawLines = output.split('\n');
+    final lines = rawLines.map((l) => l.trim()).toList();
     final headerIndex = lines.indexWhere(
       (l) => l.contains('Local') && l.contains('Remote'),
     );
@@ -314,30 +318,96 @@ class MigrationHistoryValidator {
       );
     }
 
+    // Verify table divider immediately follows header (or next non-empty line)
+    var dividerIndex = -1;
+    for (var i = headerIndex + 1; i < lines.length; i++) {
+      if (lines[i].isNotEmpty) {
+        dividerIndex = i;
+        break;
+      }
+    }
+
+    if (dividerIndex == -1 ||
+        (!lines[dividerIndex].startsWith('-') && !lines[dividerIndex].contains('|'))) {
+      throw FormatException(
+        'Invalid supabase migration list output: missing table divider after header.',
+      );
+    }
+
     final localVersions = <String>[];
     final remoteVersions = <String>[];
     final tsRegex = RegExp(r'^[0-9]{14}$');
+    var inTable = true;
 
-    // Skip header and divider
-    for (var i = headerIndex + 1; i < lines.length; i++) {
+    for (var i = dividerIndex + 1; i < lines.length; i++) {
       final line = lines[i];
-      if (line.isEmpty || line.startsWith('---') || line.contains('===')) {
+      if (line.isEmpty) {
+        // Empty line indicates end of table rows
+        inTable = false;
         continue;
       }
-      if (!line.contains('|')) continue;
+
+      if (!inTable) {
+        // Outside table rows, only accept known CLI notices/banners
+        if (line.startsWith('A new version of Supabase CLI') ||
+            line.startsWith('We recommend updating') ||
+            line.startsWith('http')) {
+          continue;
+        }
+        // If unexpected text appears after table, fail closed
+        throw FormatException(
+          'Unexpected trailing output after migration table: "$line"',
+        );
+      }
+
+      // Inside table rows: MUST be a table row with column delimiter '|'
+      if (!line.contains('|')) {
+        throw FormatException(
+          'Malformed migration list row (missing pipe delimiter |): "$line"',
+        );
+      }
 
       final parts = line.split('|').map((p) => p.trim()).toList();
-      if (parts.length >= 2) {
-        final localCol = parts[0];
-        final remoteCol = parts[1];
-
-        if (tsRegex.hasMatch(localCol)) {
-          localVersions.add(localCol);
-        }
-        if (tsRegex.hasMatch(remoteCol)) {
-          remoteVersions.add(remoteCol);
-        }
+      if (parts.length < 2) {
+        throw FormatException(
+          'Malformed migration list row (expected at least 2 columns, got ${parts.length}): "$line"',
+        );
       }
+
+      final localCol = parts[0];
+      final remoteCol = parts[1];
+
+      // Validate localCol format
+      if (localCol.isNotEmpty && !tsRegex.hasMatch(localCol)) {
+        throw FormatException(
+          'Malformed local migration version "$localCol" (must be 14 digits): "$line"',
+        );
+      }
+
+      // Validate remoteCol format
+      if (remoteCol.isNotEmpty && !tsRegex.hasMatch(remoteCol)) {
+        throw FormatException(
+          'Malformed remote migration version "$remoteCol" (must be 14 digits): "$line"',
+        );
+      }
+
+      // Both cannot be empty
+      if (localCol.isEmpty && remoteCol.isEmpty) {
+        throw FormatException(
+          'Encountered empty migration row with no local or remote version: "$line"',
+        );
+      }
+
+      if (localCol.isNotEmpty) {
+        localVersions.add(localCol);
+      }
+      if (remoteCol.isNotEmpty) {
+        remoteVersions.add(remoteCol);
+      }
+    }
+
+    if (localVersions.isEmpty && remoteVersions.isEmpty) {
+      throw FormatException('Supabase migration list returned 0 migration records.');
     }
 
     return {

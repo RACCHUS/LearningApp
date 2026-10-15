@@ -285,6 +285,79 @@ Connecting to remote database...
       );
     });
 
+    test('parseMigrationListOutput throws FormatException when table divider is missing', () {
+      const missingDivider = '''
+   Local          | Remote         | Time (UTC)          
+   20261001000000 | 20261001000000 | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(missingDivider),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on malformed timestamp format', () {
+      const badTs = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 20261001abc000 | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(badTs),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on short/corrupted timestamp', () {
+      const shortTs = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 12345          | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(shortTs),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on row missing pipe delimiter', () {
+      const missingPipe = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000   20261001000000   2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(missingPipe),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on empty row with no versions', () {
+      const emptyRow = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+                  |                | 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(emptyRow),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on unexpected trailing text', () {
+      const unexpectedTrailing = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 20261001000000 | 2026-10-01 00:00:00 
+
+Fatal corruption or unrecognized output
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(unexpectedTrailing),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
     test('compareWithHosted passes with exact parity when remote and local match', () {
       final records = [
         makeRecord('20261001000000_alpha.sql', 'select 1;'),
