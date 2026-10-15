@@ -28,6 +28,13 @@ final canonicalFieldBySlugProvider =
   return service.getFieldBySlug(slug);
 });
 
+/// Direct children of a canonical field, loaded on demand by parent ID.
+final childFieldsProvider =
+    FutureProvider.family<FieldChildrenPage, String>((ref, parentId) async {
+  final service = ref.watch(taxonomyServiceProvider);
+  return service.getChildFields(parentId);
+});
+
 /// 5-Tier Occupation Hierarchy Provider
 final occupationNodesProvider =
     FutureProvider.family<List<OccupationNode>, String?>((ref, level) async {

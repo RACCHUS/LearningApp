@@ -9,6 +9,7 @@ import '../../providers/verified_destinations_provider.dart';
 import '../../widgets/targets/create_target_dialog.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/taxonomy/cip_detail_sheet.dart';
+import '../../widgets/taxonomy/field_hierarchy_tile.dart';
 
 /// Primary Interactive Taxonomy & Career Pathway Explorer
 /// Allows learners to browse and discover:
@@ -511,7 +512,7 @@ class _TaxonomyExplorerScreenState
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         subtitle: Text(
-          'Academic Cluster ${cluster.sortOrder}',
+          'Catalog category ${cluster.sortOrder}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -542,24 +543,14 @@ class _TaxonomyExplorerScreenState
                     const Divider(),
                     const SizedBox(height: 8),
                     Text(
-                      'Canonical Fields & Disciplines',
+                      'Fields and learning areas',
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ...fields.map((f) => ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.arrow_right, size: 20),
-                          title: Text(f.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: Text(
-                            f.fieldKind.replaceAll('_', ' '),
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        )),
+                    ...fields.map((f) => FieldHierarchyTile(field: f)),
                   ],
                 ),
               );

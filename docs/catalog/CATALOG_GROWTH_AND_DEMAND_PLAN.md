@@ -18,6 +18,16 @@ Hosted Supabase has been verified to contain the complete pinned official classi
 
 The classification-import work is **done**, but it is not a license, certification, provider program or course catalog. The old roadmap is now historical; its outstanding catalog-growth requirements move here. The existing 17 learning targets, 17 published versions, 7 lessons and user accounts must be preserved.
 
+### Internal field hierarchy (in progress, October 2026)
+
+Importing CIP nodes did **not** create the matching internal subject hierarchy. As of 2026-10-15 (read-only hosted check) only the 48 CIP series have internal `fields`; the 466 groups and 2,295 programs had none, so learners could not drill below a broad field. Migration `20261015000000_cip_internal_field_bootstrap.sql` adds the service-role `bootstrap_cip_internal_fields('2020')` backfill (466 subfields + 2,295 program fields, reusing the 48 curated broad-field IDs and cluster memberships) and the read-only `taxonomy_internal_coverage()` report. The explorer's **Disciplines** tab now loads each level lazily by parent. Deploy and verify with the [controlled import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#internal-cip-field-hierarchy-deployment). A complete CIP-backed hierarchy is still not native-field, concept, K–12 or curriculum coverage.
+
+### LearningApp-native literacy and life-skills fields (implementation verified, deployment blocked)
+
+Migration `20261015010000_native_literacy_life_skills_fields.sql` adds a distinct, LearningApp-authored tree grounded in current app surfaces: **Foundational Literacy** (phonics/decoding, supported reading, oral language and adult basic-education reading), **Civic and Community Literacy** (civics/naturalization and driver readiness), and **Practical Life Skills** (cash/ATM, health/first aid, food safety and workplace safety). It restores the `cluster_life_milestones` database row that previously existed only in the Flutter fallback and connects the three roots to that catalog cluster. The taxonomy service's offline fallback exposes the same roots and children.
+
+This is a product-navigation ontology, not an external classification, K–12 standard, credential, legal/medical requirement, or claim that its practice screens constitute formal instruction. It creates no courses, tests, credential requirements, standards, or new concept placements. The six shipped sample programming concepts are linked through `concept_fields` to their already-assigned field only. Migration pgTAP coverage is in `native_literacy_life_skills_fields_test.sql`; local clean migration, database tests, and schema lint passed on 2026-10-15. Hosted deployment is blocked: there is no verified off-site backup, and local and hosted migration histories diverge. See the [production import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#current-deployment-blockers-checked-2026-10-15).
+
 ## 2. Product outcome
 
 People find a real learning destination: a professional license, certification, licensure or standardized exam, degree/program field, creator-created course, or personally defined goal. They can compare issuers, jurisdictions, verified requirements, paths and reputable preparation options.
@@ -78,6 +88,10 @@ The first P2 slice adds a narrow **issuer identity + official outbound URL** rev
 
 The remaining 21 intake entries stay unpublished. Hard database gates require verified reviewer state; public records are immediately retired on source revocation. See [P2 reviewed issuer directory runbook](P2_ISSUER_VERIFIED_DIRECTORY.md). Next work is individual legal/exam requirement provenance, service/provider APIs under terms, real learning-target mappings, and original study content.
 
+### P2 status reconciliation (2026-10-15, read-only hosted check)
+
+The pilot has grown beyond the original ten records. Anonymous readers currently see **16 published destinations**: 7 certifications (AWS ×2, Microsoft ×3, PMI PMP/CAPM), 2 licensure exams (NCLEX-RN/PN) and 7 Florida professional licenses (real estate sales associate, RN, LPN, 2-20 general lines and 2-15 life/health/annuity insurance agents, certified general and certified building contractors). Only **2 versioned regulator pathways** are publicly visible (Florida RN and LPN examination-path steps). The P2f insurance and P2g contractor pathway work is in the repository but its pathways are not publicly visible on hosted; confirm deployment and review state before describing them as live. Progress against the P2 targets: 16 of 250 reviewed destination pages, 2 of 50 validated pathways.
+
 ## 6. P3 — Experience, community and content
 
 - Search/filter by destination type, issuer, subject, jurisdiction, approval status and freshness. Unreviewed intake must not appear in public search.
@@ -113,6 +127,8 @@ Maintain source identity, license status, checksum where available, release date
 ## 9. Delivery milestones
 
 - [x] National CIP, SOC, O*NET and crosswalk graph imported to production.
+- [ ] Internal CIP 2020 field hierarchy (466 subfields, 2,295 program fields): bootstrap, coverage report and lazy browsing in repository; hosted deployment and `taxonomy_internal_coverage` verification pending.
+- [ ] LearningApp-native literacy/life-skills field tree and life-milestones cluster: additive migration, offline fallback, UI, pgTAP and Flutter tests complete; clean local migration, all database tests, schema lint, and Flutter analysis pass; hosted deployment blocked on off-site backup and migration-history reconciliation.
 - [x] Taxonomy roadmap superseded by the catalog/demand roadmap.
 - [x] Private candidate schema and strict reviewer/publication gates created in repository.
 - [x] Initial 31-item evidence-linked candidate review seed (not popularity-ranked).

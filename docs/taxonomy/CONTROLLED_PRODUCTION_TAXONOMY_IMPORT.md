@@ -1,8 +1,8 @@
 # Production Official Taxonomy Import — Controlled Operator Runbook
 
 **Environment:** Learning App, hosted Supabase project `xzvkdwebtbxlrxagtzlv` (not the bookkeeping project).  
-**Status:** Workflow prepared; **NO live import has been run**.  
-**Date:** 2026-10-11  
+**Status:** Workflow prepared; **NO live import or pending taxonomy migration has been deployed**.
+**Last checked:** 2026-10-15
 **Workflow:** `.github/workflows/controlled-official-taxonomy-import.yml` (manual `workflow_dispatch` only)  
 **Previous audit:** [Hosted Catalog Baseline](HOSTED_CATALOG_BASELINE_2026-10-11.md)
 
@@ -94,6 +94,28 @@ Compare `before.json` and `after.json` artifacts, ensure no import validation or
 - the UI's Career and Academic discovery surfaces show expanded classification results; remember that more **classification codes** does NOT create more published courses or verified licensure pathways.
 
 **If any check fails:** stop new runs and investigate; keep backup safe. Avoid `supabase db reset --linked`, schema rewrites, deleting current rows, or blindly re-running imports until root cause is understood. Recovery may require restoring your off-site logical backup to a separate database and carefully reconciling affected records with newer user changes, not automatically replacing the entire live project.
+
+## Internal CIP field hierarchy deployment
+
+Importing CIP nodes does not create internal `fields`. After every official import, `ingest_official_taxonomies.dart --ingest-all` calls the idempotent, service-role-only `bootstrap_cip_internal_fields('2020')` RPC and fails verification unless `taxonomy_internal_coverage('2020')` reports `complete: true`. `taxonomy_coverage.dart` prints the internal hierarchy separately from external counts, reports it as UNKNOWN (never zero) when unavailable, and `--strict` fails when it is incomplete.
+
+### Current deployment blockers (checked 2026-10-15)
+
+- The owner has not created a verified off-site backup. The hosted Free-plan database has no managed daily backup; **do not perform a live write until the backup procedure above is complete**.
+- The hosted project is correctly linked as `xzvkdwebtbxlrxagtzlv`. `supabase migration list --linked` shows seven remote-only versions (`20261012024727`, `20261012030645`, `20261012032630`, `20261012040321`, `20261012043357`, `20261012170223`, `20261012183947`) and nine local-only versions (`20261012000000` through `20261012000006`, `20261015000000`, `20261015010000`). Both `supabase db push --linked --dry-run` and the authorized read-only `supabase db pull --linked` stop on this mismatch before applying or pulling a schema.
+- Do **not** run the CLI-suggested `supabase migration repair` commands to force history alignment. The remote-only migration source files have not been found in the local repository or branches, and the CLI suggestions would modify hosted migration history. Recover the exact source migrations or conduct a reviewed, backed-up reconciliation before any push.
+- PR #47 contains the CIP hierarchy and native literacy/life-skills work but remains open. Its latest CI passed; merge and deploy remain gated on backup and migration-history reconciliation.
+
+To deploy migration `20261015000000_cip_internal_field_bootstrap.sql` to hosted (status 2026-10-15: **not deployed**; hosted has 48 broad fields, 0 subfields, 0 program fields):
+
+1. Confirm CI is green (clean and incremental `supabase db reset` + `supabase test db`, including `cip_internal_field_bootstrap_test.sql`).
+2. Take and verify an off-site backup (Phase 2 above).
+3. Run a read-only baseline: `dart run tool/taxonomy_coverage.dart --json > before.json`.
+4. Preview with `supabase db push --dry-run`, then apply with `supabase db push`. The migration is append-only, creates only new `fields` and `field_external_classifications` rows, and fails closed (rolling back the whole migration) on broken CIP parents, ambiguous exact mappings or slug collisions.
+5. Verify: `dart run tool/taxonomy_coverage.dart --strict` shows series 48/48, group 466/466, program 2,295/2,295 exact-mapped with all hierarchy checks at 0, and learner-facing catalog counts are unchanged from `before.json`.
+6. In the app, open Pathways & Taxonomy → Disciplines and expand a broad field, a subfield and a program field.
+
+Rerunning the bootstrap is safe: it reuses existing field IDs and only fills gaps. Later CIP editions are refused; map them to existing fields through reviewed lineage instead.
 
 ## Open operational limits
 

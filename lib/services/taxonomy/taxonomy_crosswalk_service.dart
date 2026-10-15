@@ -55,7 +55,7 @@ class TaxonomyCrosswalkService {
 
   Future<List<CanonicalField>> getFields({String? clusterSlug}) async {
     final client = _supabase;
-    if (client == null) return _fallbackFields();
+    if (client == null) return _fallbackFields(clusterSlug: clusterSlug);
     try {
       if (clusterSlug != null) {
         final clusterRes = await client
@@ -78,19 +78,56 @@ class TaxonomyCrosswalkService {
         }
       }
 
+      // Unscoped requests return only top-level roots. Nested CIP subfields and
+      // program fields (thousands of rows) are loaded per parent instead.
       final response = await client
           .from('fields')
           .select()
           .eq('is_active', true)
-          .order('sort_order', ascending: true);
+          .isFilter('parent_id', null)
+          .inFilter('field_kind', ['broad_field', 'native_field'])
+          .order('sort_order', ascending: true)
+          .limit(rootFieldLimit);
 
       return (response as List<dynamic>)
           .map((e) => CanonicalField.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       debugPrint('⚠️ Remote fields fetch failed: $e');
-      return _fallbackFields();
+      return _fallbackFields(clusterSlug: clusterSlug);
     }
+  }
+
+  static const int rootFieldLimit = 500;
+  static const int childFieldPageSize = 200;
+
+  /// Direct children of [parentId], for lazy hierarchy browsing.
+  ///
+  /// Requests [childFieldPageSize] + 1 rows so callers can tell whether the
+  /// result was truncated without loading an unbounded list.
+  Future<FieldChildrenPage> getChildFields(String parentId) async {
+    final client = _supabase;
+    if (client == null) {
+      return FieldChildrenPage.fromRows(
+        _fallbackChildFields().where((f) => f.parentId == parentId).toList(),
+        pageSize: childFieldPageSize,
+      );
+    }
+    final response = await client
+        .from('fields')
+        .select(
+            'id,name,slug,description,icon,field_kind,parent_id,sort_order,is_active')
+        .eq('is_active', true)
+        .eq('parent_id', parentId)
+        .order('sort_order', ascending: true)
+        .order('name', ascending: true)
+        .limit(childFieldPageSize + 1);
+    return FieldChildrenPage.fromRows(
+      (response as List<dynamic>)
+          .map((e) => CanonicalField.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      pageSize: childFieldPageSize,
+    );
   }
 
   Future<CanonicalField?> getFieldBySlug(String slug) async {
@@ -680,12 +717,40 @@ class TaxonomyCrosswalkService {
     ];
   }
 
-  List<CanonicalField> _fallbackFields() {
-    return const [
+  List<CanonicalField> _fallbackFields({String? clusterSlug}) {
+    const fields = [
       CanonicalField(id: 'f-cs', name: 'Computer and Information Sciences and Support Services', slug: 'computer-sciences', fieldKind: 'broad_field', sortOrder: 11),
       CanonicalField(id: 'f-math', name: 'Mathematics and Statistics', slug: 'mathematics-statistics-series', fieldKind: 'broad_field', sortOrder: 27),
       CanonicalField(id: 'f-eng', name: 'Engineering', slug: 'engineering-disciplines', fieldKind: 'broad_field', sortOrder: 14),
       CanonicalField(id: 'f-health', name: 'Health Professions and Related Programs', slug: 'health-professions-series', fieldKind: 'broad_field', sortOrder: 51),
+      CanonicalField(id: 'native-foundational-literacy', name: 'Foundational Literacy', slug: 'foundational-literacy', description: 'Beginning reading, oral language, and adult basic-education reading practice.', fieldKind: 'native_field', sortOrder: 1),
+      CanonicalField(id: 'native-civic-community-literacy', name: 'Civic and Community Literacy', slug: 'civic-and-community-literacy', description: 'Civic knowledge and practical community navigation.', fieldKind: 'native_field', sortOrder: 2),
+      CanonicalField(id: 'native-practical-life-skills', name: 'Practical Life Skills', slug: 'practical-life-skills', description: 'Practical life-skills practice represented in LearningApp.', fieldKind: 'native_field', sortOrder: 3),
+    ];
+
+    if (clusterSlug == 'cluster_life_milestones') {
+      return fields.where((field) => field.fieldKind == 'native_field').toList();
+    }
+    return fields;
+  }
+
+  /// Offline sample of the CIP 2020-backed hierarchy under CIP 11.
+  List<CanonicalField> _fallbackChildFields() {
+    return const [
+      CanonicalField(id: 'f-cs-11-01', parentId: 'f-cs', name: 'Computer and Information Sciences, General', slug: 'computer-and-information-sciences-general-cip-11-01', fieldKind: 'subfield', sortOrder: 1),
+      CanonicalField(id: 'f-cs-11-07', parentId: 'f-cs', name: 'Computer Science', slug: 'computer-science-cip-11-07', fieldKind: 'subfield', sortOrder: 7),
+      CanonicalField(id: 'f-cs-11-0101', parentId: 'f-cs-11-01', name: 'Computer and Information Sciences, General', slug: 'computer-and-information-sciences-general-cip-11-0101', fieldKind: 'program_classification', sortOrder: 101),
+      CanonicalField(id: 'f-cs-11-0701', parentId: 'f-cs-11-07', name: 'Computer Science', slug: 'computer-science-cip-11-0701', fieldKind: 'program_classification', sortOrder: 701),
+      CanonicalField(id: 'native-phonics', parentId: 'native-foundational-literacy', name: 'Phonics and Word Decoding', slug: 'phonics-and-word-decoding', fieldKind: 'native_field', sortOrder: 1),
+      CanonicalField(id: 'native-supported-reading', parentId: 'native-foundational-literacy', name: 'Supported Reading and Comprehension', slug: 'supported-reading-and-comprehension', fieldKind: 'native_field', sortOrder: 2),
+      CanonicalField(id: 'native-oral-language', parentId: 'native-foundational-literacy', name: 'Oral Language and Listening', slug: 'oral-language-and-listening', fieldKind: 'native_field', sortOrder: 3),
+      CanonicalField(id: 'native-adult-reading', parentId: 'native-foundational-literacy', name: 'Adult Basic-Education Reading', slug: 'adult-basic-education-reading', fieldKind: 'native_field', sortOrder: 4),
+      CanonicalField(id: 'native-civics', parentId: 'native-civic-community-literacy', name: 'Civics and Naturalization Preparation', slug: 'civics-and-naturalization-preparation', fieldKind: 'native_field', sortOrder: 1),
+      CanonicalField(id: 'native-driver-safety', parentId: 'native-civic-community-literacy', name: 'Driver Safety and License Preparation', slug: 'driver-safety-and-license-preparation', fieldKind: 'native_field', sortOrder: 2),
+      CanonicalField(id: 'native-cash-atm', parentId: 'native-practical-life-skills', name: 'Cash and ATM Practice', slug: 'cash-and-atm-practice', fieldKind: 'native_field', sortOrder: 1),
+      CanonicalField(id: 'native-health-first-aid', parentId: 'native-practical-life-skills', name: 'Health Literacy and First Aid', slug: 'health-literacy-and-first-aid', fieldKind: 'native_field', sortOrder: 2),
+      CanonicalField(id: 'native-food-safety', parentId: 'native-practical-life-skills', name: 'Food Safety', slug: 'food-safety', fieldKind: 'native_field', sortOrder: 3),
+      CanonicalField(id: 'native-workplace-safety', parentId: 'native-practical-life-skills', name: 'Workplace Safety', slug: 'workplace-safety', fieldKind: 'native_field', sortOrder: 4),
     ];
   }
 
