@@ -39,6 +39,53 @@ comment on function public.cip_internal_field_slug(text, text) is
   'Deterministic, code-qualified slug for CIP-bootstrapped internal fields. '
   'Including the code keeps repeated CIP titles (e.g. 11.01 and 11.0101) distinct.';
 
+-- Active CIP nodes of one level that still lack an exact internal field.
+create or replace function public.cip_bootstrap_pending(p_version text, p_level text)
+returns table (
+  node_id uuid,
+  code text,
+  slug text,
+  name text,
+  description text,
+  cross_references text[],
+  illustrative_examples text[],
+  parent_field_id uuid,
+  sort_order integer
+)
+language sql
+stable
+security invoker
+set search_path = public, pg_temp
+as $$
+  select
+    n.id,
+    n.code,
+    public.cip_internal_field_slug(n.title, n.code),
+    regexp_replace(btrim(n.title), '\s*\.+$', ''),
+    n.definition,
+    coalesce(n.cross_references, '{}'),
+    coalesce(n.illustrative_examples, '{}'),
+    pf.field_id,
+    case
+      when p_level = 'series' and n.code ~ '^\d+$' then n.code::integer
+      when split_part(n.code, '.', 2) ~ '^\d+$' then split_part(n.code, '.', 2)::integer
+      else 0
+    end
+  from public.external_classification_nodes n
+  left join public.field_external_classifications pf
+    on pf.classification_node_id = n.parent_id
+   and pf.mapping_type = 'exact_match'
+  where n.system = 'cip' and n.version = p_version and n.is_active
+    and n.level_code = p_level
+    and not exists (
+      select 1 from public.field_external_classifications fec
+      where fec.classification_node_id = n.id and fec.mapping_type = 'exact_match'
+    );
+$$;
+
+revoke all on function public.cip_bootstrap_pending(text, text) from public, anon, authenticated;
+grant execute on function public.cip_bootstrap_pending(text, text) to service_role;
+
 create or replace function public.bootstrap_cip_internal_fields(p_version text default '2020')
 returns jsonb
 language plpgsql
@@ -48,13 +95,13 @@ as $$
 declare
   v_level text;
   v_kind text;
-  v_count integer;
+  v_count bigint;
   v_created jsonb := '{}'::jsonb;
-  v_total_created integer := 0;
+  v_total_created bigint := 0;
   v_problem text;
-  v_active integer;
-  v_mapped integer;
-  v_overrides integer;
+  v_active bigint;
+  v_mapped bigint;
+  v_overrides bigint;
 begin
   if p_version is distinct from '2020' then
     raise exception 'CIP % cannot be bootstrapped: only CIP 2020 creates internal fields; later editions require reviewed mappings to existing fields',
@@ -138,19 +185,6 @@ begin
       using errcode = 'P0001';
   end if;
 
-  drop table if exists pg_temp.cip_bootstrap_pending;
-  create temp table cip_bootstrap_pending (
-    node_id uuid primary key,
-    code text not null,
-    slug text not null unique,
-    name text not null,
-    description text,
-    cross_references text[] not null,
-    illustrative_examples text[] not null,
-    parent_field_id uuid,
-    sort_order integer not null
-  ) on commit drop;
-
   -- 4. Create missing fields top-down so each level's parents already exist.
   foreach v_level in array array['series', 'group', 'program'] loop
     v_kind := case v_level
@@ -159,36 +193,9 @@ begin
       else 'program_classification'
     end;
 
-    truncate cip_bootstrap_pending;
-
-    insert into cip_bootstrap_pending
-    select
-      n.id,
-      n.code,
-      public.cip_internal_field_slug(n.title, n.code),
-      regexp_replace(btrim(n.title), '\s*\.+$', ''),
-      n.definition,
-      coalesce(n.cross_references, '{}'),
-      coalesce(n.illustrative_examples, '{}'),
-      pf.field_id,
-      case
-        when v_level = 'series' and n.code ~ '^\d+$' then n.code::integer
-        when split_part(n.code, '.', 2) ~ '^\d+$' then split_part(n.code, '.', 2)::integer
-        else 0
-      end
-    from external_classification_nodes n
-    left join field_external_classifications pf
-      on pf.classification_node_id = n.parent_id
-     and pf.mapping_type = 'exact_match'
-    where n.system = 'cip' and n.version = p_version and n.is_active
-      and n.level_code = v_level
-      and not exists (
-        select 1 from field_external_classifications fec
-        where fec.classification_node_id = n.id and fec.mapping_type = 'exact_match'
-      );
-
     if v_level <> 'series' and exists (
-      select 1 from cip_bootstrap_pending where parent_field_id is null
+      select 1 from public.cip_bootstrap_pending(p_version, v_level) p
+      where p.parent_field_id is null
     ) then
       raise exception 'CIP % % nodes have no internal parent field; refusing to create orphans', p_version, v_level
         using errcode = 'P0001';
@@ -197,7 +204,7 @@ begin
     select string_agg(x.slug, ', ' order by x.slug) into v_problem
     from (
       select p.slug
-      from cip_bootstrap_pending p
+      from public.cip_bootstrap_pending(p_version, v_level) p
       join fields f on f.slug = p.slug
       order by p.slug
       limit 20
@@ -207,7 +214,11 @@ begin
         using errcode = 'P0001';
     end if;
 
-    with inserted as (
+    -- The pending CTE is evaluated once, before either insert runs.
+    with pending as materialized (
+      select * from public.cip_bootstrap_pending(p_version, v_level)
+    ),
+    inserted as (
       insert into fields (
         name, slug, description, field_kind, parent_id, sort_order, is_active,
         cross_references, illustrative_examples, metadata
@@ -219,13 +230,13 @@ begin
           'bootstrap',
           jsonb_build_object('system', 'cip', 'version', p_version, 'code', p.code)
         )
-      from cip_bootstrap_pending p
+      from pending p
       returning id, slug
     )
     insert into field_external_classifications (field_id, classification_node_id, mapping_type, notes)
     select i.id, p.node_id, 'exact_match', 'CIP ' || p_version || ' internal field bootstrap'
     from inserted i
-    join cip_bootstrap_pending p on p.slug = i.slug;
+    join pending p on p.slug = i.slug;
 
     get diagnostics v_count = row_count;
     v_created := v_created || jsonb_build_object(v_kind, v_count);
