@@ -18,15 +18,15 @@ Hosted Supabase has been verified to contain the complete pinned official classi
 
 The classification-import work is **done**, but it is not a license, certification, provider program or course catalog. The old roadmap is now historical; its outstanding catalog-growth requirements move here. The existing 17 learning targets, 17 published versions, 7 lessons and user accounts must be preserved.
 
-### Internal field hierarchy (in progress, October 2026)
+### Internal field hierarchy (deployed, October 2026)
 
-Importing CIP nodes did **not** create the matching internal subject hierarchy. As of 2026-10-15 (read-only hosted check) only the 48 CIP series have internal `fields`; the 466 groups and 2,295 programs had none, so learners could not drill below a broad field. Migration `20261015000000_cip_internal_field_bootstrap.sql` adds the service-role `bootstrap_cip_internal_fields('2020')` backfill (466 subfields + 2,295 program fields, reusing the 48 curated broad-field IDs and cluster memberships) and the read-only `taxonomy_internal_coverage()` report. The explorer's **Disciplines** tab now loads each level lazily by parent. Deploy and verify with the [controlled import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#internal-cip-field-hierarchy-deployment). A complete CIP-backed hierarchy is still not native-field, concept, K–12 or curriculum coverage.
+Importing CIP nodes did **not** initially create the matching internal subject hierarchy. Migration `20261015000000_cip_internal_field_bootstrap.sql` adds the service-role `bootstrap_cip_internal_fields('2020')` backfill (466 subfields + 2,295 program fields, reusing the 48 curated broad-field IDs and cluster memberships) and the read-only `taxonomy_internal_coverage()` report. It was deployed on 2026-10-15; strict hosted verification reports 48/48 series, 466/466 groups and 2,295/2,295 programs, with all hierarchy checks at zero. The explorer's **Disciplines** tab loads each level lazily by parent. The full deployment and backup exception are documented in the [controlled import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#deployment-record-2026-10-15). A complete CIP-backed hierarchy is still not native-field, concept, K–12 or curriculum coverage.
 
-### LearningApp-native literacy and life-skills fields (implementation verified, deployment blocked)
+### LearningApp-native literacy and life-skills fields (deployed, October 2026)
 
 Migration `20261015010000_native_literacy_life_skills_fields.sql` adds a distinct, LearningApp-authored tree grounded in current app surfaces: **Foundational Literacy** (phonics/decoding, supported reading, oral language and adult basic-education reading), **Civic and Community Literacy** (civics/naturalization and driver readiness), and **Practical Life Skills** (cash/ATM, health/first aid, food safety and workplace safety). It restores the `cluster_life_milestones` database row that previously existed only in the Flutter fallback and connects the three roots to that catalog cluster. The taxonomy service's offline fallback exposes the same roots and children.
 
-This is a product-navigation ontology, not an external classification, K–12 standard, credential, legal/medical requirement, or claim that its practice screens constitute formal instruction. It creates no courses, tests, credential requirements, standards, or new concept placements. The six shipped sample programming concepts are linked through `concept_fields` to their already-assigned field only. Migration pgTAP coverage is in `native_literacy_life_skills_fields_test.sql`; local clean migration, database tests, and schema lint passed on 2026-10-15. Hosted deployment is blocked: there is no verified off-site backup, and local and hosted migration histories diverge. See the [production import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#current-deployment-blockers-checked-2026-10-15).
+This is a product-navigation ontology, not an external classification, K–12 standard, credential, legal/medical requirement, or claim that its practice screens constitute formal instruction. It creates no courses, tests, credential requirements, standards, or new concept placements. The six shipped sample programming concepts are linked through `concept_fields` to their already-assigned field only. The migration was deployed on 2026-10-15. Hosted verification confirms 13 active native fields, and all three roots are linked to the restored life-milestones cluster. The owner proceeded without an off-site backup; this exception is recorded in the [production import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#deployment-record-2026-10-15).
 
 ## 2. Product outcome
 
@@ -127,8 +127,8 @@ Maintain source identity, license status, checksum where available, release date
 ## 9. Delivery milestones
 
 - [x] National CIP, SOC, O*NET and crosswalk graph imported to production.
-- [ ] Internal CIP 2020 field hierarchy (466 subfields, 2,295 program fields): bootstrap, coverage report and lazy browsing in repository; hosted deployment and `taxonomy_internal_coverage` verification pending.
-- [ ] LearningApp-native literacy/life-skills field tree and life-milestones cluster: additive migration, offline fallback, UI, pgTAP and Flutter tests complete; clean local migration, all database tests, schema lint, and Flutter analysis pass; hosted deployment blocked on off-site backup and migration-history reconciliation.
+- [x] Internal CIP 2020 field hierarchy (466 subfields, 2,295 program fields): bootstrap, coverage report and lazy browsing in repository; deployed and strictly verified hosted on 2026-10-15.
+- [x] LearningApp-native literacy/life-skills field tree and life-milestones cluster: additive migration, offline fallback, UI, pgTAP and Flutter tests complete; deployed and verified hosted on 2026-10-15.
 - [x] Taxonomy roadmap superseded by the catalog/demand roadmap.
 - [x] Private candidate schema and strict reviewer/publication gates created in repository.
 - [x] Initial 31-item evidence-linked candidate review seed (not popularity-ranked).
