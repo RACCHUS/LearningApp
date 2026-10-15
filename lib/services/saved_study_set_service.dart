@@ -346,7 +346,7 @@ class SavedStudySetService {
   Future<SavedStudySet> toggleFavorite(String id) async {
     try {
       final current = await getStudySet(id);
-      return updateStudySet(current.copyWith(isFavorite: !current.isFavorite));
+      return await updateStudySet(current.copyWith(isFavorite: !current.isFavorite));
     } catch (e) {
       debugPrint('❌ Error toggling favorite: $e');
       rethrow;
@@ -762,7 +762,7 @@ class SavedStudySetService {
   }) async {
     try {
       final current = await getStudySet(studySetId);
-      return updateStudySet(
+      return await updateStudySet(
         current.copyWith(
           lessonIds: [...current.lessonIds, ...lessonIds],
           questionIds: [...current.questionIds, ...questionIds],
@@ -786,7 +786,7 @@ class SavedStudySetService {
   }) async {
     try {
       final current = await getStudySet(studySetId);
-      return updateStudySet(
+      return await updateStudySet(
         current.copyWith(
           lessonIds: current.lessonIds
               .where((id) => !lessonIds.contains(id))
