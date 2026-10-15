@@ -22,11 +22,11 @@ The classification-import work is **done**, but it is not a license, certificati
 
 Importing CIP nodes did **not** create the matching internal subject hierarchy. As of 2026-10-15 (read-only hosted check) only the 48 CIP series have internal `fields`; the 466 groups and 2,295 programs had none, so learners could not drill below a broad field. Migration `20261015000000_cip_internal_field_bootstrap.sql` adds the service-role `bootstrap_cip_internal_fields('2020')` backfill (466 subfields + 2,295 program fields, reusing the 48 curated broad-field IDs and cluster memberships) and the read-only `taxonomy_internal_coverage()` report. The explorer's **Disciplines** tab now loads each level lazily by parent. Deploy and verify with the [controlled import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#internal-cip-field-hierarchy-deployment). A complete CIP-backed hierarchy is still not native-field, concept, K–12 or curriculum coverage.
 
-### LearningApp-native literacy and life-skills fields (implementation verified, deployment pending)
+### LearningApp-native literacy and life-skills fields (implementation verified, deployment blocked)
 
 Migration `20261015010000_native_literacy_life_skills_fields.sql` adds a distinct, LearningApp-authored tree grounded in current app surfaces: **Foundational Literacy** (phonics/decoding, supported reading, oral language and adult basic-education reading), **Civic and Community Literacy** (civics/naturalization and driver readiness), and **Practical Life Skills** (cash/ATM, health/first aid, food safety and workplace safety). It restores the `cluster_life_milestones` database row that previously existed only in the Flutter fallback and connects the three roots to that catalog cluster. The taxonomy service's offline fallback exposes the same roots and children.
 
-This is a product-navigation ontology, not an external classification, K–12 standard, credential, legal/medical requirement, or claim that its practice screens constitute formal instruction. It creates no courses, tests, credential requirements, standards, or new concept placements. The six shipped sample programming concepts are linked through `concept_fields` to their already-assigned field only. Migration pgTAP coverage is in `native_literacy_life_skills_fields_test.sql`; local clean migration, database tests, and schema lint passed on 2026-10-15. Hosted deployment remains pending.
+This is a product-navigation ontology, not an external classification, K–12 standard, credential, legal/medical requirement, or claim that its practice screens constitute formal instruction. It creates no courses, tests, credential requirements, standards, or new concept placements. The six shipped sample programming concepts are linked through `concept_fields` to their already-assigned field only. Migration pgTAP coverage is in `native_literacy_life_skills_fields_test.sql`; local clean migration, database tests, and schema lint passed on 2026-10-15. Hosted deployment is blocked: there is no verified off-site backup, and local and hosted migration histories diverge. See the [production import runbook](../taxonomy/CONTROLLED_PRODUCTION_TAXONOMY_IMPORT.md#current-deployment-blockers-checked-2026-10-15).
 
 ## 2. Product outcome
 
@@ -128,7 +128,7 @@ Maintain source identity, license status, checksum where available, release date
 
 - [x] National CIP, SOC, O*NET and crosswalk graph imported to production.
 - [ ] Internal CIP 2020 field hierarchy (466 subfields, 2,295 program fields): bootstrap, coverage report and lazy browsing in repository; hosted deployment and `taxonomy_internal_coverage` verification pending.
-- [ ] LearningApp-native literacy/life-skills field tree and life-milestones cluster: additive migration, offline fallback, UI, pgTAP and Flutter tests complete; clean local migration, all database tests, schema lint, and Flutter analysis pass; hosted deployment pending.
+- [ ] LearningApp-native literacy/life-skills field tree and life-milestones cluster: additive migration, offline fallback, UI, pgTAP and Flutter tests complete; clean local migration, all database tests, schema lint, and Flutter analysis pass; hosted deployment blocked on off-site backup and migration-history reconciliation.
 - [x] Taxonomy roadmap superseded by the catalog/demand roadmap.
 - [x] Private candidate schema and strict reviewer/publication gates created in repository.
 - [x] Initial 31-item evidence-linked candidate review seed (not popularity-ranked).

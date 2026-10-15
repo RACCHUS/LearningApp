@@ -1,8 +1,8 @@
 # Production Official Taxonomy Import — Controlled Operator Runbook
 
 **Environment:** Learning App, hosted Supabase project `xzvkdwebtbxlrxagtzlv` (not the bookkeeping project).  
-**Status:** Workflow prepared; **NO live import has been run**.  
-**Date:** 2026-10-11  
+**Status:** Workflow prepared; **NO live import or pending taxonomy migration has been deployed**.
+**Last checked:** 2026-10-15
 **Workflow:** `.github/workflows/controlled-official-taxonomy-import.yml` (manual `workflow_dispatch` only)  
 **Previous audit:** [Hosted Catalog Baseline](HOSTED_CATALOG_BASELINE_2026-10-11.md)
 
@@ -98,6 +98,13 @@ Compare `before.json` and `after.json` artifacts, ensure no import validation or
 ## Internal CIP field hierarchy deployment
 
 Importing CIP nodes does not create internal `fields`. After every official import, `ingest_official_taxonomies.dart --ingest-all` calls the idempotent, service-role-only `bootstrap_cip_internal_fields('2020')` RPC and fails verification unless `taxonomy_internal_coverage('2020')` reports `complete: true`. `taxonomy_coverage.dart` prints the internal hierarchy separately from external counts, reports it as UNKNOWN (never zero) when unavailable, and `--strict` fails when it is incomplete.
+
+### Current deployment blockers (checked 2026-10-15)
+
+- The owner has not created a verified off-site backup. The hosted Free-plan database has no managed daily backup; **do not perform a live write until the backup procedure above is complete**.
+- The hosted project is correctly linked as `xzvkdwebtbxlrxagtzlv`. `supabase migration list --linked` shows seven remote-only versions (`20261012024727`, `20261012030645`, `20261012032630`, `20261012040321`, `20261012043357`, `20261012170223`, `20261012183947`) and nine local-only versions (`20261012000000` through `20261012000006`, `20261015000000`, `20261015010000`). Both `supabase db push --linked --dry-run` and the authorized read-only `supabase db pull --linked` stop on this mismatch before applying or pulling a schema.
+- Do **not** run the CLI-suggested `supabase migration repair` commands to force history alignment. The remote-only migration source files have not been found in the local repository or branches, and the CLI suggestions would modify hosted migration history. Recover the exact source migrations or conduct a reviewed, backed-up reconciliation before any push.
+- PR #47 contains the CIP hierarchy and native literacy/life-skills work but remains open. Its latest CI passed; merge and deploy remain gated on backup and migration-history reconciliation.
 
 To deploy migration `20261015000000_cip_internal_field_bootstrap.sql` to hosted (status 2026-10-15: **not deployed**; hosted has 48 broad fields, 0 subfields, 0 program fields):
 
