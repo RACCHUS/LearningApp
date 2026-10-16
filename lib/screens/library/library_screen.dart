@@ -213,6 +213,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(DesignTokens.space4),
         children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/words'),
+              icon: const Icon(Icons.spellcheck),
+              label: const Text('My spelling words'),
+            ),
+          ),
+          const SizedBox(height: 12),
           TextField(
             key: const Key('library-search'),
             controller: _search,
