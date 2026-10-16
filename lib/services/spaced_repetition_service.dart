@@ -194,7 +194,9 @@ class SpacedRepetitionService {
           .eq('id', item.id)
           .eq('user_id', _userId!);
 
-      // Word-skill evidence is distinct from canonical knowledge concepts.\n      // Do not send synthetic form IDs to the concept evidence service.\n      if (item.contentType != ReviewableContentType.wordSkill) {\n        // Propagate evidence asynchronously per Learning Architecture v2 §8.2
+      // Word-skill evidence does not identify a canonical knowledge concept.
+      if (item.contentType != ReviewableContentType.wordSkill) {
+        // Propagate ordinary review evidence to linked concepts.
         final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
         _evidenceService?.recordEvidence(
           userId: _userId!,
