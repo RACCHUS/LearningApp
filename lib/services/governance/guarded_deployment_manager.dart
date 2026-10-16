@@ -986,6 +986,41 @@ class GuardedDeploymentManager {
         if (validated.pendingList.isNotEmpty) {
           throw StateError('Postflight reported remaining pending migrations: ${validated.pendingList}');
         }
+
+        // Compare postflight applied versions directly against expected deployed list
+        final expectedApplied = [...appliedList, ...pendingList];
+        if (validated.appliedList.length != expectedApplied.length) {
+          throw StateError(
+            'Postflight applied migrations count mismatch! '
+            'Expected ${expectedApplied.length} ($expectedApplied), '
+            'but remote reported ${validated.appliedList.length} (${validated.appliedList}).',
+          );
+        }
+
+        final expectedSet = expectedApplied.toSet();
+        final actualSet = validated.appliedList.toSet();
+        final missingApplied = expectedSet.difference(actualSet);
+        final extraApplied = actualSet.difference(expectedSet);
+
+        if (missingApplied.isNotEmpty || extraApplied.isNotEmpty) {
+          final buffer = StringBuffer('Postflight applied versions do not match expected deployed ledger!\n');
+          if (missingApplied.isNotEmpty) {
+            buffer.writeln('  • Missing expected applied migrations: ${missingApplied.toList()}');
+          }
+          if (extraApplied.isNotEmpty) {
+            buffer.writeln('  • Unexpected extra applied migrations: ${extraApplied.toList()}');
+          }
+          throw StateError(buffer.toString().trim());
+        }
+
+        for (var i = 0; i < expectedApplied.length; i++) {
+          if (validated.appliedList[i] != expectedApplied[i]) {
+            throw StateError(
+              'Postflight applied migrations order mismatch at index $i! '
+              'Expected ${expectedApplied[i]}, found ${validated.appliedList[i]}.',
+            );
+          }
+        }
       } catch (e) {
         final error = 'Postflight report validation failed at $postflightReportPath: $e';
         stderrSink.writeln('❌ FATAL: $error');
