@@ -61,6 +61,15 @@ class GuardedDeploymentManager {
         stdoutSink = stdoutSink ?? stdout,
         stderrSink = stderrSink ?? stderr;
 
+  String? _heldLockToken;
+  int? _heldLockPid;
+
+  /// Returns the current lock token held by this manager instance, if any.
+  String? get heldLockToken => _heldLockToken;
+
+  /// Returns the process ID associated with the currently held lock, if any.
+  int? get heldLockPid => _heldLockPid;
+
   /// Verifies that the linked Supabase project reference strictly matches the expected target.
   void verifyProjectRef(String expectedRef) {
     final refFile = File('${workingDirectory.path}/supabase/.temp/project-ref');
@@ -238,8 +247,10 @@ class GuardedDeploymentManager {
     }
 
     // Attempt atomic lock acquisition
+    final lockToken = 'lock_${targetPid}_${DateTime.now().microsecondsSinceEpoch}';
     final lockData = {
       'pid': targetPid,
+      'lock_token': lockToken,
       'user': Platform.environment['USERNAME'] ?? Platform.environment['USER'] ?? 'unknown',
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'project_ref': projectRef,
@@ -249,6 +260,8 @@ class GuardedDeploymentManager {
     try {
       lockFile.createSync(exclusive: true);
       lockFile.writeAsStringSync(jsonEncode(lockData));
+      _heldLockToken = lockToken;
+      _heldLockPid = targetPid;
       return lockFile;
     } on FileSystemException {
       // Lock already exists. Check ownership and liveness with retry for concurrent initialization.
@@ -263,43 +276,36 @@ class GuardedDeploymentManager {
           final content = lockFile.readAsStringSync().trim();
           if (content.isNotEmpty) {
             existingData = jsonDecode(content) as Map<String, dynamic>;
-            existingPid = existingData['pid'] as int?;
-            existingUser = existingData['user'] ?? 'unknown';
-            existingTime = existingData['timestamp'] ?? 'unknown';
-            if (existingPid != null) break;
+            final parsedPid = existingData['pid'];
+            if (parsedPid is int && parsedPid > 0) {
+              existingPid = parsedPid;
+              existingUser = existingData['user'] ?? 'unknown';
+              existingTime = existingData['timestamp'] ?? 'unknown';
+              break;
+            }
           }
         } catch (_) {}
         sleep(const Duration(milliseconds: 50));
       }
 
-      if (existingPid != null && isProcessAlive(existingPid)) {
+      // If PID could not be determined, treat unknown ownership as LOCKED.
+      // Age alone or missing metadata NEVER causes automatic lock removal.
+      if (existingPid == null) {
+        throw StateError(
+          'Concurrent deployment blocked!\n'
+          'A deployment lockfile exists at ${lockFile.path}, but its owner PID could not be verified '
+          '(metadata is empty, unreadable, or missing a valid PID).\n'
+          'Automatic lock recovery without verified process termination is prohibited.\n'
+          'If this lock is orphaned from a crashed process, rerun with --force-unlock to clear it explicitly.',
+        );
+      }
+
+      if (isProcessAlive(existingPid)) {
         throw StateError(
           'Concurrent deployment blocked!\n'
           'An active deployment lock is held by PID $existingPid ($existingUser) since $existingTime.\n'
           'The process is actively running. Simultaneous deployments are prohibited.',
         );
-      }
-
-      // If PID could not be determined, check file age to prevent stealing an actively initializing lockfile.
-      if (existingPid == null) {
-        DateTime? modified;
-        try {
-          modified = lockFile.lastModifiedSync();
-        } catch (_) {}
-
-        final ageSeconds = modified != null
-            ? DateTime.now().difference(modified).inSeconds
-            : 0;
-
-        if (ageSeconds < 15) {
-          throw StateError(
-            'Concurrent deployment blocked!\n'
-            'A deployment lockfile exists and was created/modified recently (${ageSeconds}s ago), '
-            'but its metadata is not yet readable.\n'
-            'An active process may be initializing. Simultaneous deployments are prohibited.\n'
-            'If this is a stale lock from a crashed process, rerun with --force-unlock.',
-          );
-        }
       }
 
       // Process is confirmed DEAD (crashed without cleanup)
@@ -313,18 +319,56 @@ class GuardedDeploymentManager {
       // Retry atomic creation after clearing dead lock
       lockFile.createSync(exclusive: true);
       lockFile.writeAsStringSync(jsonEncode(lockData));
+      _heldLockToken = lockToken;
+      _heldLockPid = targetPid;
       return lockFile;
     }
   }
 
-  /// Releases the deployment lockfile if it exists.
-  void releaseDeploymentLock() {
+  /// Releases the deployment lockfile if owned by the current deployment session.
+  ///
+  /// To prevent accidental removal of locks belonging to concurrent or subsequent
+  /// processes, cleanup verifies that the lockfile on disk contains the exact
+  /// [lock_token] and [pid] acquired by this session, unless [force] is true.
+  void releaseDeploymentLock({bool force = false}) {
     final lockFile = File('${workingDirectory.path}/supabase/.deployment.lock');
-    if (lockFile.existsSync()) {
-      try {
-        lockFile.deleteSync();
-      } catch (_) {}
+    if (!lockFile.existsSync()) {
+      _heldLockToken = null;
+      _heldLockPid = null;
+      return;
     }
+
+    if (!force && _heldLockToken != null) {
+      try {
+        final content = lockFile.readAsStringSync().trim();
+        if (content.isNotEmpty) {
+          final data = jsonDecode(content) as Map<String, dynamic>;
+          final onDiskToken = data['lock_token'] as String?;
+          final onDiskPid = data['pid'] as int?;
+          if (onDiskToken != _heldLockToken || onDiskPid != _heldLockPid) {
+            stdoutSink.writeln(
+              '⚠️ Deployment lockfile does not belong to this deployment session '
+              '(held token: $_heldLockToken, on-disk token: $onDiskToken). Retaining lock.',
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        stdoutSink.writeln(
+          '⚠️ Could not verify lockfile ownership during cleanup ($e). Retaining lock for safety.',
+        );
+        return;
+      }
+    } else if (!force && _heldLockToken == null) {
+      // This instance never acquired a lock; do not delete an existing lock.
+      return;
+    }
+
+    try {
+      lockFile.deleteSync();
+    } catch (_) {}
+    _heldLockToken = null;
+    _heldLockPid = null;
   }
 
   /// Verifies that the proposed migrations in dry-run output match the preflight pending migrations.
@@ -409,6 +453,63 @@ class GuardedDeploymentManager {
     };
     reportFile.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(report));
     return reportFile;
+  }
+
+  /// Strictly validates the preflight or postflight report structure and data types.
+  ///
+  /// Guarantees fail-closed behavior:
+  /// - `status` must be present and equal to `'PASSED'` or `'success'`.
+  /// - `pending_versions` must be a non-null `List<String>`.
+  /// - `applied_versions` must be a non-null `List<String>`.
+  /// - All version identifiers must strictly follow canonical 14-digit format (`20YYYYMMDD...`).
+  ({List<String> pendingList, List<String> appliedList}) validatePreflightReport(
+    Map<String, dynamic> data, {
+    required String reportPath,
+  }) {
+    final status = data['status'];
+    if (status == null ||
+        (status != 'PASSED' && status != 'passed' && status != 'success')) {
+      throw FormatException(
+        'Preflight report at $reportPath has invalid or non-passing status: "$status" (expected "PASSED")',
+      );
+    }
+
+    final rawPending = data['pending_versions'];
+    if (rawPending is! List) {
+      throw FormatException(
+        'Preflight report at $reportPath missing required list field "pending_versions" (found: ${rawPending?.runtimeType})',
+      );
+    }
+
+    final rawApplied = data['applied_versions'];
+    if (rawApplied is! List) {
+      throw FormatException(
+        'Preflight report at $reportPath missing required list field "applied_versions" (found: ${rawApplied?.runtimeType})',
+      );
+    }
+
+    final versionRegex = RegExp(r'^20\d{12}$');
+    final pendingList = <String>[];
+    for (final item in rawPending) {
+      if (item is! String || !versionRegex.hasMatch(item)) {
+        throw FormatException(
+          'Preflight report at $reportPath contains invalid pending version identifier: "$item"',
+        );
+      }
+      pendingList.add(item);
+    }
+
+    final appliedList = <String>[];
+    for (final item in rawApplied) {
+      if (item is! String || !versionRegex.hasMatch(item)) {
+        throw FormatException(
+          'Preflight report at $reportPath contains invalid applied version identifier: "$item"',
+        );
+      }
+      appliedList.add(item);
+    }
+
+    return (pendingList: pendingList, appliedList: appliedList);
   }
 
   /// Runs the full guarded deployment workflow.
@@ -545,7 +646,7 @@ class GuardedDeploymentManager {
           'run',
           'tool/verify_migration_history.dart',
           '--preflight-hosted',
-          if (requireBase) '--require-base',
+          if (requireBase) '--require-base' else '--allow-no-base',
           '--base-ref',
           baseRef,
           '--report-out',
@@ -619,8 +720,33 @@ class GuardedDeploymentManager {
         );
       }
 
-      final pendingList = (preflightData['pending_versions'] as List?)?.cast<String>() ?? [];
-      final appliedList = (preflightData['applied_versions'] as List?)?.cast<String>() ?? [];
+      List<String> pendingList;
+      List<String> appliedList;
+      try {
+        final validated = validatePreflightReport(
+          preflightData,
+          reportPath: preflightReportPath,
+        );
+        pendingList = validated.pendingList;
+        appliedList = validated.appliedList;
+      } catch (e) {
+        final error = 'Invalid preflight report structure at $preflightReportPath: $e';
+        stderrSink.writeln('❌ FATAL: $error');
+        emitDeploymentReport(
+          reportDirectory: reportDirectory,
+          status: 'failed',
+          phase: 'preflight_version_gate',
+          projectRef: targetProjectRef,
+          cliVersion: detectedCliVersion,
+          error: error,
+        );
+        return DeploymentExecutionResult(
+          exitCode: 1,
+          status: 'failed',
+          phase: 'preflight_version_gate',
+          error: error,
+        );
+      }
 
       if (pendingList.isEmpty) {
         stdoutSink.writeln('\n✅ Hosted database is already at exact parity with repository.');
@@ -743,7 +869,7 @@ class GuardedDeploymentManager {
             'run',
             'tool/verify_migration_history.dart',
             '--postflight-hosted',
-            if (requireBase) '--require-base',
+            if (requireBase) '--require-base' else '--allow-no-base',
             '--base-ref',
             baseRef,
             '--report-out',
@@ -778,7 +904,7 @@ class GuardedDeploymentManager {
           'run',
           'tool/verify_migration_history.dart',
           '--postflight-hosted',
-          if (requireBase) '--require-base',
+          if (requireBase) '--require-base' else '--allow-no-base',
           '--base-ref',
           baseRef,
           '--report-out',
@@ -807,6 +933,38 @@ class GuardedDeploymentManager {
           phase: 'postflight_version_gate',
           error: 'Postflight gate failed',
         );
+      }
+
+      // Validate postflight report file
+      final postflightFile = File(postflightReportPath);
+      if (postflightFile.existsSync()) {
+        try {
+          final postflightData = jsonDecode(postflightFile.readAsStringSync()) as Map<String, dynamic>;
+          final validated = validatePreflightReport(
+            postflightData,
+            reportPath: postflightReportPath,
+          );
+          if (validated.pendingList.isNotEmpty) {
+            throw StateError('Postflight reported remaining pending migrations: ${validated.pendingList}');
+          }
+        } catch (e) {
+          final error = 'Postflight report validation failed at $postflightReportPath: $e';
+          stderrSink.writeln('❌ FATAL: $error');
+          emitDeploymentReport(
+            reportDirectory: reportDirectory,
+            status: 'failed',
+            phase: 'postflight_version_gate',
+            projectRef: targetProjectRef,
+            cliVersion: detectedCliVersion,
+            error: error,
+          );
+          return DeploymentExecutionResult(
+            exitCode: 1,
+            status: 'failed',
+            phase: 'postflight_version_gate',
+            error: error,
+          );
+        }
       }
 
       stdoutSink.writeln('\n====================================================');

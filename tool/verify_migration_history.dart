@@ -27,6 +27,7 @@ void main(List<String> args) async {
   String migrationsDirPath = 'supabase/migrations';
   String? baseRef = 'origin/main';
   bool requireBase = false;
+  bool allowNoBase = false;
   bool listPendingOnly = false;
   String? isolatePendingDir;
   String? restorePendingDir;
@@ -44,8 +45,11 @@ void main(List<String> args) async {
       baseRef = args[++i];
     } else if (arg == '--no-base') {
       baseRef = null;
+      allowNoBase = true;
     } else if (arg == '--require-base') {
       requireBase = true;
+    } else if (arg == '--allow-no-base') {
+      allowNoBase = true;
     } else if (arg == '--list-pending') {
       listPendingOnly = true;
     } else if (arg == '--isolate-pending' && i + 1 < args.length) {
@@ -141,12 +145,16 @@ void main(List<String> args) async {
         baseRef: resolvedBaseRef,
         migrationsDirPath: migrationsDirPath,
       );
-    } else if (requireBase || preflightHosted || postflightHosted) {
-      stderr.writeln('❌ Error: Could not resolve git base reference "$baseRef".');
-      stderr.writeln('Production deployment gates require a valid Git baseline to verify migration immutability.');
-      exit(1);
-    } else if (!quiet) {
-      stdout.writeln('ℹ️ Note: Git base ref "$baseRef" not found. Falling back to local verification only.');
+    } else {
+      final baselineMandatory = requireBase || ((preflightHosted || postflightHosted) && !allowNoBase);
+      if (baselineMandatory) {
+        stderr.writeln('❌ Error: Could not resolve git base reference "$baseRef".');
+        stderr.writeln('Production deployment gates require a valid Git baseline to verify migration immutability.');
+        stderr.writeln('To explicitly allow deployment without a git baseline in isolated environments, pass --allow-no-base.');
+        exit(1);
+      } else if (!quiet) {
+        stdout.writeln('ℹ️ Note: Git base ref "$baseRef" not found. Falling back to local verification only (--allow-no-base active).');
+      }
     }
   }
 
@@ -743,6 +751,7 @@ Options:
   --base-ref <ref>            Git reference to compare against (default: origin/main).
   --no-base                   Disable git baseline comparison and perform local checks only.
   --require-base              Fail if the git base reference cannot be resolved.
+  --allow-no-base             Allow hosted gates to fall back to local verification if git baseline cannot be resolved.
   --migrations-dir <dir>      Path to migrations folder (default: supabase/migrations).
   --list-pending              Print pending migration filenames (one per line) and exit.
   --isolate-pending <dir>     Move pending migrations into target folder to stage baseline.

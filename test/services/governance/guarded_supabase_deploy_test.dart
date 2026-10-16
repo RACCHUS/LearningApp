@@ -406,16 +406,16 @@ Applying migration 20261015020000_extra.sql...
       );
     });
 
-    test('acquireDeploymentLock blocks concurrent acquisition when existing lockfile is empty but recently created', () {
+    test('acquireDeploymentLock blocks concurrent acquisition and refuses auto-recovery when existing lockfile has unverified metadata', () {
       final manager = GuardedDeploymentManager(
         workingDirectory: tempDir,
       );
 
-      // Create an empty lockfile (0 bytes) representing a process that just called createSync
+      // Create an empty lockfile (0 bytes) representing an unreadable/incomplete lock
       final lockFile = File('${tempDir.path}/supabase/.deployment.lock');
       lockFile.createSync(recursive: true);
 
-      // Second process attempting acquisition must fail closed instead of treating empty file as dead
+      // Attempting acquisition must fail closed instead of treating unverified file as dead
       expect(
         () => manager.acquireDeploymentLock(
           projectRef: 'xzvkdwebtbxlrxagtzlv',
@@ -424,7 +424,18 @@ Applying migration 20261015020000_extra.sql...
         throwsStateError,
       );
 
-      // Lockfile must NOT be deleted by the second process
+      // Lockfile must NOT be deleted without explicit --force-unlock
+      expect(lockFile.existsSync(), isTrue);
+
+      // Also verify corrupt JSON with invalid PID fails closed
+      lockFile.writeAsStringSync('{"pid": "not_an_int", "user": "unknown"}');
+      expect(
+        () => manager.acquireDeploymentLock(
+          projectRef: 'xzvkdwebtbxlrxagtzlv',
+          customPid: 98765,
+        ),
+        throwsStateError,
+      );
       expect(lockFile.existsSync(), isTrue);
     });
 
@@ -524,6 +535,148 @@ Log timestamp: 20261015120000 INFO process finished at 2026-10-15T12:00:00Z
         ),
         returnsNormally,
       );
+    });
+
+    test('releaseDeploymentLock only deletes lockfile matching current deployment session token and pid', () {
+      final manager = GuardedDeploymentManager(workingDirectory: tempDir);
+
+      // Acquire lock with manager
+      final lockFile = manager.acquireDeploymentLock(
+        projectRef: 'xzvkdwebtbxlrxagtzlv',
+        customPid: 1111,
+      );
+      expect(lockFile.existsSync(), isTrue);
+      expect(manager.heldLockToken, isNotNull);
+
+      // Simulate an external process replacing or modifying the lock with a foreign token
+      final foreignLockData = {
+        'pid': 2222,
+        'lock_token': 'lock_foreign_2222_999999999',
+        'user': 'other_agent',
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'project_ref': 'xzvkdwebtbxlrxagtzlv',
+      };
+      lockFile.writeAsStringSync(jsonEncode(foreignLockData));
+
+      // Attempting to release from first manager must NOT delete the foreign lockfile
+      manager.releaseDeploymentLock();
+      expect(lockFile.existsSync(), isTrue, reason: 'Foreign lockfile must be retained during mismatched cleanup');
+
+      // Now create a manager matching the foreign lock
+      final foreignManager = GuardedDeploymentManager(workingDirectory: tempDir);
+      // Calling release when no lock was acquired by this instance must also NOT delete the lock
+      foreignManager.releaseDeploymentLock();
+      expect(lockFile.existsSync(), isTrue, reason: 'Instance with no held lock must not delete disk lockfile');
+
+      // Cleaning up with force: true removes the lock
+      foreignManager.releaseDeploymentLock(force: true);
+      expect(lockFile.existsSync(), isFalse);
+    });
+
+    test('validatePreflightReport strictly validates status and lists of 14-digit canonical timestamps', () {
+      final manager = GuardedDeploymentManager(workingDirectory: tempDir);
+
+      // Valid preflight report
+      final valid = manager.validatePreflightReport({
+        'status': 'PASSED',
+        'pending_versions': ['20261012000001', '20261015010000'],
+        'applied_versions': ['20261012000000'],
+      }, reportPath: 'test_report.json');
+      expect(valid.pendingList, equals(['20261012000001', '20261015010000']));
+      expect(valid.appliedList, equals(['20261012000000']));
+
+      // Missing pending_versions fails closed
+      expect(
+        () => manager.validatePreflightReport({
+          'status': 'PASSED',
+          'applied_versions': ['20261012000000'],
+        }, reportPath: 'test_report.json'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Missing applied_versions fails closed
+      expect(
+        () => manager.validatePreflightReport({
+          'status': 'PASSED',
+          'pending_versions': <String>[],
+        }, reportPath: 'test_report.json'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Non-list pending_versions fails closed
+      expect(
+        () => manager.validatePreflightReport({
+          'status': 'PASSED',
+          'pending_versions': 'not_a_list',
+          'applied_versions': ['20261012000000'],
+        }, reportPath: 'test_report.json'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Non-passing status fails closed
+      expect(
+        () => manager.validatePreflightReport({
+          'status': 'FAILED',
+          'pending_versions': <String>[],
+          'applied_versions': ['20261012000000'],
+        }, reportPath: 'test_report.json'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // Non 14-digit timestamp in pending_versions fails closed
+      expect(
+        () => manager.validatePreflightReport({
+          'status': 'PASSED',
+          'pending_versions': ['20261012'], // only 8 digits
+          'applied_versions': ['20261012000000'],
+        }, reportPath: 'test_report.json'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('runDeployment fails closed when preflight report is missing pending_versions', () async {
+      final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+          if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+          if (args.contains('--preflight-hosted')) {
+            // Write an incomplete preflight report missing pending_versions
+            final preflightReport = File('${reportDir.path}/preflight_report.json');
+            preflightReport.writeAsStringSync(jsonEncode({
+              'status': 'PASSED',
+              'applied_versions': ['20261012000000'],
+              // pending_versions omitted!
+            }));
+            return ProcessResult(0, 0, 'Preflight passed\n', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+      refFile.createSync(recursive: true);
+      refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+
+      final result = await manager.runDeployment(
+        reportDirPath: 'reports',
+        dryRunOnly: false,
+      );
+
+      // Must fail closed with exitCode 1 and NOT produce a false successful no-op
+      expect(result.exitCode, equals(1));
+      expect(result.status, equals('failed'));
+      expect(result.phase, equals('preflight_version_gate'));
+      expect(result.error, contains('pending_versions'));
+    });
+
+    test('.gitignore contains supabase/.deployment.lock', () {
+      final gitignoreFile = File('c:/Users/richa/Documents/Code/LearningApp/.gitignore');
+      expect(gitignoreFile.existsSync(), isTrue);
+      final lines = gitignoreFile.readAsLinesSync().map((l) => l.trim()).toList();
+      expect(lines.contains('supabase/.deployment.lock'), isTrue);
     });
   });
 }
