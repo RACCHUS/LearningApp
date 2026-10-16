@@ -8,6 +8,8 @@ void main(List<String> args) async {
   bool allowDirty = false;
   bool forceUnlock = false;
   bool allowUnpinnedCli = false;
+  bool requireBase = true;
+  String baseRef = 'origin/main';
   bool quiet = false;
   String targetProjectRef = GuardedDeploymentManager.defaultProjectRef;
   String reportDir = 'build/migration_deployment_reports';
@@ -23,6 +25,10 @@ void main(List<String> args) async {
       forceUnlock = true;
     } else if (arg == '--allow-unpinned-cli') {
       allowUnpinnedCli = true;
+    } else if (arg == '--allow-no-base') {
+      requireBase = false;
+    } else if (arg == '--base-ref' && i + 1 < args.length) {
+      baseRef = args[++i];
     } else if (arg == '--project-ref' && i + 1 < args.length) {
       targetProjectRef = args[++i];
     } else if (arg == '--report-dir' && i + 1 < args.length) {
@@ -50,6 +56,8 @@ void main(List<String> args) async {
   final result = await manager.runDeployment(
     targetProjectRef: targetProjectRef,
     reportDirPath: reportDir,
+    baseRef: baseRef,
+    requireBase: requireBase,
     dryRunOnly: dryRunOnly,
     allowDirty: allowDirty,
     forceUnlock: forceUnlock,
@@ -70,7 +78,7 @@ Executes the single guarded deployment workflow:
   2. Project identity enforcement: ensures linked project ref matches expected target (xzvkdwebtbxlrxagtzlv).
   3. Working tree check: ensures all migration files are committed (never bypassed by --allow-dirty).
   4. Deployment serialization: acquires atomic lockfile to block concurrent deployments.
-  5. Preflight version gate: asserts that hosted migrations are a valid prefix of local.
+  5. Preflight version gate: asserts that hosted migrations are a valid prefix of local and matches git baseline.
   6. Push dry-run: verifies planned changes before execution and validates set equality.
   7. Live push: applies pending append-only migrations.
   8. Postflight version gate: asserts exact 1:1 parity with repository.
@@ -81,6 +89,8 @@ Options:
   --allow-dirty           Allow non-migration uncommitted working tree files (migrations still blocked).
   --force-unlock          Clear an existing deployment lock if previous deployment crashed.
   --allow-unpinned-cli    Allow running with an unpinned Supabase CLI version for testing.
+  --base-ref <ref>        Git reference to verify migration immutability against (default: origin/main).
+  --allow-no-base         Allow deployment without a resolved git baseline (not recommended in production).
   --project-ref <id>      Expected Supabase project ref (default: xzvkdwebtbxlrxagtzlv).
   --report-dir <dir>      Directory to store audit reports (default: build/migration_deployment_reports).
   --working-dir <dir>     Base repository directory (default: .).

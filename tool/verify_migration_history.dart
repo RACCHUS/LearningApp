@@ -141,8 +141,9 @@ void main(List<String> args) async {
         baseRef: resolvedBaseRef,
         migrationsDirPath: migrationsDirPath,
       );
-    } else if (requireBase) {
+    } else if (requireBase || preflightHosted || postflightHosted) {
       stderr.writeln('❌ Error: Could not resolve git base reference "$baseRef".');
+      stderr.writeln('Production deployment gates require a valid Git baseline to verify migration immutability.');
       exit(1);
     } else if (!quiet) {
       stdout.writeln('ℹ️ Note: Git base ref "$baseRef" not found. Falling back to local verification only.');

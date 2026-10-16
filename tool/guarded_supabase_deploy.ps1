@@ -17,6 +17,12 @@
 .PARAMETER ForceUnlock
     Clear an existing deployment lock if a previous deployment crashed.
 
+.PARAMETER BaseRef
+    Git reference to verify migration immutability against (default: origin/main).
+
+.PARAMETER AllowNoBase
+    Allow deployment without a resolved git baseline.
+
 .PARAMETER ProjectRef
     Target Supabase project ref (default: xzvkdwebtbxlrxagtzlv).
 
@@ -31,6 +37,8 @@ param(
     [switch]$DryRun,
     [switch]$AllowDirty,
     [switch]$ForceUnlock,
+    [switch]$AllowNoBase,
+    [string]$BaseRef = "origin/main",
     [string]$ProjectRef = "xzvkdwebtbxlrxagtzlv",
     [string]$ReportDir = "build/migration_deployment_reports"
 )
@@ -41,6 +49,8 @@ $argsList = @("run", "tool/guarded_supabase_deploy.dart")
 if ($DryRun) { $argsList += "--dry-run" }
 if ($AllowDirty) { $argsList += "--allow-dirty" }
 if ($ForceUnlock) { $argsList += "--force-unlock" }
+if ($AllowNoBase) { $argsList += "--allow-no-base" }
+if ($BaseRef) { $argsList += "--base-ref"; $argsList += $BaseRef }
 if ($ProjectRef) { $argsList += "--project-ref"; $argsList += $ProjectRef }
 if ($ReportDir) { $argsList += "--report-dir"; $argsList += $ReportDir }
 

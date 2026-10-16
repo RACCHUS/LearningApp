@@ -388,6 +388,144 @@ Applying migration 20261015020000_extra.sql...
       final lockFile = File('${tempDir.path}/supabase/.deployment.lock');
       expect(lockFile.existsSync(), isFalse);
     });
+
+    test('verifyWorkingTreeCleanliness throws StateError when git status exits with non-zero code', () {
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('supabase/migrations')) {
+            return ProcessResult(0, 128, '', 'fatal: not a git repository');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      expect(
+        () => manager.verifyWorkingTreeCleanliness(),
+        throwsStateError,
+      );
+    });
+
+    test('acquireDeploymentLock blocks concurrent acquisition when existing lockfile is empty but recently created', () {
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+      );
+
+      // Create an empty lockfile (0 bytes) representing a process that just called createSync
+      final lockFile = File('${tempDir.path}/supabase/.deployment.lock');
+      lockFile.createSync(recursive: true);
+
+      // Second process attempting acquisition must fail closed instead of treating empty file as dead
+      expect(
+        () => manager.acquireDeploymentLock(
+          projectRef: 'xzvkdwebtbxlrxagtzlv',
+          customPid: 98765,
+        ),
+        throwsStateError,
+      );
+
+      // Lockfile must NOT be deleted by the second process
+      expect(lockFile.existsSync(), isTrue);
+    });
+
+    test('runDeployment passes require-base and base-ref flags to preflight', () async {
+      List<String> capturedPreflightArgs = [];
+      final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+          if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+          if (args.contains('--preflight-hosted')) {
+            capturedPreflightArgs = List.from(args);
+            final preflightReport = File('${reportDir.path}/preflight_report.json');
+            preflightReport.writeAsStringSync(jsonEncode({
+              'status': 'passed',
+              'pending_versions': <String>[],
+              'applied_versions': ['20261012000000'],
+            }));
+            return ProcessResult(0, 0, 'Preflight passed\n', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+      refFile.createSync(recursive: true);
+      refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+
+      final result = await manager.runDeployment(
+        reportDirPath: 'reports',
+        baseRef: 'origin/main',
+        requireBase: true,
+      );
+
+      expect(result.exitCode, equals(0));
+      expect(capturedPreflightArgs.contains('--require-base'), isTrue);
+      expect(capturedPreflightArgs.contains('--base-ref'), isTrue);
+      expect(capturedPreflightArgs[capturedPreflightArgs.indexOf('--base-ref') + 1], equals('origin/main'));
+    });
+
+    test('runDeployment captures unexpected runtime exception, emits structured failure report, and releases lock', () async {
+      final reportDir = Directory('${tempDir.path}/reports');
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+          if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+          if (args.contains('--preflight-hosted')) {
+            throw const SocketException('Simulated network failure during preflight invocation');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+      refFile.createSync(recursive: true);
+      refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+
+      final result = await manager.runDeployment(
+        reportDirPath: 'reports',
+        dryRunOnly: false,
+      );
+
+      expect(result.exitCode, equals(1));
+      expect(result.status, equals('failed'));
+      expect(result.phase, equals('preflight_version_gate'));
+      expect(result.error, contains('Simulated network failure'));
+
+      // Lockfile MUST be cleaned up even on unexpected exception
+      final lockFile = File('${tempDir.path}/supabase/.deployment.lock');
+      expect(lockFile.existsSync(), isFalse);
+
+      // Report file MUST be emitted
+      final summaryFile = File('${reportDir.path}/deployment_summary.json');
+      expect(summaryFile.existsSync(), isTrue);
+      final summary = jsonDecode(summaryFile.readAsStringSync()) as Map<String, dynamic>;
+      expect(summary['status'], equals('failed'));
+      expect(summary['phase'], equals('preflight_version_gate'));
+      expect(summary['error'], contains('Simulated network failure'));
+    });
+
+    test('verifyDryRunMatch ignores non-sql timestamps in command output', () {
+      final manager = GuardedDeploymentManager(workingDirectory: tempDir);
+
+      // Command output has a 14-digit timestamp in a log line but NOT in a .sql file
+      // e.g. "Started at 20261015120000" or ISO timestamps
+      expect(
+        () => manager.verifyDryRunMatch(
+          pendingVersions: [],
+          dryRunOutput: '''
+DRY RUN: migrations will not be pushed
+Remote database is up to date.
+Log timestamp: 20261015120000 INFO process finished at 2026-10-15T12:00:00Z
+''',
+        ),
+        returnsNormally,
+      );
+    });
   });
 }
+
 

@@ -120,14 +120,26 @@ class GuardedDeploymentManager {
   /// Verifies working tree cleanliness.
   ///
   /// CRITICAL: Any uncommitted change in supabase/migrations/ strictly halts deployment,
-  /// even when allowDirty is true.
+  /// even when allowDirty is true. Git command failures fail closed.
   void verifyWorkingTreeCleanliness({bool allowDirty = false}) {
-    final migrationResult = processRunner(
-      'git',
-      ['status', '--porcelain', 'supabase/migrations'],
-      workingDirectory: workingDirectory.path,
-      runInShell: true,
-    );
+    ProcessResult migrationResult;
+    try {
+      migrationResult = processRunner(
+        'git',
+        ['status', '--porcelain', 'supabase/migrations'],
+        workingDirectory: workingDirectory.path,
+        runInShell: true,
+      );
+    } catch (e) {
+      throw StateError('Failed to execute git status on supabase/migrations: $e');
+    }
+
+    if (migrationResult.exitCode != 0) {
+      throw StateError(
+        'Git status failed on supabase/migrations (exit code ${migrationResult.exitCode}):\n'
+        '${migrationResult.stderr.toString().trim()}',
+      );
+    }
 
     final migrationChanges = migrationResult.stdout.toString().trim();
     if (migrationChanges.isNotEmpty) {
@@ -141,12 +153,24 @@ class GuardedDeploymentManager {
     }
 
     if (!allowDirty) {
-      final gitResult = processRunner(
-        'git',
-        ['status', '--porcelain'],
-        workingDirectory: workingDirectory.path,
-        runInShell: true,
-      );
+      ProcessResult gitResult;
+      try {
+        gitResult = processRunner(
+          'git',
+          ['status', '--porcelain'],
+          workingDirectory: workingDirectory.path,
+          runInShell: true,
+        );
+      } catch (e) {
+        throw StateError('Failed to execute git status: $e');
+      }
+
+      if (gitResult.exitCode != 0) {
+        throw StateError(
+          'Git status failed on repository (exit code ${gitResult.exitCode}):\n'
+          '${gitResult.stderr.toString().trim()}',
+        );
+      }
 
       final dirtyFiles = gitResult.stdout.toString().trim();
       if (dirtyFiles.isNotEmpty) {
@@ -227,15 +251,26 @@ class GuardedDeploymentManager {
       lockFile.writeAsStringSync(jsonEncode(lockData));
       return lockFile;
     } on FileSystemException {
-      // Lock already exists. Check ownership and liveness.
+      // Lock already exists. Check ownership and liveness with retry for concurrent initialization.
       Map<String, dynamic>? existingData;
-      try {
-        existingData = jsonDecode(lockFile.readAsStringSync()) as Map<String, dynamic>;
-      } catch (_) {}
+      int? existingPid;
+      String existingUser = 'unknown';
+      String existingTime = 'unknown';
 
-      final existingPid = existingData?['pid'] as int?;
-      final existingUser = existingData?['user'] ?? 'unknown';
-      final existingTime = existingData?['timestamp'] ?? 'unknown';
+      // Retry reading up to 5 times (total ~250ms) to allow an active creator process to complete writing JSON metadata.
+      for (var attempt = 0; attempt < 5; attempt++) {
+        try {
+          final content = lockFile.readAsStringSync().trim();
+          if (content.isNotEmpty) {
+            existingData = jsonDecode(content) as Map<String, dynamic>;
+            existingPid = existingData['pid'] as int?;
+            existingUser = existingData['user'] ?? 'unknown';
+            existingTime = existingData['timestamp'] ?? 'unknown';
+            if (existingPid != null) break;
+          }
+        } catch (_) {}
+        sleep(const Duration(milliseconds: 50));
+      }
 
       if (existingPid != null && isProcessAlive(existingPid)) {
         throw StateError(
@@ -243,6 +278,28 @@ class GuardedDeploymentManager {
           'An active deployment lock is held by PID $existingPid ($existingUser) since $existingTime.\n'
           'The process is actively running. Simultaneous deployments are prohibited.',
         );
+      }
+
+      // If PID could not be determined, check file age to prevent stealing an actively initializing lockfile.
+      if (existingPid == null) {
+        DateTime? modified;
+        try {
+          modified = lockFile.lastModifiedSync();
+        } catch (_) {}
+
+        final ageSeconds = modified != null
+            ? DateTime.now().difference(modified).inSeconds
+            : 0;
+
+        if (ageSeconds < 15) {
+          throw StateError(
+            'Concurrent deployment blocked!\n'
+            'A deployment lockfile exists and was created/modified recently (${ageSeconds}s ago), '
+            'but its metadata is not yet readable.\n'
+            'An active process may be initializing. Simultaneous deployments are prohibited.\n'
+            'If this is a stale lock from a crashed process, rerun with --force-unlock.',
+          );
+        }
       }
 
       // Process is confirmed DEAD (crashed without cleanup)
@@ -279,7 +336,8 @@ class GuardedDeploymentManager {
     required List<String> pendingVersions,
     required String dryRunOutput,
   }) {
-    final versionRegex = RegExp(r'(?<!\d)(20\d{12})(?!\d)');
+    // Extract all migration version identifiers from dry-run output corresponding to .sql files
+    final versionRegex = RegExp(r'(?<!\d)(20\d{12})(?:_[a-zA-Z0-9_.-]+)?\.sql');
     final proposedMatches = versionRegex.allMatches(dryRunOutput).map((m) => m.group(1)!).toSet();
 
     if (pendingVersions.isEmpty) {
@@ -360,6 +418,8 @@ class GuardedDeploymentManager {
   Future<DeploymentExecutionResult> runDeployment({
     String targetProjectRef = defaultProjectRef,
     String reportDirPath = 'build/migration_deployment_reports',
+    String baseRef = 'origin/main',
+    bool requireBase = true,
     bool dryRunOnly = false,
     bool allowDirty = false,
     bool forceUnlock = false,
@@ -375,10 +435,12 @@ class GuardedDeploymentManager {
     final postflightReportPath = '${reportDirectory.path}/postflight_report.json';
 
     String detectedCliVersion = 'unknown';
+    String currentPhase = 'initialization';
     bool lockAcquired = false;
 
     try {
       // 1. Verify CLI version
+      currentPhase = 'cli_verification';
       try {
         detectedCliVersion = verifyCliVersion(
           expectedVersion: pinnedCliVersion,
@@ -403,6 +465,7 @@ class GuardedDeploymentManager {
       }
 
       // 2. Enforce Project Identity
+      currentPhase = 'project_identity_check';
       try {
         verifyProjectRef(targetProjectRef);
       } catch (e) {
@@ -424,6 +487,7 @@ class GuardedDeploymentManager {
       }
 
       // 3. Verify Working Tree Cleanliness
+      currentPhase = 'working_tree_cleanliness';
       try {
         verifyWorkingTreeCleanliness(allowDirty: allowDirty);
       } catch (e) {
@@ -445,6 +509,7 @@ class GuardedDeploymentManager {
       }
 
       // 4. Atomic Deployment Lock
+      currentPhase = 'deployment_serialization';
       try {
         acquireDeploymentLock(
           projectRef: targetProjectRef,
@@ -470,6 +535,7 @@ class GuardedDeploymentManager {
       }
 
       // 5. Preflight Version Gate
+      currentPhase = 'preflight_version_gate';
       if (!quiet) {
         stdoutSink.writeln('\n[1/4] Running Pre-Deployment Version Gate...');
       }
@@ -479,6 +545,9 @@ class GuardedDeploymentManager {
           'run',
           'tool/verify_migration_history.dart',
           '--preflight-hosted',
+          if (requireBase) '--require-base',
+          '--base-ref',
+          baseRef,
           '--report-out',
           preflightReportPath,
           if (quiet) '--quiet',
@@ -580,6 +649,7 @@ class GuardedDeploymentManager {
       }
 
       // 6. Push Dry-Run Verification
+      currentPhase = 'dry_run_push';
       stdoutSink.writeln('\n[2/4] Executing Supabase DB Push Dry Run...');
       final dryRunResult = processRunner(
         'supabase',
@@ -608,6 +678,7 @@ class GuardedDeploymentManager {
         );
       }
 
+      currentPhase = 'dry_run_validation';
       try {
         verifyDryRunMatch(
           pendingVersions: pendingList,
@@ -652,6 +723,7 @@ class GuardedDeploymentManager {
       }
 
       // 7. Push Live Migrations
+      currentPhase = 'live_push';
       stdoutSink.writeln('\n[3/4] Applying Pending Migrations to Hosted Project...');
       final pushResult = processRunner(
         'supabase',
@@ -671,6 +743,9 @@ class GuardedDeploymentManager {
             'run',
             'tool/verify_migration_history.dart',
             '--postflight-hosted',
+            if (requireBase) '--require-base',
+            '--base-ref',
+            baseRef,
             '--report-out',
             postflightReportPath,
             if (quiet) '--quiet',
@@ -695,6 +770,7 @@ class GuardedDeploymentManager {
       }
 
       // 8. Postflight Version Gate
+      currentPhase = 'postflight_version_gate';
       stdoutSink.writeln('\n[4/4] Running Post-Deployment Version Gate...');
       final postflightResult = processRunner(
         'dart',
@@ -702,6 +778,9 @@ class GuardedDeploymentManager {
           'run',
           'tool/verify_migration_history.dart',
           '--postflight-hosted',
+          if (requireBase) '--require-base',
+          '--base-ref',
+          baseRef,
           '--report-out',
           postflightReportPath,
           if (quiet) '--quiet',
@@ -748,6 +827,24 @@ class GuardedDeploymentManager {
         status: 'success',
         phase: 'complete',
         appliedVersions: [...appliedList, ...pendingList],
+      );
+    } catch (e, stack) {
+      stderrSink.writeln('❌ FATAL UNEXPECTED ERROR during $currentPhase: $e\n$stack');
+      try {
+        emitDeploymentReport(
+          reportDirectory: reportDirectory,
+          status: 'failed',
+          phase: currentPhase,
+          projectRef: targetProjectRef,
+          cliVersion: detectedCliVersion,
+          error: e.toString(),
+        );
+      } catch (_) {}
+      return DeploymentExecutionResult(
+        exitCode: 1,
+        status: 'failed',
+        phase: currentPhase,
+        error: e.toString(),
       );
     } finally {
       if (lockAcquired) {
