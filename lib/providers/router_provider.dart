@@ -16,6 +16,7 @@ import 'package:learning_pwa/screens/course_management_screen.dart';
 import 'package:learning_pwa/screens/courses/course_detail_screen.dart';
 import 'package:learning_pwa/screens/study_sets/content_picker_screen.dart';
 import 'package:learning_pwa/screens/study_sets/saved_study_sets_screen.dart';
+import 'package:learning_pwa/screens/words/word_learning_screen.dart';
 import 'package:learning_pwa/screens/progress/progress_screen.dart';
 import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
@@ -305,6 +306,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             studySetId: setId,
           );
         },
+      ),
+      GoRoute(
+        path: '/words',
+        name: 'word-learning',
+        builder: (context, state) => const WordLearningScreen(),
       ),
       GoRoute(
         path: '/study-sets',
