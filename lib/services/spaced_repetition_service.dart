@@ -31,6 +31,8 @@ class SpacedRepetitionService {
           .from('review_items')
           .select()
           .eq('user_id', _userId!)
+          // Dictation items are graded in /words, not Quick Review.
+          .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
       return (response as List)
@@ -57,6 +59,7 @@ class SpacedRepetitionService {
           .select()
           .eq('user_id', _userId!)
           .lte('next_review_date', today.toIso8601String())
+          .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
       return (response as List)
