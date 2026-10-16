@@ -191,19 +191,20 @@ class SpacedRepetitionService {
           .eq('id', item.id)
           .eq('user_id', _userId!);
 
-      // Propagate evidence asynchronously per Learning Architecture v2 §8.2
-      final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
-      _evidenceService?.recordEvidence(
-        userId: _userId!,
-        contentId: item.contentId,
-        contentType: item.contentType,
-        evidenceValue: evidenceValue,
-        lessonId: item.lessonId,
-      ).catchError((e) {
-        if (kDebugMode) {
-          print('⚠️ Concept evidence propagation error: $e');
-        }
-      });
+      // Word-skill evidence is distinct from canonical knowledge concepts.\n      // Do not send synthetic form IDs to the concept evidence service.\n      if (item.contentType != ReviewableContentType.wordSkill) {\n        // Propagate evidence asynchronously per Learning Architecture v2 §8.2
+        final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
+        _evidenceService?.recordEvidence(
+          userId: _userId!,
+          contentId: item.contentId,
+          contentType: item.contentType,
+          evidenceValue: evidenceValue,
+          lessonId: item.lessonId,
+        ).catchError((e) {
+          if (kDebugMode) {
+            print('⚠️ Concept evidence propagation error: $e');
+          }
+        });
+      }
 
       return updatedItem;
     } catch (e) {
