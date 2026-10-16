@@ -21,7 +21,7 @@
 4. Add fully signed-out local-guest persistence, migration to a Google account, and an opt-in, idempotent import path for an **existing** Google identity. Preserve source records and resolve list collisions without loss of progress.
 5. Verify actual Supabase OAuth provider/redirect configuration and Manual Identity Linking status with authorized test identities before enabling any full rollout. No production Auth setting changes without approval.
 6. Finish proper-name pronunciation correction, accepted variant editing, assisted-input browser behavior, signed-out and shared-device privacy, and end-to-end review semantics.
-7. Run regression tests for existing lesson and quick-review rendering; the generic quick-review path currently treats word-skill items as ordinary flashcards. The dedicated word practice is the only graded dictation experience in this slice.
+7. Run regression tests for existing lessons and Quick Review. The generic review queries now exclude word-skill items (so they cannot be incorrectly self-rated as flashcards); add properly scoped word-review entry points before the final W1 release. The dedicated /words screen is the only graded dictation experience in this slice.
 8. Resolve detected implementation and CI problems before merge; preserve the locked Learn / Library / Progress architecture.
 
 ## Notes
