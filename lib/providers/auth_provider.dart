@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -78,6 +77,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Explicitly links a Google identity to the CURRENT anonymous user.
+  /// This preserves the auth UID when Manual Identity Linking is enabled.
+  /// For an already-owned Google identity, keep the guest session intact;
+  /// existing-account import must be a separate, consent-based flow.
+  Future<void> linkGuestToGoogle() async {
+    final guest = _supabase.auth.currentUser;
+    if (guest == null || !guest.isAnonymous) {
+      throw StateError('Only an anonymous guest can upgrade this way.');
+    }
+    try {
+      state = AuthLoading();
+      await _supabase.auth.linkIdentity(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? Uri.base.origin : null,
+      );
+    } catch (e, stackTrace) {
+      _logger.warn('Google identity linking failed',
+        error: e, stackTrace: stackTrace,
+        metadata: {'method': 'linkGuestToGoogle'});
+      // Never sign out or replace the anonymous identity on a failed link.
+      state = AuthSuccess(guest);
+      rethrow;
+    }
+  }
+
+  /// Retry a failed profile write without discarding a valid auth session.
+  Future<void> retryProfileProvisioning() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    await _upsertUser(user);
+  }
+
   Future<void> _upsertUser(User user) async {
     int attempts = 0;
     const maxAttempts = 3;
@@ -114,14 +145,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
             metadata: {'userId': user.id},
           );
 
-          // Sign out the user to prevent inconsistent state
-          await _supabase.auth.signOut();
-          state = AuthError('Failed to create user account. Please try again.');
-          throw DatabaseException(
-            'User record creation failed after $maxAttempts attempts',
-            originalError: e,
-            stackTrace: stackTrace,
+          // Keep the valid auth session: signing out here could make an
+          // anonymous learner permanently lose access to their work.
+          state = AuthError(
+            'Signed in, but the profile could not be saved. Retry later.',
           );
+          return;
         }
 
         // Exponential backoff: wait before retry
