@@ -88,9 +88,9 @@ The first P2 slice adds a narrow **issuer identity + official outbound URL** rev
 
 The remaining 21 intake entries stay unpublished. Hard database gates require verified reviewer state; public records are immediately retired on source revocation. See [P2 reviewed issuer directory runbook](P2_ISSUER_VERIFIED_DIRECTORY.md). Next work is individual legal/exam requirement provenance, service/provider APIs under terms, real learning-target mappings, and original study content.
 
-### P2 status reconciliation (2026-10-15, read-only hosted check)
+### P2 status reconciliation (2026-10-16, hosted verification)
 
-The pilot has grown beyond the original ten records. Anonymous readers currently see **16 published destinations**: 7 certifications (AWS ×2, Microsoft ×3, PMI PMP/CAPM), 2 licensure exams (NCLEX-RN/PN) and 7 Florida professional licenses (real estate sales associate, RN, LPN, 2-20 general lines and 2-15 life/health/annuity insurance agents, certified general and certified building contractors). Only **2 versioned regulator pathways** are publicly visible (Florida RN and LPN examination-path steps). The P2f insurance and P2g contractor pathway work is in the repository but its pathways are not publicly visible on hosted; confirm deployment and review state before describing them as live. Progress against the P2 targets: 16 of 250 reviewed destination pages, 2 of 50 validated pathways.
+The pilot has grown beyond the original ten records. Anonymous readers currently see **16 published destinations**: 7 certifications (AWS ×2, Microsoft ×3, PMI PMP/CAPM), 2 licensure exams (NCLEX-RN/PN) and 7 Florida professional licenses (real estate sales associate, RN, LPN, 2-20 general lines and 2-15 life/health/annuity insurance agents, certified general and certified building contractors). **6 versioned regulator pathways** are publicly visible under RLS: Florida RN and LPN (`fl_bon`), Florida General Lines 2-20 and Life/Health 2-15 (`fl_dfs`), and Florida Certified General and Building Contractors (`dbpr_fl`). All six records pass transactional schema and source review gates. Progress against the P2 targets: 16 of 250 reviewed destination pages, 6 of 50 validated pathways.
 
 ## 6. P3 — Experience, community and content
 
