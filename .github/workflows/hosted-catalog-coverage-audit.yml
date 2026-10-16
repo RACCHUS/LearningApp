@@ -62,6 +62,12 @@ jobs:
           fi
           jq -r '"Scope: " + .scope, ("Pinned release mismatches: " + (.mismatches|tostring)), ("Published target versions: " + (.catalog.published_target_versions|tostring))' build/hosted-taxonomy-coverage.json >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify hosted published license pathways via anonymous REST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://xzvkdwebtbxlrxagtzlv.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_CHeZhqsA_unx_imSPmvf9w_2VAoEf2D' }}
+        run: dart run tool/verify_published_pathways.dart
+
       - name: Upload aggregate coverage report
         if: success()
         uses: actions/upload-artifact@v4
