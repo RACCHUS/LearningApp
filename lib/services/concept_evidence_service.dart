@@ -194,6 +194,9 @@ class ConceptEvidenceService {
           }
           break;
 
+        case ReviewableContentType.wordSkill:
+          // Word form retrieval is not the same as canonical concept evidence.
+          break;
         case ReviewableContentType.concept:
           results.add((conceptId: contentId, weight: 1.0));
           break;
