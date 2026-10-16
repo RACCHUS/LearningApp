@@ -935,36 +935,74 @@ class GuardedDeploymentManager {
         );
       }
 
-      // Validate postflight report file
+      // Validate postflight report file (MUST exist and be valid)
       final postflightFile = File(postflightReportPath);
-      if (postflightFile.existsSync()) {
-        try {
-          final postflightData = jsonDecode(postflightFile.readAsStringSync()) as Map<String, dynamic>;
-          final validated = validatePreflightReport(
-            postflightData,
-            reportPath: postflightReportPath,
-          );
-          if (validated.pendingList.isNotEmpty) {
-            throw StateError('Postflight reported remaining pending migrations: ${validated.pendingList}');
-          }
-        } catch (e) {
-          final error = 'Postflight report validation failed at $postflightReportPath: $e';
-          stderrSink.writeln('❌ FATAL: $error');
-          emitDeploymentReport(
-            reportDirectory: reportDirectory,
-            status: 'failed',
-            phase: 'postflight_version_gate',
-            projectRef: targetProjectRef,
-            cliVersion: detectedCliVersion,
-            error: error,
-          );
-          return DeploymentExecutionResult(
-            exitCode: 1,
-            status: 'failed',
-            phase: 'postflight_version_gate',
-            error: error,
-          );
+      if (!postflightFile.existsSync()) {
+        final error = 'Postflight succeeded but report file not found at $postflightReportPath';
+        stderrSink.writeln('❌ FATAL: $error');
+        emitDeploymentReport(
+          reportDirectory: reportDirectory,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          projectRef: targetProjectRef,
+          cliVersion: detectedCliVersion,
+          error: error,
+        );
+        return DeploymentExecutionResult(
+          exitCode: 1,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          error: error,
+        );
+      }
+
+      Map<String, dynamic> postflightData;
+      try {
+        postflightData = jsonDecode(postflightFile.readAsStringSync()) as Map<String, dynamic>;
+      } catch (e) {
+        final error = 'Malformed postflight report at $postflightReportPath: $e';
+        stderrSink.writeln('❌ FATAL: $error');
+        emitDeploymentReport(
+          reportDirectory: reportDirectory,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          projectRef: targetProjectRef,
+          cliVersion: detectedCliVersion,
+          error: error,
+        );
+        return DeploymentExecutionResult(
+          exitCode: 1,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          error: error,
+        );
+      }
+
+      try {
+        final validated = validatePreflightReport(
+          postflightData,
+          reportPath: postflightReportPath,
+        );
+        if (validated.pendingList.isNotEmpty) {
+          throw StateError('Postflight reported remaining pending migrations: ${validated.pendingList}');
         }
+      } catch (e) {
+        final error = 'Postflight report validation failed at $postflightReportPath: $e';
+        stderrSink.writeln('❌ FATAL: $error');
+        emitDeploymentReport(
+          reportDirectory: reportDirectory,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          projectRef: targetProjectRef,
+          cliVersion: detectedCliVersion,
+          error: error,
+        );
+        return DeploymentExecutionResult(
+          exitCode: 1,
+          status: 'failed',
+          phase: 'postflight_version_gate',
+          error: error,
+        );
       }
 
       stdoutSink.writeln('\n====================================================');

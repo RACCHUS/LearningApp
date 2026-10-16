@@ -672,8 +672,106 @@ Log timestamp: 20261015120000 INFO process finished at 2026-10-15T12:00:00Z
       expect(result.error, contains('pending_versions'));
     });
 
+    test('runDeployment fails closed when postflight report file is missing', () async {
+      final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+          if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+          if (args.contains('--preflight-hosted')) {
+            final preflightReport = File('${reportDir.path}/preflight_report.json');
+            preflightReport.writeAsStringSync(jsonEncode({
+              'status': 'PASSED',
+              'pending_versions': ['20261015010000'],
+              'applied_versions': ['20261012000000'],
+            }));
+            return ProcessResult(0, 0, 'Preflight passed\n', '');
+          }
+          if (args.contains('--dry-run')) {
+            return ProcessResult(0, 0, 'DRY RUN: migrations will not be pushed\nApplying migration 20261015010000_update.sql...\n', '');
+          }
+          if (executable == 'supabase' && args.contains('push')) {
+            return ProcessResult(0, 0, 'Applying migration 20261015010000_update.sql...\nFinished supabase db push.\n', '');
+          }
+          if (args.contains('--postflight-hosted')) {
+            // Postflight process succeeds with exitCode 0, but DOES NOT generate postflight_report.json!
+            return ProcessResult(0, 0, 'Postflight check finished without report\n', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+      refFile.createSync(recursive: true);
+      refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+
+      final result = await manager.runDeployment(
+        reportDirPath: 'reports',
+        dryRunOnly: false,
+      );
+
+      // Must fail closed with exitCode 1 and phase postflight_version_gate
+      expect(result.exitCode, equals(1));
+      expect(result.status, equals('failed'));
+      expect(result.phase, equals('postflight_version_gate'));
+      expect(result.error, contains('postflight_report.json'));
+    });
+
+    test('runDeployment completes successfully when live push and postflight succeed with valid 1:1 postflight report', () async {
+      final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+
+      final manager = GuardedDeploymentManager(
+        workingDirectory: tempDir,
+        processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+          if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+          if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+          if (args.contains('--preflight-hosted')) {
+            final preflightReport = File('${reportDir.path}/preflight_report.json');
+            preflightReport.writeAsStringSync(jsonEncode({
+              'status': 'PASSED',
+              'pending_versions': ['20261015010000'],
+              'applied_versions': ['20261012000000'],
+            }));
+            return ProcessResult(0, 0, 'Preflight passed\n', '');
+          }
+          if (args.contains('--dry-run')) {
+            return ProcessResult(0, 0, 'DRY RUN: migrations will not be pushed\nApplying migration 20261015010000_update.sql...\n', '');
+          }
+          if (executable == 'supabase' && args.contains('push')) {
+            return ProcessResult(0, 0, 'Applying migration 20261015010000_update.sql...\nFinished supabase db push.\n', '');
+          }
+          if (args.contains('--postflight-hosted')) {
+            final postflightReport = File('${reportDir.path}/postflight_report.json');
+            postflightReport.writeAsStringSync(jsonEncode({
+              'status': 'PASSED',
+              'pending_versions': <String>[],
+              'applied_versions': ['20261012000000', '20261015010000'],
+            }));
+            return ProcessResult(0, 0, 'Postflight passed with 1:1 parity\n', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
+      );
+
+      final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+      refFile.createSync(recursive: true);
+      refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+
+      final result = await manager.runDeployment(
+        reportDirPath: 'reports',
+        dryRunOnly: false,
+      );
+
+      expect(result.exitCode, equals(0));
+      expect(result.status, equals('success'));
+      expect(result.phase, equals('complete'));
+      expect(result.appliedVersions, equals(['20261012000000', '20261015010000']));
+    });
+
     test('.gitignore contains supabase/.deployment.lock', () {
-      final gitignoreFile = File('c:/Users/richa/Documents/Code/LearningApp/.gitignore');
+      final gitignoreFile = File('.gitignore');
       expect(gitignoreFile.existsSync(), isTrue);
       final lines = gitignoreFile.readAsLinesSync().map((l) => l.trim()).toList();
       expect(lines.contains('supabase/.deployment.lock'), isTrue);
