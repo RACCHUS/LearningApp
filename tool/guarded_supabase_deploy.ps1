@@ -3,7 +3,7 @@
     Guarded Supabase Production Migration Deployment Tool (Windows PowerShell).
 
 .DESCRIPTION
-    Implements Phase 4 permanent prevention controls from MIGRATION_HISTORY_REPAIR_DECISION_PLAN.md.
+    Implements Phase 4 permanent prevention controls from docs/history/MIGRATION_HISTORY_REPAIR_DECISION_PLAN.md.
     Enforces project identity verification, dirty-migration blocking, process serialization lock,
     preflight version gate, push dry-run validation, live push, postflight parity gate,
     and sanitized JSON audit reporting.
