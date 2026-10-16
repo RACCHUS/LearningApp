@@ -14,7 +14,7 @@
 **Mission:** Make effective education easier to discover, afford, create, teach, understand, and complete. Help people gain actual knowledge, academic progress, qualifications, and economic opportunity—not merely consume content.
 
 The product has **two distinct returns**:
-1. **Enduring family/personal utility**, regardless of commercial success: school support for children, accessible foundational literacy for adults, CLEP and college preparation, insurance/real-estate/HVAC/contractor credentials, and practical trade skills. Build for long-term use and diverse literacy, age, and ability levels. This track is anchored by the fully implemented [LITERACY_ACCESSIBILITY_PLAN.md](file:///c:/Users/richa/Documents/Code/LearningApp/LITERACY_ACCESSIBILITY_PLAN.md).
+1. **Enduring family/personal utility**, regardless of commercial success: school support for children, accessible foundational literacy for adults, CLEP and college preparation, insurance/real-estate/HVAC/contractor credentials, and practical trade skills. Build for long-term use and diverse literacy, age, and ability levels. This track is anchored by the fully implemented [LITERACY_ACCESSIBILITY_PLAN.md](../../LITERACY_ACCESSIBILITY_PLAN.md).
 2. **Potential financial return** from a scalable public educational ecosystem: paid creator resources, instruction, tutoring, subscriptions, marketplace transactions, and optional services. **Do not sacrifice family educational utility merely to maximize revenue.**
 
 **Core thesis:** Build more than a course library. Build a platform where learners ask questions, teachers teach without needing to author courses, creators publish and earn, AI assists both sides, and credible evidence about educational effectiveness makes the platform better over time.
@@ -29,7 +29,7 @@ Repository review (grounded in `README.md`, `LEARNING_ARCHITECTURE_V2.md`, `UI_A
 
 - **Client & Architecture**: Flutter/Dart PWA; Riverpod + GoRouter; Supabase PostgreSQL/Auth/Storage/RLS; Hive/local sync.
 - **Navigation Baseline**: Three primary destinations **Learn / Library / Progress**; collapsible desktop rail, searchable Help; no forced first-run onboarding. The locked UI baseline governs all new navigation work unless explicitly amended.
-- **Foundational Literacy Core (Delivered & Verified)**: 6-phase oral-first architecture documented in [LITERACY_ACCESSIBILITY_PLAN.md](file:///c:/Users/richa/Documents/Code/LearningApp/LITERACY_ACCESSIBILITY_PLAN.md) (51 passing automated tests): local pre-reader profiles, unified `PreReaderAudioService`, Zaner-Bloser handwriting stroke engine (A–Z, 0–9), 26-letter phonics catalog, CVC word blending, 2025 USCIS Naturalization exam (128-Q bank) & oral N-400 interview, Florida FLHSMV driver's license audio mock, GED Pre-Prep ABE Reading Bridge, OSHA safety & GHS pictograms, FDA Food Code (2022), Rx/first aid, 18 U.S.C. § 504 currency recognition & ATM cash withdrawal simulator, karaoke story reader, and caseworker setup mode.
+- **Foundational Literacy Core (Delivered & Verified)**: 6-phase oral-first architecture documented in [LITERACY_ACCESSIBILITY_PLAN.md](../../LITERACY_ACCESSIBILITY_PLAN.md) (51 passing automated tests): local pre-reader profiles, unified `PreReaderAudioService`, Zaner-Bloser handwriting stroke engine (A–Z, 0–9), 26-letter phonics catalog, CVC word blending, 2025 USCIS Naturalization exam (128-Q bank) & oral N-400 interview, Florida FLHSMV driver's license audio mock, GED Pre-Prep ABE Reading Bridge, OSHA safety & GHS pictograms, FDA Food Code (2022), Rx/first aid, 18 U.S.C. § 504 currency recognition & ATM cash withdrawal simulator, karaoke story reader, and caseworker setup mode.
 - **Learning Entities**: Learning contexts, learning targets and published versions, curriculum nodes, autonomous `knowledge_concepts`, courses, lessons, assessment `questions`, study sets, flashcards, user progress, review scheduling, and diagnostic pathways.
 - **Catalog Status (Important Reality Check)**: Official CIP/SOC/O*NET ingestion scripts and fixtures are verified and automated in CI against disposable test databases. However, **hosted production database population is an active ongoing effort** governed strictly by `docs/catalog/CATALOG_GROWTH_AND_DEMAND_PLAN.md` and `HOSTED_MIGRATION_ROLLOUT.md`. The superseded taxonomy roadmap is retired; do not revive it.
 - **Catalog Provenance Vocabulary**: The system already possesses a battle-tested trust vocabulary:
@@ -127,7 +127,7 @@ Maintain **distinct but linked entities**:
 **User needs:** Reading, listening, speaking, asking questions and practicing should be available through the same educational context. Particularly vital for adults with low literacy, children, and learners with accessibility needs.
 
 **Functional scope:**
-- Seamless synergy with [LITERACY_ACCESSIBILITY_PLAN.md](file:///c:/Users/richa/Documents/Code/LearningApp/LITERACY_ACCESSIBILITY_PLAN.md): pre-reader profile, studio phonemes, tactile handwriting canvas, oral milestone exams, and survival life domains.
+- Seamless synergy with [LITERACY_ACCESSIBILITY_PLAN.md](../../LITERACY_ACCESSIBILITY_PLAN.md): pre-reader profile, studio phonemes, tactile handwriting canvas, oral milestone exams, and survival life domains.
 - Read-aloud and voice interaction; adjustable speed, captions/transcripts, accessible controls, keyboard/screen-reader support and text alternatives.
 - Explanations at user-selected reading levels without condescending tone; stepwise scaffolding; visual examples; multilingual support where quality can be verified.
 - Adaptive hints, misconception diagnosis, retrieval practice, spaced review and teach-back, using existing study architecture.
@@ -190,7 +190,7 @@ Maintain **distinct but linked entities**:
 ## 4. Launch approach, pilot audience & explicit Go/No-Go decision gates
 
 ### Family-first pilots without family-only product design
-1. **Adult literacy & life milestones**: Voice-guided, low-reading-burden navigation and practical skill demonstrations (leveraging [LITERACY_ACCESSIBILITY_PLAN.md](file:///c:/Users/richa/Documents/Code/LearningApp/LITERACY_ACCESSIBILITY_PLAN.md)).
+1. **Adult literacy & life milestones**: Voice-guided, low-reading-burden navigation and practical skill demonstrations (leveraging [LITERACY_ACCESSIBILITY_PLAN.md](../../LITERACY_ACCESSIBILITY_PLAN.md)).
 2. **K–12 educational support**: Age-appropriate reading/math support; minors must have strict guardian consent controls and a complete prohibition on public profile visibility or direct contact from adult strangers.
 3. **High-stakes credential/college exams**: CLEP, Florida real estate, insurance, HVAC/EPA or contractor prep; select one or two supported targets whose official requirements and legal constraints are verified.
 4. **Contributor/teacher trial**: A knowledgeable adult joins an existing topic, answers questions, and gains followers without making a course.
@@ -289,7 +289,7 @@ Map the proposed logical entities to existing tables first; use new tables only 
 
 **Tasks**
 - [ ] **Resource Authoring**: Original resource publishing (lessons, flashcard sets, guides) with creator ownership, source citations, and AI-assisted drafts.
-- [ ] **Family & ABE Field Pilot**: Conduct structured pilot combining [LITERACY_ACCESSIBILITY_PLAN.md](file:///c:/Users/richa/Documents/Code/LearningApp/LITERACY_ACCESSIBILITY_PLAN.md) Adult Basic Education tools with credential exam prep.
+- [ ] **Family & ABE Field Pilot**: Conduct structured pilot combining [LITERACY_ACCESSIBILITY_PLAN.md](../../LITERACY_ACCESSIBILITY_PLAN.md) Adult Basic Education tools with credential exam prep.
 - [ ] **Before/After Assessment**: Compare baseline diagnostic scores to post-study outcomes, collecting feedback on clarity, pacing, and retention.
 
 **Exit:** Contributor can publish reviewed standalone resources; at least one verified end-to-end pilot demonstrates measurable skill improvement.
