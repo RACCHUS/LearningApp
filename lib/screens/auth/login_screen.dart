@@ -17,7 +17,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(authProvider.notifier).signInWithGoogle();
+      final auth = ref.read(authProvider);
+      if (auth is AuthSuccess && auth.user.isAnonymous) {
+        await ref.read(authProvider.notifier).linkGuestToGoogle();
+      } else {
+        await ref.read(authProvider.notifier).signInWithGoogle();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +59,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final auth = ref.watch(authProvider);
+    final isAnonymousGuest = auth is AuthSuccess && auth.user.isAnonymous;
     
     return Scaffold(
       body: SafeArea(
@@ -93,6 +100,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const Spacer(),
               
+              if (isAnonymousGuest) ...[
+                const Text(
+                  'You are using a guest account. Link Google to keep your '
+                  'existing lists and progress. If this Google account already '
+                  'exists, linking will not work; your guest data will remain '
+                  'in place until a safe import is available.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+              ],
               // Google Sign In Button
               FilledButton.icon(
                 onPressed: _isLoading ? null : _handleSignIn,
@@ -134,8 +151,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const SizedBox(height: 24),
               
-              // Guest Login Button
-              OutlinedButton(
+              // Do not create a second anonymous UID on an existing guest.
+              if (!isAnonymousGuest) OutlinedButton(
                 onPressed: _isLoading ? null : _handleGuestSignIn,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
