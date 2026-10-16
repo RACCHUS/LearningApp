@@ -1,0 +1,136 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
+import '../models/spaced_repetition.dart';
+import '../models/word_learning.dart';
+import 'spaced_repetition_service.dart';
+
+/// Small W1 repository for private word lists. Supabase anonymous users are
+/// authenticated and receive the same owner-scoped RLS rules as full accounts.
+/// A truly signed-out/local guest import path is a separate W1 release gate.
+class WordListService {
+  final SupabaseClient _client;
+  final SpacedRepetitionService _reviews;
+
+  WordListService({
+    SupabaseClient? client,
+    SpacedRepetitionService? reviews,
+  })  : _client = client ?? Supabase.instance.client,
+        _reviews = reviews ?? SpacedRepetitionService(supabase: client);
+
+  String get _userId {
+    final id = _client.auth.currentUser?.id;
+    if (id == null) {
+      throw StateError('Continue as Guest or sign in to save word lists.');
+    }
+    return id;
+  }
+
+  Future<List<WordList>> getLists() async {
+    final rows = await _client.from('word_lists')
+        .select('id,user_id,title,description')
+        .eq('user_id', _userId)
+        .order('created_at', ascending: false);
+    return (rows as List).map((r) =>
+        WordList.fromJson(Map<String, dynamic>.from(r as Map))).toList();
+  }
+
+  Future<WordList> createList(String title) async {
+    final clean = title.trim();
+    if (clean.isEmpty || clean.length > 160) {
+      throw ArgumentError('List title must contain 1–160 characters');
+    }
+    final row = await _client.from('word_lists')
+        .insert({'user_id': _userId, 'title': clean})
+        .select('id,user_id,title,description')
+        .single();
+    return WordList.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteList(String id) async {
+    // FK cascade deletes memberships, never shared review_items.
+    await _client.from('word_lists').delete().eq('user_id', _userId).eq('id', id);
+  }
+
+  Future<List<WordListEntry>> getEntries(String listId) async {
+    final rows = await _client.from('word_list_entries')
+        .select('*')
+        .eq('list_id', listId)
+        .order('sort_order', ascending: true);
+    return (rows as List).map((r) =>
+        WordListEntry.fromJson(Map<String, dynamic>.from(r as Map))).toList();
+  }
+
+  Future<int> addWords(
+    String listId,
+    String pastedWords, {
+    WordEntryKind kind = WordEntryKind.ordinary,
+    WordCasePolicy casePolicy = WordCasePolicy.ignoreCase,
+  }) async {
+    // Names containing an apostrophe or hyphen stay intact.
+    final tokens = pastedWords.split(RegExp(r'[,;\n\r]+'))
+        .map((w) => w.trim())
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (tokens.length > 100) {
+      throw ArgumentError('Add up to 100 words at a time.');
+    }
+    final current = await getEntries(listId);
+    final seen = current.map((e) => e.formKey).toSet();
+    final inserts = <Map<String, dynamic>>[];
+    for (final word in tokens) {
+      final key = WordFormIdentity.formKey(
+        word: word, kind: kind, casePolicy: casePolicy);
+      if (!seen.add(key)) continue;
+      inserts.add({
+        'list_id': listId,
+        'word': word,
+        'form_key': key,
+        'locale': 'en-US',
+        'entry_kind': kind.dbValue,
+        'case_policy': casePolicy.dbValue,
+        'accepted_forms': <String>[],
+        'sort_order': current.length + inserts.length,
+      });
+    }
+    if (inserts.isNotEmpty) {
+      await _client.from('word_list_entries').insert(inserts);
+    }
+    return inserts.length;
+  }
+
+  Future<void> removeWord(String entryId) async {
+    await _client.from('word_list_entries').delete().eq('id', entryId);
+  }
+
+  Future<void> recordUnassistedSpelling(
+    WordListEntry entry,
+    SpellingGrade grade,
+  ) async {
+    // Assisted success is not retention evidence.
+    if (grade.assisted) return;
+    final contentId = WordFormIdentity.spellingReviewContentId(entry.formKey);
+    var row = await _client.from('review_items').select()
+        .eq('user_id', _userId).eq('content_id', contentId).maybeSingle();
+    if (row == null) {
+      await _client.from('review_items').insert({
+        'id': const Uuid().v4(),
+        'user_id': _userId,
+        'content_id': contentId,
+        'content_type': 'word_skill',
+        'lesson_id': null,
+        'title': entry.word,
+        'next_review_date': DateTime.now().toUtc().toIso8601String(),
+      });
+      row = await _client.from('review_items').select()
+          .eq('user_id', _userId).eq('content_id', contentId).single();
+    }
+    final item = ReviewableItem.fromJson(Map<String, dynamic>.from(row));
+    final processed = await _reviews.processReview(
+      item, grade.correct ? RecallQuality.good : RecallQuality.incorrect,
+    );
+    if (processed == null) {
+      throw StateError('Unable to save spelling review. Try again.');
+    }
+  }
+}
