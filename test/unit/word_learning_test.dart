@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/word_learning.dart';
+import 'package:learning_pwa/models/spaced_repetition.dart';
 
 void main() {
   group('stable word identity', () {
@@ -38,6 +39,19 @@ void main() {
     test('rejects empty entries', () {
       expect(() => WordFormIdentity.formKey(word: '   '), throwsArgumentError);
     });
+  });
+
+  test('review item persists the SQL content type word_skill', () {
+    final item = ReviewableItem.fromJson({
+      'id': 'item-1',
+      'content_id': 'word:v1:en-US:ordinary:ignore_case:bGlhYmlsaXR5:spelling',
+      'content_type': 'word_skill',
+      'title': 'liability',
+      'next_review_date': DateTime.utc(2026, 10, 20).toIso8601String(),
+      'metadata': <String, dynamic>{},
+    });
+    expect(item.contentType, ReviewableContentType.wordSkill);
+    expect(item.toJson()['content_type'], 'word_skill');
   });
 
   group('spelling scoring', () {
