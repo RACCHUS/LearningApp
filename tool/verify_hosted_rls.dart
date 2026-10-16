@@ -83,7 +83,7 @@ class SupabaseRestClient {
     };
   }
 
-  Future<Map<String, dynamic>> restPost(String path, dynamic data, {String? token, bool upsert = false}) async {
+  Future<Map<String, dynamic>> restPost(String path, dynamic data, {String? token, bool upsert = false, bool returnRepresentation = true}) async {
     final uri = Uri.parse('$url/rest/v1/$path');
     final req = await _http.postUrl(uri);
     final auth = token ?? anonKey;
@@ -92,8 +92,10 @@ class SupabaseRestClient {
     req.headers.set('Content-Type', 'application/json');
     if (upsert) {
       req.headers.set('Prefer', 'resolution=merge-duplicates,return=representation');
-    } else {
+    } else if (returnRepresentation) {
       req.headers.set('Prefer', 'return=representation');
+    } else {
+      req.headers.set('Prefer', 'return=minimal');
     }
 
     req.write(jsonEncode(data));
@@ -111,14 +113,18 @@ class SupabaseRestClient {
     };
   }
 
-  Future<Map<String, dynamic>> restPatch(String path, Map<String, dynamic> data, {String? token}) async {
+  Future<Map<String, dynamic>> restPatch(String path, Map<String, dynamic> data, {String? token, bool returnRepresentation = true}) async {
     final uri = Uri.parse('$url/rest/v1/$path');
     final req = await _http.patchUrl(uri);
     final auth = token ?? anonKey;
     req.headers.set('apikey', anonKey);
     req.headers.set('Authorization', 'Bearer $auth');
     req.headers.set('Content-Type', 'application/json');
-    req.headers.set('Prefer', 'return=representation');
+    if (returnRepresentation) {
+      req.headers.set('Prefer', 'return=representation');
+    } else {
+      req.headers.set('Prefer', 'return=minimal');
+    }
 
     req.write(jsonEncode(data));
     final resp = await req.close();
@@ -366,7 +372,7 @@ Future<void> main() async {
     'version_code': 'v1-draft',
     'title': 'Original Draft Title',
     'status': 'draft',
-  }, token: sessionA.accessToken);
+  }, token: sessionA.accessToken, returnRepresentation: false);
   expect(createVersionRes['statusCode'] == 201, 'Owner creates draft TargetVersion');
 
   // Positive Test: User A CAN modify their draft version
@@ -374,10 +380,12 @@ Future<void> main() async {
     'target_versions?id=eq.$testVersionId',
     {'title': 'Updated Draft Title'},
     token: sessionA.accessToken,
+    returnRepresentation: false,
   );
-  final patchDraftBody = asList(patchDraftRes['body']);
+  final verifyDraftRes = await client.restGet('target_versions?id=eq.$testVersionId', token: sessionA.accessToken);
+  final patchDraftBody = asList(verifyDraftRes['body']);
   expect(
-    patchDraftRes['statusCode'] == 200 && patchDraftBody.isNotEmpty && patchDraftBody.first['title'] == 'Updated Draft Title',
+    (patchDraftRes['statusCode'] == 200 || patchDraftRes['statusCode'] == 204) && patchDraftBody.isNotEmpty && patchDraftBody.first['title'] == 'Updated Draft Title',
     'Owner can edit their draft TargetVersion (True Positive)',
   );
 
@@ -393,13 +401,22 @@ Future<void> main() async {
   }, token: sessionA.accessToken);
   expect(insertNodeRes['statusCode'] == 201, 'Owner can add curriculum nodes to draft TargetVersion (True Positive)');
 
+  // Stage to review_ready first
+  await client.restPatch(
+    'target_versions?id=eq.$testVersionId',
+    {'status': 'review_ready'},
+    token: sessionA.accessToken,
+    returnRepresentation: false,
+  );
+
   // Now promote the target version to published
   final publishVersionRes = await client.restPatch(
     'target_versions?id=eq.$testVersionId',
     {'status': 'published'},
     token: sessionA.accessToken,
+    returnRepresentation: false,
   );
-  expect(publishVersionRes['statusCode'] == 200, 'Owner promotes TargetVersion to published');
+  expect(publishVersionRes['statusCode'] == 200 || publishVersionRes['statusCode'] == 204, 'Owner promotes TargetVersion to published');
 
   // Negative Test 1: Owner CANNOT modify published version
   final patchPublishedRes = await client.restPatch(
