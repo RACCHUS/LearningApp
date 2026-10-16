@@ -4,7 +4,7 @@
 **Prepared:** October 11, 2026  
 **Last Revised:** October 12, 2026 (incorporating peer review on UGC risks, seeding, sequencing, and stack decisions)  
 **Project:** `RACCHUS/LearningApp`  
-**Suggested repository location:** `docs/product/COMMUNITY_EDUCATOR_KNOWLEDGE_ROADMAP.md`  
+**Repository location:** `docs/product/COMMUNITY_EDUCATOR_KNOWLEDGE_ROADMAP.md`  
 **Priority:** Strategic, multi-phase expansion; coexists with the active catalog-growth plan and foundational literacy plan.
 
 ---
