@@ -23,8 +23,9 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 
-# Supabase CLI temp
+# Supabase CLI temp and deployment lock
 supabase/.temp/
+supabase/.deployment.lock
 
 # macOS / Windows
 .DS_Store

@@ -284,4 +284,341 @@ class MigrationHistoryValidator {
     pending.sort();
     return pending;
   }
+
+  /// Parses table output from `supabase migration list` (including `--linked`).
+  ///
+  /// Expected table header contains `Local` and `Remote`.
+  /// Lines format: ` <local_version> | <remote_version> | <timestamp> `
+  ///
+  /// Throws [FormatException] if the output indicates an error, connection failure,
+  /// or does not contain the expected migration table headers. Never returns an
+  /// empty list when an error occurs.
+  static Map<String, List<String>> parseMigrationListOutput(String output) {
+    final lower = output.toLowerCase();
+    if (lower.contains('error:') ||
+        lower.contains('failed to') ||
+        lower.contains('fatal:') ||
+        lower.contains('cannot find') ||
+        lower.contains('connection refused') ||
+        lower.contains('permission denied') ||
+        lower.contains('timed out') ||
+        lower.contains('timeout')) {
+      throw FormatException('Supabase migration list command failed with error: $output');
+    }
+
+    final rawLines = output.split('\n');
+    final lines = rawLines.map((l) => l.trim()).toList();
+    final headerIndex = lines.indexWhere(
+      (l) => l.contains('Local') && l.contains('Remote'),
+    );
+
+    if (headerIndex == -1) {
+      throw FormatException(
+        'Invalid supabase migration list output: missing table header. Output was:\n$output',
+      );
+    }
+
+    // Verify table divider immediately follows header (or next non-empty line)
+    var dividerIndex = -1;
+    for (var i = headerIndex + 1; i < lines.length; i++) {
+      if (lines[i].isNotEmpty) {
+        dividerIndex = i;
+        break;
+      }
+    }
+
+    if (dividerIndex == -1 ||
+        (!lines[dividerIndex].startsWith('-') && !lines[dividerIndex].contains('|'))) {
+      throw FormatException(
+        'Invalid supabase migration list output: missing table divider after header.',
+      );
+    }
+
+    final localVersions = <String>[];
+    final remoteVersions = <String>[];
+    final tsRegex = RegExp(r'^[0-9]{14}$');
+    var inTable = true;
+
+    for (var i = dividerIndex + 1; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.isEmpty) {
+        // Empty line indicates end of table rows
+        inTable = false;
+        continue;
+      }
+
+      if (!inTable) {
+        // Outside table rows, only accept known CLI notices/banners
+        if (line.startsWith('A new version of Supabase CLI') ||
+            line.startsWith('We recommend updating') ||
+            line.startsWith('http')) {
+          continue;
+        }
+        // If unexpected text appears after table, fail closed
+        throw FormatException(
+          'Unexpected trailing output after migration table: "$line"',
+        );
+      }
+
+      // Inside table rows: MUST be a table row with column delimiter '|'
+      if (!line.contains('|')) {
+        throw FormatException(
+          'Malformed migration list row (missing pipe delimiter |): "$line"',
+        );
+      }
+
+      final parts = line.split('|').map((p) => p.trim()).toList();
+      if (parts.length < 2) {
+        throw FormatException(
+          'Malformed migration list row (expected at least 2 columns, got ${parts.length}): "$line"',
+        );
+      }
+
+      final localCol = parts[0];
+      final remoteCol = parts[1];
+
+      // Validate localCol format
+      if (localCol.isNotEmpty && !tsRegex.hasMatch(localCol)) {
+        throw FormatException(
+          'Malformed local migration version "$localCol" (must be 14 digits): "$line"',
+        );
+      }
+
+      // Validate remoteCol format
+      if (remoteCol.isNotEmpty && !tsRegex.hasMatch(remoteCol)) {
+        throw FormatException(
+          'Malformed remote migration version "$remoteCol" (must be 14 digits): "$line"',
+        );
+      }
+
+      // Both cannot be empty
+      if (localCol.isEmpty && remoteCol.isEmpty) {
+        throw FormatException(
+          'Encountered empty migration row with no local or remote version: "$line"',
+        );
+      }
+
+      if (localCol.isNotEmpty) {
+        localVersions.add(localCol);
+      }
+      if (remoteCol.isNotEmpty) {
+        remoteVersions.add(remoteCol);
+      }
+    }
+
+    if (localVersions.isEmpty && remoteVersions.isEmpty) {
+      throw FormatException('Supabase migration list returned 0 migration records.');
+    }
+
+    return {
+      'local': localVersions,
+      'remote': remoteVersions,
+    };
+  }
+
+  /// Compares local migration records with remote hosted migration versions for pre-deployment gate.
+  ///
+  /// Invariants:
+  /// 1. Remote versions must be valid 14-digit timestamps.
+  /// 2. Remote versions must be monotonic and have no duplicates.
+  /// 3. All remote versions must exist as canonical local migrations (blocks remote-only aliases).
+  /// 4. All local migrations with timestamp <= latest remote version must be recorded as applied on remote (blocks missing historical).
+  /// 5. Any local migrations with timestamp > latest remote version are classified as pending.
+  /// 6. Pending migrations must be strictly monotonic.
+  HostedMigrationComparisonResult compareWithHosted({
+    required List<MigrationRecord> localRecords,
+    required List<String> remoteVersions,
+  }) {
+    final issues = <MigrationValidationIssue>[];
+    final localMap = {for (final r in localRecords) r.timestamp: r};
+    final appliedVersions = <String>[];
+    final pendingVersions = <String>[];
+    final remoteOnlyVersions = <String>[];
+    final missingRemoteVersions = <String>[];
+
+    final tsRegex = RegExp(r'^[0-9]{14}$');
+
+    // 1. Validate remote version formats & ordering
+    final seenRemote = <String>{};
+    String maxRemoteTimestamp = '';
+
+    for (var i = 0; i < remoteVersions.length; i++) {
+      final rv = remoteVersions[i];
+      if (!tsRegex.hasMatch(rv)) {
+        issues.add(
+          MigrationValidationIssue(
+            severity: MigrationIssueSeverity.error,
+            rule: 'invalid_remote_version_format',
+            filename: rv,
+            message: 'Hosted migration version "$rv" is not a valid 14-digit timestamp.',
+          ),
+        );
+        continue;
+      }
+
+      if (seenRemote.contains(rv)) {
+        issues.add(
+          MigrationValidationIssue(
+            severity: MigrationIssueSeverity.error,
+            rule: 'duplicate_remote_version',
+            filename: rv,
+            message: 'Hosted migration ledger contains duplicate version "$rv".',
+          ),
+        );
+      } else {
+        seenRemote.add(rv);
+      }
+
+      if (i > 0 && rv.compareTo(remoteVersions[i - 1]) <= 0) {
+        issues.add(
+          MigrationValidationIssue(
+            severity: MigrationIssueSeverity.error,
+            rule: 'out_of_order_remote_version',
+            filename: rv,
+            message: 'Hosted migration version "$rv" is not in strictly ascending order after "${remoteVersions[i - 1]}".',
+          ),
+        );
+      }
+
+      if (rv.compareTo(maxRemoteTimestamp) > 0) {
+        maxRemoteTimestamp = rv;
+      }
+    }
+
+    // 2. Check for remote-only versions (unknown aliases / uncommitted migrations)
+    for (final rv in remoteVersions) {
+      if (!localMap.containsKey(rv)) {
+        remoteOnlyVersions.add(rv);
+        issues.add(
+          MigrationValidationIssue(
+            severity: MigrationIssueSeverity.error,
+            rule: 'remote_only_migration_version',
+            filename: rv,
+            message:
+                'Hosted migration ledger records version "$rv" which does not exist in local repository migrations. '
+                'This indicates an unknown remote alias or uncommitted migration.',
+          ),
+        );
+      } else {
+        appliedVersions.add(rv);
+      }
+    }
+
+    // 3. Check for missing historical migrations (local <= maxRemoteTimestamp not on remote)
+    if (maxRemoteTimestamp.isNotEmpty) {
+      for (final record in localRecords) {
+        if (record.timestamp.compareTo(maxRemoteTimestamp) <= 0) {
+          if (!seenRemote.contains(record.timestamp)) {
+            missingRemoteVersions.add(record.timestamp);
+            issues.add(
+              MigrationValidationIssue(
+                severity: MigrationIssueSeverity.error,
+                rule: 'missing_remote_historical_migration',
+                filename: record.filename,
+                message:
+                    'Local historical migration "${record.filename}" (timestamp ${record.timestamp}) '
+                    'is <= latest applied remote version ($maxRemoteTimestamp) but is missing from hosted ledger. '
+                    'This indicates migration history divergence or skipped migrations.',
+              ),
+            );
+          }
+        } else {
+          // Timestamp is > maxRemoteTimestamp -> pending migration
+          pendingVersions.add(record.timestamp);
+        }
+      }
+    } else {
+      // Remote is completely empty: all local migrations are pending
+      for (final record in localRecords) {
+        pendingVersions.add(record.timestamp);
+      }
+    }
+
+    return HostedMigrationComparisonResult(
+      issues: issues,
+      appliedVersions: appliedVersions,
+      pendingVersions: pendingVersions,
+      remoteOnlyVersions: remoteOnlyVersions,
+      missingRemoteVersions: missingRemoteVersions,
+    );
+  }
+
+  /// Compares local migration records with remote migration versions for post-deployment gate.
+  ///
+  /// Invariants:
+  /// Requires EXACT 1:1 parity between local migration versions and remote applied versions.
+  /// Reports error on partial deployment, missing versions, or extraneous remote versions.
+  HostedMigrationComparisonResult compareHostedPostflight({
+    required List<MigrationRecord> localRecords,
+    required List<String> remoteVersions,
+  }) {
+    final comparison = compareWithHosted(
+      localRecords: localRecords,
+      remoteVersions: remoteVersions,
+    );
+
+    final issues = List<MigrationValidationIssue>.from(comparison.issues);
+
+    // In postflight, there must be ZERO pending migrations remaining
+    if (comparison.pendingVersions.isNotEmpty) {
+      for (final pv in comparison.pendingVersions) {
+        final record = localRecords.firstWhere(
+          (r) => r.timestamp == pv,
+          orElse: () => MigrationRecord(
+            filename: pv,
+            timestamp: pv,
+            name: '',
+            path: '',
+            sizeBytes: 0,
+            content: '',
+          ),
+        );
+        issues.add(
+          MigrationValidationIssue(
+            severity: MigrationIssueSeverity.error,
+            rule: 'partial_deployment_unapplied_migration',
+            filename: record.filename,
+            message:
+                'Post-deployment check failed: migration "${record.filename}" was expected to be applied '
+                'but is still missing from the hosted ledger. Deployment was only partially applied!',
+          ),
+        );
+      }
+    }
+
+    return HostedMigrationComparisonResult(
+      issues: issues,
+      appliedVersions: comparison.appliedVersions,
+      pendingVersions: comparison.pendingVersions,
+      remoteOnlyVersions: comparison.remoteOnlyVersions,
+      missingRemoteVersions: comparison.missingRemoteVersions,
+    );
+  }
 }
+
+/// Result of comparing local migration records with hosted remote migration ledger.
+class HostedMigrationComparisonResult {
+  final List<MigrationValidationIssue> issues;
+  final List<String> appliedVersions;
+  final List<String> pendingVersions;
+  final List<String> remoteOnlyVersions;
+  final List<String> missingRemoteVersions;
+
+  const HostedMigrationComparisonResult({
+    required this.issues,
+    required this.appliedVersions,
+    required this.pendingVersions,
+    required this.remoteOnlyVersions,
+    required this.missingRemoteVersions,
+  });
+
+  bool get isValid => issues.every((i) => !i.isError);
+  bool get hasPending => pendingVersions.isNotEmpty;
+  bool get isExactParity =>
+      isValid &&
+      pendingVersions.isEmpty &&
+      remoteOnlyVersions.isEmpty &&
+      missingRemoteVersions.isEmpty;
+  int get errorCount => issues.where((i) => i.isError).length;
+}
+

@@ -93,16 +93,19 @@ jobs:
           python3 -m pip install 'openpyxl==3.1.5'
           python3 -m unittest discover -s tool/tests -p 'test_catalog_official_demand.py' -v
 
-      - name: Parse Windows backup script (no database connection)
+      - name: Parse Windows PowerShell scripts (no database connection)
         shell: pwsh
         run: |
-          $tokens = $null
-          $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile('tool/backup_hosted_learningapp.ps1', [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count -gt 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            exit 1
+          foreach ($script in @('tool/backup_hosted_learningapp.ps1', 'tool/guarded_supabase_deploy.ps1')) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($script, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error "$script : $($_.Message)" }
+              exit 1
+            }
           }
+
 
       - name: Validate curriculum manifests (JSON Schema & Quality Linter)
         run: dart run tool/lint_manifest.dart --dir content/
@@ -112,6 +115,9 @@ jobs:
 
       - name: Dry-run batch curriculum ingestion
         run: dart run tool/ingest_curriculum.dart --dir content/ --dry-run
+
+      - name: Verify migration governance & deployment test suite
+        run: flutter test test/services/governance/
 
       - name: Run tests
         run: flutter test --reporter expanded

@@ -239,4 +239,260 @@ void main() {
       expect(issues.first.message, contains('which is <= latest baseline migration'));
     });
   });
+
+  group('MigrationHistoryValidator - Hosted Version Parsing & Pre/Postflight Gates', () {
+    const validator = MigrationHistoryValidator();
+
+    MigrationRecord makeRecord(String filename, String content) {
+      return MigrationRecord.parse(
+        filename: filename,
+        path: '/dummy/$filename',
+        content: content,
+      )!;
+    }
+
+    test('parseMigrationListOutput successfully parses local and remote versions', () {
+      const cliOutput = '''
+Initialising login role...
+Connecting to remote database...
+
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 20261001000000 | 2026-10-01 00:00:00 
+   20261002000000 | 20261002000000 | 2026-10-02 00:00:00 
+   20261003000000 |                | 
+                  | 20261004000000 | 2026-10-04 00:00:00 
+''';
+
+      final parsed = MigrationHistoryValidator.parseMigrationListOutput(cliOutput);
+      expect(parsed['local'], equals(['20261001000000', '20261002000000', '20261003000000']));
+      expect(parsed['remote'], equals(['20261001000000', '20261002000000', '20261004000000']));
+    });
+
+    test('parseMigrationListOutput throws FormatException on connection/fatal errors', () {
+      const errOutput = 'Error: connection refused to db.xzvkdwebtbxlrxagtzlv.supabase.co:5432';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(errOutput),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException when header is missing', () {
+      const missingHeader = 'Random unexpected text without table';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(missingHeader),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException when table divider is missing', () {
+      const missingDivider = '''
+   Local          | Remote         | Time (UTC)          
+   20261001000000 | 20261001000000 | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(missingDivider),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on malformed timestamp format', () {
+      const badTs = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 20261001abc000 | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(badTs),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on short/corrupted timestamp', () {
+      const shortTs = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 12345          | 2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(shortTs),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on row missing pipe delimiter', () {
+      const missingPipe = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000   20261001000000   2026-10-01 00:00:00 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(missingPipe),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on empty row with no versions', () {
+      const emptyRow = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+                  |                | 
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(emptyRow),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parseMigrationListOutput throws FormatException on unexpected trailing text', () {
+      const unexpectedTrailing = '''
+   Local          | Remote         | Time (UTC)          
+  ----------------|----------------|---------------------
+   20261001000000 | 20261001000000 | 2026-10-01 00:00:00 
+
+Fatal corruption or unrecognized output
+''';
+      expect(
+        () => MigrationHistoryValidator.parseMigrationListOutput(unexpectedTrailing),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('compareWithHosted passes with exact parity when remote and local match', () {
+      final records = [
+        makeRecord('20261001000000_alpha.sql', 'select 1;'),
+        makeRecord('20261002000000_beta.sql', 'select 2;'),
+      ];
+      final remote = ['20261001000000', '20261002000000'];
+
+      final result = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(result.isValid, isTrue);
+      expect(result.isExactParity, isTrue);
+      expect(result.hasPending, isFalse);
+      expect(result.appliedVersions, equals(remote));
+      expect(result.pendingVersions, isEmpty);
+      expect(result.issues, isEmpty);
+    });
+
+    test('compareWithHosted detects valid pending migrations strictly newer than remote', () {
+      final records = [
+        makeRecord('20261001000000_alpha.sql', 'select 1;'),
+        makeRecord('20261002000000_beta.sql', 'select 2;'),
+        makeRecord('20261003000000_gamma.sql', 'select 3;'),
+      ];
+      // Remote only has first two:
+      final remote = ['20261001000000', '20261002000000'];
+
+      final result = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(result.isValid, isTrue);
+      expect(result.isExactParity, isFalse);
+      expect(result.hasPending, isTrue);
+      expect(result.pendingVersions, equals(['20261003000000']));
+      expect(result.appliedVersions, equals(['20261001000000', '20261002000000']));
+      expect(result.issues, isEmpty);
+    });
+
+    test('compareWithHosted flags remote-only versions (unknown aliases / Oct 12 defect scenario)', () {
+      final records = [
+        makeRecord('20261012000000_intake.sql', 'select 1;'),
+      ];
+      // Remote has timestamp alias 20261012024727 instead of canonical 20261012000000:
+      final remote = ['20261012024727'];
+
+      final result = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(result.isValid, isFalse);
+      expect(result.remoteOnlyVersions, equals(['20261012024727']));
+      expect(result.missingRemoteVersions, equals(['20261012000000']));
+      expect(result.issues.any((i) => i.rule == 'remote_only_migration_version'), isTrue);
+      expect(result.issues.any((i) => i.rule == 'missing_remote_historical_migration'), isTrue);
+    });
+
+    test('compareWithHosted flags missing historical local migration', () {
+      final records = [
+        makeRecord('20261001000000_first.sql', 'select 1;'),
+        makeRecord('20261002000000_second.sql', 'select 2;'),
+        makeRecord('20261003000000_third.sql', 'select 3;'),
+      ];
+      // Remote has 001 and 003, but missed 002:
+      final remote = ['20261001000000', '20261003000000'];
+
+      final result = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(result.isValid, isFalse);
+      expect(result.missingRemoteVersions, equals(['20261002000000']));
+      expect(result.issues.first.rule, equals('missing_remote_historical_migration'));
+    });
+
+    test('compareWithHosted flags duplicate or out-of-order remote versions', () {
+      final records = [
+        makeRecord('20261001000000_first.sql', 'select 1;'),
+        makeRecord('20261002000000_second.sql', 'select 2;'),
+      ];
+      // Remote has duplicate:
+      final resultDup = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: ['20261001000000', '20261001000000'],
+      );
+      expect(resultDup.issues.any((i) => i.rule == 'duplicate_remote_version'), isTrue);
+
+      // Remote out of order:
+      final resultOrder = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: ['20261002000000', '20261001000000'],
+      );
+      expect(resultOrder.issues.any((i) => i.rule == 'out_of_order_remote_version'), isTrue);
+    });
+
+    test('compareHostedPostflight passes on exact 1:1 parity', () {
+      final records = [
+        makeRecord('20261001000000_first.sql', 'select 1;'),
+        makeRecord('20261002000000_second.sql', 'select 2;'),
+      ];
+      final remote = ['20261001000000', '20261002000000'];
+
+      final postflight = validator.compareHostedPostflight(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(postflight.isValid, isTrue);
+      expect(postflight.isExactParity, isTrue);
+      expect(postflight.issues, isEmpty);
+    });
+
+    test('compareHostedPostflight flags partial deployment when pending migrations remain', () {
+      final records = [
+        makeRecord('20261001000000_first.sql', 'select 1;'),
+        makeRecord('20261002000000_second.sql', 'select 2;'),
+        makeRecord('20261003000000_third.sql', 'select 3;'),
+      ];
+      // Deployed only up to second; third is unapplied:
+      final remote = ['20261001000000', '20261002000000'];
+
+      final postflight = validator.compareHostedPostflight(
+        localRecords: records,
+        remoteVersions: remote,
+      );
+
+      expect(postflight.isValid, isFalse);
+      expect(postflight.issues.any((i) => i.rule == 'partial_deployment_unapplied_migration'), isTrue);
+      expect(postflight.issues.first.message, contains('Deployment was only partially applied'));
+    });
+  });
 }
+

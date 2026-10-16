@@ -58,4 +58,14 @@ When tasked with debugging UI issues, testing new web features, or verifying res
 - **Desktop/Tablet ($\ge$900dp)**: Collapsible `NavigationRail` with integrated Library search.
 - **Chrome Requirement**: The searchable **Help** (`?`) control must always remain accessible in the top-right chrome.
 - **Database Migrations**: Files in `supabase/migrations/` are **append-only**. Never rewrite or edit previously merged migrations.
+  - **Migration Version Invariant**: Every production migration must retain the exact 14-digit version in its committed filename (e.g. `20261012000006`). Never generate or record alternate timestamp aliases.
+  - **Guarded Deployment Path**: Production migrations must be deployed exclusively through the guarded workflow:
+    ```bash
+    dart run tool/guarded_supabase_deploy.dart
+    # Or in PowerShell:
+    .\tool\guarded_supabase_deploy.ps1 -DryRun
+    ```
+  - **AI Agent Deployment Restrictions**: AI development agents (Antigravity, Copilot, Codex) must **never** apply production migration SQL through alternate tools, direct SQL execution, or bypass paths, and must never generate new timestamps for existing files.
+  - **No Automatic or Silent Repair**: Never run `supabase migration repair` to force a preflight/postflight check to pass or mask a version discrepancy. Any version mismatch requires halting deployment and obtaining owner review with an evidence-backed decision plan.
 - **Client Secrets**: Never place service-role keys or sensitive server credentials into `.env` or client bundles.
+
