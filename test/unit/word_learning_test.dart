@@ -54,6 +54,19 @@ void main() {
     expect(item.toJson()['content_type'], 'word_skill');
   });
 
+  test('optional meaning round-trips without changing spelling identity', () {
+    final form = WordFormIdentity.formKey(word: 'liability');
+    final withMeaning = WordListEntry(
+      id: 'entry-1', listId: 'list-1', word: 'liability',
+      formKey: form, meaning: 'Legal responsibility',
+    );
+    final decoded = WordListEntry.fromJson(withMeaning.toJson());
+    expect(decoded.meaning, 'Legal responsibility');
+    expect(decoded.formKey, form);
+    expect(SpellingScorer.score(
+      submitted: 'liability', target: decoded.word).correct, isTrue);
+  });
+
   group('spelling scoring', () {
     test('ordinary words are case insensitive, proper names can be exact', () {
       expect(SpellingScorer.score(submitted: 'DOG', target: 'dog').correct, isTrue);
