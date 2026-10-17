@@ -174,6 +174,63 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
     await _run(() => _persistWords(pending));
   }
 
+  Future<void> _editEntry(WordListEntry entry) async {
+    final pronunciation = TextEditingController(
+      text: entry.pronunciationHint ?? '',
+    );
+    final alternatives = TextEditingController(
+      text: entry.acceptedForms.join(', '),
+    );
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit ${entry.word}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: pronunciation,
+              maxLength: 160,
+              decoration: const InputDecoration(
+                labelText: 'Audio pronunciation override',
+                helperText: 'Optional text to be spoken, not a spelling answer',
+              ),
+            ),
+            TextField(
+              controller: alternatives,
+              decoration: const InputDecoration(
+                labelText: 'Accepted spellings (comma-separated)',
+                helperText: 'Explicitly allow additional correct answers',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save')),
+        ],
+      ),
+    );
+    final hint = pronunciation.text;
+    final forms = alternatives.text.split(',')
+        .map((v) => v.trim())
+        .where((v) => v.isNotEmpty).toList();
+    pronunciation.dispose();
+    alternatives.dispose();
+    if (save != true) return;
+    await _run(() async {
+      await _service.updateEntryPreferences(
+        entry,
+        pronunciationHint: hint,
+        acceptedForms: forms,
+      );
+      final entries = await _service.getEntries(entry.listId);
+      if (mounted) setState(() => _entries = entries);
+    });
+  }
+
   Future<void> _deleteList() async {
     final current = _selected;
     if (current == null) return;
@@ -433,14 +490,24 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
           title: Text(entry.word),
           subtitle: entry.kind == WordEntryKind.properName
               ? const Text('Proper name · exact capitalization') : null,
-          trailing: IconButton(
-            tooltip: 'Remove from list (preserves progress)',
-            icon: const Icon(Icons.remove_circle_outline),
-            onPressed: _busy ? null : () => _run(() async {
-              await _service.removeWord(entry.id);
-              final entries = await _service.getEntries(entry.listId);
-              if (mounted) setState(() => _entries = entries);
-            }),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: 'Edit pronunciation and accepted spellings',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _busy ? null : () => _editEntry(entry),
+              ),
+              IconButton(
+                tooltip: 'Remove from list (preserves progress)',
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: _busy ? null : () => _run(() async {
+                  await _service.removeWord(entry.id);
+                  final entries = await _service.getEntries(entry.listId);
+                  if (mounted) setState(() => _entries = entries);
+                }),
+              ),
+            ],
           ),
         ),
     ],
