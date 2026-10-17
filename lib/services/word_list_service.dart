@@ -99,6 +99,39 @@ class WordListService {
     return inserts.length;
   }
 
+  /// Overrides are explicit, never inferred from dictionary suggestions.
+  /// A pronunciation hint supplies spoken text to the existing TTS service;
+  /// it does not change the word's tested spelling or stable skill identity.
+  Future<void> updateEntryPreferences(
+    WordListEntry entry, {
+    String? pronunciationHint,
+    List<String> acceptedForms = const [],
+  }) async {
+    final hint = pronunciationHint?.trim() ?? '';
+    if (hint.length > 160) {
+      throw ArgumentError('Pronunciation hint is limited to 160 characters');
+    }
+    if (acceptedForms.length > 8) {
+      throw ArgumentError('Up to eight accepted spellings are supported');
+    }
+    final normalized = <String>{};
+    final cleanForms = <String>[];
+    for (final raw in acceptedForms) {
+      final form = raw.trim();
+      if (form.isEmpty || form.length > 160) {
+        throw ArgumentError('Each accepted spelling must be 1–160 characters');
+      }
+      final key = entry.casePolicy == WordCasePolicy.exact
+          ? form
+          : form.toLowerCase();
+      if (normalized.add(key)) cleanForms.add(form);
+    }
+    await _client.from('word_list_entries').update({
+      'pronunciation_hint': hint.isEmpty ? null : hint,
+      'accepted_forms': cleanForms,
+    }).eq('list_id', entry.listId).eq('id', entry.id);
+  }
+
   Future<void> removeWord(String entryId) async {
     await _client.from('word_list_entries').delete().eq('id', entryId);
   }
