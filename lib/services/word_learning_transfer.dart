@@ -31,6 +31,61 @@ class WordLearningTransfer {
     return id;
   }
 
+  void _requireSameUser(String initialId) {
+    if (_userId != initialId) {
+      throw StateError('The signed-in account changed during this transfer.');
+    }
+  }
+
+  /// Export paginates independently of the API's default row cap. Never
+  /// silently produce an incomplete backup when a large word list has more
+  /// than 1,000 entries or an account has extensive review history.
+  Future<List<Map<String, dynamic>>> _allEntryRows(
+    String listId,
+    String ownerId,
+  ) async {
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var offset = 0; offset <= maxEntries; offset += pageSize) {
+      _requireSameUser(ownerId);
+      final page = await _client.from('word_list_entries')
+          .select('*')
+          .eq('list_id', listId)
+          .order('sort_order', ascending: true)
+          .order('id', ascending: true)
+          .range(offset, offset + pageSize - 1);
+      result.addAll((page as List)
+          .map((row) => Map<String, dynamic>.from(row as Map)));
+      if (result.length > maxEntries) {
+        throw StateError('Too many words for a single backup.');
+      }
+      if (page.length < pageSize) break;
+    }
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _allReviewRows(String ownerId) async {
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var offset = 0; offset <= maxReviews; offset += pageSize) {
+      _requireSameUser(ownerId);
+      final page = await _client.from('review_items')
+          .select('content_id,title,repetition_level,ease_factor,'
+              'next_review_date,last_reviewed_at,total_reviews,correct_reviews')
+          .eq('user_id', ownerId)
+          .eq('content_type', 'word_skill')
+          .order('content_id', ascending: true)
+          .range(offset, offset + pageSize - 1);
+      result.addAll((page as List)
+          .map((row) => Map<String, dynamic>.from(row as Map)));
+      if (result.length > maxReviews) {
+        throw StateError('Too much review history for a single backup.');
+      }
+      if (page.length < pageSize) break;
+    }
+    return result;
+  }
+
   /// Create an explicit user-managed backup. Sensitive names are never
   /// transmitted to a separate analytics or word-validation provider.
   Future<String> exportJson() async {
@@ -42,7 +97,9 @@ class WordLearningTransfer {
     var total = 0;
     final exported = <Map<String, dynamic>>[];
     for (final list in lists) {
-      final entries = await _lists.getEntries(list.id);
+      final entries = (await _allEntryRows(list.id, userId))
+          .map(WordListEntry.fromJson)
+          .toList();
       total += entries.length;
       if (total > maxEntries) {
         throw StateError('Too many words for a single backup.');
@@ -66,14 +123,8 @@ class WordLearningTransfer {
         ],
       });
     }
-    final rows = await _client.from('review_items')
-        .select('content_id,title,repetition_level,ease_factor,'
-            'next_review_date,last_reviewed_at,total_reviews,correct_reviews')
-        .eq('user_id', userId)
-        .eq('content_type', 'word_skill');
-    if ((rows as List).length > maxReviews) {
-      throw StateError('Too much review history for a single backup.');
-    }
+    final rows = await _allReviewRows(userId);
+    _requireSameUser(userId);
     final payload = {
       'format': format,
       'version': version,
@@ -83,6 +134,7 @@ class WordLearningTransfer {
       'reviews': rows,
     };
     final json = jsonEncode(payload);
+    _requireSameUser(userId);
     if (json.length > maxChars) {
       throw StateError('Word backup is too large to transfer by text.');
     }
@@ -237,6 +289,7 @@ class WordLearningTransfer {
     var reviewsCreated = 0;
     var conflictsPreserved = 0;
     for (final raw in payload['lists'] as List) {
+      _requireSameUser(userId);
       final list = raw as Map<String, dynamic>;
       final importOrigin = '${payload['source_user_id']}:${list['source_id']}';
       final existing = await _client.from('word_lists')
@@ -304,6 +357,7 @@ class WordLearningTransfer {
         conflictsPreserved += inserts.length - inserted.length;
       }
     }
+    _requireSameUser(userId);
     final existingRows = await _client.from('review_items')
         .select('content_id').eq('user_id', userId)
         .eq('content_type', 'word_skill');
@@ -332,6 +386,7 @@ class WordLearningTransfer {
       });
     }
     if (newReviews.isNotEmpty) {
+      _requireSameUser(userId);
       final inserted = await _client.from('review_items').upsert(
         newReviews,
         onConflict: 'user_id,content_id', ignoreDuplicates: true,
