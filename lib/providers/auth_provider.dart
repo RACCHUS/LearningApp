@@ -14,6 +14,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _supabase = Supabase.instance.client;
   late final StreamSubscription _authStateSubscription;
 
+  bool get isAnonymousSession =>
+      _supabase.auth.currentUser?.isAnonymous == true;
+
+  bool get hasAuthenticatedSession => _supabase.auth.currentUser != null;
+
   AuthNotifier() : super(AuthInitial()) {
     final session = _supabase.auth.currentSession;
     if (session != null) {
@@ -39,6 +44,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// the individual guest. Guests can later be upgraded to a full account
   /// by linking an identity (email / OAuth) without losing their data.
   Future<void> signInAsGuest() async {
+    if (_supabase.auth.currentUser != null) {
+      throw StateError('An authenticated session already exists.');
+    }
     try {
       state = AuthLoading();
       await _supabase.auth.signInAnonymously();
@@ -56,12 +64,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
+    if (isAnonymousSession) {
+      throw StateError(
+        'Use linkGuestToGoogle to preserve the anonymous learner ID.',
+      );
+    }
     try {
       state = AuthLoading();
-      await _supabase.auth.signInWithOAuth(
+      final launched = await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb ? Uri.base.origin : null,
       );
+      if (!launched) {
+        state = GuestMode();
+      }
     } catch (e, stackTrace) {
       // Log full error details securely
       _logger.error(
@@ -88,10 +104,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     try {
       state = AuthLoading();
-      await _supabase.auth.linkIdentity(
+      final launched = await _supabase.auth.linkIdentity(
         OAuthProvider.google,
         redirectTo: kIsWeb ? Uri.base.origin : null,
       );
+      if (!launched) {
+        // No navigation took place: do not strand the UI in AuthLoading.
+        state = AuthSuccess(guest);
+      }
     } catch (e, stackTrace) {
       _logger.warn('Google identity linking failed',
         error: e, stackTrace: stackTrace,
