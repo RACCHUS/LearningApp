@@ -354,11 +354,12 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Edit ${entry.word}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: pronunciation,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: pronunciation,
               maxLength: 160,
               decoration: const InputDecoration(
                 labelText: 'Audio pronunciation override',
@@ -381,7 +382,8 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
                 helperText: 'Private reference; vocabulary testing comes later',
               ),
             ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false),
