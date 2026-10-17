@@ -10,14 +10,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// User-controlled backup for moving private word lists from an anonymous
 /// session to a Google account that already exists. Prefer direct Google
 /// linking for new identities. This transfer never requires privileged SQL.
-class WordTransferScreen extends ConsumerStatefulWidget {
+/// Auth transitions key this entire subtree by the active account.
+/// Exported backup text and pending imports are disposed on sign-out/switch.
+class WordTransferScreen extends ConsumerWidget {
   const WordTransferScreen({super.key});
 
   @override
-  ConsumerState<WordTransferScreen> createState() => _WordTransferScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ??
+        (authState is AuthSuccess ? authState.user.id : null);
+    return _WordTransferSession(key: ValueKey('word-transfer:${userId ?? 'signed-out'}'));
+  }
 }
 
-class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
+class _WordTransferSession extends ConsumerStatefulWidget {
+  const _WordTransferSession({super.key});
+
+  @override
+  ConsumerState<_WordTransferSession> createState() => _WordTransferScreenState();
+}
+
+class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
   final _transfer = WordLearningTransfer();
   final _export = TextEditingController();
   final _import = TextEditingController();
