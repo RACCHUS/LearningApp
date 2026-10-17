@@ -47,6 +47,17 @@ class WordListService {
     return WordList.fromJson(Map<String, dynamic>.from(row));
   }
 
+  Future<void> renameList(String id, String title) async {
+    final clean = title.trim();
+    if (clean.isEmpty || clean.length > 160) {
+      throw ArgumentError('List title must contain 1–160 characters');
+    }
+    await _client.from('word_lists').update({
+      'title': clean,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id).eq('user_id', _userId);
+  }
+
   Future<void> deleteList(String id) async {
     // FK cascade deletes memberships, never shared review_items.
     await _client.from('word_lists').delete().eq('user_id', _userId).eq('id', id);
@@ -97,6 +108,32 @@ class WordListService {
       await _client.from('word_list_entries').insert(inserts);
     }
     return inserts.length;
+  }
+
+  /// Editing the actual spelling never migrates mastery. A new form key
+  /// identifies a new learning target; the previous review remains untouched
+  /// and can still be reused through another list referencing that word.
+  Future<void> changeWordSpelling(
+    WordListEntry entry,
+    String replacement,
+  ) async {
+    final clean = replacement.trim();
+    final newKey = WordFormIdentity.formKey(
+      word: clean,
+      locale: entry.locale,
+      kind: entry.kind,
+      casePolicy: entry.casePolicy,
+    );
+    final changedIdentity = newKey != entry.formKey;
+    await _client.from('word_list_entries').update({
+      'word': clean,
+      'form_key': newKey,
+      // Old accepted variants and custom TTS pronunciation may describe a
+      // different word. Preserve them only for an unchanged identity.
+      if (changedIdentity) 'accepted_forms': <String>[],
+      if (changedIdentity) 'pronunciation_hint': null,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', entry.id).eq('list_id', entry.listId);
   }
 
   /// Overrides are explicit, never inferred from dictionary suggestions.
