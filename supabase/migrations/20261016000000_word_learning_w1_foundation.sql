@@ -16,7 +16,7 @@ create table if not exists public.word_list_entries (
   id uuid primary key default gen_random_uuid(),
   list_id uuid not null references public.word_lists(id) on delete cascade,
   word text not null check (length(trim(word)) between 1 and 160),
-  form_key text not null check (length(form_key) between 1 and 700),
+  form_key text not null check (length(form_key) between 1 and 1000),
   locale text not null default 'en-US',
   entry_kind text not null default 'ordinary'
     check (entry_kind in ('ordinary', 'proper_name', 'custom')),
