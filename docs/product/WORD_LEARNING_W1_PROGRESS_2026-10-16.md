@@ -8,7 +8,7 @@
 - Append-only migration for private `word_lists` / `word_list_entries`, owner-only RLS and a `word_skill` extension to the existing `review_items` scheduler.
 - Deterministic spelling scoring, explicit accepted forms, case-sensitive proper-name support, and stable form/skill keys independent of lists.
 - Owner-scoped list creation, bulk word entry, removal and deletion. List deletion does not cascade into review state.
-- Basic `/words` screen: entry from Library, paste words, dictation with the shared audio service, typed-answer checking and a review record.
+- `/words` secondary screen: entry from Library, paste words, preview advisory corrections, manually change pronunciation/accepted forms, audio dictation and typed-answer scoring. Learners can practice the entire list or only unattempted/due words using the existing review schedule.
 - A separate account-linking method for upgrading Supabase anonymous users to Google while retaining the same identity when the provider/configuration permits it. Ordinary Google sign-in is guarded against replacing an existing guest session; canceled launches restore a usable auth state.
 - Profile provisioning no longer signs out a valid anonymous session after transient database failures, and LoginScreen offers an explicit retry.
 - A lazy-loaded, 47,147-base-form US lexicon sourced from a SCOWL-derived Hunspell dictionary (415,662 bytes of source asset text, before web compression), with original source/license notices retained in `assets/lexicons/NOTICE.txt`.
