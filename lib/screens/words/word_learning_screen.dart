@@ -349,6 +349,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     final alternatives = TextEditingController(
       text: entry.acceptedForms.join(', '),
     );
+    final meaning = TextEditingController(text: entry.meaning ?? '');
     final save = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -371,6 +372,15 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
                 helperText: 'Explicitly allow additional correct answers',
               ),
             ),
+            TextField(
+              controller: meaning,
+              maxLength: 2000,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Optional meaning or note',
+                helperText: 'Private reference; vocabulary testing comes later',
+              ),
+            ),
           ],
         ),
         actions: [
@@ -382,16 +392,19 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
       ),
     );
     final hint = pronunciation.text;
+    final explanation = meaning.text;
     final forms = alternatives.text.split(',')
         .map((v) => v.trim())
         .where((v) => v.isNotEmpty).toList();
     pronunciation.dispose();
     alternatives.dispose();
+    meaning.dispose();
     if (save != true) return;
     await _run(() async {
       await _service.updateEntryPreferences(
         entry,
         pronunciationHint: hint,
+        meaning: explanation,
         acceptedForms: forms,
       );
       final entries = await _service.getEntries(entry.listId);
@@ -738,8 +751,11 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
       for (final entry in _entries)
         ListTile(
           title: Text(entry.word),
-          subtitle: entry.kind == WordEntryKind.properName
-              ? const Text('Proper name · exact capitalization') : null,
+          subtitle: entry.meaning?.isNotEmpty == true
+              ? Text(entry.meaning!, maxLines: 2,
+                  overflow: TextOverflow.ellipsis)
+              : entry.kind == WordEntryKind.properName
+                  ? const Text('Proper name · exact capitalization') : null,
           trailing: PopupMenuButton<String>(
             tooltip: 'Word options',
             enabled: !_busy,
@@ -846,6 +862,8 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         Text(_grade!.correct ? 'Correct' : 'Not quite',
           style: Theme.of(context).textTheme.titleLarge),
         Text('Spelling: ${entry.word}'),
+        if (entry.meaning?.isNotEmpty == true)
+          Text('Meaning: ${entry.meaning}'),
         if (_grade!.assisted)
           const Text('Assisted practice is not counted as independent recall.'),
         const SizedBox(height: 12),
