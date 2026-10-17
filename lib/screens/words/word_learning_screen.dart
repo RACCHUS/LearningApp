@@ -195,6 +195,104 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     await _run(() => _persistWords(pending));
   }
 
+  Future<void> _renameSelectedList() async {
+    final selected = _selected;
+    if (selected == null) return;
+    final controller = TextEditingController(text: selected.title);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename word list'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 160,
+          decoration: const InputDecoration(labelText: 'List title'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel')),
+          FilledButton(onPressed: () =>
+              Navigator.pop(dialogContext, controller.text),
+            child: const Text('Save')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.trim().isEmpty ||
+        name.trim() == selected.title) return;
+    await _run(() async {
+      await _service.renameList(selected.id, name);
+      final lists = await _service.getLists();
+      if (mounted) {
+        setState(() {
+          _lists = lists;
+          _selected = lists.firstWhere((l) => l.id == selected.id);
+        });
+      }
+    });
+  }
+
+  Future<void> _changeSpelling(WordListEntry entry) async {
+    final controller = TextEditingController(text: entry.word);
+    final replacement = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Change saved word'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 160,
+          decoration: const InputDecoration(labelText: 'Target spelling'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel')),
+          FilledButton(onPressed: () =>
+              Navigator.pop(dialogContext, controller.text),
+              child: const Text('Continue')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (replacement == null || replacement.trim().isEmpty ||
+        replacement.trim() == entry.word) return;
+    // When the actual target changes, there must be an explicit acknowledgement
+    // that old mastery is retained only for the old form, not falsely moved.
+    final changedIdentity = WordFormIdentity.formKey(
+      word: replacement,
+      locale: entry.locale,
+      kind: entry.kind,
+      casePolicy: entry.casePolicy,
+    ) != entry.formKey;
+    if (changedIdentity) {
+      if (!mounted) return;
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Start a new spelling target?'),
+          content: const Text(
+            'The corrected word will start with its own learning history. '
+            'Any earlier reviews remain tied to the old spelling. '
+            'Previous pronunciation and accepted variants for this entry '
+            'will be cleared.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Change word')),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    }
+    await _run(() async {
+      await _service.changeWordSpelling(entry, replacement);
+      final entries = await _service.getEntries(entry.listId);
+      if (mounted) setState(() => _entries = entries);
+    });
+  }
+
   Future<void> _editEntry(WordListEntry entry) async {
     final pronunciation = TextEditingController(
       text: entry.pronunciationHint ?? '',
@@ -395,9 +493,18 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
           },
         ),
         actions: [
-          if (_selected != null && _practiceIndex == null)
-            IconButton(icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete list', onPressed: _busy ? null : _deleteList),
+          if (_selected != null && _practiceIndex == null) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Rename list',
+              onPressed: _busy ? null : _renameSelectedList,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete list',
+              onPressed: _busy ? null : _deleteList,
+            ),
+          ],
         ],
       ),
       body: SafeArea(
@@ -555,22 +662,34 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
           title: Text(entry.word),
           subtitle: entry.kind == WordEntryKind.properName
               ? const Text('Proper name · exact capitalization') : null,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'Edit pronunciation and accepted spellings',
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _busy ? null : () => _editEntry(entry),
-              ),
-              IconButton(
-                tooltip: 'Remove from list (preserves progress)',
-                icon: const Icon(Icons.remove_circle_outline),
-                onPressed: _busy ? null : () => _run(() async {
+          trailing: PopupMenuButton<String>(
+            tooltip: 'Word options',
+            enabled: !_busy,
+            onSelected: (choice) {
+              if (choice == 'spell') {
+                _changeSpelling(entry);
+              } else if (choice == 'preferences') {
+                _editEntry(entry);
+              } else if (choice == 'remove') {
+                _run(() async {
                   await _service.removeWord(entry.id);
                   final entries = await _service.getEntries(entry.listId);
                   if (mounted) setState(() => _entries = entries);
-                }),
+                });
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'spell',
+                child: Text('Change target spelling'),
+              ),
+              PopupMenuItem(
+                value: 'preferences',
+                child: Text('Pronunciation and accepted spellings'),
+              ),
+              PopupMenuItem(
+                value: 'remove',
+                child: Text('Remove from list (keep progress)'),
               ),
             ],
           ),
