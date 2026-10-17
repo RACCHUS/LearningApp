@@ -58,7 +58,14 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) {
+        final message = e is FormatException
+            ? 'The backup format is invalid or incomplete. No data was imported.'
+            : 'The transfer did not finish. Some new records may already have '
+                'been saved. It is safe to retry; existing records are not '
+                'overwritten.';
+        setState(() => _error = message);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
