@@ -6,7 +6,7 @@
 
 ## W1 scope
 
-W1 ships private, user-editable spelling lists; optional proper-name capitalization; nonbinding, offline dictionary suggestions; dictation with an independently typed answer; assisted retries; shared form-specific spaced review; two independent operations for deleting a list vs. forgetting a skill; and Word Learning-only guest transfer.
+W1 ships private, user-editable spelling lists; optional private meaning notes (not vocabulary mastery); proper-name capitalization; nonbinding, offline dictionary suggestions; dictation with an independently typed answer; assisted retries; shared form-specific spaced review; two independent operations for deleting a list vs. forgetting a skill; and Word Learning-only guest transfer.
 
 **Not W1:** Vocabulary-definition/sense assessment and Combined mode (W2/W3), creator publishing, public sharing, fully signed-out offline authoring, or migration of unrelated legacy learning data. Do not confuse private Word Learning backup with a complete account merge.
 
@@ -51,12 +51,13 @@ Automation passing **does not prove** real Google OAuth or browser TTS.
 | W9 | Test 375px and desktop layouts, keyboard-only practice and screen reader labels | No cut-off controls, accessible answer feedback and no primary-nav changes |
 | W10 | Simulate disabled/unavailable TTS | Clear recovery via assisted mode; no data loss |
 | W11 | Export and import with sensitive names; clear clipboard; switch accounts | Source user data not visible in destination before explicit import; no plaintext backup logs |
+| W12 | Add a private meaning note; refresh; export/import backup | Note remains visible after save/import and is shown after spelling feedback; spelling score is unchanged |
 
 For each case record PASS / FAIL / BLOCKED, browser/OS, date, test account initials, console/network symptoms, and steps to reproduce. Never paste a real session token, Google credential, or unredacted private export into GitHub.
 
 ## Go/no-go
 
-- **Go to review/merge** only after current CI is green, G1–G7 and W1–W11 are either PASS or have explicit, documented out-of-scope decisions and no privacy/data-loss blocker.
+- **Go to review/merge** only after current CI is green, G1–G7 and W1–W12 are either PASS or have explicit, documented out-of-scope decisions and no privacy/data-loss blocker.
 - If G2 fails due to Google or Manual Identity Linking configuration, correct the **test** environment first; do not weaken account-preservation logic.
 - No production rollout until an authorized deployment review of pending append-only migrations and Auth settings.
 - Any later Vocabulary/Combined-mode work belongs to the approved W2/W3 roadmap, not this W1 sign-in acceptance run.
