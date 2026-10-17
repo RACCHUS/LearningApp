@@ -118,6 +118,7 @@ class WordLearningTransfer {
               'case_policy': entry.casePolicy.dbValue,
               'accepted_forms': entry.acceptedForms,
               'pronunciation_hint': entry.pronunciationHint,
+              'meaning': entry.meaning,
               'sort_order': entry.sortOrder,
             },
         ],
@@ -217,10 +218,13 @@ class WordLearningTransfer {
         }
         final accepted = rawEntry['accepted_forms'];
         final hint = rawEntry['pronunciation_hint'];
+        final meaning = rawEntry['meaning'];
         final order = rawEntry['sort_order'];
         if (accepted is! List || accepted.length > 8 ||
             accepted.any((e) => e is! String || e.isEmpty || e.length > 160) ||
             (hint != null && (hint is! String || hint.length > 160)) ||
+            (meaning != null &&
+             (meaning is! String || meaning.length > 2000)) ||
             order is! int || order < 0 || order > maxEntries) {
           throw const FormatException('Invalid word preferences.');
         }
@@ -343,6 +347,7 @@ class WordLearningTransfer {
           'case_policy': entry['case_policy'],
           'accepted_forms': entry['accepted_forms'],
           'pronunciation_hint': entry['pronunciation_hint'],
+          'meaning': entry['meaning'],
           'sort_order': entry['sort_order'],
         });
       }
