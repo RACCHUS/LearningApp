@@ -13,7 +13,7 @@
 - Profile provisioning no longer signs out a valid anonymous session after transient database failures, and LoginScreen offers an explicit retry.
 - A lazy-loaded, 47,147-base-form US lexicon sourced from a SCOWL-derived Hunspell dictionary (415,662 bytes of source asset text, before web compression), with original source/license notices retained in `assets/lexicons/NOTICE.txt`.
 - Advisory spelling suggestions with explicit per-word choices and the option to keep custom spellings; proper names bypass automatic dictionary checks. Editable TTS pronunciation text and accepted spelling variants.
-- Dart unit tests and pgTAP schema/RLS smoke tests. Re-run CI after latest commits; do not infer all tests pass from earlier workflow runs.
+- Dart unit tests, widget regressions, transfer paging tests and pgTAP schema/RLS checks. The final commit must pass all CI workflows before manual browser acceptance.
 
 ## Guest-to-existing-Google transfer slice
 
@@ -42,6 +42,17 @@
 - Added list renaming and target-spelling changes in W1. A different form identity starts its own spelling schedule; the prior form history is left intact for other lists. Word-specific accepted variants and pronunciation overrides are cleared when the target changes but retained for a capitalization-only edit with unchanged identity. New service tests cover those boundaries.
 - Word Learning and backup/import failure messages no longer expose raw PostgREST errors or exception text; a partially completed idempotent import is explicitly safe to retry.
 - **Still required:** verify account switch/reload behavior in a real PWA browser, not only widget/unit tests; the actual Google OAuth callback/provider configuration has not been verified end-to-end.
+
+## W1 code-completion pass (October 17)
+
+- Dedicated `Forget spelling progress` action deletes only the selected spelling skill's review record after an irreversible-action confirmation; deleting a list still preserves reviews. Added targeted tests.
+- Due practice fetches **only** the current list's word-skill IDs in bounded batches, avoiding false-new words or oversized URLs when an account has extensive learning history.
+- Word list viewing and guest backup export now paginate instead of silently stopping at the Supabase Data API row cap. Guest export also fails closed if the authenticated account changes during a long-running operation. Automated fixtures include 1,001 words and 1,001 saved reviews.
+- Spelling sessions now display independent successes, independent misses, and assisted checks separately. Assisted retries never advance spaced recall.
+- Signed-out visitors get a clear Continue as Guest / Sign in route, not a failing private-table query. Pending word corrections cannot bleed into another selected list.
+- Complete manual browser and Google acceptance matrix: `docs/product/WORD_LEARNING_W1_ACCEPTANCE_GATE.md`. Do not interpret a green CI build as an actual OAuth end-to-end pass.
+
+**Code-only handoff:** W1's private spelling workflows, explicit Word Learning data transfer, and non-OAuth auth safeguards are implemented and exercised by automated tests. Manual browser/TTS and actual Google sign-in are intentionally the final acceptance phase. Beyond W1, offline-without-auth and cross-app learning-data migration require a separate product scope decision.
 
 ## Required before calling W1 complete
 
