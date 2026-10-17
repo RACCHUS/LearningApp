@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class WordSpellingAdvisor {
   static const assetPath = 'assets/lexicons/en_us_scowl_roots.txt';
   final Future<String> Function() _loadSource;
-  Future<Set<String>>? _entries;
+  Future<_WordLexicon>? _entries;
 
   WordSpellingAdvisor({Future<String> Function()? loadSource})
       : _loadSource = loadSource ?? (() => rootBundle.loadString(assetPath));
@@ -22,22 +22,25 @@ class WordSpellingAdvisor {
     if (input.isEmpty) return const WordSpellingAdvice(recognized: false);
     final dictionary = await (_entries ??= _readEntries());
     final lower = input.toLowerCase();
-    if (dictionary.contains(lower)) {
+    if (dictionary.words.contains(lower)) {
       return const WordSpellingAdvice(recognized: true);
     }
     // This is NOT a definitive misspelling verdict: proper nouns, technical
     // terms, plurals and valid variants can be missing from a roots list.
     final maxDistance = lower.length <= 4 ? 1 : 2;
     final matches = <({String word, int distance})>[];
-    for (final candidate in dictionary) {
-      if (candidate.isEmpty ||
-          candidate[0] != lower[0] ||
-          (candidate.length - lower.length).abs() > maxDistance) {
-        continue;
-      }
-      final distance = _boundedDistance(lower, candidate, maxDistance);
-      if (distance <= maxDistance) {
-        matches.add((word: candidate, distance: distance));
+    // Bucket by first letter and length once at load time, avoiding a
+    // full 47k-word scan on every text field edit or bulk word import.
+    final candidatesByLength = dictionary.buckets[lower[0]];
+    for (var length = lower.length - maxDistance;
+        length <= lower.length + maxDistance;
+        length++) {
+      if (length <= 0) continue;
+      for (final candidate in candidatesByLength?[length] ?? const <String>[]) {
+        final distance = _boundedDistance(lower, candidate, maxDistance);
+        if (distance <= maxDistance) {
+          matches.add((word: candidate, distance: distance));
+        }
       }
     }
     matches.sort((a, b) {
@@ -54,12 +57,18 @@ class WordSpellingAdvisor {
     );
   }
 
-  Future<Set<String>> _readEntries() async {
+  Future<_WordLexicon> _readEntries() async {
     final raw = await _loadSource();
-    return raw.split(RegExp(r'\r?\n'))
+    final words = raw.split(RegExp(r'\r?\n'))
         .map((word) => word.trim().toLowerCase())
         .where((word) => word.isNotEmpty && !word.startsWith('#'))
         .toSet();
+    final buckets = <String, Map<int, List<String>>>{};
+    for (final word in words) {
+      final lengths = buckets.putIfAbsent(word[0], () => {});
+      lengths.putIfAbsent(word.length, () => []).add(word);
+    }
+    return _WordLexicon(words, buckets);
   }
 
   /// Unit-cost Levenshtein with early budget exit; no automatic substitutions.
@@ -93,4 +102,10 @@ class WordSpellingAdvice {
     required this.recognized,
     this.suggestions = const [],
   });
+}
+
+class _WordLexicon {
+  final Set<String> words;
+  final Map<String, Map<int, List<String>>> buckets;
+  const _WordLexicon(this.words, this.buckets);
 }
