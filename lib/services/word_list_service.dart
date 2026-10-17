@@ -136,6 +136,33 @@ class WordListService {
     await _client.from('word_list_entries').delete().eq('id', entryId);
   }
 
+  /// Due-time lookup is list-independent. A never-reviewed word is due
+  /// immediately; a shared word follows one schedule across all lists.
+  Future<Set<String>> dueSpellingKeys(
+    Iterable<WordListEntry> entries, {
+    DateTime? now,
+  }) async {
+    final current = now ?? DateTime.now();
+    final rows = await _client.from('review_items')
+        .select('content_id,next_review_date')
+        .eq('user_id', _userId)
+        .eq('content_type', 'word_skill');
+    final dates = <String, DateTime>{};
+    for (final row in (rows as List)) {
+      final map = Map<String, dynamic>.from(row as Map);
+      final id = map['content_id'] as String?;
+      final date = DateTime.tryParse(
+        map['next_review_date']?.toString() ?? '',
+      );
+      if (id != null && date != null) dates[id] = date;
+    }
+    return entries.where((entry) {
+      final contentId = WordFormIdentity.spellingReviewContentId(entry.formKey);
+      final next = dates[contentId];
+      return next == null || !next.isAfter(current);
+    }).map((e) => e.formKey).toSet();
+  }
+
   Future<void> recordUnassistedSpelling(
     WordListEntry entry,
     SpellingGrade grade,
