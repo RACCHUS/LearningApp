@@ -244,7 +244,7 @@ class WordLearningTransfer {
           .eq('user_id', userId)
           .eq('import_origin', importOrigin)
           .maybeSingle();
-      final String listId;
+      late String listId;
       if (existing == null) {
         try {
           final inserted = await _client.from('word_lists').insert({
