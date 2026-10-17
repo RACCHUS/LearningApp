@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(11);
+select plan(12);
 
 select has_table('public', 'word_lists', 'word_lists exists');
 select has_table('public', 'word_list_entries', 'word_list_entries exists');
@@ -11,6 +11,7 @@ select has_column('public', 'word_lists', 'user_id', 'list ownership is explicit
 select has_column('public', 'word_list_entries', 'form_key', 'stable form identity exists');
 select has_column('public', 'word_lists', 'import_origin', 'retry-safe guest import provenance');
 select has_column('public', 'word_list_entries', 'accepted_forms', 'explicit accepted variants supported');
+select has_column('public', 'word_list_entries', 'meaning', 'private optional meaning is stored');
 select has_column('public', 'review_items', 'metadata', 'review metadata serializer has a column');
 
 select ok(
