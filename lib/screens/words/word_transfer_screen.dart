@@ -23,6 +23,7 @@ class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
   final _import = TextEditingController();
   bool _busy = false;
   bool _savedBackup = false;
+  bool _copiedBackup = false;
   String? _message;
   String? _error;
 
@@ -53,7 +54,10 @@ class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
         final text = await _transfer.exportJson();
         if (!mounted) return;
         _export.text = text;
-        setState(() => _savedBackup = false);
+        setState(() {
+          _savedBackup = false;
+          _copiedBackup = false;
+        });
       });
 
   Future<void> _copyBackup() async {
@@ -61,8 +65,11 @@ class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
     try {
       await Clipboard.setData(ClipboardData(text: _export.text));
       if (mounted) setState(() {
-        _savedBackup = true;
-        _message = 'Copied. Save this text somewhere private before switching accounts.';
+        // Clipboard success does not prove there is a recoverable copy.
+        // Switching accounts requires a separate affirmative acknowledgement.
+        _copiedBackup = true;
+        _savedBackup = false;
+        _message = 'Copied. Save the backup somewhere private, then confirm below.';
         _error = null;
       });
     } catch (_) {
@@ -102,7 +109,7 @@ class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
       });
 
   Future<void> _switchExistingAccount() async {
-    if (!_savedBackup || _export.text.isEmpty) return;
+    if (!_savedBackup || !_copiedBackup || _export.text.isEmpty) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -178,12 +185,25 @@ class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
                 icon: const Icon(Icons.copy),
                 label: const Text('Copy backup'),
               ),
-              if (isGuest)
+              if (isGuest) ...[
+                CheckboxListTile(
+                  value: _savedBackup,
+                  onChanged: !_copiedBackup
+                      ? null : (value) => setState(
+                          () => _savedBackup = value ?? false),
+                  title: const Text('I saved a private copy outside this app'),
+                  subtitle: const Text(
+                    'Signing out of an anonymous account may permanently '
+                    'remove access to its learning data. Copying alone is '
+                    'not sufficient; save the backup somewhere safe first.'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
                 FilledButton(
-                  onPressed: _busy || !_savedBackup
+                  onPressed: _busy || !_savedBackup || !_copiedBackup
                       ? null : _switchExistingAccount,
                   child: const Text('Switch to existing Google account'),
                 ),
+              ],
             ],
             const Divider(height: 36),
             const Text('Import a backup into the current account',
