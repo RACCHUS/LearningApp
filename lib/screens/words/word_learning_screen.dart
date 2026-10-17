@@ -60,7 +60,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
   @override
   void initState() {
     super.initState();
-    _loadLists();
+    if (Supabase.instance.client.auth.currentUser != null) {
+      _loadLists();
+    }
   }
 
   @override
@@ -105,6 +107,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
             _selected = selected;
             _entries = entries;
             _practiceIndex = null;
+            _pendingWords = null;
+            _pendingSuggestions = {};
+            _words.clear();
           });
         }
       });
@@ -138,6 +143,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
           _lists = lists;
           _selected = list;
           _entries = [];
+          _pendingWords = null;
+          _pendingSuggestions = {};
+          _words.clear();
         });
       }
     });
@@ -590,7 +598,24 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     );
   }
 
-  Widget _buildLists() => Column(
+  Widget _buildLists() {
+    final authenticated = Supabase.instance.client.auth.currentUser != null;
+    if (!authenticated) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Continue as Guest or sign in to keep your spelling lists '
+            'private and save learning progress.'),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: () => context.go('/login'),
+            child: const Text('Continue as Guest / Sign in'),
+          ),
+        ],
+      );
+    }
+    return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const Text('Create personal spelling lists or revisit your words.'),
@@ -613,11 +638,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
       if (_lists.isEmpty && !_busy)
         const Padding(padding: EdgeInsets.all(16),
           child: Text('No lists yet. Continue as Guest or sign in to save your words.')),
-      if (_lists.isEmpty)
-        TextButton(onPressed: () => context.go('/login'),
-          child: const Text('Continue as Guest / Sign in')),
     ],
   );
+  }
 
   Widget _buildEntries() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
