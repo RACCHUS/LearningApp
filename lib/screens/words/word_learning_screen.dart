@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/word_learning.dart';
 import '../../services/audio_service.dart';
 import '../../services/word_list_service.dart';
+import '../../services/word_spelling_advisor.dart';
 
 /// W1 private word lists and basic, independently scored audio dictation.
 /// Vocabulary and combined practice remain W2.
@@ -16,11 +17,14 @@ class WordLearningScreen extends StatefulWidget {
 
 class _WordLearningScreenState extends State<WordLearningScreen> {
   final WordListService _service = WordListService();
+  final WordSpellingAdvisor _advisor = WordSpellingAdvisor();
   final TextEditingController _words = TextEditingController();
   final TextEditingController _answer = TextEditingController();
 
   List<WordList> _lists = [];
   List<WordListEntry> _entries = [];
+  List<String>? _pendingWords;
+  Map<int, List<String>> _pendingSuggestions = {};
   WordList? _selected;
   int? _practiceIndex;
   SpellingGrade? _grade;
@@ -109,19 +113,65 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
 
   Future<void> _addWords() async {
     if (_selected == null || _words.text.trim().isEmpty) return;
+    final words = _words.text.split(RegExp(r'[,;\\n\\r]+'))
+        .map((w) => w.trim())
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.length > 100) {
+      setState(() => _error = 'Add up to 100 words at a time.');
+      return;
+    }
     await _run(() async {
-      await _service.addWords(
-        _selected!.id,
-        _words.text,
-        kind: _properNames ? WordEntryKind.properName : WordEntryKind.ordinary,
-        casePolicy: _properNames ? WordCasePolicy.exact : WordCasePolicy.ignoreCase,
-      );
-      final entries = await _service.getEntries(_selected!.id);
-      if (mounted) {
-        setState(() => _entries = entries);
-        _words.clear();
+      final suggestions = <int, List<String>>{};
+      if (!_properNames) {
+        try {
+          for (var i = 0; i < words.length; i++) {
+            final advice = await _advisor.check(words[i]);
+            if (!advice.recognized) {
+              suggestions[i] = advice.suggestions;
+            }
+          }
+        } catch (_) {
+          // A missing optional lexicon cannot prevent user-owned word entry.
+          suggestions.clear();
+        }
       }
+      if (!mounted) return;
+      if (suggestions.isNotEmpty) {
+        setState(() {
+          _pendingWords = words;
+          _pendingSuggestions = suggestions;
+        });
+        return;
+      }
+      await _persistWords(words);
     });
+  }
+
+  Future<void> _persistWords(List<String> words) async {
+    final list = _selected;
+    if (list == null || words.isEmpty) return;
+    await _service.addWords(
+      list.id,
+      words.join('\\n'),
+      kind: _properNames ? WordEntryKind.properName : WordEntryKind.ordinary,
+      casePolicy: _properNames ? WordCasePolicy.exact : WordCasePolicy.ignoreCase,
+    );
+    final entries = await _service.getEntries(list.id);
+    if (mounted) {
+      setState(() {
+        _entries = entries;
+        _pendingWords = null;
+        _pendingSuggestions = {};
+      });
+      _words.clear();
+    }
+  }
+
+  Future<void> _saveReviewedWords() async {
+    final pending = _pendingWords;
+    if (pending == null) return;
+    await _run(() => _persistWords(pending));
   }
 
   Future<void> _deleteList() async {
@@ -302,6 +352,14 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
       const SizedBox(height: 10),
       TextField(
         controller: _words,
+        onChanged: (_) {
+          if (_pendingWords != null) {
+            setState(() {
+              _pendingWords = null;
+              _pendingSuggestions = {};
+            });
+          }
+        },
         minLines: 2, maxLines: 6,
         decoration: const InputDecoration(
           labelText: 'Your words', border: OutlineInputBorder()),
@@ -310,7 +368,11 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
         title: const Text('These are names or proper nouns'),
         subtitle: const Text('Require matching capitalization'),
         value: _properNames,
-        onChanged: (v) => setState(() => _properNames = v),
+        onChanged: (v) => setState(() {
+          _properNames = v;
+          _pendingWords = null;
+          _pendingSuggestions = {};
+        }),
       ),
       FilledButton.icon(
         onPressed: _busy ? null : _addWords,
@@ -318,7 +380,47 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
         label: const Text('Add words'),
       ),
       const SizedBox(height: 8),
-      const Text('Custom words are accepted. Dictionary suggestions are not yet available in this build.'),
+      const Text('Dictionary suggestions are advisory. Names, inflections and trade terms may be absent. You can always keep what you typed.'),
+      if (_pendingWords != null) ...[
+        const SizedBox(height: 16),
+        Text('Review possible spellings',
+          style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 6),
+        const Text('Nothing is changed automatically. Choose a suggestion or keep the original spelling.'),
+        for (final warning in _pendingSuggestions.entries)
+          Card(child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Entered: ${_pendingWords![warning.key]}'),
+                const Text('Not found in the base-word list. This may still be valid.'),
+                if (warning.value.isNotEmpty)
+                  Wrap(spacing: 6, children: [
+                    for (final suggestion in warning.value)
+                      OutlinedButton(
+                        onPressed: _busy ? null : () => setState(
+                          () => _pendingWords![warning.key] = suggestion),
+                        child: Text('Use ${suggestion}'),
+                      ),
+                  ]),
+              ],
+            ),
+          )),
+        Row(children: [
+          Expanded(child: FilledButton(
+            onPressed: _busy ? null : _saveReviewedWords,
+            child: const Text('Save words as shown'),
+          )),
+          TextButton(
+            onPressed: () => setState(() {
+              _pendingWords = null;
+              _pendingSuggestions = {};
+            }),
+            child: const Text('Cancel'),
+          ),
+        ]),
+      ],
       const SizedBox(height: 18),
       FilledButton.icon(
         onPressed: _entries.isEmpty || _busy ? null : _startPractice,
