@@ -127,6 +127,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
+              if (isAnonymousGuest)
+                TextButton.icon(
+                  onPressed: _isLoading
+                      ? null : () => context.push('/words/transfer'),
+                  icon: const Icon(Icons.ios_share),
+                  label: const Text(
+                    'Google account already exists? Back up spelling lists'),
+                ),
+
               // Google Sign In Button
               FilledButton.icon(
                 onPressed: _isLoading ? null : _handleSignIn,
