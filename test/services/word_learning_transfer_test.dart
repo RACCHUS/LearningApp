@@ -29,6 +29,7 @@ void main() {
             'case_policy': 'ignore_case',
             'accepted_forms': <String>[],
             'pronunciation_hint': null,
+            'meaning': 'Responsibility for an obligation',
             'sort_order': 0,
           }
         ],
@@ -66,6 +67,23 @@ void main() {
     final list = (data['lists'] as List).first as Map<String, dynamic>;
     final entry = (list['entries'] as List).first as Map<String, dynamic>;
     entry['word'] = 'unrelated';
+    expect(() => WordLearningTransfer.validate(jsonEncode(data)),
+        throwsFormatException);
+  });
+
+  test('retains private meaning in a valid transfer', () {
+    final data = fixture();
+    final validated = WordLearningTransfer.validate(jsonEncode(data));
+    final word = (((validated['lists'] as List).single
+        as Map)['entries'] as List).single as Map;
+    expect(word['meaning'], 'Responsibility for an obligation');
+  });
+
+  test('rejects excessively long private meaning', () {
+    final data = fixture();
+    final entry = (((data['lists'] as List).single
+        as Map)['entries'] as List).single as Map<String, dynamic>;
+    entry['meaning'] = List.filled(2001, 'a').join();
     expect(() => WordLearningTransfer.validate(jsonEncode(data)),
         throwsFormatException);
   });
