@@ -33,7 +33,6 @@ void main() {
 
   testWidgets('word backup UI is replaced on an account switch', (tester) async {
     final auth = _TestAuthNotifier();
-    addTearDown(auth.dispose);
     await tester.pumpWidget(ProviderScope(
       overrides: [
         authProvider.overrideWith((ref) => auth),
