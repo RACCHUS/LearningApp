@@ -78,6 +78,50 @@ void main() {
     expect(wordB.formKey, wordA.formKey);
   });
 
+  test('word list loading does not truncate after the first API page', () async {
+    final fake = FakeSupabaseClient(currentUser: currentUser());
+    fake.setTableData('word_list_entries', [
+      for (var i = 0; i < 1001; i++)
+        {
+          'id': 'entry-$i',
+          'list_id': 'list-1',
+          'word': 'word$i',
+          'form_key': WordFormIdentity.formKey(word: 'word$i'),
+          'locale': 'en-US',
+          'entry_kind': 'ordinary',
+          'case_policy': 'ignore_case',
+          'accepted_forms': <String>[],
+          'pronunciation_hint': null,
+          'sort_order': i,
+        },
+    ]);
+    final entries = await WordListService(client: fake).getEntries('list-1');
+    expect(entries, hasLength(1001));
+    expect(entries.last.word, 'word1000');
+  });
+
+  test('more than one due-word query batch is processed', () async {
+    final words = [
+      for (var i = 0; i < 101; i++)
+        entry('word-$i', 'item$i'),
+    ];
+    final fake = FakeSupabaseClient(currentUser: currentUser());
+    fake.setTableData('review_items', [
+      for (final word in words)
+        {
+          'user_id': 'student-1',
+          'content_type': 'word_skill',
+          'content_id':
+              WordFormIdentity.spellingReviewContentId(word.formKey),
+          'next_review_date': '2026-11-01T00:00:00Z',
+        },
+    ]);
+    final due = await WordListService(client: fake).dueSpellingKeys(
+      words, now: DateTime.utc(2026, 10, 17),
+    );
+    expect(due, isEmpty);
+  });
+
   test('forget is deliberately scoped to a word skill, never a list', () async {
     final fake = FakeSupabaseClient(currentUser: currentUser());
     final target = entry('word-1', 'liability');
