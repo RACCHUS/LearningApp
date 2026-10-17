@@ -95,6 +95,21 @@ void main() {
         throwsFormatException);
   });
 
+  test('rejects review IDs that do not correspond to the review word', () {
+    final data = fixture();
+    final review = (data['reviews'] as List).first as Map<String, dynamic>;
+    review['title'] = 'different';
+    expect(() => WordLearningTransfer.validate(jsonEncode(data)),
+        throwsFormatException);
+  });
+
+  test('review identity is independent of whether its list still exists', () {
+    final data = fixture();
+    (data['lists'] as List).clear();
+    final result = WordLearningTransfer.validate(jsonEncode(data));
+    expect((result['reviews'] as List).length, 1);
+  });
+
   test('rejects corrupted progress counters', () {
     final data = fixture();
     final review = (data['reviews'] as List).first as Map<String, dynamic>;
