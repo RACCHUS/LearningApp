@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -14,6 +13,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _logger = AppLogger('AuthNotifier');
   final _supabase = Supabase.instance.client;
   late final StreamSubscription _authStateSubscription;
+
+  bool get isAnonymousSession =>
+      _supabase.auth.currentUser?.isAnonymous == true;
+
+  bool get hasAuthenticatedSession => _supabase.auth.currentUser != null;
 
   AuthNotifier() : super(AuthInitial()) {
     final session = _supabase.auth.currentSession;
@@ -40,6 +44,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// the individual guest. Guests can later be upgraded to a full account
   /// by linking an identity (email / OAuth) without losing their data.
   Future<void> signInAsGuest() async {
+    if (_supabase.auth.currentUser != null) {
+      throw StateError('An authenticated session already exists.');
+    }
     try {
       state = AuthLoading();
       await _supabase.auth.signInAnonymously();
@@ -57,12 +64,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
+    if (isAnonymousSession) {
+      throw StateError(
+        'Use linkGuestToGoogle to preserve the anonymous learner ID.',
+      );
+    }
     try {
       state = AuthLoading();
-      await _supabase.auth.signInWithOAuth(
+      final launched = await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: kIsWeb ? Uri.base.origin : null,
       );
+      if (!launched) {
+        state = GuestMode();
+      }
     } catch (e, stackTrace) {
       // Log full error details securely
       _logger.error(
@@ -78,23 +93,74 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> _upsertUser(User user) async {
+  /// Explicitly links a Google identity to the CURRENT anonymous user.
+  /// This preserves the auth UID when Manual Identity Linking is enabled.
+  /// For an already-owned Google identity, keep the guest session intact;
+  /// existing-account import must be a separate, consent-based flow.
+  Future<void> linkGuestToGoogle() async {
+    final guest = _supabase.auth.currentUser;
+    if (guest == null || !guest.isAnonymous) {
+      throw StateError('Only an anonymous guest can upgrade this way.');
+    }
+    try {
+      state = AuthLoading();
+      final launched = await _supabase.auth.linkIdentity(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? Uri.base.origin : null,
+      );
+      if (!launched) {
+        // No navigation took place: do not strand the UI in AuthLoading.
+        state = AuthSuccess(guest);
+      }
+    } catch (e, stackTrace) {
+      _logger.warn('Google identity linking failed',
+        error: e, stackTrace: stackTrace,
+        metadata: {'method': 'linkGuestToGoogle'});
+      // Never sign out or replace the anonymous identity on a failed link.
+      state = AuthSuccess(guest);
+      rethrow;
+    }
+  }
+
+  /// Retry a failed profile write without discarding a valid auth session.
+  Future<void> retryProfileProvisioning() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    final success = await _upsertUser(user);
+    if (success && _supabase.auth.currentUser?.id == user.id) {
+      state = AuthSuccess(user);
+    }
+  }
+
+  Future<bool> _upsertUser(User user) async {
     int attempts = 0;
     const maxAttempts = 3;
 
     while (attempts < maxAttempts) {
       try {
-        await _supabase.from('users').upsert({
-          'id': user.id,
-          // Anonymous users have no email; column is nullable post-migration.
-          'email': user.email,
-          'display_name': user.isAnonymous ? 'Guest' : null,
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        final existing = await _supabase.from('users')
+            .select('email')
+            .eq('id', user.id)
+            .maybeSingle();
+        if (existing == null) {
+          // Let the database set created_at exactly once. No replacement of
+          // user-controlled display names on subsequent auth events.
+          await _supabase.from('users').insert({
+            'id': user.id,
+            'email': user.email,
+            'display_name': user.isAnonymous ? 'Guest' : null,
+          });
+        } else if (existing['email'] != user.email) {
+          // Anonymous -> Google linking keeps the same UID. Sync the email
+          // without erasing existing profile fields or creation time.
+          await _supabase.from('users').update({
+            'email': user.email,
+          }).eq('id', user.id);
+        }
 
-        _logger.info('User record upserted successfully',
+        _logger.info('User record synchronized successfully',
             metadata: {'userId': user.id});
-        return; // Success
+        return true; // Success
       } catch (e, stackTrace) {
         attempts++;
 
@@ -114,20 +180,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
             metadata: {'userId': user.id},
           );
 
-          // Sign out the user to prevent inconsistent state
-          await _supabase.auth.signOut();
-          state = AuthError('Failed to create user account. Please try again.');
-          throw DatabaseException(
-            'User record creation failed after $maxAttempts attempts',
-            originalError: e,
-            stackTrace: stackTrace,
-          );
+          // Keep the valid auth session: signing out here could make an
+          // anonymous learner permanently lose access to their work.
+          // An older profile request may finish after an account switch.
+          // Never show an error from learner A in learner B's session.
+          if (_supabase.auth.currentUser?.id == user.id) {
+            state = AuthError(
+              'Signed in, but the profile could not be saved. Retry later.',
+            );
+          }
+          return false;
         }
 
         // Exponential backoff: wait before retry
         await Future.delayed(Duration(milliseconds: 500 * attempts));
       }
     }
+    return false;
   }
 
   Future<void> signOut() async {

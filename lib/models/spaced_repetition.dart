@@ -54,7 +54,17 @@ enum ReviewableContentType {
   /// Free-form question (legacy)
   question,
   /// Standalone or lesson-bound flashcard (v2)
-  flashcard;
+  flashcard,
+  /// A word-form skill, independent of any particular word list.
+  wordSkill;
+
+  String get dbValue => this == wordSkill ? 'word_skill' : name;
+
+  static ReviewableContentType fromDbValue(String? value) =>
+      ReviewableContentType.values.firstWhere(
+        (v) => v.dbValue == value,
+        orElse: () => ReviewableContentType.term,
+      );
 
   String get displayName {
     switch (this) {
@@ -74,6 +84,8 @@ enum ReviewableContentType {
         return 'Question';
       case ReviewableContentType.flashcard:
         return 'Flashcard';
+      case ReviewableContentType.wordSkill:
+        return 'Word spelling';
     }
   }
 
@@ -96,6 +108,8 @@ enum ReviewableContentType {
         return '❓';
       case ReviewableContentType.flashcard:
         return '🗂️';
+      case ReviewableContentType.wordSkill:
+        return '✏️';
     }
   }
 
@@ -106,7 +120,7 @@ enum ReviewableContentType {
 
   /// Whether this type requires text input
   bool get requiresTextInput {
-    return this == fillInBlank;
+    return this == fillInBlank || this == wordSkill;
   }
 }
 
@@ -252,9 +266,8 @@ class ReviewableItem {
     return ReviewableItem(
       id: json['id'] as String,
       contentId: json['content_id'] as String,
-      contentType: ReviewableContentType.values.firstWhere(
-        (e) => e.name == json['content_type'],
-        orElse: () => ReviewableContentType.term,
+      contentType: ReviewableContentType.fromDbValue(
+        json['content_type'] as String?,
       ),
       lessonId: json['lesson_id'] as String?,
       title: json['title'] as String,
@@ -278,7 +291,7 @@ class ReviewableItem {
     return {
       'id': id,
       'content_id': contentId,
-      'content_type': contentType.name,
+      'content_type': contentType.dbValue,
       'lesson_id': lessonId,
       'title': title,
       'subtitle': subtitle,
