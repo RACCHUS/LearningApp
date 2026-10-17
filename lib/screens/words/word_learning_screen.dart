@@ -50,6 +50,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
   SpellingGrade? _grade;
   bool _assisted = false;
   bool _showTarget = false;
+  int _independentCorrect = 0;
+  int _independentMisses = 0;
+  int _assistedChecks = 0;
   bool _properNames = false;
   bool _busy = false;
   String? _error;
@@ -301,6 +304,36 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     });
   }
 
+  Future<void> _forgetSpellingProgress(WordListEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Forget progress for ${entry.word}?'),
+        content: const Text(
+          'This permanently removes spelling review history for this word '
+          'across ALL your lists. The word stays in every list, and its next '
+          'practice starts from the beginning. This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep progress'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Forget spelling progress'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _run(() => _service.forgetSpellingProgress(entry));
+    if (mounted && _error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Spelling history cleared. Words were kept.')),
+      );
+    }
+  }
+
   Future<void> _editEntry(WordListEntry entry) async {
     final pronunciation = TextEditingController(
       text: entry.pronunciationHint ?? '',
@@ -410,6 +443,9 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         _practiceEntries = entries;
         _practiceIndex = 0;
         _grade = null;
+        _independentCorrect = 0;
+        _independentMisses = 0;
+        _assistedChecks = 0;
         _assisted = false;
         _showTarget = false;
         _answer.clear();
@@ -453,7 +489,18 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     );
     await _run(() async {
       await _service.recordUnassistedSpelling(entry, grade);
-      if (mounted) setState(() => _grade = grade);
+      if (mounted) {
+        setState(() {
+          _grade = grade;
+          if (grade.assisted) {
+            _assistedChecks++;
+          } else if (grade.correct) {
+            _independentCorrect++;
+          } else {
+            _independentMisses++;
+          }
+        });
+      }
     });
   }
 
@@ -678,6 +725,8 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
                 _changeSpelling(entry);
               } else if (choice == 'preferences') {
                 _editEntry(entry);
+              } else if (choice == 'forget') {
+                _forgetSpellingProgress(entry);
               } else if (choice == 'remove') {
                 _run(() async {
                   await _service.removeWord(entry.id);
@@ -696,6 +745,10 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
                 child: Text('Pronunciation and accepted spellings'),
               ),
               PopupMenuItem(
+                value: 'forget',
+                child: Text('Forget spelling progress (keep word)'),
+              ),
+              PopupMenuItem(
                 value: 'remove',
                 child: Text('Remove from list (keep progress)'),
               ),
@@ -712,8 +765,19 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         const Icon(Icons.check_circle_outline, size: 60),
         const SizedBox(height: 10),
         const Text('Practice complete', textAlign: TextAlign.center),
-        FilledButton(onPressed: () => setState(() => _practiceIndex = null),
-          child: const Text('Back to my list')),
+        const SizedBox(height: 12),
+        Text('Independent correct: $_independentCorrect'),
+        Text('Independent misses: $_independentMisses'),
+        Text('Assisted practice checks: $_assistedChecks'),
+        const SizedBox(height: 8),
+        const Text(
+          'Assisted checks are useful practice but do not advance retention. '
+          'Review dates are saved for independent answers.'),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => setState(() => _practiceIndex = null),
+          child: const Text('Back to my list'),
+        ),
       ]);
     }
     final entry = _practiceEntries[idx];
