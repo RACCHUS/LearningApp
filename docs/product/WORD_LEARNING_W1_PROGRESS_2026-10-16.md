@@ -26,6 +26,15 @@
 - **Scope:** This transfers Word Learning data only. General learning contexts, other legacy study sets, and other learner-owned tables are not migrated by this workflow. A complete cross-app account migration remains a separate project.
 - This is a first usable transfer path, not an automatic OAuth account merge. It still needs browser integration and idempotency tests with two Supabase test identities.
 
+## W1 reliability hardening (October 16)
+
+- Backup import now verifies that each saved spelling-review identity matches its title, case rules and proper-name identity; the review may survive deletion of all lists.
+- First-time review creation is idempotent across multiple tabs; concurrent guest imports recover safely from a unique source-list collision, and import counts reflect records actually inserted.
+- Export/transfer UI now requires the learner to confirm saving a private backup **outside** the app before signing out of a nonrecoverable anonymous session. The guest Google sign-in screen links directly to the backup route for existing accounts.
+- Google profile synchronization preserves the original `created_at` and user display name. Account upgrades update the email only when necessary, and a successful retry restores the authenticated UI state.
+- New pgTAP owner/other-user/anonymous-guest RLS tests cover real row visibility, deletion permissions and preservation of `review_items` after a list deletion.
+- Dictionary suggestions use first-letter/length indexes instead of scanning all 47,147 entries for each word. CI measures the web-copied asset and its estimated gzip size against a documented budget.
+
 ## Required before calling W1 complete
 
 1. **Do not apply migration to production without owner approval.** Run clean database upgrade + RLS owner/other-user/anonymous tests in disposable local or CI database.
