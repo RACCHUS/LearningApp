@@ -14,6 +14,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
 import '../../widgets/targets/diagnostic_launch_banner.dart';
+import '../../widgets/targets/pathway_preparation_goal_card.dart';
 import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
 import '../governance/version_staging_dashboard_screen.dart';
 
@@ -115,7 +116,20 @@ class TargetDetailScreen extends ConsumerWidget {
                     error: (_, __) => const SizedBox.shrink(),
                     data: (issuer) => issuer == null
                         ? const SizedBox.shrink()
-                        : _buildIssuerSourceCard(context, issuer),
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildIssuerSourceCard(context, issuer),
+                              if (issuer.destinationType == 'professional_license')
+                                Padding(
+                                  padding: const EdgeInsets.only(top: DesignTokens.space2),
+                                  child: PathwayPreparationGoalCard(
+                                    targetId: target.id,
+                                    destination: issuer,
+                                  ),
+                                ),
+                            ],
+                          ),
                   ),
                 if (ref.watch(authProvider) is AuthSuccess &&
                     (ref.watch(authProvider) as AuthSuccess).user.id ==
