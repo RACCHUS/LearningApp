@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/screens/words/word_transfer_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helper.dart';
 
@@ -28,6 +29,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await TestHelper.initializeSupabase();
   });
 
