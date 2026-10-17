@@ -192,6 +192,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await Future.delayed(Duration(milliseconds: 500 * attempts));
       }
     }
+    return false;
   }
 
   Future<void> signOut() async {
