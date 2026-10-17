@@ -65,7 +65,7 @@ graph TD
         CRel["concept_relations"]
         CF["concept_fields"]
         UCS["user_concept_state"]
-        RI["review_items (FSRS / Spaced Repetition)"]
+        RI["review_items (SM-2 / Spaced Repetition)"]
         UP["user_progress"]
     end
 
@@ -96,11 +96,12 @@ graph TD
 
 1. **`public.questions` (Psychometric Assessment Items)**:
    - **Schema**: `id (uuid)`, `lesson_id (uuid FK to lessons)`, `question_text (text)`, `options (jsonb array)`, `correct_answer (int)`, `type (mcq|true_false|short_answer)`, `explanation (text)`, `user_id (uuid)`, `created_at`, `updated_at`.
-   - **Role**: Serves exclusively as graded items for spaced repetition (`review_items`), diagnostic readiness (`AssessmentEngine`), and weighted concept evidence (`question_concepts` $\rightarrow$ `user_concept_state`).
+   - **Role**: Serves exclusively as graded items for spaced repetition (`review_items` using the SuperMemo-2 / SM-2 algorithm via `SpacedRepetitionService`), diagnostic readiness (`AssessmentEngine`), and weighted concept evidence (`question_concepts` $\rightarrow$ `user_concept_state`).
    - **Critical Constraint**: `questions` has a single numeric `correct_answer` and strict scoring semantics. It is completely unsuitable for multi-perspective, threaded, or conversational community Q&A.
 
 2. **`public.users` (User Identity)**:
-   - **Schema**: `id (uuid PK references auth.users)`, `email (text unique)`, `display_name (text)`, `created_at (timestamptz)`.
+   - **Schema**: `id (uuid PK default gen_random_uuid())`, `email (text unique not null)`, `display_name (text)`, `created_at (timestamptz default now())`.
+   - **Live Schema Note**: The live hosted schema does not currently enforce a declared foreign key constraint from `public.users.id` to `auth.users.id`. Linking `public.users.id` directly to `auth.users.id` is an intended architecture and best practice for future identity migrations.
    - **Role**: Minimal identity record.
    - **Gaps**: Does not track user roles, age bracket/minor status, educator bio, verification state, social links, or public profile preferences.
 
@@ -108,8 +109,10 @@ graph TD
    - Distinguishes official regulator credentials from private user goals.
    - Enforces strict RLS: users can only link private, unreviewed draft goals to published catalog destinations in the matching jurisdiction.
 
-4. **`public.curriculum_reviewers`**:
-   - Minimal table (`user_id`, `created_at`) used by administrative RPCs to govern curriculum promotion.
+4. **`public.curriculum_reviewers` (Target-Specific Governance)**:
+   - **Schema**: 5 columns: `id (uuid PK)`, `target_id (uuid FK references learning_targets)`, `user_id (uuid)`, `role (text check in ('reviewer', 'editor', 'admin'))`, `created_at (timestamptz)`.
+   - **Scope**: Strictly scoped to authoring, editing, and approving versioned curriculum trees for specific learning targets.
+   - **Distinction**: Must **not** be automatically reused as a platform-wide community moderator table. Platform-wide moderation and trust & safety require a dedicated, distinct authorization role or table (`moderation_roles` / `trust_and_safety_actions`).
 
 ---
 
@@ -133,6 +136,7 @@ graph TD
 4. **License Pathway Preparation (P2h)**:
    - `PathwayTreeParser`, `PathwayReadinessService`, `PathwayPreparationSheet`, `PathwayPreparationGoalCard`.
    - Client-side interactive route selection (`op: 'any'`) and self-reported checklist tracking for 6 Florida licenses.
+   - **Shared-Device Storage Finding**: `PathwayReadinessService` currently keys storage by destination/target ID (`pathway_readiness_{destinationId}_{goalId ?? "standalone"}`). On shared browser devices across family or caseworker profiles, standalone pathway state is device-wide rather than user-scoped. Hardening storage keys to user-scoped namespaces (e.g. `pathway_readiness_{userId ?? "local"}_{destinationId}_{goalId ?? "standalone"}`) and testing cross-session isolation across sign-in/out is flagged as an important operational enhancement.
 
 ---
 
@@ -145,8 +149,8 @@ The following matrix compares current capabilities against the strategic roadmap
 | **1. Social Q&A vs. Psychometrics** | `public.questions` table is strictly psychometric (MCQ, 0-indexed answer, linked to `user_concept_state` mastery). | Conversational, threaded questions and answers scoped to lessons/concepts/targets with upvotes, citations, and revisions. | **Missing Subsystem** | **Invariant 1**: Complete domain isolation. Create `community_questions` and `community_answers`. Never mix social Q&A into psychometric `questions`. |
 | **2. Educator & Creator Identity** | Minimal `public.users` (id, email, display_name). No public profile UI. | Educator channels, subject expertise, credential verification tags, followers, office hours. | **Missing Subsystem** | **Invariant 2**: Create additive `educator_profiles` and `educator_subjects`. Distinguish self-declared vs. verified credentials. |
 | **3. Trust, Safety & Moderation** | Administrative SQL scripts & RLS. No user reporting UI or moderator inbox. | User flagging, moderation queue UI, audit log of actions, DMCA notices, automated profanity/spam filters. | **Missing Subsystem (P0 Prerequisite)** | **ECO-00B**: Build `moderation_reports`, `moderation_queue`, and admin moderation UI before enabling public UGC. |
-| **4. Child Safety & Minor Protection** | Pre-reader profiles stored locally in offline Hive/SharedPreferences. | Strict COPPA/FERPA compliance. Minors prohibited from public posting or direct adult messaging. | **Critical Legal Gap** | **Invariant 3**: Minors default to private, guardian-managed accounts. Public posting restricted to verified adults ($\ge 18$). |
-| **5. AI Transparency & Prompt Security** | `AiPromptService` generates lesson plans via rigid schemas. | In-context AI answer synthesis, uncertainty flags, prompt-injection defense. | **Partial / Security Gap** | **Invariant 4**: Sanitize all user questions through input filter before LLM submission. Label AI answers clearly. |
+| **4. Child Safety & Minor Protection** | Pre-reader profiles stored locally in offline Hive/SharedPreferences. | Strict minor protection operational design (age-assurance, guardian consent, retention/deletion rules). | **Critical Legal & Operational Gap** | **Invariant 3**: Minors default to private, guardian-managed accounts. Public posting restricted to verified adults ($\ge 18$). Operationalize consent and deletion procedures before claiming legal compliance. |
+| **5. AI Transparency & Prompt Security** | `AiPromptService` generates lesson plans via rigid schemas. | In-context AI answer synthesis, uncertainty flags, robust defense-in-depth prompt-injection protection. | **Partial / Security Gap** | **Invariant 4**: Structural isolation of system instructions from user inputs, constrained model tool access, output schema validation, rate limits, and adversarial testing. Label AI answers clearly. |
 | **6. Content Licensing & Provenance** | `content_provenance.dart` models source URL and checked dates for official catalog destinations. | Explicit creator licensing (CC-BY, CC-BY-SA, All Rights Reserved), derivative rights tracking. | **Missing Subsystem** | Add `resource_licenses` table and require explicit license selection upon publishing. |
 | **7. Multi-Modal Audio Harmonization** | Rich local TTS/STT and oral literacy mocks. | Audio playback for community Q&A, voice question asking, accessible explanations. | **Integration Opportunity** | Re-use `PreReaderAudioService` and `AudioLessonOrchestrator` to vocalize community answers. |
 | **8. Cost & Observability Monitoring** | Basic `supabase_health_service.dart`. | Real-time monitoring of AI tokens, TTS/STT API costs, media storage, and rate-limit violations. | **Missing Operational Tooling** | **ECO-00C**: Implement cost quotas, rate-limiting token buckets, and alert thresholds. |
@@ -171,19 +175,23 @@ To maintain structural integrity, the following invariants are strictly binding 
   - `Private` (learner's personal unshared draft)
 - **Prohibition**: Never invent redundant labels (e.g., "Verified Answer", "Certified Expert") that blur regulatory vs. platform vs. self-reported distinctions.
 
-### Invariant 3: Minor Safety & Privacy (COPPA / FERPA)
-- **Rule**: Public user-generated content (asking public questions, posting answers, creating public channels) is restricted to verified adult users ($\ge 18$).
-- **Minor Accounts**: Learners under 18 (or accounts managed under caseworker/family profiles) operate in **Private Study Mode**:
-  - No public profile indexing.
-  - No direct messaging from adult strangers.
-  - Can read approved public FAQs and community answers, but cannot broadcast UGC without guardian/caseworker mediation.
+### Invariant 3: Minor Safety & Privacy (Operational Design)
+- **Policy Rule**: Public user-generated content (asking public questions, posting answers, creating public channels) is restricted to verified adult users ($\ge 18$).
+- **Operational Requirements for ECO-00B**:
+  - *Age Assurance*: Define non-intrusive, explicit age attestation/verification mechanisms during account onboarding.
+  - *Guardian & Caseworker Controls*: Provide delegated account management for minors, enabling reading of approved educational FAQs and foundational literacy content while blocking public UGC broadcasts and disabling direct messaging from adult strangers.
+  - *Data Retention & Deletion*: Establish strict data minimization, consent logging, and complete account/data deletion workflows ("Right to be Forgotten").
+  - *Legal Scope Distinction*: Recognize that the 18+ policy is a conservative product control, but formal legal claims (COPPA, FERPA) require qualified legal review and documented operational procedures before asserting statutory compliance.
 
-### Invariant 4: Prompt-Injection Defense & AI Disclosure
-- **Rule**: Any user-authored question or answer passed to an LLM for summarization, tag extraction, or AI explanation must undergo deterministic input sanitization.
-- **Controls**:
-  - Strip system-instruction delimiters (`<role>`, `<task>`, `system:`, `ignore previous instructions`).
-  - Cap question input length (e.g., max 1,000 characters).
-  - Explicitly mark all AI-synthesized responses with visual robot badges, confidence disclaimers, and links to official regulator sources.
+### Invariant 4: Defense-in-Depth Prompt-Injection Architecture
+- **Principle**: Simple substring stripping (such as filtering `system:` or `ignore previous instructions`) is brittle, easily bypassed, and damages legitimate educational inquiries (e.g., questions about prompt engineering, system administration, or programming).
+- **Defense-in-Depth Controls**:
+  1. *Structural Separation*: Enforce strict message role boundaries (e.g., rigid OpenAI/Gemini system instructions vs. user content blocks) where system instructions cannot be overwritten by untrusted user payloads.
+  2. *Tool Privilege Constraints*: AI agents/models generating or evaluating community explanations must run in an isolated sandbox with zero access to administrative database credentials or privileged RPC execution.
+  3. *Strict Output Schema Validation*: Enforce deterministic JSON output schemas; parse and validate response types and structure before storing or rendering.
+  4. *Rate Limits & Token Budgets*: Apply strict per-user request rate limits and context-window length caps (e.g., 1,000 characters per question) to eliminate prompt-stuffing vectors.
+  5. *Adversarial Regression Testing*: Maintain an automated test suite of adversarial prompt injection attempts to continuously verify resilience without breaking educational edge cases.
+  6. *Visual Transparency*: Explicitly mark all AI-synthesized responses with visual robot badges, confidence disclaimers, and links to official regulator sources.
 
 ### Invariant 5: Navigation Baseline & First-Run Help Integrity
 - **Rule**: The core navigation destinations remain **Learn**, **Library**, and **Progress** per [UI_ARCHITECTURE_LOCKED.md](../../UI_ARCHITECTURE_LOCKED.md).
