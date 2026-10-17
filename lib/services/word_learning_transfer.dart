@@ -201,6 +201,24 @@ class WordLearningTransfer {
           (last != null && (last is! String || DateTime.tryParse(last) == null))) {
         throw const FormatException('Invalid spelling review history.');
       }
+
+      // A syntactically valid ID is insufficient: ensure the exported review
+      // really belongs to its stated target word, including the locale,
+      // proper-name policy and case-sensitivity. Reviews remain portable even
+      // when their original list has since been deleted.
+      final match = content.firstMatch(id);
+      final kind = WordEntryKind.parse(match!.group(1));
+      final casePolicy = WordCasePolicy.parse(match.group(2));
+      final expectedId = WordFormIdentity.spellingReviewContentId(
+        WordFormIdentity.formKey(
+          word: title,
+          kind: kind,
+          casePolicy: casePolicy,
+        ),
+      );
+      if (id != expectedId) {
+        throw const FormatException('Spelling review does not match its word.');
+      }
     }
     return parsed;
   }
