@@ -173,7 +173,9 @@ class WordListService {
     var row = await _client.from('review_items').select()
         .eq('user_id', _userId).eq('content_id', contentId).maybeSingle();
     if (row == null) {
-      await _client.from('review_items').insert({
+      // Two active tabs can both see no record. Ignore the second creation,
+      // preserving the first schedule and the unique user/content identity.
+      await _client.from('review_items').upsert({
         'id': const Uuid().v4(),
         'user_id': _userId,
         'content_id': contentId,
@@ -181,7 +183,7 @@ class WordListService {
         'lesson_id': null,
         'title': entry.word,
         'next_review_date': DateTime.now().toUtc().toIso8601String(),
-      });
+      }, onConflict: 'user_id,content_id', ignoreDuplicates: true);
       row = await _client.from('review_items').select()
           .eq('user_id', _userId).eq('content_id', contentId).single();
     }
