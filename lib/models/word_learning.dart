@@ -137,6 +137,8 @@ class WordListEntry {
   final WordCasePolicy casePolicy;
   final List<String> acceptedForms;
   final String? pronunciationHint;
+  /// Private user-supplied explanatory note; not a graded vocabulary sense.
+  final String? meaning;
   final int sortOrder;
 
   const WordListEntry({
@@ -149,6 +151,7 @@ class WordListEntry {
     this.casePolicy = WordCasePolicy.ignoreCase,
     this.acceptedForms = const [],
     this.pronunciationHint,
+    this.meaning,
     this.sortOrder = 0,
   });
 
@@ -164,6 +167,7 @@ class WordListEntry {
             .map((v) => v.toString())
             .toList(growable: false),
         pronunciationHint: json['pronunciation_hint'] as String?,
+        meaning: json['meaning'] as String?,
         sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       );
 
@@ -177,6 +181,7 @@ class WordListEntry {
         'case_policy': casePolicy.dbValue,
         'accepted_forms': acceptedForms,
         'pronunciation_hint': pronunciationHint,
+        'meaning': meaning,
         'sort_order': sortOrder,
       };
 }
