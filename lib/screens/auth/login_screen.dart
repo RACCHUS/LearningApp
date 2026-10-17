@@ -104,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               if (profileNeedsRetry) ...[
                 Text(
-                  (auth as AuthError).message,
+                  auth.message,
                   textAlign: TextAlign.center,
                 ),
                 TextButton(
