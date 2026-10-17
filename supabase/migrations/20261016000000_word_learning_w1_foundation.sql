@@ -37,6 +37,11 @@ create index if not exists word_list_entries_order_idx
 alter table public.word_lists enable row level security;
 alter table public.word_list_entries enable row level security;
 
+-- Data API table grants are separate from RLS; anonymous Supabase users
+-- also hold the authenticated Postgres role. Never grant writes to anon.
+grant select, insert, update, delete on public.word_lists to authenticated;
+grant select, insert, update, delete on public.word_list_entries to authenticated;
+
 create policy word_lists_owner_only on public.word_lists
   for all to authenticated
   using (user_id = (select auth.uid()))
