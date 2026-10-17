@@ -182,9 +182,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
           // Keep the valid auth session: signing out here could make an
           // anonymous learner permanently lose access to their work.
-          state = AuthError(
-            'Signed in, but the profile could not be saved. Retry later.',
-          );
+          // An older profile request may finish after an account switch.
+          // Never show an error from learner A in learner B's session.
+          if (_supabase.auth.currentUser?.id == user.id) {
+            state = AuthError(
+              'Signed in, but the profile could not be saved. Retry later.',
+            );
+          }
           return false;
         }
 
