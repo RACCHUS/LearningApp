@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../providers/auth_provider.dart';
+import '../../services/word_learning_transfer.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// User-controlled backup for moving private word lists from an anonymous
+/// session to a Google account that already exists. Prefer direct Google
+/// linking for new identities. This transfer never requires privileged SQL.
+class WordTransferScreen extends ConsumerStatefulWidget {
+  const WordTransferScreen({super.key});
+
+  @override
+  ConsumerState<WordTransferScreen> createState() => _WordTransferScreenState();
+}
+
+class _WordTransferScreenState extends ConsumerState<WordTransferScreen> {
+  final _transfer = WordLearningTransfer();
+  final _export = TextEditingController();
+  final _import = TextEditingController();
+  bool _busy = false;
+  bool _savedBackup = false;
+  String? _message;
+  String? _error;
+
+  @override
+  void dispose() {
+    _export.dispose();
+    _import.dispose();
+    super.dispose();
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+      _message = null;
+    });
+    try {
+      await action();
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _exportBackup() async => _run(() async {
+        final text = await _transfer.exportJson();
+        if (!mounted) return;
+        _export.text = text;
+        setState(() => _savedBackup = false);
+      });
+
+  Future<void> _copyBackup() async {
+    if (_export.text.isEmpty) return;
+    try {
+      await Clipboard.setData(ClipboardData(text: _export.text));
+      if (mounted) setState(() {
+        _savedBackup = true;
+        _message = 'Copied. Save this text somewhere private before switching accounts.';
+        _error = null;
+      });
+    } catch (_) {
+      if (mounted) setState(() =>
+          _error = 'Clipboard unavailable. Manually select and copy the backup text.');
+    }
+  }
+
+  Future<void> _importBackup() async => _run(() async {
+        final answer = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Import this word backup?'),
+            content: const Text(
+              'Only word lists and spelling-review history will be imported. '
+              'Existing account data wins if there is a conflict. '
+              'The source backup remains unchanged.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel')),
+              FilledButton(onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Import')),
+            ],
+          ),
+        );
+        if (answer != true) return;
+        final result = await _transfer.importJson(_import.text);
+        if (mounted) {
+          setState(() => _message =
+              'Imported ${result.listsCreated} lists, '
+              '${result.wordsCreated} words and '
+              '${result.reviewsCreated} review records. '
+              '${result.destinationConflictsPreserved} existing items '
+              'were kept unchanged.');
+          _import.clear();
+        }
+      });
+
+  Future<void> _switchExistingAccount() async {
+    if (!_savedBackup || _export.text.isEmpty) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch to your existing Google account?'),
+        content: const Text(
+          'This ends access to the current anonymous session. '
+          'Your guest data remains on the server, but may be inaccessible '
+          'after sign-out. Make sure the copied word backup is saved privately '
+          'before continuing. After Google sign-in, return to Word Learning '
+          'and import the backup.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Stay as Guest')),
+          FilledButton(onPressed: () => Navigator.pop(context, true),
+              child: const Text('Switch accounts')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await _run(() async {
+      final auth = ref.read(authProvider.notifier);
+      await auth.signOut();
+      await auth.signInWithGoogle();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final isGuest = user?.isAnonymous ?? false;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Transfer spelling lists')),
+      body: SafeArea(child: Center(child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 650),
+        child: ListView(padding: const EdgeInsets.all(20), children: [
+          const Text('Back up and transfer your personal spelling lists',
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          const Text(
+            'This backup can include personal names and spelling history. '
+            'Keep it private. You control when it is copied or imported. '
+            'Do not share it publicly or leave it on a shared clipboard.'),
+          const SizedBox(height: 14),
+          if (_busy) const LinearProgressIndicator(),
+          if (_error != null)
+            Text(_error!, style: TextStyle(
+              color: Theme.of(context).colorScheme.error)),
+          if (_message != null) Text(_message!),
+          if (user == null)
+            FilledButton(onPressed: () => context.go('/login'),
+              child: const Text('Sign in or Continue as Guest'))
+          else ...[
+            FilledButton.icon(
+              onPressed: _busy ? null : _exportBackup,
+              icon: const Icon(Icons.ios_share),
+              label: const Text('Prepare a private backup'),
+            ),
+            if (_export.text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _export,
+                readOnly: true,
+                minLines: 3,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Your private backup text',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _copyBackup,
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy backup'),
+              ),
+              if (isGuest)
+                FilledButton(
+                  onPressed: _busy || !_savedBackup
+                      ? null : _switchExistingAccount,
+                  child: const Text('Switch to existing Google account'),
+                ),
+            ],
+            const Divider(height: 36),
+            const Text('Import a backup into the current account',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _import,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Paste your saved backup',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _busy ? null : _importBackup,
+              icon: const Icon(Icons.file_download),
+              label: const Text('Review and import backup'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(const ClipboardData(text: ''));
+                if (mounted) setState(() => _message =
+                    'Clipboard cleared. Keep your private saved copy.');
+              },
+              child: const Text('Clear clipboard'),
+            ),
+          ],
+        ]),
+      ))),
+    );
+  }
+}
