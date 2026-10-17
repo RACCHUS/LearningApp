@@ -30,6 +30,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
   int? _practiceIndex;
   SpellingGrade? _grade;
   bool _assisted = false;
+  bool _showTarget = false;
   bool _properNames = false;
   bool _busy = false;
   String? _error;
@@ -285,6 +286,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
         _practiceIndex = 0;
         _grade = null;
         _assisted = false;
+        _showTarget = false;
         _answer.clear();
       });
     });
@@ -330,6 +332,17 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
     });
   }
 
+  /// A wrong answer has already revealed the spelling in feedback. A retry
+  /// is valuable practice, but cannot count as new independent recall.
+  void _retryAssisted() {
+    setState(() {
+      _grade = null;
+      _assisted = true;
+      _showTarget = false;
+      _answer.clear();
+    });
+  }
+
   void _nextWord() {
     final idx = _practiceIndex;
     if (idx == null) return;
@@ -337,6 +350,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
       _practiceIndex = idx + 1;
       _grade = null;
       _assisted = false;
+      _showTarget = false;
       _answer.clear();
     });
   }
@@ -568,10 +582,13 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
         label: const Text('Hear word / replay'),
       ),
       TextButton(
-        onPressed: () => setState(() => _assisted = true),
+        onPressed: () => setState(() {
+          _assisted = true;
+          _showTarget = !_showTarget;
+        }),
         child: const Text('Audio unclear? Reveal as assisted practice'),
       ),
-      if (_assisted)
+      if (_showTarget)
         Text('Target word: ${entry.word} (assisted — not counted as unaided recall)'),
       const SizedBox(height: 18),
       TextField(
@@ -599,6 +616,14 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
         if (_grade!.assisted)
           const Text('Assisted practice is not counted as independent recall.'),
         const SizedBox(height: 12),
+        if (!_grade!.correct) ...[
+          OutlinedButton.icon(
+            onPressed: _retryAssisted,
+            icon: const Icon(Icons.replay),
+            label: const Text('Try again (assisted practice)'),
+          ),
+          const SizedBox(height: 8),
+        ],
         FilledButton(onPressed: _nextWord, child: const Text('Next word')),
       ],
     ]);
