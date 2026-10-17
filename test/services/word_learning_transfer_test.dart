@@ -107,6 +107,6 @@ void main() {
     expect(() => WordLearningTransfer.validate('not json'),
         throwsFormatException);
     expect(() => WordLearningTransfer.validate(
-        'x' * (WordLearningTransfer.maxChars + 1)), throwsFormatException);
+        List.filled(WordLearningTransfer.maxChars + 1, 'x').join()), throwsFormatException);
   });
 }
