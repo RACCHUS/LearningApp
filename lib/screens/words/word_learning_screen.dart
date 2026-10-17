@@ -399,6 +399,12 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const Text('Create personal spelling lists or revisit your words.'),
+      const SizedBox(height: 8),
+      TextButton.icon(
+        onPressed: () => context.push('/words/transfer'),
+        icon: const Icon(Icons.swap_horiz),
+        label: const Text('Back up or transfer spelling lists'),
+      ),
       const SizedBox(height: 16),
       FilledButton.icon(onPressed: _busy ? null : _createList,
         icon: const Icon(Icons.add), label: const Text('Create a word list')),
