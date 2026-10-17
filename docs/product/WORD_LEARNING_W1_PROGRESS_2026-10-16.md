@@ -35,6 +35,14 @@
 - New pgTAP owner/other-user/anonymous-guest RLS tests cover real row visibility, deletion permissions and preservation of `review_items` after a list deletion.
 - Dictionary suggestions use first-letter/length indexes instead of scanning all 47,147 entries for each word. CI measures the web-copied asset and its estimated gzip size against a documented budget.
 
+## W1 account-isolation and editing pass (October 17)
+
+- Word Learning and private backup screens now use account-keyed widget subtrees. When Supabase Auth changes the active user, earlier list/practice state and backup/clipboard input controllers are disposed instead of displayed to a new account. Added widget regression coverage for signed-out -> learner A -> learner B -> signed-out transitions.
+- A delayed profile-sync failure for a previous account cannot surface as an error in a newly signed-in account. Google/guest error snackbars use safe, actionable messages instead of displaying raw provider exceptions.
+- Added list renaming and target-spelling changes in W1. A different form identity starts its own spelling schedule; the prior form history is left intact for other lists. Word-specific accepted variants and pronunciation overrides are cleared when the target changes but retained for a capitalization-only edit with unchanged identity. New service tests cover those boundaries.
+- Word Learning and backup/import failure messages no longer expose raw PostgREST errors or exception text; a partially completed idempotent import is explicitly safe to retry.
+- **Still required:** verify account switch/reload behavior in a real PWA browser, not only widget/unit tests; the actual Google OAuth callback/provider configuration has not been verified end-to-end.
+
 ## Required before calling W1 complete
 
 1. **Do not apply migration to production without owner approval.** Run clean database upgrade + RLS owner/other-user/anonymous tests in disposable local or CI database.
