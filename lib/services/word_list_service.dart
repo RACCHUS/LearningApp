@@ -157,9 +157,14 @@ class WordListService {
   Future<void> updateEntryPreferences(
     WordListEntry entry, {
     String? pronunciationHint,
+    String? meaning,
     List<String> acceptedForms = const [],
   }) async {
     final hint = pronunciationHint?.trim() ?? '';
+    final explanation = meaning?.trim() ?? '';
+    if (explanation.length > 2000) {
+      throw ArgumentError('Meaning is limited to 2,000 characters');
+    }
     if (hint.length > 160) {
       throw ArgumentError('Pronunciation hint is limited to 160 characters');
     }
@@ -180,6 +185,7 @@ class WordListService {
     }
     await _client.from('word_list_entries').update({
       'pronunciation_hint': hint.isEmpty ? null : hint,
+      'meaning': explanation.isEmpty ? null : explanation,
       'accepted_forms': cleanForms,
     }).eq('list_id', entry.listId).eq('id', entry.id);
   }
