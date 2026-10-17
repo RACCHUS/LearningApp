@@ -17,8 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      final auth = ref.read(authProvider);
-      if (auth is AuthSuccess && auth.user.isAnonymous) {
+      if (ref.read(authProvider.notifier).isAnonymousSession) {
         await ref.read(authProvider.notifier).linkGuestToGoogle();
       } else {
         await ref.read(authProvider.notifier).signInWithGoogle();
@@ -60,7 +59,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final auth = ref.watch(authProvider);
-    final isAnonymousGuest = auth is AuthSuccess && auth.user.isAnonymous;
+    final isAnonymousGuest = ref.read(authProvider.notifier).isAnonymousSession;
+    final profileNeedsRetry =
+        auth is AuthError &&
+        ref.read(authProvider.notifier).hasAuthenticatedSession;
     
     return Scaffold(
       body: SafeArea(
@@ -100,6 +102,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const Spacer(),
               
+              if (profileNeedsRetry) ...[
+                Text(
+                  (auth as AuthError).message,
+                  textAlign: TextAlign.center,
+                ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          await ref.read(authProvider.notifier)
+                              .retryProfileProvisioning();
+                        },
+                  child: const Text('Retry profile synchronization'),
+                ),
+              ],
               if (isAnonymousGuest) ...[
                 const Text(
                   'You are using a guest account. Link Google to keep your '
