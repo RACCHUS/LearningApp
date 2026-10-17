@@ -249,7 +249,7 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 0 — Inventory, Trust & Safety, Legal & Observability Prerequisites (P0 Prerequisite)
 
 **Tasks**
-- [ ] **Architecture & Schema Audit**: Audit actual implemented features, migrations, existing assessment `questions`, Q&A components, author ownership, voice capabilities, and hosted catalog state. Produce a verified gap matrix.
+- [x] **Architecture & Schema Audit**: Audit actual implemented features, migrations, existing assessment `questions`, Q&A components, author ownership, voice capabilities, and hosted catalog state. Produce a verified gap matrix. (Completed in [ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md](ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md)).
 - [ ] **Trust & Safety / Legal Framework**: Author Terms of Service and Privacy Policy (with strict minor data isolation). Establish DMCA registered agent and takedown workflow.
 - [ ] **Moderation Tooling**: Build an administrative moderation queue and reporting UI (replacing pure service-role script approval).
 - [ ] **Age Eligibility Determination**: Decisively enforce age eligibility rules (adults only for public posting; minors restricted to private/guardian-managed accounts).
