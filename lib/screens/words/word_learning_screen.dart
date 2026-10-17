@@ -113,7 +113,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
 
   Future<void> _addWords() async {
     if (_selected == null || _words.text.trim().isEmpty) return;
-    final words = _words.text.split(RegExp(r'[,;\\n\\r]+'))
+    final words = _words.text.split(RegExp(r'[,;\n\r]+'))
         .map((w) => w.trim())
         .where((w) => w.isNotEmpty)
         .toList();
@@ -153,7 +153,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
     if (list == null || words.isEmpty) return;
     await _service.addWords(
       list.id,
-      words.join('\\n'),
+      words.join('\n'),
       kind: _properNames ? WordEntryKind.properName : WordEntryKind.ordinary,
       casePolicy: _properNames ? WordCasePolicy.exact : WordCasePolicy.ignoreCase,
     );
