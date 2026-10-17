@@ -76,7 +76,15 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) {
+        final message = e is PostgrestException && e.code == '23505'
+            ? 'This word or list entry already exists.'
+            : e is ArgumentError
+                ? 'Please check the word or list title and try again.'
+                : 'Could not complete the change. Check your connection '
+                    'and try again; existing learning history is preserved.';
+        setState(() => _error = message);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
