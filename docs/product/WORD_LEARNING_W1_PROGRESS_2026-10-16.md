@@ -9,18 +9,20 @@
 - Deterministic spelling scoring, explicit accepted forms, case-sensitive proper-name support, and stable form/skill keys independent of lists.
 - Owner-scoped list creation, bulk word entry, removal and deletion. List deletion does not cascade into review state.
 - Basic `/words` screen: entry from Library, paste words, dictation with the shared audio service, typed-answer checking and a review record.
-- A separate account-linking method for upgrading Supabase anonymous users to Google while retaining the same identity when the provider/configuration permits it.
-- Profile provisioning no longer signs out a valid anonymous session after transient database failures.
-- Dart unit tests and pgTAP schema/RLS smoke tests (CI pending).
+- A separate account-linking method for upgrading Supabase anonymous users to Google while retaining the same identity when the provider/configuration permits it. Ordinary Google sign-in is guarded against replacing an existing guest session; canceled launches restore a usable auth state.
+- Profile provisioning no longer signs out a valid anonymous session after transient database failures, and LoginScreen offers an explicit retry.
+- A lazy-loaded, 47,147-base-form US lexicon sourced from a SCOWL-derived Hunspell dictionary (415,662 bytes of source asset text, before web compression), with original source/license notices retained in `assets/lexicons/NOTICE.txt`.
+- Advisory spelling suggestions with explicit per-word choices and the option to keep custom spellings; proper names bypass automatic dictionary checks. Editable TTS pronunciation text and accepted spelling variants.
+- Dart unit tests and pgTAP schema/RLS smoke tests. Re-run CI after latest commits; do not infer all tests pass from earlier workflow runs.
 
 ## Required before calling W1 complete
 
 1. **Do not apply migration to production without owner approval.** Run clean database upgrade + RLS owner/other-user/anonymous tests in disposable local or CI database.
 2. Verify Dart analyzer, Flutter tests, release web build, and interactive browser flow in CI/staging; code has not been tested in a running browser in this branch.
-3. Add the licensed US-English spelling lexicon, advisory typo suggestions, override UI, exact compressed asset/bundle-size measurement, and proper attribution; do not ship with unverified dictionary claims.
+3. **Dictionary work partially completed.** Measure the actual web-build compressed asset footprint, verify license packaging for this exact derived dataset, and test false-positive rates with ordinary inflections, names, school terms and contractor/insurance vocabulary. This is only a base-form list; no lack-of-entry verdict may block saving.
 4. Add fully signed-out local-guest persistence, migration to a Google account, and an opt-in, idempotent import path for an **existing** Google identity. Preserve source records and resolve list collisions without loss of progress.
 5. Verify actual Supabase OAuth provider/redirect configuration and Manual Identity Linking status with authorized test identities before enabling any full rollout. No production Auth setting changes without approval.
-6. Finish proper-name pronunciation correction, accepted variant editing, assisted-input browser behavior, signed-out and shared-device privacy, and end-to-end review semantics.
+6. Pronunciation override and accepted-form editing exist; verify TTS pronunciation in browsers and native builds, proper-name behavior, assisted-input browser behavior, signed-out/shared-device privacy, and review semantics before calling them production ready.
 7. Run regression tests for existing lessons and Quick Review. The generic review queries now exclude word-skill items (so they cannot be incorrectly self-rated as flashcards); add properly scoped word-review entry points before the final W1 release. The dedicated /words screen is the only graded dictation experience in this slice.
 8. Resolve detected implementation and CI problems before merge; preserve the locked Learn / Library / Progress architecture.
 
