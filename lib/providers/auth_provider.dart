@@ -126,26 +126,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> retryProfileProvisioning() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
-    await _upsertUser(user);
+    final success = await _upsertUser(user);
+    if (success && _supabase.auth.currentUser?.id == user.id) {
+      state = AuthSuccess(user);
+    }
   }
 
-  Future<void> _upsertUser(User user) async {
+  Future<bool> _upsertUser(User user) async {
     int attempts = 0;
     const maxAttempts = 3;
 
     while (attempts < maxAttempts) {
       try {
-        await _supabase.from('users').upsert({
-          'id': user.id,
-          // Anonymous users have no email; column is nullable post-migration.
-          'email': user.email,
-          'display_name': user.isAnonymous ? 'Guest' : null,
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        final existing = await _supabase.from('users')
+            .select('email')
+            .eq('id', user.id)
+            .maybeSingle();
+        if (existing == null) {
+          // Let the database set created_at exactly once. No replacement of
+          // user-controlled display names on subsequent auth events.
+          await _supabase.from('users').insert({
+            'id': user.id,
+            'email': user.email,
+            'display_name': user.isAnonymous ? 'Guest' : null,
+          });
+        } else if (existing['email'] != user.email) {
+          // Anonymous -> Google linking keeps the same UID. Sync the email
+          // without erasing existing profile fields or creation time.
+          await _supabase.from('users').update({
+            'email': user.email,
+          }).eq('id', user.id);
+        }
 
-        _logger.info('User record upserted successfully',
+        _logger.info('User record synchronized successfully',
             metadata: {'userId': user.id});
-        return; // Success
+        return true; // Success
       } catch (e, stackTrace) {
         attempts++;
 
@@ -170,7 +185,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           state = AuthError(
             'Signed in, but the profile could not be saved. Retry later.',
           );
-          return;
+          return false;
         }
 
         // Exponential backoff: wait before retry
