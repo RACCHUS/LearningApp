@@ -64,12 +64,27 @@ class WordListService {
   }
 
   Future<List<WordListEntry>> getEntries(String listId) async {
-    final rows = await _client.from('word_list_entries')
-        .select('*')
-        .eq('list_id', listId)
-        .order('sort_order', ascending: true);
-    return (rows as List).map((r) =>
-        WordListEntry.fromJson(Map<String, dynamic>.from(r as Map))).toList();
+    // A single query can be capped by the Supabase Data API. Keep long lists
+    // usable, and fail loudly instead of silently omitting words at the cap.
+    const pageSize = 500;
+    const maxEntriesPerList = 10000;
+    final result = <WordListEntry>[];
+    for (var offset = 0; offset <= maxEntriesPerList; offset += pageSize) {
+      final rows = await _client.from('word_list_entries')
+          .select('*')
+          .eq('list_id', listId)
+          .order('sort_order', ascending: true)
+          .order('id', ascending: true)
+          .range(offset, offset + pageSize - 1);
+      result.addAll((rows as List)
+          .map((r) => WordListEntry.fromJson(
+              Map<String, dynamic>.from(r as Map))));
+      if (result.length > maxEntriesPerList) {
+        throw StateError('Word list is too large to load safely.');
+      }
+      if (rows.length < pageSize) break;
+    }
+    return result;
   }
 
   Future<int> addWords(
@@ -187,19 +202,25 @@ class WordListService {
         .toSet()
         .toList();
     if (keys.isEmpty) return <String>{};
-    final rows = await _client.from('review_items')
-        .select('content_id,next_review_date')
-        .eq('user_id', _userId)
-        .eq('content_type', 'word_skill')
-        .inFilter('content_id', keys);
     final dates = <String, DateTime>{};
-    for (final row in (rows as List)) {
-      final map = Map<String, dynamic>.from(row as Map);
+    // Bound query/URL size: base64 form keys can be long, so avoid sending
+    // a single oversized IN(...) argument for a full word list.
+    const chunkSize = 50;
+    for (var offset = 0; offset < keys.length; offset += chunkSize) {
+      final batch = keys.skip(offset).take(chunkSize).toList();
+      final rows = await _client.from('review_items')
+          .select('content_id,next_review_date')
+          .eq('user_id', _userId)
+          .eq('content_type', 'word_skill')
+          .inFilter('content_id', batch);
+      for (final row in (rows as List)) {
+        final map = Map<String, dynamic>.from(row as Map);
       final id = map['content_id'] as String?;
       final date = DateTime.tryParse(
         map['next_review_date']?.toString() ?? '',
       );
-      if (id != null && date != null) dates[id] = date;
+        if (id != null && date != null) dates[id] = date;
+      }
     }
     return entries.where((entry) {
       final contentId = WordFormIdentity.spellingReviewContentId(entry.formKey);
