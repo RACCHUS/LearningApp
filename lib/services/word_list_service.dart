@@ -215,10 +215,10 @@ class WordListService {
           .inFilter('content_id', batch);
       for (final row in (rows as List)) {
         final map = Map<String, dynamic>.from(row as Map);
-      final id = map['content_id'] as String?;
-      final date = DateTime.tryParse(
-        map['next_review_date']?.toString() ?? '',
-      );
+        final id = map['content_id'] as String?;
+        final date = DateTime.tryParse(
+          map['next_review_date']?.toString() ?? '',
+        );
         if (id != null && date != null) dates[id] = date;
       }
     }
