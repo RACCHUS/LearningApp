@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../providers/auth_provider.dart';
 
 import '../../models/word_learning.dart';
 import '../../services/audio_service.dart';
@@ -8,14 +12,29 @@ import '../../services/word_spelling_advisor.dart';
 
 /// W1 private word lists and basic, independently scored audio dictation.
 /// Vocabulary and combined practice remain W2.
-class WordLearningScreen extends StatefulWidget {
+/// Each authenticated identity receives a fresh in-memory screen state.
+/// A sign-out or account switch disposes controllers, past search results,
+/// current practice answers and pending asynchronous UI updates.
+class WordLearningScreen extends ConsumerWidget {
   const WordLearningScreen({super.key});
 
   @override
-  State<WordLearningScreen> createState() => _WordLearningScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userId = Supabase.instance.client.auth.currentUser?.id ??
+        (authState is AuthSuccess ? authState.user.id : null);
+    return _WordLearningSession(key: ValueKey('word-learning:${userId ?? 'signed-out'}'));
+  }
 }
 
-class _WordLearningScreenState extends State<WordLearningScreen> {
+class _WordLearningSession extends StatefulWidget {
+  const _WordLearningSession({super.key});
+
+  @override
+  State<_WordLearningSession> createState() => _WordLearningScreenState();
+}
+
+class _WordLearningScreenState extends State<_WordLearningSession> {
   final WordListService _service = WordListService();
   final WordSpellingAdvisor _advisor = WordSpellingAdvisor();
   final TextEditingController _words = TextEditingController();
