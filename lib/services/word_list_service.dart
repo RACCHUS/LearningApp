@@ -180,10 +180,18 @@ class WordListService {
     DateTime? now,
   }) async {
     final current = now ?? DateTime.now();
+    // Only fetch review IDs for these list entries. The Data API can cap
+    // unbounded selects at 1,000 rows, falsely treating older mastery as new.
+    final keys = entries
+        .map((e) => WordFormIdentity.spellingReviewContentId(e.formKey))
+        .toSet()
+        .toList();
+    if (keys.isEmpty) return <String>{};
     final rows = await _client.from('review_items')
         .select('content_id,next_review_date')
         .eq('user_id', _userId)
-        .eq('content_type', 'word_skill');
+        .eq('content_type', 'word_skill')
+        .inFilter('content_id', keys);
     final dates = <String, DateTime>{};
     for (final row in (rows as List)) {
       final map = Map<String, dynamic>.from(row as Map);
@@ -198,6 +206,16 @@ class WordListService {
       final next = dates[contentId];
       return next == null || !next.isAfter(current);
     }).map((e) => e.formKey).toSet();
+  }
+
+  /// Deliberate, separate erasure of ONE spelling skill's history.
+  /// Never removes the word from any list and never touches meaning skills.
+  Future<void> forgetSpellingProgress(WordListEntry entry) async {
+    final contentId = WordFormIdentity.spellingReviewContentId(entry.formKey);
+    await _client.from('review_items').delete()
+        .eq('user_id', _userId)
+        .eq('content_type', 'word_skill')
+        .eq('content_id', contentId);
   }
 
   Future<void> recordUnassistedSpelling(
