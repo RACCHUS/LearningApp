@@ -54,6 +54,14 @@
 
 **Code-only handoff:** W1's private spelling workflows, explicit Word Learning data transfer, and non-OAuth auth safeguards are implemented and exercised by automated tests. Manual browser/TTS and actual Google sign-in are intentionally the final acceptance phase. Beyond W1, offline-without-auth and cross-app learning-data migration require a separate product scope decision.
 
+## Final non-OAuth W1 scope closure (October 17)
+
+- Optional learner-written meaning is now stored privately in `word_list_entries.meaning` through an **append-only migration**, is editable in a phone-scrollable dialog, appears after spelling feedback, and survives user-controlled guest backup/import. It is not a reviewed dictionary sense and does **not** affect vocabulary mastery.
+- `getEntries` paginates long lists and due-review IDs are queried in bounded batches. Existing word mastery cannot silently disappear from due decisions because of the Data API row cap.
+- Added local tests for 1,001 word-list entries, a 101-word due practice batch, >1,000 backup records, explicit spelling-history forget behavior, and optional meaning identity/backup validation.
+- Final hands-on acceptance includes private meaning persistence; see `WORD_LEARNING_W1_ACCEPTANCE_GATE.md`.
+- The remaining **manual acceptance** covers web/browser TTS, keyboard/screen-reader usability, and actual Google sign-in/identity-link or existing-account import using disposable test accounts. W2/Vocabulary and whole-app account migration remain separate work rather than unfinished W1 code.
+
 ## Required before calling W1 complete
 
 1. **Do not apply migration to production without owner approval.** Run clean database upgrade + RLS owner/other-user/anonymous tests in disposable local or CI database.
