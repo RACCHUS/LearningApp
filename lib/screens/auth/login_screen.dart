@@ -22,10 +22,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         await ref.read(authProvider.notifier).signInWithGoogle();
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
+        final stillGuest = ref.read(authProvider.notifier).isAnonymousSession;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: ${e.toString()}')),
+          SnackBar(
+            content: Text(stillGuest
+                ? 'Google linking did not complete. Your guest session is still '
+                  'available. If this Google account already exists, use '
+                  'the private spelling backup option.'
+                : 'Google sign-in did not complete. Check your connection '
+                  'and try again.'),
+          ),
         );
       }
     } finally {
@@ -42,10 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) {
         GoRouter.of(context).go('/');
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          const SnackBar(
+            content: Text('Could not start a guest session. '
+                'Check your connection and try again.'),
+          ),
         );
       }
     } finally {
