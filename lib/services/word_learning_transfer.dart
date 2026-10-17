@@ -246,14 +246,29 @@ class WordLearningTransfer {
           .maybeSingle();
       final String listId;
       if (existing == null) {
-        final inserted = await _client.from('word_lists').insert({
-          'user_id': userId,
-          'title': list['title'],
-          'description': list['description'],
-          'import_origin': importOrigin,
-        }).select('id').single();
-        listId = inserted['id'] as String;
-        listsCreated++;
+        try {
+          final inserted = await _client.from('word_lists').insert({
+            'user_id': userId,
+            'title': list['title'],
+            'description': list['description'],
+            'import_origin': importOrigin,
+          }).select('id').single();
+          listId = inserted['id'] as String;
+          listsCreated++;
+        } on PostgrestException catch (e) {
+          // Concurrent/retried imports can race after the initial lookup.
+          // Only a provenance uniqueness conflict is safe to recover; all
+          // unrelated database failures must propagate to the caller.
+          if (e.code != '23505') rethrow;
+          final recovered = await _client.from('word_lists')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('import_origin', importOrigin)
+              .maybeSingle();
+          if (recovered == null) rethrow;
+          listId = recovered['id'] as String;
+          conflictsPreserved++;
+        }
       } else {
         listId = existing['id'] as String;
       }
@@ -279,9 +294,14 @@ class WordLearningTransfer {
         });
       }
       if (inserts.isNotEmpty) {
-        await _client.from('word_list_entries').upsert(inserts,
-          onConflict: 'list_id,form_key', ignoreDuplicates: true);
-        wordsCreated += inserts.length;
+        final inserted = await _client.from('word_list_entries').upsert(
+          inserts,
+          onConflict: 'list_id,form_key', ignoreDuplicates: true,
+        ).select('id');
+        // Count actual inserted rows; ignoreDuplicates can drop concurrent
+        // duplicates after a client-side preflight count.
+        wordsCreated += (inserted as List).length;
+        conflictsPreserved += inserts.length - inserted.length;
       }
     }
     final existingRows = await _client.from('review_items')
@@ -312,9 +332,12 @@ class WordLearningTransfer {
       });
     }
     if (newReviews.isNotEmpty) {
-      await _client.from('review_items').upsert(newReviews,
-        onConflict: 'user_id,content_id', ignoreDuplicates: true);
-      reviewsCreated = newReviews.length;
+      final inserted = await _client.from('review_items').upsert(
+        newReviews,
+        onConflict: 'user_id,content_id', ignoreDuplicates: true,
+      ).select('id');
+      reviewsCreated = (inserted as List).length;
+      conflictsPreserved += newReviews.length - inserted.length;
     }
     return WordTransferResult(
       listsCreated: listsCreated,
