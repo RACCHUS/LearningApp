@@ -23,6 +23,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
 
   List<WordList> _lists = [];
   List<WordListEntry> _entries = [];
+  List<WordListEntry> _practiceEntries = [];
   List<String>? _pendingWords;
   Map<int, List<String>> _pendingSuggestions = {};
   WordList? _selected;
@@ -264,23 +265,38 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
     });
   }
 
-  void _startPractice() {
+  Future<void> _startPractice({bool onlyDue = false}) async {
     if (_entries.isEmpty) return;
-    setState(() {
-      _practiceIndex = 0;
-      _grade = null;
-      _assisted = false;
-      _answer.clear();
+    await _run(() async {
+      var entries = _entries.toList();
+      if (onlyDue) {
+        final due = await _service.dueSpellingKeys(entries);
+        entries = entries.where((entry) => due.contains(entry.formKey)).toList();
+      }
+      if (!mounted) return;
+      if (entries.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('No spelling words are due yet. You can practice all words.'),
+        ));
+        return;
+      }
+      setState(() {
+        _practiceEntries = entries;
+        _practiceIndex = 0;
+        _grade = null;
+        _assisted = false;
+        _answer.clear();
+      });
     });
   }
 
   Future<void> _speakWord() async {
     final idx = _practiceIndex;
-    if (idx == null || idx >= _entries.length) return;
+    if (idx == null || idx >= _practiceEntries.length) return;
     try {
       final audio = AudioService();
       await audio.initialize();
-      final entry = _entries[idx];
+      final entry = _practiceEntries[idx];
       final ok = await audio.speak(
         entry.pronunciationHint?.trim().isNotEmpty == true
             ? entry.pronunciationHint!
@@ -300,7 +316,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
   Future<void> _checkAnswer() async {
     final idx = _practiceIndex;
     if (idx == null || _grade != null || _answer.text.trim().isEmpty) return;
-    final entry = _entries[idx];
+    final entry = _practiceEntries[idx];
     final grade = SpellingScorer.score(
       submitted: _answer.text,
       target: entry.word,
@@ -480,9 +496,19 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
       ],
       const SizedBox(height: 18),
       FilledButton.icon(
-        onPressed: _entries.isEmpty || _busy ? null : _startPractice,
+        onPressed: _entries.isEmpty || _busy
+            ? null
+            : () => _startPractice(onlyDue: true),
+        icon: const Icon(Icons.event_available),
+        label: const Text('Practice words due'),
+      ),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        onPressed: _entries.isEmpty || _busy
+            ? null
+            : () => _startPractice(),
         icon: const Icon(Icons.hearing),
-        label: Text('Practice spelling (${_entries.length})'),
+        label: Text('Practice all words (${_entries.length})'),
       ),
       const SizedBox(height: 12),
       for (final entry in _entries)
@@ -515,7 +541,7 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
 
   Widget _buildPractice() {
     final idx = _practiceIndex!;
-    if (idx >= _entries.length) {
+    if (idx >= _practiceEntries.length) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Icon(Icons.check_circle_outline, size: 60),
         const SizedBox(height: 10),
@@ -524,9 +550,9 @@ class _WordLearningScreenState extends State<WordLearningScreen> {
           child: const Text('Back to my list')),
       ]);
     }
-    final entry = _entries[idx];
+    final entry = _practiceEntries[idx];
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Word ${idx + 1} of ${_entries.length}',
+      Text('Word ${idx + 1} of ${_practiceEntries.length}',
         style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 18),
       const Text('Listen, then spell the word without looking at it.'),
