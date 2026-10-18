@@ -65,6 +65,22 @@
   3. Removed redundant `ref.listen` from the root screen.
 - **Regression Check:** Added `delayed query from account A does not repopulate account B screen` in [`test/widgets/word_learning_session_isolation_test.dart`](test/widgets/word_learning_session_isolation_test.dart), verifying that an Account A query delayed until after switching to Account B is dropped and never renders Account A data on Account B's screen.
 
+### Fix E: Anonymous User Profile Sanitization & Session Reload Stability
+- **Problem:**
+  1. On browser reload, Gotrue anonymous sessions return `user.email = ""` (empty string) rather than `null`. The `public.users` table has a `UNIQUE(email)` constraint. PostgreSQL permits multiple `NULL` values in a unique column, but only a single empty string `""`. The second guest user triggered a duplicate key violation on `users_email_key`.
+  2. After 3 failed retries, `_upsertUser()` emitted `AuthError`, demoting the user's active session and causing `WordLearningScreen` to evaluate `userId` as `null`, mounting a signed-out empty list screen.
+  3. Local Supabase had `[auth.external.google]` disabled and `enable_manual_linking = false`, returning `Unsupported provider: provider is not enabled`.
+- **Remedy:**
+  1. In [`lib/providers/auth_provider.dart`](lib/providers/auth_provider.dart), sanitized `email` in `_upsertUser` so empty strings are stored as `null`, preventing unique key collisions.
+  2. Maintained `state = AuthSuccess(user)` even if profile sync encounters warnings, preventing authenticated learners from losing UI access.
+  3. In [`lib/screens/words/word_learning_screen.dart`](lib/screens/words/word_learning_screen.dart) and [`lib/screens/words/word_transfer_screen.dart`](lib/screens/words/word_transfer_screen.dart), added client session fallback `final userId = authUser?.id ?? clientUser?.id` ensuring that active session keys remain rock-solid across page refreshes.
+  4. In [`supabase/config.toml`](supabase/config.toml), enabled `[auth.external.google]`, set `enable_manual_linking = true`, and added redirect URLs.
+- **Verification Evidence:**
+  - In manual retesting, all three lists (`dogma`, `test`, `OAuth verification 2026-10-18`) reloaded cleanly on browser refresh without being cleared.
+  - Profile warning on the login screen resolved.
+  - Anonymous guest UID, lists, reviews, and timestamps survived intact after failed Google link attempt.
+  - Google OAuth successfully initiated handshake with `accounts.google.com` (returning 401 `invalid_client` only because the client ID in `.env` is a local placeholder, confirming the local Gotrue provider configuration is working).
+
 ---
 
 ## 3. Comprehensive Acceptance Gate Matrix
