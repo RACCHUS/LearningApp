@@ -15,17 +15,27 @@ import '../../theme/design_tokens.dart';
 class CreateTargetDialog extends ConsumerStatefulWidget {
   final TargetType? initialType;
   final VerifiedDestination? initialDestination;
+  final String? initialDescription;
 
-  const CreateTargetDialog({super.key, this.initialType, this.initialDestination});
+  const CreateTargetDialog({
+    super.key,
+    this.initialType,
+    this.initialDestination,
+    this.initialDescription,
+  });
 
   static Future<LearningTarget?> show(BuildContext context, {
     TargetType? initialType,
     VerifiedDestination? initialDestination,
+    String? initialDescription,
   }) {
     return showDialog<LearningTarget>(
       context: context,
       builder: (context) => CreateTargetDialog(
-        initialType: initialType, initialDestination: initialDestination),
+        initialType: initialType,
+        initialDestination: initialDestination,
+        initialDescription: initialDescription,
+      ),
     );
   }
 
@@ -53,7 +63,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     _selectedType = widget.initialDestination?.supportedPrivateGoalType ??
         widget.initialType ?? TargetType.career;
     _titleController = TextEditingController();
-    _descController = TextEditingController();
+    _descController = TextEditingController(text: widget.initialDescription ?? '');
     _providerController = TextEditingController();
     _jurisdictionController = TextEditingController(
         text: widget.initialDestination?.supportedPrivateGoalType ==
