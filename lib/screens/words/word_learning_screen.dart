@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../../providers/auth_provider.dart';
 
@@ -15,26 +15,14 @@ import '../../services/word_spelling_advisor.dart';
 /// Each authenticated identity receives a fresh in-memory screen state.
 /// A sign-out or account switch disposes controllers, past search results,
 /// current practice answers and pending asynchronous UI updates.
-class WordLearningScreen extends ConsumerWidget {
+class WordLearningScreen extends ConsumerStatefulWidget {
   const WordLearningScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final userId = Supabase.instance.client.auth.currentUser?.id ??
-        (authState is AuthSuccess ? authState.user.id : null);
-    return _WordLearningSession(key: ValueKey('word-learning:${userId ?? 'signed-out'}'));
-  }
+  ConsumerState<WordLearningScreen> createState() => _WordLearningScreenState();
 }
 
-class _WordLearningSession extends StatefulWidget {
-  const _WordLearningSession({super.key});
-
-  @override
-  State<_WordLearningSession> createState() => _WordLearningScreenState();
-}
-
-class _WordLearningScreenState extends State<_WordLearningSession> {
+class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
   final WordListService _service = WordListService();
   final WordSpellingAdvisor _advisor = WordSpellingAdvisor();
   final TextEditingController _words = TextEditingController();
@@ -60,9 +48,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
   @override
   void initState() {
     super.initState();
-    if (Supabase.instance.client.auth.currentUser != null) {
-      _loadLists();
-    }
+    _loadLists();
   }
 
   @override
@@ -74,6 +60,8 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
 
   Future<void> _run(Future<void> Function() action) async {
     if (_busy) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -95,10 +83,13 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     }
   }
 
-  Future<void> _loadLists() async => _run(() async {
-        final lists = await _service.getLists();
-        if (mounted) setState(() => _lists = lists);
-      });
+  Future<void> _loadLists() async {
+    if (Supabase.instance.client.auth.currentUser == null) return;
+    await _run(() async {
+      final lists = await _service.getLists();
+      if (mounted) setState(() => _lists = lists);
+    });
+  }
 
   Future<void> _select(WordList selected) async => _run(() async {
         final entries = await _service.getEntries(selected.id);
@@ -133,7 +124,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         ],
       ),
     );
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (title == null || title.trim().isEmpty) return;
     await _run(() async {
       final list = await _service.createList(title);
@@ -237,7 +228,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         ],
       ),
     );
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (name == null || name.trim().isEmpty ||
         name.trim() == selected.title) return;
     await _run(() async {
@@ -273,7 +264,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
         ],
       ),
     );
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (replacement == null || replacement.trim().isEmpty ||
         replacement.trim() == entry.word) return;
     // When the actual target changes, there must be an explicit acknowledgement
@@ -398,9 +389,11 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
     final forms = alternatives.text.split(',')
         .map((v) => v.trim())
         .where((v) => v.isNotEmpty).toList();
-    pronunciation.dispose();
-    alternatives.dispose();
-    meaning.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      pronunciation.dispose();
+      alternatives.dispose();
+      meaning.dispose();
+    });
     if (save != true) return;
     await _run(() async {
       await _service.updateEntryPreferences(
@@ -552,35 +545,67 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      final prevUser = previous is AuthSuccess ? previous.user.id : null;
+      final nextUser = next is AuthSuccess ? next.user.id : null;
+      if (prevUser != nextUser) {
+        setState(() {
+          _lists = [];
+          _entries = [];
+          _practiceEntries = [];
+          _pendingWords = null;
+          _pendingSuggestions = {};
+          _selected = null;
+          _practiceIndex = null;
+          _grade = null;
+          _words.clear();
+          _answer.clear();
+          _error = null;
+        });
+        if (nextUser != null) {
+          _loadLists();
+        }
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_selected?.title ?? 'My word lists'),
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_practiceIndex != null || _selected != null) {
-              setState(() {
-                _practiceIndex = null;
-                _selected = null;
-              });
-              _loadLists();
-            } else {
-              context.go('/library');
-            }
-          },
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (_practiceIndex != null || _selected != null) {
+                setState(() {
+                  _practiceIndex = null;
+                  _selected = null;
+                });
+                _loadLists();
+              } else {
+                context.go('/library');
+              }
+            },
+          ),
         ),
         actions: [
           if (_selected != null && _practiceIndex == null) ...[
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Rename list',
-              onPressed: _busy ? null : _renameSelectedList,
+            Semantics(
+              label: 'Rename list',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _busy ? null : _renameSelectedList,
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete list',
-              onPressed: _busy ? null : _deleteList,
+            Semantics(
+              label: 'Delete list',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _busy ? null : _deleteList,
+              ),
             ),
           ],
         ],
@@ -758,9 +783,12 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
                   overflow: TextOverflow.ellipsis)
               : entry.kind == WordEntryKind.properName
                   ? const Text('Proper name · exact capitalization') : null,
-          trailing: PopupMenuButton<String>(
-            tooltip: 'Word options',
-            enabled: !_busy,
+          trailing: Semantics(
+            label: 'Word options',
+            button: true,
+            child: PopupMenuButton<String>(
+              tooltip: '',
+              enabled: !_busy,
             onSelected: (choice) {
               if (choice == 'spell') {
                 _changeSpelling(entry);
@@ -796,6 +824,7 @@ class _WordLearningScreenState extends State<_WordLearningSession> {
             ],
           ),
         ),
+      ),
     ],
   );
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../../providers/auth_provider.dart';
 import '../../services/word_learning_transfer.dart';
@@ -18,9 +18,10 @@ class WordTransferScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userId = Supabase.instance.client.auth.currentUser?.id ??
-        (authState is AuthSuccess ? authState.user.id : null);
-    return _WordTransferSession(key: ValueKey('word-transfer:${userId ?? 'signed-out'}'));
+    final userId = authState is AuthSuccess ? authState.user.id : null;
+    return _WordTransferSession(
+      key: ValueKey('word-transfer:${userId ?? 'signed-out'}'),
+    );
   }
 }
 
@@ -50,6 +51,8 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
 
   Future<void> _run(Future<void> Function() action) async {
     if (_busy) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -159,6 +162,21 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      final prevUser = previous is AuthSuccess ? previous.user.id : null;
+      final nextUser = next is AuthSuccess ? next.user.id : null;
+      if (prevUser != nextUser) {
+        setState(() {
+          _export.clear();
+          _import.clear();
+          _savedBackup = false;
+          _copiedBackup = false;
+          _message = null;
+          _error = null;
+        });
+      }
+    });
+
     final user = Supabase.instance.client.auth.currentUser;
     final isGuest = user?.isAnonymous ?? false;
     return Scaffold(
