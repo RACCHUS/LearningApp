@@ -65,6 +65,15 @@ class ReviewContentFactory {
           onReveal: onReveal,
           onQualitySelected: onQualitySelected,
         );
+      case ReviewableContentType.wordSkill:
+        // Generic review can show the prompt, but dedicated dictation practice
+        // hides the answer and performs typed spelling assessment.
+        return FlashcardReviewWidget(
+          item: item,
+          showAnswer: showAnswer,
+          onReveal: onReveal,
+          onQualitySelected: onQualitySelected,
+        );
       case ReviewableContentType.question:
         // Legacy question type - treat as multiple choice if has options
         if (item.metadata?['options'] != null) {

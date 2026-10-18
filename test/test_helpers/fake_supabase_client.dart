@@ -100,23 +100,27 @@ class FakeSupabaseQueryBuilder implements SupabaseQueryBuilder {
     Object values, {
     bool defaultToNull = true,
   }) {
-    final Map<String, dynamic>? record;
+    final List<Map<String, dynamic>> records;
     if (values is Map<String, dynamic>) {
-      record = Map<String, dynamic>.from(values);
+      final record = Map<String, dynamic>.from(values);
       record.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
       if (tableName == 'study_sets') {
         record.putIfAbsent('created_at', () => '2026-09-29T00:00:00Z');
         record.putIfAbsent('updated_at', () => '2026-09-29T00:00:00Z');
       }
-      insertedRecords.add(record);
+      records = [record];
     } else if (values is List) {
-      record = null;
-      insertedRecords.addAll(values.cast<Map<String, dynamic>>());
+      records = values.map((v) {
+        final r = Map<String, dynamic>.from(v as Map);
+        r.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
+        return r;
+      }).toList();
     } else {
-      record = null;
+      records = [];
     }
+    insertedRecords.addAll(records);
     return FakePostgrestFilterBuilder(
-      data: [if (record != null) record],
+      data: records,
       insertedRecords: insertedRecords,
       deletedIds: deletedIds,
       isInsert: true,
@@ -130,19 +134,23 @@ class FakeSupabaseQueryBuilder implements SupabaseQueryBuilder {
     bool ignoreDuplicates = false,
     bool defaultToNull = true,
   }) {
-    final Map<String, dynamic>? record;
+    final List<Map<String, dynamic>> records;
     if (values is Map<String, dynamic>) {
-      record = Map<String, dynamic>.from(values);
+      final record = Map<String, dynamic>.from(values);
       record.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
-      insertedRecords.add(record);
+      records = [record];
     } else if (values is List) {
-      record = null;
-      insertedRecords.addAll(values.cast<Map<String, dynamic>>());
+      records = values.map((v) {
+        final r = Map<String, dynamic>.from(v as Map);
+        r.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
+        return r;
+      }).toList();
     } else {
-      record = null;
+      records = [];
     }
+    insertedRecords.addAll(records);
     return FakePostgrestFilterBuilder(
-      data: [if (record != null) record],
+      data: records,
       insertedRecords: insertedRecords,
       deletedIds: deletedIds,
       isInsert: true,

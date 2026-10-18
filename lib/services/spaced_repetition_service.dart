@@ -31,6 +31,8 @@ class SpacedRepetitionService {
           .from('review_items')
           .select()
           .eq('user_id', _userId!)
+          // Dictation items are graded in /words, not Quick Review.
+          .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
       return (response as List)
@@ -57,6 +59,7 @@ class SpacedRepetitionService {
           .select()
           .eq('user_id', _userId!)
           .lte('next_review_date', today.toIso8601String())
+          .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
       return (response as List)
@@ -191,19 +194,22 @@ class SpacedRepetitionService {
           .eq('id', item.id)
           .eq('user_id', _userId!);
 
-      // Propagate evidence asynchronously per Learning Architecture v2 §8.2
-      final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
-      _evidenceService?.recordEvidence(
-        userId: _userId!,
-        contentId: item.contentId,
-        contentType: item.contentType,
-        evidenceValue: evidenceValue,
-        lessonId: item.lessonId,
-      ).catchError((e) {
-        if (kDebugMode) {
-          print('⚠️ Concept evidence propagation error: $e');
-        }
-      });
+      // Word-skill evidence does not identify a canonical knowledge concept.
+      if (item.contentType != ReviewableContentType.wordSkill) {
+        // Propagate ordinary review evidence to linked concepts.
+        final evidenceValue = quality.index >= 3 ? 1.0 : 0.0;
+        _evidenceService?.recordEvidence(
+          userId: _userId!,
+          contentId: item.contentId,
+          contentType: item.contentType,
+          evidenceValue: evidenceValue,
+          lessonId: item.lessonId,
+        ).catchError((e) {
+          if (kDebugMode) {
+            print('⚠️ Concept evidence propagation error: $e');
+          }
+        });
+      }
 
       return updatedItem;
     } catch (e) {

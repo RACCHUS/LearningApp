@@ -125,6 +125,9 @@ jobs:
       - name: Build web release
         run: flutter build web --release
 
+      - name: Check Word Learning PWA spelling asset size
+        run: python3 tool/measure_word_lexicon.py
+
   verify-database:
     name: Verify clean Supabase migrations and complete official taxonomy ingestion
     runs-on: ubuntu-latest

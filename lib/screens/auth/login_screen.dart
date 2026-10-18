@@ -17,11 +17,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(authProvider.notifier).signInWithGoogle();
-    } catch (e) {
+      if (ref.read(authProvider.notifier).isAnonymousSession) {
+        await ref.read(authProvider.notifier).linkGuestToGoogle();
+      } else {
+        await ref.read(authProvider.notifier).signInWithGoogle();
+      }
+    } catch (_) {
       if (mounted) {
+        final stillGuest = ref.read(authProvider.notifier).isAnonymousSession;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: ${e.toString()}')),
+          SnackBar(
+            content: Text(stillGuest
+                ? 'Google linking did not complete. Your guest session is still '
+                  'available. If this Google account already exists, use '
+                  'the private spelling backup option.'
+                : 'Google sign-in did not complete. Check your connection '
+                  'and try again.'),
+          ),
         );
       }
     } finally {
@@ -38,10 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) {
         GoRouter.of(context).go('/');
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          const SnackBar(
+            content: Text('Could not start a guest session. '
+                'Check your connection and try again.'),
+          ),
         );
       }
     } finally {
@@ -54,6 +69,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final auth = ref.watch(authProvider);
+    final isAnonymousGuest = ref.read(authProvider.notifier).isAnonymousSession;
+    final profileNeedsRetry =
+        auth is AuthError &&
+        ref.read(authProvider.notifier).hasAuthenticatedSession;
     
     return Scaffold(
       body: SafeArea(
@@ -93,6 +113,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const Spacer(),
               
+              if (profileNeedsRetry) ...[
+                Text(
+                  auth.message,
+                  textAlign: TextAlign.center,
+                ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          await ref.read(authProvider.notifier)
+                              .retryProfileProvisioning();
+                        },
+                  child: const Text('Retry profile synchronization'),
+                ),
+              ],
+              if (GoRouterState.of(context).uri.queryParameters.containsKey('oauth_error')) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          GoRouterState.of(context).uri.queryParameters['oauth_error'] == 'access_denied'
+                              ? 'Google sign-in was cancelled. Your guest session and data remain intact.'
+                              : 'Google sign-in did not complete: ${GoRouterState.of(context).uri.queryParameters['oauth_error_description'] ?? GoRouterState.of(context).uri.queryParameters['oauth_error']}. Guest data is safe.',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (isAnonymousGuest) ...[
+                const Text(
+                  'You are using a guest account. Link Google to keep your '
+                  'existing lists and progress. If this Google account already '
+                  'exists, linking will not work; your guest data will remain '
+                  'in place until a safe import is available.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (isAnonymousGuest)
+                TextButton.icon(
+                  onPressed: _isLoading
+                      ? null : () => context.push('/words/transfer'),
+                  icon: const Icon(Icons.ios_share),
+                  label: const Text(
+                    'Google account already exists? Back up spelling lists'),
+                ),
+
               // Google Sign In Button
               FilledButton.icon(
                 onPressed: _isLoading ? null : _handleSignIn,
@@ -134,8 +213,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               
               const SizedBox(height: 24),
               
-              // Guest Login Button
-              OutlinedButton(
+              // Do not create a second anonymous UID on an existing guest.
+              if (!isAnonymousGuest) OutlinedButton(
                 onPressed: _isLoading ? null : _handleGuestSignIn,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

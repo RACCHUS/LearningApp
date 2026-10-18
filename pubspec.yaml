@@ -62,6 +62,8 @@ flutter:
   # The following section is specific to Flutter.
   assets:
     - assets/images/
+    - assets/lexicons/en_us_scowl_roots.txt
+    - assets/lexicons/NOTICE.txt
     - assets/sample_lesson.json
     - assets/lessons/
     - .env
