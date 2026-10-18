@@ -128,6 +128,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: const Text('Retry profile synchronization'),
                 ),
               ],
+              if (GoRouterState.of(context).uri.queryParameters.containsKey('oauth_error')) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          GoRouterState.of(context).uri.queryParameters['oauth_error'] == 'access_denied'
+                              ? 'Google sign-in was cancelled. Your guest session and data remain intact.'
+                              : 'Google sign-in did not complete: ${GoRouterState.of(context).uri.queryParameters['oauth_error_description'] ?? GoRouterState.of(context).uri.queryParameters['oauth_error']}. Guest data is safe.',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (isAnonymousGuest) ...[
                 const Text(
                   'You are using a guest account. Link Google to keep your '

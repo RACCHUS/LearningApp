@@ -219,6 +219,50 @@
       window.addEventListener('offline', updateOnlineStatus);
       window.addEventListener('load', updateOnlineStatus);
     })();
+
+    // ---------------------------------------------------------------------
+    // OAuth Error & Callback Hash Normalization
+    // ---------------------------------------------------------------------
+    // Supabase Auth Gotrue redirects OAuth cancellations and failures to:
+    //   http://<host>/#error=access_denied&error_code=403&error_description=...
+    // Flutter's HashUrlStrategy interprets an unslashed hash fragment (#error=...)
+    // as a path string ('error=...'), causing GoRouter's internal route matcher
+    // to throw an assertion failure: `uri.path.startsWith(newMatchedLocation)`.
+    // We normalize any '#error=' or '#error_code=' fragments into a valid slashed
+    // route (e.g. `#/login?oauth_error=...` or `#/words?oauth_error=...`)
+    // BEFORE Flutter's router initializes.
+    (function () {
+      try {
+        if (window.location.hash && window.location.hash.startsWith('#/')) {
+          window.sessionStorage.setItem('oauth_return_path', window.location.hash.substring(1));
+        }
+        window.addEventListener('hashchange', function () {
+          if (window.location.hash && window.location.hash.startsWith('#/')) {
+            window.sessionStorage.setItem('oauth_return_path', window.location.hash.substring(1));
+          }
+        });
+
+        const hash = window.location.hash;
+        if (hash && (hash.startsWith('#error=') || hash.startsWith('#error_code='))) {
+          const queryPart = hash.substring(1);
+          const params = new URLSearchParams(queryPart);
+          const error = params.get('error') || params.get('error_code') || 'auth_error';
+          const description = params.get('error_description') || '';
+
+          const savedRoute = window.sessionStorage.getItem('oauth_return_path') || '/login';
+          const targetPath = savedRoute.startsWith('/') ? savedRoute : '/' + savedRoute;
+          const separator = targetPath.includes('?') ? '&' : '?';
+          const normalized = window.location.pathname + '#' + targetPath + separator +
+            'oauth_error=' + encodeURIComponent(error) +
+            (description ? '&oauth_error_description=' + encodeURIComponent(description) : '');
+
+          window.history.replaceState(null, '', normalized);
+          console.warn('Normalized OAuth error callback:', error, description);
+        }
+      } catch (err) {
+        console.error('Failed to normalize OAuth error hash:', err);
+      }
+    })();
   </script>
 </head>
 <body>
