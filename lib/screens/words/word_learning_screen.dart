@@ -22,7 +22,9 @@ class WordLearningScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userId = authState is AuthSuccess ? authState.user.id : null;
+    final authUser = authState is AuthSuccess ? authState.user : null;
+    final clientUser = Supabase.instance.client.auth.currentUser;
+    final userId = authUser?.id ?? clientUser?.id;
     return _WordLearningSession(
       key: ValueKey('word-learning:${userId ?? 'signed-out'}'),
       userId: userId,

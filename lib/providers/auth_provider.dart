@@ -136,6 +136,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     int attempts = 0;
     const maxAttempts = 3;
 
+    final cleanEmail = (user.email != null && user.email!.trim().isNotEmpty)
+        ? user.email!.trim()
+        : null;
+
     while (attempts < maxAttempts) {
       try {
         final existing = await _supabase.from('users')
@@ -147,14 +151,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
           // user-controlled display names on subsequent auth events.
           await _supabase.from('users').insert({
             'id': user.id,
-            'email': user.email,
+            'email': cleanEmail,
             'display_name': user.isAnonymous ? 'Guest' : null,
           });
-        } else if (existing['email'] != user.email) {
+        } else if (existing['email'] != cleanEmail) {
           // Anonymous -> Google linking keeps the same UID. Sync the email
           // without erasing existing profile fields or creation time.
           await _supabase.from('users').update({
-            'email': user.email,
+            'email': cleanEmail,
           }).eq('id', user.id);
         }
 
@@ -185,9 +189,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           // An older profile request may finish after an account switch.
           // Never show an error from learner A in learner B's session.
           if (_supabase.auth.currentUser?.id == user.id) {
-            state = AuthError(
-              'Signed in, but the profile could not be saved. Retry later.',
-            );
+            state = AuthSuccess(user);
           }
           return false;
         }
