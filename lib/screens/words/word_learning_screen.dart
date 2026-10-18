@@ -15,15 +15,33 @@ import '../../services/word_spelling_advisor.dart';
 /// Each authenticated identity receives a fresh in-memory screen state.
 /// A sign-out or account switch disposes controllers, past search results,
 /// current practice answers and pending asynchronous UI updates.
-class WordLearningScreen extends ConsumerStatefulWidget {
-  const WordLearningScreen({super.key});
+class WordLearningScreen extends ConsumerWidget {
+  final WordListService? service;
+  const WordLearningScreen({super.key, this.service});
 
   @override
-  ConsumerState<WordLearningScreen> createState() => _WordLearningScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userId = authState is AuthSuccess ? authState.user.id : null;
+    return _WordLearningSession(
+      key: ValueKey('word-learning:${userId ?? 'signed-out'}'),
+      userId: userId,
+      service: service,
+    );
+  }
 }
 
-class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
-  final WordListService _service = WordListService();
+class _WordLearningSession extends ConsumerStatefulWidget {
+  final String? userId;
+  final WordListService? service;
+  const _WordLearningSession({super.key, this.userId, this.service});
+
+  @override
+  ConsumerState<_WordLearningSession> createState() => _WordLearningScreenState();
+}
+
+class _WordLearningScreenState extends ConsumerState<_WordLearningSession> {
+  late final WordListService _service = widget.service ?? WordListService();
   final WordSpellingAdvisor _advisor = WordSpellingAdvisor();
   final TextEditingController _words = TextEditingController();
   final TextEditingController _answer = TextEditingController();
@@ -60,8 +78,9 @@ class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
 
   Future<void> _run(Future<void> Function() action) async {
     if (_busy) return;
+    final callingUser = widget.userId;
     await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
+    if (!mounted || widget.userId != callingUser) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -69,7 +88,7 @@ class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
     try {
       await action();
     } catch (e) {
-      if (mounted) {
+      if (mounted && widget.userId == callingUser) {
         final message = e is PostgrestException && e.code == '23505'
             ? 'This word or list entry already exists.'
             : e is ArgumentError
@@ -79,21 +98,27 @@ class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
         setState(() => _error = message);
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && widget.userId == callingUser) {
+        setState(() => _busy = false);
+      }
     }
   }
 
   Future<void> _loadLists() async {
-    if (Supabase.instance.client.auth.currentUser == null) return;
+    final callingUser = widget.userId;
+    if (callingUser == null) return;
     await _run(() async {
       final lists = await _service.getLists();
-      if (mounted) setState(() => _lists = lists);
+      if (mounted && widget.userId == callingUser) {
+        setState(() => _lists = lists);
+      }
     });
   }
 
   Future<void> _select(WordList selected) async => _run(() async {
+        final callingUser = widget.userId;
         final entries = await _service.getEntries(selected.id);
-        if (mounted) {
+        if (mounted && widget.userId == callingUser) {
           setState(() {
             _selected = selected;
             _entries = entries;
@@ -545,29 +570,6 @@ class _WordLearningScreenState extends ConsumerState<WordLearningScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authProvider, (previous, next) {
-      final prevUser = previous is AuthSuccess ? previous.user.id : null;
-      final nextUser = next is AuthSuccess ? next.user.id : null;
-      if (prevUser != nextUser) {
-        setState(() {
-          _lists = [];
-          _entries = [];
-          _practiceEntries = [];
-          _pendingWords = null;
-          _pendingSuggestions = {};
-          _selected = null;
-          _practiceIndex = null;
-          _grade = null;
-          _words.clear();
-          _answer.clear();
-          _error = null;
-        });
-        if (nextUser != null) {
-          _loadLists();
-        }
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: Text(_selected?.title ?? 'My word lists'),
