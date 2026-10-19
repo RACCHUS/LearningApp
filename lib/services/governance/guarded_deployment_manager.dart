@@ -804,11 +804,17 @@ class GuardedDeploymentManager {
         );
       }
 
+      final combinedDryRunOutput =
+          '${dryRunResult.stdout}\n${dryRunResult.stderr}';
+      if (!quiet && dryRunResult.stderr.toString().trim().isNotEmpty) {
+        stdoutSink.writeln(dryRunResult.stderr.toString().trim());
+      }
+
       currentPhase = 'dry_run_validation';
       try {
         verifyDryRunMatch(
           pendingVersions: pendingList,
-          dryRunOutput: dryRunResult.stdout.toString(),
+          dryRunOutput: combinedDryRunOutput,
         );
       } catch (e) {
         stderrSink.writeln('❌ FATAL: Dry run verification failed: $e');
@@ -859,6 +865,11 @@ class GuardedDeploymentManager {
       );
 
       stdoutSink.write(pushResult.stdout);
+      if (!quiet &&
+          pushResult.stderr.toString().trim().isNotEmpty &&
+          pushResult.exitCode == 0) {
+        stdoutSink.writeln(pushResult.stderr.toString().trim());
+      }
       if (pushResult.exitCode != 0) {
         stderrSink.write(pushResult.stderr);
         stderrSink.writeln('❌ Fatal: Migration push failed!');
