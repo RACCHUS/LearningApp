@@ -84,7 +84,7 @@ select throws_ok($q$
   update public.exam_reference_manifest_revisions
      set publication_status='published'
    where id='05555555-5555-4555-8555-555555555555'
-$q$, '23514', null,
+$q$, 'P0001', null,
   'Unreviewed draft cannot publish despite usable dates');
 
 select lives_ok($q$
