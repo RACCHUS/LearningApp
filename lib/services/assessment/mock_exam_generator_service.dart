@@ -6,7 +6,8 @@ import '../../models/assessment_engine/mock_exam_blueprint.dart';
 import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../models/assessment_item.dart';
 
-/// Generates mock examination sessions governed by authoritative blueprint constraints.
+/// Generates practice-only sets from target curriculum constraints.
+/// Official exam fidelity requires separate sourced validation (EXM-03).
 class MockExamGeneratorService {
   final SupabaseClient _supabase;
   final Random _random;
@@ -17,7 +18,7 @@ class MockExamGeneratorService {
   })  : _supabase = supabase ?? Supabase.instance.client,
         _random = random ?? Random();
 
-  /// Loads the official blueprint constraint model for a given target version.
+  /// Loads curriculum-based practice constraints for a target version.
   Future<MockExamBlueprint> loadBlueprint(String targetVersionId) async {
     final versionRes = await _supabase
         .from('target_versions')
@@ -36,10 +37,14 @@ class MockExamGeneratorService {
         'EXAM';
     final title =
         versionRes['title'] as String? ?? 'Certification Practice Exam';
-    final passingScore = (versionMeta['passing_score'] as num?)?.toInt() ?? 750;
-    final scale = versionMeta['scale'] as String? ?? '100-900';
-    final timeLimit =
-        (versionMeta['time_limit_minutes'] as num?)?.toInt() ?? 90;
+    // Legacy passing_score/scale and time_limit_minutes lack verified per-rule
+    // provenance. Never promote them to official claims in practice mode.
+    // 90 minutes is an explicitly practice-only fallback countdown.
+    final configuredPracticeMinutes =
+        (versionMeta['practice_time_limit_minutes'] as num?)?.toInt();
+    final timeLimit = configuredPracticeMinutes != null && configuredPracticeMinutes > 0
+        ? configuredPracticeMinutes
+        : 90;
     final defaultQuestionCount =
         (versionMeta['default_question_count'] as num?)?.toInt() ?? 50;
 
@@ -125,8 +130,8 @@ class MockExamGeneratorService {
       examCode: examCode,
       title: title,
       timeLimitMinutes: timeLimit,
-      officialPassingScore: passingScore,
-      officialScoreScale: scale,
+      officialPassingScore: null,
+      officialScoreScale: null,
       defaultQuestionCount: defaultQuestionCount,
       domainWeights: domainList,
       difficultyDistribution: difficultyDistribution,
@@ -134,6 +139,15 @@ class MockExamGeneratorService {
       maxStimulusItemsRatio: maxStimulusItemsRatio,
       metadata: versionMeta,
     );
+  }
+
+  /// Refuses partial sets instead of silently displaying a full-count practice exam.
+  static void requireExactPracticeCount(int requestedCount, int actualCount) {
+    if (requestedCount != actualCount) {
+      throw StateError('Only $actualCount of $requestedCount requested practice items '
+          'have valid domain mappings and satisfy selection constraints. '
+          'Choose a smaller practice set or add reviewed items.');
+    }
   }
 
   /// Generates a mock exam constrained by domain weights, allowed interaction
@@ -205,6 +219,7 @@ class MockExamGeneratorService {
 
     final objectiveIds = objectiveToDomain.keys.toList();
     final conceptToDomain = <String, String>{};
+    final ambiguousConceptIds = <String>{};
     if (objectiveIds.isNotEmpty) {
       final objectiveConceptsRes = await _supabase
           .from('curriculum_node_concepts')
@@ -215,12 +230,19 @@ class MockExamGeneratorService {
         final conceptId = row['concept_id'] as String;
         final objectiveId = row['curriculum_node_id'] as String;
         final domainId = objectiveToDomain[objectiveId];
-        if (domainId != null) {
-          conceptToDomain[conceptId] = domainId;
+        if (domainId != null && !ambiguousConceptIds.contains(conceptId)) {
+          final previousDomain = conceptToDomain[conceptId];
+          if (previousDomain != null && previousDomain != domainId) {
+            conceptToDomain.remove(conceptId);
+            ambiguousConceptIds.add(conceptId);
+          } else {
+            conceptToDomain[conceptId] = domainId;
+          }
         }
       }
     }
 
+    final ambiguousItemIds = <String>{};
     final itemIds = allItems.map((item) => item.id).toList();
     if (itemIds.isNotEmpty) {
       final itemConceptsRes = await _supabase
@@ -233,23 +255,23 @@ class MockExamGeneratorService {
         final conceptId = row['concept_id'] as String;
         itemConceptMap.putIfAbsent(itemId, () => []).add(conceptId);
 
-        if (!itemDomainMap.containsKey(itemId) &&
-            conceptToDomain.containsKey(conceptId)) {
-          itemDomainMap[itemId] = conceptToDomain[conceptId]!;
+        final domainId = conceptToDomain[conceptId];
+        if (domainId == null || ambiguousItemIds.contains(itemId)) continue;
+        final previousDomain = itemDomainMap[itemId];
+        if (previousDomain != null && previousDomain != domainId) {
+          itemDomainMap.remove(itemId);
+          ambiguousItemIds.add(itemId);
+        } else {
+          itemDomainMap[itemId] = domainId;
         }
       }
     }
 
-    final highestWeightDomain = blueprint.domainWeights.reduce(
-      (a, b) => a.weight >= b.weight ? a : b,
-    );
-
+    // Exclude unmapped and ambiguous items rather than silently borrowing the
+    // highest-weight domain or fabricating domain evidence.
     for (final item in allItems) {
-      var domainId = itemDomainMap[item.id];
-      if (domainId == null || !domainItemsMap.containsKey(domainId)) {
-        domainId = highestWeightDomain.domainId;
-        itemDomainMap[item.id] = domainId;
-      }
+      final domainId = itemDomainMap[item.id];
+      if (domainId == null || !domainItemsMap.containsKey(domainId)) continue;
       domainItemsMap[domainId]!.add(item);
     }
 
@@ -326,7 +348,7 @@ class MockExamGeneratorService {
       }
 
       final spareItems =
-          allItems.where((item) => !selectedIds.contains(item.id)).toList()
+          allItems.where((item) => itemDomainMap.containsKey(item.id) && !selectedIds.contains(item.id)).toList()
             ..shuffle(_random);
 
       for (final entry in desiredDifficulty.entries) {
@@ -356,14 +378,17 @@ class MockExamGeneratorService {
       }
     }
 
+    requireExactPracticeCount(totalQuestions, selectedItems.length);
     selectedItems.shuffle(_random);
 
     final finalItemDomainMap = <String, String>{};
     for (final item in selectedItems) {
-      final domainId = itemDomainMap[item.id] ?? highestWeightDomain.domainId;
+      final domainId = itemDomainMap[item.id];
+      if (domainId == null) {
+        throw StateError('Practice item ${item.id} has no validated domain mapping.');
+      }
       final domain = blueprint.domainWeights.firstWhere(
         (candidate) => candidate.domainId == domainId,
-        orElse: () => highestWeightDomain,
       );
       finalItemDomainMap[item.id] = domain.domainCode;
     }
