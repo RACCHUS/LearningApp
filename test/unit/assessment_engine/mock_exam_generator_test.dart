@@ -149,6 +149,13 @@ void main() {
       expect(roundTrip.officialScoreScale, isNull);
     });
 
+    test('Unmapped and invalid domains never fall back to the largest domain', () {
+      const validDomains = {'dom-a', 'dom-b'};
+      expect(MockExamGeneratorService.validPracticeDomain(null, validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('unknown', validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('dom-a', validDomains), 'dom-a');
+    });
+
     test('Refuses underfilled practice sessions instead of claiming full length', () {
       expect(() => MockExamGeneratorService.requireExactPracticeCount(10, 8),
           throwsA(isA<StateError>()));
