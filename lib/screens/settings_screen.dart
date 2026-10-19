@@ -384,6 +384,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => context.push('/moderation'),
             ),
 
+            ListTile(
+              leading: const Icon(Icons.insights, color: Colors.teal),
+              title: const Text('Cost & Observability'),
+              subtitle: const Text('System health, AI token quotas & provider spend (ECO-00C)'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/observability'),
+            ),
+
             const Divider(height: 32),
 
             ListTile(
