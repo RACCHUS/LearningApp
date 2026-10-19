@@ -1,7 +1,12 @@
 # LearningApp Terms of Service
 
-**Effective Date:** October 17, 2026  
-**Last Revised:** October 17, 2026  
+> [!IMPORTANT]
+> **DRAFT LEGAL DOCUMENT — PENDING OPERATIONAL VERIFICATION AND QUALIFIED LEGAL REVIEW**  
+> This document is a preliminary architectural draft representing the planned Terms of Service for LearningApp. It does **not** constitute final legal advice or a completed legal compliance program. Operational contact channels, terms, and platform commitments must undergo formal review by qualified legal counsel prior to launching public user-generated content or open user registration.
+
+**Status:** Draft / Pending Operational & Legal Verification  
+**Effective Date:** Pending Public Launch  
+**Last Revised:** October 2026  
 **Application:** LearningApp (`RACCHUS/LearningApp`)  
 
 ---
@@ -30,10 +35,11 @@ If you are using the Service on behalf of an institution, organization, or famil
 
 1. **Adult Users ($\ge 18$)**:
    - Public posting features—including submitting public questions, publishing answers, creating public creator channels, and participating in public discussions—are restricted exclusively to individuals who are at least eighteen (18) years of age.
-2. **Minors (< 18) & Family Accounts**:
-   - Individuals under 18 may use the Service solely in **Private Study Mode** under the supervision and consent of a parent, legal guardian, or authorized educational institution/caseworker.
-   - Minor accounts are restricted from public directory listing, public broadcasting, and direct messaging with adult strangers.
-   - Parents and legal guardians are responsible for supervising their minor's use of the Service.
+2. **Minors (< 18) & Family / Institutional Accounts**:
+   - Individuals under 18 may use the Service solely in **Private Study Mode** under the supervision and verified consent of a parent or legal guardian, or pursuant to an authorized school contract under applicable student privacy laws (FERPA / COPPA).
+   - A caseworker or informal guardian relationship does not automatically establish statutory parental consent under COPPA; educational institution consent is valid solely when the Service is utilized exclusively for the school's educational benefit and not for unrelated commercial purposes.
+   - Minor accounts are strictly isolated: zero public directory listing, zero public broadcasting, and zero unvetted direct messaging between adult strangers and minors.
+   - Public user-generated content (UGC) features remain administratively disabled platform-wide until operational moderation, age verification, and reporting systems are fully tested and deployed.
 
 ---
 
@@ -83,8 +89,11 @@ These Terms shall be governed by and construed in accordance with the laws of th
 
 ---
 
-## 9. Contact Information
+## 9. Contact Information (Draft — Pending Operational Launch)
 
-For inquiries regarding these Terms of Service:
-- **Email:** `support@learningapp.local`
-- **Repository:** [`RACCHUS/LearningApp`](https://github.com/RACCHUS/LearningApp)
+> [!NOTE]
+> Operational support and legal intake channels below are placeholders pending formal operational establishment.
+
+- **Legal Inquiries:** `[legal-inquiries@domain-pending.example]`
+- **Technical Support:** `[support@domain-pending.example]`
+- **Repository Support:** [`RACCHUS/LearningApp`](https://github.com/RACCHUS/LearningApp)
