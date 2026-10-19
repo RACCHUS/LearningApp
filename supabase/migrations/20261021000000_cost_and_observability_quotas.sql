@@ -13,8 +13,8 @@ create table if not exists public.usage_quotas (
   tts_chars_daily_limit int not null default 10000 check (tts_chars_daily_limit > 0),
   storage_bytes_used bigint not null default 0 check (storage_bytes_used >= 0),
   storage_bytes_limit bigint not null default 52428800 check (storage_bytes_limit > 0), -- 50 MB
-  window_reset_at timestamptz not null default timezone('utc'::text, now() + interval '1 day'),
-  updated_at timestamptz not null default timezone('utc'::text, now())
+  window_reset_at timestamptz not null default (now() + interval '1 day'),
+  updated_at timestamptz not null default now()
 );
 
 -- RLS Enforcement
@@ -43,7 +43,7 @@ create table if not exists public.usage_events (
   quantity int not null check (quantity > 0),
   provider text not null default 'internal',
   metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc'::text, now())
+  created_at timestamptz not null default now()
 );
 
 -- Covering indexes for foreign keys, queries, and time-series aggregation
@@ -82,7 +82,7 @@ declare
   v_quota record;
   v_allowed boolean;
   v_remaining int;
-  v_now timestamptz := timezone('utc'::text, now());
+  v_now timestamptz := now();
   v_tier text;
   v_ai_limit int;
   v_tts_limit int;
@@ -224,7 +224,7 @@ begin
     p_hours := 24;
   end if;
 
-  v_since := timezone('utc'::text, now()) - (p_hours || ' hours')::interval;
+  v_since := now() - (p_hours || ' hours')::interval;
 
   select coalesce(sum(quantity) filter (where service_type = 'ai_tokens'), 0),
          coalesce(sum(quantity) filter (where service_type = 'tts_chars'), 0),

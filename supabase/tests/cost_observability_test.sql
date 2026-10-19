@@ -205,12 +205,15 @@ select ok(
 -- -----------------------------------------------------------------------------
 -- Rolling Daily Window Rollover Test
 -- -----------------------------------------------------------------------------
--- Manually expire Learner A's quota window
+-- Reset to test runner role to simulate window expiration (authenticated clients have no direct update permissions)
+reset role;
+
 update public.usage_quotas
-   set window_reset_at = timezone('utc'::text, now() - interval '1 hour')
+   set window_reset_at = now() - interval '1 hour'
  where user_id = '8f7c1a20-0000-4000-8000-000000000002';
 
 -- Switch back to Learner A
+set local role authenticated;
 select set_config('request.jwt.claim.sub', '8f7c1a20-0000-4000-8000-000000000002', true);
 
 -- Call should trigger window rollover, resetting used counters
