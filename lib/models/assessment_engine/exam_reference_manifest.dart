@@ -59,7 +59,7 @@ class ExamPartSpec {
     this.officialRequirements = const {},
   });
 
-  bool get hasValidatedSubtreeCandidate =>
+  bool get hasScopeRootCandidate =>
       curriculumRootNodeId != null && curriculumRootNodeId!.isNotEmpty;
 
   factory ExamPartSpec.fromJson(Map<String, dynamic> json) {
@@ -161,6 +161,9 @@ class ExamReferenceManifestRevision {
   final ExamManifestStatus status;
   final bool reviewed;
   final String? officialSourceUrl;
+  final String? officialSourceReleaseId;
+  final DateTime? sourceCheckedAt;
+  final DateTime? reviewedAt;
   final List<Map<String, dynamic>> references;
   final List<Map<String, dynamic>> roomRules;
 
@@ -174,6 +177,9 @@ class ExamReferenceManifestRevision {
     required this.status,
     required this.reviewed,
     this.officialSourceUrl,
+    this.officialSourceReleaseId,
+    this.sourceCheckedAt,
+    this.reviewedAt,
     this.references = const [],
     this.roomRules = const [],
   });
@@ -206,13 +212,49 @@ class ExamReferenceManifestRevision {
         row['reviewed_at'] != null &&
         row['reviewer_ref']?.toString().isNotEmpty == true;
     final sourceUrl = row['official_source_url']?.toString();
-    // Do not expose a nominally published but unverifiable manifest as valid.
-    if (status == ExamManifestStatus.published &&
-        (!reviewed || sourceUrl == null || sourceUrl.isEmpty ||
-            row['source_checked_at'] == null || sources.isEmpty)) {
-      throw const FormatException(
-        'Published reference manifest lacks approval or primary-source evidence',
-      );
+    final sourceReleaseId = row['source_release_id']?.toString();
+    final sourceCheckedAt = DateTime.tryParse(
+        row['source_checked_at']?.toString() ?? '');
+    final reviewedAt = DateTime.tryParse(
+        row['reviewed_at']?.toString() ?? '');
+    // Published records require actual source evidence, a subsequent human
+    // review and anchored editions. Missing/invalid citations are not
+    // implicitly verified even if a status string says 'published'.
+    if (status == ExamManifestStatus.published) {
+      if (!reviewed ||
+          sourceUrl == null ||
+          !sourceUrl.startsWith('https://') ||
+          sourceReleaseId == null ||
+          sourceReleaseId.isEmpty ||
+          sourceCheckedAt == null ||
+          reviewedAt == null ||
+          reviewedAt.isBefore(sourceCheckedAt) ||
+          sources.isEmpty) {
+        throw const FormatException(
+          'Published manifest lacks source evidence or human approval',
+        );
+      }
+      for (final entry in sources) {
+        _requiredText(entry['key'], 'reference key');
+        _requiredText(entry['edition'], 'reference edition');
+        _requiredText(entry['source_page'], 'reference primary source page');
+      }
+      for (final rule in rules) {
+        final state = rule['state']?.toString();
+        if (!const {'verified', 'unverified', 'unknown', 'not_applicable'}
+            .contains(state)) {
+          throw const FormatException('Invalid reference-room rule state');
+        }
+        if (state == 'verified') {
+          _requiredText(rule['source_page'], 'verified room-rule source page');
+          if (rule['value'] == null) {
+            throw const FormatException('Verified room rule lacks value');
+          }
+        }
+        if (state == 'unknown' && rule['value'] != null) {
+          throw const FormatException('Unknown room rules cannot assert values');
+        }
+      }
     }
     return ExamReferenceManifestRevision(
       id: _requiredText(row['id'], 'id'),
@@ -224,6 +266,9 @@ class ExamReferenceManifestRevision {
       status: status,
       reviewed: reviewed,
       officialSourceUrl: sourceUrl,
+      officialSourceReleaseId: sourceReleaseId,
+      sourceCheckedAt: sourceCheckedAt,
+      reviewedAt: reviewedAt,
       references: List.unmodifiable(sources),
       roomRules: List.unmodifiable(rules),
     );
@@ -274,7 +319,7 @@ class ExamReferenceManifestResolver {
         ExamManifestSelectionStatus.unknownExamPart,
       );
     }
-    if (!part.hasValidatedSubtreeCandidate) {
+    if (!part.hasScopeRootCandidate) {
       return const ExamManifestSelection(
         ExamManifestSelectionStatus.missingPartScope,
       );
