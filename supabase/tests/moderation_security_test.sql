@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(28);
+select plan(34);
 
 -- 1. Setup synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -23,9 +23,28 @@ insert into public.users (id, email) values
   ('8f7c1a10-0000-4000-8000-000000000099', 'deletable-mod@example.invalid')
 on conflict (id) do nothing;
 
--- 2. Setup real target entity in public.lessons for report testing
-insert into public.lessons (id, title, user_id) values
-  ('8f7c1a10-0000-4000-8000-000000000501', 'Safety Compliance Lesson', '8f7c1a10-0000-4000-8000-000000000040')
+-- 2. Setup real target entities for report testing
+insert into public.lessons (id, title, user_id, visibility) values
+  ('8f7c1a10-0000-4000-8000-000000000501', 'Public Safety Compliance Lesson', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000502', 'Private Learner Notes', '8f7c1a10-0000-4000-8000-000000000040', 'private'),
+  ('8f7c1a10-0000-4000-8000-000000000511', 'Public Lesson 11', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000512', 'Public Lesson 12', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000513', 'Public Lesson 13', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000514', 'Public Lesson 14', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000515', 'Public Lesson 15', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000516', 'Public Lesson 16', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000517', 'Public Lesson 17', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000518', 'Public Lesson 18', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000519', 'Public Lesson 19', '8f7c1a10-0000-4000-8000-000000000040', 'public'),
+  ('8f7c1a10-0000-4000-8000-000000000520', 'Public Lesson 20', '8f7c1a10-0000-4000-8000-000000000040', 'public')
+on conflict (id) do nothing;
+
+insert into public.study_sets (id, title, user_id) values
+  ('8f7c1a10-0000-4000-8000-000000000503', 'Learner Private Study Set', '8f7c1a10-0000-4000-8000-000000000040')
+on conflict (id) do nothing;
+
+insert into public.word_lists (id, title, user_id) values
+  ('8f7c1a10-0000-4000-8000-000000000504', 'Learner Private Word List', '8f7c1a10-0000-4000-8000-000000000040')
 on conflict (id) do nothing;
 
 -- 3. Bootstrap moderation roles directly (as superuser/service_role)
@@ -125,7 +144,7 @@ select throws_ok(
 );
 
 -- -----------------------------------------------------------------------------
--- Test D: Report Submission, Target Existence & Deduplication
+-- Test D: Report Submission, Target Visibility & Deduplication
 -- -----------------------------------------------------------------------------
 
 -- Non-existent target UUID is rejected
@@ -141,7 +160,59 @@ select throws_ok(
   'Submitting report on non-existent target raises P0002'
 );
 
--- Reporter submits a valid report on existing lesson
+-- Reporter attempting to report another user's private lesson is rejected with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'lesson',
+       '8f7c1a10-0000-4000-8000-000000000502'::uuid,
+       'spam',
+       'Attempting to report private lesson without authorization'
+     ) $$,
+  'P0002',
+  null,
+  'Reporting private lesson of another user is denied with P0002'
+);
+
+-- Reporter attempting to report another user's private study set is rejected with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'study_set',
+       '8f7c1a10-0000-4000-8000-000000000503'::uuid,
+       'spam',
+       'Attempting to report private study set without authorization'
+     ) $$,
+  'P0002',
+  null,
+  'Reporting private study set of another user is denied with P0002'
+);
+
+-- Reporter attempting to report another user's private word list is rejected with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'word_list',
+       '8f7c1a10-0000-4000-8000-000000000504'::uuid,
+       'spam',
+       'Attempting to report private word list without authorization'
+     ) $$,
+  'P0002',
+  null,
+  'Reporting private word list of another user is denied with P0002'
+);
+
+-- Reporter attempting to report their own profile is rejected with 42501
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'profile',
+       '8f7c1a10-0000-4000-8000-000000000030'::uuid,
+       'harassment',
+       'Self-reporting attempt'
+     ) $$,
+  '42501',
+  null,
+  'Submitting moderation report against own account is rejected with 42501'
+);
+
+-- Reporter submits a valid report on existing public lesson
 select lives_ok(
   $$ select public.submit_moderation_report(
        'lesson',
@@ -149,7 +220,7 @@ select lives_ok(
        'spam',
        'Automated promotional link'
      ) $$,
-  'Authenticated learner can submit a moderation report on existing content'
+  'Authenticated learner can submit a moderation report on existing public content'
 );
 
 -- Duplicate pending report on the same target is blocked
@@ -234,7 +305,45 @@ select throws_ok(
 );
 
 -- -----------------------------------------------------------------------------
--- Test F: Audit Trail Preservation on User Deletions (ON DELETE SET NULL)
+-- Test F: Rate Limiting & Concurrency Serialization
+-- -----------------------------------------------------------------------------
+
+do $$ begin
+  perform set_config('request.jwt.claim.sub', '8f7c1a10-0000-4000-8000-000000000030', true);
+end $$;
+
+-- Submit 9 additional distinct reports (bringing total to 10 in the hour)
+select lives_ok(
+  $$
+  do $b$
+  declare
+    v_id uuid;
+  begin
+    for v_id in
+      select id from public.lessons where id between '8f7c1a10-0000-4000-8000-000000000511' and '8f7c1a10-0000-4000-8000-000000000519'
+    loop
+      perform public.submit_moderation_report('lesson', v_id, 'spam', 'Batch rate limit test report');
+    end loop;
+  end $b$;
+  $$,
+  'Submitting up to 10 reports within an hour succeeds'
+);
+
+-- Submitting the 11th report raises P0004
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'lesson',
+       '8f7c1a10-0000-4000-8000-000000000520'::uuid,
+       'spam',
+       '11th report exceeding limit'
+     ) $$,
+  'P0004',
+  null,
+  'Submitting 11th report within the hour exceeds rate limit and raises P0004'
+);
+
+-- -----------------------------------------------------------------------------
+-- Test G: Audit Trail Preservation on User Deletions (ON DELETE SET NULL)
 -- -----------------------------------------------------------------------------
 
 set local role postgres;

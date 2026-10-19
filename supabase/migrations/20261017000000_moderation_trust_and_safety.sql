@@ -137,6 +137,10 @@ create unique index if not exists idx_moderation_reports_dedup
   on public.moderation_reports (reporter_id, target_type, target_id)
   where status in ('pending', 'under_review');
 
+-- Index backing hourly rate-limit lookups per reporter
+create index if not exists idx_moderation_reports_reporter_created
+  on public.moderation_reports (reporter_id, created_at desc);
+
 -- RLS on moderation_reports
 -- Direct client inserts, updates, and deletes are denied to enforce rate-limits, target checks, and atomic actions.
 create policy moderation_reports_select_policy on public.moderation_reports
@@ -279,43 +283,83 @@ begin
     raise exception 'Invalid report reason: %', p_reason using errcode = '22023';
   end if;
 
-  -- Validate target type and verify actual target existence in database
+  -- Validate target type, verify actual target existence AND caller visibility authorization
   case p_target_type
     when 'course' then
-      if not exists (select 1 from public.courses where id = p_target_id) then
-        raise exception 'Target course % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.courses
+         where id = p_target_id
+           and (is_public = true or user_id = v_caller_id)
+      ) then
+        raise exception 'Target course % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'lesson' then
-      if not exists (select 1 from public.lessons where id = p_target_id) then
-        raise exception 'Target lesson % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.lessons
+         where id = p_target_id
+           and (visibility = 'public' or user_id = v_caller_id)
+      ) then
+        raise exception 'Target lesson % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'study_set' then
-      if not exists (select 1 from public.study_sets where id = p_target_id) then
-        raise exception 'Target study_set % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.study_sets
+         where id = p_target_id
+           and user_id = v_caller_id
+      ) then
+        raise exception 'Target study_set % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'word_list' then
-      if not exists (select 1 from public.word_lists where id = p_target_id) then
-        raise exception 'Target word_list % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.word_lists
+         where id = p_target_id
+           and user_id = v_caller_id
+      ) then
+        raise exception 'Target word_list % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'curriculum' then
-      if not exists (select 1 from public.curriculum_nodes where id = p_target_id) then
-        raise exception 'Target curriculum % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.curriculum_nodes cn
+          join public.target_versions v on v.id = cn.target_version_id
+          join public.learning_targets t on t.id = v.target_id
+         where cn.id = p_target_id
+           and (
+             (t.status = 'published' and t.is_public = true and v.status = 'published')
+             or t.created_by = v_caller_id
+           )
+      ) then
+        raise exception 'Target curriculum % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'resource' then
-      if not exists (select 1 from public.user_curriculum_resources where id = p_target_id) then
-        raise exception 'Target resource % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.user_curriculum_resources
+         where id = p_target_id
+           and user_id = v_caller_id
+      ) then
+        raise exception 'Target resource % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'question' then
-      if not exists (select 1 from public.questions where id = p_target_id) then
-        raise exception 'Target question % does not exist', p_target_id using errcode = 'P0002';
+      if not exists (
+        select 1 from public.questions q
+          join public.lessons l on l.id = q.lesson_id
+         where q.id = p_target_id
+           and (l.visibility = 'public' or l.user_id = v_caller_id)
+      ) then
+        raise exception 'Target question % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'profile' then
+      if p_target_id = v_caller_id then
+        raise exception 'Cannot submit moderation report against your own account' using errcode = '42501';
+      end if;
       if not exists (select 1 from auth.users where id = p_target_id) then
         raise exception 'Target user profile % does not exist', p_target_id using errcode = 'P0002';
       end if;
     else
       raise exception 'Invalid target_type: %', p_target_type using errcode = '22023';
   end case;
+
+  -- Transactional concurrency lock: serialize submissions per user to prevent concurrent rate limit bypass
+  perform pg_advisory_xact_lock(hashtext('moderation_report_rate_limit'), hashtext(v_caller_id::text));
 
   -- Rate limit check: maximum 10 reports per hour per user
   select count(*)::integer into v_recent_reports_count
