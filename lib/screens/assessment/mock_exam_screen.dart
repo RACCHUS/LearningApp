@@ -66,7 +66,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
           backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'Finish & Submit Exam?',
+            'Finish & Submit Practice?',
             style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
           ),
           content: Column(
@@ -74,7 +74,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Are you sure you want to end your exam session?',
+                'Are you sure you want to end your practice session?',
                 style: GoogleFonts.inter(fontSize: 14),
               ),
               const SizedBox(height: 16),
@@ -133,7 +133,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(
-                'Submit Final Exam',
+                'Submit Practice',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
               ),
             ),
@@ -313,7 +313,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Time has expired! Submitting your examination...'),
+            content: Text('Practice timer ended. Submitting your answers...'),
             backgroundColor: Color(0xFFEF4444),
           ),
         );
@@ -324,7 +324,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
     final totalQuestions = session.items.length;
     if (totalQuestions == 0) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Exam Simulation')),
+        appBar: AppBar(title: const Text('Practice Set')),
         body: const Center(child: Text('No exam items generated.')),
       );
     }
@@ -350,7 +350,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          tooltip: 'Exit Exam',
+          tooltip: 'Exit Practice',
           onPressed: () => _confirmFinishExam(session),
         ),
         title: Column(
@@ -364,7 +364,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
               ),
             ),
             Text(
-              'Domain $currentDomainCode',
+              'PRACTICE ONLY · Domain $currentDomainCode',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
