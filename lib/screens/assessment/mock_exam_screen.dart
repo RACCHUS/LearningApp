@@ -331,7 +331,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
 
     final currentItem = session.items[_currentIndex];
     final isFlagged = session.isItemFlagged(currentItem.id);
-    final currentDomainCode = session.itemDomainMap[currentItem.id] ?? '1.0';
+    final currentDomainCode = session.itemDomainMap[currentItem.id] ?? 'Unmapped';
     final remainingTime = session.remainingDuration;
     final isCriticalTime = remainingTime.inMinutes < 2;
     final isWarningTime = remainingTime.inMinutes < 10 && !isCriticalTime;
