@@ -140,7 +140,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Should transition to ExamReportScreen
-      expect(find.text('Diagnostic Readiness Report'), findsOneWidget);
+      expect(find.text('Practice Results'), findsOneWidget);
       expect(find.text('PRACTICE ONLY · NOT AN OFFICIAL EXAM RESULT'), findsOneWidget);
       expect(find.text('PRACTICE PERFORMANCE'), findsOneWidget);
       expect(find.text('Unverified'), findsWidgets);
