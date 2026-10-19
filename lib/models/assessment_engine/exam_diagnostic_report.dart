@@ -40,7 +40,7 @@ class OfficialExamFacts {
     required this.scoreScale,
     required this.timeLimitMinutes,
     this.nonAffiliationNotice =
-        'LearningApp is independent of official examination providers. Practice results do not represent official scores or verified standards.'
+        'LearningApp is independent of official examination providers. Practice results do not represent official scores or verified standards.',
   });
 }
 
