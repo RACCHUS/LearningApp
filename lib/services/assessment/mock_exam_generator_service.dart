@@ -73,7 +73,13 @@ class MockExamGeneratorService {
           }
         : AssessmentInteractionType.values
             .where((type) => allowedRaw.contains(type.toDbString()))
-            .toSet();
+            .toSet()
+            .intersection(const <AssessmentInteractionType>{
+              AssessmentInteractionType.singleChoice,
+              AssessmentInteractionType.multiSelect,
+              AssessmentInteractionType.orderedResponse,
+              AssessmentInteractionType.matching,
+            });
 
     if (allowedInteractionTypes.isEmpty) {
       throw StateError(
@@ -139,6 +145,11 @@ class MockExamGeneratorService {
       maxStimulusItemsRatio: maxStimulusItemsRatio,
       metadata: versionMeta,
     );
+  }
+
+  /// Returns only a mapped, declared practice domain. Never guesses a domain.
+  static String? validPracticeDomain(String? domainId, Set<String> allowedIds) {
+    return domainId != null && allowedIds.contains(domainId) ? domainId : null;
   }
 
   /// Refuses partial sets instead of silently displaying a full-count practice exam.
@@ -270,8 +281,8 @@ class MockExamGeneratorService {
     // Exclude unmapped and ambiguous items rather than silently borrowing the
     // highest-weight domain or fabricating domain evidence.
     for (final item in allItems) {
-      final domainId = itemDomainMap[item.id];
-      if (domainId == null || !domainItemsMap.containsKey(domainId)) continue;
+      final domainId = validPracticeDomain(itemDomainMap[item.id], domainItemsMap.keys.toSet());
+      if (domainId == null) continue;
       domainItemsMap[domainId]!.add(item);
     }
 
@@ -383,7 +394,7 @@ class MockExamGeneratorService {
 
     final finalItemDomainMap = <String, String>{};
     for (final item in selectedItems) {
-      final domainId = itemDomainMap[item.id];
+      final domainId = validPracticeDomain(itemDomainMap[item.id], domainItemsMap.keys.toSet());
       if (domainId == null) {
         throw StateError('Practice item ${item.id} has no validated domain mapping.');
       }
