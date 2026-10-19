@@ -1,13 +1,18 @@
 # LearningApp DMCA Copyright & Takedown Policy
 
-**Effective Date:** October 17, 2026  
+> [!IMPORTANT]
+> **DRAFT LEGAL DOCUMENT — PENDING OPERATIONAL VERIFICATION, DESIGNATED AGENT REGISTRATION, AND QUALIFIED LEGAL REVIEW**  
+> This document is an architectural draft representing the planned copyright compliance framework for LearningApp. It does **not** constitute legal advice, a completed compliance program, or active operational designated agent registration under 17 U.S.C. § 512(c)(2). Prior to enabling public user-generated content (UGC), LearningApp must register a designated agent in the U.S. Copyright Office directory, establish verified operational contact channels, and obtain formal legal counsel review.
+
+**Status:** Draft / Pending Legal & Operational Verification  
+**Effective Date:** Pending Public Launch  
 **Application:** LearningApp (`RACCHUS/LearningApp`)  
 
 ---
 
 ## 1. Compliance with the Digital Millennium Copyright Act
 
-LearningApp respects the intellectual property rights of creators, publishers, and educators. In accordance with the Digital Millennium Copyright Act of 1998 (17 U.S.C. § 512, "DMCA"), LearningApp will respond expeditiously to claims of copyright infringement committed using our Service if reported to our Designated Copyright Agent identified below.
+LearningApp respects the intellectual property rights of creators, publishers, and educators. In accordance with the Digital Millennium Copyright Act of 1998 (17 U.S.C. § 512, "DMCA"), LearningApp will respond expeditiously to claims of copyright infringement committed using our Service once reported to our Designated Copyright Agent identified below upon formal registration.
 
 ---
 
@@ -24,14 +29,17 @@ If you believe that your copyrighted work has been copied in a way that constitu
 
 ---
 
-## 3. Designated Copyright Agent Contact
+## 3. Designated Copyright Agent Contact (Draft — Pending Official Registration)
 
-Notices must be directed to:
+> [!NOTE]
+> Operational designated agent details below are provisional placeholders. Pursuant to 37 C.F.R. § 201.38, safe harbor protections require active registration in the U.S. Copyright Office Designated Agent Directory prior to public operations.
 
 **LearningApp DMCA Designated Agent**  
-- **Email:** `dmca@learningapp.local` (Subject line: "DMCA Copyright Notice")  
-- **Mailing Address:** LearningApp Legal / DMCA Agent, 100 Innovation Way, Suite 400, Orlando, FL 32801  
-- **Repository Support:** [`RACCHUS/LearningApp`](https://github.com/RACCHUS/LearningApp)  
+- **Agent Name:** `[Designated Agent Name - Pending Formal Registration]`  
+- **Email:** `[dmca-agent@domain-pending.example]` (Provisional repository intake: `RACCHUS/LearningApp` Security/Legal intake)  
+- **Mailing Address:** `[Designated Agent Physical Mailing Address - Pending Corporate Verification]`  
+- **U.S. Copyright Office Registration ID:** `[Pending Directory Registration]`  
+- **Repository Inquiries:** [`RACCHUS/LearningApp`](https://github.com/RACCHUS/LearningApp)  
 
 ---
 

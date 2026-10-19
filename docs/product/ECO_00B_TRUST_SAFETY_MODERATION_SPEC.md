@@ -75,7 +75,7 @@ erDiagram
     moderation_actions {
         uuid id PK
         uuid report_id FK
-        uuid moderator_id FK
+        uuid moderator_id FK "on delete set null"
         text action
         text reason
         text notes
@@ -94,17 +94,39 @@ erDiagram
    - `granted_by uuid references auth.users(id) on delete set null`
    - `created_at timestamptz not null default now()`
 
-2. **Security Definer Authorization Function**:
+2. **Private Schema & Zero-Argument Authorization Helpers**:
+   To eliminate user ID spoofing and protect internal role evaluations:
    ```sql
-   create or replace function public.is_moderator(user_id uuid)
-   returns boolean language sql security definer
-   set search_path = public, pg_temp as $$
+   create schema if not exists private;
+   revoke all on schema private from public, anon, authenticated;
+
+   -- Zero-argument caller check for moderators or admins
+   create or replace function private.is_moderator()
+   returns boolean language sql stable security definer
+   set search_path = '' as $$
      select exists (
        select 1 from public.moderation_roles
-        where user_id = is_moderator.user_id
+        where user_id = auth.uid()
           and role in ('moderator', 'admin')
      );
    $$;
+
+   -- Zero-argument caller check for platform administrators
+   create or replace function private.is_admin()
+   returns boolean language sql stable security definer
+   set search_path = '' as $$
+     select exists (
+       select 1 from public.moderation_roles
+        where user_id = auth.uid()
+          and role = 'admin'
+     );
+   $$;
+
+   revoke all on function private.is_moderator() from public, anon, authenticated;
+   grant execute on function private.is_moderator() to authenticated, service_role;
+
+   revoke all on function private.is_admin() from public, anon, authenticated;
+   grant execute on function private.is_admin() to authenticated, service_role;
    ```
 
 3. **`public.moderation_reports`**:
@@ -117,11 +139,17 @@ erDiagram
    - `status text not null default 'pending' check (status in ('pending', 'under_review', 'actioned', 'dismissed'))`
    - `created_at timestamptz not null default now()`
    - `updated_at timestamptz not null default now()`
+   - **Report Deduplication**: Partial unique index:
+     ```sql
+     create unique index idx_moderation_reports_dedup
+       on public.moderation_reports (reporter_id, target_type, target_id)
+      where status in ('pending', 'under_review');
+     ```
 
 4. **`public.moderation_actions`**:
    - `id uuid primary key default gen_random_uuid()`
    - `report_id uuid references public.moderation_reports(id) on delete set null`
-   - `moderator_id uuid not null references auth.users(id) on delete cascade`
+   - `moderator_id uuid references auth.users(id) on delete set null` (**Preserves immutable audit trail even if moderator account is deleted**)
    - `action text not null check (action in ('dismiss', 'warn', 'hide', 'delete', 'suspend_user', 'rate_limit'))`
    - `reason text not null`
    - `notes text`
@@ -129,25 +157,72 @@ erDiagram
    - `target_id uuid not null`
    - `created_at timestamptz not null default now()`
 
+5. **Atomic Transactional Workflow RPC (`public.apply_moderation_action`)**:
+   Moderation decisions and report status changes must be recorded in a single atomic transaction:
+   ```sql
+   create or replace function public.apply_moderation_action(
+     p_report_id uuid,
+     p_action text,
+     p_reason text,
+     p_notes text default null
+   )
+   returns uuid language plpgsql security definer
+   set search_path = '' as $$
+   declare
+     v_report record;
+     v_action_id uuid;
+     v_new_status text;
+   begin
+     if not private.is_moderator() then
+       raise exception 'Access denied: caller does not possess moderator privileges' using errcode = '42501';
+     end if;
+
+     select * into v_report
+       from public.moderation_reports
+      where id = p_report_id;
+
+     if not found then
+       raise exception 'Report % not found', p_report_id using errcode = 'P0002';
+     end if;
+
+     v_new_status := case when p_action = 'dismiss' then 'dismissed' else 'actioned' end;
+
+     insert into public.moderation_actions (
+       report_id, moderator_id, action, reason, notes, target_type, target_id
+     ) values (
+       p_report_id, auth.uid(), p_action, p_reason, p_notes, v_report.target_type, v_report.target_id
+     ) returning id into v_action_id;
+
+     update public.moderation_reports
+        set status = v_new_status,
+            updated_at = now()
+      where id = p_report_id;
+
+     return v_action_id;
+   end;
+   $$;
+   ```
+
 ---
 
 ### 2.3 Row-Level Security (RLS) Policies
 
-All tables enable RLS (`alter table ... enable row level security;`):
+All tables strictly enforce RLS (`alter table ... enable row level security;`):
 
 - **`moderation_roles`**:
-  - `SELECT`: Only moderators and admins can query roles (`public.is_moderator(auth.uid())`).
-  - `INSERT/UPDATE/DELETE`: Admins only or service_role.
+  - `SELECT`: Only moderators and admins can query roles (`using (private.is_moderator())`).
+  - `INSERT/UPDATE/DELETE`: Admins only (`using (private.is_admin())` and `with check (private.is_admin())`).
+  - **Self-Granting Prevention**: Non-admins cannot grant roles. First administrator is bootstrapped via initial migration or service-role.
 
 - **`moderation_reports`**:
   - `INSERT`: Authenticated users can file a report (`with check (reporter_id = auth.uid())`).
-  - `SELECT`: A user can see reports they filed (`reporter_id = auth.uid()`). Moderators can see **all** reports (`public.is_moderator(auth.uid())`).
-  - `UPDATE`: Only moderators can update report status (`using (public.is_moderator(auth.uid()))`).
+  - `SELECT`: A user can see reports they filed (`reporter_id = auth.uid()`). Moderators can see **all** reports (`using (private.is_moderator())`).
+  - `UPDATE`: Only moderators can update report status (`using (private.is_moderator())`).
   - `DELETE`: Denied to everyone (append-only audit integrity).
 
 - **`moderation_actions`**:
-  - `INSERT`: Only moderators (`public.is_moderator(auth.uid())` and `with check (moderator_id = auth.uid())`).
-  - `SELECT`: Only moderators.
+  - `INSERT`: Only moderators via direct check or atomic RPC (`with check (private.is_moderator() and (moderator_id = auth.uid() or moderator_id is null))`).
+  - `SELECT`: Only moderators (`using (private.is_moderator())`).
   - `UPDATE/DELETE`: Denied to everyone (immutable compliance trail).
 
 ---
@@ -157,6 +232,7 @@ All tables enable RLS (`alter table ... enable row level security;`):
 ECO-00B delivers three comprehensive legal and governance documents in `docs/legal/`:
 
 ### 3.1 Terms of Service (`docs/legal/TERMS_OF_SERVICE.md`)
+- **Status**: Draft pending operational verification and qualified legal review.
 - **Educational Scope & Disclaimer**:
   - LearningApp is a personal study, foundational literacy, and career preparation platform.
   - Using LearningApp, completing courses, or checking milestone preparation steps **does not award an official degree, state license, or certified qualification**.
@@ -165,30 +241,29 @@ ECO-00B delivers three comprehensive legal and governance documents in `docs/leg
   - Prohibition of sharing actual, confidential, or live state licensing exam items.
 - **Age Requirement & Minor Accounts**:
   - Public posting and broadcasting features require users to be at least 18 years of age.
-  - Minors may use the platform in private study mode with guardian or institutional supervision.
-- **User Content Licensing**:
-  - Creators retain ownership of original materials. By submitting public questions or answers, users grant LearningApp a non-exclusive license to display, index, and organize the content within the learning graph.
+  - Minors may use the platform in private study mode with verified parental or school consent.
+  - Public user-generated content (UGC) is disabled platform-wide during Phase 0.
 
 ### 3.2 Privacy Policy (`docs/legal/PRIVACY_POLICY.md`)
+- **Status**: Draft pending operational verification and qualified legal review.
 - **Data Minimization**:
   - The platform collects only essential account credentials (email, display name) and study progress telemetry.
   - Offline pre-reader profiles and oral literacy progress remain strictly on-device by default.
 - **Minor Safety & Children's Privacy**:
   - Strict isolation: zero public directory listing of minor accounts.
   - Complete prohibition of unvetted direct messaging between adult strangers and minors.
-  - Documented parental consent procedures and expedited account deletion workflows.
-- **Data Subject Rights**:
-  - Export personal data upon request.
-  - Complete account deletion ("Right to be Forgotten") erasing all personal learning targets, progress logs, and non-anonymized records.
+  - Clear articulation of COPPA/FERPA boundaries (caseworker/guardian vs statutory parental consent; school consent limited strictly to educational benefit).
+- **Target Specifications Under Development**:
+  - Self-service account deletion ("Right to be Forgotten") and automated data export are documented as future technical specifications under active engineering development.
 
 ### 3.3 DMCA Takedown & Copyright Policy (`docs/legal/DMCA_TAKEDOWN_POLICY.md`)
+- **Status**: Draft pending operational verification and U.S. Copyright Office directory registration.
 - **Designated Agent Notice Requirements**:
-  - Identification of copyrighted work, infringing URL/identifier, contact info, good-faith statement, and physical/electronic signature.
+  - Standard statutory elements pursuant to 17 U.S.C. § 512(c)(3).
+  - Explicit notice that designated agent registration in the U.S. Copyright Office directory (37 C.F.R. § 201.38) is required prior to public operations.
 - **Takedown & Safe Harbor Workflow**:
-  - Immediate temporary concealment of contested material upon receipt of valid 17 U.S.C. § 512(c)(3) notice.
-  - Prompt notification to content author.
-- **Counter-Notice & Restoration**:
-  - 10–14 business day statutory window for rights holders to file court actions prior to content restoration.
+  - Immediate temporary concealment of contested material upon receipt of valid notice.
+  - Prompt notification to content author and 10–14 business day counter-notice statutory window.
 - **Repeat Infringer Policy**:
   - Termination of publishing privileges for persistent copyright infringers.
 
@@ -199,56 +274,53 @@ ECO-00B delivers three comprehensive legal and governance documents in `docs/leg
 ### 4.1 Client Models & Services
 
 1. **`lib/models/governance/moderation_report.dart`**:
-   - `ModerationReport`: id, reporterId, targetType, targetId, reason, description, status, createdAt.
+   - `ModerationReport`: id, reporterId, targetType, targetId, reason, description, status, createdAt, updatedAt.
    - `ModerationAction`: id, reportId, moderatorId, action, reason, notes, targetType, targetId, createdAt.
    - Enums: `ReportReason`, `ReportStatus`, `ModerationActionType`.
 
 2. **`lib/services/governance/moderation_service.dart`**:
-   - `submitReport(...)`: Creates a new report record.
+   - `submitReport(...)`: Creates a new report record via client insert or RPC.
    - `fetchQueue(...)`: Loads pending and under-review reports for authorized moderators.
-   - `resolveReport(...)`: Executes a moderation action and transitions report status in a single workflow.
-   - `checkModeratorStatus(...)`: Evaluates `public.is_moderator(auth.uid())`.
-
-3. **`lib/providers/governance/moderation_provider.dart`**:
-   - `moderatorStatusProvider`: FutureProvider checking if the current user has moderator privileges.
-   - `moderationQueueProvider`: StateNotifierProvider managing filtering, sorting, and optimistic updates of reports.
+   - `applyModerationAction(...)`: Invokes the atomic `public.apply_moderation_action` RPC.
+   - `checkModeratorStatus(...)`: Evaluates `private.is_moderator()`.
 
 ### 4.2 Moderation Queue Screen (`lib/screens/governance/moderation_queue_screen.dart`)
 - **Access Guard**: Automatically redirects or renders an access-denied state if `is_moderator` is false.
 - **Filter Tabs**: `Pending` (badge count), `Under Review`, `Actioned`, `Dismissed`.
 - **Reason Chips**: Filter by reason (`Minor Safety`, `Harassment`, `Misinformation`, `Spam`, `Copyright`).
-- **Interactive Action Dialog**:
-  - Allows moderator to select resolution (`Dismiss`, `Warn Author`, `Hide Content`, `Delete Content`, `Suspend User`).
+- **Interactive Action Dialog with Operational Clarity**:
+  - Clearly labels actions as **Auditable Moderation Decisions**.
+  - Explicitly states that recording `hide` or `suspend_user` creates an immutable compliance record, and distinguishes decision logging from downstream automated content muting until subsequent epics.
   - Requires mandatory justification note.
-  - Records the action immutably to `moderation_actions`.
+  - Executes atomically via `public.apply_moderation_action`.
 
 ---
 
 ## 5. Verification & Testing Plan
 
-1. **SQL & Migration Tests (`test/supabase/moderation_trust_and_safety_test.sql`)**:
-   - pgTAP test suite validating:
-     - Table existence, columns, and foreign keys.
-     - RLS: Anonymous user cannot read or insert reports.
-     - RLS: Authenticated learner can insert report but cannot read others' reports.
-     - RLS: Non-moderator cannot query `moderation_actions` or update report status.
-     - RLS: Moderator can view all reports and insert actions.
-2. **Dart Unit & Service Tests (`test/services/moderation_service_test.dart`)**:
-   - Verify report submission, JSON serialization, status transitions, and error handling.
+1. **pgTAP Security & RLS Tests (`supabase/tests/moderation_security_test.sql`)**:
+   - Located under repository-standard `supabase/tests/`.
+   - Validates:
+     - Zero-argument caller enforcement (`private.is_moderator()` uses `auth.uid()`).
+     - Privilege escalation defense: non-moderators cannot view reports, perform actions, or read roles.
+     - Separation of powers: moderators cannot grant admin roles; only admins can modify `moderation_roles`.
+     - Audit trail preservation: deleting an auth user sets `moderator_id = null` and retains all action history.
+     - Atomic transaction consistency: `apply_moderation_action` updates report status and records action log together.
+     - Deduplication: prevents duplicate pending reports by the same user on the same target.
+2. **Dart Unit & Service Tests (`test/services/governance/moderation_service_test.dart`)**:
+   - Verify report submission, atomic action execution, status parsing, and error handling.
 3. **Widget Tests (`test/widgets/governance/moderation_queue_screen_test.dart`)**:
    - Verify access control rejection for non-moderators.
-   - Verify report list rendering, filter tabs, and action dialog submission.
+   - Verify report list rendering, filter tabs, action dialog validation, and operational disclaimers.
 
 ---
 
 ## 6. Implementation Deliverables Checklist
 
-- [ ] `docs/product/ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md` updated with schema corrections.
-- [ ] `docs/product/ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md` authored.
-- [ ] `docs/legal/TERMS_OF_SERVICE.md` authored.
-- [ ] `docs/legal/PRIVACY_POLICY.md` authored.
-- [ ] `docs/legal/DMCA_TAKEDOWN_POLICY.md` authored.
+- [x] Legal drafts updated with explicit draft notices, disclaimers, and COPPA/FERPA clarifications in `docs/legal/`.
+- [x] Architecture specification updated in `docs/product/ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md`.
 - [ ] Additive Supabase migration `20261017000000_moderation_trust_and_safety.sql` created.
-- [ ] Dart models, services, and providers implemented in `lib/models/governance/`, `lib/services/governance/`, `lib/providers/governance/`.
+- [ ] pgTAP security test suite authored at `supabase/tests/moderation_security_test.sql`.
+- [ ] Dart models and service implemented in `lib/models/governance/` and `lib/services/governance/`.
 - [ ] Responsive `ModerationQueueScreen` implemented in `lib/screens/governance/`.
-- [ ] Automated unit, service, widget, and RLS tests passing.
+- [ ] Automated unit, widget, and pgTAP tests passing.
