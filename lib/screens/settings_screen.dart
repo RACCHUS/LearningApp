@@ -376,6 +376,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => context.push('/settings/motivation'),
             ),
 
+            ListTile(
+              leading: const Icon(Icons.shield_outlined, color: Colors.blue),
+              title: const Text('Trust & Safety Console'),
+              subtitle: const Text('Review reports and moderation queue (ECO-00B)'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/moderation'),
+            ),
+
             const Divider(height: 32),
 
             ListTile(

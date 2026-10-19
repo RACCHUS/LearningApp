@@ -1,4 +1,5 @@
 import 'package:learning_pwa/screens/settings_screen.dart';
+import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -366,6 +367,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/motivation',
         name: 'settings-motivation',
         builder: (context, state) => const MotivationSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/moderation',
+        name: 'moderation-queue',
+        builder: (context, state) => const ModerationQueueScreen(),
       ),
       GoRoute(
         path: '/test/hands-free',
