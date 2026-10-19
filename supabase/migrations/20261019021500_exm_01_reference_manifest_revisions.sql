@@ -121,7 +121,7 @@ create table public.exam_reference_manifest_revisions (
 );
 
 comment on table public.exam_reference_manifest_revisions is
-  'Versioned independently of curricula. Public editorial identity fields are non-sensitive pseudonymous IDs; store private reviewer notes elsewhere. Approved source data, not copyrighted reference text. No learner/anon writes.';
+  'Independently versioned. Public identity fields must use non-sensitive reviewer aliases. Keep internal review notes outside public published metadata.';
 create index exam_manifest_lookup_idx
   on public.exam_reference_manifest_revisions (
     target_version_id,exam_part_key,publication_status,effective_from
@@ -222,48 +222,7 @@ begin
     if not exists (
       select 1 from public.content_source_releases sr
       where sr.id=new.source_release_id
-        and sr.source_url ~ '^https://[^[:space:]]+    ) then
-      raise exception 'Manifest source release must link to a primary HTTPS document';
-    end if;
-  end if;
-
-  return new;
-end
-$$;
-
-revoke all on function public.guard_exam_reference_manifest_revision()
-  from public,anon,authenticated;
-
-create trigger trg_guard_exam_reference_manifest_revision
-before insert or update or delete
-on public.exam_reference_manifest_revisions
-for each row execute function public.guard_exam_reference_manifest_revision();
-
-alter table public.exam_reference_manifest_revisions enable row level security;
-revoke all on public.exam_reference_manifest_revisions
-  from public,anon,authenticated;
-grant select on public.exam_reference_manifest_revisions to anon,authenticated;
-grant select,insert,update,delete on public.exam_reference_manifest_revisions
-  to service_role;
-
-create policy exam_reference_manifest_public_select
-on public.exam_reference_manifest_revisions for select
-to anon,authenticated
-using (
-  publication_status='published'
-  and review_status='approved'
-  and exists (
-    select 1 from public.target_versions v
-    join public.learning_targets t on t.id=v.target_id
-    where v.id=exam_reference_manifest_revisions.target_version_id
-      and v.status='published'
-      and t.status='published' and t.is_public=true
-  )
-);
-
--- Intentionally no INSERT/UPDATE/DELETE policy for anon/authenticated.
--- Draft and review_ready records are not visible over the client Data API.
-
+        and sr.source_url ~ '^https://[^[:space:]]+$'
       and sr.source_url = new.official_source_url
     ) then
       raise exception 'Manifest source release must link to a primary HTTPS document';
