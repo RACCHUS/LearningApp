@@ -97,6 +97,45 @@ void main() {
       }), throwsFormatException);
     });
 
+    test('Verified claims require resolvable primary source records', () {
+      final metadata = targetMetadata(requirements: {
+        'reference_mode': {
+          'state': 'verified',
+          'value': 'candidate_supplied_paper',
+          'evidence_ids': ['regulator-pdf-1'],
+        },
+      });
+      expect(() => ExamPreparationProfile.fromTargetVersionMetadata(
+        targetVersionId: 'target-v1',
+        metadata: metadata,
+      ), throwsFormatException);
+
+      (metadata['exam_preparation'] as Map)['source_evidence'] = [
+        {
+          'id': 'regulator-pdf-1',
+          'official_url': 'https://www.example.gov/reference.pdf',
+          'source_page': '1',
+          'source_checked_at': '2026-10-18T18:00:00Z',
+        },
+      ];
+      expect(() => ExamPreparationProfile.fromTargetVersionMetadata(
+        targetVersionId: 'target-v1',
+        metadata: metadata,
+      ), returnsNormally);
+
+      (metadata['exam_preparation'] as Map)['source_evidence'] = [
+        {
+          'id': 'regulator-pdf-1',
+          'official_url': 'https://www.example.gov/reference.pdf',
+          'source_checked_at': '2026-10-18T18:00:00Z',
+        },
+      ];
+      expect(() => ExamPreparationProfile.fromTargetVersionMetadata(
+        targetVersionId: 'target-v1',
+        metadata: metadata,
+      ), throwsFormatException);
+    });
+
     test('Duplicate or malformed parts fail closed', () {
       final metadata = targetMetadata();
       (metadata['exam_preparation'] as Map)['exam_parts'] = [
