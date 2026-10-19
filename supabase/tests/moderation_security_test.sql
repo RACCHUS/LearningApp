@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(34);
+select plan(37);
 
 -- 1. Setup synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -45,6 +45,44 @@ on conflict (id) do nothing;
 
 insert into public.word_lists (id, title, user_id) values
   ('8f7c1a10-0000-4000-8000-000000000504', 'Learner Private Word List', '8f7c1a10-0000-4000-8000-000000000040')
+on conflict (id) do nothing;
+
+-- Target & Version for unpublished target-version lesson isolation testing
+insert into public.learning_targets
+  (id, target_type, title, slug, status, is_public, is_official, created_by)
+values
+  ('8f7c1a10-0000-4000-8000-000000000601', 'certification',
+   'Private Draft Target', 'private-draft-target', 'draft', false, false,
+   '8f7c1a10-0000-4000-8000-000000000040')
+on conflict (id) do nothing;
+
+insert into public.target_versions (id, target_id, version_code, status)
+values
+  ('8f7c1a10-0000-4000-8000-000000000602',
+   '8f7c1a10-0000-4000-8000-000000000601', 'draft-v1', 'draft')
+on conflict (id) do nothing;
+
+insert into public.lessons (id, title, user_id, visibility, origin_target_version_id)
+values
+  ('8f7c1a10-0000-4000-8000-000000000603', 'Public Flag But Draft Target Lesson',
+   '8f7c1a10-0000-4000-8000-000000000040', 'public',
+   '8f7c1a10-0000-4000-8000-000000000602')
+on conflict (id) do nothing;
+
+insert into public.questions (id, lesson_id, question_text, options, correct_answer, user_id)
+values
+  ('8f7c1a10-0000-4000-8000-000000000604',
+   '8f7c1a10-0000-4000-8000-000000000603',
+   'Draft Lesson Test Question',
+   '["Option A", "Option B"]'::jsonb,
+   0,
+   '8f7c1a10-0000-4000-8000-000000000040'),
+  ('8f7c1a10-0000-4000-8000-000000000505',
+   '8f7c1a10-0000-4000-8000-000000000501',
+   'Public Safety Lesson Test Question',
+   '["Option A", "Option B"]'::jsonb,
+   0,
+   '8f7c1a10-0000-4000-8000-000000000040')
 on conflict (id) do nothing;
 
 -- 3. Bootstrap moderation roles directly (as superuser/service_role)
@@ -173,6 +211,32 @@ select throws_ok(
   'Reporting private lesson of another user is denied with P0002'
 );
 
+-- Reporter attempting to report lesson on unpublished target version is rejected with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'lesson',
+       '8f7c1a10-0000-4000-8000-000000000603'::uuid,
+       'spam',
+       'Attempting to report lesson on unpublished target version'
+     ) $$,
+  'P0002',
+  null,
+  'Reporting lesson on unpublished draft target version is denied with P0002'
+);
+
+-- Reporter attempting to report question on unpublished target version is rejected with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report(
+       'question',
+       '8f7c1a10-0000-4000-8000-000000000604'::uuid,
+       'spam',
+       'Attempting to report question on unpublished target version'
+     ) $$,
+  'P0002',
+  null,
+  'Reporting question on unpublished draft target version is denied with P0002'
+);
+
 -- Reporter attempting to report another user's private study set is rejected with P0002
 select throws_ok(
   $$ select public.submit_moderation_report(
@@ -199,17 +263,17 @@ select throws_ok(
   'Reporting private word list of another user is denied with P0002'
 );
 
--- Reporter attempting to report their own profile is rejected with 42501
+-- Reporter attempting to report a profile is rejected with 0A000 (profile reporting disabled)
 select throws_ok(
   $$ select public.submit_moderation_report(
        'profile',
-       '8f7c1a10-0000-4000-8000-000000000030'::uuid,
+       '8f7c1a10-0000-4000-8000-000000000040'::uuid,
        'harassment',
-       'Self-reporting attempt'
+       'Profile report attempt'
      ) $$,
-  '42501',
+  '0A000',
   null,
-  'Submitting moderation report against own account is rejected with 42501'
+  'Submitting moderation report against profile is rejected with 0A000 (feature disabled)'
 );
 
 -- Reporter submits a valid report on existing public lesson
@@ -221,6 +285,17 @@ select lives_ok(
        'Automated promotional link'
      ) $$,
   'Authenticated learner can submit a moderation report on existing public content'
+);
+
+-- Reporter submits a valid report on existing public question
+select lives_ok(
+  $$ select public.submit_moderation_report(
+       'question',
+       '8f7c1a10-0000-4000-8000-000000000505'::uuid,
+       'inappropriate',
+       'Inappropriate quiz content'
+     ) $$,
+  'Authenticated learner can submit a moderation report on existing public question'
 );
 
 -- Duplicate pending report on the same target is blocked
@@ -312,7 +387,7 @@ do $$ begin
   perform set_config('request.jwt.claim.sub', '8f7c1a10-0000-4000-8000-000000000030', true);
 end $$;
 
--- Submit 9 additional distinct reports (bringing total to 10 in the hour)
+-- Submit 8 additional distinct reports (bringing total to 10 in the hour)
 select lives_ok(
   $$
   do $b$
@@ -320,7 +395,7 @@ select lives_ok(
     v_id uuid;
   begin
     for v_id in
-      select id from public.lessons where id between '8f7c1a10-0000-4000-8000-000000000511' and '8f7c1a10-0000-4000-8000-000000000519'
+      select id from public.lessons where id between '8f7c1a10-0000-4000-8000-000000000511' and '8f7c1a10-0000-4000-8000-000000000518'
     loop
       perform public.submit_moderation_report('lesson', v_id, 'spam', 'Batch rate limit test report');
     end loop;

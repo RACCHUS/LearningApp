@@ -294,11 +294,7 @@ begin
         raise exception 'Target course % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'lesson' then
-      if not exists (
-        select 1 from public.lessons
-         where id = p_target_id
-           and (visibility = 'public' or user_id = v_caller_id)
-      ) then
+      if not public.is_lesson_visible(p_target_id) then
         raise exception 'Target lesson % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'study_set' then
@@ -341,19 +337,14 @@ begin
     when 'question' then
       if not exists (
         select 1 from public.questions q
-          join public.lessons l on l.id = q.lesson_id
          where q.id = p_target_id
-           and (l.visibility = 'public' or l.user_id = v_caller_id)
+           and q.lesson_id is not null
+           and public.is_lesson_visible(q.lesson_id)
       ) then
         raise exception 'Target question % does not exist or caller lacks access', p_target_id using errcode = 'P0002';
       end if;
     when 'profile' then
-      if p_target_id = v_caller_id then
-        raise exception 'Cannot submit moderation report against your own account' using errcode = '42501';
-      end if;
-      if not exists (select 1 from auth.users where id = p_target_id) then
-        raise exception 'Target user profile % does not exist', p_target_id using errcode = 'P0002';
-      end if;
+      raise exception 'Profile reporting is disabled until public profile launch' using errcode = '0A000';
     else
       raise exception 'Invalid target_type: %', p_target_type using errcode = '22023';
   end case;
