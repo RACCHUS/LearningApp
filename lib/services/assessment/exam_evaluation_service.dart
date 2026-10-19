@@ -22,7 +22,7 @@ class ExamEvaluationService {
     final missedConceptMap = <String, int>{}; // conceptId -> missed count
 
     for (final item in session.items) {
-      final domainCode = session.itemDomainMap[item.id] ?? '1.0';
+      final domainCode = session.itemDomainMap[item.id] ?? 'unmapped';
       final userAns = session.userResponses[item.id];
       final itemConcepts = session.itemConceptMap[item.id] ?? [];
 
