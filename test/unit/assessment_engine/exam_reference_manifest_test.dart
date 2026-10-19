@@ -280,7 +280,7 @@ void main() {
       final records = [
         ExamReferenceManifestRevision.fromRow(manifestRow(status: 'draft')),
         ExamReferenceManifestRevision.fromRow(manifestRow(
-          id: 'unreviewed', revision: 3, reviewStatus: 'pending')),
+          id: 'unreviewed', revision: 3, status: 'draft', reviewStatus: 'pending')),
         ExamReferenceManifestRevision.fromRow(manifestRow(
           id: 'foreign', revision: 4, version: 'other-target')),
         ExamReferenceManifestRevision.fromRow(manifestRow(
