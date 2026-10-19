@@ -149,6 +149,15 @@ void main() {
       expect(roundTrip.officialScoreScale, isNull);
     });
 
+    test('Only renderer-supported question formats are eligible', () {
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.singleChoice), isTrue);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.matrixGrid), isFalse);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.numericEntry), isFalse);
+    });
+
     test('Unmapped and invalid domains never fall back to the largest domain', () {
       const validDomains = {'dom-a', 'dom-b'};
       expect(MockExamGeneratorService.validPracticeDomain(null, validDomains), isNull);
