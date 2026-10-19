@@ -99,6 +99,7 @@ void main() {
         description: 'Contains targeted offensive content',
         status: ReportStatus.pending,
         createdAt: DateTime.utc(2026, 10, 18, 14, 30),
+        updatedAt: DateTime.utc(2026, 10, 18, 14, 30),
       );
 
       final fakeService = FakeModerationService(
@@ -126,7 +127,7 @@ void main() {
       expect(find.text('Public / Standard Reason *'), findsOneWidget);
       expect(find.text('Internal Audit Notes (Optional)'), findsOneWidget);
       expect(
-        find.textContaining('Audit Trail Notice: Actions are atomic'),
+        find.textContaining('Option A Governance: Moderation actions are recorded as administrative decisions'),
         findsOneWidget,
       );
 
@@ -147,9 +148,10 @@ void main() {
         reporterId: 'usr-1',
         targetType: ModerationTargetType.course,
         targetId: 'course-1',
-        reason: ReportReason.copyrightInfringement,
+        reason: ReportReason.copyright,
         status: ReportStatus.pending,
         createdAt: DateTime.utc(2026, 10, 18, 15, 0),
+        updatedAt: DateTime.utc(2026, 10, 18, 15, 0),
       );
 
       final sampleResolved = ModerationReport(
@@ -157,11 +159,10 @@ void main() {
         reporterId: 'usr-2',
         targetType: ModerationTargetType.studySet,
         targetId: 'set-1',
-        reason: ReportReason.spamPhishing,
-        status: ReportStatus.resolvedActionTaken,
+        reason: ReportReason.spam,
+        status: ReportStatus.actioned,
         createdAt: DateTime.utc(2026, 10, 18, 14, 0),
-        resolvedBy: 'mod-1',
-        resolutionNotes: 'Spam removed',
+        updatedAt: DateTime.utc(2026, 10, 18, 14, 30),
       );
 
       final fakeService = FakeModerationService(

@@ -17,7 +17,7 @@ class FakeRpcFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> 
 }
 
 void main() {
-  group('ECO-00B: Moderation Models Tests', () {
+  group('ECO-00B: Canonical Database Contract & Model Tests', () {
     test('ModerationReport serialization and deserialization roundtrip', () {
       final now = DateTime.utc(2026, 10, 18, 12, 0, 0);
       final report = ModerationReport(
@@ -25,62 +25,144 @@ void main() {
         reporterId: 'usr-reporter-1',
         targetType: ModerationTargetType.lesson,
         targetId: 'lesson-101',
-        reason: ReportReason.csamCsae,
+        reason: ReportReason.minorSafety,
         description: 'Harmful content detected',
         status: ReportStatus.pending,
         createdAt: now,
+        updatedAt: now,
       );
 
       final json = report.toJson();
       expect(json['id'], 'rep-12345');
+      expect(json['reporter_id'], 'usr-reporter-1');
       expect(json['target_type'], 'lesson');
-      expect(json['reason'], 'csam_csae');
+      expect(json['reason'], 'minor_safety');
       expect(json['status'], 'pending');
 
       final deserialized = ModerationReport.fromJson(json);
       expect(deserialized.id, report.id);
+      expect(deserialized.reporterId, 'usr-reporter-1');
       expect(deserialized.targetType, ModerationTargetType.lesson);
-      expect(deserialized.reason, ReportReason.csamCsae);
+      expect(deserialized.reason, ReportReason.minorSafety);
       expect(deserialized.status, ReportStatus.pending);
       expect(deserialized.createdAt, now);
+      expect(deserialized.updatedAt, now);
       expect(deserialized.status.isTerminal, isFalse);
     });
 
-    test('ReportStatus terminal checks', () {
+    test('ModerationReport handles null reporter_id (account deleted preservation)', () {
+      final now = DateTime.utc(2026, 10, 18, 12, 0, 0);
+      final json = {
+        'id': 'rep-orphan',
+        'reporter_id': null,
+        'target_type': 'word_list',
+        'target_id': 'wl-999',
+        'reason': 'spam',
+        'description': null,
+        'status': 'actioned',
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+
+      final deserialized = ModerationReport.fromJson(json);
+      expect(deserialized.id, 'rep-orphan');
+      expect(deserialized.reporterId, isNull);
+      expect(deserialized.targetType, ModerationTargetType.wordList);
+      expect(deserialized.reason, ReportReason.spam);
+      expect(deserialized.status, ReportStatus.actioned);
+      expect(deserialized.status.isTerminal, isTrue);
+    });
+
+    test('All canonical ReportStatus database values parse and roundtrip', () {
+      const dbStatuses = ['pending', 'under_review', 'actioned', 'dismissed'];
+      for (final dbVal in dbStatuses) {
+        final status = ReportStatus.fromDb(dbVal);
+        expect(status.dbValue, dbVal);
+      }
       expect(ReportStatus.pending.isTerminal, isFalse);
       expect(ReportStatus.underReview.isTerminal, isFalse);
-      expect(ReportStatus.resolvedActionTaken.isTerminal, isTrue);
-      expect(ReportStatus.resolvedNoAction.isTerminal, isTrue);
+      expect(ReportStatus.actioned.isTerminal, isTrue);
       expect(ReportStatus.dismissed.isTerminal, isTrue);
     });
 
-    test('ModerationRole role checks', () {
-      final modRole = ModerationRole(
-        id: 'role-1',
-        userId: 'u1',
-        role: 'moderator',
-        grantedAt: DateTime.utc(2026, 10, 1),
-      );
-      expect(modRole.isModerator, isTrue);
-      expect(modRole.isAdmin, isFalse);
+    test('Unknown ReportStatus fails visibly with FormatException', () {
+      expect(() => ReportStatus.fromDb('unknown_status'), throwsFormatException);
+      expect(() => ReportStatus.fromDb(null), throwsArgumentError);
+    });
+
+    test('All canonical ModerationActionType database values parse and roundtrip', () {
+      const dbActions = ['dismiss', 'warn', 'hide', 'delete', 'suspend_user', 'rate_limit'];
+      for (final dbVal in dbActions) {
+        final action = ModerationActionType.fromDb(dbVal);
+        expect(action.dbValue, dbVal);
+      }
+    });
+
+    test('Unknown ModerationActionType fails visibly with FormatException', () {
+      expect(() => ModerationActionType.fromDb('ban_forever'), throwsFormatException);
+      expect(() => ModerationActionType.fromDb(null), throwsArgumentError);
+    });
+
+    test('All canonical ReportReason database values parse and roundtrip', () {
+      const dbReasons = ['spam', 'harassment', 'misinformation', 'copyright', 'minor_safety', 'inappropriate', 'other'];
+      for (final dbVal in dbReasons) {
+        final reason = ReportReason.fromDb(dbVal);
+        expect(reason.dbValue, dbVal);
+      }
+    });
+
+    test('Unknown ReportReason fails visibly with FormatException', () {
+      expect(() => ReportReason.fromDb('arbitrary_reason'), throwsFormatException);
+      expect(() => ReportReason.fromDb(null), throwsArgumentError);
+    });
+
+    test('All canonical ModerationTargetType database values parse and roundtrip', () {
+      const dbTargets = ['course', 'lesson', 'study_set', 'word_list', 'curriculum', 'resource', 'question', 'profile'];
+      for (final dbVal in dbTargets) {
+        final target = ModerationTargetType.fromDb(dbVal);
+        expect(target.dbValue, dbVal);
+      }
+    });
+
+    test('Unknown ModerationTargetType fails visibly with FormatException', () {
+      expect(() => ModerationTargetType.fromDb('video'), throwsFormatException);
+      expect(() => ModerationTargetType.fromDb(null), throwsArgumentError);
+    });
+
+    test('ModerationRole role checks and column alignment with created_at', () {
+      final now = DateTime.utc(2026, 10, 1);
+      final json = {
+        'id': 'role-1',
+        'user_id': 'u1',
+        'role': 'moderator',
+        'granted_by': 'admin-uuid',
+        'created_at': now.toIso8601String(),
+      };
+
+      final role = ModerationRole.fromJson(json);
+      expect(role.id, 'role-1');
+      expect(role.userId, 'u1');
+      expect(role.isModerator, isTrue);
+      expect(role.isAdmin, isFalse);
+      expect(role.createdAt, now);
 
       final adminRole = ModerationRole(
         id: 'role-2',
         userId: 'u2',
         role: 'admin',
-        grantedAt: DateTime.utc(2026, 10, 1),
+        createdAt: now,
       );
       expect(adminRole.isModerator, isTrue);
       expect(adminRole.isAdmin, isTrue);
     });
 
-    test('ModerationAction serialization roundtrip', () {
+    test('ModerationAction serialization roundtrip with null moderator_id', () {
       final now = DateTime.utc(2026, 10, 18, 13, 0, 0);
       final action = ModerationAction(
         id: 'act-1',
         reportId: 'rep-12345',
-        moderatorId: 'mod-1',
-        action: ModerationActionType.contentRemoved,
+        moderatorId: null,
+        action: ModerationActionType.delete,
         targetType: ModerationTargetType.course,
         targetId: 'course-99',
         reason: 'Violation of Terms of Service',
@@ -89,14 +171,14 @@ void main() {
       );
 
       final json = action.toJson();
-      expect(json['action'], 'content_removed');
+      expect(json['action'], 'delete');
       expect(json['target_type'], 'course');
-      expect(json['reason'], 'Violation of Terms of Service');
+      expect(json['moderator_id'], isNull);
 
       final deserialized = ModerationAction.fromJson(json);
       expect(deserialized.id, action.id);
-      expect(deserialized.action, ModerationActionType.contentRemoved);
-      expect(deserialized.targetType, ModerationTargetType.course);
+      expect(deserialized.action, ModerationActionType.delete);
+      expect(deserialized.moderatorId, isNull);
       expect(deserialized.notes, 'Target reviewed by legal team');
     });
   });
@@ -204,7 +286,7 @@ void main() {
           'apply_moderation_action',
           params: {
             'p_report_id': 'rep-123',
-            'p_action': 'content_hidden',
+            'p_action': 'hide',
             'p_reason': 'Pending investigation',
             'p_notes': 'Reported by community',
           },
@@ -213,7 +295,7 @@ void main() {
 
       await service.applyModerationAction(
         reportId: 'rep-123',
-        action: ModerationActionType.contentHidden,
+        action: ModerationActionType.hide,
         reason: 'Pending investigation',
         notes: 'Reported by community',
       );
@@ -223,7 +305,7 @@ void main() {
           'apply_moderation_action',
           params: {
             'p_report_id': 'rep-123',
-            'p_action': 'content_hidden',
+            'p_action': 'hide',
             'p_reason': 'Pending investigation',
             'p_notes': 'Reported by community',
           },

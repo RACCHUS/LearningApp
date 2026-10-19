@@ -80,10 +80,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
   }
 
   Future<void> _showActionDialog(ModerationReport report) async {
-    ModerationActionType selectedAction = report.reason == ReportReason.csamCsae ||
-            report.reason == ReportReason.childSafety
-        ? ModerationActionType.contentRemoved
-        : ModerationActionType.contentHidden;
+    ModerationActionType selectedAction = report.reason == ReportReason.minorSafety
+        ? ModerationActionType.delete
+        : ModerationActionType.hide;
 
     final reasonController = TextEditingController(
       text: 'Violates platform safety policy (${report.reason.displayName})',
@@ -143,7 +142,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Select Action',
+                          'Select Action (Administrative Decision)',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -210,25 +209,32 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.lock_clock,
-                              size: 16,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Audit Trail Notice: Actions are atomic, logged with your moderator identity, and permanently preserved for compliance.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontStyle: FontStyle.italic,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Option A Governance: Moderation actions are recorded as administrative decisions in the compliance audit trail. Automated cascading content deletion will activate when public UGC is enabled.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -339,8 +345,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
   Widget _buildReportCard(ModerationReport report, ThemeData theme) {
     final colorScheme = theme.colorScheme;
 
-    final isSevere = report.reason == ReportReason.csamCsae ||
-        report.reason == ReportReason.childSafety;
+    final isSevere = report.reason == ReportReason.minorSafety;
 
     Color statusColor;
     switch (report.status) {
@@ -350,10 +355,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
       case ReportStatus.underReview:
         statusColor = Colors.blue;
         break;
-      case ReportStatus.resolvedActionTaken:
+      case ReportStatus.actioned:
         statusColor = Colors.green;
         break;
-      case ReportStatus.resolvedNoAction:
       case ReportStatus.dismissed:
         statusColor = Colors.grey;
         break;
@@ -470,17 +474,6 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                 ),
               ),
             ],
-            if (report.resolutionNotes != null &&
-                report.resolutionNotes!.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                'Resolution: ${report.resolutionNotes}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
-                ),
-              ),
-            ],
             const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -493,9 +486,10 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                   )
                 else
                   Text(
-                    'Closed by: ${report.resolvedBy ?? 'system'}',
+                    'Status: ${report.status.displayName}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
               ],
@@ -514,12 +508,16 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
         return Icons.menu_book;
       case ModerationTargetType.studySet:
         return Icons.style;
-      case ModerationTargetType.comment:
-        return Icons.comment;
-      case ModerationTargetType.userProfile:
-        return Icons.person;
-      case ModerationTargetType.unknown:
+      case ModerationTargetType.wordList:
+        return Icons.spellcheck;
+      case ModerationTargetType.curriculum:
+        return Icons.account_tree;
+      case ModerationTargetType.resource:
+        return Icons.folder_shared;
+      case ModerationTargetType.question:
         return Icons.help_outline;
+      case ModerationTargetType.profile:
+        return Icons.person;
     }
   }
 

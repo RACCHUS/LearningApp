@@ -118,7 +118,7 @@ create policy moderation_roles_delete_policy on public.moderation_roles
 create table if not exists public.moderation_reports (
   id uuid primary key default gen_random_uuid(),
   reporter_id uuid references auth.users(id) on delete set null,
-  target_type text not null check (target_type in ('question', 'answer', 'comment', 'profile', 'curriculum', 'resource', 'word_list')),
+  target_type text not null check (target_type in ('course', 'lesson', 'study_set', 'word_list', 'curriculum', 'resource', 'question', 'profile')),
   target_id uuid not null,
   reason text not null check (reason in ('spam', 'harassment', 'misinformation', 'copyright', 'minor_safety', 'inappropriate', 'other')),
   description text,
@@ -138,23 +138,15 @@ create unique index if not exists idx_moderation_reports_dedup
   where status in ('pending', 'under_review');
 
 -- RLS on moderation_reports
+-- Direct client inserts, updates, and deletes are denied to enforce rate-limits, target checks, and atomic actions.
 create policy moderation_reports_select_policy on public.moderation_reports
   for select
   to authenticated
   using (reporter_id = auth.uid() or private.is_moderator());
 
-create policy moderation_reports_insert_policy on public.moderation_reports
-  for insert
-  to authenticated
-  with check (reporter_id = auth.uid());
-
-create policy moderation_reports_update_policy on public.moderation_reports
-  for update
-  to authenticated
-  using (private.is_moderator())
-  with check (private.is_moderator());
-
--- Deletes denied to everyone (append-only audit integrity)
+revoke all on table public.moderation_reports from public, anon;
+revoke insert, update, delete on table public.moderation_reports from authenticated;
+grant select on table public.moderation_reports to authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 5. Moderation Actions Table (Immutable Audit Log, Nullable on Delete)
@@ -181,17 +173,15 @@ create index if not exists idx_moderation_actions_created
   on public.moderation_actions(created_at desc);
 
 -- RLS on moderation_actions
+-- Direct client inserts, updates, and deletes are denied to ensure actions are only logged via apply_moderation_action RPC.
 create policy moderation_actions_select_policy on public.moderation_actions
   for select
   to authenticated
   using (private.is_moderator());
 
-create policy moderation_actions_insert_policy on public.moderation_actions
-  for insert
-  to authenticated
-  with check (private.is_moderator() and (moderator_id = auth.uid() or moderator_id is null));
-
--- Updates and Deletes denied to everyone (immutable action history)
+revoke all on table public.moderation_actions from public, anon;
+revoke insert, update, delete on table public.moderation_actions from authenticated;
+grant select on table public.moderation_actions to authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 6. Transactional Atomic Moderation Workflow RPC
@@ -217,16 +207,27 @@ begin
     raise exception 'Access denied: caller does not possess moderator privileges' using errcode = '42501';
   end if;
 
+  if p_action not in ('dismiss', 'warn', 'hide', 'delete', 'suspend_user', 'rate_limit') then
+    raise exception 'Invalid moderation action: %', p_action using errcode = '22023';
+  end if;
+
+  if p_reason is null or trim(p_reason) = '' then
+    raise exception 'Moderation action reason is mandatory' using errcode = '22023';
+  end if;
+
+  -- Lock report row FOR UPDATE to prevent race conditions from concurrent actions
   select * into v_report
     from public.moderation_reports
-   where id = p_report_id;
+   where id = p_report_id
+     for update;
 
   if not found then
     raise exception 'Report % not found', p_report_id using errcode = 'P0002';
   end if;
 
-  if p_action not in ('dismiss', 'warn', 'hide', 'delete', 'suspend_user', 'rate_limit') then
-    raise exception 'Invalid moderation action: %', p_action using errcode = '22023';
+  -- Validate permitted status transitions: cannot re-resolve an already resolved report
+  if v_report.status not in ('pending', 'under_review') then
+    raise exception 'Report % has already been resolved with status %', p_report_id, v_report.status using errcode = '22000';
   end if;
 
   v_new_status := case when p_action = 'dismiss' then 'dismissed' else 'actioned' end;
@@ -250,7 +251,7 @@ revoke all on function public.apply_moderation_action(uuid, text, text, text) fr
 grant execute on function public.apply_moderation_action(uuid, text, text, text) to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
--- 7. Moderation Report Submission RPC with Rate Limiting
+-- 7. Moderation Report Submission RPC with Rate Limiting & Target Validation
 -- -----------------------------------------------------------------------------
 
 create or replace function public.submit_moderation_report(
@@ -274,13 +275,47 @@ begin
     raise exception 'Authentication required to submit moderation reports' using errcode = '42501';
   end if;
 
-  if p_target_type not in ('question', 'answer', 'comment', 'profile', 'curriculum', 'resource', 'word_list') then
-    raise exception 'Invalid target_type: %', p_target_type using errcode = '22023';
-  end if;
-
   if p_reason not in ('spam', 'harassment', 'misinformation', 'copyright', 'minor_safety', 'inappropriate', 'other') then
     raise exception 'Invalid report reason: %', p_reason using errcode = '22023';
   end if;
+
+  -- Validate target type and verify actual target existence in database
+  case p_target_type
+    when 'course' then
+      if not exists (select 1 from public.courses where id = p_target_id) then
+        raise exception 'Target course % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'lesson' then
+      if not exists (select 1 from public.lessons where id = p_target_id) then
+        raise exception 'Target lesson % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'study_set' then
+      if not exists (select 1 from public.study_sets where id = p_target_id) then
+        raise exception 'Target study_set % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'word_list' then
+      if not exists (select 1 from public.word_lists where id = p_target_id) then
+        raise exception 'Target word_list % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'curriculum' then
+      if not exists (select 1 from public.curriculum_nodes where id = p_target_id) then
+        raise exception 'Target curriculum % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'resource' then
+      if not exists (select 1 from public.user_curriculum_resources where id = p_target_id) then
+        raise exception 'Target resource % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'question' then
+      if not exists (select 1 from public.questions where id = p_target_id) then
+        raise exception 'Target question % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    when 'profile' then
+      if not exists (select 1 from auth.users where id = p_target_id) then
+        raise exception 'Target user profile % does not exist', p_target_id using errcode = 'P0002';
+      end if;
+    else
+      raise exception 'Invalid target_type: %', p_target_type using errcode = '22023';
+  end case;
 
   -- Rate limit check: maximum 10 reports per hour per user
   select count(*)::integer into v_recent_reports_count
