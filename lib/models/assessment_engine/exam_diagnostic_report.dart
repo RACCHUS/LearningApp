@@ -23,14 +23,14 @@ enum DomainEvidenceLevel {
   }
 }
 
-/// Official published parameters directly from the authoritative examination blueprint.
-/// (Section 15.6: Kept strictly distinct from app estimates)
+/// Official exam facts only when independently sourced and verified.
+/// Unknown facts remain null. Legacy mock metadata does not establish authority.
 class OfficialExamFacts {
   final String examCode;
   final String title;
-  final int publishedPassingScore;
-  final String scoreScale; // e.g. "100-900"
-  final int timeLimitMinutes;
+  final int? publishedPassingScore;
+  final String? scoreScale;
+  final int? timeLimitMinutes;
   final String nonAffiliationNotice;
 
   const OfficialExamFacts({
@@ -48,7 +48,8 @@ class OfficialExamFacts {
 /// (Section 15.6: Uses evidence-based framing, strictly avoiding overclaiming "Mastered")
 class AppReadinessEstimate {
   final double practiceScorePercentage; // 0.0 to 100.0
-  final int estimatedScaledScore; // e.g. 770 on 100-900 scale
+  /// Unavailable until a separately validated conversion model exists.
+  final int? estimatedScaledScore;
   final TargetReadinessBand readinessBand;
   final String readinessHeadline;
   final String readinessSummary;
@@ -73,8 +74,9 @@ class AppReadinessEstimate {
     required this.totalScoreEarned,
   });
 
-  bool get indicatesPassingReadiness =>
-      readinessBand == TargetReadinessBand.strongCoverage || practiceScorePercentage >= 80.0;
+  /// Practice performance cannot establish a probability of passing a real exam.
+  @Deprecated('Uncalibrated practice results cannot indicate official passing readiness.')
+  bool get indicatesPassingReadiness => false;
 }
 
 /// Domain-level performance diagnostic adhering to evidence-based terminology.
