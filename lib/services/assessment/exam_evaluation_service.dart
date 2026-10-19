@@ -107,7 +107,6 @@ class ExamEvaluationService {
         percentage: percentage,
         evidenceLevel: evidenceLevel,
       ));
-
     }
 
     // Raw practice performance only. This is not an issuer score conversion
