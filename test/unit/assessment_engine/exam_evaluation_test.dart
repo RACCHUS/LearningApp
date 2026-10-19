@@ -104,7 +104,7 @@ void main() {
 
     final service = ExamEvaluationService();
 
-    test('Evaluates perfect exam (100%) and generates correct scaled score and evidence', () {
+    test('Evaluates perfect practice set without invented official scaled score', () {
       final session = MockExamSession(
         id: 'sess-1',
         blueprint: blueprint,
@@ -130,7 +130,8 @@ void main() {
       final report = service.evaluateExam(session);
 
       expect(report.readinessEstimate.practiceScorePercentage, equals(100.0));
-      expect(report.readinessEstimate.estimatedScaledScore, equals(900));
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
+      expect(report.readinessEstimate.indicatesPassingReadiness, isFalse);
       expect(report.readinessEstimate.readinessBand, equals(TargetReadinessBand.strongCoverage));
       expect(report.readinessEstimate.correctCount, equals(4));
       expect(report.readinessEstimate.incorrectCount, equals(0));
@@ -146,9 +147,10 @@ void main() {
       expect(report.readinessEstimate.readinessHeadline.toLowerCase(), isNot(contains('mastered')));
       expect(report.readinessEstimate.readinessSummary.toLowerCase(), isNot(contains('mastered')));
 
-      // Official facts preserved separately
-      expect(report.officialFacts.publishedPassingScore, equals(750));
-      expect(report.officialFacts.scoreScale, equals('100-900'));
+      // Legacy blueprint inputs are not authoritative without source evidence.
+      expect(report.officialFacts.publishedPassingScore, isNull);
+      expect(report.officialFacts.scoreScale, isNull);
+      expect(report.officialFacts.timeLimitMinutes, isNull);
     });
 
     test('Evaluates exam with missed questions and creates concept remediation recommendations', () {
@@ -183,8 +185,8 @@ void main() {
       final report = service.evaluateExam(session);
 
       expect(report.readinessEstimate.practiceScorePercentage, equals(50.0));
-      // 100 + (0.5 * 800) = 500
-      expect(report.readinessEstimate.estimatedScaledScore, equals(500));
+      // A raw 50% practice result is not a 100-900 issuer prediction.
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
       expect(report.readinessEstimate.readinessBand, equals(TargetReadinessBand.needsReinforcement));
       expect(report.readinessEstimate.correctCount, equals(2));
       expect(report.readinessEstimate.incorrectCount, equals(2));
@@ -239,6 +241,7 @@ void main() {
       expect(report.readinessEstimate.partialCount, equals(1));
       expect(report.readinessEstimate.correctCount, equals(0));
       expect(report.readinessEstimate.practiceScorePercentage, closeTo(66.6, 1.0));
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
     });
   });
 }
