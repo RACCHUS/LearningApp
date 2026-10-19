@@ -32,6 +32,28 @@ revoke all on function public.exam_item_answer_locations_valid(jsonb)
 grant execute on function public.exam_item_answer_locations_valid(jsonb)
   to service_role;
 
+-- Canonical, database-calculated fingerprint of the actual user-visible item
+-- and its grading instructions. The supplied binding hash is never trusted
+-- merely because it has SHA-256 syntax.
+create function public.exam_reference_item_fingerprint(p_item_id uuid)
+returns text language sql stable security invoker
+set search_path=pg_catalog,public
+as $
+  select encode(sha256(convert_to(
+    jsonb_build_object(
+      'prompt',i.prompt,
+      'interaction_type',i.interaction_type,
+      'response_spec',i.response_spec,
+      'scoring_spec',i.scoring_spec,
+      'explanation',i.explanation
+    )::text,'UTF8')), 'hex')
+  from public.assessment_items i where i.id=p_item_id
+$;
+revoke all on function public.exam_reference_item_fingerprint(uuid)
+  from public,anon,authenticated;
+grant execute on function public.exam_reference_item_fingerprint(uuid)
+  to service_role;
+
 create table public.assessment_item_reference_validity (
   id uuid primary key default gen_random_uuid(),
   assessment_item_id uuid not null
@@ -131,6 +153,10 @@ begin
   end if;
 
   if new.publication_status='published' then
+    if new.item_content_sha256 is distinct from
+       public.exam_reference_item_fingerprint(new.assessment_item_id) then
+      raise exception 'Approved answer binding content hash does not match the live canonical item';
+    end if;
     if m.publication_status <> 'published' then
       raise exception 'Cannot approve an answer for an unpublished/retired reference manifest';
     end if;
