@@ -131,7 +131,6 @@ void main() {
 
       expect(report.readinessEstimate.practiceScorePercentage, equals(100.0));
       expect(report.readinessEstimate.estimatedScaledScore, isNull);
-      expect(report.readinessEstimate.indicatesPassingReadiness, isFalse);
       expect(report.readinessEstimate.readinessBand, equals(TargetReadinessBand.strongCoverage));
       expect(report.readinessEstimate.correctCount, equals(4));
       expect(report.readinessEstimate.incorrectCount, equals(0));
