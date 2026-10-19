@@ -69,6 +69,8 @@ $$;
 
 revoke all on function public.exam_reference_manifest_payload_valid(jsonb,jsonb)
   from public,anon,authenticated;
+grant execute on function public.exam_reference_manifest_payload_valid(jsonb,jsonb)
+  to service_role;
 
 create table public.exam_reference_manifest_revisions (
   id uuid primary key default gen_random_uuid(),
