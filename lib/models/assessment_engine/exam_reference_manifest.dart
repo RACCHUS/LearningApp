@@ -116,6 +116,36 @@ class ExamPreparationProfile {
     if (json['schema_version'] != 1 || json['exam_parts'] is! List) {
       throw const FormatException('Unsupported exam profile schema');
     }
+    // Never accept a bare "verified" flag with an unresolvable evidence ID.
+    // Authoring review still must check the actual regulator PDF and its
+    // applicability; this is only an input-integrity gate.
+    final checkedEvidence = <String>{};
+    final sourceEvidence = json['source_evidence'];
+    if (sourceEvidence != null) {
+      if (sourceEvidence is! List) {
+        throw const FormatException('source_evidence must be a list');
+      }
+      final seenIds = <String>{};
+      for (final rawEvidence in sourceEvidence) {
+        if (rawEvidence is! Map) {
+          throw const FormatException('source_evidence entries must be objects');
+        }
+        final evidence = Map<String, dynamic>.from(rawEvidence);
+        final id = _requiredText(evidence['id'], 'source_evidence.id');
+        if (!seenIds.add(id)) {
+          throw FormatException('Duplicate source evidence ID: ' + id);
+        }
+        final url = evidence['official_url']?.toString();
+        final page = evidence['source_page']?.toString();
+        final checkedAt = DateTime.tryParse(
+          evidence['source_checked_at']?.toString() ?? '',
+        );
+        if (url != null && url.startsWith('https://') &&
+            page != null && page.isNotEmpty && checkedAt != null) {
+          checkedEvidence.add(id);
+        }
+      }
+    }
     final parts = <ExamPartSpec>[];
     final keys = <String>{};
     for (final rawPart in json['exam_parts'] as List) {
@@ -125,6 +155,14 @@ class ExamPreparationProfile {
       final part = ExamPartSpec.fromJson(Map<String, dynamic>.from(rawPart));
       if (!keys.add(part.key)) {
         throw FormatException('Duplicate exam part key: ' + part.key);
+      }
+      for (final fact in part.officialRequirements.values) {
+        if (fact.state == ExamFactState.verified &&
+            fact.evidenceIds.any((id) => !checkedEvidence.contains(id))) {
+          throw FormatException(
+            'Verified official requirement lacks checkable primary-source evidence for part: ' + part.key,
+          );
+        }
       }
       parts.add(part);
     }
