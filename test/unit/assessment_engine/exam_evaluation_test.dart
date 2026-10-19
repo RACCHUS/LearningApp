@@ -204,6 +204,21 @@ void main() {
       expect(missedConceptIds, contains('concept-incident-resp'));
     });
 
+    test('Missing item-domain assignment is reported as unmapped', () {
+      final session = MockExamSession(
+        id: 'missing-domain-practice',
+        blueprint: blueprint,
+        items: [items.first],
+        userResponses: {'item-sc-1': 1},
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+      final report = ExamEvaluationService().evaluateExam(session);
+      expect(report.scoredItems.single.domainCode, 'unmapped');
+      expect(report.readinessEstimate.practiceScorePercentage, 100.0);
+    });
+
     test('Practice percentage does not apply unverified domain weighting', () {
       final unevenBlueprint = MockExamBlueprint(
         targetVersionId: 'tv-uneven',
