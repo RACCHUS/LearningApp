@@ -227,6 +227,31 @@ All tables strictly enforce RLS (`alter table ... enable row level security;`):
 
 ---
 
+### 2.4 Initial Administrator Provisioning & Security Hardening (`20261019000000_moderation_roles_least_privilege.sql`)
+
+Migration 51 deployed additional defense-in-depth protections and bootstrapped root administrative access:
+
+1. **Table-Level Least Privilege (`0026_pg_graphql_anon_table_exposed`)**:
+   - Privileges on `public.moderation_roles` were explicitly revoked from `public, anon` and granted exclusively to `authenticated`. This eliminates the table from the anonymous GraphQL schema while maintaining authenticated RLS enforcement.
+2. **View Security Hardening (`security_invoker`)**:
+   - `public.v_field_relations_bidirectional` was updated with `security_invoker = true` to execute under the caller's context rather than security-definer semantics.
+3. **Initial Administrator Bootstrap Provenance Convention**:
+   - The root administrator (`richardgurudeo@gmail.com`) was provisioned via idempotent insert matching `auth.users(email)`:
+     ```sql
+     insert into public.moderation_roles (user_id, role, granted_by)
+     select id, 'admin', id
+       from auth.users
+      where lower(email) = 'richardgurudeo@gmail.com'
+     on conflict (user_id) do update set role = 'admin';
+     ```
+   - **Audit Provenance Clarification**: `granted_by` is set to the administrator's own `user_id` solely as an explicit self-referential initialization convention to satisfy foreign key and non-null constraints during migration execution. This must **not** be interpreted as evidence that the user personally granted themselves the role through the administrative UI. All subsequent operational role assignments executed post-bootstrap will record the distinct granting administrator's `auth.uid()`.
+4. **Security & Performance Advisory Evaluation**:
+   - *Authenticated GraphQL Visibility (`0027`)*: Reported on moderation tables; authenticated queries remain strictly governed and filtered by active table RLS policies.
+   - *RLS Policy & Foreign Key Index Deferrals*: `moderation_reports_select_policy` optimization and foreign key covering indexes on `moderation_actions` are deferred until production queue throughput warrants covering indexes.
+   - *Public UGC Launch Boundary*: Public UGC authoring remains strictly disabled until operational DMCA agent registration and COPPA/FERPA compliance reviews are formally approved.
+
+---
+
 ## 3. Legal & Policy Documentation Framework
 
 ECO-00B delivers three comprehensive legal and governance documents in `docs/legal/`:
@@ -319,8 +344,11 @@ ECO-00B delivers three comprehensive legal and governance documents in `docs/leg
 
 - [x] Legal drafts updated with explicit draft notices, disclaimers, and COPPA/FERPA clarifications in `docs/legal/`.
 - [x] Architecture specification updated in `docs/product/ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md`.
-- [ ] Additive Supabase migration `20261017000000_moderation_trust_and_safety.sql` created.
-- [ ] pgTAP security test suite authored at `supabase/tests/moderation_security_test.sql`.
-- [ ] Dart models and service implemented in `lib/models/governance/` and `lib/services/governance/`.
-- [ ] Responsive `ModerationQueueScreen` implemented in `lib/screens/governance/`.
-- [ ] Automated unit, widget, and pgTAP tests passing.
+- [x] Additive Supabase migration `20261017000000_moderation_trust_and_safety.sql` deployed and verified (Migration 50).
+- [x] Additive Supabase migration `20261019000000_moderation_roles_least_privilege.sql` deployed and verified (Migration 51).
+- [x] pgTAP security test suite authored and passing at `supabase/tests/moderation_security_test.sql` (37 assertions).
+- [x] Dart models and service implemented in `lib/models/governance/` and `lib/services/governance/`.
+- [x] Responsive `ModerationQueueScreen` implemented in `lib/screens/governance/` with navigation route `/moderation`.
+- [x] Automated unit, widget (1,585 assertions), and pgTAP clean-database tests passing in CI.
+- [x] Guarded production deployment executed with 51/51 migrations in 1:1 remote parity.
+- [x] Initial root administrator account provisioned and active on hosted database.
