@@ -87,6 +87,7 @@ void main() {
       // 1. Verify header elements: Exam code, timer, and question indicator
       expect(find.text('SY0-701'), findsOneWidget);
       expect(find.text('Question 1 of 2'), findsOneWidget);
+      expect(find.text('PRACTICE ONLY · Domain 1.0'), findsOneWidget);
       expect(find.text('1:30:00'), findsOneWidget);
 
       // 2. Verify prompt
@@ -128,20 +129,22 @@ void main() {
       await tester.tap(find.text('Finish Exam'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Finish & Submit Exam?'), findsOneWidget);
+      expect(find.text('Finish & Submit Practice?'), findsOneWidget);
       // Item 2 is unanswered, so warning should show
       expect(find.text('1 unanswered question'), findsOneWidget);
       // Item 1 is flagged, so flag notice should show
       expect(find.text('1 flagged question for review'), findsOneWidget);
 
       // Confirm submission
-      await tester.tap(find.text('Submit Final Exam'));
+      await tester.tap(find.text('Submit Practice'));
       await tester.pumpAndSettle();
 
       // Should transition to ExamReportScreen
       expect(find.text('Diagnostic Readiness Report'), findsOneWidget);
-      expect(find.text('OFFICIAL BLUEPRINT STANDARD'), findsOneWidget);
-      expect(find.text('APP READINESS ESTIMATE'), findsOneWidget);
+      expect(find.text('PRACTICE ONLY · NOT AN OFFICIAL EXAM RESULT'), findsOneWidget);
+      expect(find.text('PRACTICE PERFORMANCE'), findsOneWidget);
+      expect(find.text('Unverified'), findsWidgets);
+      expect(find.textContaining('Estimated Scaled Score'), findsNothing);
     });
   });
 }
