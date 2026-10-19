@@ -3,6 +3,9 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select plan(25);
 
+select has_index('public','exam_reference_manifest_revisions','exam_manifest_lookup_idx',
+  'Manifest date lookup is indexed');
+
 select has_table('public','exam_reference_manifest_revisions',
   'EXM-01 manifests are independent of target versions');
 select col_is_pk('public','exam_reference_manifest_revisions','id',
