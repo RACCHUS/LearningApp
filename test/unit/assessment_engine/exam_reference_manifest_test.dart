@@ -42,6 +42,7 @@ void main() {
         'reviewed_at': '2026-10-18T19:00:00Z',
         'reviewer_ref': 'external-review-1',
         'official_source_url': 'https://www.example.gov/primary-reference.pdf',
+        'source_release_id': 'source-release-1',
         'source_checked_at': '2026-10-18T18:00:00Z',
         'reference_entries': [
           {
@@ -234,6 +235,29 @@ void main() {
       )), throwsFormatException);
       final noReferences = manifestRow()..['reference_entries'] = [];
       expect(() => ExamReferenceManifestRevision.fromRow(noReferences),
+          throwsFormatException);
+    });
+
+    test('A published record requires independent source, review, and exact edition anchors', () {
+      final missingRelease = manifestRow()..remove('source_release_id');
+      expect(() => ExamReferenceManifestRevision.fromRow(missingRelease),
+          throwsFormatException);
+
+      final reviewBeforeSource = manifestRow()
+        ..['reviewed_at'] = '2026-10-18T17:00:00Z';
+      expect(() => ExamReferenceManifestRevision.fromRow(reviewBeforeSource),
+          throwsFormatException);
+
+      final noPage = manifestRow()..['reference_entries'] = [
+        {'key': 'example-publication', 'edition': '2027'}
+      ];
+      expect(() => ExamReferenceManifestRevision.fromRow(noPage),
+          throwsFormatException);
+
+      final unsourcedRule = manifestRow()..['room_rules'] = [
+        {'name': 'tabs', 'state': 'verified', 'value': true}
+      ];
+      expect(() => ExamReferenceManifestRevision.fromRow(unsourcedRule),
           throwsFormatException);
     });
 
