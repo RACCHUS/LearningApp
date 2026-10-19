@@ -38,7 +38,7 @@ grant execute on function public.exam_item_answer_locations_valid(jsonb)
 create function public.exam_reference_item_fingerprint(p_item_id uuid)
 returns text language sql stable security invoker
 set search_path=pg_catalog,public
-as $
+as $item_hash$
   select encode(sha256(convert_to(
     jsonb_build_object(
       'prompt',i.prompt,
@@ -48,7 +48,7 @@ as $
       'explanation',i.explanation
     )::text,'UTF8')), 'hex')
   from public.assessment_items i where i.id=p_item_id
-$;
+$item_hash$;
 revoke all on function public.exam_reference_item_fingerprint(uuid)
   from public,anon,authenticated;
 grant execute on function public.exam_reference_item_fingerprint(uuid)
