@@ -32,7 +32,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         title: Text(
-          'Diagnostic Readiness Report',
+          'Practice Results',
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         actions: [
