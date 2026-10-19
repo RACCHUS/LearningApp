@@ -155,6 +155,33 @@ void main() {
       expect(later.isSelected, isTrue);
     });
 
+    test('Within-year edition changes resolve by exact administration day', () {
+      final earlier = ExamReferenceManifestRevision.fromRow(manifestRow(
+        id: 'pre-switch',
+        from: '2027-01-01',
+        until: '2027-07-31',
+        revision: 2,
+      ));
+      final later = ExamReferenceManifestRevision.fromRow(manifestRow(
+        id: 'post-switch',
+        from: '2027-08-01',
+        until: '2027-12-31',
+        revision: 3,
+      ));
+      expect(resolver.select(
+        profile: profile,
+        examPartKey: 'project_management',
+        administrationDate: DateTime.utc(2027, 7, 31),
+        revisions: [earlier, later],
+      ).revision?.id, 'pre-switch');
+      expect(resolver.select(
+        profile: profile,
+        examPartKey: 'project_management',
+        administrationDate: DateTime.utc(2027, 8, 1),
+        revisions: [earlier, later],
+      ).revision?.id, 'post-switch');
+    });
+
     test('2027-only references never claim to cover 2026 exam dates', () {
       final only2027 = ExamReferenceManifestRevision.fromRow(manifestRow());
       final result = resolver.select(
