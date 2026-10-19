@@ -251,11 +251,11 @@ Map the proposed logical entities to existing tables first; use new tables only 
 **Tasks**
 - [x] **Architecture & Schema Audit**: Audit actual implemented features, migrations, existing assessment `questions`, Q&A components, author ownership, voice capabilities, and hosted catalog state. Produce a verified gap matrix. (Completed in [ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md](ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md)).
 - [x] **Trust & Safety / Legal Framework**: Author Terms of Service and Privacy Policy (with strict minor data isolation). Establish DMCA registered agent and takedown workflow. (Delivered in [TERMS_OF_SERVICE.md](../legal/TERMS_OF_SERVICE.md), [PRIVACY_POLICY.md](../legal/PRIVACY_POLICY.md), and [DMCA_TAKEDOWN_POLICY.md](../legal/DMCA_TAKEDOWN_POLICY.md)).
-- [ ] **Moderation Tooling**: Build an administrative moderation queue and reporting UI (replacing pure service-role script approval). (Specified in [ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md](ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md)).
+- [x] **Moderation Tooling**: Build an administrative moderation queue and reporting UI (replacing pure service-role script approval). (Delivered and deployed in ECO-00B via Migrations 50 & 51, PR #61, PR #69, [ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md](ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md), and `/#/moderation`).
 - [x] **Age Eligibility Determination**: Decisively enforce age eligibility rules (adults only for public posting; minors restricted to private/guardian-managed accounts). (Codified in Terms of Service and Privacy Policy).
-- [ ] **Cost & Observability Dashboards**: Establish baseline hosting, AI token, TTS/STT, and media storage cost dashboards with strict alert thresholds.
+- [x] **Cost & Observability Dashboards**: Establish baseline hosting, AI token, TTS/STT, and media storage cost dashboards with strict alert thresholds. (Delivered and deployed in ECO-00C via Migration 52, PR #70, [ECO_00C_COST_OBSERVABILITY_SPEC.md](ECO_00C_COST_OBSERVABILITY_SPEC.md), and `/#/observability`).
 
-**Exit:** Accepted domain model, legal protections live, moderation queue operational, cost dashboards in place, and zero duplicate schema models.
+**Exit:** Accepted domain model, legal protections live, moderation queue operational, cost dashboards in place, and zero duplicate schema models. (ALL PHASE 0 GATES SATISFIED — GATE 0 → 1 CLEARED).
 
 ---
 
