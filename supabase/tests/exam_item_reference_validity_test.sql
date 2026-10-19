@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(28);
+select plan(30);
 
 select has_table('public','assessment_item_reference_validity',
   'Private answer-location review records exist');
@@ -106,12 +106,41 @@ select lives_ok($q$
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     '99999999-9999-4999-8999-999999999999',
     '77777777-7777-4777-8777-777777777777',
-    1,repeat('a',64),1,'handbook','synthetic-2027',
+    1,public.exam_reference_item_fingerprint('99999999-9999-4999-8999-999999999999'),1,'handbook','synthetic-2027',
     '55555555-5555-4555-8555-555555555555',
     '[{"chapter":"2","section":"2.1","source_page":"11"}]'::jsonb,
     'human-author',true
   )
 $q$, 'AI-assisted draft may have a human author of record and no reviewer yet');
+
+select is(
+  (select item_content_sha256 = public.exam_reference_item_fingerprint(assessment_item_id)
+   from public.assessment_item_reference_validity
+   where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+  true, 'Draft binds to a computed snapshot of real item prompt and scoring');
+
+select throws_ok($q$
+  insert into public.assessment_item_reference_validity (
+    assessment_item_id,manifest_revision_id,
+    item_content_revision,item_content_sha256,answer_location_revision,
+    reference_edition_key,reference_edition,source_release_id,
+    expected_locations,author_ref,ai_drafted,
+    reviewer_ref,reviewer_qualification_evidence,reviewer_edition_access_evidence,
+    review_status,rights_review_status,reviewed_at,review_minutes,
+    publication_status
+  ) values (
+    '99999999-9999-4999-8999-999999999999',
+    '77777777-7777-4777-8777-777777777777',
+    1,repeat('b',64),2,'handbook','synthetic-2027',
+    '55555555-5555-4555-8555-555555555555',
+    '[{"section":"2.1","source_page":"11"}]'::jsonb,
+    'human-author',false,
+    'another-human','Synthetic qualifications reviewed',
+    'Synthetic exact edition held',
+    'approved','approved',now(),5,'published'
+  )
+$q$, 'P0001', null,
+  'Fake content hashes cannot be published even with independent review');
 
 select throws_ok($q$
   update public.assessment_item_reference_validity
@@ -164,7 +193,7 @@ select lives_ok($q$
   ) values (
     '99999999-9999-4999-8999-999999999999',
     '88888888-8888-4888-8888-888888888888',
-    1,repeat('a',64),1,'handbook','synthetic-2028',
+    1,public.exam_reference_item_fingerprint('99999999-9999-4999-8999-999999999999'),1,'handbook','synthetic-2028',
     '66666666-6666-4666-8666-666666666666',
     '[{"section":"2.1","source_page":"19"}]'::jsonb,
     'human-author',true
