@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(16);
+select plan(22);
 
 -- 1. Setup synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -33,6 +33,8 @@ end $$;
 
 select is(private.is_admin(), true, 'Admin caller returns true for private.is_admin()');
 select is(private.is_moderator(), true, 'Admin caller returns true for private.is_moderator()');
+select is(public.is_admin(), true, 'Admin caller returns true for public.is_admin() RPC');
+select is(public.is_moderator(), true, 'Admin caller returns true for public.is_moderator() RPC');
 
 do $$ begin
   perform set_config('request.jwt.claim.sub', '8f7c1a10-0000-4000-8000-000000000020', true);
@@ -40,6 +42,8 @@ end $$;
 
 select is(private.is_admin(), false, 'Moderator caller returns false for private.is_admin()');
 select is(private.is_moderator(), true, 'Moderator caller returns true for private.is_moderator()');
+select is(public.is_admin(), false, 'Moderator caller returns false for public.is_admin() RPC');
+select is(public.is_moderator(), true, 'Moderator caller returns true for public.is_moderator() RPC');
 
 do $$ begin
   perform set_config('request.jwt.claim.sub', '8f7c1a10-0000-4000-8000-000000000030', true);
@@ -47,6 +51,8 @@ end $$;
 
 select is(private.is_admin(), false, 'Normal learner returns false for private.is_admin()');
 select is(private.is_moderator(), false, 'Normal learner returns false for private.is_moderator()');
+select is(public.is_admin(), false, 'Normal learner returns false for public.is_admin() RPC');
+select is(public.is_moderator(), false, 'Normal learner returns false for public.is_moderator() RPC');
 
 -- -----------------------------------------------------------------------------
 -- Test B: RLS on moderation_roles

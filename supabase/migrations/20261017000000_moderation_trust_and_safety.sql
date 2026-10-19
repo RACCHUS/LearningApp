@@ -62,6 +62,33 @@ $$;
 revoke all on function private.is_admin() from public, anon;
 grant execute on function private.is_admin() to authenticated, service_role;
 
+-- Public zero-argument RPC wrappers for authenticated client calls
+create or replace function public.is_moderator()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.is_moderator();
+$$;
+
+revoke all on function public.is_moderator() from public, anon;
+grant execute on function public.is_moderator() to authenticated, service_role;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.is_admin();
+$$;
+
+revoke all on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated, service_role;
+
 -- RLS on moderation_roles
 create policy moderation_roles_select_policy on public.moderation_roles
   for select
