@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(27);
+select plan(28);
 
 select has_table('public','assessment_item_reference_validity',
   'Private answer-location review records exist');
@@ -117,7 +117,7 @@ select throws_ok($q$
   update public.assessment_item_reference_validity
     set publication_status='published'
     where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-$q$, '23514', null,
+$q$, 'P0001', null,
   'Draft cannot publish without independent review and rights approval');
 
 select throws_ok($q$
