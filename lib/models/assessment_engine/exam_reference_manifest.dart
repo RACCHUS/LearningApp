@@ -328,6 +328,7 @@ enum ExamManifestSelectionStatus {
   unknownExamDate,
   noApplicableRevision,
   conflictingRevisions,
+  unavailableSource,
 }
 
 class ExamManifestSelection {
