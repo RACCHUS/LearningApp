@@ -12,6 +12,13 @@ class MockExamGeneratorService {
   final SupabaseClient _supabase;
   final Random _random;
 
+  static const renderablePracticeTypes = <AssessmentInteractionType>{
+    AssessmentInteractionType.singleChoice,
+    AssessmentInteractionType.multiSelect,
+    AssessmentInteractionType.orderedResponse,
+    AssessmentInteractionType.matching,
+  };
+
   MockExamGeneratorService({
     SupabaseClient? supabase,
     Random? random,
@@ -74,12 +81,7 @@ class MockExamGeneratorService {
         : AssessmentInteractionType.values
             .where((type) => allowedRaw.contains(type.toDbString()))
             .toSet()
-            .intersection(const <AssessmentInteractionType>{
-              AssessmentInteractionType.singleChoice,
-              AssessmentInteractionType.multiSelect,
-              AssessmentInteractionType.orderedResponse,
-              AssessmentInteractionType.matching,
-            });
+            .intersection(renderablePracticeTypes);
 
     if (allowedInteractionTypes.isEmpty) {
       throw StateError(
@@ -196,7 +198,8 @@ class MockExamGeneratorService {
         )
         .where(
           (item) =>
-              blueprint.allowedInteractionTypes.contains(item.interactionType),
+              blueprint.allowedInteractionTypes.contains(item.interactionType) &&
+              renderablePracticeTypes.contains(item.interactionType),
         )
         .toList();
 
@@ -280,8 +283,9 @@ class MockExamGeneratorService {
 
     // Exclude unmapped and ambiguous items rather than silently borrowing the
     // highest-weight domain or fabricating domain evidence.
+    final validDomainIds = domainItemsMap.keys.toSet();
     for (final item in allItems) {
-      final domainId = validPracticeDomain(itemDomainMap[item.id], domainItemsMap.keys.toSet());
+      final domainId = validPracticeDomain(itemDomainMap[item.id], validDomainIds);
       if (domainId == null) continue;
       domainItemsMap[domainId]!.add(item);
     }
@@ -359,7 +363,9 @@ class MockExamGeneratorService {
       }
 
       final spareItems =
-          allItems.where((item) => itemDomainMap.containsKey(item.id) && !selectedIds.contains(item.id)).toList()
+          allItems.where((item) =>
+              validPracticeDomain(itemDomainMap[item.id], validDomainIds) != null &&
+              !selectedIds.contains(item.id)).toList()
             ..shuffle(_random);
 
       for (final entry in desiredDifficulty.entries) {
@@ -394,7 +400,7 @@ class MockExamGeneratorService {
 
     final finalItemDomainMap = <String, String>{};
     for (final item in selectedItems) {
-      final domainId = validPracticeDomain(itemDomainMap[item.id], domainItemsMap.keys.toSet());
+      final domainId = validPracticeDomain(itemDomainMap[item.id], validDomainIds);
       if (domainId == null) {
         throw StateError('Practice item ${item.id} has no validated domain mapping.');
       }
