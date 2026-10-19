@@ -204,6 +204,40 @@ void main() {
       expect(missedConceptIds, contains('concept-incident-resp'));
     });
 
+    test('Practice percentage does not apply unverified domain weighting', () {
+      final unevenBlueprint = MockExamBlueprint(
+        targetVersionId: 'tv-uneven',
+        examCode: 'PRACTICE',
+        title: 'Practice Test',
+        domainWeights: const [
+          DomainWeightConstraint(
+            domainId: 'dom-1', domainCode: '1.0',
+            domainTitle: 'First topic', weight: 0.90,
+          ),
+          DomainWeightConstraint(
+            domainId: 'dom-2', domainCode: '2.0',
+            domainTitle: 'Second topic', weight: 0.10,
+          ),
+        ],
+      );
+      final session = MockExamSession(
+        id: 'raw-practice-session',
+        blueprint: unevenBlueprint,
+        items: [items[0], items[2]],
+        itemDomainMap: {'item-sc-1': '1.0', 'item-or-1': '2.0'},
+        userResponses: {
+          'item-sc-1': 1,
+          'item-or-1': ['Containment', 'Preparation', 'Detection'],
+        },
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+      final report = ExamEvaluationService().evaluateExam(session);
+      expect(report.readinessEstimate.practiceScorePercentage, 50.0);
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
+    });
+
     test('Evaluates partial credit in multi-select (SATA)', () {
       final sataItem = AssessmentItem(
         id: 'item-sata-partial',
