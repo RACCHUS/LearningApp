@@ -850,4 +850,14 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 
 ---
 
+### A.5 — EXM-02A R1–R4 disposable internal prototype
+
+- **Implementation:** Draft PR #72 adds `lib/models/assessment_engine/reference_mastery_drill.dart` and `lib/screens/assessment/reference_mastery_drill_screen.dart`, with matching unit and widget tests. R1 chooses a reference, R2 types a reviewed section identifier, R3 interprets a provision, and R4 chains reference → section → interpretation → solution. Skill-level outcomes remain distinct; no unverified composite or issuer-scaled pass prediction.
+- **Truthful timing:** Each step records elapsed time measured inside the app; feedback-reading time is excluded from the next step. Optional physical-book time is labeled self-reported, not observed. Session evidence exists only in memory and disappears when the route is disposed.
+- **Production-blocking safety gate:** Exercise construction requires an explicit synthetic fixture. This screen is not registered in public navigation and ships no real official questions. The existing database's `assessment_item_reference_validity` rows remain private; real answer locations and held-out scoring specs cannot be fetched or shipped in the learner Flutter client. Production content requires a separate, reviewed delivery-and-server-scoring boundary before any real practice is exposed.
+- **Tests / acceptance:** Model and widget tests cover all four modes, section identifiers/aliases, wrong-reference/right-location disagreement, time segregation, invalid steps, finished-session protections and the synthetic-only UI warning. CI result must be recorded once verified; source creation is not a passing claim.
+- **Still unfulfilled:** A real pilot part, regulator source reconciliation, 2027 edition acquisition, independent qualified review, 16 reviewed practice and eight held-out items, feedback grounded in those verified references, secure learner-delivery API, and EXM-02B durable account-isolated attempts. EXM-03+ simulations, adaptability, efficacy measurement and creator workflows remain subsequent gates. No timeline promises, production database writes or PR merges have been authorized here.
+
+---
+
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
