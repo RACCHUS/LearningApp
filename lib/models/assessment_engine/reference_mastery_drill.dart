@@ -152,6 +152,7 @@ class ReferenceDrillSession {
   final List<ReferenceStepOutcome> _outcomes = [];
   late DateTime _stepStartedAt;
   int? _reportedPhysicalMinutes;
+  bool _feedbackPending = false;
 
   ReferenceDrillSession(
     this.exercise, {
@@ -164,7 +165,7 @@ class ReferenceDrillSession {
   bool get complete => _outcomes.length == exercise.steps.length;
   int get currentStepIndex => _outcomes.length;
   ReferenceDrillStep? get currentStep =>
-      complete ? null : exercise.steps[currentStepIndex];
+      complete || _feedbackPending ? null : exercise.steps[currentStepIndex];
   int get correctSteps => _outcomes.where((result) => result.correct).length;
   int? get selfReportedPhysicalMinutes => _reportedPhysicalMinutes;
   Duration get observedAppDuration =>
@@ -192,8 +193,18 @@ class ReferenceDrillSession {
       response: section ?? step.options[option!],
     );
     _outcomes.add(result);
-    _stepStartedAt = now;
+    _feedbackPending = true;
     return result;
+  }
+
+  /// Start measuring the next step only after the learner dismisses feedback.
+  /// This avoids counting time spent reading correction as navigation time.
+  void continueAfterFeedback() {
+    if (!_feedbackPending) {
+      throw StateError('No submitted answer is awaiting acknowledgement');
+    }
+    _feedbackPending = false;
+    _stepStartedAt = _clock();
   }
 
   void reportPhysicalBookMinutes(int? minutes) {
