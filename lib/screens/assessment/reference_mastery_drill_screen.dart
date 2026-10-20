@@ -67,6 +67,7 @@ class _ReferenceMasteryDrillScreenState
   }
 
   void _next() {
+    _session.continueAfterFeedback();
     setState(() {
       _feedback = null;
       _selectedOption = null;
