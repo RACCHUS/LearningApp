@@ -119,12 +119,17 @@ void main() {
         aiTokensDailyLimit: 15000,
         ttsCharsUsedToday: 500, // 5% used, 95% remaining
         ttsCharsDailyLimit: 10000,
+        sttSecondsUsedToday: 100,
+        sttSecondsDailyLimit: 3600,
         storageBytesUsed: 0,
         storageBytesLimit: 52428800,
+        eventsRecordedToday: 10,
+        eventsDailyLimit: 1000,
         windowResetAt: DateTime.now().add(const Duration(days: 1)),
         updatedAt: DateTime.now(),
       );
       expect(service.shouldFallbackToOnDeviceTts(healthyQuota), isFalse);
+      expect(service.shouldFallbackToOnDeviceStt(healthyQuota), isFalse);
 
       // Depleted quota (<= 20% remaining) SHOULD fallback
       final lowQuota = UsageQuota(
@@ -134,12 +139,19 @@ void main() {
         aiTokensDailyLimit: 15000,
         ttsCharsUsedToday: 8500, // 85% used, 15% remaining
         ttsCharsDailyLimit: 10000,
+        sttSecondsUsedToday: 3000, // >80% used
+        sttSecondsDailyLimit: 3600,
         storageBytesUsed: 0,
         storageBytesLimit: 52428800,
+        eventsRecordedToday: 850, // >80% limit
+        eventsDailyLimit: 1000,
         windowResetAt: DateTime.now().add(const Duration(days: 1)),
         updatedAt: DateTime.now(),
       );
       expect(service.shouldFallbackToOnDeviceTts(lowQuota), isTrue);
+      expect(service.shouldFallbackToOnDeviceStt(lowQuota), isTrue);
+      expect(lowQuota.isEventsNearLimit, isTrue);
+      expect(lowQuota.eventsRemaining, 150);
     });
   });
 }

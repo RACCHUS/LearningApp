@@ -255,7 +255,10 @@ Map the proposed logical entities to existing tables first; use new tables only 
 - [x] **Age Eligibility Determination**: Decisively enforce age eligibility rules (adults only for public posting; minors restricted to private/guardian-managed accounts). (Codified in Terms of Service and Privacy Policy).
 - [x] **Cost & Observability Dashboards**: Establish baseline hosting, AI token, TTS/STT, and media storage cost dashboards with strict alert thresholds. (Delivered and deployed in ECO-00C via Migration 52, PR #70, [ECO_00C_COST_OBSERVABILITY_SPEC.md](ECO_00C_COST_OBSERVABILITY_SPEC.md), and `/#/observability`).
 
-**Exit:** Accepted domain model, legal protections live, moderation queue operational, cost dashboards in place, and zero duplicate schema models. (ALL PHASE 0 GATES SATISFIED — GATE 0 → 1 CLEARED).
+**Exit:**
+- **Technical Foundations Deployed & Verified**: Database domain models, moderation queue UI (`/#/moderation`), and cost observability dashboards (`/#/observability`) are fully implemented and deployed to production (Migrations 50, 51, 52, 53).
+- **Phase 1 Engineering Clearance**: Phase 1 concept-scoped Q&A architecture, private development, seed-FAQ authoring, and test suites are cleared to proceed behind the existing disabled-public-UGC boundary.
+- **Operational Public Posting Gate (Gate 0 → 1 Qualified)**: Before public user-generated Q&A posting or external search indexing goes live, operational evidence of corporate legal registration, US Copyright Office DMCA registered agent confirmation, and tested age-assurance/parental consent enforcement must be recorded.
 
 ---
 

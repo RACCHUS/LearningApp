@@ -392,6 +392,17 @@ sequenceDiagram
 
 ---
 
+## 4.5 Hardening, STT Metering & Abuse Prevention (Migration 53)
+
+To prevent resource exhaustion, denial of service, and event table amplification:
+1. **Defense-in-Depth Table Revocations**: Direct `INSERT`, `UPDATE`, and `DELETE` grants on `public.usage_quotas` and `public.usage_events` are explicitly revoked from `authenticated`, `anon`, and `public`. Modifications can only occur through security definer RPCs (`check_and_record_usage`) and `service_role`.
+2. **Metadata Payload Bounding**: `octet_length(p_metadata::text)` is capped at 4,096 bytes (4 KB). Payloads exceeding 4KB are rejected with PostgreSQL error `22023`.
+3. **Storage Allocation Minimum Boundary**: `storage_bytes` requests must allocate at least 1,024 bytes (1 KB) per call (`p_quantity >= 1024`). Sub-kilobyte allocations are rejected with error `22023` to prevent 1-byte micro-event table flooding.
+4. **Daily Event Logging Frequency Cap**: `events_recorded_today` is metered against `events_daily_limit` (1,000/day for learners, 10,000/day for administrators). Requests exceeding this ceiling are rejected with error `42900`.
+5. **Speech-to-Text (STT) Metering**: Added `stt_seconds_used_today` and `stt_seconds_daily_limit` (default 3,600s / 1 hr for learners, 36,000s / 10 hrs for admins) with automatic deduction and rollover in `check_and_record_usage`.
+
+---
+
 ## 7. Verification & Testing Plan
 
 1. **pgTAP Security & Quota Tests (`supabase/tests/cost_observability_test.sql`)**:
@@ -401,25 +412,28 @@ sequenceDiagram
    - Verify rejection and event omission when quantity exceeds limit.
    - Verify tenant RLS isolation: ordinary users cannot inspect others' quotas or events.
    - Verify administrator bypass: users with `role = 'admin'` can read system-wide usage.
+   - Verify abuse prevention: metadata size >4KB rejection, storage request <1KB rejection, and event frequency ceiling.
+   - Verify defense-in-depth: direct table writes by authenticated clients denied with 42501.
 2. **Dart Unit Tests (`test/services/governance/usage_quota_service_test.dart`)**:
    - Verify token estimation integration with `PromptContextCompressor`.
    - Verify Hive offline quota caching and reconciliation.
-   - Verify 80% soft-limit warning emission.
+   - Verify 80% soft-limit warning emission for AI, TTS, STT, and event logging.
 3. **Widget Tests (`test/widgets/governance/cost_observability_screen_test.dart`)**:
    - Verify Access Denied rendering for non-admins.
-   - Verify gauge rendering, health badge display, and fallback session counts.
+   - Verify gauge rendering, health badge display, STT audio, and abuse prevention tiles.
 4. **Guarded Deployment**:
-   - Verify clean dry-run and migration ledger parity for migration 52 via `tool/guarded_supabase_deploy.dart`.
+   - Verify clean dry-run and migration ledger parity for migrations 52 and 53 via `tool/guarded_supabase_deploy.dart`.
 
 ---
 
 ## 8. Implementation Deliverables Checklist
 
-- [ ] Architecture specification approved in `docs/product/ECO_00C_COST_OBSERVABILITY_SPEC.md`.
-- [ ] Additive Supabase migration `20261021000000_cost_and_observability_quotas.sql` created.
-- [ ] pgTAP test suite authored at `supabase/tests/cost_observability_test.sql`.
-- [ ] Dart models and services created in `lib/models/governance/` and `lib/services/governance/`.
-- [ ] `CostObservabilityScreen` implemented in `lib/screens/governance/`.
-- [ ] Router integration with route `/observability` and Settings navigation entry.
-- [ ] Automated unit, widget, and pgTAP tests passing.
-- [ ] Guarded production deployment executed and verified.
+- [x] Architecture specification approved in `docs/product/ECO_00C_COST_OBSERVABILITY_SPEC.md`.
+- [x] Additive Supabase migration `20261021000000_cost_and_observability_quotas.sql` (Migration 52) created and deployed.
+- [x] Additive Supabase migration `20261022000000_usage_quotas_hardening_and_stt.sql` (Migration 53) created and tested.
+- [x] pgTAP test suite authored at `supabase/tests/cost_observability_test.sql` (37 tests).
+- [x] Dart models and services created in `lib/models/governance/` and `lib/services/governance/`.
+- [x] `CostObservabilityScreen` implemented in `lib/screens/governance/`.
+- [x] Router integration with route `/observability` and Settings navigation entry.
+- [x] Automated unit, widget, and pgTAP tests passing.
+- [x] Guarded production deployment executed and verified.
