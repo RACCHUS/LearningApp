@@ -122,7 +122,7 @@ class ReferenceDrillExercise {
         this.steps.length != expected.length ||
         !List.generate(expected.length,
             (i) => this.steps[i].skill == expected[i]).every((ok) => ok)) {
-      throw const StateError(
+      throw StateError(
           'Only complete, synthetic R1–R4 drill exercises are supported');
     }
   }
