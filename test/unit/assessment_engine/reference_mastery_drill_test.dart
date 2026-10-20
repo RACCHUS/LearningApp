@@ -163,6 +163,17 @@ void main() {
       expect(session.submitSection('2.1').correct, isTrue);
     });
 
+    test('A new session cannot inherit another learner session evidence', () {
+      final fixture = exerciseFor(ReferenceDrillMode.r1);
+      final firstSession = ReferenceDrillSession(fixture);
+      firstSession.submitOption(0);
+      final otherSession = ReferenceDrillSession(fixture);
+      expect(otherSession.outcomes, isEmpty);
+      expect(otherSession.currentStepIndex, 0);
+      expect(otherSession.correctSteps, 0);
+      expect(() => otherSession.outcomes.clear(), throwsUnsupportedError);
+    });
+
     test('Self-reported time is not editable until session finishes', () {
       final session = ReferenceDrillSession(exerciseFor(ReferenceDrillMode.r1));
       expect(() => session.reportPhysicalBookMinutes(2), throwsStateError);
