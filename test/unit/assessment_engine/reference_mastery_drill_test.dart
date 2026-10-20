@@ -73,8 +73,11 @@ void main() {
     test('R4 keeps a wrong book separate from correct section and solution', () {
       final session = ReferenceDrillSession(exerciseFor(ReferenceDrillMode.r4));
       session.submitOption(0); // wrong book
+      session.continueAfterFeedback();
       session.submitSection('2.1'); // correct location
+      session.continueAfterFeedback();
       session.submitOption(0); // wrong interpretation
+      session.continueAfterFeedback();
       session.submitOption(0); // correct solution
       expect(session.complete, isTrue);
       expect(session.correctSteps, 2);
@@ -131,10 +134,16 @@ void main() {
       );
       now = now.add(const Duration(seconds: 12));
       session.submitOption(1);
+      now = now.add(const Duration(seconds: 40)); // reading feedback
+      session.continueAfterFeedback();
       now = now.add(const Duration(seconds: 18));
       session.submitSection('2.1');
+      now = now.add(const Duration(seconds: 7)); // reading feedback
+      session.continueAfterFeedback();
       now = now.add(const Duration(seconds: 9));
       session.submitOption(2);
+      now = now.add(const Duration(seconds: 20)); // reading feedback
+      session.continueAfterFeedback();
       now = now.add(const Duration(seconds: 22));
       session.submitOption(0);
       expect(session.observedAppDuration, const Duration(seconds: 61));
@@ -144,6 +153,14 @@ void main() {
       expect(session.observedAppDuration, const Duration(seconds: 61));
       expect(() => session.reportPhysicalBookMinutes(1441),
           throwsFormatException);
+    });
+
+    test('Feedback must be acknowledged before another step can be scored', () {
+      final session = ReferenceDrillSession(exerciseFor(ReferenceDrillMode.r4));
+      session.submitOption(1);
+      expect(() => session.submitSection('2.1'), throwsStateError);
+      session.continueAfterFeedback();
+      expect(session.submitSection('2.1').correct, isTrue);
     });
 
     test('Self-reported time is not editable until session finishes', () {
