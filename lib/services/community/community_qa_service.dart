@@ -4,6 +4,7 @@ import 'package:learning_pwa/core/logging/app_logger.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
+import 'package:learning_pwa/models/community/author_review_feedback.dart';
 
 /// Service managing concept-scoped Community Q&A workflows (ECO-01 & ECO-02).
 ///
@@ -154,7 +155,7 @@ class CommunityQaService {
     }
   }
 
-  /// Fetches the authenticated user's private draft or under-review questions.
+  /// Fetches the authenticated user's private draft, under-review, or archived questions.
   Future<List<CommunityQuestion>> fetchMyDrafts() async {
     try {
       final user = _supabase.auth.currentUser;
@@ -164,7 +165,7 @@ class CommunityQaService {
           .from('community_questions')
           .select()
           .eq('author_id', user.id)
-          .inFilter('status', ['draft', 'under_review'])
+          .inFilter('status', ['draft', 'under_review', 'archived'])
           .order('created_at', ascending: false);
 
       final List<dynamic> rows = response as List<dynamic>;
@@ -174,6 +175,82 @@ class CommunityQaService {
     } catch (e, st) {
       _logger.warn('Failed to fetch user drafts: $e', error: e, stackTrace: st);
       return [];
+    }
+  }
+
+  /// Fetches the authenticated user's private draft, under-review, or archived answers.
+  Future<List<CommunityAnswer>> fetchMyDraftAnswers() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return [];
+
+      final response = await _supabase
+          .from('community_answers')
+          .select()
+          .eq('author_id', user.id)
+          .inFilter('status', ['draft', 'under_review', 'archived'])
+          .order('created_at', ascending: false);
+
+      final List<dynamic> rows = response as List<dynamic>;
+      return rows
+          .map((row) => CommunityAnswer.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      _logger.warn('Failed to fetch user draft answers: $e', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  /// Fetches decision feedback for the authenticated user's submissions.
+  ///
+  /// Calls the secure RPC [fetch_my_submission_feedback] which returns only feedback
+  /// on items authored by the caller, without exposing internal moderation notes
+  /// or reviewer identity.
+  Future<List<AuthorReviewFeedback>> fetchMySubmissionFeedback({String? targetId}) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return [];
+
+      final response = await _supabase.rpc(
+        'fetch_my_submission_feedback',
+        params: {
+          if (targetId != null) 'p_target_id': targetId,
+        },
+      );
+
+      final List<dynamic> rows = response as List<dynamic>;
+      return rows
+          .map((row) => AuthorReviewFeedback.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      _logger.warn('Failed to fetch submission feedback: $e', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  /// Resolves question titles for a list of question UUIDs.
+  Future<Map<String, String>> fetchQuestionTitles(List<String> questionIds) async {
+    if (questionIds.isEmpty) return {};
+    try {
+      final uniqueIds = questionIds.toSet().toList();
+      final response = await _supabase
+          .from('community_questions')
+          .select('id, title')
+          .inFilter('id', uniqueIds);
+
+      final List<dynamic> rows = response as List<dynamic>;
+      final map = <String, String>{};
+      for (final row in rows) {
+        final id = row['id'] as String?;
+        final title = row['title'] as String?;
+        if (id != null && title != null) {
+          map[id] = title;
+        }
+      }
+      return map;
+    } catch (e, st) {
+      _logger.warn('Failed to fetch question titles: $e', error: e, stackTrace: st);
+      return {};
     }
   }
 
@@ -297,6 +374,7 @@ class CommunityQaService {
     required String questionId,
     required String action,
     String? notes,
+    String? internalNotes,
   }) async {
     try {
       final response = await _supabase.rpc(
@@ -305,6 +383,7 @@ class CommunityQaService {
           'p_question_id': questionId,
           'p_action': action,
           if (notes != null) 'p_notes': notes,
+          if (internalNotes != null) 'p_internal_notes': internalNotes,
         },
       );
       return Map<String, dynamic>.from(response as Map);
@@ -322,6 +401,7 @@ class CommunityQaService {
     required String answerId,
     required String action,
     String? notes,
+    String? internalNotes,
   }) async {
     try {
       final response = await _supabase.rpc(
@@ -330,6 +410,7 @@ class CommunityQaService {
           'p_answer_id': answerId,
           'p_action': action,
           if (notes != null) 'p_notes': notes,
+          if (internalNotes != null) 'p_internal_notes': internalNotes,
         },
       );
       return Map<String, dynamic>.from(response as Map);

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
+import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
@@ -10,6 +11,9 @@ import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 class FakeCommunityQaService extends CommunityQaService {
   final List<CommunityQuestion> fakeSeeds;
   final List<CommunityQuestion> fakeDrafts;
+  final List<CommunityAnswer> fakeDraftAnswers;
+  final List<AuthorReviewFeedback> fakeFeedback;
+  final Map<String, String> fakeQuestionTitles;
   final List<CommunityQuestion> fakeReviewQueue;
   final List<CommunityAnswer> fakeReviewAnswers;
   final List<CommunityReviewAudit> fakeAuditLogs;
@@ -21,11 +25,15 @@ class FakeCommunityQaService extends CommunityQaService {
   String? lastReviewAction;
   String? lastAnswerReviewAction;
   String? lastReviewNotes;
+  String? lastReviewInternalNotes;
   String? lastAcceptedAnswerId;
 
   FakeCommunityQaService({
     required this.fakeSeeds,
     required this.fakeDrafts,
+    this.fakeDraftAnswers = const [],
+    this.fakeFeedback = const [],
+    this.fakeQuestionTitles = const {},
     this.fakeReviewQueue = const [],
     this.fakeReviewAnswers = const [],
     this.fakeAuditLogs = const [],
@@ -45,6 +53,31 @@ class FakeCommunityQaService extends CommunityQaService {
   @override
   Future<List<CommunityQuestion>> fetchMyDrafts() async {
     return fakeDrafts;
+  }
+
+  @override
+  Future<List<CommunityAnswer>> fetchMyDraftAnswers() async {
+    return fakeDraftAnswers;
+  }
+
+  @override
+  Future<List<AuthorReviewFeedback>> fetchMySubmissionFeedback({String? targetId}) async {
+    if (targetId != null) {
+      return fakeFeedback.where((f) => f.targetId == targetId).toList();
+    }
+    return fakeFeedback;
+  }
+
+  @override
+  Future<Map<String, String>> fetchQuestionTitles(List<String> questionIds) async {
+    final result = <String, String>{};
+    for (final q in [...fakeSeeds, ...fakeDrafts, ...fakeReviewQueue]) {
+      if (questionIds.contains(q.id)) {
+        result[q.id] = q.title;
+      }
+    }
+    result.addAll(fakeQuestionTitles);
+    return result;
   }
 
   @override
@@ -109,6 +142,7 @@ class FakeCommunityQaService extends CommunityQaService {
     required String questionId,
     required String action,
     String? notes,
+    String? internalNotes,
   }) async {
     if (action == 'publish' && throwUgcDisabledOnPublish) {
       throw Exception('Public learner UGC is currently disabled. Learner questions cannot be published before operational launch clearance.');
@@ -116,6 +150,7 @@ class FakeCommunityQaService extends CommunityQaService {
     lastReviewedQuestionId = questionId;
     lastReviewAction = action;
     lastReviewNotes = notes;
+    lastReviewInternalNotes = internalNotes;
     return {'success': true, 'question_id': questionId, 'action': action};
   }
 
@@ -124,6 +159,7 @@ class FakeCommunityQaService extends CommunityQaService {
     required String answerId,
     required String action,
     String? notes,
+    String? internalNotes,
   }) async {
     if (action == 'publish' && throwUgcDisabledOnPublish) {
       throw Exception('Public learner UGC is currently disabled. Learner answers cannot be published before operational launch clearance.');
@@ -131,6 +167,7 @@ class FakeCommunityQaService extends CommunityQaService {
     lastReviewedAnswerId = answerId;
     lastAnswerReviewAction = action;
     lastReviewNotes = notes;
+    lastReviewInternalNotes = internalNotes;
     return {'success': true, 'answer_id': answerId, 'action': action};
   }
 
@@ -480,7 +517,8 @@ void main() {
       await tester.tap(find.text('Reject'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'Please provide Florida statute citations.');
+      await tester.enterText(find.byType(TextField).first, 'Please provide Florida statute citations.');
+      await tester.enterText(find.byType(TextField).at(1), 'Internal policy review needed.');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Confirm Rejection'));
@@ -489,6 +527,7 @@ void main() {
       expect(fakeService.lastReviewedQuestionId, 'review-1');
       expect(fakeService.lastReviewAction, 'reject');
       expect(fakeService.lastReviewNotes, 'Please provide Florida statute citations.');
+      expect(fakeService.lastReviewInternalNotes, 'Internal policy review needed.');
     });
 
     testWidgets('moderator can switch to Answers tab in review queue to review learner submitted answers', (tester) async {
@@ -541,10 +580,12 @@ void main() {
         id: 'aud-1',
         targetType: 'question',
         targetId: 'review-1',
+        reviewerId: 'mod-uuid-1234',
         action: 'reject',
         previousStatus: 'under_review',
         newStatus: 'archived',
         notes: 'Needs clearer regulatory context.',
+        internalNotes: 'Internal check approved.',
         createdAt: DateTime.now(),
       );
 
@@ -553,6 +594,7 @@ void main() {
         fakeDrafts: [],
         fakeReviewQueue: [],
         fakeAuditLogs: [auditLog],
+        fakeQuestionTitles: {'review-1': 'Question for Moderator Review'},
       );
 
       await tester.pumpWidget(buildTestWidget(
@@ -569,7 +611,10 @@ void main() {
 
       expect(find.text('REJECT'), findsOneWidget);
       expect(find.text('Status change: under_review -> archived'), findsOneWidget);
-      expect(find.text('Needs clearer regulatory context.'), findsOneWidget);
+      expect(find.text('Author Feedback: Needs clearer regulatory context.'), findsOneWidget);
+      expect(find.text('Internal Notes: Internal check approved.'), findsOneWidget);
+      expect(find.textContaining('Reviewer: Moderator'), findsOneWidget);
+      expect(find.text('Target: Question for Moderator Review'), findsOneWidget);
     });
 
     testWidgets('handles UGC Launch Gate restriction gracefully when publish fails', (tester) async {
@@ -679,6 +724,138 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fakeService.lastAcceptedAnswerId, 'ans-unaccepted-1');
+    });
+
+    testWidgets('Platform Curated badge is NOT displayed for non-seeded answers on seeded questions or for offline demos', (tester) async {
+      final unseededAnswerOnSeededQuestion = {
+        'faq-1': [
+          CommunityAnswer(
+            id: 'ans-unseeded-1',
+            questionId: 'faq-1',
+            authorId: 'learner-10',
+            bodyMarkdown: 'Learner contribution that is not platform-curated.',
+            isAccepted: false,
+            isSeeded: false,
+            status: 'published',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ],
+      };
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeAnswers: unseededAnswerOnSeededQuestion,
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // Expand question
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Learner contribution that is not platform-curated.'), findsOneWidget);
+      expect(find.text('Platform Curated'), findsNothing);
+    });
+
+    testWidgets('author can view rejection decision feedback in My Drafts tab without exposing internal audit', (tester) async {
+      final rejectedQuestion = CommunityQuestion(
+        id: 'draft-rejected-1',
+        authorId: 'user-mock',
+        title: 'How do Florida barbers renew their licenses?',
+        bodyMarkdown: 'My notes on barber license renewal requirements.',
+        status: 'archived',
+        isSeeded: false,
+        createdAt: DateTime(2026, 10, 15),
+        updatedAt: DateTime(2026, 10, 16),
+      );
+
+      final authorFeedback = AuthorReviewFeedback(
+        id: 'fb-1',
+        targetType: 'question',
+        targetId: 'draft-rejected-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Please clarify that Florida barber licenses are renewed biennially by July 31st of even years.',
+        createdAt: DateTime(2026, 10, 16),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [rejectedQuestion],
+        fakeFeedback: [authorFeedback],
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Drafts (1)'), findsOneWidget);
+
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('How do Florida barbers renew their licenses?'), findsOneWidget);
+      expect(find.text('Needs Revision'), findsOneWidget);
+      expect(find.text('Educator Review Feedback:'), findsOneWidget);
+      expect(find.text('Please clarify that Florida barber licenses are renewed biennially by July 31st of even years.'), findsOneWidget);
+    });
+
+    testWidgets('moderator review queue displays full context (author, date, parent question title)', (tester) async {
+      final reviewQuestion = CommunityQuestion(
+        id: 'rev-q-10',
+        authorId: 'learner-author-1234',
+        title: 'Safety Data Sheet format inquiry',
+        bodyMarkdown: 'Are 16 sections required under OSHA GHS?',
+        status: 'under_review',
+        isSeeded: false,
+        conceptId: 'workplace.safety.hazcom',
+        createdAt: DateTime(2026, 10, 20),
+        updatedAt: DateTime(2026, 10, 20),
+      );
+
+      final reviewAnswer = CommunityAnswer(
+        id: 'rev-ans-20',
+        questionId: 'rev-q-10',
+        authorId: 'learner-ans-5678',
+        bodyMarkdown: 'Yes, OSHA aligns with GHS Annex 4 requiring all 16 sections.',
+        status: 'under_review',
+        createdAt: DateTime(2026, 10, 21),
+        updatedAt: DateTime(2026, 10, 21),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewQueue: [reviewQuestion],
+        fakeReviewAnswers: [reviewAnswer],
+        fakeQuestionTitles: {'rev-q-10': 'Safety Data Sheet format inquiry'},
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (2)'));
+      await tester.pumpAndSettle();
+
+      // Check Question Context: Author & Submitted date
+      expect(find.text('Author: Learner (learner-)'), findsOneWidget);
+      expect(find.text('Submitted: 10/20/2026'), findsOneWidget);
+      expect(find.text('Safety Data Sheet format inquiry'), findsOneWidget);
+
+      // Switch to Answers sub-segment
+      await tester.tap(find.text('Answers (1)'));
+      await tester.pumpAndSettle();
+
+      // Check Answer Context: Parent Question Title, Author & Submitted date
+      expect(find.text('Question: "Safety Data Sheet format inquiry"'), findsOneWidget);
+      expect(find.text('Author: Learner (learner-)'), findsOneWidget);
+      expect(find.text('Submitted: 10/21/2026'), findsOneWidget);
+      expect(find.text('Yes, OSHA aligns with GHS Annex 4 requiring all 16 sections.'), findsOneWidget);
     });
   });
 }

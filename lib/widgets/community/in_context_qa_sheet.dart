@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
+import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
@@ -99,12 +100,29 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   String? _statusMessage;
   List<CommunityQuestion> _seedFaqs = [];
   List<CommunityQuestion> _myDrafts = [];
+  List<CommunityAnswer> _myDraftAnswers = [];
+  Map<String, AuthorReviewFeedback> _submissionFeedback = {};
   List<CommunityQuestion> _reviewQuestions = [];
   List<CommunityAnswer> _reviewAnswers = [];
   List<CommunityReviewAudit> _auditLogs = [];
+  Map<String, String> _questionTitles = {};
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
   final Set<String> _userUpvoted = {};
+
+  String _formatAuthorId(String id) {
+    if (id == 'offline-demo') return 'Offline Demo';
+    return 'Learner (${id.length > 8 ? id.substring(0, 8) : id})';
+  }
+
+  String _formatReviewerId(String? id) {
+    if (id == null) return 'System';
+    return 'Moderator (${id.length > 8 ? id.substring(0, 8) : id})';
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.month}/${dt.day}/${dt.year}';
+  }
 
   @override
   void initState() {
@@ -129,11 +147,15 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         lessonId: widget.lessonId,
       );
       final drafts = await widget.service.fetchMyDrafts();
+      final draftAnswers = await widget.service.fetchMyDraftAnswers();
+      final feedbackList = await widget.service.fetchMySubmissionFeedback();
+      final feedbackMap = {for (final f in feedbackList) f.targetId: f};
 
       bool isMod = false;
       List<CommunityQuestion> reviewQuestions = [];
       List<CommunityAnswer> reviewAnswers = [];
       List<CommunityReviewAudit> auditLogs = [];
+      Map<String, String> questionTitles = {};
       try {
         final modService = widget.moderationService ?? ModerationService();
         isMod = await modService.isModerator();
@@ -141,6 +163,15 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           reviewQuestions = await widget.service.fetchUnderReviewQuestions();
           reviewAnswers = await widget.service.fetchUnderReviewAnswers();
           auditLogs = await widget.service.fetchReviewAuditHistory(limit: 25);
+          final questionIdsToResolve = <String>{
+            ...reviewAnswers.map((a) => a.questionId),
+            ...draftAnswers.map((a) => a.questionId),
+            ...auditLogs.where((l) => l.isQuestion).map((l) => l.targetId),
+          }.toList();
+          questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
+        } else if (draftAnswers.isNotEmpty) {
+          final questionIdsToResolve = draftAnswers.map((a) => a.questionId).toSet().toList();
+          questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
         }
       } catch (_) {}
 
@@ -150,9 +181,12 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         setState(() {
           _seedFaqs = faqs;
           _myDrafts = drafts;
+          _myDraftAnswers = draftAnswers;
+          _submissionFeedback = feedbackMap;
           _reviewQuestions = reviewQuestions;
           _reviewAnswers = reviewAnswers;
           _auditLogs = auditLogs;
+          _questionTitles = questionTitles;
           _isModerator = isMod;
           _isLoading = false;
         });
@@ -176,12 +210,19 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         targetId: widget.targetId,
         lessonId: widget.lessonId,
       );
+      final questionIdsToResolve = <String>{
+        ...reviewAnswers.map((a) => a.questionId),
+        ..._myDraftAnswers.map((a) => a.questionId),
+        ...auditLogs.where((l) => l.isQuestion).map((l) => l.targetId),
+      }.toList();
+      final questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
       if (mounted) {
         setState(() {
           _reviewQuestions = reviewQuestions;
           _reviewAnswers = reviewAnswers;
           _auditLogs = auditLogs;
           _seedFaqs = faqs;
+          _questionTitles = questionTitles;
         });
       }
     } catch (_) {}
@@ -235,12 +276,18 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     } catch (_) {}
   }
 
-  Future<void> _handleReviewQuestion(String questionId, String action, {String? notes}) async {
+  Future<void> _handleReviewQuestion(
+    String questionId,
+    String action, {
+    String? notes,
+    String? internalNotes,
+  }) async {
     try {
       await widget.service.reviewQuestion(
         questionId: questionId,
         action: action,
         notes: notes,
+        internalNotes: internalNotes,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,12 +303,18 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     }
   }
 
-  Future<void> _handleReviewAnswer(String answerId, String action, {String? notes}) async {
+  Future<void> _handleReviewAnswer(
+    String answerId,
+    String action, {
+    String? notes,
+    String? internalNotes,
+  }) async {
     try {
       await widget.service.reviewAnswer(
         answerId: answerId,
         action: action,
         notes: notes,
+        internalNotes: internalNotes,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -318,29 +371,42 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     required String title,
   }) async {
     final notesController = TextEditingController();
+    final internalNotesController = TextEditingController();
     final shouldReject = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Reject $targetType'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Provide feedback or an editorial rationale for rejecting "$title". This will be recorded in the moderation audit trail.',
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: notesController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Editorial / Governance Notes',
-                hintText: 'e.g., Needs revision: clarify distinction between blends and digraphs.',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Provide feedback for rejecting "$title". Learner-facing feedback will be delivered directly to the author in their private drafts.',
+                style: const TextStyle(fontSize: 13),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Author Feedback (Shared with Author)',
+                  hintText: 'e.g., Needs revision: clarify distinction between blends and digraphs.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: internalNotesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Internal Moderation Notes (Confidential)',
+                  hintText: 'e.g., Escalated to curriculum lead; check state benchmark alignment.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -358,11 +424,23 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
     if (shouldReject == true) {
       final notes = notesController.text.trim();
+      final internalNotes = internalNotesController.text.trim();
       final effectiveNotes = notes.isEmpty ? null : notes;
+      final effectiveInternalNotes = internalNotes.isEmpty ? null : internalNotes;
       if (targetType == 'question') {
-        await _handleReviewQuestion(targetId, 'reject', notes: effectiveNotes);
+        await _handleReviewQuestion(
+          targetId,
+          'reject',
+          notes: effectiveNotes,
+          internalNotes: effectiveInternalNotes,
+        );
       } else {
-        await _handleReviewAnswer(targetId, 'reject', notes: effectiveNotes);
+        await _handleReviewAnswer(
+          targetId,
+          'reject',
+          notes: effectiveNotes,
+          internalNotes: effectiveInternalNotes,
+        );
       }
     }
   }
@@ -485,7 +563,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           tabs: [
             Tab(text: 'FAQs (${_seedFaqs.length})'),
             const Tab(text: 'Ask a Question'),
-            Tab(text: 'My Drafts (${_myDrafts.length})'),
+            Tab(text: 'My Drafts (${_myDrafts.length + _myDraftAnswers.length})'),
             if (_isModerator) Tab(text: 'Review Queue ($totalReviewCount)'),
           ],
         ),
@@ -704,7 +782,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                       ],
                     ),
                   ),
-                  if (ans.isSeeded || q.isSeeded)
+                  if (ans.isSeeded && !isOfflineDemo)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -874,58 +952,232 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Widget _buildMyDraftsTab(ThemeData theme) {
-    if (_myDrafts.isEmpty) {
+    final totalDrafts = _myDrafts.length + _myDraftAnswers.length;
+    if (totalDrafts == 0) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'You have not authored any private questions yet.',
+            'You have not authored any private questions or answers yet.',
             style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
         ),
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(12),
-      itemCount: _myDrafts.length,
-      itemBuilder: (context, index) {
-        final d = _myDrafts[index];
-        final isUnderReview = d.status == 'under_review';
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: ListTile(
-            title: Text(d.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            subtitle: Text(
-              d.bodyMarkdown,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
+      children: [
+        if (_myDrafts.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Text(
+              'My Questions (${_myDrafts.length})',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.blueGrey),
             ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isUnderReview ? Colors.orange.withValues(alpha: 0.12) : Colors.grey.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(4),
+          ),
+          ..._myDrafts.map((d) {
+            final isArchived = d.status == 'archived';
+            final isUnderReview = d.status == 'under_review';
+            final feedback = _submissionFeedback[d.id];
+
+            final statusLabel = isArchived
+                ? 'Needs Revision'
+                : (isUnderReview ? 'Under Review' : 'Draft');
+            final statusColor = isArchived
+                ? Colors.red
+                : (isUnderReview ? Colors.orange : Colors.grey);
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: statusColor.withValues(alpha: isArchived ? 0.35 : 0.2)),
               ),
-              child: Text(
-                isUnderReview ? 'Under Review' : 'Draft',
-                style: TextStyle(
-                  color: isUnderReview ? Colors.orange[800] : Colors.grey[700],
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(d.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: isArchived ? Colors.red[800] : (isUnderReview ? Colors.orange[800] : Colors.grey[700]),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      d.bodyMarkdown,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    if (feedback != null && feedback.feedback.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.rate_review_outlined, size: 14, color: Colors.amber[900]),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Educator Review Feedback:',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.amber[900]),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    feedback.feedback,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
+            );
+          }),
+        ],
+        if (_myDraftAnswers.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 12),
+            child: Text(
+              'My Answers (${_myDraftAnswers.length})',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.blueGrey),
             ),
           ),
-        );
-      },
+          ..._myDraftAnswers.map((a) {
+            final isArchived = a.status == 'archived';
+            final isUnderReview = a.status == 'under_review';
+            final feedback = _submissionFeedback[a.id];
+
+            final statusLabel = isArchived
+                ? 'Needs Revision'
+                : (isUnderReview ? 'Under Review' : 'Draft');
+            final statusColor = isArchived
+                ? Colors.red
+                : (isUnderReview ? Colors.orange : Colors.grey);
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: statusColor.withValues(alpha: isArchived ? 0.35 : 0.2)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Answer to: "${_questionTitles[a.questionId] ?? a.questionId}"',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.blueGrey),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: isArchived ? Colors.red[800] : (isUnderReview ? Colors.orange[800] : Colors.grey[700]),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      a.bodyMarkdown,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    if (feedback != null && feedback.feedback.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.rate_review_outlined, size: 14, color: Colors.amber[900]),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Educator Review Feedback:',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.amber[900]),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    feedback.feedback,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ],
     );
   }
 
@@ -1013,29 +1265,49 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Under Review',
-                        style: TextStyle(
-                          color: Colors.orange[800],
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Under Review',
+                            style: TextStyle(
+                              color: Colors.orange[800],
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (q.conceptId != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            q.conceptId!,
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (q.conceptId != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        q.conceptId!,
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                    ],
+                    Text(
+                      'Submitted: ${_formatDate(q.createdAt)}',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.person_outline, size: 13, color: Colors.blueGrey[700]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Author: ${_formatAuthorId(q.authorId)}',
+                      style: TextStyle(fontSize: 11, color: Colors.blueGrey[700], fontWeight: FontWeight.w500),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -1121,44 +1393,80 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Under Review',
-                        style: TextStyle(
-                          color: Colors.orange[800],
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Under Review',
+                            style: TextStyle(
+                              color: Colors.orange[800],
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (a.isAiGenerated) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              a.aiModelName != null ? 'AI: ${a.aiModelName}' : 'AI Assisted',
+                              style: const TextStyle(color: Colors.purple, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (a.isAiGenerated) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          a.aiModelName != null ? 'AI: ${a.aiModelName}' : 'AI Assisted',
-                          style: const TextStyle(color: Colors.purple, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+                    Text(
+                      'Submitted: ${_formatDate(a.createdAt)}',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.person_outline, size: 13, color: Colors.blueGrey[700]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Author: ${_formatAuthorId(a.authorId)}',
+                      style: TextStyle(fontSize: 11, color: Colors.blueGrey[700], fontWeight: FontWeight.w500),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Parent Question ID: ${a.questionId}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.blueGrey),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.help_outline, size: 14, color: Colors.blueGrey),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Question: "${_questionTitles[a.questionId] ?? a.questionId}"',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.blueGrey),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   a.bodyMarkdown,
                   style: theme.textTheme.bodyMedium,
@@ -1263,21 +1571,36 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          audit.targetType == 'question' ? 'Question' : 'Answer',
+                          audit.targetType == 'question' ? 'Question Review' : 'Answer Review',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ],
                     ),
                     Text(
-                      '${audit.createdAt.month}/${audit.createdAt.day} ${audit.createdAt.hour}:${audit.createdAt.minute.toString().padLeft(2, '0')}',
+                      '${audit.createdAt.month}/${audit.createdAt.day}/${audit.createdAt.year} ${audit.createdAt.hour}:${audit.createdAt.minute.toString().padLeft(2, '0')}',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Status change: ${audit.previousStatus} -> ${audit.newStatus}',
-                  style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                  'Target: ${_questionTitles[audit.targetId] ?? (audit.targetType == 'question' ? 'Question #${_formatAuthorId(audit.targetId)}' : 'Answer #${_formatAuthorId(audit.targetId)}')}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+                ),
+                const SizedBox(height: 2),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      'Reviewer: ${_formatReviewerId(audit.reviewerId)}',
+                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                    ),
+                    Text(
+                      'Status change: ${audit.previousStatus} -> ${audit.newStatus}',
+                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
+                    ),
+                  ],
                 ),
                 if (audit.notes != null && audit.notes!.isNotEmpty) ...[
                   const SizedBox(height: 6),
@@ -1294,8 +1617,31 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            audit.notes!,
+                            'Author Feedback: ${audit.notes!}',
                             style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (audit.internalNotes != null && audit.internalNotes!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.shield_outlined, size: 12, color: Colors.amber),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Internal Notes: ${audit.internalNotes!}',
+                            style: TextStyle(fontSize: 11, color: Colors.amber[900]),
                           ),
                         ),
                       ],

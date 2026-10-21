@@ -12,6 +12,7 @@ class CommunityReviewAudit {
   final String previousStatus;
   final String newStatus;
   final String? notes;
+  final String? internalNotes;
   final DateTime createdAt;
 
   const CommunityReviewAudit({
@@ -23,6 +24,7 @@ class CommunityReviewAudit {
     required this.previousStatus,
     required this.newStatus,
     this.notes,
+    this.internalNotes,
     required this.createdAt,
   });
 
@@ -39,6 +41,7 @@ class CommunityReviewAudit {
       previousStatus: json['previous_status'] as String,
       newStatus: json['new_status'] as String,
       notes: json['notes'] as String?,
+      internalNotes: json['internal_notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -53,6 +56,7 @@ class CommunityReviewAudit {
       'previous_status': previousStatus,
       'new_status': newStatus,
       if (notes != null) 'notes': notes,
+      if (internalNotes != null) 'internal_notes': internalNotes,
       'created_at': createdAt.toIso8601String(),
     };
   }

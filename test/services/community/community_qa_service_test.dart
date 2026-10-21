@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
+import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 
 void main() {
@@ -175,6 +176,7 @@ void main() {
         previousStatus: 'under_review',
         newStatus: 'archived',
         notes: 'Needs clarity on regulatory statutory citation.',
+        internalNotes: 'Flagged for moderation follow-up.',
         createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
       );
 
@@ -182,6 +184,7 @@ void main() {
       expect(audit.isAnswer, isFalse);
       expect(audit.action, 'reject');
       expect(audit.notes, 'Needs clarity on regulatory statutory citation.');
+      expect(audit.internalNotes, 'Flagged for moderation follow-up.');
 
       final json = audit.toJson();
       final revived = CommunityReviewAudit.fromJson(json);
@@ -194,6 +197,37 @@ void main() {
       expect(revived.previousStatus, 'under_review');
       expect(revived.newStatus, 'archived');
       expect(revived.notes, 'Needs clarity on regulatory statutory citation.');
+      expect(revived.internalNotes, 'Flagged for moderation follow-up.');
+    });
+
+    test('AuthorReviewFeedback serialization and properties', () {
+      final feedback = AuthorReviewFeedback(
+        id: 'fb-001',
+        targetType: 'question',
+        targetId: 'q-999',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Please cite the relevant administrative code section.',
+        createdAt: DateTime.parse('2026-10-21T14:00:00Z'),
+      );
+
+      expect(feedback.id, 'fb-001');
+      expect(feedback.targetType, 'question');
+      expect(feedback.targetId, 'q-999');
+      expect(feedback.action, 'reject');
+      expect(feedback.newStatus, 'archived');
+      expect(feedback.feedback, 'Please cite the relevant administrative code section.');
+
+      final json = feedback.toJson();
+      final revived = AuthorReviewFeedback.fromJson(json);
+
+      expect(revived.id, 'fb-001');
+      expect(revived.targetType, 'question');
+      expect(revived.targetId, 'q-999');
+      expect(revived.action, 'reject');
+      expect(revived.newStatus, 'archived');
+      expect(revived.feedback, 'Please cite the relevant administrative code section.');
+      expect(revived.createdAt, DateTime.parse('2026-10-21T14:00:00Z'));
     });
 
     test('CommunityQaService handles offline empty fallbacks gracefully', () async {
@@ -210,6 +244,16 @@ void main() {
 
       final myDrafts = await service.fetchMyDrafts();
       expect(myDrafts, isEmpty);
+
+      final myDraftAnswers = await service.fetchMyDraftAnswers();
+      expect(myDraftAnswers, isEmpty);
+
+      final myFeedback = await service.fetchMySubmissionFeedback();
+      expect(myFeedback, isEmpty);
+
+      final questionTitles = await service.fetchQuestionTitles(['q-1', 'q-2']);
+      expect(questionTitles, isEmpty);
     });
   });
 }
+
