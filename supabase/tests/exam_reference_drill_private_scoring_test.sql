@@ -123,7 +123,7 @@ select throws_ok($q$
  update public.exam_reference_drill_scoring_keys
  set publication_status='published'
  where id='b3000000-0000-4000-8000-000000000019'
-$q$, '23514',null,
+$q$, 'P0001',null,
  'Cannot publish scoring answer keys without independent reviewer signoff');
 select lives_ok($q$
  update public.exam_reference_drill_scoring_keys set
