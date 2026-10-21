@@ -153,8 +153,12 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   void _onUserChanged(String? newUserId) {
     if (!mounted) return;
     _loadRequestId++;
+    _titleController.clear();
+    _bodyController.clear();
     setState(() {
       _activeUserId = newUserId;
+      _isSubmitting = false;
+      _statusMessage = null;
       _myDrafts = [];
       _myDraftAnswers = [];
       _submissionFeedback = {};
@@ -162,6 +166,10 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       _reviewAnswers = [];
       _auditLogs = [];
       _answerParentQuestionIds = {};
+      _questionTitles = {};
+      _answersCache.clear();
+      _expandedQuestions.clear();
+      _userUpvoted.clear();
       _isModerator = false;
       _isLoading = true;
     });
@@ -194,11 +202,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       );
       final drafts = await widget.service.fetchMyDrafts();
       final draftAnswers = await widget.service.fetchMyDraftAnswers();
-      final feedbackList = await widget.service.fetchMySubmissionFeedback();
-      final feedbackMap = <String, AuthorReviewFeedback>{};
-      for (final f in feedbackList) {
-        feedbackMap.putIfAbsent(f.targetId, () => f);
-      }
+      final feedbackMap = await widget.service.fetchLatestSubmissionFeedback();
 
       bool isMod = false;
       List<CommunityQuestion> reviewQuestions = [];
@@ -318,23 +322,31 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _loadAnswers(String questionId) async {
     if (_answersCache.containsKey(questionId)) return;
+    final int requestId = _loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
     try {
       final answers = await widget.service.fetchAnswersForQuestion(questionId);
-      if (mounted) {
-        setState(() {
-          _answersCache[questionId] = answers;
-        });
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+      setState(() {
+        _answersCache[questionId] = answers;
+      });
     } catch (_) {}
   }
 
   Future<void> _handleVote(CommunityQuestion question) async {
     if (question.authorId == 'offline-demo') return;
+    final int requestId = _loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
     try {
       final result = await widget.service.toggleVote(
         targetType: 'question',
         targetId: question.id,
       );
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
+      }
       final bool voted = result['voted'] as bool? ?? false;
       final int newCount = result['upvote_count'] as int? ?? question.upvoteCount;
 
@@ -353,14 +365,17 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _handleAcceptAnswer(String answerId, String questionId) async {
+    final int requestId = _loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
     try {
       await widget.service.acceptAnswer(answerId: answerId);
       final updatedAnswers = await widget.service.fetchAnswersForQuestion(questionId);
-      if (mounted) {
-        setState(() {
-          _answersCache[questionId] = updatedAnswers;
-        });
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+      setState(() {
+        _answersCache[questionId] = updatedAnswers;
+      });
     } catch (_) {}
   }
 
@@ -535,6 +550,9 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _submitDraftQuestion() async {
     if (!_formKey.currentState!.validate()) return;
+    final int requestId = ++_loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
+
     setState(() {
       _isSubmitting = true;
       _statusMessage = null;
@@ -550,7 +568,11 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         submitForReview: true,
       );
 
-      if (newQuestion != null && mounted) {
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
+      }
+
+      if (newQuestion != null) {
         _titleController.clear();
         _bodyController.clear();
         setState(() {
@@ -559,15 +581,214 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           _isSubmitting = false;
         });
         _tabController?.animateTo(2);
+      } else {
+        setState(() => _isSubmitting = false);
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _statusMessage = 'Unable to save question. Please try again.';
-          _isSubmitting = false;
-        });
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+      setState(() {
+        _statusMessage = 'Unable to save question. Please try again.';
+        _isSubmitting = false;
+      });
     }
+  }
+
+  Future<void> _showAnswerRevisionDialog(CommunityAnswer rejectedAnswer) async {
+    final String? dialogAuthorId = widget.service.currentUserId;
+    final parentTitle = _questionTitles[rejectedAnswer.questionId] ?? 'Question';
+    final feedback = _submissionFeedback[rejectedAnswer.id];
+    final answerController = TextEditingController(text: rejectedAnswer.bodyMarkdown);
+    final formKey = GlobalKey<FormState>();
+    bool isDialogSubmitting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.edit_note, color: Colors.blueAccent),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Revise and Resubmit Answer',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 500,
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Parent Question:',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                parentTitle,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (feedback != null && feedback.feedback.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.feedback_outlined, size: 16, color: Colors.amber[900]),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Educator Feedback:',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber[900]),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        feedback.feedback,
+                                        style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: answerController,
+                          maxLines: 6,
+                          minLines: 4,
+                          decoration: const InputDecoration(
+                            labelText: 'Your Revised Answer (Markdown supported)',
+                            hintText: 'Address feedback and provide a clear, accurate explanation...',
+                            border: OutlineInputBorder(),
+                            alignLabelWithHint: true,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().length < 10) {
+                              return 'Answer must be at least 10 characters long.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Submitting creates a new private draft answer queued for educator review. Your previous submission remains archived.',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDialogSubmitting ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  icon: isDialogSubmitting
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.send, size: 14),
+                  label: const Text('Submit Revised Answer'),
+                  onPressed: isDialogSubmitting
+                      ? null
+                      : () async {
+                          if (!formKey.currentState!.validate()) return;
+                          final int requestId = ++_loadRequestId;
+                          final String? requestUserId = widget.service.currentUserId;
+
+                          if (requestUserId != dialogAuthorId) {
+                            Navigator.of(ctx).pop();
+                            return;
+                          }
+
+                          setDialogState(() => isDialogSubmitting = true);
+
+                          try {
+                            final newAnswer = await widget.service.createDraftAnswer(
+                              questionId: rejectedAnswer.questionId,
+                              bodyMarkdown: answerController.text.trim(),
+                              submitForReview: true,
+                            );
+
+                            if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                              return;
+                            }
+
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+
+                            if (newAnswer != null) {
+                              setState(() {
+                                _myDraftAnswers.insert(0, newAnswer);
+                                _answerParentQuestionIds[newAnswer.id] = newAnswer.questionId;
+                                _statusMessage = 'Revised answer submitted for educator review.';
+                              });
+                              _tabController?.animateTo(2);
+                            }
+                          } catch (e) {
+                            if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                              return;
+                            }
+                            setDialogState(() => isDialogSubmitting = false);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red[800],
+                                  content: Text('Failed to submit revised answer: $e'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -1288,14 +1509,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                         child: TextButton.icon(
                           icon: const Icon(Icons.edit_note, size: 16),
                           label: const Text('Revise and Resubmit Answer', style: TextStyle(fontSize: 12)),
-                          onPressed: () {
-                            setState(() {
-                              _expandedQuestions.add(a.questionId);
-                              _statusMessage = 'Revise your answer to "${_questionTitles[a.questionId] ?? a.questionId}" addressing educator feedback.';
-                            });
-                            _tabController?.animateTo(0);
-                            _loadAnswers(a.questionId);
-                          },
+                          onPressed: () => _showAnswerRevisionDialog(a),
                         ),
                       ),
                     ],
