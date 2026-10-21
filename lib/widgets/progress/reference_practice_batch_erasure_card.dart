@@ -159,10 +159,11 @@ class _OwnedBatchesState extends State<_OwnedBatches> {
               'including retired editions. No automatic deletion occurs.',
             ),
             const Text(
-              'Export before deleting if you need a copy. The current '
-              'all-edition JSON export cannot include more than 5,000 '
-              'saved steps. If you need a complete export of a larger '
-              'history, do not delete it until a suitable export is available.',
+              'Export before deleting if you need a copy. The standard '
+              'one-statement EXM export stops at 5,000 saved steps; use '
+              'verified large history export for up to 50,000 steps. '
+              'For more than 50,000 steps, do not delete records if you '
+              'still need a complete copy.',
             ),
             TextButton.icon(
               key:const Key('exm-batch-preview'),
