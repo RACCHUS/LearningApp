@@ -108,6 +108,55 @@ void main() {
     expect(json.toString(),isNot(contains('scoring_spec')));
   });
 
+
+  test('Progress reports bounded pages and cancellation stops subsequent RPCs',
+      () async {
+    final client=FakeSupabaseClient(currentUser:user(owner));
+    final all=List.generate(501,(i)=>record(i+1));
+    var inventories=0;
+    var pages=0;
+    var cancelled=false;
+    final progress=<({int loaded,int total})>[];
+    final service=ExamReferenceVerifiedLargeExportService(
+      client:client,
+      testInventory:() async {
+        inventories++;
+        return inventory(all.length);
+      },
+      testPage:(limit,at,id) async {
+        pages++;
+        final next=id==null?0:int.parse(id.substring(id.length-12));
+        return page(all.skip(next).take(limit).toList());
+      },
+    );
+    await expectLater(service.loadComplete(
+      expectedOwnerId:owner,
+      onProgress:(loaded,total){
+        progress.add((loaded:loaded,total:total));
+        if(loaded==250)cancelled=true;
+      },
+      shouldCancel:()=>cancelled,
+    ),throwsA(isA<ReferencePracticeExportCancelled>()));
+    expect(inventories,1);
+    expect(pages,1);
+    expect(progress.map((p)=>p.loaded).toList(),[0,250]);
+    expect(progress.every((p)=>p.total==501),isTrue);
+  });
+
+  test('Cancellation before initial RPC does not read learner history',
+      () async {
+    final client=FakeSupabaseClient(currentUser:user(owner));
+    var reads=0;
+    final service=ExamReferenceVerifiedLargeExportService(
+      client:client,
+      testInventory:() async {reads++;return inventory(1);},
+    );
+    await expectLater(service.loadComplete(
+      expectedOwnerId:owner,shouldCancel:()=>true,
+    ),throwsA(isA<ReferencePracticeExportCancelled>()));
+    expect(reads,0);
+  });
+
   test('Mid-export grade change with same row count rejects completeness',
       () async {
     final client=FakeSupabaseClient(currentUser:user(owner));

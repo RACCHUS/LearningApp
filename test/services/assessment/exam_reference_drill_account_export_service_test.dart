@@ -109,6 +109,12 @@ void main() {
     expect(json.toString().contains('step_tokens'),false);
     expect(json.toString().contains('scoring_spec'),false);
     expect(json.toString().contains('reviewer_ref'),false);
+    final chunked=jsonDecode(export.toJsonExportChunks().join())
+        as Map<String,dynamic>;
+    expect(chunked,json);
+    expect(chunked.toString(),isNot(contains('private_answer')));
+    expect(chunked.toString(),isNot(contains('scoring_spec')));
+
   });
 
   test('Guest and wrong owner cannot call export API',() async {

@@ -3,6 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'exam_reference_drill_account_export_service.dart';
 import 'exam_reference_drill_progress_service.dart';
 
+/// Cancellation stops further *client* RPCs; an in-flight server read may
+/// still finish. It does not change, write or delete any saved records.
+class ReferencePracticeExportCancelled implements Exception {
+  const ReferencePracticeExportCancelled();
+}
+
 /// Extended EXM reference-practice export (up to 50,000 steps).
 /// Preflight and postflight are separate RLS-invoker SQL statements. This is
 /// NOT a single repeatable-read transaction. Any changed ID/grade digest
@@ -73,10 +79,22 @@ class ExamReferenceVerifiedLargeExportService {
 
   Future<ReferencePracticeAccountExport> loadComplete({
     required String expectedOwnerId,
+    void Function(int loaded, int total)? onProgress,
+    bool Function()? shouldCancel,
   }) async {
+    void checkCancelled() {
+      if (shouldCancel?.call() == true) {
+        throw const ReferencePracticeExportCancelled();
+      }
+    }
+
     _requireOwner(expectedOwnerId);
+    checkCancelled();
     final start=_inventory(await _readInventory(),expectedOwnerId);
     _requireOwner(expectedOwnerId);
+    checkCancelled();
+    onProgress?.call(0,start.count);
+    checkCancelled();
 
     final rows=<ReferenceDrillEvidence>[];
     final seen=<String>{};
@@ -84,10 +102,12 @@ class ExamReferenceVerifiedLargeExportService {
     String? previousId;
     while(rows.length<start.count) {
       _requireOwner(expectedOwnerId);
+      checkCancelled();
       final requested=(start.count-rows.length).clamp(1,pageLimit).toInt();
       final dynamic response=await _readPage(
         requested,previousTime?.toIso8601String(),previousId);
       _requireOwner(expectedOwnerId);
+      checkCancelled();
       if(response is! Map)throw const FormatException('Invalid export page');
       final packet=Map<String,dynamic>.from(response);
       const keys={'scope','owner_auth_uid','row_count','rows'};
@@ -126,18 +146,24 @@ class ExamReferenceVerifiedLargeExportService {
       if(page.length<requested && rows.length!=start.count) {
         throw const FormatException('Export ended before inventory count');
       }
+      checkCancelled();
+      onProgress?.call(rows.length,start.count);
+      checkCancelled();
     }
 
     // Final server-side digest catches concurrent new/delete rows AND newly
     // graded receipts. Never silently export a stale multi-request snapshot.
     _requireOwner(expectedOwnerId);
+    checkCancelled();
     final end=_inventory(await _readInventory(),expectedOwnerId);
     _requireOwner(expectedOwnerId);
+    checkCancelled();
     if(end.count!=start.count || end.fingerprint!=start.fingerprint ||
        rows.length!=end.count) {
       throw StateError('Reference history changed during export. '
           'Nothing complete was prepared; retry from a fresh inventory.');
     }
+    checkCancelled();
     return ReferencePracticeAccountExport(
       ownerId:expectedOwnerId,
       generatedAt:DateTime.now().toUtc(),

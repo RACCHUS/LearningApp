@@ -16,6 +16,22 @@ class ReferencePracticeJsonDownload {
         '${two(t.hour)}${two(t.minute)}${two(t.second)}Z.json';
   }
 
+  /// Assemble a browser Blob from bounded JSON byte chunks, without creating
+  /// one full intermediate JSON string in Dart.
+  void requestChunkedDownload({
+    required String filename,
+    required Iterable<String> chunks,
+  }) {
+    if (!isSupported) {
+      throw UnsupportedError('File download is browser-only');
+    }
+    if (!RegExp(r'^learningapp-exm-reference-practice-\d{8}T\d{6}Z\.json$')
+        .hasMatch(filename)) {
+      throw const FormatException('Invalid EXM download filename');
+    }
+    download_platform.requestDownloadChunks(filename: filename, chunks: chunks);
+  }
+
   /// Call directly from a real user click. Throws synchronously if unsupported
   /// or if browser initiation failed; success only means a download REQUEST.
   void requestDownload({

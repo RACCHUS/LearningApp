@@ -81,6 +81,10 @@ class _OwnerExportState extends State<_OwnerExport> {
   ReferencePracticeAccountExport? _export;
   bool _largeMode = false;
   bool _busy = false;
+  bool _preparingLarge = false;
+  bool _cancelLarge = false;
+  int _loadedSteps = 0;
+  int _totalSteps = 0;
   String? _error;
 
   Future<void> _prepare() async {
@@ -112,6 +116,10 @@ class _OwnerExportState extends State<_OwnerExport> {
     if (_busy) return;
     setState(() {
       _busy = true;
+      _preparingLarge = true;
+      _cancelLarge = false;
+      _loadedSteps = 0;
+      _totalSteps = 0;
       _error = null;
       _export = null;
       _largeMode = false;
@@ -119,6 +127,15 @@ class _OwnerExportState extends State<_OwnerExport> {
     try {
       final export = await _largeService.loadComplete(
         expectedOwnerId: widget.ownerId,
+        shouldCancel: () => _cancelLarge || !mounted ||
+            !widget.ownerStillCurrent(),
+        onProgress: (loaded, total) {
+          if (!mounted || _cancelLarge || !widget.ownerStillCurrent()) return;
+          setState(() {
+            _loadedSteps = loaded;
+            _totalSteps = total;
+          });
+        },
       );
       if (!mounted) return;
       if (export.ownerId != widget.ownerId) {
@@ -128,14 +145,28 @@ class _OwnerExportState extends State<_OwnerExport> {
         _export = export;
         _largeMode = true;
       });
+    } on ReferencePracticeExportCancelled {
+      if (!mounted) return;
+      setState(() => _error =
+          'Large-history export cancelled. No file was prepared.');
     } catch (_) {
       if (!mounted) return;
       setState(() => _error =
           'Could not verify a complete large-history export. '
           'Records may have changed; retry. No JSON was copied.');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _preparingLarge = false;
+        });
+      }
     }
+  }
+
+  void _cancelLargePreparation() {
+    if (!_preparingLarge || _cancelLarge) return;
+    setState(() => _cancelLarge = true);
   }
 
   Future<void> _copy() async {
@@ -199,7 +230,8 @@ class _OwnerExportState extends State<_OwnerExport> {
           'including older reference editions and owner identifiers. '
           'This is not a full LearningApp account archive. Keep the file '
           'private and check your browser Downloads; the app cannot '
-          'confirm that the file was saved.',
+          'confirm that the file was saved. Browser file exports are '
+          'limited to 64 MiB to avoid excessive memory usage.',
         ),
         actions: [
           TextButton(
@@ -224,11 +256,11 @@ class _OwnerExportState extends State<_OwnerExport> {
         !identical(data, _export)) return;
     setState(() => _busy = true);
     try {
-      final json = data.toJsonExport();
-      // requestDownload must start synchronously from the confirmation click.
-      _fileDownload.requestDownload(
+      // No giant intermediate JSON string; the browser collects bounded
+      // UTF-8 byte segments before attempting the user-activated download.
+      _fileDownload.requestChunkedDownload(
         filename: ReferencePracticeJsonDownload.filenameAt(DateTime.now()),
-        json: json,
+        chunks: data.toJsonExportChunks(),
       );
       if (!mounted || !widget.ownerStillCurrent()) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -285,6 +317,20 @@ class _OwnerExportState extends State<_OwnerExport> {
               'All-edition exports remain EXM-only, not full account archives.',
             ),
             if (_busy) const LinearProgressIndicator(),
+            if (_preparingLarge) ...[
+              Text(
+                _cancelLarge
+                    ? 'Cancelling after the current request finishes…'
+                    : 'Preparing $_loadedSteps of $_totalSteps saved steps',
+                key: const Key('exm-large-export-progress'),
+              ),
+              TextButton.icon(
+                key: const Key('exm-large-export-cancel'),
+                onPressed: _cancelLarge ? null : _cancelLargePreparation,
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Cancel large export'),
+              ),
+            ],
             if (_error != null)
               Text(_error!, key: const Key('exm-account-export-error')),
             if (data != null) ...[

@@ -122,6 +122,13 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded
 
+      - name: EXM 50k synthetic JSON export load probe (no user data)
+        run: >-
+          flutter test
+          --dart-define=EXM_STRESS=true
+          test/services/assessment/reference_practice_json_load_probe_test.dart
+          --reporter expanded
+
       - name: Build web release
         run: flutter build web --release
 
