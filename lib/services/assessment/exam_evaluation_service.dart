@@ -22,7 +22,7 @@ class ExamEvaluationService {
     final missedConceptMap = <String, int>{}; // conceptId -> missed count
 
     for (final item in session.items) {
-      final domainCode = session.itemDomainMap[item.id] ?? '1.0';
+      final domainCode = session.itemDomainMap[item.id] ?? 'unmapped';
       final userAns = session.userResponses[item.id];
       final itemConcepts = session.itemConceptMap[item.id] ?? [];
 
@@ -91,9 +91,6 @@ class ExamEvaluationService {
 
     // Compile Domain Diagnostics
     final domainDiagnostics = <DomainDiagnostic>[];
-    double weightedPercentageSum = 0.0;
-    double totalActiveWeight = 0.0;
-
     for (final domain in session.blueprint.domainWeights) {
       final stats = domainScoreTracker[domain.domainCode] ?? (total: 0, correct: 0, earned: 0.0);
       final percentage = stats.total > 0 ? (stats.earned / stats.total) * 100.0 : 0.0;
@@ -110,20 +107,13 @@ class ExamEvaluationService {
         percentage: percentage,
         evidenceLevel: evidenceLevel,
       ));
-
-      if (stats.total > 0) {
-        weightedPercentageSum += percentage * domain.weight;
-        totalActiveWeight += domain.weight;
-      }
     }
 
-    // Overall Practice Performance
-    final overallPercentage = totalActiveWeight > 0
-        ? (weightedPercentageSum / totalActiveWeight).clamp(0.0, 100.0)
-        : (session.totalQuestions > 0 ? (totalScoreEarned / session.totalQuestions) * 100.0 : 0.0);
-
-    // Compute Scaled Score (e.g. 100-900 CompTIA scale)
-    final scaledScore = _calculateScaledScore(overallPercentage, session.blueprint.officialScoreScale);
+    // Raw practice performance only. This is not an issuer score conversion
+    // or a validated exam pass prediction.
+    final overallPercentage = session.totalQuestions > 0
+        ? ((totalScoreEarned / session.totalQuestions) * 100.0).clamp(0.0, 100.0)
+        : 0.0;
 
     // Determine Readiness Band and Section 15.6 Safe Phrasing
     final TargetReadinessBand readinessBand;
@@ -132,19 +122,19 @@ class ExamEvaluationService {
 
     if (overallPercentage >= 80.0) {
       readinessBand = TargetReadinessBand.strongCoverage;
-      headline = 'Strong Practice Readiness Demonstrated';
+      headline = 'Strong Practice Performance';
       summary =
-          'Your evaluation reflects strong foundational grasp across the curriculum blueprint. Continue targeted review to sustain readiness.';
+          'You performed well on this practice set. This is not a predicted official exam result; continue reviewing unfamiliar items.';
     } else if (overallPercentage >= 65.0) {
       readinessBand = TargetReadinessBand.developing;
       headline = 'Developing Practice Performance';
       summary =
-          'You demonstrate solid knowledge in several domains with key opportunities for reinforcement prior to official testing.';
+          'This practice set shows strengths and gaps. Review missed items and try new examples; it does not predict an official result.';
     } else {
       readinessBand = TargetReadinessBand.needsReinforcement;
       headline = 'Targeted Reinforcement Recommended';
       summary =
-          'Practice evidence indicates that concentrated concept review in specific domains will significantly strengthen test performance.';
+          'Review missed items and practice the relevant concepts again. This score is not an official passing prediction.';
     }
 
     // Remediation recommendations based on missed items
@@ -165,18 +155,20 @@ class ExamEvaluationService {
     return ExamDiagnosticReport(
       sessionId: session.id,
       targetVersionId: session.blueprint.targetVersionId,
+      examPartKey: session.blueprint.examPartKey,
       completedAt: session.completedAt ?? DateTime.now(),
       durationTaken: Duration(seconds: session.elapsedSeconds),
       officialFacts: OfficialExamFacts(
         examCode: session.blueprint.examCode,
         title: session.blueprint.title,
-        publishedPassingScore: session.blueprint.officialPassingScore,
-        scoreScale: session.blueprint.officialScoreScale,
-        timeLimitMinutes: session.blueprint.timeLimitMinutes,
+        // Legacy metadata has not undergone per-rule source verification.
+        publishedPassingScore: null,
+        scoreScale: null,
+        timeLimitMinutes: null,
       ),
       readinessEstimate: AppReadinessEstimate(
         practiceScorePercentage: overallPercentage,
-        estimatedScaledScore: scaledScore,
+        estimatedScaledScore: null,
         readinessBand: readinessBand,
         readinessHeadline: headline,
         readinessSummary: summary,
@@ -307,13 +299,4 @@ class ExamEvaluationService {
     }
   }
 
-  int _calculateScaledScore(double percentage, String scale) {
-    if (scale == '100-900') {
-      // CompTIA: 100 + (percentage / 100) * 800
-      final scaled = 100 + (percentage / 100.0) * 800;
-      return scaled.round().clamp(100, 900);
-    }
-    // Default 0-100 scale
-    return percentage.round().clamp(0, 100);
-  }
 }
