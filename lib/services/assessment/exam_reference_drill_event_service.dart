@@ -26,6 +26,7 @@ class ExamReferenceDrillEventService {
 
   /// Client-submitted timing/response *observations*, not graded evidence.
   Future<Map<String, dynamic>> recordStep({
+    String? expectedOwnerId,
     required String clientAttemptId,
     required String assessmentItemId,
     required String approvedBindingId,
@@ -41,7 +42,7 @@ class ExamReferenceDrillEventService {
     required DateTime completedAt,
     Duration? selfReportedBookTime,
   }) async {
-    final user = _permanentUser();
+    final user = _permanentUser(expectedUserId: expectedOwnerId);
     if (!const {
       'resource_choice', 'section_location', 'interpretation', 'application',
     }.contains(step)) {
