@@ -4,17 +4,21 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/assessment_engine/exam_reference_manifest.dart';
 import '../../models/learning_target.dart';
 import '../../services/assessment/exam_reference_manifest_service.dart';
+import '../../services/assessment/exam_reference_drill_event_service.dart';
+import 'saved_reference_drill_history_card.dart';
 
 /// Exam dates and approved reference lookup belong inside the existing goal.
 /// Unsourced exam rules are never substituted with practice defaults.
 class ExamPreparationOverviewCard extends StatefulWidget {
   final TargetVersion targetVersion;
   final ExamReferenceManifestService? manifestService;
+  final ExamReferenceDrillEventService? drillEventService;
 
   const ExamPreparationOverviewCard({
     super.key,
     required this.targetVersion,
     this.manifestService,
+    this.drillEventService,
   });
 
   @override
@@ -203,6 +207,10 @@ class _ExamPreparationOverviewCardState
             icon: const Icon(Icons.open_in_new, size: 16),
             label: const Text('Open official reference source'),
           ),
+        SavedReferenceDrillHistoryCard(
+          manifestRevisionId: revision.id,
+          eventService: widget.drillEventService,
+        ),
       ],
     );
   }
