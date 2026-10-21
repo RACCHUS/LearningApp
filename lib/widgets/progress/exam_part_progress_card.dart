@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/exam_part_progress_provider.dart';
 import '../../providers/learning_context_provider.dart';
+import 'exam_part_reference_history_card.dart';
 import '../../theme/design_tokens.dart';
 import '../../screens/assessment/diagnostic_assessment_screen.dart';
 
@@ -194,8 +195,9 @@ class _SelectedExamPartProgress extends ConsumerWidget {
           ),
           const Divider(),
           const Text(
-            'Part-specific practice attempt history is not yet available. '
-            'These counts are concept evidence, not saved exam attempts.',
+            'Diagnostic and mock-exam attempt history is not saved by this '
+            'part Progress view. Knowledge counts are not exam scores. '
+            'Saved R1–R4 reference drills can be reviewed separately below.',
             key: Key('exam-part-history-limit'),
           ),
           const SizedBox(height: DesignTokens.space2),
@@ -234,6 +236,12 @@ class _SelectedExamPartProgress extends ConsumerWidget {
               icon: const Icon(Icons.menu_book_outlined),
               label: const Text('View full target outline'),
             ),
+          ExamPartReferenceHistoryCard(
+            key: ValueKey('reference-history:$learnerId:$targetVersionId:$partKey'),
+            ownerId: learnerId,
+            targetVersionId: targetVersionId,
+            examPartKey: partKey,
+          ),
         ],
       ),
     );
