@@ -134,7 +134,7 @@ class ReferenceDrillAttemptRecorder {
     required bool responded,
     required Duration appElapsed,
     Duration? selfReportedBookTime,
-  }) {
+  }) async {
     if (_writing || _pending != null) {
       throw StateError('Retry the pending reference drill step first');
     }
@@ -159,7 +159,7 @@ class ReferenceDrillAttemptRecorder {
       startedAt: _stepStartedAt,
       completedAt: finishedAt,
     );
-    return retryPending();
+    return await retryPending();
   }
 
   Future<Map<String, dynamic>> retryPending() async {
