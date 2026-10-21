@@ -197,7 +197,7 @@ void main(){
     final file=download.files.single;
     expect(file.filename,startsWith('learningapp-exm-reference-practice-'));
     expect(file.filename,endsWith('Z.json'));
-    expect(file.filename,doesNotContain('owner-a'));
+    expect(file.filename,isNot(contains('owner-a')));
     expect(file.json,contains('pre-and-post-inventory-verified-not-atomic'));
     expect(file.json,contains('reference-practice-all-editions'));
     expect(file.json,isNot(contains('scoring_spec')));
