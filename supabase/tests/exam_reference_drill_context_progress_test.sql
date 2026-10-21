@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(32);
+select plan(34);
 
 select has_function('public','exam_reference_drill_part_attempt_history',
   array['uuid','text','integer','timestamp with time zone','uuid'],
