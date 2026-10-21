@@ -11,6 +11,7 @@ create function public.exam_reference_drill_context_progress(
   p_target_version_id uuid
 )
 returns table (
+  target_version_id uuid,
   manifest_revision_id uuid,
   exam_part_key text,
   manifest_revision integer,
@@ -58,7 +59,7 @@ begin
   end if;
 
   return query
-  select m.id, m.exam_part_key, m.revision,
+  select m.target_version_id, m.id, m.exam_part_key, m.revision,
     e.drill_step,
     count(*)::integer,
     count(*) filter (where g.is_correct is true)::integer,
