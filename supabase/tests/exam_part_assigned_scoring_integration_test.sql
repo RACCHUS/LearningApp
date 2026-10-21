@@ -132,9 +132,9 @@ select ok((select not (result::text like '%correct_index%')
  and not (result::text like '%sha256%')
  from exm03_issued),
  'Issuer never exposes scores, correct answers or item hashes');
-select is((select count(*)::int from public.exam_part_practice_assignments
- where owner_id='d3180000-0000-4000-8000-000000000001'),1,
- 'Issuer persists one privately owner-scoped question assignment');
+-- The learner must NOT read the private assignment table to verify issuance.
+select ok((select (result->>'assignment_id') is not null from exm03_issued),
+ 'Authenticated issuer returns only the opaque new assignment identifier');
 select is((select (public.exm03_issue_assigned_practice(
  'd3160000-0000-4000-8000-000000000001','part_a')
  ->>'question_count')::int),6,
