@@ -16,6 +16,7 @@ import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_context_progress_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_account_export_card.dart';
+import 'package:learning_pwa/widgets/progress/reference_practice_erasure_card.dart';
 import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/providers/reset_provider.dart';
@@ -95,6 +96,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             _RetentionSection(summary: retention),
             const SizedBox(height: DesignTokens.space3),
             const ReferencePracticeAccountExportCard(),
+            const SizedBox(height: DesignTokens.space3),
+            const ReferencePracticeErasureCard(),
             const SizedBox(height: DesignTokens.space3),
             progressAsync.when(
               loading: () => const Padding(
