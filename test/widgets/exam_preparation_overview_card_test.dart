@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/widgets/targets/exam_preparation_overview_card.dart';
 import 'package:learning_pwa/services/assessment/exam_reference_manifest_service.dart';
@@ -96,7 +98,9 @@ void main() {
         ]
       }
     });
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(ProviderScope(
+      overrides: [authProvider.overrideWith((ref) => _GuestAuthNotifier())],
+      child: MaterialApp(
       home: Scaffold(
         body: SingleChildScrollView(
           child: ExamPreparationOverviewCard(
@@ -105,7 +109,7 @@ void main() {
           ),
         ),
       ),
-    ));
+    )));
     await tester.tap(find.text('Check references'));
     await tester.pumpAndSettle();
     expect(find.text('Select your actual exam administration date'), findsOneWidget);
@@ -132,4 +136,11 @@ void main() {
     );
     expect(find.byKey(const Key('exam-preparation-overview')), findsNothing);
   });
+}
+
+class _GuestAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+  _GuestAuthNotifier() : super(GuestMode());
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
