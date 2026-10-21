@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
@@ -10,17 +11,26 @@ class FakeCommunityQaService extends CommunityQaService {
   final List<CommunityQuestion> fakeSeeds;
   final List<CommunityQuestion> fakeDrafts;
   final List<CommunityQuestion> fakeReviewQueue;
+  final List<CommunityAnswer> fakeReviewAnswers;
+  final List<CommunityReviewAudit> fakeAuditLogs;
   final Map<String, List<CommunityAnswer>> fakeAnswers;
+  final bool throwUgcDisabledOnPublish;
 
   String? lastReviewedQuestionId;
+  String? lastReviewedAnswerId;
   String? lastReviewAction;
+  String? lastAnswerReviewAction;
+  String? lastReviewNotes;
   String? lastAcceptedAnswerId;
 
   FakeCommunityQaService({
     required this.fakeSeeds,
     required this.fakeDrafts,
     this.fakeReviewQueue = const [],
+    this.fakeReviewAnswers = const [],
+    this.fakeAuditLogs = const [],
     this.fakeAnswers = const {},
+    this.throwUgcDisabledOnPublish = false,
   });
 
   @override
@@ -40,6 +50,20 @@ class FakeCommunityQaService extends CommunityQaService {
   @override
   Future<List<CommunityQuestion>> fetchUnderReviewQuestions({int limit = 50}) async {
     return fakeReviewQueue;
+  }
+
+  @override
+  Future<List<CommunityAnswer>> fetchUnderReviewAnswers({int limit = 50}) async {
+    return fakeReviewAnswers;
+  }
+
+  @override
+  Future<List<CommunityReviewAudit>> fetchReviewAuditHistory({
+    String? targetType,
+    String? targetId,
+    int limit = 50,
+  }) async {
+    return fakeAuditLogs;
   }
 
   @override
@@ -86,9 +110,28 @@ class FakeCommunityQaService extends CommunityQaService {
     required String action,
     String? notes,
   }) async {
+    if (action == 'publish' && throwUgcDisabledOnPublish) {
+      throw Exception('Public learner UGC is currently disabled. Learner questions cannot be published before operational launch clearance.');
+    }
     lastReviewedQuestionId = questionId;
     lastReviewAction = action;
+    lastReviewNotes = notes;
     return {'success': true, 'question_id': questionId, 'action': action};
+  }
+
+  @override
+  Future<Map<String, dynamic>> reviewAnswer({
+    required String answerId,
+    required String action,
+    String? notes,
+  }) async {
+    if (action == 'publish' && throwUgcDisabledOnPublish) {
+      throw Exception('Public learner UGC is currently disabled. Learner answers cannot be published before operational launch clearance.');
+    }
+    lastReviewedAnswerId = answerId;
+    lastAnswerReviewAction = action;
+    lastReviewNotes = notes;
+    return {'success': true, 'answer_id': answerId, 'action': action};
   }
 
   @override
@@ -411,8 +454,190 @@ void main() {
       await tester.tap(find.text('Reject'));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Confirm Rejection'));
+      await tester.pumpAndSettle();
+
       expect(fakeService.lastReviewedQuestionId, 'review-1');
       expect(fakeService.lastReviewAction, 'reject');
+    });
+
+    testWidgets('moderator can reject with editorial feedback notes which are saved to audit', (tester) async {
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: List.from(testDrafts),
+        fakeReviewQueue: List.from(testReviewQueue),
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Reject'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Please provide Florida statute citations.');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Confirm Rejection'));
+      await tester.pumpAndSettle();
+
+      expect(fakeService.lastReviewedQuestionId, 'review-1');
+      expect(fakeService.lastReviewAction, 'reject');
+      expect(fakeService.lastReviewNotes, 'Please provide Florida statute citations.');
+    });
+
+    testWidgets('moderator can switch to Answers tab in review queue to review learner submitted answers', (tester) async {
+      final reviewAnswer = CommunityAnswer(
+        id: 'rev-ans-1',
+        questionId: 'faq-1',
+        authorId: 'learner-3',
+        bodyMarkdown: 'You should pause slightly between consonants.',
+        isAccepted: false,
+        isAiGenerated: true,
+        aiModelName: 'gemini-1.5-flash',
+        status: 'under_review',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewQueue: [],
+        fakeReviewAnswers: [reviewAnswer],
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (1)'));
+      await tester.pumpAndSettle();
+
+      // Switch to Answers sub-segment
+      await tester.tap(find.text('Answers (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('You should pause slightly between consonants.'), findsOneWidget);
+      expect(find.text('AI: gemini-1.5-flash'), findsOneWidget);
+
+      // Tap Publish
+      await tester.tap(find.text('Publish'));
+      await tester.pumpAndSettle();
+
+      expect(fakeService.lastReviewedAnswerId, 'rev-ans-1');
+      expect(fakeService.lastAnswerReviewAction, 'publish');
+    });
+
+    testWidgets('moderator can view Audit Log segment displaying historical governance actions', (tester) async {
+      final auditLog = CommunityReviewAudit(
+        id: 'aud-1',
+        targetType: 'question',
+        targetId: 'review-1',
+        action: 'reject',
+        previousStatus: 'under_review',
+        newStatus: 'archived',
+        notes: 'Needs clearer regulatory context.',
+        createdAt: DateTime.now(),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewQueue: [],
+        fakeAuditLogs: [auditLog],
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (0)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Audit Log (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('REJECT'), findsOneWidget);
+      expect(find.text('Status change: under_review -> archived'), findsOneWidget);
+      expect(find.text('Needs clearer regulatory context.'), findsOneWidget);
+    });
+
+    testWidgets('handles UGC Launch Gate restriction gracefully when publish fails', (tester) async {
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewQueue: List.from(testReviewQueue),
+        throwUgcDisabledOnPublish: true,
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Publish'));
+      await tester.pumpAndSettle();
+
+      // Displays Phase 1 Launch Gate Active dialog
+      expect(find.text('Phase 1 Launch Gate Active'), findsOneWidget);
+      expect(find.textContaining('Public learner UGC is disabled during Phase 1 private testing'), findsOneWidget);
+
+      // Tap Understood
+      await tester.tap(find.text('Understood'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Phase 1 Launch Gate Active'), findsNothing);
+    });
+
+    testWidgets('renders source attribution in a dedicated provenance box for verified FAQs', (tester) async {
+      final answersWithAttribution = {
+        'faq-1': [
+          CommunityAnswer(
+            id: 'ans-attr-1',
+            questionId: 'faq-1',
+            authorId: 'admin-1',
+            bodyMarkdown: 'Phonics instruction requires sequential decoding. Source: National Reading Panel. Verified October 2026. Note: Platform-curated educational reference.',
+            isAccepted: true,
+            isSeeded: true,
+            status: 'published',
+            upvoteCount: 5,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ],
+      };
+
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: List.from(testSeeds),
+          fakeDrafts: [],
+          fakeAnswers: answersWithAttribution,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Expand question
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Phonics instruction requires sequential decoding.'), findsOneWidget);
+      expect(find.text('Platform Curated'), findsWidgets);
+      expect(find.textContaining('Source: National Reading Panel. Verified October 2026.'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
     });
 
     testWidgets('moderator can mark unaccepted answers as accepted', (tester) async {
