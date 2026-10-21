@@ -72,8 +72,16 @@ class FakeFileDownload extends ReferencePracticeJsonDownload {
 
   @override
   void requestDownload({required String filename, required String json}) {
+    throw StateError('Unexpected legacy full-string download');
+  }
+
+  @override
+  void requestChunkedDownload({
+    required String filename,
+    required Iterable<String> chunks,
+  }) {
     if (fail) throw StateError('Browser denied download');
-    files.add((filename: filename, json: json));
+    files.add((filename: filename, json: chunks.join()));
   }
 }
 
