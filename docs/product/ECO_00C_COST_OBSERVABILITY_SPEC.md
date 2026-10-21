@@ -400,6 +400,7 @@ To prevent resource exhaustion, denial of service, and event table amplification
 3. **Storage Allocation Minimum Boundary**: `storage_bytes` requests must allocate at least 1,024 bytes (1 KB) per call (`p_quantity >= 1024`). Sub-kilobyte allocations are rejected with error `22023` to prevent 1-byte micro-event table flooding.
 4. **Daily Event Logging Frequency Cap**: `events_recorded_today` is metered against `events_daily_limit` (1,000/day for learners, 10,000/day for administrators). Requests exceeding this ceiling are rejected with error `42900`.
 5. **Speech-to-Text (STT) Metering**: Added `stt_seconds_used_today` and `stt_seconds_daily_limit` (default 3,600s / 1 hr for learners, 36,000s / 10 hrs for admins) with automatic deduction and rollover in `check_and_record_usage`.
+6. **Provider Identifier Bounding (Migration 54)**: `p_provider` text parameter is bounded to a maximum of 64 characters and must be non-empty (`length(trim(p_provider)) between 1 and 64`). Violations are rejected with SQL error `22023` to eliminate uncontrolled text storage in `usage_events`.
 
 ---
 
@@ -412,7 +413,7 @@ To prevent resource exhaustion, denial of service, and event table amplification
    - Verify rejection and event omission when quantity exceeds limit.
    - Verify tenant RLS isolation: ordinary users cannot inspect others' quotas or events.
    - Verify administrator bypass: users with `role = 'admin'` can read system-wide usage.
-   - Verify abuse prevention: metadata size >4KB rejection, storage request <1KB rejection, and event frequency ceiling.
+   - Verify abuse prevention: provider string bound <= 64 chars, metadata size >4KB rejection, storage request <1KB rejection, and event frequency ceiling.
    - Verify defense-in-depth: direct table writes by authenticated clients denied with 42501.
 2. **Dart Unit Tests (`test/services/governance/usage_quota_service_test.dart`)**:
    - Verify token estimation integration with `PromptContextCompressor`.
@@ -422,7 +423,7 @@ To prevent resource exhaustion, denial of service, and event table amplification
    - Verify Access Denied rendering for non-admins.
    - Verify gauge rendering, health badge display, STT audio, and abuse prevention tiles.
 4. **Guarded Deployment**:
-   - Verify clean dry-run and migration ledger parity for migrations 52 and 53 via `tool/guarded_supabase_deploy.dart`.
+   - Verify clean dry-run and migration ledger parity for migrations 52, 53, and 54 via `tool/guarded_supabase_deploy.dart`.
 
 ---
 
@@ -431,7 +432,8 @@ To prevent resource exhaustion, denial of service, and event table amplification
 - [x] Architecture specification approved in `docs/product/ECO_00C_COST_OBSERVABILITY_SPEC.md`.
 - [x] Additive Supabase migration `20261021000000_cost_and_observability_quotas.sql` (Migration 52) created and deployed.
 - [x] Additive Supabase migration `20261022000000_usage_quotas_hardening_and_stt.sql` (Migration 53) created and tested.
-- [x] pgTAP test suite authored at `supabase/tests/cost_observability_test.sql` (37 tests).
+- [x] Additive Supabase migration `20261023000000_quota_provider_length_guard.sql` (Migration 54) created and tested.
+- [x] pgTAP test suite authored at `supabase/tests/cost_observability_test.sql` (39 tests).
 - [x] Dart models and services created in `lib/models/governance/` and `lib/services/governance/`.
 - [x] `CostObservabilityScreen` implemented in `lib/screens/governance/`.
 - [x] Router integration with route `/observability` and Settings navigation entry.

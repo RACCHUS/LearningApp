@@ -265,12 +265,13 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 1 — Concept-Scoped Community Q&A & Cold-Start Seeding (P1)
 
 **Tasks**
-- [ ] **Concept- & Lesson-Scoped Q&A**: Embed Q&A directly within active learning contexts (DMV, Real Estate, Literacy, GED) rather than launching a disconnected global forum.
+- [x] **Concept- & Lesson-Scoped Q&A Baseline**: Schema (`community_questions`, `community_answers`, `community_votes`), atomic upvoting RPC, least-privilege RLS policies, and private in-context learning UI drawer delivered in ECO-01 (Migrations 54 & 55).
+- [x] **Moderation Queue Integration**: Extended `moderation_reports` target types and updated `submit_moderation_report` RPC to support `community_question` and `community_answer`.
 - [ ] **Cold-Start Seeding**: Author and verify 20–50 high-quality seed FAQs and answers for initial pilot topics.
 - [ ] **Q&A Interaction**: Authenticated adult ask/answer/edit/report flows, answer history, spam rate limits, and report integration into the Phase 0 moderation queue.
 - [ ] **AI Explanation with Prompt-Injection Defense**: Labeled AI explanations with uncertainty disclosures and strict input sanitization.
 - [ ] **Web Discovery Boundary**: Deliver within Flutter app; establish architecture for external crawlable SEO pages if public indexing is pursued.
-- [ ] **Automated Testing**: Unit, database RLS policy, accessibility, and E2E widget tests.
+- [x] **Automated Testing**: Unit, database RLS policy, and widget tests for ECO-01 community models, services, and in-context sheet (`community_qa_test.sql`, `community_qa_service_test.dart`, `in_context_qa_sheet_test.dart`).
 
 **Exit:** Learner can find existing answers on pilot topics, ask questions in context, receive timely human or AI assistance, and report issues; zero unmoderated spam.
 

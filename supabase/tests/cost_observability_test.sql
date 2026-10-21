@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(37);
+select plan(39);
 
 -- 1. Setup synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -79,6 +79,21 @@ select throws_ok(
   '22023',
   null,
   'Unknown service type rejected with 22023'
+);
+
+-- Guard 0: Reject provider string > 64 chars or empty
+select throws_ok(
+  $$ select public.check_and_record_usage('ai_tokens', 100, repeat('X', 65)) $$,
+  '22023',
+  null,
+  'Provider string > 64 chars rejected with 22023'
+);
+
+select throws_ok(
+  $$ select public.check_and_record_usage('ai_tokens', 100, '   ') $$,
+  '22023',
+  null,
+  'Empty/whitespace provider string rejected with 22023'
 );
 
 -- Guard 1: Reject metadata payload exceeding 4KB
