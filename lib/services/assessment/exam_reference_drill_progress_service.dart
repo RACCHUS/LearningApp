@@ -251,7 +251,69 @@ class ExamReferenceDrillProgressService {
   }) async {
     _requireOwner(expectedOwnerId);
     if (!RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12},
+    ).hasMatch(manifestRevisionId) || maxRecords < 1 || maxRecords > 5000) {
+      throw const FormatException('Invalid progress scope or export bound');
+    }
+    final all = <ReferenceDrillEvidence>[];
+    String? cursorTime, cursorId;
+    final seen = <String>{};
+    while (true) {
+      _requireOwner(expectedOwnerId);
+      final limit = (maxRecords + 1 - all.length).clamp(1, 100).toInt();
+      final dynamic page = _testTransport != null
+          ? await _testTransport(manifestRevisionId, limit,
+              cursorTime, cursorId)
+          : await _client.rpc('exam_reference_drill_progress_page', params: {
+              'p_manifest_revision_id': manifestRevisionId,
+              'p_limit': limit,
+              'p_before_recorded_at': cursorTime,
+              'p_before_event_id': cursorId,
+            });
+      _requireOwner(expectedOwnerId);
+      if (page is! List || page.length > limit) {
+        throw const FormatException('Malformed progress page');
+      }
+      DateTime? previousAt = cursorTime == null
+          ? null : DateTime.tryParse(cursorTime);
+      String? previousId = cursorId;
+      for (final raw in page) {
+        if (raw is! Map) {
+          throw const FormatException('Malformed progress record');
+        }
+        final event = ReferenceDrillEvidence.fromRow(
+          Map<String, dynamic>.from(raw),
+          ownerId: expectedOwnerId,
+          manifestId: manifestRevisionId,
+        );
+        if (!seen.add(event.id)) {
+          throw const FormatException('Duplicate progress cursor result');
+        }
+        if (previousAt != null &&
+            (event.recordedAt.isAfter(previousAt) ||
+             (event.recordedAt.isAtSameMomentAs(previousAt) &&
+              event.id.compareTo(previousId!) >= 0))) {
+          throw const FormatException('Out-of-order progress result');
+        }
+        all.add(event);
+        previousAt = event.recordedAt;
+        previousId = event.id;
+      }
+      if (all.length > maxRecords) {
+        throw StateError('This edition exceeds the safe export bound; '
+            'do not label an incomplete export as complete.');
+      }
+      if (page.length < limit) break;
+      cursorTime = all.last.recordedAt.toIso8601String();
+      cursorId = all.last.id;
+    }
+    _requireOwner(expectedOwnerId);
+    return ReferenceDrillProgressSnapshot(
+      ownerId: expectedOwnerId, manifestId: manifestRevisionId, events: all,
+    );
+  }
+}
+,
     ).hasMatch(manifestRevisionId) || maxRecords < 1 || maxRecords > 5000) {
       throw const FormatException('Invalid progress scope or export bound');
     }
