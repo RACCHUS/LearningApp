@@ -250,7 +250,7 @@ begin
     raise exception 'Invalid reference response token' using errcode='22023';
   end if;
 
-  select * into key_row from public.exam_reference_drill_scoring_keys k
+  select k.* into key_row from public.exam_reference_drill_scoring_keys k
     join public.assessment_item_reference_validity b
       on b.id=k.approved_binding_id
     join public.exam_reference_manifest_revisions m
