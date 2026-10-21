@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/exam_reference_manifest.dart';
 import 'package:learning_pwa/services/assessment/diagnostic_assessment_service.dart';
+import 'package:learning_pwa/services/assessment/exam_evaluation_service.dart';
 import 'package:learning_pwa/services/assessment/exam_part_curriculum_scope.dart';
 import 'package:learning_pwa/services/assessment/mock_exam_generator_service.dart';
 import 'package:learning_pwa/services/target_readiness_service.dart';
@@ -51,7 +52,7 @@ List<Map<String, dynamic>> _nodes() {
   return rows;
 }
 
-FakeSupabaseClient _client() {
+FakeSupabaseClient _client({bool withMixedItem = false}) {
   final fake = FakeSupabaseClient();
   fake.setTableData('target_versions', [
     {
@@ -109,6 +110,14 @@ FakeSupabaseClient _client() {
     'assessment_item_id': 'ambiguous-item', 'concept_id': 'shared',
     'role': 'primary', 'weight': 1.0,
   });
+  if (withMixedItem) {
+    mappings.add({
+      'assessment_item_id': 'item-a-0',
+      'concept_id': 'concept-b-1',
+      'role': 'supporting',
+      'weight': 0.5,
+    });
+  }
   fake.setTableData('assessment_items', items);
   fake.setTableData('assessment_item_concepts', mappings);
   fake.setTableData('knowledge_concepts', [
@@ -223,6 +232,8 @@ void main() {
       expect(session.blueprint.domainWeights.map((d) => d.domainId),
           ['domain-a']);
       expect(session.blueprint.toJson()['exam_part_key'], 'part_a');
+      final report = ExamEvaluationService().evaluateExam(session);
+      expect(report.examPartKey, 'part_a');
 
       expect(
         () => service.generateExamSession(
@@ -272,6 +283,26 @@ void main() {
       expect(b, hasLength(6));
       expect(a.map((i) => i.item.id), everyElement(startsWith('item-a-')));
       expect(b.map((i) => i.item.id), everyElement(startsWith('item-b-')));
+    });
+
+    test('diagnostic rejects a mixed-part item rather than masking its B link',
+        () async {
+      final service = DiagnosticAssessmentService(
+        supabase: _client(withMixedItem: true),
+      );
+      final a = await service.getAvailability(
+        targetId: 'target-a', targetVersionId: _version,
+        examPartKey: 'part_a',
+      );
+      expect(a.availableItemCount, 5);
+      expect(a.isAvailable, isFalse);
+      expect(
+        () => service.generatePreAssessment(
+          targetId: 'target-a', targetVersionId: _version,
+          examPartKey: 'part_a',
+        ),
+        throwsA(isA<DiagnosticUnavailableException>()),
+      );
     });
 
     test('shared global concept can count toward part readiness, not other-part',
