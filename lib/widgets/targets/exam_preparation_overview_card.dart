@@ -6,6 +6,7 @@ import '../../models/learning_target.dart';
 import '../../services/assessment/exam_reference_manifest_service.dart';
 import '../../services/assessment/exam_reference_drill_event_service.dart';
 import 'saved_reference_drill_history_card.dart';
+import 'reviewed_reference_drill_practice_card.dart';
 
 /// Exam dates and approved reference lookup belong inside the existing goal.
 /// Unsourced exam rules are never substituted with practice defaults.
@@ -176,6 +177,11 @@ class _ExamPreparationOverviewCardState
     }
 
     final revision = selection.revision!;
+    if (_examDate == null || _partKey != revision.examPartKey ||
+        !revision.covers(_examDate!)) {
+      return const Text('No approved reference list matches this exam date.',
+          key: Key('exam-reference-unavailable'));
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -207,6 +213,12 @@ class _ExamPreparationOverviewCardState
             icon: const Icon(Icons.open_in_new, size: 16),
             label: const Text('Open official reference source'),
           ),
+        ReviewedReferenceDrillPracticeCard(
+          manifestRevisionId: revision.id,
+          examPartKey: revision.examPartKey,
+          administrationDate: _examDate!,
+          eventService: widget.drillEventService,
+        ),
         SavedReferenceDrillHistoryCard(
           manifestRevisionId: revision.id,
           eventService: widget.drillEventService,
