@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/exam_reference_manifest.dart';
+import 'package:learning_pwa/models/assessment/diagnostic_assessment.dart';
 import 'package:learning_pwa/services/assessment/diagnostic_assessment_service.dart';
 import 'package:learning_pwa/services/assessment/exam_evaluation_service.dart';
 import 'package:learning_pwa/services/assessment/exam_part_curriculum_scope.dart';
@@ -328,6 +329,120 @@ void main() {
         ),
         throwsStateError,
       );
+    });
+
+    test('scoped evaluation pins part identity and canonical questions', () async {
+      final fake = _client();
+      final service = DiagnosticAssessmentService(supabase: fake);
+      final original = await service.generatePreAssessment(
+        targetId: 'target-a', targetVersionId: _version,
+        examPartKey: 'part_a',
+      );
+      final report = await service.evaluatePartDiagnosticSession(
+        userId: '',
+        targetId: 'target-a',
+        targetTitle: 'Synthetic Target',
+        targetVersionId: _version,
+        examPartKey: 'part_a',
+        items: original,
+        submissions: [
+          for (final entry in original)
+            DiagnosticAnswerSubmission(
+              itemId: entry.item.id,
+              response: 0,
+            ),
+        ],
+      );
+      expect(report.examPartKey, 'part_a');
+      expect(report.curriculumRootNodeId, 'root-a');
+      expect(report.learnerId, '');
+      expect(report.correctQuestions, 6);
+      expect(report.totalQuestions, 6);
+      expect(report.evidencePersisted, isFalse); // guest, no owner writes
+      final copy = report.copyWith(
+        remedialSetCreated: true,
+        remedialSetId: 'remedial-1',
+      );
+      expect(copy.examPartKey, 'part_a');
+      expect(copy.curriculumRootNodeId, 'root-a');
+      expect(copy.remedialSetId, 'remedial-1');
+    });
+
+    test('stale, duplicated or foreign part items fail before evidence writes',
+        () async {
+      final fake = _client();
+      final service = DiagnosticAssessmentService(supabase: fake);
+      final a = await service.generatePreAssessment(
+        targetId: 'target-a', targetVersionId: _version,
+        examPartKey: 'part_a',
+      );
+      final b = await service.generatePreAssessment(
+        targetId: 'target-a', targetVersionId: _version,
+        examPartKey: 'part_b',
+      );
+      Future<void> expectRejected(
+        List<DiagnosticAssessmentItem> selection,
+      ) async {
+        final before = fake.insertedRecords.length;
+        await expectLater(
+          service.evaluatePartDiagnosticSession(
+            userId: 'user-1',
+            targetId: 'target-a', targetTitle: 'Synthetic Target',
+            targetVersionId: _version, examPartKey: 'part_a',
+            items: selection,
+            submissions: [
+              for (final entry in selection)
+                DiagnosticAnswerSubmission(
+                    itemId: entry.item.id, response: 0),
+            ],
+          ),
+          throwsA(isA<StateError>()),
+        );
+        expect(fake.insertedRecords.length, before);
+      }
+
+      await expectRejected([...a.take(5), b.first]);
+      await expectRejected([...a.take(5), a.first]); // duplicate ID
+      final changed = DiagnosticAssessmentItem(
+        item: a.first.item.copyWith(
+          scoringSpec: const {'correct_index': 1},
+        ),
+        concepts: a.first.concepts,
+      );
+      await expectRejected([changed, ...a.skip(1)]);
+      final modifiedConcept = DiagnosticAssessmentItem(
+        item: a.first.item,
+        concepts: [
+          const DiagnosticConceptRef(
+              conceptId: 'concept-b-1', conceptName: 'Foreign'),
+        ],
+      );
+      await expectRejected([modifiedConcept, ...a.skip(1)]);
+    });
+
+    test('part evaluation refuses insufficient currently published coverage',
+        () async {
+      final fake = _client(withMixedItem: true);
+      final service = DiagnosticAssessmentService(supabase: fake);
+      final wholeService = DiagnosticAssessmentService(supabase: _client());
+      final selected = await wholeService.generatePreAssessment(
+        targetId: 'target-a', targetVersionId: _version,
+        examPartKey: 'part_a',
+      );
+      await expectLater(
+        service.evaluatePartDiagnosticSession(
+          userId: 'user-1', targetId: 'target-a',
+          targetTitle: 'Synthetic Target', targetVersionId: _version,
+          examPartKey: 'part_a', items: selected,
+          submissions: [
+            for (final entry in selected)
+              DiagnosticAnswerSubmission(
+                itemId: entry.item.id, response: 0),
+          ],
+        ),
+        throwsA(isA<DiagnosticUnavailableException>()),
+      );
+      expect(fake.insertedRecords, isEmpty);
     });
   });
 }

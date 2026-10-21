@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -234,6 +235,100 @@ class DiagnosticAssessmentService {
       reinforcementPriorities: reinforcementPriorities,
       strongEvidenceConcepts: strongEvidenceConcepts,
       evidencePersisted: evidencePersisted,
+    );
+  }
+
+  /// Validates all part-specific canonical items before recording evidence.
+  ///
+  /// Unlike a caller-supplied part label, the reviewed candidate snapshot is
+  /// independently reconstructed from the selected target/version/part. Any
+  /// stale, mixed-part, duplicated, or altered item aborts before evidence
+  /// writes. This is educational diagnostic evidence, NOT an official result.
+  Future<DiagnosticAssessmentReport> evaluatePartDiagnosticSession({
+    required String userId,
+    required String targetId,
+    required String targetTitle,
+    required String targetVersionId,
+    required String examPartKey,
+    required List<DiagnosticAssessmentItem> items,
+    required List<DiagnosticAnswerSubmission> submissions,
+  }) async {
+    if (examPartKey.isEmpty || items.length < minimumItemCount) {
+      throw const DiagnosticUnavailableException(
+        'A selected exam part and sufficient reviewed items are required.',
+      );
+    }
+
+    final scope = await ExamPartCurriculumScopeResolver(client: _supabase)
+        .resolve(
+          targetVersionId: targetVersionId,
+          examPartKey: examPartKey,
+        );
+    final snapshot = await _loadCandidateSnapshot(
+      targetId: targetId,
+      targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
+    );
+    if (!snapshot.isPublishedVersion ||
+        snapshot.items.length < minimumItemCount ||
+        snapshot.representedConceptIds.length < minimumConceptCount) {
+      throw const DiagnosticUnavailableException(
+        'Reviewed part-specific diagnostic coverage is unavailable.',
+      );
+    }
+
+    final approvedById = {
+      for (final candidate in snapshot.items) candidate.item.id: candidate,
+    };
+    final ids = items.map((item) => item.item.id).toSet();
+    final responseIds = submissions.map((answer) => answer.itemId).toSet();
+    if (ids.length != items.length ||
+        responseIds.length != submissions.length ||
+        submissions.length != items.length ||
+        !responseIds.containsAll(ids)) {
+      throw StateError('Selected diagnostic item/response IDs are invalid.');
+    }
+
+    final canonicalItems = <DiagnosticAssessmentItem>[];
+    for (final supplied in items) {
+      final canonical = approvedById[supplied.item.id];
+      if (canonical == null ||
+          canonical.item.prompt != supplied.item.prompt ||
+          canonical.item.interactionType != supplied.item.interactionType ||
+          jsonEncode(canonical.item.responseSpec) !=
+              jsonEncode(supplied.item.responseSpec) ||
+          jsonEncode(canonical.item.scoringSpec) !=
+              jsonEncode(supplied.item.scoringSpec) ||
+          canonical.item.difficulty != supplied.item.difficulty ||
+          canonical.item.explanation != supplied.item.explanation ||
+          canonical.concepts.length != supplied.concepts.length ||
+          canonical.concepts.asMap().entries.any((entry) {
+            final other = supplied.concepts[entry.key];
+            return entry.value.conceptId != other.conceptId ||
+                entry.value.role != other.role ||
+                entry.value.weight != other.weight;
+          })) {
+        throw StateError(
+          'The selected part diagnostic contains stale or unapproved items.',
+        );
+      }
+      canonicalItems.add(canonical);
+    }
+
+    // Score from the independently loaded canonical version, not mutable
+    // caller payloads. Historical item-version pinning remains a future gate.
+    final result = await evaluateDiagnosticSession(
+      userId: userId,
+      targetId: targetId,
+      targetTitle: targetTitle,
+      targetVersionId: targetVersionId,
+      items: canonicalItems,
+      submissions: submissions,
+    );
+    return result.copyWith(
+      examPartKey: examPartKey,
+      curriculumRootNodeId: scope.rootNodeId,
+      learnerId: userId,
     );
   }
 
