@@ -394,14 +394,21 @@ class DiagnosticAssessmentService {
         .inFilter('assessment_item_id', itemIds);
 
     final conceptIds = <String>{};
+    final invalidScopedItemIds = <String>{};
     final rawByItem = <String, List<Map<String, dynamic>>>{};
     for (final raw in itemConceptRows as List) {
       final row = (raw as Map).cast<String, dynamic>();
       final itemId = row['assessment_item_id']?.toString();
       final conceptId = row['concept_id']?.toString();
-      if (itemId == null ||
-          conceptId == null ||
-          !coreConceptWeights.containsKey(conceptId)) {
+      if (itemId == null) continue;
+      // A mixed A+B or shared-concept assessment is not a safe Part A item
+      // simply because one of its mappings happens to be within Part A.
+      if (partScope != null &&
+          (conceptId == null || !coreConceptWeights.containsKey(conceptId))) {
+        invalidScopedItemIds.add(itemId);
+        continue;
+      }
+      if (conceptId == null || !coreConceptWeights.containsKey(conceptId)) {
         continue;
       }
       rawByItem.putIfAbsent(itemId, () => []).add(row);
@@ -433,6 +440,7 @@ class DiagnosticAssessmentService {
     final represented = <String>{};
 
     for (final item in assessmentItems) {
+      if (invalidScopedItemIds.contains(item.id)) continue;
       final mappings = rawByItem[item.id] ?? const [];
       if (mappings.isEmpty) continue;
 
