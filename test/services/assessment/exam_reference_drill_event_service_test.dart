@@ -83,6 +83,43 @@ void main() {
     expect(fake.insertedRecords, isEmpty);
   });
 
+  test('A mismatched expected owner cannot request or delete records', () async {
+    final fake = FakeSupabaseClient(currentUser: account(id: 'account-a'));
+    final service = ExamReferenceDrillEventService(client: fake);
+    await expectLater(
+      service.listMyEvents(
+        expectedOwnerId: 'account-b',
+        manifestRevisionId: 'manifest-27',
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      service.deleteMyAttempt(
+        'attempt-id',
+        expectedOwnerId: 'account-b',
+        manifestRevisionId: 'manifest-27',
+      ),
+      throwsStateError,
+    );
+    expect(fake.deletedIds, isEmpty);
+  });
+
+  test('History query filters both owner and exact manifest revision', () async {
+    final fake = FakeSupabaseClient(currentUser: account(id: 'account-a'));
+    fake.setTableData('exam_reference_drill_events', [
+      {'id': 'right', 'owner_auth_uid': 'account-a',
+       'manifest_revision_id': 'manifest-27', 'recorded_at': '2027-01-01'},
+      {'id': 'old-edition', 'owner_auth_uid': 'account-a',
+       'manifest_revision_id': 'manifest-26', 'recorded_at': '2026-01-01'},
+      {'id': 'foreign', 'owner_auth_uid': 'account-b',
+       'manifest_revision_id': 'manifest-27', 'recorded_at': '2027-01-02'},
+    ]);
+    final rows = await ExamReferenceDrillEventService(client: fake)
+        .listMyEvents(manifestRevisionId: 'manifest-27',
+                      expectedOwnerId: 'account-a');
+    expect(rows.map((row) => row['id']).toList(), ['right']);
+  });
+
   test('Signed-in retrieval is scoped by auth subject and capped', () async {
     final fake = FakeSupabaseClient(currentUser: account());
     fake.setTableData('exam_reference_drill_events', [
