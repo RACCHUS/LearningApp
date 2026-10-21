@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(67);
+select plan(79);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -26,13 +26,16 @@ values ('7f7c1a20-0000-4000-8000-000000000001', 'admin', '7f7c1a20-0000-4000-800
 on conflict (user_id) do update set role = 'admin';
 
 -- -----------------------------------------------------------------------------
--- 1. Schema Structure Checks (5 tests)
+-- 1. Schema Structure Checks (8 tests)
 -- -----------------------------------------------------------------------------
 select has_table('public', 'community_questions', 'Table public.community_questions exists');
 select has_table('public', 'community_answers', 'Table public.community_answers exists');
 select has_table('public', 'community_votes', 'Table public.community_votes exists');
+select has_table('public', 'community_config', 'Table public.community_config exists');
+select has_table('public', 'community_review_audit', 'Table public.community_review_audit exists');
 select has_function('public', 'cast_community_vote', Array['text', 'uuid'], 'RPC cast_community_vote exists');
 select has_function('public', 'handle_community_answer_count', 'Trigger function handle_community_answer_count exists');
+select has_function('private', 'is_community_ugc_public_enabled', 'Function private.is_community_ugc_public_enabled exists');
 
 -- -----------------------------------------------------------------------------
 -- 2. Unauthenticated Access & Anonymous Read Permissions (2 tests)
@@ -706,19 +709,34 @@ select throws_ok(
   'Invalid question review action rejected with 22023'
 );
 
--- Moderator publishing question succeeds (1 test)
-select lives_ok(
+-- UGC Launch Gate: Moderator cannot publish non-seeded learner question while public UGC is disabled (1 test)
+select throws_ok(
   $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'publish') $$,
-  'Moderator publishing question succeeds'
+  '22000',
+  null,
+  'Moderator cannot publish learner question while public UGC launch gate is closed (22000)'
+);
+
+-- Moderator can archive learner question (1 test)
+select lives_ok(
+  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'archive', 'Archived due to UGC gate') $$,
+  'Moderator archiving learner question succeeds'
 );
 
 select is(
   (select status from public.community_questions where id = '00000000-0000-0000-0000-000000000601'),
-  'published',
-  'Question status transitioned to published'
+  'archived',
+  'Question status transitioned to archived'
 );
 
--- Moderator creates second draft answer on published question 201
+-- Durable audit trail check for question review (1 test)
+select is(
+  (select count(*)::integer from public.community_review_audit where target_type = 'question' and target_id = '00000000-0000-0000-0000-000000000601' and action = 'archive' and notes = 'Archived due to UGC gate'),
+  1,
+  'Append-only review audit record created for question review'
+);
+
+-- Moderator creates second draft answer on published seeded question 201
 insert into public.community_answers (
   id, question_id, author_id, body_markdown, status, is_accepted
 ) values (
@@ -730,10 +748,17 @@ insert into public.community_answers (
   false
 ) on conflict (id) do nothing;
 
--- Moderator publishes the answer via review_community_answer (1 test)
+-- Moderator publishes the answer via review_community_answer (seeded parent question allows publishing) (1 test)
 select lives_ok(
-  $$ select public.review_community_answer('00000000-0000-0000-0000-000000000602'::uuid, 'publish') $$,
-  'Moderator publishing under-review answer succeeds'
+  $$ select public.review_community_answer('00000000-0000-0000-0000-000000000602'::uuid, 'publish', 'Verified educator explanation') $$,
+  'Moderator publishing under-review answer for seeded question succeeds'
+);
+
+-- Durable audit trail check for answer review (1 test)
+select is(
+  (select count(*)::integer from public.community_review_audit where target_type = 'answer' and target_id = '00000000-0000-0000-0000-000000000602' and action = 'publish'),
+  1,
+  'Append-only review audit record created for answer review'
 );
 
 -- Question author accepts second answer (1 test)
@@ -756,13 +781,56 @@ select is(
   'Previously accepted answer automatically transitioned to is_accepted = false'
 );
 
--- Pilot FAQ Seeding RPC execution by Admin (1 test)
+-- Audit table permissions and RLS (2 tests)
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
+select is(
+  (select count(*)::integer from public.community_review_audit),
+  0,
+  'Learner cannot select records from community_review_audit (RLS returns 0 rows)'
+);
 
+select throws_ok(
+  $$ insert into public.community_review_audit (target_type, target_id, action, previous_status, new_status) values ('question', '00000000-0000-0000-0000-000000000601', 'publish', 'under_review', 'published') $$,
+  '42501',
+  null,
+  'Direct insert to community_review_audit by authenticated learner is revoked (42501)'
+);
+
+-- Seeding RPC authorization check: learner cannot call seed_pilot_community_faqs (1 test)
+select throws_ok(
+  $$ select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000002'::uuid) $$,
+  '42501',
+  null,
+  'Learner calling seed_pilot_community_faqs is rejected with 42501'
+);
+
+-- Admin calling seed_pilot_community_faqs succeeds (1 test)
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
 select ok(
   (select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid)) >= 18,
   'Admin calling seed_pilot_community_faqs successfully seeds at least 18 reference FAQs'
+);
+
+-- Idempotency check: second invocation returns 0 (1 test)
+select is(
+  (select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid)),
+  0,
+  'Second invocation of seed_pilot_community_faqs is idempotent and returns 0 new questions'
+);
+
+-- Exactly 18 pilot reference FAQs seeded (1 test)
+select is(
+  (select count(*)::integer from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201'),
+  18,
+  'Exactly 18 pilot reference FAQs seeded'
+);
+
+-- Answer count trigger integrity: all seeded pilot FAQs must have answer_count = 1 (1 test)
+select is(
+  (select count(*)::integer from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201' and answer_count <> 1),
+  0,
+  'All 18 seeded pilot FAQs have answer_count exactly equal to 1'
 );
 
 rollback;
