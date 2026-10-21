@@ -21,7 +21,9 @@ void main() {
     ExamReferenceDrillEventService service, {
     Duration elapsed = const Duration(seconds: 10),
     String step = 'section_location',
+    String? expectedOwnerId,
   }) => service.recordStep(
+    expectedOwnerId: expectedOwnerId,
     clientAttemptId: '11111111-1111-4111-8111-111111111111',
     assessmentItemId: '22222222-2222-4222-8222-222222222222',
     approvedBindingId: '33333333-3333-4333-8333-333333333333',
@@ -102,6 +104,14 @@ void main() {
       throwsStateError,
     );
     expect(fake.deletedIds, isEmpty);
+  });
+
+  test('Recording refuses a different session owner before the insert', () async {
+    final fake = FakeSupabaseClient(currentUser: account(id: 'account-b'));
+    final service = ExamReferenceDrillEventService(client: fake);
+    await expectLater(submit(service, expectedOwnerId: 'account-a'),
+        throwsStateError);
+    expect(fake.insertedRecords, isEmpty);
   });
 
   test('History query filters both owner and exact manifest revision', () async {

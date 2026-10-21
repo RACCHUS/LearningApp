@@ -1,5 +1,21 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// PostgreSQL serializes timestamptz with an offset and possibly different
+/// fractional-second precision than DateTime.toIso8601String(). Retry must
+/// compare the same instant, not the raw string representation.
+bool _sameStoredDrillObservation(
+  String field,
+  Object? submitted,
+  Object? stored,
+) {
+  if (field == 'started_at' || field == 'completed_at') {
+    final a = DateTime.tryParse(submitted?.toString() ?? '');
+    final b = DateTime.tryParse(stored?.toString() ?? '');
+    return a != null && b != null && a.isAtSameMomentAs(b);
+  }
+  return submitted == stored;
+}
+
 /// EXM-02B: secure storage of *ungraded* R1–R4 practice observations.
 ///
 /// Supabase Auth anonymous guest sessions have authenticated DB role but are
@@ -26,6 +42,7 @@ class ExamReferenceDrillEventService {
 
   /// Client-submitted timing/response *observations*, not graded evidence.
   Future<Map<String, dynamic>> recordStep({
+    String? expectedOwnerId,
     required String clientAttemptId,
     required String assessmentItemId,
     required String approvedBindingId,
@@ -41,7 +58,7 @@ class ExamReferenceDrillEventService {
     required DateTime completedAt,
     Duration? selfReportedBookTime,
   }) async {
-    final user = _permanentUser();
+    final user = _permanentUser(expectedUserId: expectedOwnerId);
     if (!const {
       'resource_choice', 'section_location', 'interpretation', 'application',
     }.contains(step)) {
@@ -96,7 +113,7 @@ class ExamReferenceDrillEventService {
       _permanentUser(expectedUserId: user.id);
       if (existing == null) rethrow;
       for (final entry in payload.entries) {
-        if (entry.value != existing[entry.key]) {
+        if (!_sameStoredDrillObservation(entry.key, entry.value, existing[entry.key])) {
           throw StateError(
             'This attempt step already exists with different observations.',
           );
