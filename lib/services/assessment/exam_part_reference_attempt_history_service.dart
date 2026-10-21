@@ -177,11 +177,70 @@ class ExamPartReferenceAttemptHistoryService {
     String? beforeAttemptId,
   }) async {
     _requireOwner(expectedOwnerId);
-    if (!_uuid.hasMatch(targetVersionId) ||
-        !RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(examPartKey) ||
+    // Isolate the paired-cursor XOR before the boolean OR chain. Without
+    // these parentheses Dart may bind equality across adjacent OR terms and
+    // reject otherwise valid first-page requests.
+    final cursorIsPaired = (beforeAt == null) == (beforeAttemptId == null);
+    final validVersion = _uuid.hasMatch(targetVersionId);
+    final validPart = RegExp(r'^[a-z][a-z0-9_]*
+
+    final raw = _testTransport != null
+        ? await _testTransport(
+            targetVersionId, examPartKey, limit,
+            beforeAt?.toUtc().toIso8601String(), beforeAttemptId,
+          )
+        : await _client.rpc(
+            'exam_reference_drill_part_attempt_history',
+            params: {
+              'p_target_version_id': targetVersionId,
+              'p_exam_part_key': examPartKey,
+              'p_limit': limit,
+              'p_before_last_at': beforeAt?.toUtc().toIso8601String(),
+              'p_before_attempt_id': beforeAttemptId,
+            },
+          );
+    _requireOwner(expectedOwnerId);
+    if (raw is! List || raw.length > limit) {
+      throw const FormatException('Invalid bounded reference history response');
+    }
+    final rows = <SavedPartReferenceAttempt>[];
+    final seen = <String>{};
+    for (final item in raw) {
+      if (item is! Map) {
+        throw const FormatException('Malformed reference attempt');
+      }
+      final row = SavedPartReferenceAttempt.fromRow(
+        Map<String, dynamic>.from(item),
+        ownerId: expectedOwnerId,
+        targetVersionId: targetVersionId,
+        examPartKey: examPartKey,
+      );
+      if (!seen.add(row.id) ||
+          (rows.isNotEmpty &&
+           (row.lastRecordedAt.isAfter(rows.last.lastRecordedAt) ||
+            (row.lastRecordedAt.isAtSameMomentAs(rows.last.lastRecordedAt) &&
+             row.id.compareTo(rows.last.id) >= 0))) ||
+          (beforeAt != null &&
+           (row.lastRecordedAt.isAfter(beforeAt) ||
+            (row.lastRecordedAt.isAtSameMomentAs(beforeAt) &&
+             row.id.compareTo(beforeAttemptId!) >= 0)))) {
+        throw const FormatException('Untrusted or unsorted attempt cursor');
+      }
+      rows.add(row);
+    }
+    _requireOwner(expectedOwnerId);
+    return SavedPartReferenceAttemptPage(
+      ownerId: expectedOwnerId, targetVersionId: targetVersionId,
+      partKey: examPartKey, attempts: rows, pageLimit: limit,
+    );
+  }
+}
+).hasMatch(examPartKey);
+    final validCursorId = beforeAttemptId == null ||
+        _uuid.hasMatch(beforeAttemptId);
+    if (!validVersion || !validPart ||
         examPartKey.length > 128 || limit < 1 || limit > 50 ||
-        (beforeAt == null) != (beforeAttemptId == null) ||
-        (beforeAttemptId != null && !_uuid.hasMatch(beforeAttemptId))) {
+        !cursorIsPaired || !validCursorId) {
       throw const FormatException('Invalid exact exam part history request');
     }
 
