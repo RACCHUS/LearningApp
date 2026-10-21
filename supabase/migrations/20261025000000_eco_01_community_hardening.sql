@@ -74,6 +74,11 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- Allow authorized internal updates initiated by trusted security-definer RPCs or triggers
+  if current_setting('community.internal_counter_update', true) = 'true' then
+    return new;
+  end if;
+
   if not private.is_admin() then
     -- Non-admin authors cannot manipulate authoritative counters, seeded flag, or timestamps
     if new.upvote_count <> old.upvote_count or
@@ -103,6 +108,11 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- Allow authorized internal updates initiated by trusted security-definer RPCs or triggers
+  if current_setting('community.internal_counter_update', true) = 'true' then
+    return new;
+  end if;
+
   if not private.is_admin() then
     -- Non-admin authors cannot manipulate upvote_count, is_accepted, question link, or timestamps
     if new.upvote_count <> old.upvote_count or
@@ -123,6 +133,54 @@ drop trigger if exists trg_prevent_community_answer_tampering on public.communit
 create trigger trg_prevent_community_answer_tampering
   before update on public.community_answers
   for each row execute function public.prevent_community_answer_tampering();
+
+-- Authoritative answer count trigger function (sets internal_counter_update to allow question counter updates)
+create or replace function public.handle_community_answer_count()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform set_config('community.internal_counter_update', 'true', true);
+
+  if tg_op = 'INSERT' then
+    if new.status = 'published' then
+      update public.community_questions
+         set answer_count = answer_count + 1,
+             updated_at = now()
+       where id = new.question_id;
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if old.status <> 'published' and new.status = 'published' then
+      update public.community_questions
+         set answer_count = answer_count + 1,
+             updated_at = now()
+       where id = new.question_id;
+    elsif old.status = 'published' and new.status <> 'published' then
+      update public.community_questions
+         set answer_count = greatest(0, answer_count - 1),
+             updated_at = now()
+       where id = new.question_id;
+    end if;
+  elsif tg_op = 'DELETE' then
+    if old.status = 'published' then
+      update public.community_questions
+         set answer_count = greatest(0, answer_count - 1),
+             updated_at = now()
+       where id = old.question_id;
+    end if;
+  end if;
+  return null;
+end;
+$$;
+
+-- Column privileges hardening (defense in depth for authenticated updates)
+revoke update on table public.community_questions from authenticated;
+grant update (title, body_markdown, status, concept_id, target_id, lesson_id, cip_code) on table public.community_questions to authenticated;
+
+revoke update on table public.community_answers from authenticated;
+grant update (body_markdown, status) on table public.community_answers to authenticated;
 
 -- Revoke execute on trigger functions from public & anon
 revoke all on function public.handle_community_answer_count() from public, anon;
@@ -189,6 +247,9 @@ begin
        and target_type = p_target_type
        and target_id = p_target_id
   ) into v_voted;
+
+  -- Set transaction-local internal counter flag so tamper trigger allows atomic RPC updates
+  perform set_config('community.internal_counter_update', 'true', true);
 
   if v_voted then
     -- Remove vote (toggle off)
