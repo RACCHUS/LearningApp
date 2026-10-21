@@ -109,6 +109,13 @@ class DiagnosticAssessmentReport {
   final String targetId;
   final String targetTitle;
   final String targetVersionId;
+  /// Present only for an explicitly selected, validated exam-part diagnostic.
+  /// Never an assertion of official exam-simulation fidelity.
+  final String? examPartKey;
+  final String? curriculumRootNodeId;
+  /// Learner identity at submission, for suppressing old private reports after
+  /// a shared-device account switch. Legacy target-wide reports may omit it.
+  final String? learnerId;
   final DateTime completedAt;
   final int totalQuestions;
   final int correctQuestions;
@@ -130,6 +137,9 @@ class DiagnosticAssessmentReport {
     required this.targetId,
     required this.targetTitle,
     required this.targetVersionId,
+    this.examPartKey,
+    this.curriculumRootNodeId,
+    this.learnerId,
     required this.completedAt,
     required this.totalQuestions,
     required this.correctQuestions,
@@ -149,6 +159,9 @@ class DiagnosticAssessmentReport {
   });
 
   DiagnosticAssessmentReport copyWith({
+    String? examPartKey,
+    String? curriculumRootNodeId,
+    String? learnerId,
     bool? remedialSetCreated,
     String? remedialSetId,
     String? remedialSetTitle,
@@ -159,6 +172,9 @@ class DiagnosticAssessmentReport {
       targetId: targetId,
       targetTitle: targetTitle,
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey ?? this.examPartKey,
+      curriculumRootNodeId: curriculumRootNodeId ?? this.curriculumRootNodeId,
+      learnerId: learnerId ?? this.learnerId,
       completedAt: completedAt,
       totalQuestions: totalQuestions,
       correctQuestions: correctQuestions,
