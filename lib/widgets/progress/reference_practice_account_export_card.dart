@@ -199,7 +199,8 @@ class _OwnerExportState extends State<_OwnerExport> {
           'including older reference editions and owner identifiers. '
           'This is not a full LearningApp account archive. Keep the file '
           'private and check your browser Downloads; the app cannot '
-          'confirm that the file was saved.',
+          'confirm that the file was saved. Browser file exports are '
+          'limited to 64 MiB to avoid excessive memory usage.',
         ),
         actions: [
           TextButton(
@@ -224,11 +225,11 @@ class _OwnerExportState extends State<_OwnerExport> {
         !identical(data, _export)) return;
     setState(() => _busy = true);
     try {
-      final json = data.toJsonExport();
-      // requestDownload must start synchronously from the confirmation click.
-      _fileDownload.requestDownload(
+      // No giant intermediate JSON string; the browser collects bounded
+      // UTF-8 byte segments before attempting the user-activated download.
+      _fileDownload.requestChunkedDownload(
         filename: ReferencePracticeJsonDownload.filenameAt(DateTime.now()),
-        json: json,
+        chunks: data.toJsonExportChunks(),
       );
       if (!mounted || !widget.ownerStillCurrent()) return;
       ScaffoldMessenger.of(context).showSnackBar(
