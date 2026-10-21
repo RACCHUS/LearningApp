@@ -34,7 +34,7 @@ class ReferencePracticeJsonChunker {
         final end = offset + room < bytes.length
             ? offset + room
             : bytes.length;
-        builder.add(Uint8List.sublistView(bytes, offset, end));
+        builder.add(bytes.sublist(offset, end));
         offset = end;
         if (builder.length == partBytes) {
           yield builder.takeBytes();
