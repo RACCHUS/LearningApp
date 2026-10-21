@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 
 void main() {
@@ -160,6 +161,55 @@ void main() {
       expect(cgcBody, contains('Section 489.111, Florida Statutes'));
       expect(cgcBody, contains('Rule 61G4-15.001'));
       expect(cgcBody, contains('Platform-curated educational reference'));
+    });
+  });
+
+  group('ECO-02: Educator Review, Editorial Governance & Audit Trail', () {
+    test('CommunityReviewAudit serialization and audit properties', () {
+      final audit = CommunityReviewAudit(
+        id: 'audit-001',
+        targetType: 'question',
+        targetId: 'q-999',
+        reviewerId: 'reviewer-user-1',
+        action: 'reject',
+        previousStatus: 'under_review',
+        newStatus: 'archived',
+        notes: 'Needs clarity on regulatory statutory citation.',
+        createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
+      );
+
+      expect(audit.isQuestion, isTrue);
+      expect(audit.isAnswer, isFalse);
+      expect(audit.action, 'reject');
+      expect(audit.notes, 'Needs clarity on regulatory statutory citation.');
+
+      final json = audit.toJson();
+      final revived = CommunityReviewAudit.fromJson(json);
+
+      expect(revived.id, 'audit-001');
+      expect(revived.targetType, 'question');
+      expect(revived.targetId, 'q-999');
+      expect(revived.reviewerId, 'reviewer-user-1');
+      expect(revived.action, 'reject');
+      expect(revived.previousStatus, 'under_review');
+      expect(revived.newStatus, 'archived');
+      expect(revived.notes, 'Needs clarity on regulatory statutory citation.');
+    });
+
+    test('CommunityQaService handles offline empty fallbacks gracefully', () async {
+      final service = CommunityQaService();
+
+      final reviewQuestions = await service.fetchUnderReviewQuestions();
+      expect(reviewQuestions, isEmpty);
+
+      final reviewAnswers = await service.fetchUnderReviewAnswers();
+      expect(reviewAnswers, isEmpty);
+
+      final auditHistory = await service.fetchReviewAuditHistory();
+      expect(auditHistory, isEmpty);
+
+      final myDrafts = await service.fetchMyDrafts();
+      expect(myDrafts, isEmpty);
     });
   });
 }

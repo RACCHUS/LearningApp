@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_review_audit.dart';
 
 /// Service managing concept-scoped Community Q&A workflows (ECO-01 & ECO-02).
 ///
@@ -97,12 +98,68 @@ class CommunityQaService {
     }
   }
 
+  /// Fetches answers awaiting educator or moderator review.
+  ///
+  /// Accessible only to users possessing moderator or admin privileges.
+  Future<List<CommunityAnswer>> fetchUnderReviewAnswers({int limit = 50}) async {
+    try {
+      final response = await _supabase
+          .from('community_answers')
+          .select()
+          .eq('status', 'under_review')
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      final List<dynamic> rows = response as List<dynamic>;
+      return rows
+          .map((row) => CommunityAnswer.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      _logger.warn('Failed to fetch under-review answers: $e', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  /// Fetches durable review decision history for moderation and governance auditing.
+  ///
+  /// Accessible to moderators via RLS policy.
+  Future<List<CommunityReviewAudit>> fetchReviewAuditHistory({
+    String? targetType,
+    String? targetId,
+    int limit = 50,
+  }) async {
+    try {
+      var query = _supabase
+          .from('community_review_audit')
+          .select();
+
+      if (targetType != null) {
+        query = query.eq('target_type', targetType);
+      }
+      if (targetId != null) {
+        query = query.eq('target_id', targetId);
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      final List<dynamic> rows = response as List<dynamic>;
+      return rows
+          .map((row) => CommunityReviewAudit.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      _logger.warn('Failed to fetch community review audit history: $e', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
   /// Fetches the authenticated user's private draft or under-review questions.
   Future<List<CommunityQuestion>> fetchMyDrafts() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return [];
-
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return [];
+
       final response = await _supabase
           .from('community_questions')
           .select()
@@ -158,15 +215,15 @@ class CommunityQaService {
     String? cipCode,
     bool submitForReview = false,
   }) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      _logger.warn('Cannot create question: user is not authenticated');
-      return null;
-    }
-
-    final status = submitForReview ? 'under_review' : 'draft';
-
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        _logger.warn('Cannot create question: user is not authenticated');
+        return null;
+      }
+
+      final status = submitForReview ? 'under_review' : 'draft';
+
       final data = {
         'author_id': user.id,
         'title': title.trim(),
@@ -187,6 +244,47 @@ class CommunityQaService {
       return CommunityQuestion.fromJson(response);
     } catch (e, st) {
       _logger.error('Failed to create draft question: $e', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  /// Creates a draft answer (or marks it under review).
+  ///
+  /// Non-admin users cannot publish answers directly during Phase 1.
+  Future<CommunityAnswer?> createDraftAnswer({
+    required String questionId,
+    required String bodyMarkdown,
+    bool submitForReview = false,
+    bool isAiGenerated = false,
+    String? aiModelName,
+  }) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        _logger.warn('Cannot create answer: user is not authenticated');
+        return null;
+      }
+
+      final status = submitForReview ? 'under_review' : 'draft';
+
+      final data = {
+        'question_id': questionId,
+        'author_id': user.id,
+        'body_markdown': bodyMarkdown.trim(),
+        'status': status,
+        'is_ai_generated': isAiGenerated,
+        if (aiModelName != null) 'ai_model_name': aiModelName,
+      };
+
+      final response = await _supabase
+          .from('community_answers')
+          .insert(data)
+          .select()
+          .single();
+
+      return CommunityAnswer.fromJson(response);
+    } catch (e, st) {
+      _logger.error('Failed to create draft answer: $e', error: e, stackTrace: st);
       rethrow;
     }
   }
