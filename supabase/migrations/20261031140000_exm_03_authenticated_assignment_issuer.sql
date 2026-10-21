@@ -24,7 +24,6 @@ declare
   v_visible jsonb;
   v_assignment uuid;
   v_expiry timestamptz;
-  v_pick integer;
 begin
   -- PostgREST validates the JWT signature; the issuer additionally checks
   -- permanent-account status and the exact still-live Auth session.
