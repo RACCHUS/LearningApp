@@ -1,33 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/assessment_engine/exam_reference_manifest.dart';
 import '../../models/learning_target.dart';
+import '../../services/assessment/exam_reference_manifest_service.dart';
 
-/// A truthful, in-context overview: no parallel navigation, no speculative
-/// regulator claims, and no dated reference checklist without an approved
-/// manifest for the learner's administration date.
-class ExamPreparationOverviewCard extends StatelessWidget {
+/// Exam dates and approved reference lookup belong inside the existing goal.
+/// Unsourced exam rules are never substituted with practice defaults.
+class ExamPreparationOverviewCard extends StatefulWidget {
   final TargetVersion targetVersion;
+  final ExamReferenceManifestService? manifestService;
 
   const ExamPreparationOverviewCard({
     super.key,
     required this.targetVersion,
+    this.manifestService,
   });
+
+  @override
+  State<ExamPreparationOverviewCard> createState() =>
+      _ExamPreparationOverviewCardState();
+}
+
+class _ExamPreparationOverviewCardState
+    extends State<ExamPreparationOverviewCard> {
+  DateTime? _examDate;
+  String? _partKey;
+  Future<ExamManifestSelection>? _lookup;
+
+  Future<void> _chooseExamDate(
+    ExamPreparationProfile profile,
+    ExamPartSpec part,
+  ) async {
+    final chosen = await showDatePicker(
+      context: context,
+      initialDate: _examDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'Select your actual exam administration date',
+    );
+    if (!mounted || chosen == null) return;
+
+    setState(() {
+      _examDate = chosen;
+      _partKey = part.key;
+      _lookup = (widget.manifestService ?? ExamReferenceManifestService())
+          .resolveForExamDate(
+            profile: profile,
+            examPartKey: part.key,
+            administrationDate: chosen,
+          );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     ExamPreparationProfile? profile;
     try {
       profile = ExamPreparationProfile.fromTargetVersionMetadata(
-        targetVersionId: targetVersion.id,
-        metadata: targetVersion.metadata,
+        targetVersionId: widget.targetVersion.id,
+        metadata: widget.targetVersion.metadata,
       );
     } on FormatException {
       return const SizedBox.shrink();
     }
-
     if (profile == null) return const SizedBox.shrink();
 
+    final typedProfile = profile;
     final theme = Theme.of(context);
     return Card(
       key: const Key('exam-preparation-overview'),
@@ -50,15 +89,17 @@ class ExamPreparationOverviewCard extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
-            for (final part in profile.examParts)
+            for (final part in typedProfile.examParts)
               Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
                     const Icon(Icons.book_outlined, size: 17),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(part.displayName),
+                    Expanded(child: Text(part.displayName)),
+                    TextButton(
+                      onPressed: () => _chooseExamDate(typedProfile, part),
+                      child: const Text('Check references'),
                     ),
                   ],
                 ),
@@ -67,16 +108,102 @@ class ExamPreparationOverviewCard extends StatelessWidget {
             Text(
               'Official reference lists, permitted book editions, '
               'room rules, and exam-time limits are not verified here. '
-              'A dated checklist will appear only for an independently '
+              'A dated checklist appears only for an independently '
               'reviewed manifest covering your actual exam date.',
               key: const Key('exam-reference-unknown-notice'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (_lookup != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                'Reference check for ' + (_partKey ?? 'selected part') + ' · ' +
+                    (_examDate?.toIso8601String().substring(0, 10) ?? ''),
+                style: theme.textTheme.titleSmall,
+              ),
+              FutureBuilder<ExamManifestSelection>(
+                future: _lookup,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text(
+                      'Reference verification is unavailable. '
+                      'Confirm applicable editions with the official provider.',
+                      key: Key('exam-reference-unavailable'),
+                    );
+                  }
+                  if (!snapshot.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(),
+                    );
+                  }
+                  return _renderSelection(snapshot.data!);
+                },
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _renderSelection(ExamManifestSelection selection) {
+    if (!selection.isSelected) {
+      String notice;
+      switch (selection.status) {
+        case ExamManifestSelectionStatus.noApplicableRevision:
+          notice = 'No approved reference list is available for this exam '
+              'date. Continue general study; do not assume an edition.';
+          break;
+        case ExamManifestSelectionStatus.conflictingRevisions:
+          notice = 'Conflicting reference revisions were found. Reference '
+              'preparation is withheld until the sources are reconciled.';
+          break;
+        case ExamManifestSelectionStatus.unavailableSource:
+          notice = 'The reference list could not be verified. Try again '
+              'later and confirm the rules with the exam provider.';
+          break;
+        default:
+          notice = 'A specific exam part and administration date are '
+              'required before reference details can be verified.';
+      }
+      return Text(notice, key: const Key('exam-reference-unavailable'));
+    }
+
+    final revision = selection.revision!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reviewed reference list (revision ' +
+              revision.revision.toString() +
+              '). Confirm the latest rules with the exam provider.',
+          key: const Key('exam-reference-reviewed'),
+        ),
+        const SizedBox(height: 8),
+        for (final book in revision.references)
+          Text('• ' + (book['title'] ?? book['key']).toString() +
+              ' — Edition ' + book['edition'].toString()),
+        const SizedBox(height: 8),
+        Text(
+          'Only reviewed reference metadata is shown. '
+          'Check the primary source for exam-room rules, '
+          'approved materials and any later corrections.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (revision.officialSourceUrl != null)
+          TextButton.icon(
+            onPressed: () {
+              final url = Uri.tryParse(revision.officialSourceUrl!);
+              if (url != null && url.scheme == 'https' && url.host.isNotEmpty) {
+                launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.open_in_new, size: 16),
+            label: const Text('Open official reference source'),
+          ),
+      ],
     );
   }
 }
