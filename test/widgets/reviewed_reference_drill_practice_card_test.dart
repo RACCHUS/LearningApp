@@ -110,6 +110,7 @@ class _FakeScoreApi extends ExamReferenceDrillScoringService {
   _FakeScoreApi() : super(client: FakeSupabaseClient());
   final List<String> requested = [];
   bool failOnce = false;
+  int completed = 0;
   @override
   Future<VerifiedReferenceDrillStepScore> scoreRecordedStep({
     required String expectedOwnerId,
@@ -121,13 +122,14 @@ class _FakeScoreApi extends ExamReferenceDrillScoringService {
       failOnce = false;
       throw StateError('temporary network error');
     }
+    completed++;
     return VerifiedReferenceDrillStepScore(
       step: const {
         1: 'resource_choice',
         2: 'section_location',
         3: 'interpretation',
         4: 'application',
-      }[requested.length] ?? 'resource_choice',
+      }[completed] ?? 'resource_choice',
       isCorrect: true, scoringVersion: 1,
       gradedAt: DateTime.utc(2027, 1, 1),
     );
