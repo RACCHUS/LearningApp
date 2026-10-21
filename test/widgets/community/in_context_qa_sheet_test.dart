@@ -1397,8 +1397,9 @@ void main() {
       // A genuine widget-level review data refresh and general data reload occur while submission is pending.
       // Under the decoupled architecture, these increment _reloadReviewSeq and _loadDataSeq, but do not
       // alter _authSessionGeneration, ensuring valid in-flight submissions are preserved.
-      await sheetKey.currentState?.reloadReviewDataForTesting();
-      await sheetKey.currentState?.loadDataForTesting();
+      expect(sheetKey.currentState, isNotNull);
+      await sheetKey.currentState!.reloadReviewDataForTesting();
+      await sheetKey.currentState!.loadDataForTesting();
 
       // Now the submission completes successfully
       final savedQuestion = CommunityQuestion(
