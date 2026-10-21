@@ -11,12 +11,15 @@ class ExamReferenceDrillEventService {
   ExamReferenceDrillEventService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
-  User _permanentUser() {
+  User _permanentUser({String? expectedUserId}) {
     final user = _client.auth.currentUser;
     if (user == null || user.isAnonymous) {
       throw StateError(
         'Durable reference practice requires a signed-in non-guest account.',
       );
+    }
+    if (expectedUserId != null && user.id != expectedUserId) {
+      throw StateError('Reference practice owner changed during this request.');
     }
     return user;
   }
@@ -77,6 +80,7 @@ class ExamReferenceDrillEventService {
           .insert(payload)
           .select()
           .single();
+      _permanentUser(expectedUserId: user.id);
       return Map<String, dynamic>.from(response);
     } on PostgrestException catch (error) {
       if (error.code != '23505') rethrow;
@@ -89,6 +93,7 @@ class ExamReferenceDrillEventService {
           .eq('client_attempt_id', clientAttemptId)
           .eq('drill_step', step)
           .maybeSingle();
+      _permanentUser(expectedUserId: user.id);
       if (existing == null) rethrow;
       for (final entry in payload.entries) {
         if (entry.value != existing[entry.key]) {
@@ -101,32 +106,63 @@ class ExamReferenceDrillEventService {
     }
   }
 
-  /// Each query is independently owner-scoped. No shared cross-account cache.
+  /// Query is scoped to the current permanent account, with a post-await
+  /// identity check so a response from account A cannot populate account B.
   Future<List<Map<String, dynamic>>> listMyEvents({
     int limit = 100,
+    String? manifestRevisionId,
+    String? expectedOwnerId,
   }) async {
-    final user = _permanentUser();
+    final user = _permanentUser(expectedUserId: expectedOwnerId);
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
-    final rows = await _client
+    if (manifestRevisionId != null && manifestRevisionId.trim().isEmpty) {
+      throw ArgumentError.value(manifestRevisionId, 'manifestRevisionId');
+    }
+    var query = _client
         .from('exam_reference_drill_events')
         .select()
-        .eq('owner_auth_uid', user.id)
+        .eq('owner_auth_uid', user.id);
+    if (manifestRevisionId != null) {
+      query = query.eq('manifest_revision_id', manifestRevisionId);
+    }
+    final rows = await query
         .order('recorded_at', ascending: false)
         .limit(limit);
+    _permanentUser(expectedUserId: user.id);
+    // Defense in depth: never return foreign rows even if a mock, server or
+    // mistakenly altered query returns broader data than requested.
     return (rows as List)
         .map((row) => Map<String, dynamic>.from(row as Map))
+        .where((row) =>
+            row['owner_auth_uid'] == user.id &&
+            (manifestRevisionId == null ||
+                row['manifest_revision_id'] == manifestRevisionId))
         .toList();
   }
 
-  /// User-requested deletion, distinct from ordinary append-only recording.
-  Future<void> deleteMyAttempt(String clientAttemptId) async {
-    final user = _permanentUser();
-    await _client
+  /// Explicit user-directed removal; require the same account that opened
+  /// the confirmation and limit deletion to the selected manifest.
+  Future<void> deleteMyAttempt(
+    String clientAttemptId, {
+    String? manifestRevisionId,
+    String? expectedOwnerId,
+  }) async {
+    final user = _permanentUser(expectedUserId: expectedOwnerId);
+    if (clientAttemptId.trim().isEmpty ||
+        (manifestRevisionId != null && manifestRevisionId.trim().isEmpty)) {
+      throw ArgumentError('Attempt and manifest identities must not be empty');
+    }
+    var query = _client
         .from('exam_reference_drill_events')
         .delete()
         .eq('owner_auth_uid', user.id)
         .eq('client_attempt_id', clientAttemptId);
+    if (manifestRevisionId != null) {
+      query = query.eq('manifest_revision_id', manifestRevisionId);
+    }
+    await query;
+    _permanentUser(expectedUserId: user.id);
   }
 }
