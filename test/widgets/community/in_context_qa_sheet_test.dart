@@ -315,6 +315,7 @@ void main() {
   Widget buildTestWidget({
     CommunityQaService? service,
     ModerationService? moderationService,
+    GlobalKey<InContextQaSheetState>? sheetKey,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -322,6 +323,7 @@ void main() {
           width: 800,
           height: 700,
           child: InContextQaSheet(
+            key: sheetKey,
             topicTitle: 'Phonics Blending Pilot',
             conceptId: 'literacy.phonics',
             service: service ?? FakeCommunityQaService(
@@ -1366,7 +1368,12 @@ void main() {
       );
       fakeService.draftQuestionCompleter = draftCompleter;
 
-      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      final sheetKey = GlobalKey<InContextQaSheetState>();
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+        sheetKey: sheetKey,
+      ));
       await tester.pumpAndSettle();
 
       // User A goes to the "Ask a Question" tab and fills the form
@@ -1387,9 +1394,11 @@ void main() {
       await tester.tap(find.text('Save Private Question'));
       await tester.pump();
 
-      // An independent reload occurs for the same user (e.g. reloadReviewData or FAQ expansion)
-      // Since user is still user-a, session generation remains identical.
-      await fakeService.fetchSeedFaqs();
+      // A genuine widget-level review data refresh and general data reload occur while submission is pending.
+      // Under the decoupled architecture, these increment _reloadReviewSeq and _loadDataSeq, but do not
+      // alter _authSessionGeneration, ensuring valid in-flight submissions are preserved.
+      await sheetKey.currentState?.reloadReviewDataForTesting();
+      await sheetKey.currentState?.loadDataForTesting();
 
       // Now the submission completes successfully
       final savedQuestion = CommunityQuestion(
