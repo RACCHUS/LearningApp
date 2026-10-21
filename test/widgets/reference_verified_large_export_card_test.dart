@@ -55,11 +55,24 @@ class FakeLarge extends ExamReferenceVerifiedLargeExportService {
   @override
   Future<ReferencePracticeAccountExport> loadComplete({
     required String expectedOwnerId,
-  }) {
+    void Function(int loaded, int total)? onProgress,
+    bool Function()? shouldCancel,
+  }) async {
     owners.add(expectedOwnerId);
-    if(pending!=null)return pending!.future;
-    if(fail)return Future.error(StateError('changed during export'));
-    return Future.value(export(expectedOwnerId));
+    if (shouldCancel?.call() == true) {
+      throw const ReferencePracticeExportCancelled();
+    }
+    onProgress?.call(0,1);
+    final result = pending != null
+        ? await pending!.future
+        : fail
+            ? throw StateError('changed during export')
+            : export(expectedOwnerId);
+    if (shouldCancel?.call() == true) {
+      throw const ReferencePracticeExportCancelled();
+    }
+    onProgress?.call(1,1);
+    return result;
   }
 }
 class FakeFileDownload extends ReferencePracticeJsonDownload {
@@ -174,6 +187,30 @@ void main(){
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('exm-account-export-copy')),findsNothing);
     expect(large.owners,['owner-a']);
+  });
+
+
+  testWidgets('Cancelling in-flight large export leaves no prepared file',
+      (tester) async {
+    final auth=FakeAuth(AuthSuccess(user('owner-a')));
+    final large=FakeLarge()..pending=Completer<ReferencePracticeAccountExport>();
+    final download=FakeFileDownload();
+    await mount(tester,auth,large,downloader:download);
+    await tester.ensureVisible(find.byKey(const Key('exm-large-export-load')));
+    await tester.tap(find.byKey(const Key('exm-large-export-load')));
+    await tester.pump();
+    expect(find.byKey(const Key('exm-large-export-progress')),findsOneWidget);
+    final cancel=find.byKey(const Key('exm-large-export-cancel'));
+    await tester.ensureVisible(cancel);
+    await tester.tap(cancel);
+    await tester.pump();
+    expect(find.textContaining('Cancelling after'),findsOneWidget);
+    large.pending!.complete(export('owner-a'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Large-history export cancelled.'),findsOneWidget);
+    expect(find.byKey(const Key('exm-account-export-download')),findsNothing);
+    expect(find.byKey(const Key('exm-account-export-copy')),findsNothing);
+    expect(download.files,isEmpty);
   });
 
   testWidgets('Browser save requires loaded evidence and separate click consent',
