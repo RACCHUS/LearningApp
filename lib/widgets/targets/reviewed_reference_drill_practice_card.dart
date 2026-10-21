@@ -91,6 +91,7 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
   String? _selected;
   String? _pendingEventId;
   String? _pendingAnswer;
+  ReferenceDrillStep? _awaitingStep;
   String? _error;
   bool _working = false;
   bool _noAvailable = false;
@@ -172,8 +173,9 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
   }
 
   Future<void> _submit() async {
-    if (_working || _recorder == null || _recorder!.isComplete) return;
-    final step = _recorder!.nextStep!;
+    if (_working || _recorder == null ||
+        (_recorder!.isComplete && _pendingEventId == null)) return;
+    final step = _awaitingStep ?? _recorder!.nextStep!;
     final token = _pendingAnswer ?? _selected;
     final isRetry = _recorder!.hasPendingWrite;
     final elapsed = _watch?.elapsed ?? Duration.zero;
@@ -196,6 +198,7 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
       _working = true;
       _error = null;
       _pendingAnswer = token;
+      _awaitingStep = step;
     });
     try {
       if (_pendingEventId == null) {
@@ -234,6 +237,7 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
       setState(() {
         _feedback.add('${_stepTitle(step)} — $feedback');
         _pendingAnswer = null;
+        _awaitingStep = null;
         _pendingEventId = null;
         _selected = null;
         _bookSeconds.clear();
@@ -254,7 +258,7 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
   @override
   Widget build(BuildContext context) {
     final recorder = _recorder;
-    final step = recorder?.nextStep;
+    final step = _awaitingStep ?? recorder?.nextStep;
     final prompt = step == null ? null : _practice?.steps[_stepKey(step)];
     return Card(
       key: const Key('reviewed-reference-practice'),
