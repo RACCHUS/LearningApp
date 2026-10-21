@@ -7,6 +7,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../test_helpers/fake_supabase_client.dart';
 
+class _MutableClient implements SupabaseClient {
+  final _MutableAuth stub = _MutableAuth();
+  @override
+  GoTrueClient get auth => stub;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+class _MutableAuth implements GoTrueClient {
+  User? active;
+  @override
+  User? get currentUser => active;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+
 const manifest = '33333333-3333-4333-8333-333333333333';
 const eventOne = '11111111-1111-4111-8111-111111111111';
 const eventTwo = '22222222-2222-4222-8222-222222222222';
@@ -46,27 +62,6 @@ void main() {
   test('Cursor pages yield all evidence with precise checked/skipped counts',
       () async {
     final client = FakeSupabaseClient(currentUser: user('account-a'));
-    var calls = 0;
-    final service = ExamReferenceDrillProgressService(
-      client: client,
-      testTransport: (m, limit, before, beforeId) async {
-        expect(m,manifest);
-        calls++;
-        if (calls == 1) {
-          expect(before,isNull);
-          return [
-            row(eventThree,'application', responded:false,
-              recorded:'2027-03-01T12:00:02Z'),
-            row(eventTwo,'section_location',
-              recorded:'2027-03-01T12:00:01Z'),
-          ];
-        }
-        expect(beforeId,eventTwo);
-        return [
-          row(eventOne,'resource_choice',correct:true,version:3),
-        ];
-      },
-    );
     // 2 records then one page: use maxRecords=2? would reject; a
     // 100-record first page is needed for an actual cursor continuation.
     final events = <Map<String,dynamic>>[
@@ -105,13 +100,14 @@ void main() {
   });
 
   test('Owner changes across await fail closed', () async {
-    final client = FakeSupabaseClient(currentUser:user('account-a'));
+    final client = _MutableClient();
+    client.stub.active=user('account-a');
     final pending = Completer<dynamic>();
     final service = ExamReferenceDrillProgressService(
       client:client, testTransport:(m,l,t,i)=>pending.future);
     final loading=service.loadComplete(
       expectedOwnerId:'account-a',manifestRevisionId:manifest);
-    client.auth.setCurrentUser(user('account-b'));
+    client.stub.active=user('account-b');
     pending.complete([row(eventOne,'resource_choice',correct:true,version:1)]);
     await expectLater(loading,throwsStateError);
   });
