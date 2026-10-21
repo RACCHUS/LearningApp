@@ -860,4 +860,15 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 
 ---
 
+### A.6 — Consolidated integration against the current main migration ledger
+
+- **Purpose:** The earlier EXM feature PRs (#62–#72) were created before `main` added trust/safety and cost-observability migrations, including `20261021000000_cost_and_observability_quotas.sql`. The original, still-unmerged EXM migration timestamps `20261019021500` and `20261019023000` were subsequently rejected as backdated by the current repository guard. That is a **branch integration** issue, not approval to edit a production-applied migration.
+- **Non-destructive recovery:** A new branch `feature/exm-current-main-integration-20261020` was created directly from current `main`. All 25 EXM application, test and plan files were transferred without rewriting the older PR branches. The previously unmerged migration contents now use new, sequential repository paths `supabase/migrations/20261021000001_exm_01_reference_manifest_revisions.sql` and `supabase/migrations/20261021000002_exm_02a_item_reference_validity.sql`. The historical old-path statements in preceding Appendix A entries describe their corresponding older draft PRs.
+- **EXM-02A internal prototype:** The application code adds four synthetic practice experiences R1–R4 but is **not reachable from public routes**. It retains disposable client-only results and never fetches private real approved answers. Step timing begins after feedback acknowledgement so reading correction does not inflate navigation response time. Production learner delivery and hidden server-side scoring remain necessary.
+- **Verification status:** The consolidated branch and re-sequenced migrations require a fresh, complete GitHub CI pass against the current main baseline, including incremental upgrades, clean-slate pgTAP, Flutter analysis/tests and web release. No completion is claimed until these are verified.
+- **Phase scope:** The owner-approved requirements, including exact-edition external review, a narrowly selected code-navigation pilot, 24 source-reviewed items, R1–R4 verified content, durable EXM-02B attempts, EXM-03 simulation, EXM-04 adaptive preparation and EXM-05 outcomes measurement, remain unmet unless separately recorded as completed. Nothing in this integration constitutes a deployed service or source-content approval.
+- **Safety:** No GitHub merge into main, no hosted Supabase writes/deployments and no real DBPR reference publication. Source files from `main` not involving EXM (including current governance and observability code) were preserved.
+
+---
+
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
