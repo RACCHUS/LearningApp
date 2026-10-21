@@ -55,7 +55,7 @@ class ExamReferenceVerifiedLargeExportService {
        !RegExp(r'^[a-f0-9]{32}$').hasMatch(fingerprint)){
       throw const FormatException('Untrusted export inventory');
     }
-    return (count:count as int,fingerprint:fingerprint as String);
+    return (count:count,fingerprint:fingerprint);
   }
 
   Future<dynamic> _readInventory()=>_testInventory!=null
