@@ -80,15 +80,17 @@ begin
       using errcode='22023';
   end if;
 
-  -- SELECT ... FOR UPDATE freezes the *selected* owner rows. Only those exact
-  -- IDs may be deleted; no new rows inserted during the request are swept up.
-  -- Cross-request changes are checked against the preview's row fingerprint.
+  -- A read-only owner-RLS query identifies the previewed IDs. PostgreSQL
+  -- SELECT FOR UPDATE/SHARE would wrongly require granting UPDATE access,
+  -- which EXM events intentionally deny. The DELETE locks its selected rows;
+  -- only those IDs can be removed, never concurrent new inserts. An observed
+  -- row-count mismatch aborts this entire transaction.
   select array_agg(selected.id order by selected.id),count(*)::integer
     into selected_ids,selected_count
     from (
       select e.id from public.exam_reference_drill_events e
       where e.owner_auth_uid=actor_uid
-      order by e.id for update
+      order by e.id
     ) selected;
   if selected_count > 5000 then
     raise exception 'Saved practice exceeds safe erasure limit'
