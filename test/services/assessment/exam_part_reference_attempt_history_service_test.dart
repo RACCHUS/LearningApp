@@ -63,7 +63,7 @@ Map<String, dynamic> _row({
   'graded_incorrect': incorrect,
   'awaiting_grade': awaiting,
   'skipped_steps': skipped,
-  'first_recorded_at': '2027-03-01T11:59:00Z',
+  'first_recorded_at': '2027-03-01T11:00:00Z',
   'last_recorded_at': recorded,
   'completed_four_steps': completed ?? steps == 4,
 };
