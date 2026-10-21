@@ -74,6 +74,58 @@ void main() {
       expect(service.lastItemIds, ['item-1', 'item-2']);
     },
   );
+
+  testWidgets('explicit part flows into result without changing target-wide route',
+      (tester) async {
+    final target = LearningTarget(
+      id: 'target-1',
+      targetType: TargetType.certification,
+      title: 'Synthetic Certification',
+      slug: 'synthetic-cert',
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+    final items = [
+      _item('item-1', 'Concept One'),
+      _item('item-2', 'Concept Two'),
+    ];
+    final service = _FakeDiagnosticService();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        targetDetailProvider('target-1')
+            .overrideWith((ref) => Future.value(target)),
+        examPartDiagnosticItemsProvider((
+          targetId: 'target-1',
+          targetVersionId: 'version-1',
+          examPartKey: 'part_a',
+        )).overrideWith((ref) => Future.value(items)),
+        diagnosticAssessmentServiceProvider.overrideWithValue(service),
+        learnerIdProvider.overrideWith((ref) => 'user-1'),
+      ],
+      child: const MaterialApp(
+        home: DiagnosticAssessmentScreen(
+          targetId: 'target-1',
+          targetVersionId: 'version-1',
+          examPartKey: 'part_a',
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Answer A'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Answer A'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete Diagnostic'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diagnostic Results'), findsOneWidget);
+    expect(find.byKey(const Key('diagnostic-part-identity')), findsOneWidget);
+    expect(find.text('Practice part: part_a'), findsOneWidget);
+    expect(find.text('Start Full Curriculum'), findsOneWidget);
+    expect(service.lastExamPartKey, 'part_a');
+  });
 }
 
 DiagnosticAssessmentItem _item(String id, String conceptName) {
@@ -103,6 +155,7 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
 
   String? lastTargetVersionId;
   List<String> lastItemIds = const [];
+  String? lastExamPartKey;
 
   @override
   Future<DiagnosticAssessmentReport> evaluateDiagnosticSession({
@@ -132,4 +185,31 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
       evidencePersisted: true,
     );
   }
+
+  @override
+  Future<DiagnosticAssessmentReport> evaluatePartDiagnosticSession({
+    required String userId,
+    required String targetId,
+    required String targetTitle,
+    required String targetVersionId,
+    required String examPartKey,
+    required List<DiagnosticAssessmentItem> items,
+    required List<DiagnosticAnswerSubmission> submissions,
+  }) async {
+    lastExamPartKey = examPartKey;
+    final result = await evaluateDiagnosticSession(
+      userId: userId,
+      targetId: targetId,
+      targetTitle: targetTitle,
+      targetVersionId: targetVersionId,
+      items: items,
+      submissions: submissions,
+    );
+    return result.copyWith(
+      examPartKey: examPartKey,
+      curriculumRootNodeId: 'root-a',
+      learnerId: userId,
+    );
+  }
+
 }
