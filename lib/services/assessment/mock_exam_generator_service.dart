@@ -196,6 +196,17 @@ class MockExamGeneratorService {
         (examPartKey != null && blueprint.curriculumRootNodeId == null)) {
       throw StateError('Preloaded exam blueprint does not match requested part.');
     }
+    if (preloadedBlueprint != null && examPartKey != null) {
+      final verified = await ExamPartCurriculumScopeResolver(client: _supabase)
+          .resolve(targetVersionId: targetVersionId, examPartKey: examPartKey);
+      if (blueprint.curriculumRootNodeId != verified.rootNodeId ||
+          blueprint.domainWeights.isEmpty ||
+          blueprint.domainWeights.any(
+            (domain) => !verified.nodeIds.contains(domain.domainId),
+          )) {
+        throw StateError('Preloaded exam blueprint is outside selected part.');
+      }
+    }
     final totalQuestions = questionCount ?? blueprint.defaultQuestionCount;
     if (totalQuestions <= 0) {
       throw ArgumentError.value(
