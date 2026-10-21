@@ -119,5 +119,41 @@ void main() {
       expect(answers.first.bodyMarkdown, contains('Consonant-Vowel-Consonant'));
       expect(answers.first.upvoteCount, 0);
     });
+
+    test('verifies Florida DBPR regulatory accuracy in offline licensing FAQ answers', () async {
+      final service = CommunityQaService();
+
+      // 1. Florida Cosmetology CE (seed-faq-013)
+      final cosmoAnswers = await service.fetchAnswersForQuestion('seed-faq-013');
+      expect(cosmoAnswers.length, 1);
+      final cosmoBody = cosmoAnswers.first.bodyMarkdown;
+      expect(cosmoBody, contains('10 hours'));
+      expect(cosmoBody, contains('Rule 61G5-20.002, Florida Administrative Code'));
+      expect(cosmoBody, contains('Group 1 expires October 31 of odd-numbered years'));
+      expect(cosmoBody, contains('Group 2 expires October 31 of even-numbered years'));
+      expect(cosmoBody, contains('0.5 hour of Occupational Safety and Health Administration (OSHA)'));
+      expect(cosmoBody, contains('0.5 hour of Workers\' Compensation'));
+      expect(cosmoBody, contains('Platform-curated educational reference'));
+
+      // 2. Florida Electrical Endorsement (seed-faq-016)
+      final elecAnswers = await service.fetchAnswersForQuestion('seed-faq-016');
+      expect(elecAnswers.length, 1);
+      final elecBody = elecAnswers.first.bodyMarkdown;
+      expect(elecBody, contains('Florida does not have reciprocal licensing agreements with any other state'));
+      expect(elecBody, contains('Section 489.511, Florida Statutes'));
+      expect(elecBody, contains('Licensure by Endorsement'));
+      expect(elecBody, contains('substantially equivalent'));
+      expect(elecBody, contains('10 years'));
+      expect(elecBody, contains('Platform-curated educational reference'));
+
+      // 3. Florida General Contractor Qualifications (seed-faq-018)
+      final cgcAnswers = await service.fetchAnswersForQuestion('seed-faq-018');
+      expect(cgcAnswers.length, 1);
+      final cgcBody = cgcAnswers.first.bodyMarkdown;
+      expect(cgcBody, contains('structures of not less than four stories'));
+      expect(cgcBody, contains('Section 489.111, Florida Statutes'));
+      expect(cgcBody, contains('Rule 61G4-15.001'));
+      expect(cgcBody, contains('Platform-curated educational reference'));
+    });
   });
 }
