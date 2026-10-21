@@ -74,6 +74,37 @@ void main() {
     expect(contexts.lastRootType, ContextRootType.target);
     expect(find.text('LEARN DESTINATION'), findsOneWidget);
   });
+
+  testWidgets('account switch hides scoped report and its private concepts',
+      (tester) async {
+    final owner = StateProvider<String>((ref) => 'learner-a');
+    final scopedReport = _report().copyWith(
+      examPartKey: 'part_a',
+      curriculumRootNodeId: 'root-a',
+      learnerId: 'learner-a',
+    );
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        learnerIdProvider.overrideWith((ref) => ref.watch(owner)),
+      ],
+      child: MaterialApp(
+        home: DiagnosticReportScreen(report: scopedReport),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Practice part: part_a'), findsOneWidget);
+    expect(find.text('Gap Concept'), findsWidgets);
+
+    final element = tester.element(find.byType(DiagnosticReportScreen));
+    final container = ProviderScope.containerOf(element);
+    container.read(owner.notifier).state = 'learner-b';
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('diagnostic-account-changed')), findsOneWidget);
+    expect(find.text('Gap Concept'), findsNothing);
+    expect(find.text('Practice part: part_a'), findsNothing);
+    expect(find.byKey(const Key('generate-remedial-set-button')), findsNothing);
+  });
 }
 
 DiagnosticAssessmentReport _report() {
