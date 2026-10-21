@@ -145,6 +145,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _handleVote(CommunityQuestion question) async {
+    if (question.authorId == 'offline-demo') return;
     try {
       final result = await widget.service.toggleVote(
         targetType: 'question',
@@ -373,10 +374,10 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                       icon: Icon(
                         isUpvoted ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
                         size: 18,
-                        color: isUpvoted ? Colors.blueAccent : Colors.grey,
+                        color: isOfflineDemo ? Colors.grey[400] : (isUpvoted ? Colors.blueAccent : Colors.grey),
                       ),
-                      onPressed: () => _handleVote(q),
-                      tooltip: 'Upvote',
+                      onPressed: isOfflineDemo ? null : () => _handleVote(q),
+                      tooltip: isOfflineDemo ? 'Voting disabled for offline preview' : 'Upvote',
                     ),
                     IconButton(
                       icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
@@ -410,7 +411,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                         for (final ans in _answersCache[q.id]!) ...[
                           Text(
                             ans.isAccepted && !isOfflineDemo
-                                ? 'Verified Answer:'
+                                ? 'Accepted Answer:'
                                 : 'Community Answer:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,

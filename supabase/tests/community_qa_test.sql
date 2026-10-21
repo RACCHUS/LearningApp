@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(40);
+select plan(51);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -62,14 +62,13 @@ select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002
 select throws_ok(
   $$
     insert into public.community_questions (
-      id, author_id, title, body_markdown, status, is_seeded
+      id, author_id, title, body_markdown, status
     ) values (
       '00000000-0000-0000-0000-000000000101',
       '7f7c1a20-0000-4000-8000-000000000002',
       'Unauthorized Public Question',
       'This question should not be directly published by non-admin.',
-      'published',
-      false
+      'published'
     )
   $$,
   '42501',
@@ -100,14 +99,13 @@ select throws_ok(
 select lives_ok(
   $$
     insert into public.community_questions (
-      id, author_id, title, body_markdown, status, is_seeded, concept_id
+      id, author_id, title, body_markdown, status, concept_id
     ) values (
       '00000000-0000-0000-0000-000000000103',
       '7f7c1a20-0000-4000-8000-000000000002',
       'How does phonics blending work?',
       'I am trying to understand the blending of CVC words.',
       'draft',
-      false,
       'literacy.phonics.blending'
     )
   $$,
@@ -452,6 +450,179 @@ select throws_ok(
   '42501',
   null,
   'Learner directly updating upvote_count on community answer rejected by tamper trigger (42501)'
+);
+
+-- -----------------------------------------------------------------------------
+-- 10. INSERT Tamper-Proofing on Questions & Answers (8 tests)
+-- -----------------------------------------------------------------------------
+-- Learner A attempting to explicitly specify upvote_count on question INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_questions (
+      id, author_id, title, body_markdown, status, upvote_count
+    ) values (
+      '00000000-0000-0000-0000-000000000502',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Question with forged upvotes',
+      'Body text for testing upvote forge on insert.',
+      'draft',
+      50
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community question with explicit upvote_count is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify view_count on question INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_questions (
+      id, author_id, title, body_markdown, status, view_count
+    ) values (
+      '00000000-0000-0000-0000-000000000503',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Question with forged views',
+      'Body text for testing view forge on insert.',
+      'draft',
+      100
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community question with explicit view_count is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify answer_count on question INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_questions (
+      id, author_id, title, body_markdown, status, answer_count
+    ) values (
+      '00000000-0000-0000-0000-000000000504',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Question with forged answers',
+      'Body text for testing answer count forge on insert.',
+      'draft',
+      10
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community question with explicit answer_count is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify created_at on question INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_questions (
+      id, author_id, title, body_markdown, status, created_at
+    ) values (
+      '00000000-0000-0000-0000-000000000505',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Question with forged timestamp',
+      'Body text for testing timestamp forge on insert.',
+      'draft',
+      '2020-01-01 00:00:00+00'::timestamptz
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community question with explicit created_at is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify is_accepted on answer INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status, is_accepted
+    ) values (
+      '00000000-0000-0000-0000-000000000506',
+      '00000000-0000-0000-0000-000000000103',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Forged accepted answer body text.',
+      'draft',
+      true
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community answer with explicit is_accepted is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify upvote_count on answer INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status, upvote_count
+    ) values (
+      '00000000-0000-0000-0000-000000000507',
+      '00000000-0000-0000-0000-000000000103',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Forged upvote answer body text.',
+      'draft',
+      25
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community answer with explicit upvote_count is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify is_ai_generated on answer INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status, is_ai_generated
+    ) values (
+      '00000000-0000-0000-0000-000000000508',
+      '00000000-0000-0000-0000-000000000103',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Forged AI flag answer body text.',
+      'draft',
+      true
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community answer with explicit is_ai_generated is rejected (42501)'
+);
+
+-- Learner A attempting to explicitly specify created_at on answer INSERT is blocked
+select throws_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status, created_at
+    ) values (
+      '00000000-0000-0000-0000-000000000509',
+      '00000000-0000-0000-0000-000000000103',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Forged timestamp answer body text.',
+      'draft',
+      '2020-01-01 00:00:00+00'::timestamptz
+    )
+  $$,
+  '42501',
+  null,
+  'Learner inserting community answer with explicit created_at is rejected (42501)'
+);
+
+-- -----------------------------------------------------------------------------
+-- 11. Trigger Function Execution Revocation (3 tests)
+-- -----------------------------------------------------------------------------
+select ok(
+  not has_function_privilege('authenticated', 'public.handle_community_answer_count()', 'execute'),
+  'Authenticated role has no EXECUTE privilege on handle_community_answer_count'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.prevent_community_question_tampering()', 'execute'),
+  'Authenticated role has no EXECUTE privilege on prevent_community_question_tampering'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.prevent_community_answer_tampering()', 'execute'),
+  'Authenticated role has no EXECUTE privilege on prevent_community_answer_tampering'
 );
 
 rollback;
