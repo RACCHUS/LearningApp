@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(96);
+select plan(102);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -36,6 +36,8 @@ select has_table('public', 'community_review_audit', 'Table public.community_rev
 select has_function('public', 'cast_community_vote', Array['text', 'uuid'], 'RPC cast_community_vote exists');
 select has_function('public', 'handle_community_answer_count', 'Trigger function handle_community_answer_count exists');
 select has_function('private', 'is_community_ugc_public_enabled', 'Function private.is_community_ugc_public_enabled exists');
+select has_column('public', 'community_review_audit', 'internal_notes', 'Table public.community_review_audit has internal_notes column');
+select has_function('public', 'fetch_my_submission_feedback', Array['uuid'], 'RPC fetch_my_submission_feedback exists');
 
 -- -----------------------------------------------------------------------------
 -- 2. Unauthenticated Access & Anonymous Read Permissions (2 tests)
@@ -658,8 +660,8 @@ select ok(
 reset role;
 
 -- Function existence checks (4 tests)
-select has_function('public', 'review_community_question', Array['uuid', 'text', 'text'], 'RPC review_community_question exists');
-select has_function('public', 'review_community_answer', Array['uuid', 'text', 'text'], 'RPC review_community_answer exists');
+select has_function('public', 'review_community_question', Array['uuid', 'text', 'text', 'text'], 'RPC review_community_question exists');
+select has_function('public', 'review_community_answer', Array['uuid', 'text', 'text', 'text'], 'RPC review_community_answer exists');
 select has_function('public', 'accept_community_answer', Array['uuid'], 'RPC accept_community_answer exists');
 select has_function('public', 'seed_pilot_community_faqs', Array['uuid'], 'RPC seed_pilot_community_faqs exists');
 
@@ -743,7 +745,7 @@ select throws_ok(
 
 -- Moderator can archive learner question (1 test)
 select lives_ok(
-  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'archive', 'Archived due to UGC gate') $$,
+  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'archive', 'Archived due to UGC gate', 'Internal note: awaiting pilot launch') $$,
   'Moderator archiving learner question succeeds'
 );
 
@@ -755,9 +757,9 @@ select is(
 
 -- Durable audit trail check for question review (1 test)
 select is(
-  (select count(*)::integer from public.community_review_audit where target_type = 'question' and target_id = '00000000-0000-0000-0000-000000000601' and action = 'archive' and notes = 'Archived due to UGC gate'),
+  (select count(*)::integer from public.community_review_audit where target_type = 'question' and target_id = '00000000-0000-0000-0000-000000000601' and action = 'archive' and notes = 'Archived due to UGC gate' and internal_notes = 'Internal note: awaiting pilot launch'),
   1,
-  'Append-only review audit record created for question review'
+  'Append-only review audit record created for question review with internal_notes'
 );
 
 -- Moderator creates second draft answer on published seeded question 201
@@ -852,6 +854,41 @@ select throws_ok(
   null,
   'Direct insert to community_review_audit by authenticated learner is revoked (42501)'
 );
+
+-- 13. Learner Decision Feedback Query RPC (4 tests)
+-- Learner A retrieves own feedback for archived question 601
+select is(
+  (select count(*)::integer from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid)),
+  1,
+  'Learner A can retrieve feedback for their own rejected/archived question'
+);
+
+select is(
+  (select feedback from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid)),
+  'Archived due to UGC gate',
+  'Learner A receives author-facing notes without reviewer_id or internal_notes exposure'
+);
+
+-- Learner B cannot view Learner A submission feedback (tenant isolation)
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000003', true);
+select is(
+  (select count(*)::integer from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid)),
+  0,
+  'Learner B cannot see feedback for Learner A question'
+);
+
+-- Anon cannot view submission feedback (execute revoked from anon)
+set local role anon;
+select throws_ok(
+  $$ select * from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid) $$,
+  '42501',
+  null,
+  'Anon calling fetch_my_submission_feedback is rejected with 42501'
+);
+
+-- Restore authenticated role as Learner A for subsequent tests
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
 
 -- Seeding RPC authorization check: learner cannot call seed_pilot_community_faqs (1 test)
 select throws_ok(
