@@ -312,7 +312,7 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
                 key: const Key('submit-reviewed-drill-step'),
                 onPressed: _working ? null : _submit,
                 child: Text(_pendingEventId != null
-                    ? 'Retry scoring' : recorder.hasPendingWrite
+                    ? 'Retry scoring' : recorder!.hasPendingWrite
                     ? 'Retry saving step' : _selected == null
                     ? 'Skip and record step' : 'Save and check response'),
               ),
