@@ -89,11 +89,13 @@ class ExamPartPracticeHistoryService {
     if (targetVersionId.isEmpty || examPartKey.isEmpty) {
       throw ArgumentError('Exact target version and part required for erasure.');
     }
-    await _client.from('exam_part_practice_attempts')
-        .delete()
-        .eq('owner_id', expectedOwnerId)
-        .eq('target_version_id', targetVersionId)
-        .eq('exam_part_key', examPartKey);
+    // Deletes the server-issued assignment as well as the scored row in
+    // one transaction; a late identical submit cannot recreate erased data.
+    // Caller-facing UI confirmation and account-wide erasure remain gated.
+    await _client.rpc('exm03_erase_part_attempts', params: {
+      'p_target_version_id': targetVersionId,
+      'p_exam_part_key': examPartKey,
+    });
     _requireOwner(expectedOwnerId);
   }
 }
