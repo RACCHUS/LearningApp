@@ -49,7 +49,7 @@ set search_path = ''
 as $$
 declare
   v_caller_id uuid;
-  v_question record;
+  v_current_status text;
   v_new_status text;
 begin
   v_caller_id := auth.uid();
@@ -63,7 +63,7 @@ begin
       using errcode = '22023';
   end if;
 
-  select * into v_question
+  select status into v_current_status
     from public.community_questions
    where id = p_question_id
      for update;
@@ -91,7 +91,9 @@ begin
     'success', true,
     'question_id', p_question_id,
     'action', p_action,
-    'status', v_new_status
+    'previous_status', v_current_status,
+    'status', v_new_status,
+    'notes', p_notes
   );
 end;
 $$;
@@ -166,7 +168,8 @@ begin
     'success', true,
     'answer_id', p_answer_id,
     'action', p_action,
-    'status', v_new_status
+    'status', v_new_status,
+    'notes', p_notes
   );
 end;
 $$;
