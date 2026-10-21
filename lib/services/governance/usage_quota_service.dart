@@ -48,8 +48,12 @@ class UsageQuotaService {
           aiTokensDailyLimit: 15000,
           ttsCharsUsedToday: 0,
           ttsCharsDailyLimit: 10000,
+          sttSecondsUsedToday: 0,
+          sttSecondsDailyLimit: 3600,
           storageBytesUsed: 0,
           storageBytesLimit: 52428800,
+          eventsRecordedToday: 0,
+          eventsDailyLimit: 1000,
           windowResetAt: DateTime.now().add(const Duration(days: 1)),
           updatedAt: DateTime.now(),
         );
@@ -121,6 +125,12 @@ class UsageQuotaService {
   bool shouldFallbackToOnDeviceTts(UsageQuota? quota) {
     if (quota == null) return true; // Guests default to local Web Speech
     return quota.isTtsLow || quota.ttsCharsRemaining <= 0;
+  }
+
+  /// Determines whether STT should gracefully degrade to on-device speech recognition.
+  bool shouldFallbackToOnDeviceStt(UsageQuota? quota) {
+    if (quota == null) return true; // Guests default to local speech recognition
+    return quota.isSttLow || quota.sttSecondsRemaining <= 0;
   }
 
   void dispose() {

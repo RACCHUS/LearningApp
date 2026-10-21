@@ -61,6 +61,7 @@ void main() {
         since: DateTime.parse('2026-10-21T00:00:00Z'),
         totalAiTokens: 45000,
         totalTtsChars: 25000,
+        totalSttSeconds: 180,
         totalStorageBytes: 15728640, // 15 MB
         activeUsers: 8,
         totalEvents: 34,
@@ -92,8 +93,12 @@ void main() {
       expect(find.text('45000'), findsOneWidget);
       expect(find.text('TTS Characters'), findsOneWidget);
       expect(find.text('25000'), findsOneWidget);
+      expect(find.text('STT Audio Processed'), findsOneWidget);
+      expect(find.text('180s'), findsOneWidget);
       expect(find.text('Storage Stored'), findsOneWidget);
       expect(find.text('15.0 MB'), findsOneWidget);
+      expect(find.text('Abuse Prevention'), findsOneWidget);
+      expect(find.text('Hardened'), findsOneWidget);
     });
   });
 }
