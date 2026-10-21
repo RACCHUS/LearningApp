@@ -45,7 +45,9 @@ class _DiagnosticReportScreenState
 
   @override
   Widget build(BuildContext context) {
-    final learnerId = ref.watch(learnerIdProvider);
+    final learnerId = _report.learnerId == null
+        ? null
+        : ref.watch(learnerIdProvider);
     if (_report.learnerId != null && _report.learnerId != learnerId) {
       // An old report must not be visible to the next signed-in account.
       return const Scaffold(
