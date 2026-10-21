@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(94);
+select plan(96);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -964,6 +964,33 @@ select is(
   (select title from public.community_questions where concept_id = 'workplace.safety.fire'),
   'What is the PASS method for operating a portable fire extinguisher?',
   'workplace.safety.fire updated in-place to latest title'
+);
+
+-- Security Hardening: Learner private draft matching a seed FAQ title is NOT hijacked during seeding (2 tests)
+insert into public.community_questions (
+  id, author_id, title, body_markdown, status, is_seeded, concept_id
+) values (
+  '00000000-0000-0000-0000-000000000701',
+  '7f7c1a20-0000-4000-8000-000000000002',
+  'What is the CVC pattern in phonics and how is it taught?',
+  'My private notes on CVC pattern',
+  'draft',
+  false,
+  'test.learner.cvc'
+) on conflict (id) do nothing;
+
+select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid);
+
+select is(
+  (select is_seeded from public.community_questions where id = '00000000-0000-0000-0000-000000000701'),
+  false,
+  'Learner draft with matching seed title is NOT converted to is_seeded = true'
+);
+
+select is(
+  (select status from public.community_questions where id = '00000000-0000-0000-0000-000000000701'),
+  'draft',
+  'Learner draft retains its original draft status and is not published'
 );
 
 rollback;

@@ -48,9 +48,6 @@ class CommunityQaService {
           .map((row) => CommunityQuestion.fromJson(row as Map<String, dynamic>))
           .toList();
 
-      if (result.isEmpty) {
-        return _getOfflineSeedFaqs(conceptId: conceptId, targetId: targetId, lessonId: lessonId);
-      }
       return result;
     } catch (e, st) {
       _logger.warn('Failed to fetch seed FAQs, falling back to offline defaults: $e', error: e, stackTrace: st);
@@ -368,8 +365,8 @@ class CommunityQaService {
       CommunityQuestion(
         id: 'seed-faq-006',
         authorId: 'offline-demo',
-        title: 'How does the split vowel digraph or silent-e rule function?',
-        bodyMarkdown: 'What is the phonetic mechanic behind the final silent-e in words like "cake", "ride", and "rope"?',
+        title: 'How does the silent-e (split digraph) change vowel sounds in English?',
+        bodyMarkdown: 'What is the phonics principle behind the "magic e" or silent-e pattern in words like "hop" vs "hope"?',
         status: 'published',
         isSeeded: true,
         conceptId: 'literacy.silent_e',
@@ -384,8 +381,8 @@ class CommunityQaService {
       CommunityQuestion(
         id: 'seed-faq-007',
         authorId: 'offline-demo',
-        title: 'What are the standard OSHA requirements for Personal Protective Equipment (PPE)?',
-        bodyMarkdown: 'Under OSHA general industry guidelines, when must an employer provide PPE and what gear is mandated?',
+        title: 'What are the five levels of the Hierarchy of Controls in workplace safety?',
+        bodyMarkdown: 'Under NIOSH and OSHA standards, how should employers prioritize hazard mitigation methods?',
         status: 'published',
         isSeeded: true,
         conceptId: 'workplace.safety.ppe',
@@ -398,8 +395,8 @@ class CommunityQaService {
       CommunityQuestion(
         id: 'seed-faq-008',
         authorId: 'offline-demo',
-        title: 'What information must be included in a Safety Data Sheet (SDS) under GHS?',
-        bodyMarkdown: 'How is an OSHA Hazard Communication Safety Data Sheet structured, and which sections are critical for immediate chemical spills?',
+        title: 'What information must be included on an OSHA-compliant GHS chemical safety label?',
+        bodyMarkdown: 'What are the mandatory elements required on hazardous chemical container labels under OSHA HazCom 2012?',
         status: 'published',
         isSeeded: true,
         conceptId: 'workplace.safety.hazcom',
@@ -412,8 +409,8 @@ class CommunityQaService {
       CommunityQuestion(
         id: 'seed-faq-009',
         authorId: 'offline-demo',
-        title: 'What does the PASS acronym stand for when operating a fire extinguisher?',
-        bodyMarkdown: 'What is the proper procedural technique for safely deploying a portable workplace fire extinguisher?',
+        title: 'What is the PASS method for operating a portable fire extinguisher?',
+        bodyMarkdown: 'What four-step sequence should workers follow when using a portable fire extinguisher during an incipient-stage fire?',
         status: 'published',
         isSeeded: true,
         conceptId: 'workplace.safety.fire',
@@ -554,8 +551,13 @@ class CommunityQaService {
     ];
 
     if (conceptId != null && conceptId.isNotEmpty) {
-      final filtered = allSeeds.where((q) => q.conceptId == conceptId).toList();
-      return filtered.isNotEmpty ? filtered : allSeeds;
+      return allSeeds.where((q) => q.conceptId == conceptId).toList();
+    }
+    if (targetId != null && targetId.isNotEmpty) {
+      return allSeeds.where((q) => q.targetId == targetId).toList();
+    }
+    if (lessonId != null && lessonId.isNotEmpty) {
+      return allSeeds.where((q) => q.lessonId == lessonId).toList();
     }
     return allSeeds;
   }
