@@ -204,3 +204,29 @@ final diagnosticSessionProvider = StateNotifierProvider.autoDispose.family<
   final service = ref.watch(diagnosticAssessmentServiceProvider);
   return DiagnosticSessionNotifier(service, key);
 });
+
+/// Separate scoped providers avoid accidental reuse of whole-target caches.
+/// These are not wired to learner launch until part-specific review gates pass.
+typedef ExamPartDiagnosticKey = ({
+  String targetId,
+  String targetVersionId,
+  String examPartKey,
+});
+
+final examPartDiagnosticAvailabilityProvider = FutureProvider.autoDispose
+    .family<DiagnosticAvailability, ExamPartDiagnosticKey>((ref, key) async {
+  return ref.watch(diagnosticAssessmentServiceProvider).getAvailability(
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+});
+
+final examPartDiagnosticItemsProvider = FutureProvider.autoDispose
+    .family<List<DiagnosticAssessmentItem>, ExamPartDiagnosticKey>((ref, key) async {
+  return ref.watch(diagnosticAssessmentServiceProvider).generatePreAssessment(
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+});
