@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(13);
+select plan(22);
 
 insert into auth.users (id,email) values
  ('d3180000-0000-4000-8000-000000000001','exm03-graded-a@example.invalid')
@@ -92,6 +92,74 @@ begin
 end
 $fixture$;
 
+-- Real Supabase auth session ownership is required in addition to JWT.
+-- These synthetic sessions and their issued assignments roll back with pgTAP.
+insert into auth.sessions (id,user_id) values
+ ('d3210000-0000-4000-8000-000000000001',
+  'd3180000-0000-4000-8000-000000000001');
+
+select ok(not has_function_privilege('anon',
+  'public.exm03_issue_assigned_practice(uuid,text)','EXECUTE'),
+  'Unsigned clients cannot request part assignments');
+select ok(has_function_privilege('authenticated',
+  'public.exm03_issue_assigned_practice(uuid,text)','EXECUTE'),
+  'Only authenticated learners can request scoped educational practice');
+
+set local role authenticated;
+do $issuer_jwt$
+begin
+ perform set_config('request.jwt.claim.sub',
+ 'd3180000-0000-4000-8000-000000000001',true);
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000001","role":"authenticated",
+ "is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
+end
+$issuer_jwt$;
+
+select throws_ok($q$
+ select public.exm03_issue_assigned_practice(
+  'd3160000-0000-4000-8000-000000000001','part_b')
+$q$,'42501',null,'Issuer rejects unconfigured Part B without fallback');
+
+create temp table exm03_issued as
+select public.exm03_issue_assigned_practice(
+ 'd3160000-0000-4000-8000-000000000001','part_a') result;
+select is((select (result->>'question_count')::int from exm03_issued),6,
+ 'Server selects exactly six reviewed canonical Part A questions');
+select ok((select not (result::text like '%correct_index%')
+ and not (result::text like '%scoring_spec%')
+ and not (result::text like '%sha256%')
+ from exm03_issued),
+ 'Issuer never exposes scores, correct answers or item hashes');
+-- The learner must NOT read the private assignment table to verify issuance.
+select ok((select (result->>'assignment_id') is not null from exm03_issued),
+ 'Authenticated issuer returns only the opaque new assignment identifier');
+select is((select (public.exm03_issue_assigned_practice(
+ 'd3160000-0000-4000-8000-000000000001','part_a')
+ ->>'question_count')::int),6,
+ 'Second bounded assignment is permitted for same learner');
+select throws_ok($q$
+ select public.exm03_issue_assigned_practice(
+ 'd3160000-0000-4000-8000-000000000001','part_a')
+$q$,'42501',null,
+ 'Third pending assignment is denied by concurrent issuance bound');
+
+-- A changed/invalid session cannot borrow an existing owner's Auth identity.
+do $revoked$
+begin
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000001","role":"authenticated",
+ "is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000099"}',true);
+end
+$revoked$;
+select throws_ok($q$
+ select public.exm03_issue_assigned_practice(
+ 'd3160000-0000-4000-8000-000000000001','part_a')
+$q$,'42501',null,'Revoked or nonexistent session cannot issue attempts');
+reset role;
+
 insert into public.exam_part_practice_assignments (
  id,owner_id,target_id,target_version_id,exam_part_key,
  curriculum_root_node_id,manifest_revision_id,practice_kind,
@@ -111,7 +179,8 @@ where i.origin_target_version_id =
   'd3160000-0000-4000-8000-000000000001'::uuid;
 
 select is((select count(*)::integer from public.exam_part_practice_assignments
-  where exam_part_key='part_a'),1,'One immutable part assignment is issued');
+  where exam_part_key='part_a'),3,
+ 'Two pending and one scored test assignment were issued');
 select throws_ok($q$
  select public.exm03_record_assigned_practice(
  'd3200000-0000-4000-8000-000000000001','{}'::jsonb)
@@ -158,8 +227,8 @@ do $jwt$ begin
  perform set_config('request.jwt.claims','{"is_anonymous":false}',true);
 end $jwt$;
 select is(public.exm03_erase_part_attempts(
- 'd3160000-0000-4000-8000-000000000001','part_a'),1,
- 'Owner erasure deletes issued assignment and related score atomically');
+ 'd3160000-0000-4000-8000-000000000001','part_a'),3,
+ 'Owner erasure deletes two pending and one scored assignment atomically');
 reset role;
 select is((select count(*)::integer from public.exam_part_practice_attempts),0,
  'Erasure eliminates graded attempts');
