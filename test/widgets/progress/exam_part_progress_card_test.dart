@@ -111,7 +111,7 @@ void main() {
     expect(find.text('0 of 2 part core concepts assessed'), findsOneWidget);
     expect(find.text('2 of 4 part core concepts assessed'), findsNothing);
     expect(find.byKey(const Key('exam-part-start-diagnostic')), findsOneWidget);
-    expect(find.textContaining('not saved exam attempts'), findsOneWidget);
+    expect(find.textContaining('Saved R1–R4 reference drills'), findsOneWidget);
   });
 
   testWidgets('account switch resets selected part and hides old knowledge',
