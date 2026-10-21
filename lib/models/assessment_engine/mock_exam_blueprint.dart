@@ -3,11 +3,16 @@ import '../assessment_item.dart';
 /// Specifies the blueprint and weighting constraints for generating a mock exam.
 class MockExamBlueprint {
   final String targetVersionId;
+  /// Null means legacy target-wide educational practice.
+  final String? examPartKey;
+  final String? curriculumRootNodeId;
   final String examCode;
   final String title;
+  /// Configurable practice countdown; never an official exam duration by itself.
   final int timeLimitMinutes;
-  final int officialPassingScore;
-  final String officialScoreScale;
+  /// Unverified legacy exam metadata is not displayed as official exam facts.
+  final int? officialPassingScore;
+  final String? officialScoreScale;
   final int defaultQuestionCount;
   final List<DomainWeightConstraint> domainWeights;
   final Map<String, double> difficultyDistribution;
@@ -17,11 +22,13 @@ class MockExamBlueprint {
 
   const MockExamBlueprint({
     required this.targetVersionId,
+    this.examPartKey,
+    this.curriculumRootNodeId,
     required this.examCode,
     required this.title,
     this.timeLimitMinutes = 90,
-    this.officialPassingScore = 750,
-    this.officialScoreScale = '100-900',
+    this.officialPassingScore,
+    this.officialScoreScale,
     this.defaultQuestionCount = 50,
     required this.domainWeights,
     this.difficultyDistribution = const {
@@ -145,11 +152,13 @@ class MockExamBlueprint {
 
     return MockExamBlueprint(
       targetVersionId: json['target_version_id'] as String? ?? '',
+      examPartKey: json['exam_part_key'] as String?,
+      curriculumRootNodeId: json['curriculum_root_node_id'] as String?,
       examCode: json['exam_code'] as String? ?? '',
       title: json['title'] as String? ?? 'Mock Exam',
       timeLimitMinutes: (json['time_limit_minutes'] as num?)?.toInt() ?? 90,
-      officialPassingScore: (json['official_passing_score'] as num?)?.toInt() ?? 750,
-      officialScoreScale: json['official_score_scale'] as String? ?? '100-900',
+      officialPassingScore: (json['official_passing_score'] as num?)?.toInt(),
+      officialScoreScale: json['official_score_scale'] as String?,
       defaultQuestionCount: (json['default_question_count'] as num?)?.toInt() ?? 50,
       domainWeights: domainList,
       difficultyDistribution: difficultyDistribution,
@@ -162,6 +171,8 @@ class MockExamBlueprint {
 
   Map<String, dynamic> toJson() => {
         'target_version_id': targetVersionId,
+        'exam_part_key': examPartKey,
+        'curriculum_root_node_id': curriculumRootNodeId,
         'exam_code': examCode,
         'title': title,
         'time_limit_minutes': timeLimitMinutes,
