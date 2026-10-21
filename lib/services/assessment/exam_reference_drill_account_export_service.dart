@@ -31,8 +31,7 @@ class ReferencePracticeAccountExport {
   int get skipped =>
       events.where((e) => !e.responded).length;
 
-  /// Explicitly labelled as an EXM subsystem export, NOT all app data.
-  String toJsonExport() => const JsonEncoder.withIndent('  ').convert({
+  Map<String, dynamic> _metadata() => {
     'format': 'learningapp-exm-reference-practice-account-v1',
     'scope': 'reference-practice-all-editions',
     'owner_auth_uid': ownerId,
@@ -45,8 +44,28 @@ class ReferencePracticeAccountExport {
         'Older editions are historical evidence, not current book lists. '
         'Times and physical reference use are not independently verified. '
         'Graded selections do not predict an official passing score.',
+  };
+
+  /// Legacy clipboard export; produces one large string. Use
+  /// [toJsonExportChunks] for browser file downloads to reduce peak heap use.
+  String toJsonExport() => const JsonEncoder.withIndent('  ').convert({
+    ..._metadata(),
     'steps': [for (final event in events) event.toExport()],
   });
+
+  /// JSON file output without materializing a second list of every step map
+  /// or assembling one giant JSON string in the Dart heap.
+  /// Uses the same strict event.toExport() allowlist as clipboard output.
+  Iterable<String> toJsonExportChunks() sync* {
+    final header = jsonEncode(_metadata());
+    // The header is always a JSON object; append the steps array at its end.
+    yield '${header.substring(0, header.length - 1)},"steps":[';
+    for (var i = 0; i < events.length; i++) {
+      if (i != 0) yield ',';
+      yield jsonEncode(events[i].toExport());
+    }
+    yield ']}';
+  }
 }
 
 class ExamReferenceDrillAccountExportService {
