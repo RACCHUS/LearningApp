@@ -226,8 +226,8 @@ do $jwt$ begin
  perform set_config('request.jwt.claims','{"is_anonymous":false}',true);
 end $jwt$;
 select is(public.exm03_erase_part_attempts(
- 'd3160000-0000-4000-8000-000000000001','part_a'),1,
- 'Owner erasure deletes issued assignment and related score atomically');
+ 'd3160000-0000-4000-8000-000000000001','part_a'),3,
+ 'Owner erasure deletes two pending and one scored assignment atomically');
 reset role;
 select is((select count(*)::integer from public.exam_part_practice_attempts),0,
  'Erasure eliminates graded attempts');
