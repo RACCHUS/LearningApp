@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(51);
+select plan(67);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -623,6 +623,146 @@ select ok(
 select ok(
   not has_function_privilege('authenticated', 'public.prevent_community_answer_tampering()', 'execute'),
   'Authenticated role has no EXECUTE privilege on prevent_community_answer_tampering'
+);
+
+-- -----------------------------------------------------------------------------
+-- 12. ECO-02 Moderator Review Workflow & FAQ Seeding (14 tests)
+-- -----------------------------------------------------------------------------
+reset role;
+
+-- Function existence checks (4 tests)
+select has_function('public', 'review_community_question', Array['uuid', 'text', 'text'], 'RPC review_community_question exists');
+select has_function('public', 'review_community_answer', Array['uuid', 'text', 'text'], 'RPC review_community_answer exists');
+select has_function('public', 'accept_community_answer', Array['uuid'], 'RPC accept_community_answer exists');
+select has_function('public', 'seed_pilot_community_faqs', Array['uuid'], 'RPC seed_pilot_community_faqs exists');
+
+-- Provision moderator user
+insert into auth.users (id, email) values
+  ('7f7c1a20-0000-4000-8000-000000000004', 'qa-moderator@example.invalid')
+on conflict (id) do nothing;
+
+insert into public.users (id, email) values
+  ('7f7c1a20-0000-4000-8000-000000000004', 'qa-moderator@example.invalid')
+on conflict (id) do nothing;
+
+insert into public.moderation_roles (user_id, role, granted_by)
+values ('7f7c1a20-0000-4000-8000-000000000004', 'moderator', '7f7c1a20-0000-4000-8000-000000000001')
+on conflict (user_id) do update set role = 'moderator';
+
+-- Test question for review workflow
+insert into public.community_questions (
+  id, author_id, title, body_markdown, status
+) values (
+  '00000000-0000-0000-0000-000000000601',
+  '7f7c1a20-0000-4000-8000-000000000002',
+  'Question awaiting review',
+  'Learner A submitted this question for educator review.',
+  'under_review'
+) on conflict (id) do nothing;
+
+-- Non-moderator learner calling review_community_question throws 42501 (1 test)
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
+
+select throws_ok(
+  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'publish') $$,
+  '42501',
+  null,
+  'Non-moderator cannot call review_community_question (42501)'
+);
+
+-- Non-moderator learner calling review_community_answer throws 42501 (1 test)
+select throws_ok(
+  $$ select public.review_community_answer('00000000-0000-0000-0000-000000000301'::uuid, 'publish') $$,
+  '42501',
+  null,
+  'Non-moderator cannot call review_community_answer (42501)'
+);
+
+-- Non-author, non-moderator calling accept_community_answer throws 42501 (1 test)
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000003', true);
+select throws_ok(
+  $$ select public.accept_community_answer('00000000-0000-0000-0000-000000000301'::uuid) $$,
+  '42501',
+  null,
+  'Non-author, non-moderator learner cannot accept answers (42501)'
+);
+
+-- Switch to Moderator session
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000004', true);
+
+-- Moderator can SELECT under-review questions by other users via RLS (1 test)
+select is(
+  (select count(*)::integer from public.community_questions where id = '00000000-0000-0000-0000-000000000601'),
+  1,
+  'Moderator can select under_review question authored by another learner'
+);
+
+-- Invalid review action throws 22023 (1 test)
+select throws_ok(
+  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'invalid_action') $$,
+  '22023',
+  null,
+  'Invalid question review action rejected with 22023'
+);
+
+-- Moderator publishing question succeeds (1 test)
+select lives_ok(
+  $$ select public.review_community_question('00000000-0000-0000-0000-000000000601'::uuid, 'publish') $$,
+  'Moderator publishing question succeeds'
+);
+
+select is(
+  (select status from public.community_questions where id = '00000000-0000-0000-0000-000000000601'),
+  'published',
+  'Question status transitioned to published'
+);
+
+-- Moderator creates second draft answer on published question 201
+insert into public.community_answers (
+  id, question_id, author_id, body_markdown, status, is_accepted
+) values (
+  '00000000-0000-0000-0000-000000000602',
+  '00000000-0000-0000-0000-000000000201',
+  '7f7c1a20-0000-4000-8000-000000000004',
+  'Second verified explanatory answer submitted for review.',
+  'under_review',
+  false
+) on conflict (id) do nothing;
+
+-- Moderator publishes the answer via review_community_answer (1 test)
+select lives_ok(
+  $$ select public.review_community_answer('00000000-0000-0000-0000-000000000602'::uuid, 'publish') $$,
+  'Moderator publishing under-review answer succeeds'
+);
+
+-- Question author accepts second answer (1 test)
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$ select public.accept_community_answer('00000000-0000-0000-0000-000000000602'::uuid) $$,
+  'Question author can accept published answer'
+);
+
+-- Single accepted answer invariant: 301 was accepted, now 602 is accepted and 301 is not (2 tests)
+select is(
+  (select is_accepted from public.community_answers where id = '00000000-0000-0000-0000-000000000602'),
+  true,
+  'Newly accepted answer has is_accepted = true'
+);
+
+select is(
+  (select is_accepted from public.community_answers where id = '00000000-0000-0000-0000-000000000301'),
+  false,
+  'Previously accepted answer automatically transitioned to is_accepted = false'
+);
+
+-- Pilot FAQ Seeding RPC execution by Admin (1 test)
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+
+select ok(
+  (select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid)) >= 18,
+  'Admin calling seed_pilot_community_faqs successfully seeds at least 18 reference FAQs'
 );
 
 rollback;
