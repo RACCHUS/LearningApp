@@ -12,6 +12,8 @@ class CommunityAnswer {
   final bool isAiGenerated;
   final String? aiModelName;
   final bool isAccepted;
+  final bool isSeeded;
+  final String? seedKey;
   final String status; // 'draft', 'under_review', 'published', 'archived', 'flagged'
   final int upvoteCount;
   final DateTime createdAt;
@@ -25,6 +27,8 @@ class CommunityAnswer {
     this.isAiGenerated = false,
     this.aiModelName,
     this.isAccepted = false,
+    this.isSeeded = false,
+    this.seedKey,
     this.status = 'published',
     this.upvoteCount = 0,
     required this.createdAt,
@@ -43,6 +47,8 @@ class CommunityAnswer {
       isAiGenerated: json['is_ai_generated'] as bool? ?? false,
       aiModelName: json['ai_model_name'] as String?,
       isAccepted: json['is_accepted'] as bool? ?? false,
+      isSeeded: json['is_seeded'] as bool? ?? false,
+      seedKey: json['seed_key'] as String?,
       status: json['status'] as String? ?? 'published',
       upvoteCount: json['upvote_count'] as int? ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -59,6 +65,8 @@ class CommunityAnswer {
       'is_ai_generated': isAiGenerated,
       if (aiModelName != null) 'ai_model_name': aiModelName,
       'is_accepted': isAccepted,
+      'is_seeded': isSeeded,
+      if (seedKey != null) 'seed_key': seedKey,
       'status': status,
       'upvote_count': upvoteCount,
       'created_at': createdAt.toIso8601String(),
@@ -74,6 +82,8 @@ class CommunityAnswer {
     bool? isAiGenerated,
     String? aiModelName,
     bool? isAccepted,
+    bool? isSeeded,
+    String? seedKey,
     String? status,
     int? upvoteCount,
     DateTime? createdAt,
@@ -87,6 +97,8 @@ class CommunityAnswer {
       isAiGenerated: isAiGenerated ?? this.isAiGenerated,
       aiModelName: aiModelName ?? this.aiModelName,
       isAccepted: isAccepted ?? this.isAccepted,
+      isSeeded: isSeeded ?? this.isSeeded,
+      seedKey: seedKey ?? this.seedKey,
       status: status ?? this.status,
       upvoteCount: upvoteCount ?? this.upvoteCount,
       createdAt: createdAt ?? this.createdAt,

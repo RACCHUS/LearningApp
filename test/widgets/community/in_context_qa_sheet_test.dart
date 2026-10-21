@@ -248,6 +248,41 @@ void main() {
       expect(iconButton.tooltip, 'Voting disabled for offline preview');
     });
 
+    testWidgets('displays Offline Example Answer label for offline demo answers', (tester) async {
+      final offlineDemoAnswers = {
+        'seed-faq-001': [
+          CommunityAnswer(
+            id: 'ans-demo-1',
+            questionId: 'seed-faq-001',
+            authorId: 'offline-demo',
+            bodyMarkdown: 'A CVC word is composed of a Consonant, Short Vowel, and Consonant.',
+            isAccepted: true,
+            status: 'published',
+            upvoteCount: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ],
+      };
+
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: offlineDemoSeed,
+          fakeDrafts: [],
+          fakeAnswers: offlineDemoAnswers,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Expand the question
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Offline Example Answer:'), findsOneWidget);
+      expect(find.text('Official Answer:'), findsNothing);
+      expect(find.text('Accepted Answer:'), findsNothing);
+    });
+
     testWidgets('distinguishes accepted answers from unreviewed community answers', (tester) async {
       final fakeAnswers = {
         'faq-1': [

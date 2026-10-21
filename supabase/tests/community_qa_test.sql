@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(79);
+select plan(94);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -126,6 +126,28 @@ select throws_ok(
   'Direct insert to community_votes by authenticated client is revoked (42501)'
 );
 
+-- Direct table-level write operations on community_config by authenticated user are revoked (3 tests)
+select throws_ok(
+  $$ insert into public.community_config (key, value) values ('test_key', true) $$,
+  '42501',
+  null,
+  'Direct INSERT on community_config by authenticated user is revoked (42501)'
+);
+
+select throws_ok(
+  $$ update public.community_config set value = true where key = 'public_ugc_enabled' $$,
+  '42501',
+  null,
+  'Direct UPDATE on community_config by authenticated user is revoked (42501)'
+);
+
+select throws_ok(
+  $$ delete from public.community_config where key = 'public_ugc_enabled' $$,
+  '42501',
+  null,
+  'Direct DELETE on community_config by authenticated user is revoked (42501)'
+);
+
 -- -----------------------------------------------------------------------------
 -- 4. Admin Question Seeding & Publishing (3 tests)
 -- -----------------------------------------------------------------------------
@@ -142,7 +164,7 @@ select lives_ok(
       'A CVC word is a three-letter word following the Consonant-Vowel-Consonant pattern.',
       'published',
       true,
-      'literacy.cvc.basics'
+      'test.synthetic.cvc'
     )
   $$,
   'Admin successfully seeds and publishes official FAQ question'
@@ -152,13 +174,14 @@ select lives_ok(
 select lives_ok(
   $$
     insert into public.community_answers (
-      id, question_id, author_id, body_markdown, is_ai_generated, is_accepted, status
+      id, question_id, author_id, body_markdown, is_ai_generated, is_accepted, is_seeded, status
     ) values (
       '00000000-0000-0000-0000-000000000301',
       '00000000-0000-0000-0000-000000000201',
       '7f7c1a20-0000-4000-8000-000000000001',
       'Examples of CVC words include cat, dog, and sun. They are foundational for emergent readers.',
       false,
+      true,
       true,
       'published'
     )
@@ -251,13 +274,14 @@ select lives_ok(
 select lives_ok(
   $$
     insert into public.community_answers (
-      id, question_id, author_id, body_markdown, status
+      id, question_id, author_id, body_markdown, status, is_seeded
     ) values (
       '00000000-0000-0000-0000-000000000402',
       '00000000-0000-0000-0000-000000000401',
       '7f7c1a20-0000-4000-8000-000000000001',
       'Answer to an unpublished draft question.',
-      'published'
+      'published',
+      true
     )
   $$,
   'Admin creates answer on draft question'
@@ -738,20 +762,52 @@ select is(
 
 -- Moderator creates second draft answer on published seeded question 201
 insert into public.community_answers (
-  id, question_id, author_id, body_markdown, status, is_accepted
+  id, question_id, author_id, body_markdown, status, is_accepted, is_seeded
 ) values (
   '00000000-0000-0000-0000-000000000602',
   '00000000-0000-0000-0000-000000000201',
   '7f7c1a20-0000-4000-8000-000000000004',
   'Second verified explanatory answer submitted for review.',
   'under_review',
+  false,
   false
 ) on conflict (id) do nothing;
 
--- Moderator publishes the answer via review_community_answer (seeded parent question allows publishing) (1 test)
+-- UGC Launch Gate: Moderator cannot publish non-seeded answer even on seeded question while public UGC is disabled (1 test)
+select throws_ok(
+  $$ select public.review_community_answer('00000000-0000-0000-0000-000000000602'::uuid, 'publish', 'Verified educator explanation') $$,
+  '22000',
+  null,
+  'Moderator cannot publish learner answer on seeded FAQ while public UGC launch gate is closed (22000)'
+);
+
+-- Trigger enforcement: Direct admin UPDATE to published on non-seeded answer is blocked by trigger (1 test)
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+select throws_ok(
+  $$ update public.community_answers set status = 'published' where id = '00000000-0000-0000-0000-000000000602' $$,
+  '22000',
+  null,
+  'Direct admin UPDATE to published on non-seeded answer is blocked by trigger (22000)'
+);
+
+-- Trigger enforcement: Direct admin UPDATE to published on non-seeded question is blocked by trigger (1 test)
+select throws_ok(
+  $$ update public.community_questions set status = 'published' where id = '00000000-0000-0000-0000-000000000601' $$,
+  '22000',
+  null,
+  'Direct admin UPDATE to published on non-seeded question is blocked by trigger (22000)'
+);
+
+-- Admin marks answer 602 as seeded (trusted platform-curated content)
+update public.community_answers set is_seeded = true where id = '00000000-0000-0000-0000-000000000602';
+
+-- Moderator session
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000004', true);
+
+-- Moderator publishes the now-seeded answer via review_community_answer (1 test)
 select lives_ok(
   $$ select public.review_community_answer('00000000-0000-0000-0000-000000000602'::uuid, 'publish', 'Verified educator explanation') $$,
-  'Moderator publishing under-review answer for seeded question succeeds'
+  'Moderator publishing seeded under-review answer succeeds'
 );
 
 -- Durable audit trail check for answer review (1 test)
@@ -831,6 +887,83 @@ select is(
   (select count(*)::integer from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201' and answer_count <> 1),
   0,
   'All 18 seeded pilot FAQs have answer_count exactly equal to 1'
+);
+
+-- All 18 pilot FAQs have stable seed_key assigned (1 test)
+select is(
+  (select count(*)::integer from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201' and seed_key is not null),
+  18,
+  'All 18 seeded pilot FAQs have stable seed_key assigned'
+);
+
+-- All 18 accepted pilot answers have is_seeded = true and seed_key assigned (1 test)
+select is(
+  (select count(*)::integer from public.community_answers a join public.community_questions q on q.id = a.question_id where q.is_seeded = true and q.id <> '00000000-0000-0000-0000-000000000201' and a.is_accepted = true and a.is_seeded = true and a.seed_key is not null),
+  18,
+  'All 18 accepted pilot answers have is_seeded = true and seed_key assigned'
+);
+
+-- Full source attribution check across all 18 pilot answers (1 test)
+select is(
+  (select count(*)::integer from public.community_answers a join public.community_questions q on q.id = a.question_id where q.is_seeded = true and q.id <> '00000000-0000-0000-0000-000000000201' and a.is_accepted = true and a.body_markdown like '%Source:%' and a.body_markdown like '%Verified October 2026%' and a.body_markdown like '%Platform-curated%'),
+  18,
+  'All 18 accepted pilot answers have full Source attribution, October 2026 verification, and platform disclaimer'
+);
+
+-- Upgrade Idempotency from Migration 58 baseline (retitle 4 questions to old titles and rerun seeder) (6 tests)
+update public.community_questions
+   set title = 'How does the split vowel digraph or silent-e rule function?'
+ where concept_id = 'literacy.silent_e';
+
+update public.community_questions
+   set title = 'What are the standard OSHA requirements for Personal Protective Equipment (PPE)?'
+ where concept_id = 'workplace.safety.ppe';
+
+update public.community_questions
+   set title = 'What information must be included in a Safety Data Sheet (SDS) under GHS?'
+ where concept_id = 'workplace.safety.hazcom';
+
+update public.community_questions
+   set title = 'What does the PASS acronym stand for when operating a fire extinguisher?'
+ where concept_id = 'workplace.safety.fire';
+
+-- Rerun seeding function against simulated Migration 58 baseline: must return 0 new questions (1 test)
+select is(
+  (select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid)),
+  0,
+  'Seeding against Migration 58 baseline retitles in-place and returns 0 new questions'
+);
+
+-- Count of seeded questions remains exactly 18 (no duplicate questions created) (1 test)
+select is(
+  (select count(*)::integer from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201'),
+  18,
+  'Count of seeded questions remains exactly 18 after upgrade re-seeding'
+);
+
+-- Verify in-place retitling of all 4 records (4 tests)
+select is(
+  (select title from public.community_questions where concept_id = 'literacy.silent_e'),
+  'How does the silent-e (split digraph) change vowel sounds in English?',
+  'literacy.silent_e updated in-place to latest title'
+);
+
+select is(
+  (select title from public.community_questions where concept_id = 'workplace.safety.ppe'),
+  'What are the five levels of the Hierarchy of Controls in workplace safety?',
+  'workplace.safety.ppe updated in-place to latest title'
+);
+
+select is(
+  (select title from public.community_questions where concept_id = 'workplace.safety.hazcom'),
+  'What information must be included on an OSHA-compliant GHS chemical safety label?',
+  'workplace.safety.hazcom updated in-place to latest title'
+);
+
+select is(
+  (select title from public.community_questions where concept_id = 'workplace.safety.fire'),
+  'What is the PASS method for operating a portable fire extinguisher?',
+  'workplace.safety.fire updated in-place to latest title'
 );
 
 rollback;
