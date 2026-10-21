@@ -50,6 +50,11 @@ final examPartProfileServiceProvider = Provider<ExamPartProfileService>((ref) {
   return ExamPartProfileService();
 });
 
+final examPartScopeResolverProvider =
+    Provider<ExamPartCurriculumScopeResolver>((ref) {
+  return ExamPartCurriculumScopeResolver();
+});
+
 final examPartProfileProvider = FutureProvider.autoDispose
     .family<ExamPreparationProfile?, ExamPartProfileKey>((ref, key) {
   return ref.watch(examPartProfileServiceProvider).load(key);
@@ -92,7 +97,7 @@ final examPartProgressProvider = FutureProvider.autoDispose
 
   // Independently resolve the actual descendant tree; metadata alone
   // cannot authorize an exam-part read or result.
-  final scope = await ExamPartCurriculumScopeResolver().resolve(
+  final scope = await ref.watch(examPartScopeResolverProvider).resolve(
     targetVersionId: key.targetVersionId,
     examPartKey: key.examPartKey,
   );
