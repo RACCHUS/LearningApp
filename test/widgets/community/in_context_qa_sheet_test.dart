@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, AuthChangeEvent, Session, User;
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
@@ -18,7 +20,10 @@ class FakeCommunityQaService extends CommunityQaService {
   final List<CommunityAnswer> fakeReviewAnswers;
   final List<CommunityReviewAudit> fakeAuditLogs;
   final Map<String, List<CommunityAnswer>> fakeAnswers;
+  final Map<String, String> fakeAnswerParentMap;
   final bool throwUgcDisabledOnPublish;
+  String? fakeUserId;
+  final StreamController<AuthState>? authStreamController;
 
   String? lastReviewedQuestionId;
   String? lastReviewedAnswerId;
@@ -38,8 +43,22 @@ class FakeCommunityQaService extends CommunityQaService {
     this.fakeReviewAnswers = const [],
     this.fakeAuditLogs = const [],
     this.fakeAnswers = const {},
+    this.fakeAnswerParentMap = const {},
+    this.fakeUserId,
+    this.authStreamController,
     this.throwUgcDisabledOnPublish = false,
   });
+
+  @override
+  String? get currentUserId => fakeUserId;
+
+  @override
+  Stream<AuthState>? get authStateChanges => authStreamController?.stream;
+
+  @override
+  Future<Map<String, String>> fetchAnswerParentQuestionMap(List<String> answerIds) async {
+    return fakeAnswerParentMap;
+  }
 
   @override
   Future<List<CommunityQuestion>> fetchSeedFaqs({
@@ -797,9 +816,252 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('How do Florida barbers renew their licenses?'), findsOneWidget);
-      expect(find.text('Needs Revision'), findsOneWidget);
+      expect(find.text('Rejected — Create a Revised Submission'), findsOneWidget);
+      expect(find.text('Revise and Resubmit as New Question'), findsOneWidget);
       expect(find.text('Educator Review Feedback:'), findsOneWidget);
       expect(find.text('Please clarify that Florida barber licenses are renewed biennially by July 31st of even years.'), findsOneWidget);
+    });
+
+    testWidgets('account switch immediately clears private drafts/feedback and prevents cross-account leak', (tester) async {
+      final userADraft = CommunityQuestion(
+        id: 'draft-user-a',
+        authorId: 'user-a',
+        title: 'User A Secret Question',
+        bodyMarkdown: 'Private notes belonging to User A.',
+        status: 'archived',
+        isSeeded: false,
+        createdAt: DateTime(2026, 10, 15),
+        updatedAt: DateTime(2026, 10, 16),
+      );
+      final userAFeedback = AuthorReviewFeedback(
+        id: 'fb-user-a',
+        targetType: 'question',
+        targetId: 'draft-user-a',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Private feedback intended only for User A.',
+        createdAt: DateTime(2026, 10, 16),
+      );
+
+      final authStreamController = StreamController<AuthState>.broadcast();
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [userADraft],
+        fakeFeedback: [userAFeedback],
+        fakeUserId: 'user-a',
+        authStreamController: authStreamController,
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // Go to My Drafts tab
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('User A Secret Question'), findsOneWidget);
+      expect(find.text('Private feedback intended only for User A.'), findsOneWidget);
+
+      // Now switch account to user-b
+      fakeService.fakeUserId = 'user-b';
+      fakeService.fakeDrafts.clear();
+      fakeService.fakeFeedback.clear();
+
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // User A's private data must be completely cleared and absent
+      expect(find.text('User A Secret Question'), findsNothing);
+      expect(find.text('Private feedback intended only for User A.'), findsNothing);
+      expect(find.text('You have not authored any private questions or answers yet.'), findsOneWidget);
+
+      await authStreamController.close();
+    });
+
+    testWidgets('displays latest review feedback decision when multiple review records exist for the same target', (tester) async {
+      final rejectedQuestion = CommunityQuestion(
+        id: 'draft-multi-review-1',
+        authorId: 'user-mock',
+        title: 'Multi-review decision question',
+        bodyMarkdown: 'Draft body under repeated review cycles.',
+        status: 'archived',
+        isSeeded: false,
+        createdAt: DateTime(2026, 10, 10),
+        updatedAt: DateTime(2026, 10, 21),
+      );
+
+      final oldestFeedback = AuthorReviewFeedback(
+        id: 'fb-old',
+        targetType: 'question',
+        targetId: 'draft-multi-review-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Old rejection feedback: Incomplete citation.',
+        createdAt: DateTime(2026, 10, 15),
+      );
+      final latestFeedback = AuthorReviewFeedback(
+        id: 'fb-new',
+        targetType: 'question',
+        targetId: 'draft-multi-review-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Latest rejection feedback: Please add Florida Rule 61G5 citation.',
+        createdAt: DateTime(2026, 10, 21),
+      );
+
+      // CommunityQaService returns feedback ordered created_at DESC (latest first)
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [rejectedQuestion],
+        fakeFeedback: [latestFeedback, oldestFeedback],
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      // Must display the newest feedback and not the older overwritten one
+      expect(find.text('Latest rejection feedback: Please add Florida Rule 61G5 citation.'), findsOneWidget);
+      expect(find.text('Old rejection feedback: Incomplete citation.'), findsNothing);
+    });
+
+    testWidgets('tapping "Revise and Resubmit as New Question" populates question form and navigates to Ask tab', (tester) async {
+      final rejectedQuestion = CommunityQuestion(
+        id: 'draft-to-revise-1',
+        authorId: 'user-mock',
+        title: 'How to obtain Florida Certified General Contractor license?',
+        bodyMarkdown: 'Original draft text lacking experience details.',
+        status: 'archived',
+        isSeeded: false,
+        createdAt: DateTime(2026, 10, 18),
+        updatedAt: DateTime(2026, 10, 19),
+      );
+
+      final feedback = AuthorReviewFeedback(
+        id: 'fb-rev-1',
+        targetType: 'question',
+        targetId: 'draft-to-revise-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Please explain 4-year experience requirement under Section 489.111, F.S.',
+        createdAt: DateTime(2026, 10, 19),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [rejectedQuestion],
+        fakeFeedback: [feedback],
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Revise and Resubmit as New Question'), findsOneWidget);
+
+      await tester.tap(find.text('Revise and Resubmit as New Question'));
+      await tester.pumpAndSettle();
+
+      // Verify form is pre-filled and Ask tab is selected with status message
+      expect(find.text('How to obtain Florida Certified General Contractor license?'), findsOneWidget);
+      expect(find.text('Original draft text lacking experience details.'), findsOneWidget);
+      expect(find.text('Revise your question based on educator feedback and save as a new draft.'), findsOneWidget);
+    });
+
+    testWidgets('tapping "Revise and Resubmit Answer" navigates to FAQs tab and opens parent question', (tester) async {
+      final rejectedAnswer = CommunityAnswer(
+        id: 'ans-to-revise-1',
+        questionId: 'faq-1',
+        authorId: 'user-mock',
+        bodyMarkdown: 'Original answer text needing correction.',
+        status: 'archived',
+        createdAt: DateTime(2026, 10, 18),
+        updatedAt: DateTime(2026, 10, 19),
+      );
+
+      final feedback = AuthorReviewFeedback(
+        id: 'fb-ans-1',
+        targetType: 'answer',
+        targetId: 'ans-to-revise-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Answer needs to cite phonological awareness research.',
+        createdAt: DateTime(2026, 10, 19),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeDraftAnswers: [rejectedAnswer],
+        fakeFeedback: [feedback],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Revise and Resubmit Answer'), findsOneWidget);
+
+      await tester.tap(find.text('Revise and Resubmit Answer'));
+      await tester.pumpAndSettle();
+
+      // Verify navigated to FAQs tab with parent question expanded
+      expect(find.text('How does phonics blending work?'), findsOneWidget);
+      expect(find.textContaining('Revise your answer to "How does phonics blending work?"'), findsOneWidget);
+    });
+
+    testWidgets('audit log resolves and displays parent question title for answer events', (tester) async {
+      final audit = CommunityReviewAudit(
+        id: 'audit-ans-1',
+        targetType: 'answer',
+        targetId: 'ans-audit-1',
+        reviewerId: 'reviewer-1',
+        action: 'reject',
+        previousStatus: 'under_review',
+        newStatus: 'archived',
+        notes: 'Needs statutory citation.',
+        createdAt: DateTime(2026, 10, 21),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeAuditLogs: [audit],
+        fakeAnswerParentMap: {'ans-audit-1': 'q-parent-1'},
+        fakeQuestionTitles: {'q-parent-1': 'Florida Electrical Contractor Scope'},
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (0)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Audit Log (1)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Target: Answer to: "Florida Electrical Contractor Scope"'), findsOneWidget);
     });
 
     testWidgets('moderator review queue displays full context (author, date, parent question title)', (tester) async {

@@ -23,6 +23,24 @@ class CommunityQaService {
   CommunityQaService({SupabaseClient? supabase})
       : _injectedClient = supabase;
 
+  /// Returns the current authenticated user ID, or null if unauthenticated / offline.
+  String? get currentUserId {
+    try {
+      return _supabase.auth.currentUser?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Broadcast stream of authentication state changes.
+  Stream<AuthState>? get authStateChanges {
+    try {
+      return _supabase.auth.onAuthStateChange;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Fetches curated, published seed FAQs, optionally filtered by topic scope.
   Future<List<CommunityQuestion>> fetchSeedFaqs({
     String? conceptId,
@@ -252,6 +270,43 @@ class CommunityQaService {
       _logger.warn('Failed to fetch question titles: $e', error: e, stackTrace: st);
       return {};
     }
+  }
+
+  /// Resolves the parent question UUID for a list of answer UUIDs.
+  Future<Map<String, String>> fetchAnswerParentQuestionMap(List<String> answerIds) async {
+    if (answerIds.isEmpty) return {};
+    try {
+      final uniqueIds = answerIds.toSet().toList();
+      final response = await _supabase
+          .from('community_answers')
+          .select('id, question_id')
+          .inFilter('id', uniqueIds);
+
+      final List<dynamic> rows = response as List<dynamic>;
+      final map = <String, String>{};
+      for (final row in rows) {
+        final id = row['id'] as String?;
+        final questionId = row['question_id'] as String?;
+        if (id != null && questionId != null) {
+          map[id] = questionId;
+        }
+      }
+      return map;
+    } catch (e, st) {
+      _logger.warn('Failed to fetch answer parent question map: $e', error: e, stackTrace: st);
+      return {};
+    }
+  }
+
+  /// Returns a map of targetId -> latest AuthorReviewFeedback, preserving only the newest
+  /// review decision for each submission target.
+  Future<Map<String, AuthorReviewFeedback>> fetchLatestSubmissionFeedback({String? targetId}) async {
+    final list = await fetchMySubmissionFeedback(targetId: targetId);
+    final map = <String, AuthorReviewFeedback>{};
+    for (final f in list) {
+      map.putIfAbsent(f.targetId, () => f);
+    }
+    return map;
   }
 
   /// Fetches answers for a specific community question.

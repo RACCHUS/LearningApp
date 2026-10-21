@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
@@ -30,6 +32,7 @@ Future<void> showInContextQaSheet(
       builder: (sheetContext) => SizedBox(
         height: MediaQuery.sizeOf(sheetContext).height * 0.88,
         child: InContextQaSheet(
+          key: ValueKey(effectiveService.currentUserId ?? 'anon'),
           conceptId: conceptId,
           targetId: targetId,
           lessonId: lessonId,
@@ -52,6 +55,7 @@ Future<void> showInContextQaSheet(
         child: SizedBox(
           width: 640,
           child: InContextQaSheet(
+            key: ValueKey(effectiveService.currentUserId ?? 'anon'),
             conceptId: conceptId,
             targetId: targetId,
             lessonId: lessonId,
@@ -93,6 +97,10 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   final _bodyController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  String? _activeUserId;
+  int _loadRequestId = 0;
+  StreamSubscription<AuthState>? _authSubscription;
+
   bool _isLoading = true;
   bool _isSubmitting = false;
   bool _isModerator = false;
@@ -105,6 +113,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   List<CommunityQuestion> _reviewQuestions = [];
   List<CommunityAnswer> _reviewAnswers = [];
   List<CommunityReviewAudit> _auditLogs = [];
+  Map<String, String> _answerParentQuestionIds = {};
   Map<String, String> _questionTitles = {};
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
@@ -127,11 +136,41 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   @override
   void initState() {
     super.initState();
+    _activeUserId = widget.service.currentUserId;
+    _subscribeToAuthChanges();
+    _loadData();
+  }
+
+  void _subscribeToAuthChanges() {
+    _authSubscription = widget.service.authStateChanges?.listen((event) {
+      final newUserId = event.session?.user.id;
+      if (newUserId != _activeUserId) {
+        _onUserChanged(newUserId);
+      }
+    });
+  }
+
+  void _onUserChanged(String? newUserId) {
+    if (!mounted) return;
+    _loadRequestId++;
+    setState(() {
+      _activeUserId = newUserId;
+      _myDrafts = [];
+      _myDraftAnswers = [];
+      _submissionFeedback = {};
+      _reviewQuestions = [];
+      _reviewAnswers = [];
+      _auditLogs = [];
+      _answerParentQuestionIds = {};
+      _isModerator = false;
+      _isLoading = true;
+    });
     _loadData();
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _tabController?.dispose();
     _titleController.dispose();
     _bodyController.dispose();
@@ -139,7 +178,14 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    final int requestId = ++_loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
+
+    setState(() {
+      _isLoading = true;
+      _activeUserId = requestUserId;
+    });
+
     try {
       final faqs = await widget.service.fetchSeedFaqs(
         conceptId: widget.conceptId,
@@ -149,13 +195,18 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       final drafts = await widget.service.fetchMyDrafts();
       final draftAnswers = await widget.service.fetchMyDraftAnswers();
       final feedbackList = await widget.service.fetchMySubmissionFeedback();
-      final feedbackMap = {for (final f in feedbackList) f.targetId: f};
+      final feedbackMap = <String, AuthorReviewFeedback>{};
+      for (final f in feedbackList) {
+        feedbackMap.putIfAbsent(f.targetId, () => f);
+      }
 
       bool isMod = false;
       List<CommunityQuestion> reviewQuestions = [];
       List<CommunityAnswer> reviewAnswers = [];
       List<CommunityReviewAudit> auditLogs = [];
+      Map<String, String> answerParentMap = {};
       Map<String, String> questionTitles = {};
+
       try {
         final modService = widget.moderationService ?? ModerationService();
         isMod = await modService.isModerator();
@@ -163,44 +214,70 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           reviewQuestions = await widget.service.fetchUnderReviewQuestions();
           reviewAnswers = await widget.service.fetchUnderReviewAnswers();
           auditLogs = await widget.service.fetchReviewAuditHistory(limit: 25);
+
+          final answerAuditTargetIds = auditLogs.where((l) => l.isAnswer).map((l) => l.targetId).toList();
+          final rawAnswerParentMap = await widget.service.fetchAnswerParentQuestionMap(answerAuditTargetIds);
+          answerParentMap = Map<String, String>.from(rawAnswerParentMap);
+          for (final a in [...reviewAnswers, ...draftAnswers]) {
+            answerParentMap[a.id] = a.questionId;
+          }
+
           final questionIdsToResolve = <String>{
             ...reviewAnswers.map((a) => a.questionId),
             ...draftAnswers.map((a) => a.questionId),
             ...auditLogs.where((l) => l.isQuestion).map((l) => l.targetId),
+            ...answerParentMap.values,
           }.toList();
           questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
         } else if (draftAnswers.isNotEmpty) {
+          for (final a in draftAnswers) {
+            answerParentMap[a.id] = a.questionId;
+          }
           final questionIdsToResolve = draftAnswers.map((a) => a.questionId).toSet().toList();
           questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
         }
       } catch (_) {}
 
-      if (mounted) {
-        _tabController?.dispose();
-        _tabController = TabController(length: isMod ? 4 : 3, vsync: this);
-        setState(() {
-          _seedFaqs = faqs;
-          _myDrafts = drafts;
-          _myDraftAnswers = draftAnswers;
-          _submissionFeedback = feedbackMap;
-          _reviewQuestions = reviewQuestions;
-          _reviewAnswers = reviewAnswers;
-          _auditLogs = auditLogs;
-          _questionTitles = questionTitles;
-          _isModerator = isMod;
-          _isLoading = false;
-        });
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+
+      final targetLength = isMod ? 4 : 3;
+      if (_tabController == null || _tabController!.length != targetLength) {
+        final oldController = _tabController;
+        _tabController = TabController(length: targetLength, vsync: this);
+        oldController?.dispose();
+      }
+      setState(() {
+        _seedFaqs = faqs;
+        _myDrafts = drafts;
+        _myDraftAnswers = draftAnswers;
+        _submissionFeedback = feedbackMap;
+        _reviewQuestions = reviewQuestions;
+        _reviewAnswers = reviewAnswers;
+        _auditLogs = auditLogs;
+        _answerParentQuestionIds = answerParentMap;
+        _questionTitles = questionTitles;
+        _isModerator = isMod;
+        _isLoading = false;
+      });
     } catch (_) {
-      if (mounted) {
-        _tabController?.dispose();
-        _tabController = TabController(length: 3, vsync: this);
-        setState(() => _isLoading = false);
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+      if (_tabController == null || _tabController!.length != 3) {
+        final oldController = _tabController;
+        _tabController = TabController(length: 3, vsync: this);
+        oldController?.dispose();
+      }
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _reloadReviewData() async {
+    final int requestId = ++_loadRequestId;
+    final String? requestUserId = widget.service.currentUserId;
+
     try {
       final reviewQuestions = await widget.service.fetchUnderReviewQuestions();
       final reviewAnswers = await widget.service.fetchUnderReviewAnswers();
@@ -210,21 +287,32 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         targetId: widget.targetId,
         lessonId: widget.lessonId,
       );
+      final answerAuditTargetIds = auditLogs.where((l) => l.isAnswer).map((l) => l.targetId).toList();
+      final rawAnswerParentMap = await widget.service.fetchAnswerParentQuestionMap(answerAuditTargetIds);
+      final answerParentMap = Map<String, String>.from(rawAnswerParentMap);
+      for (final a in [...reviewAnswers, ..._myDraftAnswers]) {
+        answerParentMap[a.id] = a.questionId;
+      }
       final questionIdsToResolve = <String>{
         ...reviewAnswers.map((a) => a.questionId),
         ..._myDraftAnswers.map((a) => a.questionId),
         ...auditLogs.where((l) => l.isQuestion).map((l) => l.targetId),
+        ...answerParentMap.values,
       }.toList();
       final questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
-      if (mounted) {
-        setState(() {
-          _reviewQuestions = reviewQuestions;
-          _reviewAnswers = reviewAnswers;
-          _auditLogs = auditLogs;
-          _seedFaqs = faqs;
-          _questionTitles = questionTitles;
-        });
+
+      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+        return;
       }
+
+      setState(() {
+        _reviewQuestions = reviewQuestions;
+        _reviewAnswers = reviewAnswers;
+        _auditLogs = auditLogs;
+        _seedFaqs = faqs;
+        _answerParentQuestionIds = answerParentMap;
+        _questionTitles = questionTitles;
+      });
     } catch (_) {}
   }
 
@@ -567,6 +655,27 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
             if (_isModerator) Tab(text: 'Review Queue ($totalReviewCount)'),
           ],
         ),
+        if (_statusMessage != null)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                const SizedBox(width: 8),
+                Expanded(child: Text(_statusMessage!, style: const TextStyle(fontSize: 12))),
+                InkWell(
+                  onTap: () => setState(() => _statusMessage = null),
+                  child: const Icon(Icons.close, size: 16, color: Colors.blueGrey),
+                ),
+              ],
+            ),
+          ),
 
         // Tab Views
         Expanded(
@@ -873,23 +982,6 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_statusMessage != null)
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(_statusMessage!, style: const TextStyle(fontSize: 12))),
-                  ],
-                ),
-              ),
             Text(
               'Ask a Question about this Topic',
               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -982,7 +1074,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
             final feedback = _submissionFeedback[d.id];
 
             final statusLabel = isArchived
-                ? 'Needs Revision'
+                ? 'Rejected — Create a Revised Submission'
                 : (isUnderReview ? 'Under Review' : 'Draft');
             final statusColor = isArchived
                 ? Colors.red
@@ -1065,6 +1157,24 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                         ),
                       ),
                     ],
+                    if (isArchived) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.edit_note, size: 16),
+                          label: const Text('Revise and Resubmit as New Question', style: TextStyle(fontSize: 12)),
+                          onPressed: () {
+                            _titleController.text = d.title;
+                            _bodyController.text = d.bodyMarkdown;
+                            setState(() {
+                              _statusMessage = 'Revise your question based on educator feedback and save as a new draft.';
+                            });
+                            _tabController?.animateTo(1);
+                          },
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1085,7 +1195,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
             final feedback = _submissionFeedback[a.id];
 
             final statusLabel = isArchived
-                ? 'Needs Revision'
+                ? 'Rejected — Create a Revised Submission'
                 : (isUnderReview ? 'Under Review' : 'Draft');
             final statusColor = isArchived
                 ? Colors.red
@@ -1168,6 +1278,24 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ],
+                    if (isArchived) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.edit_note, size: 16),
+                          label: const Text('Revise and Resubmit Answer', style: TextStyle(fontSize: 12)),
+                          onPressed: () {
+                            setState(() {
+                              _expandedQuestions.add(a.questionId);
+                              _statusMessage = 'Revise your answer to "${_questionTitles[a.questionId] ?? a.questionId}" addressing educator feedback.';
+                            });
+                            _tabController?.animateTo(0);
+                            _loadAnswers(a.questionId);
+                          },
                         ),
                       ),
                     ],
@@ -1583,9 +1711,24 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'Target: ${_questionTitles[audit.targetId] ?? (audit.targetType == 'question' ? 'Question #${_formatAuthorId(audit.targetId)}' : 'Answer #${_formatAuthorId(audit.targetId)}')}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+                Builder(
+                  builder: (context) {
+                    String targetTitle;
+                    if (audit.isQuestion) {
+                      final qTitle = _questionTitles[audit.targetId];
+                      targetTitle = qTitle != null ? qTitle : 'Question #${_formatAuthorId(audit.targetId)}';
+                    } else {
+                      final parentQuestionId = _answerParentQuestionIds[audit.targetId];
+                      final parentTitle = parentQuestionId != null ? _questionTitles[parentQuestionId] : null;
+                      targetTitle = parentTitle != null
+                          ? 'Answer to: "$parentTitle"'
+                          : 'Answer #${_formatAuthorId(audit.targetId)}';
+                    }
+                    return Text(
+                      'Target: $targetTitle',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+                    );
+                  },
                 ),
                 const SizedBox(height: 2),
                 Wrap(
