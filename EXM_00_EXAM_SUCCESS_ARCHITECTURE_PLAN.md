@@ -850,4 +850,13 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 
 ---
 
+### A.5 — EXM-02A R1–R4 practice-engine slice
+
+- **Coded in a separate review branch:** `feature/exm-02a-r1-r4-drill-engine-20261020`, stacked on draft EXM-02A validity PR #68. `lib/models/assessment_engine/reference_drill_engine.dart` introduces four independently observed reference-navigation stages: R1 source choice, R2 section, R3 interpretation and R4 application. Each step records separate correctness and elapsed *in-app* time, with physical-book duration accepted only when explicitly self-reported. No issuer-scaled score or composite mastery prediction is generated.
+- **Tests:** `test/unit/assessment_engine/reference_drill_engine_test.dart` covers step ordering, independent R2 drills, weak-link isolation, missing responses, negative-time rejection and no approval inheritance across manifest revisions. All test inputs are invented and do not validate any DBPR answer.
+- **Important boundaries:** The in-memory task includes synthetic expected answers and therefore **must not** be fetched directly from the private editorial answer-binding table by the learner; learner-safe prompts/scoring require a separately designed trusted review-scoring endpoint or properly secured review-gated delivery model. This foundation is not integrated with a live UI or EXM-02B attempt store, and no real reviewer-approved items exist yet.
+- **Verification:** Pending CI verification at the corresponding code commit; no hosted database activity, item publication or deployment.
+
+---
+
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
