@@ -141,7 +141,6 @@ class CommunityQaService {
         'title': title.trim(),
         'body_markdown': bodyMarkdown.trim(),
         'status': status,
-        'is_seeded': false,
         if (conceptId != null) 'concept_id': conceptId,
         if (targetId != null) 'target_id': targetId,
         if (lessonId != null) 'lesson_id': lessonId,

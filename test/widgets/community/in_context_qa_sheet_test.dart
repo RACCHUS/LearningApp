@@ -101,6 +101,23 @@ void main() {
     ),
   ];
 
+  final offlineDemoSeed = [
+    CommunityQuestion(
+      id: 'seed-faq-001',
+      authorId: 'offline-demo',
+      title: 'What is the CVC pattern in phonics?',
+      bodyMarkdown: 'A CVC word is composed of a Consonant, a Short Vowel, and a Consonant.',
+      status: 'published',
+      isSeeded: true,
+      conceptId: 'literacy.cvc.basics',
+      viewCount: 0,
+      upvoteCount: 0,
+      answerCount: 0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+  ];
+
   Widget buildTestWidget({CommunityQaService? service}) {
     return MaterialApp(
       home: Scaffold(
@@ -138,23 +155,6 @@ void main() {
     });
 
     testWidgets('displays offline demonstration preview badge without fabricated engagement', (tester) async {
-      final offlineDemoSeed = [
-        CommunityQuestion(
-          id: 'seed-faq-001',
-          authorId: 'offline-demo',
-          title: 'What is the CVC pattern in phonics?',
-          bodyMarkdown: 'A CVC word is composed of a Consonant, a Short Vowel, and a Consonant.',
-          status: 'published',
-          isSeeded: true,
-          conceptId: 'literacy.cvc.basics',
-          viewCount: 0,
-          upvoteCount: 0,
-          answerCount: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
-
       await tester.pumpWidget(buildTestWidget(
         service: FakeCommunityQaService(
           fakeSeeds: offlineDemoSeed,
@@ -168,7 +168,23 @@ void main() {
       expect(find.textContaining('upvotes'), findsNothing);
     });
 
-    testWidgets('distinguishes verified answers from unreviewed community answers', (tester) async {
+    testWidgets('disables voting on offline demo records', (tester) async {
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: offlineDemoSeed,
+          fakeDrafts: [],
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final voteButtonFinder = find.widgetWithIcon(IconButton, Icons.thumb_up_alt_outlined);
+      expect(voteButtonFinder, findsOneWidget);
+      final iconButton = tester.widget<IconButton>(voteButtonFinder);
+      expect(iconButton.onPressed, isNull);
+      expect(iconButton.tooltip, 'Voting disabled for offline preview');
+    });
+
+    testWidgets('distinguishes accepted answers from unreviewed community answers', (tester) async {
       final fakeAnswers = {
         'faq-1': [
           CommunityAnswer(
@@ -198,7 +214,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.expand_more));
       await tester.pumpAndSettle();
 
-      expect(find.text('Verified Answer:'), findsOneWidget);
+      expect(find.text('Accepted Answer:'), findsOneWidget);
       expect(find.text('Blending requires sound continuity.'), findsOneWidget);
     });
 
