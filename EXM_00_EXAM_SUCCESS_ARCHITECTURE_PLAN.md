@@ -884,3 +884,13 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 ---
 
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
+
+---
+
+### A.8 — EXM-02B R1–R4 durable step recorder (development only; CI pending)
+
+- **Date / phase / branch:** October 20, 2026; EXM-02B continuation on `feature/exm-02b-r1-r4-attempt-recorder-20261020`, stacked above draft PR #79. **Status: coded; CI and review not yet verified**.
+- **Implementation:** `lib/services/assessment/reference_drill_attempt_recorder.dart` introduces an answer-free, attempt-scoped R1–R4 adapter with the exact assessment item, approved binding, reference manifest revision, exam part, administration date, and content/answer revisions. A permanent-account owner is captured by the caller; `recordStep` now accepts `expectedOwnerId` and rejects an account switch before the insert. Steps are sequential, have a stable UUID per attempt, and record distinct app-measured proxy duration and optional self-reported physical-book time. A failed write retains the *same* pending step, timestamps and attempt UUID for safe idempotent retry. No answer/score/protected book text is posted by the recorder.
+- **Test coverage added (not yet a pass claim):** `test/services/assessment/reference_drill_attempt_recorder_test.dart` checks R1–R4 ordering and metadata, standalone R2, guest rejection, changed-account refusal, version identity validation, and missing private key/score fields in outgoing events.
+- **Security boundary:** This class is **not** a verified learner task-delivery service or scoring authority. The existing SQL trigger still validates a supplied binding against private editorial review and correct source/date/part, but no real approved pilot item is seeded. `DisposableReferenceDrillSession` contains expected answers for synthetic in-memory unit fixtures only; never expose that structure or those keys in a learner bundle for a live drill. Client timing/responded flags remain *unverified observations*. A separate server-private reviewed-answer delivery/scoring contract, protected item selection, learner-facing integration, export/retention acceptance, CI and owner review are still outstanding.
+- **Hosted state:** No merge, production Supabase migration, hosted DML, official content publication or deployment was attempted.
