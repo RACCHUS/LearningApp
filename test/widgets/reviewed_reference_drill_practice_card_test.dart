@@ -194,7 +194,8 @@ void main() {
     ]);
     expect(scores.requested.length,4);
     expect(find.byKey(const Key('reviewed-drill-complete')),findsOneWidget);
-    expect(find.textContaining('predict licensing'),findsNothing);
+    expect(find.textContaining('do not predict licensing-exam success'),
+        findsOneWidget);
   });
 
   testWidgets('Saved step retries scoring without writing another event',
