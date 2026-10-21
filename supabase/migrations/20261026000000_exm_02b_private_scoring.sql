@@ -14,6 +14,7 @@ as $check$
 declare
   step_name text;
   entry jsonb;
+  candidate jsonb;
   token text;
   seen text[];
 begin
@@ -31,9 +32,12 @@ begin
       return false;
     end if;
     seen := array[]::text[];
-    for token in
-      select value #>> '{}' from jsonb_array_elements(entry) as source(value)
+    for candidate in select value from jsonb_array_elements(entry) as source(value)
     loop
+      if jsonb_typeof(candidate) is distinct from 'string' then
+        return false;
+      end if;
+      token := candidate #>> '{}';
       if token is null
          or length(token) > 80
          or token !~ '^[a-z0-9][a-z0-9 _./:-]*$'
@@ -128,6 +132,21 @@ begin
       or binding.item_content_sha256 is distinct from
         public.exam_reference_item_fingerprint(binding.assessment_item_id) then
       raise exception 'No approved, unchanged edition-specific item binding';
+    end if;
+    -- R1 and R2 must at least agree with the already independently reviewed
+    -- exact-edition book and one source-anchored section. The reviewer is
+    -- responsible for the complete accepted-token/rule semantics.
+    if not (new.step_tokens -> 'resource_choice'
+          @> jsonb_build_array(lower(binding.reference_edition_key)))
+       or not exists (
+         select 1 from jsonb_array_elements(binding.expected_locations)
+           as location(value)
+         join jsonb_array_elements_text(
+           new.step_tokens -> 'section_location'
+         ) as accepted(token)
+           on lower(btrim(location.value->>'section'))=accepted.token
+       ) then
+      raise exception 'Rubric resource and section must match approved location';
     end if;
     if new.review_status <> 'approved'
       or new.rights_review_status <> 'approved'
