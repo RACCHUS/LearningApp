@@ -1084,3 +1084,16 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 - **Projection:** `examPartProgressProvider` keys a read-only view by learner, target, version and part; revalidates actual version-owned part subtree and both knowledge-readiness and diagnostic availability. Shared global concept evidence can contribute to multiple relevant parts, but is never treated as historically scored part-specific exam attempts. Missing durable per-part attempt history is explicitly disclosed.
 - **Secondary guidance:** Pure `ExamPartNextActionEngine` recommends mapping/study/reinforcement/practice from only scoped concepts and verified canonical diagnostic availability. Weaker concepts outrank more mock questions, and a diagnostic button is never offered for insufficient content. A launched diagnostic is pinned to exact selected part/version; the outline action is explicitly **full target** rather than falsely implying a part filter.
 - **Tests and boundaries:** Pure precedence, version mismatch, owner target/version/part validation, A/B selection and account switch widgets. See `docs/exm/EXM_03_SELECTED_PART_PROGRESS.md`. No hosted SQL, saved attempt claims, official exam readiness claims or authorized merge/deploy; these are later gates.
+
+
+### A.27 — EXM-03 durable per-part attempt foundation (dormant, unlaunched)
+
+The unmerged `20261031120000_exm_03_private_part_attempt_foundation.sql`
+defines owner-only educational attempt summaries with SELECT/DELETE RLS and
+**no authenticated INSERT or UPDATE privilege**. A reviewed server-side
+canonical scorer is still needed before appending any real attempt.
+`ExamPartPracticeAttempt` and `ExamPartPracticeHistoryService` define a
+strict version/part/owner model, bounded part read/export and exact-part
+erasure. These do **not** integrate with EXM-02B R1–R4 portability or UI
+and are not currently displayed as verified past attempts. The complete
+release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
