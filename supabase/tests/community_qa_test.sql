@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(28);
+select plan(25);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
