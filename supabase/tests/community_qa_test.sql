@@ -1,11 +1,12 @@
--- pgTAP Community Q&A Security & Integrity Test Suite (ECO-01)
--- Validates concept-scoped Q&A schema, RLS boundaries (public UGC disabled for non-admins),
+-- pgTAP Community Q&A Security & Integrity Test Suite (ECO-01 Hardened)
+-- Validates concept-scoped Q&A schema, anonymous read access (no 42501 errors),
+-- parent-question publication constraints on answers, tamper-prevention triggers,
 -- atomic upvoting, answer counting triggers, and moderation integration.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(25);
+select plan(40);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -25,7 +26,7 @@ values ('7f7c1a20-0000-4000-8000-000000000001', 'admin', '7f7c1a20-0000-4000-800
 on conflict (user_id) do update set role = 'admin';
 
 -- -----------------------------------------------------------------------------
--- Schema Structure Checks
+-- 1. Schema Structure Checks (5 tests)
 -- -----------------------------------------------------------------------------
 select has_table('public', 'community_questions', 'Table public.community_questions exists');
 select has_table('public', 'community_answers', 'Table public.community_answers exists');
@@ -34,7 +35,7 @@ select has_function('public', 'cast_community_vote', Array['text', 'uuid'], 'RPC
 select has_function('public', 'handle_community_answer_count', 'Trigger function handle_community_answer_count exists');
 
 -- -----------------------------------------------------------------------------
--- Unauthenticated Access
+-- 2. Unauthenticated Access & Anonymous Read Permissions (2 tests)
 -- -----------------------------------------------------------------------------
 set local role anon;
 
@@ -45,8 +46,14 @@ select throws_ok(
   'Unauthenticated voting rejected with 42501'
 );
 
+-- Anonymous SELECT must execute without permission denied on private.is_admin()
+select lives_ok(
+  $$ select count(*) from public.community_questions where status = 'published' $$,
+  'Anonymous role can SELECT published questions without 42501 is_admin error'
+);
+
 -- -----------------------------------------------------------------------------
--- Phase 1 Gate & RLS Enforcement: Non-Admin Public UGC Disabled
+-- 3. Phase 1 Gate & RLS Enforcement: Non-Admin Public UGC Disabled (4 tests)
 -- -----------------------------------------------------------------------------
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
@@ -119,7 +126,7 @@ select throws_ok(
 );
 
 -- -----------------------------------------------------------------------------
--- Admin Question Seeding & Publishing
+-- 4. Admin Question Seeding & Publishing (3 tests)
 -- -----------------------------------------------------------------------------
 select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
 
@@ -166,7 +173,7 @@ select is(
 );
 
 -- -----------------------------------------------------------------------------
--- Tenant Isolation & Visibility
+-- 5. Tenant Isolation & Anonymous Visibility (6 tests)
 -- -----------------------------------------------------------------------------
 -- Switch to Learner B
 select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000003', true);
@@ -192,8 +199,104 @@ select is(
   'Learner B cannot see Learner A private draft question'
 );
 
+-- Switch to anon
+set local role anon;
+
+-- Anon CAN see published seed FAQ
+select is(
+  (select count(*)::int from public.community_questions where id = '00000000-0000-0000-0000-000000000201'),
+  1,
+  'Anon can read published seed FAQ question'
+);
+
+-- Anon CANNOT see Learner A draft question
+select is(
+  (select count(*)::int from public.community_questions where id = '00000000-0000-0000-0000-000000000103'),
+  0,
+  'Anon cannot read private draft question'
+);
+
+-- Anon CAN see published answer on published seed FAQ
+select is(
+  (select count(*)::int from public.community_answers where id = '00000000-0000-0000-0000-000000000301'),
+  1,
+  'Anon can read published answer on published seed FAQ'
+);
+
 -- -----------------------------------------------------------------------------
--- Atomic Upvoting RPC
+-- 6. Parent Question Publication Constraints on Answers (6 tests)
+-- -----------------------------------------------------------------------------
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+
+-- Admin creates unpublished draft question
+select lives_ok(
+  $$
+    insert into public.community_questions (
+      id, author_id, title, body_markdown, status, is_seeded
+    ) values (
+      '00000000-0000-0000-0000-000000000401',
+      '7f7c1a20-0000-4000-8000-000000000001',
+      'Unpublished Draft Admin Question',
+      'This question is in draft status.',
+      'draft',
+      false
+    )
+  $$,
+  'Admin creates draft question'
+);
+
+-- Admin attaches answer marked published to that draft question
+select lives_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status
+    ) values (
+      '00000000-0000-0000-0000-000000000402',
+      '00000000-0000-0000-0000-000000000401',
+      '7f7c1a20-0000-4000-8000-000000000001',
+      'Answer to an unpublished draft question.',
+      'published'
+    )
+  $$,
+  'Admin creates answer on draft question'
+);
+
+-- Anon must NOT be able to see answer to unpublished draft question
+set local role anon;
+select is(
+  (select count(*)::int from public.community_answers where id = '00000000-0000-0000-0000-000000000402'),
+  0,
+  'Anon cannot see answer to unpublished parent question even if answer has status=published'
+);
+
+-- Learner B must NOT be able to see answer to unpublished draft question
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000003', true);
+select is(
+  (select count(*)::int from public.community_answers where id = '00000000-0000-0000-0000-000000000402'),
+  0,
+  'Learner B cannot see answer to unpublished parent question'
+);
+
+-- Voting on answer to unpublished question must fail with P0002
+select throws_ok(
+  $$ select public.cast_community_vote('answer', '00000000-0000-0000-0000-000000000402'::uuid) $$,
+  'P0002',
+  null,
+  'Voting on answer to unpublished parent question rejected with P0002'
+);
+
+-- Reporting answer to unpublished question must fail with P0002
+select throws_ok(
+  $$ select public.submit_moderation_report('community_answer', '00000000-0000-0000-0000-000000000402'::uuid, 'spam', 'Spam report') $$,
+  'P0002',
+  null,
+  'Reporting answer to unpublished parent question rejected with P0002'
+);
+
+-- -----------------------------------------------------------------------------
+-- 7. Atomic Upvoting RPC (6 tests)
 -- -----------------------------------------------------------------------------
 -- Learner B upvotes seed FAQ question
 select is(
@@ -238,7 +341,7 @@ select throws_ok(
 );
 
 -- -----------------------------------------------------------------------------
--- Moderation Reporting Integration
+-- 8. Moderation Reporting Integration (3 tests)
 -- -----------------------------------------------------------------------------
 -- Learner B can report published community question
 select lives_ok(
@@ -279,6 +382,76 @@ select lives_ok(
     )
   $$,
   'Learner B can submit moderation report on visible community answer'
+);
+
+-- -----------------------------------------------------------------------------
+-- 9. Authoritative Counter & System Field Tamper-Proofing (5 tests)
+-- -----------------------------------------------------------------------------
+-- Switch to Learner A
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
+
+-- Learner A attempting to directly mutate upvote_count on own draft question is blocked
+select throws_ok(
+  $$
+    update public.community_questions
+       set upvote_count = 999
+     where id = '00000000-0000-0000-0000-000000000103'
+  $$,
+  '42501',
+  null,
+  'Learner directly updating upvote_count on community question rejected by tamper trigger (42501)'
+);
+
+-- Learner A attempting to directly mutate is_seeded on own draft question is blocked
+select throws_ok(
+  $$
+    update public.community_questions
+       set is_seeded = true
+     where id = '00000000-0000-0000-0000-000000000103'
+  $$,
+  '42501',
+  null,
+  'Learner directly updating is_seeded on community question rejected by tamper trigger (42501)'
+);
+
+-- Learner A creates draft answer to own draft question
+select lives_ok(
+  $$
+    insert into public.community_answers (
+      id, question_id, author_id, body_markdown, status
+    ) values (
+      '00000000-0000-0000-0000-000000000501',
+      '00000000-0000-0000-0000-000000000103',
+      '7f7c1a20-0000-4000-8000-000000000002',
+      'Learner A draft answer note.',
+      'draft'
+    )
+  $$,
+  'Learner A creates draft answer'
+);
+
+-- Learner A attempting to directly set is_accepted on answer is blocked
+select throws_ok(
+  $$
+    update public.community_answers
+       set is_accepted = true
+     where id = '00000000-0000-0000-0000-000000000501'
+  $$,
+  '42501',
+  null,
+  'Learner directly updating is_accepted on community answer rejected by tamper trigger (42501)'
+);
+
+-- Learner A attempting to directly set upvote_count on answer is blocked
+select throws_ok(
+  $$
+    update public.community_answers
+       set upvote_count = 50
+     where id = '00000000-0000-0000-0000-000000000501'
+  $$,
+  '42501',
+  null,
+  'Learner directly updating upvote_count on community answer rejected by tamper trigger (42501)'
 );
 
 rollback;

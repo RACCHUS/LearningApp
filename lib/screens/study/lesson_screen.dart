@@ -32,6 +32,7 @@ import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/unified_lesson_provider.dart';
 import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
+import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -325,6 +326,18 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                       : 'Publish lesson',
                   onPressed: () => _toggleVisibility(lessonData.lesson),
                 ),
+              IconButton(
+                key: const Key('lesson_in_context_qa_action'),
+                icon: const Icon(Icons.forum_outlined),
+                tooltip: 'Lesson Q&A & FAQs',
+                onPressed: () {
+                  showInContextQaSheet(
+                    context,
+                    lessonId: widget.lessonId,
+                    topicTitle: lessonData.lesson.title,
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.swap_horiz),
                 tooltip: 'Change study mode',

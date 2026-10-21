@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
 class ConceptScreen extends ConsumerStatefulWidget {
   final List<ConceptContent> concepts;
@@ -79,6 +80,23 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
         elevation: 0,
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
+        actions: [
+          IconButton(
+            key: const Key('concept_in_context_qa_action'),
+            icon: const Icon(Icons.forum_outlined),
+            tooltip: 'Concept Q&A & FAQs',
+            onPressed: () {
+              final currentConcept = widget.concepts.isNotEmpty && _currentIndex < widget.concepts.length
+                  ? widget.concepts[_currentIndex]
+                  : null;
+              showInContextQaSheet(
+                context,
+                conceptId: currentConcept?.id,
+                topicTitle: currentConcept?.conceptText,
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [

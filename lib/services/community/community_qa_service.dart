@@ -181,7 +181,8 @@ class CommunityQaService {
     }
   }
 
-  /// Offline fallback seed FAQs to ensure high availability and offline study.
+  /// Offline fallback demonstration FAQs to ensure guidance remains accessible offline
+  /// without presenting fabricated engagement metrics or unverified claims.
   List<CommunityQuestion> _getOfflineSeedFaqs({
     String? conceptId,
     String? targetId,
@@ -191,45 +192,45 @@ class CommunityQaService {
     final allSeeds = [
       CommunityQuestion(
         id: 'seed-faq-001',
-        authorId: 'system-seed',
+        authorId: 'offline-demo',
         title: 'What is the CVC pattern in phonics?',
         bodyMarkdown: 'A CVC word is composed of a Consonant, a Short Vowel, and a Consonant (e.g., cat, dog, sun). Blending these three sounds together is the first step toward fluent reading.',
         status: 'published',
         isSeeded: true,
         conceptId: 'literacy.cvc.basics',
-        viewCount: 42,
-        upvoteCount: 15,
-        answerCount: 1,
-        createdAt: now.subtract(const Duration(days: 7)),
-        updatedAt: now.subtract(const Duration(days: 7)),
+        viewCount: 0,
+        upvoteCount: 0,
+        answerCount: 0,
+        createdAt: now,
+        updatedAt: now,
       ),
       CommunityQuestion(
         id: 'seed-faq-002',
-        authorId: 'system-seed',
+        authorId: 'offline-demo',
         title: 'How do sight words differ from decodable words?',
         bodyMarkdown: 'Decodable words can be sounded out letter-by-letter using standard phonics rules. Sight words frequently appear in English and may follow irregular spelling patterns, so learners memorize them for instant recognition.',
         status: 'published',
         isSeeded: true,
         conceptId: 'literacy.sight_words',
-        viewCount: 38,
-        upvoteCount: 12,
-        answerCount: 1,
-        createdAt: now.subtract(const Duration(days: 6)),
-        updatedAt: now.subtract(const Duration(days: 6)),
+        viewCount: 0,
+        upvoteCount: 0,
+        answerCount: 0,
+        createdAt: now,
+        updatedAt: now,
       ),
       CommunityQuestion(
         id: 'seed-faq-003',
-        authorId: 'system-seed',
+        authorId: 'offline-demo',
         title: 'What safety gear is required for OSHA general workplace standards?',
         bodyMarkdown: 'OSHA standard PPE typically requires hard hats, eye protection (safety glasses or goggles), slip-resistant steel-toe boots, and hearing protection in high-decibel zones.',
         status: 'published',
         isSeeded: true,
         conceptId: 'workplace.safety.ppe',
-        viewCount: 29,
-        upvoteCount: 9,
-        answerCount: 1,
-        createdAt: now.subtract(const Duration(days: 5)),
-        updatedAt: now.subtract(const Duration(days: 5)),
+        viewCount: 0,
+        upvoteCount: 0,
+        answerCount: 0,
+        createdAt: now,
+        updatedAt: now,
       ),
     ];
 
