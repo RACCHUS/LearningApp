@@ -871,4 +871,15 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 
 ---
 
+### A.7 — EXM-02B authenticated durable attempt storage (partial foundation)
+
+- **Additive schema in isolated review branch:** `supabase/migrations/20261021000003_exm_02b_durable_reference_attempts.sql` adds a private `exam_reference_drill_attempts` table. It is anchored to `auth.users.id` (not `public.users`) with ON DELETE CASCADE, exact target/part, intended administration date, immutable manifest and approved answer-binding UUIDs, item/content/answer revisions, R1–R4 mode and skill step, scoring version, duration, optional separately labeled self-reported physical-book minutes, and immutable outcomes. Per-owner/client-session/step unique keys prevent duplicate writes on retry.
+- **Security:** RLS enables authenticated **owner-only SELECT and DELETE**; no anonymous access and no client INSERT/UPDATE grants. Only the trusted service role may write server-scored evidence. An insert trigger checks the binding and manifest are published and exact-version compatible with the intended exam date. Client-created “verified” scores cannot be accepted. Updates are rejected, and user-directed deletion or deletion of an Auth user removes linked evidence.
+- **Retention disclosure:** `until_user_deletes` means user-controlled deletion and Auth account cascade, **not** an implemented automated retention expiry job. Future policy and scheduled deletion requirements still need owner/legal review.
+- **Tests:** `supabase/tests/exam_reference_drill_attempts_test.sql` uses fictional source and two disposable Auth subjects to verify grants/RLS, owner A/B isolation, attempted cross-account deletion, immutability, idempotent submissions, foreign administration-year rejection, honest R1 skill attribution, and separate app/self-reported time. CI result remains pending until independently confirmed.
+- **Not yet a delivered EXM-02B feature:** The separate secure scoring/delivery API and account-aware client history screens are not implemented; R1–R4 remains a synthetic disposable prototype. No external learner should be told their current practice persists. Record EXM-02B as **schema and privacy groundwork only** until end-to-end signed-in account switching, sign-out, delete, idempotency, validated scorer, and actual progress tests are complete.
+- **No production changes:** Database migrations and tests are committed only to a feature branch; no hosted writes, merge, real reviewed content or deployment occurred.
+
+---
+
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
