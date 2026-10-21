@@ -75,7 +75,7 @@ class TargetReadinessService {
       final conceptsRes = await _supabase
           .from('curriculum_node_concepts')
           .select('concept_id, weight')
-          .filter('curriculum_node_id', 'in', nodeIds)
+          .inFilter('curriculum_node_id', nodeIds)
           .eq('relevance', 'core');
 
       // Deduplicate concepts, preserving the highest weight
