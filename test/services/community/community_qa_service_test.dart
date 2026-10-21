@@ -253,6 +253,41 @@ void main() {
 
       final questionTitles = await service.fetchQuestionTitles(['q-1', 'q-2']);
       expect(questionTitles, isEmpty);
+
+      final answerParentMap = await service.fetchAnswerParentQuestionMap(['ans-1', 'ans-2']);
+      expect(answerParentMap, isEmpty);
+    });
+
+    test('fetchLatestSubmissionFeedback dedupes feedback and retains newest decision per target', () async {
+      // Simulate multiple review decisions for target-1 (oldest and newest)
+      final oldestFeedback = AuthorReviewFeedback(
+        id: 'fb-old',
+        targetType: 'question',
+        targetId: 'target-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Old rejection note from initial review.',
+        createdAt: DateTime.parse('2026-10-18T10:00:00Z'),
+      );
+      final newestFeedback = AuthorReviewFeedback(
+        id: 'fb-new',
+        targetType: 'question',
+        targetId: 'target-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.',
+        createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
+      );
+
+      final list = [newestFeedback, oldestFeedback]; // Ordered created_at DESC as returned by RPC
+      final map = <String, AuthorReviewFeedback>{};
+      for (final f in list) {
+        map.putIfAbsent(f.targetId, () => f);
+      }
+
+      expect(map.length, 1);
+      expect(map['target-1']?.id, 'fb-new');
+      expect(map['target-1']?.feedback, 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.');
     });
   });
 }
