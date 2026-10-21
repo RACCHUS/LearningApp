@@ -273,7 +273,7 @@ class MockExamGeneratorService {
       final objectiveConceptsRes = await _supabase
           .from('curriculum_node_concepts')
           .select('concept_id, curriculum_node_id')
-          .filter('curriculum_node_id', 'in', objectiveIds);
+          .inFilter('curriculum_node_id', objectiveIds);
 
       for (final row in (objectiveConceptsRes as List? ?? [])) {
         final conceptId = row['concept_id'] as String;
@@ -297,7 +297,7 @@ class MockExamGeneratorService {
       final itemConceptsRes = await _supabase
           .from('assessment_item_concepts')
           .select('assessment_item_id, concept_id')
-          .filter('assessment_item_id', 'in', itemIds);
+          .inFilter('assessment_item_id', itemIds);
 
       for (final row in (itemConceptsRes as List? ?? [])) {
         final itemId = row['assessment_item_id'] as String;
