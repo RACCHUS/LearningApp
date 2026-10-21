@@ -179,7 +179,8 @@ where i.origin_target_version_id =
   'd3160000-0000-4000-8000-000000000001'::uuid;
 
 select is((select count(*)::integer from public.exam_part_practice_assignments
-  where exam_part_key='part_a'),1,'One immutable part assignment is issued');
+  where exam_part_key='part_a'),3,
+ 'Two pending and one scored test assignment were issued');
 select throws_ok($q$
  select public.exm03_record_assigned_practice(
  'd3200000-0000-4000-8000-000000000001','{}'::jsonb)
