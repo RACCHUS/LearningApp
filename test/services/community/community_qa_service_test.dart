@@ -101,12 +101,18 @@ void main() {
       final ppeSeeds = await service.fetchSeedFaqs(conceptId: 'workplace.safety.ppe');
       expect(ppeSeeds.length, 1);
       expect(ppeSeeds.first.conceptId, 'workplace.safety.ppe');
-      expect(ppeSeeds.first.title, contains('Personal Protective Equipment'));
+      expect(ppeSeeds.first.title, contains('Hierarchy of Controls'));
 
       final ceSeeds = await service.fetchSeedFaqs(conceptId: 'licensure.cosmetology.ce');
       expect(ceSeeds.length, 1);
       expect(ceSeeds.first.conceptId, 'licensure.cosmetology.ce');
       expect(ceSeeds.first.title, contains('Florida Cosmetology'));
+    });
+
+    test('returns empty list for unknown conceptId during offline fallback instead of unrelated FAQs', () async {
+      final service = CommunityQaService();
+      final unknownSeeds = await service.fetchSeedFaqs(conceptId: 'unrelated.unknown.concept');
+      expect(unknownSeeds, isEmpty);
     });
 
     test('returns verified offline answers for offline seed FAQs', () async {
