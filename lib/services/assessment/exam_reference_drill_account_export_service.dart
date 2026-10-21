@@ -10,11 +10,13 @@ import 'exam_reference_drill_progress_service.dart';
 class ReferencePracticeAccountExport {
   final String ownerId;
   final DateTime generatedAt;
+  final String snapshotConsistency;
   final List<ReferenceDrillEvidence> events;
 
   ReferencePracticeAccountExport({
     required this.ownerId,
     required this.generatedAt,
+    this.snapshotConsistency = 'single-sql-statement',
     required List<ReferenceDrillEvidence> events,
   }) : events = List.unmodifiable(events);
 
@@ -36,7 +38,7 @@ class ReferencePracticeAccountExport {
     'owner_auth_uid': ownerId,
     'generated_at': generatedAt.toIso8601String(),
     'record_count': events.length,
-    'snapshot_consistency': 'single-sql-statement',
+    'snapshot_consistency': snapshotConsistency,
     'complete_within_limit': true,
     'disclaimer': 'Only saved EXM reference-practice step data is included. '
         'This is not a whole LearningApp account archive. '
