@@ -921,3 +921,18 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 - **Tests added:** `supabase/tests/exam_reference_drill_presentation_delivery_test.sql` covers private grants, reviewer signoff, immutable publication, 2026/2027 fail-close, part matching, safe output field boundaries and guest denial; service tests cover stale account completions and strict projection parsing; widget tests cover guest restrictions, no automatic fetch, R1–R4 ordered recording, transient scoring retries, no approved item and account-switch disposal. **Tests not yet a pass claim.**
 - **Remaining gates:** Current scoring protocol supports original multiple-choice answer tokens, **not** free-form text interpretation or supervised proof of physical reference navigation; educator editorial workflow, held-out inventory partition, real verified 2027 content, privacy/logging security review, grade/Progress history integration, export, data-retention approval and pilot testing remain incomplete. No unsupported issuer passing prediction is shown. External pilot remains blocked.
 - **Production:** No merge, real item publication, production Supabase DDL/DML, migration repair or deployment.
+
+---
+
+### A.11 — EXM-02B current-main compatibility integration (code review; CI pending)
+
+- **Branch / base:** `feature/exm-02b-integration-20261020`, current `main` at `8dee5aa9b185887b968bc507cfebb51ad34b2da3`, retaining all independent ECO-01 and governance changes. **Status: assembled, CI pending; no merge or production writes**. The earlier draft PR stack #76 / #77 / #79 / #81 / #82 / #84 remains unmodified for focused review.
+- **Why:** `main` added `20261026000000_eco_01_insert_hardening.sql` after the prior EXM tests, causing an exact migration timestamp collision and new-file backdating failures in CI. None of those checks are bypassed or repaired in the hosted migration ledger.
+- **Reconciliation:** Five **unmerged EXM-only** SQL migration files were copied with their tested source blobs, preserving order and source contents but using monotonically appended names after latest `main`:
+  - `20261027010000_exm_01_reference_manifest_revisions.sql`
+  - `20261027020000_exm_02a_item_reference_validity.sql`
+  - `20261027030000_exm_02b_durable_drill_events.sql`
+  - `20261027040000_exm_02b_private_scoring.sql`
+  - `20261027050000_exm_02b_reviewed_practice_delivery.sql`
+- **Merge/review gate:** This is a cumulative integration branch to run checks on current `main`. Compare its implementation/test/documentation blobs with the corresponding individual draft PR slices before any consolidation. Do not merge overlapping cumulative and stacked PRs separately. An approved final strategy must reconcile exact migration filenames, review findings, production RLS and guarded deployment preflight, with no alternate version aliases and no direct hosted SQL.
+- **Open:** Confirm current-main incremental + clean-slate migrations, pgTAP, Flutter analysis/widgets, official taxonomy integrity, and editorial/owner/security review. If a merge changes `main` again, re-check migration parity and stop on any new mismatch.
