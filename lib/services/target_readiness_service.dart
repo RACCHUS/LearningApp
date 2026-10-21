@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_concept_state.dart';
 import 'concept_evidence_service.dart';
+import 'assessment/exam_part_curriculum_scope.dart';
 
 /// Evaluates learner readiness for a Learning Target Version per spec §9.
 ///
@@ -29,7 +30,11 @@ class TargetReadinessService {
   Future<TargetReadiness> evaluateTargetReadiness({
     required String userId,
     required String targetVersionId,
+    String? examPartKey,
   }) async {
+    if (targetVersionId.isEmpty && examPartKey != null) {
+      throw StateError('Part readiness needs a target version.');
+    }
     if (targetVersionId.isEmpty) {
       return TargetReadiness(
         targetVersionId: targetVersionId,
@@ -43,12 +48,18 @@ class TargetReadinessService {
 
     try {
       // 1. Get curriculum node IDs for this target version
-      final nodesRes = await _supabase
-          .from('curriculum_nodes')
-          .select('id')
-          .eq('target_version_id', targetVersionId);
-
-      final nodeIds = (nodesRes as List).map((n) => n['id'] as String).toList();
+      final List<String> nodeIds;
+      if (examPartKey != null) {
+        final scope = await ExamPartCurriculumScopeResolver(client: _supabase)
+            .resolve(targetVersionId: targetVersionId, examPartKey: examPartKey);
+        nodeIds = scope.nodeIds.toList();
+      } else {
+        final nodesRes = await _supabase
+            .from('curriculum_nodes')
+            .select('id')
+            .eq('target_version_id', targetVersionId);
+        nodeIds = (nodesRes as List).map((n) => n['id'] as String).toList();
+      }
       if (nodeIds.isEmpty) {
         return TargetReadiness(
           targetVersionId: targetVersionId,
@@ -107,6 +118,9 @@ class TargetReadinessService {
         userConceptStates: states,
       );
     } catch (e) {
+      // An explicit part request must never silently appear as a successful
+      // whole-target or empty readiness result after invalid scope metadata.
+      if (examPartKey != null) rethrow;
       debugPrint('⚠️ Error evaluating target readiness for $targetVersionId: $e');
       return TargetReadiness(
         targetVersionId: targetVersionId,
