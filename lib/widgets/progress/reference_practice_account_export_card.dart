@@ -4,15 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/assessment/exam_reference_drill_account_export_service.dart';
+import '../../services/assessment/exam_reference_verified_large_export_service.dart';
 
 /// EXM reference-practice subsystem portability, NOT a full account archive.
 /// Kept separate from ordinary knowledge/mastery dashboards.
 class ReferencePracticeAccountExportCard extends ConsumerWidget {
   final ExamReferenceDrillAccountExportService? exportService;
+  final ExamReferenceVerifiedLargeExportService? largeExportService;
 
   const ReferencePracticeAccountExportCard({
     super.key,
     this.exportService,
+    this.largeExportService,
   });
 
   @override
@@ -25,6 +28,7 @@ class ReferencePracticeAccountExportCard extends ConsumerWidget {
       key: ValueKey('exm-account-export:${auth.user.id}'),
       ownerId: auth.user.id,
       service: exportService,
+      largeService: largeExportService,
     );
   }
 }
@@ -32,11 +36,13 @@ class ReferencePracticeAccountExportCard extends ConsumerWidget {
 class _OwnerExport extends StatefulWidget {
   final String ownerId;
   final ExamReferenceDrillAccountExportService? service;
+  final ExamReferenceVerifiedLargeExportService? largeService;
 
   const _OwnerExport({
     super.key,
     required this.ownerId,
     this.service,
+    this.largeService,
   });
 
   @override
@@ -49,7 +55,13 @@ class _OwnerExportState extends State<_OwnerExport> {
   ExamReferenceDrillAccountExportService get _service =>
       widget.service ?? _defaultService;
 
+  late final ExamReferenceVerifiedLargeExportService _defaultLargeService =
+      ExamReferenceVerifiedLargeExportService();
+  ExamReferenceVerifiedLargeExportService get _largeService =>
+      widget.largeService ?? _defaultLargeService;
+
   ReferencePracticeAccountExport? _export;
+  bool _largeMode = false;
   bool _busy = false;
   String? _error;
 
@@ -58,6 +70,7 @@ class _OwnerExportState extends State<_OwnerExport> {
     setState(() {
       _busy = true;
       _export = null;
+      _largeMode = false;
       _error = null;
     });
     try {
@@ -72,6 +85,36 @@ class _OwnerExportState extends State<_OwnerExport> {
       setState(() => _error =
           'Could not prepare a complete private reference-practice export. '
           'Retry; no partial file was copied.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _prepareLarge() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+      _export = null;
+      _largeMode = false;
+    });
+    try {
+      final export = await _largeService.loadComplete(
+        expectedOwnerId: widget.ownerId,
+      );
+      if (!mounted) return;
+      if (export.ownerId != widget.ownerId) {
+        throw StateError('Untrusted large export owner');
+      }
+      setState(() {
+        _export = export;
+        _largeMode = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error =
+          'Could not verify a complete large-history export. '
+          'Records may have changed; retry. No JSON was copied.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -148,10 +191,25 @@ class _OwnerExportState extends State<_OwnerExport> {
                   ? 'Prepare all reference-practice data'
                   : 'Refresh reference-practice export'),
             ),
+            TextButton.icon(
+              key: const Key('exm-large-export-load'),
+              onPressed: _busy ? null : _prepareLarge,
+              icon: const Icon(Icons.storage_outlined),
+              label: const Text('Prepare verified large history (up to 50,000 steps)'),
+            ),
+            const Text(
+              'Large-history export checks that event and grade inventories '
+              'match before and after paging. This is not an atomic '
+              'database snapshot; changes during collection cause a failure. '
+              'All-edition exports remain EXM-only, not full account archives.',
+            ),
             if (_busy) const LinearProgressIndicator(),
             if (_error != null)
               Text(_error!, key: const Key('exm-account-export-error')),
             if (data != null) ...[
+              if (_largeMode)
+                const Text('Large export verified against the final account '
+                    'inventory; not a single database transaction.'),
               Text(
                 '${data.events.length} saved steps across '
                 '${data.manifestCount} reference edition(s)',
