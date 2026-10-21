@@ -88,10 +88,16 @@ class InContextQaSheet extends StatefulWidget {
   });
 
   @override
-  State<InContextQaSheet> createState() => _InContextQaSheetState();
+  State<InContextQaSheet> createState() => InContextQaSheetState();
 }
 
-class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerProviderStateMixin {
+class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerProviderStateMixin {
+  @visibleForTesting
+  Future<void> reloadReviewDataForTesting() => _reloadReviewData();
+
+  @visibleForTesting
+  Future<void> loadDataForTesting() => _loadData();
+
   TabController? _tabController;
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
