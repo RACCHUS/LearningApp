@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(19);
+select plan(20);
 
 select has_table('public','exam_reference_drill_attempts',
   'Durable attempts use a separate owner-scoped evidence table');
@@ -202,19 +202,17 @@ select set_config('request.jwt.claim.sub',
  'b2000000-0000-4000-8000-000000000002',true);
 select is((select count(*)::integer from public.exam_reference_drill_attempts),
   0,'Owner B cannot see account A attempts');
-select is((with deleted as (
+select lives_ok($sql$
   delete from public.exam_reference_drill_attempts
-  returning id
-) select count(*)::integer from deleted),
-  0,'Owner B cannot delete account A history');
+$sql$, 'Owner B deletion cannot touch rows protected by account A RLS');
 
 select set_config('request.jwt.claim.sub',
  'a1000000-0000-4000-8000-000000000001',true);
-select is((with deleted as (
+select is((select count(*)::integer from public.exam_reference_drill_attempts),
+  1,'Account A history remains present after B attempted deletion');
+select lives_ok($sql$
   delete from public.exam_reference_drill_attempts
-  returning id
-) select count(*)::integer from deleted),
-  1,'Owner A can delete their private drill history');
+$sql$, 'Owner A can delete their private drill history');
 reset role;
 
 select is((select count(*)::integer from public.exam_reference_drill_attempts),
