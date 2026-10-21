@@ -82,6 +82,7 @@ void main() {
     final api=_FakeBatches();
     await mount(tester,auth,api);
     expect(api.owners,isEmpty);
+    expect(find.textContaining('cannot include more than 5,000'), findsOneWidget);
     expect(find.byKey(const Key('exm-batch-delete')),findsNothing);
     await tester.tap(find.text('Preview next EXM batch'));
     await tester.pumpAndSettle();
