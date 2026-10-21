@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +10,7 @@ import '../../models/user_concept_state.dart';
 import '../concept_evidence_service.dart';
 import '../saved_study_set_service.dart';
 import 'exam_evaluation_service.dart';
+import 'exam_part_curriculum_scope.dart';
 
 class DiagnosticUnavailableException implements Exception {
   final String message;
@@ -49,10 +51,12 @@ class DiagnosticAssessmentService {
   Future<DiagnosticAvailability> getAvailability({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
   }) async {
     final snapshot = await _loadCandidateSnapshot(
       targetId: targetId,
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
     );
     return DiagnosticAvailability(
       targetVersionId: targetVersionId,
@@ -67,6 +71,7 @@ class DiagnosticAssessmentService {
   Future<List<DiagnosticAssessmentItem>> generatePreAssessment({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
     int itemCount = defaultItemCount,
   }) async {
     if (itemCount <= 0) {
@@ -76,6 +81,7 @@ class DiagnosticAssessmentService {
     final snapshot = await _loadCandidateSnapshot(
       targetId: targetId,
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
     );
     if (!snapshot.isPublishedVersion) {
       throw const DiagnosticUnavailableException(
@@ -232,6 +238,100 @@ class DiagnosticAssessmentService {
     );
   }
 
+  /// Validates all part-specific canonical items before recording evidence.
+  ///
+  /// Unlike a caller-supplied part label, the reviewed candidate snapshot is
+  /// independently reconstructed from the selected target/version/part. Any
+  /// stale, mixed-part, duplicated, or altered item aborts before evidence
+  /// writes. This is educational diagnostic evidence, NOT an official result.
+  Future<DiagnosticAssessmentReport> evaluatePartDiagnosticSession({
+    required String userId,
+    required String targetId,
+    required String targetTitle,
+    required String targetVersionId,
+    required String examPartKey,
+    required List<DiagnosticAssessmentItem> items,
+    required List<DiagnosticAnswerSubmission> submissions,
+  }) async {
+    if (examPartKey.isEmpty || items.length < minimumItemCount) {
+      throw const DiagnosticUnavailableException(
+        'A selected exam part and sufficient reviewed items are required.',
+      );
+    }
+
+    final scope = await ExamPartCurriculumScopeResolver(client: _supabase)
+        .resolve(
+          targetVersionId: targetVersionId,
+          examPartKey: examPartKey,
+        );
+    final snapshot = await _loadCandidateSnapshot(
+      targetId: targetId,
+      targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
+    );
+    if (!snapshot.isPublishedVersion ||
+        snapshot.items.length < minimumItemCount ||
+        snapshot.representedConceptIds.length < minimumConceptCount) {
+      throw const DiagnosticUnavailableException(
+        'Reviewed part-specific diagnostic coverage is unavailable.',
+      );
+    }
+
+    final approvedById = {
+      for (final candidate in snapshot.items) candidate.item.id: candidate,
+    };
+    final ids = items.map((item) => item.item.id).toSet();
+    final responseIds = submissions.map((answer) => answer.itemId).toSet();
+    if (ids.length != items.length ||
+        responseIds.length != submissions.length ||
+        submissions.length != items.length ||
+        !responseIds.containsAll(ids)) {
+      throw StateError('Selected diagnostic item/response IDs are invalid.');
+    }
+
+    final canonicalItems = <DiagnosticAssessmentItem>[];
+    for (final supplied in items) {
+      final canonical = approvedById[supplied.item.id];
+      if (canonical == null ||
+          canonical.item.prompt != supplied.item.prompt ||
+          canonical.item.interactionType != supplied.item.interactionType ||
+          jsonEncode(canonical.item.responseSpec) !=
+              jsonEncode(supplied.item.responseSpec) ||
+          jsonEncode(canonical.item.scoringSpec) !=
+              jsonEncode(supplied.item.scoringSpec) ||
+          canonical.item.difficulty != supplied.item.difficulty ||
+          canonical.item.explanation != supplied.item.explanation ||
+          canonical.concepts.length != supplied.concepts.length ||
+          canonical.concepts.asMap().entries.any((entry) {
+            final other = supplied.concepts[entry.key];
+            return entry.value.conceptId != other.conceptId ||
+                entry.value.role != other.role ||
+                entry.value.weight != other.weight;
+          })) {
+        throw StateError(
+          'The selected part diagnostic contains stale or unapproved items.',
+        );
+      }
+      canonicalItems.add(canonical);
+    }
+
+    // Score from the independently loaded canonical version, not mutable
+    // caller payloads. Historical item-version pinning remains a future gate.
+    final result = await evaluateDiagnosticSession(
+      userId: userId,
+      targetId: targetId,
+      targetTitle: targetTitle,
+      targetVersionId: targetVersionId,
+      items: canonicalItems,
+      submissions: submissions,
+    );
+    return result.copyWith(
+      examPartKey: examPartKey,
+      curriculumRootNodeId: scope.rootNodeId,
+      learnerId: userId,
+    );
+  }
+
   Future<DiagnosticAssessmentReport> generateRemedialStudySet({
     required DiagnosticAssessmentReport report,
   }) async {
@@ -265,7 +365,11 @@ class DiagnosticAssessmentService {
   Future<_CandidateSnapshot> _loadCandidateSnapshot({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
   }) async {
+    if (targetVersionId.isEmpty && examPartKey != null) {
+      throw const DiagnosticUnavailableException('No version for selected exam part.');
+    }
     if (targetVersionId.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: false,
@@ -290,14 +394,25 @@ class DiagnosticAssessmentService {
       );
     }
 
-    final nodeRows = await _supabase
-        .from('curriculum_nodes')
-        .select('id')
-        .eq('target_version_id', targetVersionId);
-    final nodeIds = (nodeRows as List)
-        .map((row) => row['id']?.toString())
-        .whereType<String>()
-        .toList();
+    final ExamPartCurriculumScope? partScope = examPartKey == null
+        ? null
+        : await ExamPartCurriculumScopeResolver(client: _supabase).resolve(
+            targetVersionId: targetVersionId,
+            examPartKey: examPartKey,
+          );
+    final List<String> nodeIds;
+    if (partScope == null) {
+      final nodeRows = await _supabase
+          .from('curriculum_nodes')
+          .select('id')
+          .eq('target_version_id', targetVersionId);
+      nodeIds = (nodeRows as List)
+          .map((row) => row['id']?.toString())
+          .whereType<String>()
+          .toList();
+    } else {
+      nodeIds = partScope.nodeIds.toList();
+    }
     if (nodeIds.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: true,
@@ -322,6 +437,22 @@ class DiagnosticAssessmentService {
         coreConceptWeights[conceptId] = weight;
       }
     }
+    // A concept shared by another exam part cannot by itself prove an
+    // assessment item's part identity. Exclude these ambiguous links from
+    // part-specific diagnostic selection until item-to-node review exists.
+    // Global knowledge readiness may still reuse this concept legitimately.
+    if (partScope != null && partScope.outsideNodeIds.isNotEmpty) {
+      final outsideRows = await _supabase
+          .from('curriculum_node_concepts')
+          .select('concept_id')
+          .inFilter('curriculum_node_id', partScope.outsideNodeIds.toList());
+      final shared = (outsideRows as List)
+          .map((row) => row['concept_id']?.toString())
+          .whereType<String>()
+          .toSet();
+      coreConceptWeights.removeWhere((id, _) => shared.contains(id));
+    }
+
     if (coreConceptWeights.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: true,
@@ -358,14 +489,21 @@ class DiagnosticAssessmentService {
         .inFilter('assessment_item_id', itemIds);
 
     final conceptIds = <String>{};
+    final invalidScopedItemIds = <String>{};
     final rawByItem = <String, List<Map<String, dynamic>>>{};
     for (final raw in itemConceptRows as List) {
       final row = (raw as Map).cast<String, dynamic>();
       final itemId = row['assessment_item_id']?.toString();
       final conceptId = row['concept_id']?.toString();
-      if (itemId == null ||
-          conceptId == null ||
-          !coreConceptWeights.containsKey(conceptId)) {
+      if (itemId == null) continue;
+      // A mixed A+B or shared-concept assessment is not a safe Part A item
+      // simply because one of its mappings happens to be within Part A.
+      if (partScope != null &&
+          (conceptId == null || !coreConceptWeights.containsKey(conceptId))) {
+        invalidScopedItemIds.add(itemId);
+        continue;
+      }
+      if (conceptId == null || !coreConceptWeights.containsKey(conceptId)) {
         continue;
       }
       rawByItem.putIfAbsent(itemId, () => []).add(row);
@@ -397,6 +535,7 @@ class DiagnosticAssessmentService {
     final represented = <String>{};
 
     for (final item in assessmentItems) {
+      if (invalidScopedItemIds.contains(item.id)) continue;
       final mappings = rawByItem[item.id] ?? const [];
       if (mappings.isEmpty) continue;
 
