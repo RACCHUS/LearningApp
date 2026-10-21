@@ -274,7 +274,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           unselectedLabelColor: Colors.grey,
           indicatorColor: Colors.blueAccent,
           tabs: [
-            Tab(text: 'Seed FAQs (${_seedFaqs.length})'),
+            Tab(text: 'FAQs (${_seedFaqs.length})'),
             const Tab(text: 'Ask a Question'),
             Tab(text: 'My Drafts (${_myDrafts.length})'),
           ],
@@ -303,7 +303,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No seed FAQs available for this specific topic yet.',
+            'No FAQs available for this specific topic yet.',
             style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
         ),
@@ -317,6 +317,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         final q = _seedFaqs[index];
         final isExpanded = _expandedQuestions.contains(q.id);
         final isUpvoted = _userUpvoted.contains(q.id);
+        final isOfflineDemo = q.authorId == 'offline-demo';
 
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -339,19 +340,29 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.12),
+                          color: isOfflineDemo
+                              ? Colors.grey.withValues(alpha: 0.15)
+                              : Colors.blue.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Official FAQ',
-                          style: TextStyle(color: Colors.blue[700], fontSize: 11, fontWeight: FontWeight.bold),
+                          isOfflineDemo
+                              ? 'Offline Demo Preview'
+                              : (q.isSeeded ? 'Official FAQ' : 'Community FAQ'),
+                          style: TextStyle(
+                            color: isOfflineDemo ? Colors.grey[800] : Colors.blue[700],
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${q.upvoteCount} upvotes',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
+                      if (!isOfflineDemo) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '${q.upvoteCount} upvotes',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -396,21 +407,33 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                       ),
                       const SizedBox(height: 10),
                       if (_answersCache.containsKey(q.id)) ...[
-                        const Text(
-                          'Verified Answer:',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green),
-                        ),
-                        const SizedBox(height: 4),
-                        for (final ans in _answersCache[q.id]!)
+                        for (final ans in _answersCache[q.id]!) ...[
+                          Text(
+                            ans.isAccepted && !isOfflineDemo
+                                ? 'Verified Answer:'
+                                : 'Community Answer:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: ans.isAccepted && !isOfflineDemo
+                                  ? Colors.green
+                                  : Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
                           Container(
-                            margin: const EdgeInsets.only(top: 4),
+                            margin: const EdgeInsets.only(top: 4, bottom: 8),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.08),
+                              color: (ans.isAccepted && !isOfflineDemo
+                                      ? Colors.green
+                                      : Colors.blueGrey)
+                                  .withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(ans.bodyMarkdown, style: const TextStyle(fontSize: 13)),
                           ),
+                        ],
                       ],
                     ],
                   ),

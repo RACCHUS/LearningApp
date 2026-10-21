@@ -4,13 +4,17 @@ import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
+import 'package:learning_pwa/models/community/community_answer.dart';
+
 class FakeCommunityQaService extends CommunityQaService {
   final List<CommunityQuestion> fakeSeeds;
   final List<CommunityQuestion> fakeDrafts;
+  final Map<String, List<CommunityAnswer>> fakeAnswers;
 
   FakeCommunityQaService({
     required this.fakeSeeds,
     required this.fakeDrafts,
+    this.fakeAnswers = const {},
   });
 
   @override
@@ -25,6 +29,11 @@ class FakeCommunityQaService extends CommunityQaService {
   @override
   Future<List<CommunityQuestion>> fetchMyDrafts() async {
     return fakeDrafts;
+  }
+
+  @override
+  Future<List<CommunityAnswer>> fetchAnswersForQuestion(String questionId) async {
+    return fakeAnswers[questionId] ?? [];
   }
 
   @override
@@ -114,18 +123,83 @@ void main() {
 
       expect(find.text('Phonics Blending Pilot'), findsOneWidget);
       expect(find.textContaining('Phase 1 Pilot: Open public community posting is disabled'), findsOneWidget);
-      expect(find.text('Seed FAQs (1)'), findsOneWidget);
+      expect(find.text('FAQs (1)'), findsOneWidget);
       expect(find.text('Ask a Question'), findsOneWidget);
       expect(find.text('My Drafts (1)'), findsOneWidget);
     });
 
-    testWidgets('displays seed FAQs with upvote counts and official badges', (tester) async {
+    testWidgets('displays seed FAQs with upvote counts and official badges for reviewed records', (tester) async {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
       expect(find.text('How does phonics blending work?'), findsOneWidget);
       expect(find.text('Official FAQ'), findsOneWidget);
       expect(find.text('9 upvotes'), findsOneWidget);
+    });
+
+    testWidgets('displays offline demonstration preview badge without fabricated engagement', (tester) async {
+      final offlineDemoSeed = [
+        CommunityQuestion(
+          id: 'seed-faq-001',
+          authorId: 'offline-demo',
+          title: 'What is the CVC pattern in phonics?',
+          bodyMarkdown: 'A CVC word is composed of a Consonant, a Short Vowel, and a Consonant.',
+          status: 'published',
+          isSeeded: true,
+          conceptId: 'literacy.cvc.basics',
+          viewCount: 0,
+          upvoteCount: 0,
+          answerCount: 0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ];
+
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: offlineDemoSeed,
+          fakeDrafts: [],
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Offline Demo Preview'), findsOneWidget);
+      expect(find.text('Official FAQ'), findsNothing);
+      expect(find.textContaining('upvotes'), findsNothing);
+    });
+
+    testWidgets('distinguishes verified answers from unreviewed community answers', (tester) async {
+      final fakeAnswers = {
+        'faq-1': [
+          CommunityAnswer(
+            id: 'ans-1',
+            questionId: 'faq-1',
+            authorId: 'admin-1',
+            bodyMarkdown: 'Blending requires sound continuity.',
+            isAccepted: true,
+            status: 'published',
+            upvoteCount: 5,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        ],
+      };
+
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: List.from(testSeeds),
+          fakeDrafts: [],
+          fakeAnswers: fakeAnswers,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Expand the question
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Verified Answer:'), findsOneWidget);
+      expect(find.text('Blending requires sound continuity.'), findsOneWidget);
     });
 
     testWidgets('displays user private drafts in My Drafts tab', (tester) async {

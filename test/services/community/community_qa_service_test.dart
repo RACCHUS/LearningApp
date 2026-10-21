@@ -67,13 +67,21 @@ void main() {
   });
 
   group('ECO-01: CommunityQaService Offline & Fallback', () {
-    test('returns default seed FAQs when client is offline or unconfigured', () async {
+    test('returns default demonstration FAQs without fabricated metrics when client is offline', () async {
       final service = CommunityQaService();
       final seeds = await service.fetchSeedFaqs();
 
       expect(seeds.isNotEmpty, isTrue);
       expect(seeds.any((s) => s.isSeeded), isTrue);
       expect(seeds.any((s) => s.conceptId == 'literacy.cvc.basics'), isTrue);
+
+      // Verify absence of fabricated engagement metrics and presence of offline-demo author
+      for (final s in seeds) {
+        expect(s.authorId, 'offline-demo');
+        expect(s.upvoteCount, 0);
+        expect(s.viewCount, 0);
+        expect(s.answerCount, 0);
+      }
     });
 
     test('filters offline seed FAQs by conceptId', () async {
@@ -83,6 +91,8 @@ void main() {
       expect(cvcSeeds.length, 1);
       expect(cvcSeeds.first.conceptId, 'literacy.cvc.basics');
       expect(cvcSeeds.first.title, contains('CVC pattern'));
+      expect(cvcSeeds.first.authorId, 'offline-demo');
+      expect(cvcSeeds.first.upvoteCount, 0);
     });
   });
 }
