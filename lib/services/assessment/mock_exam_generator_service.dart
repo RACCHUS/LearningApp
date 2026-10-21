@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/assessment_engine/mock_exam_blueprint.dart';
 import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../models/assessment_item.dart';
+import 'exam_part_curriculum_scope.dart';
 
 /// Generates practice-only sets from target curriculum constraints.
 /// Official exam fidelity requires separate sourced validation (EXM-03).
@@ -26,7 +27,10 @@ class MockExamGeneratorService {
         _random = random ?? Random();
 
   /// Loads curriculum-based practice constraints for a target version.
-  Future<MockExamBlueprint> loadBlueprint(String targetVersionId) async {
+  Future<MockExamBlueprint> loadBlueprint(
+    String targetVersionId, {
+    String? examPartKey,
+  }) async {
     final versionRes = await _supabase
         .from('target_versions')
         .select('id, version_code, title, metadata')
@@ -36,6 +40,15 @@ class MockExamGeneratorService {
     if (versionRes == null) {
       throw StateError('Target version not found: $targetVersionId');
     }
+
+    // A requested part must resolve against THIS version's typed profile.
+    // Invalid roots never silently expand to the whole target.
+    final partScope = examPartKey == null
+        ? null
+        : await ExamPartCurriculumScopeResolver(client: _supabase).resolve(
+            targetVersionId: targetVersionId,
+            examPartKey: examPartKey,
+          );
 
     final versionMeta =
         (versionRes['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -102,6 +115,9 @@ class MockExamGeneratorService {
 
     final domainList = <DomainWeightConstraint>[];
     for (final row in (domainNodesRes as List? ?? [])) {
+      if (partScope != null && !partScope.nodeIds.contains(row['id'])) {
+        continue;
+      }
       final weight = (row['weight'] as num?)?.toDouble() ?? 0.0;
       domainList.add(
         DomainWeightConstraint(
@@ -135,6 +151,8 @@ class MockExamGeneratorService {
 
     return MockExamBlueprint(
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
+      curriculumRootNodeId: partScope?.rootNodeId,
       examCode: examCode,
       title: title,
       timeLimitMinutes: timeLimit,
@@ -168,10 +186,27 @@ class MockExamGeneratorService {
   Future<MockExamSession> generateExamSession({
     required String targetVersionId,
     int? questionCount,
+    String? examPartKey,
     MockExamBlueprint? preloadedBlueprint,
   }) async {
-    final blueprint =
-        preloadedBlueprint ?? await loadBlueprint(targetVersionId);
+    final blueprint = preloadedBlueprint ??
+        await loadBlueprint(targetVersionId, examPartKey: examPartKey);
+    if (blueprint.targetVersionId != targetVersionId ||
+        blueprint.examPartKey != examPartKey ||
+        (examPartKey != null && blueprint.curriculumRootNodeId == null)) {
+      throw StateError('Preloaded exam blueprint does not match requested part.');
+    }
+    if (preloadedBlueprint != null && examPartKey != null) {
+      final verified = await ExamPartCurriculumScopeResolver(client: _supabase)
+          .resolve(targetVersionId: targetVersionId, examPartKey: examPartKey);
+      if (blueprint.curriculumRootNodeId != verified.rootNodeId ||
+          blueprint.domainWeights.isEmpty ||
+          blueprint.domainWeights.any(
+            (domain) => !verified.nodeIds.contains(domain.domainId),
+          )) {
+        throw StateError('Preloaded exam blueprint is outside selected part.');
+      }
+    }
     final totalQuestions = questionCount ?? blueprint.defaultQuestionCount;
     if (totalQuestions <= 0) {
       throw ArgumentError.value(
@@ -238,7 +273,7 @@ class MockExamGeneratorService {
       final objectiveConceptsRes = await _supabase
           .from('curriculum_node_concepts')
           .select('concept_id, curriculum_node_id')
-          .filter('curriculum_node_id', 'in', objectiveIds);
+          .inFilter('curriculum_node_id', objectiveIds);
 
       for (final row in (objectiveConceptsRes as List? ?? [])) {
         final conceptId = row['concept_id'] as String;
@@ -262,7 +297,7 @@ class MockExamGeneratorService {
       final itemConceptsRes = await _supabase
           .from('assessment_item_concepts')
           .select('assessment_item_id, concept_id')
-          .filter('assessment_item_id', 'in', itemIds);
+          .inFilter('assessment_item_id', itemIds);
 
       for (final row in (itemConceptsRes as List? ?? [])) {
         final itemId = row['assessment_item_id'] as String;

@@ -154,6 +154,8 @@ class ScoredItemResult {
 class ExamDiagnosticReport {
   final String sessionId;
   final String targetVersionId;
+  /// Scoped practice identity; null is legacy whole-target practice.
+  final String? examPartKey;
   final DateTime completedAt;
   final Duration durationTaken;
   final OfficialExamFacts officialFacts;
@@ -165,6 +167,7 @@ class ExamDiagnosticReport {
   const ExamDiagnosticReport({
     required this.sessionId,
     required this.targetVersionId,
+    this.examPartKey,
     required this.completedAt,
     required this.durationTaken,
     required this.officialFacts,
