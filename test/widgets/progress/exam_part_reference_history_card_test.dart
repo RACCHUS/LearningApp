@@ -32,7 +32,7 @@ Map<String,dynamic> _record(int index, {String owner='owner-a'}) => {
   'awaiting_grade':1, 'skipped_steps':1,
   'first_recorded_at':'2027-03-01T11:59:00Z',
   'last_recorded_at':
-      '2027-03-01T11:${index.toString().padLeft(2,'0')}:00Z',
+      '2027-03-01T12:${index.toString().padLeft(2,'0')}:00Z',
   'completed_four_steps':true,
 };
 
@@ -64,7 +64,7 @@ void main() {
     await tester.tap(find.byKey(const Key('exam-part-history-load')));
     await tester.pumpAndSettle();
     expect(find.textContaining('1 recent saved'),findsOneWidget);
-    expect(find.textContaining('1 graded correct'),findsNothing);
+    expect(find.textContaining('1 graded correct'),findsOneWidget);
     expect(find.textContaining('1 graded incorrect'),findsOneWidget);
     expect(find.textContaining('1 awaiting'),findsOneWidget);
     expect(find.textContaining('1 skipped'),findsOneWidget);
