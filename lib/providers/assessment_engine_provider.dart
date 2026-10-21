@@ -7,6 +7,8 @@ import '../models/assessment_engine/mock_exam_session.dart';
 import '../models/assessment_item.dart';
 import '../services/assessment/adaptive_practice_service.dart';
 import '../services/assessment/exam_evaluation_service.dart';
+import '../services/assessment/exam_practice_elapsed_clock.dart';
+
 import '../services/assessment/mock_exam_generator_service.dart';
 
 /// Provider for MockExamGeneratorService
@@ -31,43 +33,75 @@ final mockExamBlueprintProvider =
   return generator.loadBlueprint(targetVersionId);
 });
 
-/// State controller for an active timed mock exam session
+/// State controller for a local, practice-only mock examination.
+/// A Stopwatch measures actual active elapsed time; the periodic timer only
+/// refreshes display state and cannot be treated as an official exam clock.
 class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
   final ExamEvaluationService _evaluationService;
+  final ExamPracticeElapsedClock _clock;
   Timer? _timer;
+  bool _submitted = false;
 
-  ExamSessionNotifier(this._evaluationService) : super(null);
+  ExamSessionNotifier(
+    this._evaluationService, {
+    ExamPracticeElapsedClock? clock,
+  })  : _clock = clock ?? StopwatchExamPracticeElapsedClock(),
+        super(null);
 
-  void startSession(MockExamSession session) {
+  void _cancelTicker() {
     _timer?.cancel();
-    state = session.copyWith(
-      startedAt: DateTime.now(),
-      status: ExamSessionStatus.inProgress,
-    );
+    _timer = null;
+  }
 
-    // Start 1-second ticker for timed simulation
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state == null || !state!.status.isActive) {
-        timer.cancel();
-        return;
-      }
+  void _syncElapsed() {
+    final current = state;
+    if (current == null || current.status != ExamSessionStatus.inProgress) {
+      return;
+    }
 
-      final newElapsed = state!.elapsedSeconds + 1;
-      if (newElapsed >= state!.timeLimit.inSeconds) {
-        timer.cancel();
-        state = state!.copyWith(
-          elapsedSeconds: newElapsed,
-          completedAt: DateTime.now(),
-          status: ExamSessionStatus.expired,
-        );
-      } else {
-        state = state!.copyWith(elapsedSeconds: newElapsed);
-      }
+    // A throttled timer does not grant extra time. Action handlers call this
+    // synchronously too, before accepting any post-deadline answer or flag.
+    final elapsed = _clock.elapsed.inSeconds;
+    if (elapsed >= current.timeLimit.inSeconds) {
+      _clock.stop();
+      _cancelTicker();
+      state = current.copyWith(
+        elapsedSeconds: elapsed,
+        completedAt: DateTime.now(),
+        status: ExamSessionStatus.expired,
+      );
+    } else if (elapsed != current.elapsedSeconds) {
+      state = current.copyWith(elapsedSeconds: elapsed);
+    }
+  }
+
+  void _startTicker() {
+    _cancelTicker();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _syncElapsed();
     });
   }
 
+  void startSession(MockExamSession session) {
+    _cancelTicker();
+    _clock.stop();
+    _clock.reset();
+    _submitted = false;
+    state = session.copyWith(
+      startedAt: DateTime.now(),
+      elapsedSeconds: 0,
+      status: ExamSessionStatus.inProgress,
+    );
+    _clock.start();
+    _syncElapsed();
+    if (state?.status == ExamSessionStatus.inProgress) {
+      _startTicker();
+    }
+  }
+
   void recordResponse(String itemId, dynamic response) {
-    if (state == null || state!.isCompleted) return;
+    _syncElapsed();
+    if (state?.status != ExamSessionStatus.inProgress) return;
 
     final updated = Map<String, dynamic>.from(state!.userResponses);
     if (response == null) {
@@ -80,7 +114,8 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
   }
 
   void toggleFlag(String itemId) {
-    if (state == null || state!.isCompleted) return;
+    _syncElapsed();
+    if (state?.status != ExamSessionStatus.inProgress) return;
 
     final updated = Set<String>.from(state!.flaggedItemIds);
     if (updated.contains(itemId)) {
@@ -92,33 +127,50 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     state = state!.copyWith(flaggedItemIds: updated);
   }
 
+  /// Local educational practice permits pause. It is not official timing.
   void pauseSession() {
-    if (state == null || state!.status != ExamSessionStatus.inProgress) return;
-    _timer?.cancel();
+    _syncElapsed();
+    if (state?.status != ExamSessionStatus.inProgress) return;
+    _clock.stop();
+    _cancelTicker();
     state = state!.copyWith(status: ExamSessionStatus.paused);
   }
 
   void resumeSession() {
-    if (state == null || state!.status != ExamSessionStatus.paused) return;
-    startSession(state!);
+    if (state?.status != ExamSessionStatus.paused) return;
+    // Crucially, do not call startSession: that resets the clock and start time.
+    _clock.start();
+    state = state!.copyWith(status: ExamSessionStatus.inProgress);
+    _syncElapsed();
+    if (state?.status == ExamSessionStatus.inProgress) {
+      _startTicker();
+    }
   }
 
+  /// Only the first submission is evaluated. An expired practice session
+  /// remains expired in its result; a late click cannot make it "completed".
   ExamDiagnosticReport? submitExam() {
-    if (state == null) return null;
-    _timer?.cancel();
+    if (state == null || _submitted) return null;
+    _syncElapsed();
+    _cancelTicker();
+    _clock.stop();
 
-    final finishedSession = state!.copyWith(
-      completedAt: DateTime.now(),
-      status: ExamSessionStatus.completed,
-    );
+    final current = state!;
+    final finishedSession = current.status == ExamSessionStatus.expired
+        ? current
+        : current.copyWith(
+            completedAt: DateTime.now(),
+            status: ExamSessionStatus.completed,
+          );
+    _submitted = true;
     state = finishedSession;
-
     return _evaluationService.evaluateExam(finishedSession);
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _cancelTicker();
+    _clock.stop();
     super.dispose();
   }
 }
