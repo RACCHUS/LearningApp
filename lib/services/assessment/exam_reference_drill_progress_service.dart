@@ -260,7 +260,7 @@ class ExamReferenceDrillProgressService {
     final seen = <String>{};
     while (true) {
       _requireOwner(expectedOwnerId);
-      final limit = (maxRecords + 1 - all.length).clamp(1, 100);
+      final limit = (maxRecords + 1 - all.length).clamp(1, 100).toInt();
       final dynamic page = _testTransport != null
           ? await _testTransport(manifestRevisionId, limit,
               cursorTime, cursorId)
