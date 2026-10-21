@@ -1097,3 +1097,10 @@ strict version/part/owner model, bounded part read/export and exact-part
 erasure. These do **not** integrate with EXM-02B R1–R4 portability or UI
 and are not currently displayed as verified past attempts. The complete
 release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
+
+### A.28 — EXM-03 private issued-assignment scoring (draft)
+
+- The append-only migration `20261031130000_exm_03_assigned_practice_scoring.sql` adds a separate **service-role-only** assignment store. Client scores cannot be persisted without an exact question set preissued by a trusted backend, a current approved manifest, an unchanged canonical item fingerprint, reviewed source binding, part-exclusive core concept mapping, and at least six single-choice items spanning three concepts.
+- The service-only `exm03_record_assigned_practice(uuid,jsonb)` uses row locking and unique assignment linkage to make identical network retries idempotent, reject conflicting replays, and grade from canonical server scoring rules. It returns only educational practice counts and score, **never official exam certification/pass/fail**. No consumer issuance path is enabled.
+- `exm03_erase_part_attempts(uuid,text)` revokes direct owner DELETE and atomically erases *both* assignment and scored evidence for a confirmed version/part to prevent post-erasure replay restoration. The Dart service calls this RPC; the user confirmation interface and complete account-wide export/retention contracts are still blocked.
+- A separate synthetic pgTAP suite tests source/role gates, a six-item verified attempt, retry, conflicts and erasure. See `docs/exm/EXM_03_ASSIGNED_CANONICAL_SCORING.md`. No production SQL, hosted account data or new learner UX is modified.
