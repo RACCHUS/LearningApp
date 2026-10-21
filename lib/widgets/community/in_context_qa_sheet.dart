@@ -476,7 +476,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                               Text(
                                 ans.isAccepted && !isOfflineDemo
                                     ? 'Accepted Answer:'
-                                    : (isOfflineDemo ? 'Official Answer:' : 'Community Answer:'),
+                                    : (isOfflineDemo ? 'Offline Example Answer:' : 'Community Answer:'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
