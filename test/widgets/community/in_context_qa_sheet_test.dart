@@ -1278,7 +1278,7 @@ void main() {
       expect(find.text('Under Review'), findsOneWidget);
     });
 
-    testWidgets('answer revision composer prevents cross-account submission if auth changes while dialog is open', (tester) async {
+    testWidgets('answer revision composer is dismissed immediately on auth switch, hiding private text and feedback', (tester) async {
       final authStreamController = StreamController<AuthState>.broadcast();
       final rejectedAnswer = CommunityAnswer(
         id: 'ans-user-a-1',
@@ -1290,10 +1290,21 @@ void main() {
         updatedAt: DateTime(2026, 10, 19),
       );
 
+      final feedback = AuthorReviewFeedback(
+        id: 'fb-ans-user-a-1',
+        targetType: 'answer',
+        targetId: 'ans-user-a-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Private educator feedback intended only for User A.',
+        createdAt: DateTime(2026, 10, 19),
+      );
+
       final fakeService = FakeCommunityQaService(
         fakeSeeds: List.from(testSeeds),
         fakeDrafts: [],
         fakeDraftAnswers: [rejectedAnswer],
+        fakeFeedback: [feedback],
         fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
         fakeUserId: 'user-a',
         authStreamController: authStreamController,
@@ -1308,11 +1319,16 @@ void main() {
       await tester.tap(find.text('Revise and Resubmit Answer'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Revise and Resubmit Answer'), findsNWidgets(2));
+      // Revision modal is open with User A's private answer content and feedback
+      expect(find.text('Revise and Resubmit Answer'), findsNWidgets(2)); // Button & Dialog Title
+      expect(find.text('User A draft answer needing revision.'), findsNWidgets(2)); // List & Dialog
+      expect(find.text('Private educator feedback intended only for User A.'), findsNWidgets(2)); // List & Dialog
+      expect(find.text('Submit Revised Answer'), findsOneWidget);
 
       // While dialog is open, switch account to user-b
       fakeService.fakeUserId = 'user-b';
       fakeService.fakeDraftAnswers.clear();
+      fakeService.fakeFeedback.clear();
       final sessionB = Session(
         accessToken: 'mock-token-b',
         tokenType: 'bearer',
@@ -1327,13 +1343,134 @@ void main() {
       authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
       await tester.pumpAndSettle();
 
-      // Attempt to submit in the open dialog
-      await tester.tap(find.text('Submit Revised Answer'));
-      await tester.pumpAndSettle();
+      // Revision modal must be immediately dismissed: title, submit button, draft text, and feedback are absent
+      expect(find.text('Submit Revised Answer'), findsNothing);
+      expect(find.text('User A draft answer needing revision.'), findsNothing);
+      expect(find.text('Private educator feedback intended only for User A.'), findsNothing);
+      expect(find.text('You have not authored any private questions or answers yet.'), findsOneWidget);
 
       // Submission must not have been created for user-b
       expect(fakeService.lastCreatedAnswerQuestionId, isNull);
       expect(fakeService.fakeDraftAnswers, isEmpty);
+
+      await authStreamController.close();
+    });
+
+    testWidgets('concurrent independent review list refresh does not discard legitimate in-flight question submission', (tester) async {
+      final draftCompleter = Completer<CommunityQuestion?>();
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeUserId: 'user-a',
+      );
+      fakeService.draftQuestionCompleter = draftCompleter;
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // User A goes to the "Ask a Question" tab and fills the form
+      await tester.tap(find.text('Ask a Question'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Question Title'),
+        'Valid Question in Progress',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Details / Context'),
+        'Detailed explanation for the valid in-flight question with sufficient length.',
+      );
+      await tester.pumpAndSettle();
+
+      // Submit the question (now in-flight via draftCompleter)
+      await tester.tap(find.text('Save Private Question'));
+      await tester.pump();
+
+      // An independent reload occurs for the same user (e.g. reloadReviewData or FAQ expansion)
+      // Since user is still user-a, session generation remains identical.
+      await fakeService.fetchSeedFaqs();
+
+      // Now the submission completes successfully
+      final savedQuestion = CommunityQuestion(
+        id: 'draft-q-success-1',
+        authorId: 'user-a',
+        title: 'Valid Question in Progress',
+        bodyMarkdown: 'Detailed explanation for the valid in-flight question with sufficient length.',
+        status: 'under_review',
+        isSeeded: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      draftCompleter.complete(savedQuestion);
+      await tester.pumpAndSettle();
+
+      // The submission must NOT be discarded: text fields cleared, drafts updated, and success message shown
+      expect(find.widgetWithText(TextFormField, 'Valid Question in Progress'), findsNothing);
+      expect(find.text('Question saved as a private draft and queued for review.'), findsOneWidget);
+      expect(find.text('My Drafts (1)'), findsOneWidget);
+      expect(find.text('Valid Question in Progress'), findsOneWidget);
+    });
+
+    testWidgets('moderator rejection dialog is dismissed immediately on auth switch', (tester) async {
+      final authStreamController = StreamController<AuthState>.broadcast();
+      final reviewQuestion = CommunityQuestion(
+        id: 'rev-q-mod-1',
+        authorId: 'learner-1',
+        title: 'Question for Mod Review',
+        bodyMarkdown: 'Context for mod review question body.',
+        status: 'under_review',
+        isSeeded: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewQueue: [reviewQuestion],
+        fakeUserId: 'user-mod',
+        authStreamController: authStreamController,
+      );
+
+      await tester.pumpWidget(buildTestWidget(
+        service: fakeService,
+        moderationService: FakeModerationService(isMod: true),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Review Queue (1)'));
+      await tester.pumpAndSettle();
+
+      // Moderator taps Reject to open the rejection dialog
+      await tester.tap(find.text('Reject'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reject question'), findsOneWidget);
+      expect(find.textContaining('Provide feedback for rejecting "Question for Mod Review"'), findsOneWidget);
+      expect(find.text('Confirm Rejection'), findsOneWidget);
+
+      // Account changes to learner user-b
+      fakeService.fakeUserId = 'user-b';
+      fakeService.fakeReviewQueue.clear();
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // Rejection dialog must be completely dismissed
+      expect(find.text('Reject question'), findsNothing);
+      expect(find.text('Confirm Rejection'), findsNothing);
+      expect(find.textContaining('Provide feedback for rejecting "Question for Mod Review"'), findsNothing);
 
       await authStreamController.close();
     });
