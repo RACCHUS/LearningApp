@@ -98,7 +98,14 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   final _formKey = GlobalKey<FormState>();
 
   String? _activeUserId;
-  int _loadRequestId = 0;
+  int _authSessionGeneration = 0;
+  int _loadDataSeq = 0;
+  int _reloadReviewSeq = 0;
+
+  BuildContext? _activeRevisionDialogContext;
+  BuildContext? _activeRejectionDialogContext;
+  BuildContext? _activeLaunchGateDialogContext;
+
   StreamSubscription<AuthState>? _authSubscription;
 
   bool _isLoading = true;
@@ -118,6 +125,30 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
   final Set<String> _userUpvoted = {};
+
+  bool _isSessionValid(int sessionGen, String? sessionUserId) {
+    return mounted && sessionGen == _authSessionGeneration && widget.service.currentUserId == sessionUserId;
+  }
+
+  void _dismissActiveDialogs() {
+    final revCtx = _activeRevisionDialogContext;
+    _activeRevisionDialogContext = null;
+    if (revCtx != null && revCtx.mounted) {
+      Navigator.of(revCtx, rootNavigator: true).pop();
+    }
+
+    final rejCtx = _activeRejectionDialogContext;
+    _activeRejectionDialogContext = null;
+    if (rejCtx != null && rejCtx.mounted) {
+      Navigator.of(rejCtx, rootNavigator: true).pop();
+    }
+
+    final gateCtx = _activeLaunchGateDialogContext;
+    _activeLaunchGateDialogContext = null;
+    if (gateCtx != null && gateCtx.mounted) {
+      Navigator.of(gateCtx, rootNavigator: true).pop();
+    }
+  }
 
   String _formatAuthorId(String id) {
     if (id == 'offline-demo') return 'Offline Demo';
@@ -152,7 +183,8 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   void _onUserChanged(String? newUserId) {
     if (!mounted) return;
-    _loadRequestId++;
+    _authSessionGeneration++;
+    _dismissActiveDialogs();
     _titleController.clear();
     _bodyController.clear();
     setState(() {
@@ -179,6 +211,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _dismissActiveDialogs();
     _tabController?.dispose();
     _titleController.dispose();
     _bodyController.dispose();
@@ -186,12 +219,13 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _loadData() async {
-    final int requestId = ++_loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final int loadSeq = ++_loadDataSeq;
+    final String? sessionUserId = widget.service.currentUserId;
 
     setState(() {
       _isLoading = true;
-      _activeUserId = requestUserId;
+      _activeUserId = sessionUserId;
     });
 
     try {
@@ -242,7 +276,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         }
       } catch (_) {}
 
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId) || loadSeq != _loadDataSeq) {
         return;
       }
 
@@ -266,7 +300,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         _isLoading = false;
       });
     } catch (_) {
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId) || loadSeq != _loadDataSeq) {
         return;
       }
       if (_tabController == null || _tabController!.length != 3) {
@@ -279,8 +313,9 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _reloadReviewData() async {
-    final int requestId = ++_loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final int reviewSeq = ++_reloadReviewSeq;
+    final String? sessionUserId = widget.service.currentUserId;
 
     try {
       final reviewQuestions = await widget.service.fetchUnderReviewQuestions();
@@ -305,7 +340,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       }.toList();
       final questionTitles = await widget.service.fetchQuestionTitles(questionIdsToResolve);
 
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId) || reviewSeq != _reloadReviewSeq) {
         return;
       }
 
@@ -322,11 +357,11 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _loadAnswers(String questionId) async {
     if (_answersCache.containsKey(questionId)) return;
-    final int requestId = _loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final String? sessionUserId = widget.service.currentUserId;
     try {
       final answers = await widget.service.fetchAnswersForQuestion(questionId);
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId)) {
         return;
       }
       setState(() {
@@ -337,14 +372,14 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _handleVote(CommunityQuestion question) async {
     if (question.authorId == 'offline-demo') return;
-    final int requestId = _loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final String? sessionUserId = widget.service.currentUserId;
     try {
       final result = await widget.service.toggleVote(
         targetType: 'question',
         targetId: question.id,
       );
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId)) {
         return;
       }
       final bool voted = result['voted'] as bool? ?? false;
@@ -365,12 +400,12 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   }
 
   Future<void> _handleAcceptAnswer(String answerId, String questionId) async {
-    final int requestId = _loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final String? sessionUserId = widget.service.currentUserId;
     try {
       await widget.service.acceptAnswer(answerId: answerId);
       final updatedAnswers = await widget.service.fetchAnswersForQuestion(questionId);
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId)) {
         return;
       }
       setState(() {
@@ -439,22 +474,27 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       if (mounted) {
         showDialog<void>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            icon: const Icon(Icons.lock_clock, color: Colors.amber, size: 36),
-            title: const Text('Phase 1 Launch Gate Active'),
-            content: Text(
-              'Public learner UGC is disabled during Phase 1 private testing. '
-              'Learner $targetType items cannot be published publicly before operational launch clearance. '
-              'The submission remains preserved under review.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Understood'),
+          builder: (ctx) {
+            _activeLaunchGateDialogContext = ctx;
+            return AlertDialog(
+              icon: const Icon(Icons.lock_clock, color: Colors.amber, size: 36),
+              title: const Text('Phase 1 Launch Gate Active'),
+              content: Text(
+                'Public learner UGC is disabled during Phase 1 private testing. '
+                'Learner $targetType items cannot be published publicly before operational launch clearance. '
+                'The submission remains preserved under review.',
               ),
-            ],
-          ),
-        );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Understood'),
+                ),
+              ],
+            );
+          },
+        ).then((_) {
+          _activeLaunchGateDialogContext = null;
+        });
       }
     } else {
       if (mounted) {
@@ -473,63 +513,17 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     required String targetId,
     required String title,
   }) async {
-    final notesController = TextEditingController();
-    final internalNotesController = TextEditingController();
-    final shouldReject = await showDialog<bool>(
+    final result = await showDialog<(String?, String?)>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Reject $targetType'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Provide feedback for rejecting "$title". Learner-facing feedback will be delivered directly to the author in their private drafts.',
-                style: const TextStyle(fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Author Feedback (Shared with Author)',
-                  hintText: 'e.g., Needs revision: clarify distinction between blends and digraphs.',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: internalNotesController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Internal Moderation Notes (Confidential)',
-                  hintText: 'e.g., Escalated to curriculum lead; check state benchmark alignment.',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirm Rejection', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        _activeRejectionDialogContext = ctx;
+        return _RejectionDialog(targetType: targetType, title: title);
+      },
     );
+    _activeRejectionDialogContext = null;
 
-    if (shouldReject == true) {
-      final notes = notesController.text.trim();
-      final internalNotes = internalNotesController.text.trim();
-      final effectiveNotes = notes.isEmpty ? null : notes;
-      final effectiveInternalNotes = internalNotes.isEmpty ? null : internalNotes;
+    if (result != null) {
+      final (effectiveNotes, effectiveInternalNotes) = result;
       if (targetType == 'question') {
         await _handleReviewQuestion(
           targetId,
@@ -550,8 +544,8 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _submitDraftQuestion() async {
     if (!_formKey.currentState!.validate()) return;
-    final int requestId = ++_loadRequestId;
-    final String? requestUserId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
+    final String? sessionUserId = widget.service.currentUserId;
 
     setState(() {
       _isSubmitting = true;
@@ -568,7 +562,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         submitForReview: true,
       );
 
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId)) {
         return;
       }
 
@@ -585,7 +579,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
         setState(() => _isSubmitting = false);
       }
     } catch (e) {
-      if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
+      if (!_isSessionValid(sessionGen, sessionUserId)) {
         return;
       }
       setState(() {
@@ -597,198 +591,38 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
 
   Future<void> _showAnswerRevisionDialog(CommunityAnswer rejectedAnswer) async {
     final String? dialogAuthorId = widget.service.currentUserId;
+    final int sessionGen = _authSessionGeneration;
     final parentTitle = _questionTitles[rejectedAnswer.questionId] ?? 'Question';
     final feedback = _submissionFeedback[rejectedAnswer.id];
-    final answerController = TextEditingController(text: rejectedAnswer.bodyMarkdown);
-    final formKey = GlobalKey<FormState>();
-    bool isDialogSubmitting = false;
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.edit_note, color: Colors.blueAccent),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Revise and Resubmit Answer',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              content: SizedBox(
-                width: 500,
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Parent Question:',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                parentTitle,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (feedback != null && feedback.feedback.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(Icons.feedback_outlined, size: 16, color: Colors.amber[900]),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Educator Feedback:',
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber[900]),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        feedback.feedback,
-                                        style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: answerController,
-                          maxLines: 6,
-                          minLines: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Your Revised Answer (Markdown supported)',
-                            hintText: 'Address feedback and provide a clear, accurate explanation...',
-                            border: OutlineInputBorder(),
-                            alignLabelWithHint: true,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().length < 10) {
-                              return 'Answer must be at least 10 characters long.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Submitting creates a new private draft answer queued for educator review. Your previous submission remains archived.',
-                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isDialogSubmitting ? null : () => Navigator.of(ctx).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton.icon(
-                  icon: isDialogSubmitting
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.send, size: 14),
-                  label: const Text('Submit Revised Answer'),
-                  onPressed: isDialogSubmitting
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) return;
-                          final int requestId = ++_loadRequestId;
-                          final String? requestUserId = widget.service.currentUserId;
-
-                          if (requestUserId != dialogAuthorId) {
-                            Navigator.of(ctx).pop();
-                            return;
-                          }
-
-                          setDialogState(() => isDialogSubmitting = true);
-
-                          try {
-                            final newAnswer = await widget.service.createDraftAnswer(
-                              questionId: rejectedAnswer.questionId,
-                              bodyMarkdown: answerController.text.trim(),
-                              submitForReview: true,
-                            );
-
-                            if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
-                              if (ctx.mounted) Navigator.of(ctx).pop();
-                              return;
-                            }
-
-                            if (ctx.mounted) Navigator.of(ctx).pop();
-
-                            if (newAnswer != null) {
-                              setState(() {
-                                _myDraftAnswers.insert(0, newAnswer);
-                                _answerParentQuestionIds[newAnswer.id] = newAnswer.questionId;
-                                _statusMessage = 'Revised answer submitted for educator review.';
-                              });
-                              _tabController?.animateTo(2);
-                            }
-                          } catch (e) {
-                            if (!mounted || requestId != _loadRequestId || widget.service.currentUserId != requestUserId) {
-                              if (ctx.mounted) Navigator.of(ctx).pop();
-                              return;
-                            }
-                            setDialogState(() => isDialogSubmitting = false);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.red[800],
-                                  content: Text('Failed to submit revised answer: $e'),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                ),
-              ],
-            );
+        _activeRevisionDialogContext = dialogContext;
+        return _AnswerRevisionDialog(
+          rejectedAnswer: rejectedAnswer,
+          parentTitle: parentTitle,
+          feedback: feedback,
+          dialogAuthorId: dialogAuthorId,
+          sessionGen: sessionGen,
+          isSessionValid: _isSessionValid,
+          onSubmitAnswer: (bodyMarkdown) => widget.service.createDraftAnswer(
+            questionId: rejectedAnswer.questionId,
+            bodyMarkdown: bodyMarkdown,
+            submitForReview: true,
+          ),
+          onSuccess: (newAnswer) {
+            setState(() {
+              _myDraftAnswers.insert(0, newAnswer);
+              _answerParentQuestionIds[newAnswer.id] = newAnswer.questionId;
+              _statusMessage = 'Revised answer submitted for educator review.';
+            });
+            _tabController?.animateTo(2);
           },
         );
       },
     );
+    _activeRevisionDialogContext = null;
   }
 
   @override
@@ -2013,3 +1847,310 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     );
   }
 }
+
+class _RejectionDialog extends StatefulWidget {
+  final String targetType;
+  final String title;
+
+  const _RejectionDialog({
+    required this.targetType,
+    required this.title,
+  });
+
+  @override
+  State<_RejectionDialog> createState() => _RejectionDialogState();
+}
+
+class _RejectionDialogState extends State<_RejectionDialog> {
+  late final TextEditingController _notesController;
+  late final TextEditingController _internalNotesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController();
+    _internalNotesController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _internalNotesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Reject ${widget.targetType}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Provide feedback for rejecting "${widget.title}". Learner-facing feedback will be delivered directly to the author in their private drafts.',
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Author Feedback (Shared with Author)',
+                hintText: 'e.g., Needs revision: clarify distinction between blends and digraphs.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _internalNotesController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Internal Moderation Notes (Confidential)',
+                hintText: 'e.g., Escalated to curriculum lead; check state benchmark alignment.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
+          onPressed: () {
+            final notes = _notesController.text.trim();
+            final internalNotes = _internalNotesController.text.trim();
+            Navigator.of(context).pop(
+              (notes.isEmpty ? null : notes, internalNotes.isEmpty ? null : internalNotes),
+            );
+          },
+          child: const Text('Confirm Rejection', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnswerRevisionDialog extends StatefulWidget {
+  final CommunityAnswer rejectedAnswer;
+  final String parentTitle;
+  final AuthorReviewFeedback? feedback;
+  final String? dialogAuthorId;
+  final int sessionGen;
+  final bool Function(int sessionGen, String? sessionUserId) isSessionValid;
+  final Future<CommunityAnswer?> Function(String bodyMarkdown) onSubmitAnswer;
+  final void Function(CommunityAnswer newAnswer) onSuccess;
+
+  const _AnswerRevisionDialog({
+    required this.rejectedAnswer,
+    required this.parentTitle,
+    required this.feedback,
+    required this.dialogAuthorId,
+    required this.sessionGen,
+    required this.isSessionValid,
+    required this.onSubmitAnswer,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_AnswerRevisionDialog> createState() => _AnswerRevisionDialogState();
+}
+
+class _AnswerRevisionDialogState extends State<_AnswerRevisionDialog> {
+  late final TextEditingController _answerController;
+  final _formKey = GlobalKey<FormState>();
+  bool _isDialogSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _answerController = TextEditingController(text: widget.rejectedAnswer.bodyMarkdown);
+  }
+
+  @override
+  void dispose() {
+    _answerController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (!widget.isSessionValid(widget.sessionGen, widget.dialogAuthorId)) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Submission cancelled: account changed during revision.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isDialogSubmitting = true);
+
+    try {
+      final newAnswer = await widget.onSubmitAnswer(_answerController.text.trim());
+
+      if (!widget.isSessionValid(widget.sessionGen, widget.dialogAuthorId)) {
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        return;
+      }
+
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
+      if (newAnswer != null) {
+        widget.onSuccess(newAnswer);
+      }
+    } catch (e) {
+      if (!widget.isSessionValid(widget.sessionGen, widget.dialogAuthorId)) {
+        if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        return;
+      }
+      if (mounted) {
+        setState(() => _isDialogSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red[800],
+            content: Text('Failed to submit revised answer: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.edit_note, color: Colors.blueAccent),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Revise and Resubmit Answer',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Parent Question:',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.parentTitle,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.feedback != null && widget.feedback!.feedback.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.feedback_outlined, size: 16, color: Colors.amber[900]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Educator Feedback:',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber[900]),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.feedback!.feedback,
+                                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _answerController,
+                  maxLines: 6,
+                  minLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Your Revised Answer (Markdown supported)',
+                    hintText: 'Address feedback and provide a clear, accurate explanation...',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().length < 10) {
+                      return 'Answer must be at least 10 characters long.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Submitting creates a new private draft answer queued for educator review. Your previous submission remains archived.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isDialogSubmitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton.icon(
+          icon: _isDialogSubmitting
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.send, size: 14),
+          label: const Text('Submit Revised Answer'),
+          onPressed: _isDialogSubmitting ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
