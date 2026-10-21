@@ -9,6 +9,7 @@ import '../../models/user_concept_state.dart';
 import '../concept_evidence_service.dart';
 import '../saved_study_set_service.dart';
 import 'exam_evaluation_service.dart';
+import 'exam_part_curriculum_scope.dart';
 
 class DiagnosticUnavailableException implements Exception {
   final String message;
@@ -49,10 +50,12 @@ class DiagnosticAssessmentService {
   Future<DiagnosticAvailability> getAvailability({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
   }) async {
     final snapshot = await _loadCandidateSnapshot(
       targetId: targetId,
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
     );
     return DiagnosticAvailability(
       targetVersionId: targetVersionId,
@@ -67,6 +70,7 @@ class DiagnosticAssessmentService {
   Future<List<DiagnosticAssessmentItem>> generatePreAssessment({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
     int itemCount = defaultItemCount,
   }) async {
     if (itemCount <= 0) {
@@ -76,6 +80,7 @@ class DiagnosticAssessmentService {
     final snapshot = await _loadCandidateSnapshot(
       targetId: targetId,
       targetVersionId: targetVersionId,
+      examPartKey: examPartKey,
     );
     if (!snapshot.isPublishedVersion) {
       throw const DiagnosticUnavailableException(
@@ -265,7 +270,11 @@ class DiagnosticAssessmentService {
   Future<_CandidateSnapshot> _loadCandidateSnapshot({
     required String targetId,
     required String targetVersionId,
+    String? examPartKey,
   }) async {
+    if (targetVersionId.isEmpty && examPartKey != null) {
+      throw const DiagnosticUnavailableException('No version for selected exam part.');
+    }
     if (targetVersionId.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: false,
@@ -290,14 +299,25 @@ class DiagnosticAssessmentService {
       );
     }
 
-    final nodeRows = await _supabase
-        .from('curriculum_nodes')
-        .select('id')
-        .eq('target_version_id', targetVersionId);
-    final nodeIds = (nodeRows as List)
-        .map((row) => row['id']?.toString())
-        .whereType<String>()
-        .toList();
+    final ExamPartCurriculumScope? partScope = examPartKey == null
+        ? null
+        : await ExamPartCurriculumScopeResolver(client: _supabase).resolve(
+            targetVersionId: targetVersionId,
+            examPartKey: examPartKey,
+          );
+    final List<String> nodeIds;
+    if (partScope == null) {
+      final nodeRows = await _supabase
+          .from('curriculum_nodes')
+          .select('id')
+          .eq('target_version_id', targetVersionId);
+      nodeIds = (nodeRows as List)
+          .map((row) => row['id']?.toString())
+          .whereType<String>()
+          .toList();
+    } else {
+      nodeIds = partScope.nodeIds.toList();
+    }
     if (nodeIds.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: true,
@@ -322,6 +342,22 @@ class DiagnosticAssessmentService {
         coreConceptWeights[conceptId] = weight;
       }
     }
+    // A concept shared by another exam part cannot by itself prove an
+    // assessment item's part identity. Exclude these ambiguous links from
+    // part-specific diagnostic selection until item-to-node review exists.
+    // Global knowledge readiness may still reuse this concept legitimately.
+    if (partScope != null && partScope.outsideNodeIds.isNotEmpty) {
+      final outsideRows = await _supabase
+          .from('curriculum_node_concepts')
+          .select('concept_id')
+          .inFilter('curriculum_node_id', partScope.outsideNodeIds.toList());
+      final shared = (outsideRows as List)
+          .map((row) => row['concept_id']?.toString())
+          .whereType<String>()
+          .toSet();
+      coreConceptWeights.removeWhere((id, _) => shared.contains(id));
+    }
+
     if (coreConceptWeights.isEmpty) {
       return const _CandidateSnapshot(
         isPublishedVersion: true,
