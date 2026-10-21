@@ -877,13 +877,18 @@ select is(
   'Learner B cannot see feedback for Learner A question'
 );
 
--- Anon cannot view submission feedback
+-- Anon cannot view submission feedback (execute revoked from anon)
 set local role anon;
-select is(
-  (select count(*)::integer from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid)),
-  0,
-  'Anon cannot view submission feedback'
+select throws_ok(
+  $$ select * from public.fetch_my_submission_feedback('00000000-0000-0000-0000-000000000601'::uuid) $$,
+  '42501',
+  null,
+  'Anon calling fetch_my_submission_feedback is rejected with 42501'
 );
+
+-- Restore authenticated role as Learner A for subsequent tests
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000002', true);
 
 -- Seeding RPC authorization check: learner cannot call seed_pilot_community_faqs (1 test)
 select throws_ok(
