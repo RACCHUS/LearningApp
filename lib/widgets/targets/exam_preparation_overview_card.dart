@@ -6,6 +6,7 @@ import '../../models/learning_target.dart';
 import '../../services/assessment/exam_reference_manifest_service.dart';
 import '../../services/assessment/exam_reference_drill_event_service.dart';
 import 'saved_reference_drill_history_card.dart';
+import 'reference_drill_progress_card.dart';
 import 'reviewed_reference_drill_practice_card.dart';
 
 /// Exam dates and approved reference lookup belong inside the existing goal.
@@ -218,6 +219,9 @@ class _ExamPreparationOverviewCardState
           examPartKey: revision.examPartKey,
           administrationDate: _examDate!,
           eventService: widget.drillEventService,
+        ),
+        ReferenceDrillProgressCard(
+          manifestRevisionId: revision.id,
         ),
         SavedReferenceDrillHistoryCard(
           manifestRevisionId: revision.id,
