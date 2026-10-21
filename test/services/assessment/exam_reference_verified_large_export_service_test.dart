@@ -42,7 +42,7 @@ Map<String,dynamic> record(int index,{
   'scoring_version':isCorrect==null?null:1,
   'graded_at':isCorrect==null?null:'2027-03-01T12:00:01Z',
 };
-Map<String,dynamic> inventory(int count,{String digest='a'*32,
+Map<String,dynamic> inventory(int count,{String digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   String ownerId=owner})=> {
     'scope':'reference-practice-all-editions',
     'owner_auth_uid':ownerId,
