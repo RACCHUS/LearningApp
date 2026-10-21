@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
+import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
-/// Opens the in-context Concept Q&A sheet for learning screens (ECO-01).
+/// Opens the in-context Concept Q&A sheet for learning screens (ECO-01 & ECO-02).
 Future<void> showInContextQaSheet(
   BuildContext context, {
   String? conceptId,
@@ -12,9 +13,11 @@ Future<void> showInContextQaSheet(
   String? lessonId,
   String? topicTitle,
   CommunityQaService? service,
+  ModerationService? moderationService,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   final effectiveService = service ?? CommunityQaService();
+  final effectiveModService = moderationService ?? ModerationService();
 
   if (width < DesignTokens.breakpointTablet) {
     return showModalBottomSheet<void>(
@@ -30,6 +33,7 @@ Future<void> showInContextQaSheet(
           lessonId: lessonId,
           topicTitle: topicTitle,
           service: effectiveService,
+          moderationService: effectiveModService,
         ),
       ),
     );
@@ -40,17 +44,18 @@ Future<void> showInContextQaSheet(
     builder: (dialogContext) => Dialog(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 620,
+          maxWidth: 640,
           maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.82,
         ),
         child: SizedBox(
-          width: 620,
+          width: 640,
           child: InContextQaSheet(
             conceptId: conceptId,
             targetId: targetId,
             lessonId: lessonId,
             topicTitle: topicTitle,
             service: effectiveService,
+            moderationService: effectiveModService,
           ),
         ),
       ),
@@ -64,6 +69,7 @@ class InContextQaSheet extends StatefulWidget {
   final String? lessonId;
   final String? topicTitle;
   final CommunityQaService service;
+  final ModerationService? moderationService;
 
   const InContextQaSheet({
     super.key,
@@ -72,6 +78,7 @@ class InContextQaSheet extends StatefulWidget {
     this.lessonId,
     this.topicTitle,
     required this.service,
+    this.moderationService,
   });
 
   @override
@@ -79,16 +86,18 @@ class InContextQaSheet extends StatefulWidget {
 }
 
 class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+  TabController? _tabController;
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = true;
   bool _isSubmitting = false;
+  bool _isModerator = false;
   String? _statusMessage;
   List<CommunityQuestion> _seedFaqs = [];
   List<CommunityQuestion> _myDrafts = [];
+  List<CommunityQuestion> _reviewQueue = [];
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
   final Set<String> _userUpvoted = {};
@@ -96,13 +105,12 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _loadData();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     _titleController.dispose();
     _bodyController.dispose();
     super.dispose();
@@ -118,15 +126,31 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
       );
       final drafts = await widget.service.fetchMyDrafts();
 
+      bool isMod = false;
+      List<CommunityQuestion> reviewItems = [];
+      try {
+        final modService = widget.moderationService ?? ModerationService();
+        isMod = await modService.isModerator();
+        if (isMod) {
+          reviewItems = await widget.service.fetchUnderReviewQuestions();
+        }
+      } catch (_) {}
+
       if (mounted) {
+        _tabController?.dispose();
+        _tabController = TabController(length: isMod ? 4 : 3, vsync: this);
         setState(() {
           _seedFaqs = faqs;
           _myDrafts = drafts;
+          _reviewQueue = reviewItems;
+          _isModerator = isMod;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) {
+        _tabController?.dispose();
+        _tabController = TabController(length: 3, vsync: this);
         setState(() => _isLoading = false);
       }
     }
@@ -168,6 +192,36 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
     } catch (_) {}
   }
 
+  Future<void> _handleAcceptAnswer(String answerId, String questionId) async {
+    try {
+      await widget.service.acceptAnswer(answerId: answerId);
+      final updatedAnswers = await widget.service.fetchAnswersForQuestion(questionId);
+      if (mounted) {
+        setState(() {
+          _answersCache[questionId] = updatedAnswers;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleReviewQuestion(String questionId, String action) async {
+    try {
+      await widget.service.reviewQuestion(questionId: questionId, action: action);
+      final updatedQueue = await widget.service.fetchUnderReviewQuestions();
+      final faqs = await widget.service.fetchSeedFaqs(
+        conceptId: widget.conceptId,
+        targetId: widget.targetId,
+        lessonId: widget.lessonId,
+      );
+      if (mounted) {
+        setState(() {
+          _reviewQueue = updatedQueue;
+          _seedFaqs = faqs;
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _submitDraftQuestion() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -193,7 +247,7 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
           _statusMessage = 'Question saved as a private draft and queued for review.';
           _isSubmitting = false;
         });
-        _tabController.animateTo(2); // Switch to My Questions tab
+        _tabController?.animateTo(2);
       }
     } catch (e) {
       if (mounted) {
@@ -209,6 +263,13 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final title = widget.topicTitle ?? 'Concept Q&A & FAQs';
+
+    if (_isLoading || _tabController == null) {
+      return const SizedBox(
+        height: 300,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Column(
       children: [
@@ -278,21 +339,21 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
             Tab(text: 'FAQs (${_seedFaqs.length})'),
             const Tab(text: 'Ask a Question'),
             Tab(text: 'My Drafts (${_myDrafts.length})'),
+            if (_isModerator) Tab(text: 'Review Queue (${_reviewQueue.length})'),
           ],
         ),
 
         // Tab Views
         Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSeedFaqsTab(theme),
-                    _buildAskTab(theme),
-                    _buildMyDraftsTab(theme),
-                  ],
-                ),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildSeedFaqsTab(theme),
+              _buildAskTab(theme),
+              _buildMyDraftsTab(theme),
+              if (_isModerator) _buildReviewQueueTab(theme),
+            ],
+          ),
         ),
       ],
     );
@@ -409,17 +470,28 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                       const SizedBox(height: 10),
                       if (_answersCache.containsKey(q.id)) ...[
                         for (final ans in _answersCache[q.id]!) ...[
-                          Text(
-                            ans.isAccepted && !isOfflineDemo
-                                ? 'Accepted Answer:'
-                                : 'Community Answer:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: ans.isAccepted && !isOfflineDemo
-                                  ? Colors.green
-                                  : Colors.blueGrey,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                ans.isAccepted && !isOfflineDemo
+                                    ? 'Accepted Answer:'
+                                    : (isOfflineDemo ? 'Official Answer:' : 'Community Answer:'),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: ans.isAccepted && !isOfflineDemo
+                                      ? Colors.green
+                                      : Colors.blueGrey,
+                                ),
+                              ),
+                              if (!ans.isAccepted && _isModerator && !isOfflineDemo)
+                                TextButton.icon(
+                                  icon: const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                                  label: const Text('Accept', style: TextStyle(fontSize: 11, color: Colors.green)),
+                                  onPressed: () => _handleAcceptAnswer(ans.id, q.id),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Container(
@@ -582,6 +654,110 @@ class _InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPr
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReviewQueueTab(ThemeData theme) {
+    if (_reviewQueue.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle_outline, size: 36, color: Colors.green),
+              const SizedBox(height: 8),
+              Text(
+                'Moderator Review Queue is Empty',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'No learner questions currently awaiting review.',
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: _reviewQueue.length,
+      itemBuilder: (context, index) {
+        final q = _reviewQueue[index];
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Under Review',
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (q.conceptId != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        q.conceptId!,
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  q.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  q.bodyMarkdown,
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.close, size: 14, color: Colors.red),
+                      label: const Text('Reject', style: TextStyle(color: Colors.red, fontSize: 12)),
+                      onPressed: () => _handleReviewQuestion(q.id, 'reject'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.check, size: 14),
+                      label: const Text('Publish', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _handleReviewQuestion(q.id, 'publish'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );

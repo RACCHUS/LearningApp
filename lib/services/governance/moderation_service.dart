@@ -3,10 +3,11 @@ import 'package:learning_pwa/models/governance/moderation_report.dart';
 
 /// Service providing client operations for ECO-00B Trust, Safety & Moderation.
 class ModerationService {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _injectedClient;
+  SupabaseClient get _supabase => _injectedClient ?? Supabase.instance.client;
 
   ModerationService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+      : _injectedClient = supabase;
 
   /// Check whether the current authenticated user has moderator privileges.
   /// Calls the zero-argument public RPC wrapper `is_moderator()`.
