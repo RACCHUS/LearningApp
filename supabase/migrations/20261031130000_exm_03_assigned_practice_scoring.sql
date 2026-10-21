@@ -361,3 +361,70 @@ grant execute on function public.exm03_record_assigned_practice(uuid,jsonb)
   to service_role;
 comment on function public.exm03_record_assigned_practice(uuid,jsonb) is
   'Service-role only, transactional, idempotent canonical single-choice scoring of preassigned, unchanged, approved part-specific items. Never an official exam score. Not exposed to learner clients.';
+
+
+-- Erasure must remove the underlying issued assignment as well as its scored
+-- row. Otherwise deleting the result and retrying the same assignment would
+-- recreate "erased" history. Replace unrestricted owner DELETE with one
+-- transaction that cascades assignment -> attempt, then verifies emptiness.
+revoke delete on public.exam_part_practice_attempts from authenticated;
+drop policy if exists exm03_attempt_delete_owner
+  on public.exam_part_practice_attempts;
+
+create function public.exm03_erase_part_attempts(
+  p_target_version_id uuid,
+  p_exam_part_key text
+)
+returns integer
+language plpgsql security definer
+set search_path=pg_catalog,public,pg_temp
+as $erase$
+declare
+  actor uuid;
+  deleted_count integer;
+begin
+  actor := (select auth.uid());
+  if actor is null or
+     (select (auth.jwt()->>'is_anonymous')::boolean)
+        is distinct from false or
+     p_target_version_id is null or
+     p_exam_part_key is null or
+     p_exam_part_key !~ '^[a-z][a-z0-9_]{0,127}$' then
+    raise exception 'Permanent account and exact exam part required'
+      using errcode='42501';
+  end if;
+
+  -- Atomic erasure of both completed and unused assignments for that part.
+  -- The attempt FK uses ON DELETE CASCADE, preventing any recorded retry.
+  with removed as (
+    delete from public.exam_part_practice_assignments a
+    where a.owner_id=actor
+      and a.target_version_id=p_target_version_id
+      and a.exam_part_key=p_exam_part_key
+    returning a.id
+  )
+  select count(*) into deleted_count from removed;
+
+  if exists (
+    select 1 from public.exam_part_practice_attempts t
+      where t.owner_id=actor
+        and t.target_version_id=p_target_version_id
+        and t.exam_part_key=p_exam_part_key
+  ) or exists (
+    select 1 from public.exam_part_practice_assignments a
+      where a.owner_id=actor
+        and a.target_version_id=p_target_version_id
+        and a.exam_part_key=p_exam_part_key
+  ) then
+    raise exception 'Part history erasure did not complete'
+      using errcode='40001';
+  end if;
+  return deleted_count;
+end
+$erase$;
+revoke all on function public.exm03_erase_part_attempts(uuid,text)
+  from public,anon,authenticated;
+grant execute on function public.exm03_erase_part_attempts(uuid,text)
+  to authenticated;
+comment on function public.exm03_erase_part_attempts(uuid,text) is
+  'Permanent owner-only atomic exact-part erasure of assignments and attempt history, with no replay re-creation. Requires confirmation in future UI.';
