@@ -5,17 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/assessment/exam_reference_drill_account_export_service.dart';
 import '../../services/assessment/exam_reference_verified_large_export_service.dart';
+import '../../services/assessment/reference_practice_json_download.dart';
 
 /// EXM reference-practice subsystem portability, NOT a full account archive.
 /// Kept separate from ordinary knowledge/mastery dashboards.
 class ReferencePracticeAccountExportCard extends ConsumerWidget {
   final ExamReferenceDrillAccountExportService? exportService;
   final ExamReferenceVerifiedLargeExportService? largeExportService;
+  final ReferencePracticeJsonDownload? fileDownload;
 
   const ReferencePracticeAccountExportCard({
     super.key,
     this.exportService,
     this.largeExportService,
+    this.fileDownload,
   });
 
   @override
@@ -29,6 +32,12 @@ class ReferencePracticeAccountExportCard extends ConsumerWidget {
       ownerId: auth.user.id,
       service: exportService,
       largeService: largeExportService,
+      fileDownload: fileDownload,
+      ownerStillCurrent: () {
+        final current = ref.read(authProvider);
+        return current is AuthSuccess && !current.user.isAnonymous &&
+            current.user.id == auth.user.id;
+      },
     );
   }
 }
@@ -37,12 +46,16 @@ class _OwnerExport extends StatefulWidget {
   final String ownerId;
   final ExamReferenceDrillAccountExportService? service;
   final ExamReferenceVerifiedLargeExportService? largeService;
+  final ReferencePracticeJsonDownload? fileDownload;
+  final bool Function() ownerStillCurrent;
 
   const _OwnerExport({
     super.key,
     required this.ownerId,
     this.service,
     this.largeService,
+    this.fileDownload,
+    required this.ownerStillCurrent,
   });
 
   @override
@@ -59,6 +72,11 @@ class _OwnerExportState extends State<_OwnerExport> {
       ExamReferenceVerifiedLargeExportService();
   ExamReferenceVerifiedLargeExportService get _largeService =>
       widget.largeService ?? _defaultLargeService;
+
+  late final ReferencePracticeJsonDownload _defaultDownload =
+      ReferencePracticeJsonDownload();
+  ReferencePracticeJsonDownload get _fileDownload =>
+      widget.fileDownload ?? _defaultDownload;
 
   ReferencePracticeAccountExport? _export;
   bool _largeMode = false;
@@ -147,7 +165,8 @@ class _OwnerExportState extends State<_OwnerExport> {
     );
     // If the owning account changes while the dialog is open, Flutter
     // disposes this keyed widget. Never copy an old account's payload.
-    if (!mounted || confirmed != true || _busy) return;
+    if (!mounted || confirmed != true || _busy ||
+        !widget.ownerStillCurrent() || !identical(data, _export)) return;
     setState(() => _busy = true);
     try {
       await Clipboard.setData(ClipboardData(text: data.toJsonExport()));
@@ -159,6 +178,68 @@ class _OwnerExportState extends State<_OwnerExport> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not copy reference-practice JSON.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Confirmation button itself initiates the browser request synchronously,
+  /// preserving user activation. Returning from a dialog Future first can
+  /// cause browsers to block programmatic file downloads.
+  void _confirmFileDownload() {
+    final data = _export;
+    if (_busy || data == null || !_fileDownload.isSupported) return;
+    showDialog<void>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('Download your reference-practice JSON?'),
+        content: const Text(
+          'Requests a local JSON file containing your saved R1–R4 steps, '
+          'including older reference editions and owner identifiers. '
+          'This is not a full LearningApp account archive. Keep the file '
+          'private and check your browser Downloads; the app cannot '
+          'confirm that the file was saved.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('exm-json-download-confirm'),
+            onPressed: () {
+              Navigator.of(dialog).pop();
+              _requestFileDownload(data);
+            },
+            child: const Text('Request JSON file download'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _requestFileDownload(ReferencePracticeAccountExport data) {
+    if (!mounted || _busy || !widget.ownerStillCurrent() ||
+        !identical(data, _export)) return;
+    setState(() => _busy = true);
+    try {
+      final json = data.toJsonExport();
+      // requestDownload must start synchronously from the confirmation click.
+      _fileDownload.requestDownload(
+        filename: ReferencePracticeJsonDownload.filenameAt(DateTime.now()),
+        json: json,
+      );
+      if (!mounted || !widget.ownerStillCurrent()) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(
+          'JSON download requested. Check your browser Downloads.',
+        )),
+      );
+    } catch (_) {
+      if (!mounted || !widget.ownerStillCurrent()) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not request JSON download.')),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -226,6 +307,16 @@ class _OwnerExportState extends State<_OwnerExport> {
                 'may not be approved for your next exam. Practice times '
                 'and physical book use are unverified.',
               ),
+              if (_fileDownload.isSupported)
+                OutlinedButton.icon(
+                  key: const Key('exm-account-export-download'),
+                  onPressed: _busy ? null : _confirmFileDownload,
+                  icon: const Icon(Icons.download_outlined),
+                  label: const Text('Download reference-practice JSON file'),
+                )
+              else
+                const Text('File download is available in a supported web '
+                    'browser. You can still copy JSON on this device.'),
               OutlinedButton.icon(
                 key: const Key('exm-account-export-copy'),
                 onPressed: _busy ? null : _copy,
