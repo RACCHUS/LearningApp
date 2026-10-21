@@ -33,6 +33,13 @@ class FakeCommunityQaService extends CommunityQaService {
   String? lastReviewInternalNotes;
   String? lastAcceptedAnswerId;
 
+  Completer<CommunityQuestion?>? draftQuestionCompleter;
+  Completer<List<CommunityAnswer>>? answersCompleter;
+  Completer<CommunityAnswer?>? draftAnswerCompleter;
+  String? lastCreatedAnswerQuestionId;
+  String? lastCreatedAnswerBody;
+  bool? lastCreatedAnswerSubmitForReview;
+
   FakeCommunityQaService({
     required this.fakeSeeds,
     required this.fakeDrafts,
@@ -71,12 +78,12 @@ class FakeCommunityQaService extends CommunityQaService {
 
   @override
   Future<List<CommunityQuestion>> fetchMyDrafts() async {
-    return fakeDrafts;
+    return List<CommunityQuestion>.from(fakeDrafts);
   }
 
   @override
   Future<List<CommunityAnswer>> fetchMyDraftAnswers() async {
-    return fakeDraftAnswers;
+    return List<CommunityAnswer>.from(fakeDraftAnswers);
   }
 
   @override
@@ -120,6 +127,9 @@ class FakeCommunityQaService extends CommunityQaService {
 
   @override
   Future<List<CommunityAnswer>> fetchAnswersForQuestion(String questionId) async {
+    if (answersCompleter != null) {
+      return answersCompleter!.future;
+    }
     return fakeAnswers[questionId] ?? [];
   }
 
@@ -133,9 +143,12 @@ class FakeCommunityQaService extends CommunityQaService {
     String? cipCode,
     bool submitForReview = false,
   }) async {
+    if (draftQuestionCompleter != null) {
+      return draftQuestionCompleter!.future;
+    }
     final q = CommunityQuestion(
-      id: 'mock-draft-1',
-      authorId: 'user-mock',
+      id: 'mock-draft-${fakeDrafts.length + 1}',
+      authorId: fakeUserId ?? 'user-mock',
       title: title,
       bodyMarkdown: bodyMarkdown,
       status: submitForReview ? 'under_review' : 'draft',
@@ -146,6 +159,33 @@ class FakeCommunityQaService extends CommunityQaService {
     );
     fakeDrafts.add(q);
     return q;
+  }
+
+  @override
+  Future<CommunityAnswer?> createDraftAnswer({
+    required String questionId,
+    required String bodyMarkdown,
+    bool submitForReview = false,
+    bool isAiGenerated = false,
+    String? aiModelName,
+  }) async {
+    lastCreatedAnswerQuestionId = questionId;
+    lastCreatedAnswerBody = bodyMarkdown;
+    lastCreatedAnswerSubmitForReview = submitForReview;
+    if (draftAnswerCompleter != null) {
+      return draftAnswerCompleter!.future;
+    }
+    final a = CommunityAnswer(
+      id: 'mock-ans-${fakeDraftAnswers.length + 1}',
+      questionId: questionId,
+      authorId: fakeUserId ?? 'user-mock',
+      bodyMarkdown: bodyMarkdown,
+      status: submitForReview ? 'under_review' : 'draft',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    fakeDraftAnswers.add(a);
+    return a;
   }
 
   @override
@@ -889,6 +929,187 @@ void main() {
       await authStreamController.close();
     });
 
+    testWidgets('account switch clears unsubmitted draft form inputs, status message, and caches', (tester) async {
+      final authStreamController = StreamController<AuthState>.broadcast();
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeUserId: 'user-a',
+        authStreamController: authStreamController,
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // User A goes to the "Ask a Question" tab and types sensitive unsubmitted text
+      await tester.tap(find.text('Ask a Question'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Question Title'),
+        'User A Highly Confidential Title',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Details / Context'),
+        'User A Private Draft Body Content that should never leak to another user',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('User A Highly Confidential Title'), findsOneWidget);
+      expect(find.text('User A Private Draft Body Content that should never leak to another user'), findsOneWidget);
+
+      // Now switch account to user-b
+      fakeService.fakeUserId = 'user-b';
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // Form controllers MUST be completely cleared for User B
+      expect(find.text('User A Highly Confidential Title'), findsNothing);
+      expect(find.text('User A Private Draft Body Content that should never leak to another user'), findsNothing);
+
+      await authStreamController.close();
+    });
+
+    testWidgets('delayed in-flight question submission under Account A is discarded across account switch', (tester) async {
+      final authStreamController = StreamController<AuthState>.broadcast();
+      final draftCompleter = Completer<CommunityQuestion?>();
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeUserId: 'user-a',
+        authStreamController: authStreamController,
+      );
+      fakeService.draftQuestionCompleter = draftCompleter;
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // Navigate to Ask a Question tab and submit
+      await tester.tap(find.text('Ask a Question'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Question Title'),
+        'User A In-Flight Question Title',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Details / Context'),
+        'User A In-Flight Body with sufficient length for valid form submission.',
+      );
+      await tester.pumpAndSettle();
+
+      // Click submit (request goes in-flight)
+      await tester.tap(find.text('Save Private Question'));
+      await tester.pump();
+
+      // While request is in-flight, account switches to user-b
+      fakeService.fakeUserId = 'user-b';
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // Now complete the delayed in-flight question for User A
+      draftCompleter.complete(CommunityQuestion(
+        id: 'q-user-a-delayed',
+        authorId: 'user-a',
+        title: 'User A In-Flight Question Title',
+        bodyMarkdown: 'User A In-Flight Body with sufficient length for valid form submission.',
+        status: 'under_review',
+        isSeeded: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+      await tester.pumpAndSettle();
+
+      // Switch to My Drafts tab
+      await tester.tap(find.text('My Drafts (0)'));
+      await tester.pumpAndSettle();
+
+      // User A's question must NOT have been inserted into User B's drafts
+      expect(find.text('User A In-Flight Question Title'), findsNothing);
+      expect(find.text('You have not authored any private questions or answers yet.'), findsOneWidget);
+
+      await authStreamController.close();
+    });
+
+    testWidgets('delayed in-flight answer loading under Account A is discarded across account switch', (tester) async {
+      final authStreamController = StreamController<AuthState>.broadcast();
+      final answersCompleter = Completer<List<CommunityAnswer>>();
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeUserId: 'user-a',
+        authStreamController: authStreamController,
+      );
+      fakeService.answersCompleter = answersCompleter;
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      // User A taps to expand first FAQ, starting in-flight _loadAnswers
+      await tester.tap(find.text(testSeeds.first.title));
+      await tester.pump();
+
+      // Account switches to user-b
+      fakeService.fakeUserId = 'user-b';
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // Complete the delayed answers
+      answersCompleter.complete([
+        CommunityAnswer(
+          id: 'delayed-ans-1',
+          questionId: testSeeds.first.id,
+          authorId: 'user-a',
+          bodyMarkdown: 'Secret User A answer payload',
+          status: 'published',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        )
+      ]);
+      await tester.pumpAndSettle();
+
+      // Verify the delayed payload is not rendered or leaked
+      expect(find.text('Secret User A answer payload'), findsNothing);
+
+      await authStreamController.close();
+    });
+
     testWidgets('displays latest review feedback decision when multiple review records exist for the same target', (tester) async {
       final rejectedQuestion = CommunityQuestion(
         id: 'draft-multi-review-1',
@@ -983,7 +1204,7 @@ void main() {
       expect(find.text('Revise your question based on educator feedback and save as a new draft.'), findsOneWidget);
     });
 
-    testWidgets('tapping "Revise and Resubmit Answer" navigates to FAQs tab and opens parent question', (tester) async {
+    testWidgets('tapping "Revise and Resubmit Answer" opens answer composer dialog and submits revised under-review answer', (tester) async {
       final rejectedAnswer = CommunityAnswer(
         id: 'ans-to-revise-1',
         questionId: 'faq-1',
@@ -1010,6 +1231,7 @@ void main() {
         fakeDraftAnswers: [rejectedAnswer],
         fakeFeedback: [feedback],
         fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'user-mock',
       );
 
       await tester.pumpWidget(buildTestWidget(service: fakeService));
@@ -1023,9 +1245,97 @@ void main() {
       await tester.tap(find.text('Revise and Resubmit Answer'));
       await tester.pumpAndSettle();
 
-      // Verify navigated to FAQs tab with parent question expanded
+      // Verify dialog is displayed with context, educator feedback, and prefilled text
+      expect(find.text('Revise and Resubmit Answer'), findsNWidgets(2)); // Button & Dialog Title
       expect(find.text('How does phonics blending work?'), findsOneWidget);
-      expect(find.textContaining('Revise your answer to "How does phonics blending work?"'), findsOneWidget);
+      expect(find.text('Answer needs to cite phonological awareness research.'), findsNWidgets(2)); // List & Dialog
+      expect(find.text('Original answer text needing correction.'), findsNWidgets(2));
+
+      // Edit answer text
+      final answerField = find.widgetWithText(TextFormField, 'Your Revised Answer (Markdown supported)');
+      expect(answerField, findsOneWidget);
+      await tester.enterText(
+        answerField,
+        'Revised answer text citing Linnea Ehri (2005) phonological phase research with valid length.',
+      );
+      await tester.pumpAndSettle();
+
+      // Submit revised answer
+      await tester.tap(find.text('Submit Revised Answer'));
+      await tester.pumpAndSettle();
+
+      // Verify createDraftAnswer was called correctly on the service
+      expect(fakeService.lastCreatedAnswerQuestionId, 'faq-1');
+      expect(fakeService.lastCreatedAnswerBody, contains('Linnea Ehri (2005)'));
+      expect(fakeService.lastCreatedAnswerSubmitForReview, isTrue);
+
+      // Dialog should be dismissed and status message shown
+      expect(find.text('Revised answer submitted for educator review.'), findsOneWidget);
+
+      // Both the original archived answer and the new under-review answer must exist
+      expect(find.text('My Drafts (2)'), findsOneWidget);
+      expect(find.text('Rejected — Create a Revised Submission'), findsOneWidget);
+      expect(find.text('Under Review'), findsOneWidget);
+    });
+
+    testWidgets('answer revision composer prevents cross-account submission if auth changes while dialog is open', (tester) async {
+      final authStreamController = StreamController<AuthState>.broadcast();
+      final rejectedAnswer = CommunityAnswer(
+        id: 'ans-user-a-1',
+        questionId: 'faq-1',
+        authorId: 'user-a',
+        bodyMarkdown: 'User A draft answer needing revision.',
+        status: 'archived',
+        createdAt: DateTime(2026, 10, 18),
+        updatedAt: DateTime(2026, 10, 19),
+      );
+
+      final fakeService = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeDraftAnswers: [rejectedAnswer],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'user-a',
+        authStreamController: authStreamController,
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: fakeService));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Revise and Resubmit Answer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Revise and Resubmit Answer'), findsNWidgets(2));
+
+      // While dialog is open, switch account to user-b
+      fakeService.fakeUserId = 'user-b';
+      fakeService.fakeDraftAnswers.clear();
+      final sessionB = Session(
+        accessToken: 'mock-token-b',
+        tokenType: 'bearer',
+        user: User(
+          id: 'user-b',
+          appMetadata: {},
+          userMetadata: {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+      authStreamController.add(AuthState(AuthChangeEvent.signedIn, sessionB));
+      await tester.pumpAndSettle();
+
+      // Attempt to submit in the open dialog
+      await tester.tap(find.text('Submit Revised Answer'));
+      await tester.pumpAndSettle();
+
+      // Submission must not have been created for user-b
+      expect(fakeService.lastCreatedAnswerQuestionId, isNull);
+      expect(fakeService.fakeDraftAnswers, isEmpty);
+
+      await authStreamController.close();
     });
 
     testWidgets('audit log resolves and displays parent question title for answer events', (tester) async {

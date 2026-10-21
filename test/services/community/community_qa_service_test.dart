@@ -258,8 +258,7 @@ void main() {
       expect(answerParentMap, isEmpty);
     });
 
-    test('fetchLatestSubmissionFeedback dedupes feedback and retains newest decision per target', () async {
-      // Simulate multiple review decisions for target-1 (oldest and newest)
+    test('fetchLatestSubmissionFeedback directly exercises CommunityQaService and dedupes feedback newest-first', () async {
       final oldestFeedback = AuthorReviewFeedback(
         id: 'fb-old',
         targetType: 'question',
@@ -278,17 +277,42 @@ void main() {
         feedback: 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.',
         createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
       );
+      final target2Feedback = AuthorReviewFeedback(
+        id: 'fb-target-2',
+        targetType: 'answer',
+        targetId: 'target-2',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Cite OSHA 1910.1200.',
+        createdAt: DateTime.parse('2026-10-20T08:00:00Z'),
+      );
 
-      final list = [newestFeedback, oldestFeedback]; // Ordered created_at DESC as returned by RPC
-      final map = <String, AuthorReviewFeedback>{};
-      for (final f in list) {
-        map.putIfAbsent(f.targetId, () => f);
-      }
+      final service = _TestFeedbackQaService([newestFeedback, oldestFeedback, target2Feedback]);
+      final map = await service.fetchLatestSubmissionFeedback();
 
-      expect(map.length, 1);
+      expect(map.length, 2);
       expect(map['target-1']?.id, 'fb-new');
       expect(map['target-1']?.feedback, 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.');
+      expect(map['target-2']?.id, 'fb-target-2');
+      expect(map['target-2']?.feedback, 'Cite OSHA 1910.1200.');
+
+      final filteredMap = await service.fetchLatestSubmissionFeedback(targetId: 'target-1');
+      expect(filteredMap.length, 1);
+      expect(filteredMap['target-1']?.id, 'fb-new');
     });
   });
+}
+
+class _TestFeedbackQaService extends CommunityQaService {
+  final List<AuthorReviewFeedback> feedbackToReturn;
+  _TestFeedbackQaService(this.feedbackToReturn);
+
+  @override
+  Future<List<AuthorReviewFeedback>> fetchMySubmissionFeedback({String? targetId}) async {
+    if (targetId != null) {
+      return feedbackToReturn.where((f) => f.targetId == targetId).toList();
+    }
+    return feedbackToReturn;
+  }
 }
 
