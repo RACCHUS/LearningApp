@@ -124,3 +124,65 @@ comment on policy exm03_no_direct_read_of_approved_answers
 -- Approved items must not bypass through a normal SELECT(*) or
 -- owner/lesson version visibility policy. No client editor can read their
 -- private canonical scoring rubric through this table.
+
+-- An item response_spec may contain richer option objects. Returning that
+-- JSON from the issuer could disclose embedded correctness flags. Require
+-- ordinary text-only choices for every backend-issued v1 single-choice set.
+create function public.exm03_safe_visible_choices(p_options jsonb)
+returns boolean language plpgsql immutable security invoker
+set search_path=pg_catalog
+as $choices$
+declare
+  choice jsonb;
+begin
+  if jsonb_typeof(p_options) is distinct from 'array'
+     or jsonb_array_length(p_options) not between 2 and 10 then
+    return false;
+  end if;
+  for choice in select value from jsonb_array_elements(p_options) loop
+    if jsonb_typeof(choice) is distinct from 'string'
+       or length(btrim(choice #>> '{}')) not between 1 and 1000 then
+      return false;
+    end if;
+  end loop;
+  return true;
+end
+$choices$;
+revoke all on function public.exm03_safe_visible_choices(jsonb)
+  from public,anon,authenticated;
+grant execute on function public.exm03_safe_visible_choices(jsonb)
+  to service_role;
+
+create function public.exm03_guard_visible_assignment()
+returns trigger language plpgsql security definer
+set search_path=pg_catalog,public,pg_temp
+as $guard_choices$
+declare
+  q jsonb;
+  canonical_options jsonb;
+begin
+  for q in select value from jsonb_array_elements(new.assigned_items) loop
+    if (q->>'id') is null or
+       coalesce(q->>'id','') !~
+       '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$' then
+      raise exception 'Invalid assigned item identifier'
+        using errcode='42501';
+    end if;
+    select i.response_spec->'options' into canonical_options
+      from public.assessment_items i where i.id=(q->>'id')::uuid;
+    if not public.exm03_safe_visible_choices(canonical_options) then
+      raise exception 'Exam question options must be reviewed plain text'
+        using errcode='42501';
+    end if;
+  end loop;
+  return new;
+end
+$guard_choices$;
+revoke all on function public.exm03_guard_visible_assignment()
+  from public,anon,authenticated;
+create trigger exm03_plain_text_issued_questions
+before insert on public.exam_part_practice_assignments
+for each row execute function public.exm03_guard_visible_assignment();
+
+comment on function public.exm03_safe_visible_choices(jsonb) is
+ 'Protect public practice question projection from nested object options with correct-answer flags; only bounded, nonempty text choices may be issued.';
