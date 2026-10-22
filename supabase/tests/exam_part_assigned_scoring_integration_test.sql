@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(22);
+select plan(35);
 
 insert into auth.users (id,email) values
  ('d3180000-0000-4000-8000-000000000001','exm03-graded-a@example.invalid')
@@ -91,6 +91,46 @@ begin
  end loop;
 end
 $fixture$;
+
+select ok(public.exm03_safe_visible_choices('["A","B"]'::jsonb),
+ 'Approved text-only visible options are safe to deliver');
+select ok(not public.exm03_safe_visible_choices(
+ '[{"text":"A","isCorrect":true},"B"]'::jsonb),
+ 'Nested choice objects cannot leak correctness flags');
+
+insert into public.assessment_items(
+ id,origin_target_version_id,interaction_type,
+ prompt,response_spec,scoring_spec
+) values (
+ 'd3110000-0000-4000-8000-000000000007',
+ 'd3160000-0000-4000-8000-000000000001',
+ 'single_choice','Unsafe object-encoded fake option',
+ '{"options":[{"text":"A","isCorrect":true},"B"]}'::jsonb,
+ '{"correct_index":0}'::jsonb
+);
+select throws_ok($unsafe_assignment$
+ insert into public.exam_part_practice_assignments(
+ owner_id,target_id,target_version_id,exam_part_key,
+ curriculum_root_node_id,manifest_revision_id,practice_kind,
+ assigned_items,expires_at
+ ) values(
+ 'd3180000-0000-4000-8000-000000000001',
+ 'd3160000-0000-4000-8000-000000000000',
+ 'd3160000-0000-4000-8000-000000000001','part_a',
+ 'd3170000-0000-4000-8000-000000000000',
+ 'd3190000-0000-4000-8000-000000000001','diagnostic',
+ (select jsonb_agg(jsonb_build_object(
+   'id',i.id,'sha256',public.exam_reference_item_fingerprint(i.id)))
+ from public.assessment_items i
+ where i.origin_target_version_id=
+ 'd3160000-0000-4000-8000-000000000001'),now()+interval '1 hour'
+ )
+$unsafe_assignment$,'42501',null,
+ 'Assignment rejects unsafe choices even if a backend tries to issue them');
+
+-- Keep this rejected item out of the rest of the reviewed six-item fixture.
+delete from public.assessment_items
+where id='d3110000-0000-4000-8000-000000000007';
 
 -- Real Supabase auth session ownership is required in addition to JWT.
 -- These synthetic sessions and their issued assignments roll back with pgTAP.
@@ -219,6 +259,89 @@ select throws_ok($q$
  where i.origin_target_version_id =
   'd3160000-0000-4000-8000-000000000001'::uuid
 $q$,'23505',null,'Conflicting response replay is rejected');
+
+-- Public submission accepts only the original owner's issued live session,
+-- never an invented owner, client-supplied score or unreviewed question.
+select has_function('public','exm03_submit_assigned_practice',
+ array['uuid','jsonb'],'Session-bound submission endpoint exists');
+select ok(has_function_privilege('authenticated',
+ 'public.exm03_submit_assigned_practice(uuid,jsonb)','EXECUTE'),
+ 'Authenticated practice users can submit assignments');
+select ok(not has_function_privilege('anon',
+ 'public.exm03_submit_assigned_practice(uuid,jsonb)','EXECUTE'),
+ 'Unsigned users cannot submit a verified score');
+
+create temp table exm03_browser_answers as
+select (i.result->>'assignment_id')::uuid as assignment_id,
+ jsonb_object_agg(q.value->>'id',to_jsonb(0)) as responses
+from exm03_issued i,
+ lateral jsonb_array_elements(i.result->'questions') as q(value)
+group by i.result->>'assignment_id';
+-- Synthetic temp data only: grant the test's impersonated role access.
+grant select on exm03_browser_answers to authenticated;
+
+set local role authenticated;
+do $auth_submit$ begin
+ perform set_config('request.jwt.claim.sub',
+  'd3180000-0000-4000-8000-000000000001',true);
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000001",
+ "role":"authenticated","is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
+end $auth_submit$;
+
+select is((select count(*)::int from public.assessment_items
+ where id='d3110000-0000-4000-8000-000000000001'),0,
+ 'Approved answer-bearing items are blocked from legacy direct reads');
+select throws_ok($q$
+ select public.exm03_submit_assigned_practice(
+ 'd3200000-0000-4000-8000-000000000001','{}'::jsonb)
+$q$,'42501',null,'Unbound manual assignment cannot be publicly submitted');
+
+do $invalid_session$ begin
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000001",
+ "role":"authenticated","is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000099"}',true);
+end $invalid_session$;
+select throws_ok($q$
+ select public.exm03_submit_assigned_practice(assignment_id,responses)
+ from exm03_browser_answers
+$q$,'42501',null,'Invalid session cannot submit another issued assignment');
+do $real_session$ begin
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000001",
+ "role":"authenticated","is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
+end $real_session$;
+select is((select (public.exm03_submit_assigned_practice(
+ assignment_id,responses)->>'fully_correct_count')::int
+ from exm03_browser_answers),6,
+ 'Original live session grades six answers from canonical server keys');
+select ok((select (public.exm03_submit_assigned_practice(
+ assignment_id,responses)->>'already_recorded')::boolean
+ from exm03_browser_answers),
+ 'Same answers recover original result without duplicate writes');
+select throws_ok($q$
+ select public.exm03_submit_assigned_practice(assignment_id,
+   (select jsonb_object_agg(k,to_jsonb(1))
+    from jsonb_object_keys(responses) k))
+ from exm03_browser_answers
+$q$,'23505',null,'Changed answer replay cannot forge score');
+
+do $wrong_owner$ begin
+ perform set_config('request.jwt.claim.sub',
+  'd3180000-0000-4000-8000-000000000099',true);
+ perform set_config('request.jwt.claims',
+ '{"sub":"d3180000-0000-4000-8000-000000000099",
+ "role":"authenticated","is_anonymous":false,
+ "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
+end $wrong_owner$;
+select throws_ok($q$
+ select public.exm03_submit_assigned_practice(assignment_id,responses)
+ from exm03_browser_answers
+$q$,'42501',null,'Foreign owner cannot submit original owner assignment');
+reset role;
 
 set local role authenticated;
 do $jwt$ begin
