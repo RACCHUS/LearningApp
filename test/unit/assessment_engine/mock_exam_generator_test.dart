@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/services/assessment/mock_exam_generator_service.dart';
 
 void main() {
   group('Phase E: MockExamBlueprint & Quota Computation Tests', () {
@@ -132,6 +133,43 @@ void main() {
         },
       );
       expect(decoded.maxStimulusItemsRatio, 0.2);
+    });
+
+    test('Missing official fields stay unknown; practice timer is a preset', () {
+      final legacy = MockExamBlueprint.fromJson({
+        'target_version_id': 'tv-legacy',
+        'exam_code': 'LEGACY',
+        'domain_weights': <Map<String, dynamic>>[],
+      });
+      expect(legacy.officialPassingScore, isNull);
+      expect(legacy.officialScoreScale, isNull);
+      expect(legacy.timeLimitMinutes, 90); // practice preset, not verified
+      final roundTrip = MockExamBlueprint.fromJson(legacy.toJson());
+      expect(roundTrip.officialPassingScore, isNull);
+      expect(roundTrip.officialScoreScale, isNull);
+    });
+
+    test('Only renderer-supported question formats are eligible', () {
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.singleChoice), isTrue);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.matrixGrid), isFalse);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.numericEntry), isFalse);
+    });
+
+    test('Unmapped and invalid domains never fall back to the largest domain', () {
+      const validDomains = {'dom-a', 'dom-b'};
+      expect(MockExamGeneratorService.validPracticeDomain(null, validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('unknown', validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('dom-a', validDomains), 'dom-a');
+    });
+
+    test('Refuses underfilled practice sessions instead of claiming full length', () {
+      expect(() => MockExamGeneratorService.requireExactPracticeCount(10, 8),
+          throwsA(isA<StateError>()));
+      expect(() => MockExamGeneratorService.requireExactPracticeCount(10, 10),
+          returnsNormally);
     });
 
     test('Normalizes unnormalized domain weights gracefully', () {
