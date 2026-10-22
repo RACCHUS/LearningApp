@@ -25,7 +25,7 @@ as $submit$
 declare
   actor_id uuid;
   active_session uuid;
-  matching_assignment public.exam_part_practice_assignments%rowtype;
+  matching_assignment_id uuid;
   result jsonb;
 begin
   actor_id := (select auth.uid());
@@ -54,12 +54,12 @@ begin
 
   -- Neither the user ID nor the issued session may be client-provided.
   -- Assignment locks in the canonical scorer serialize concurrent retries.
-  select * into matching_assignment
+  select a.id into matching_assignment_id
   from public.exam_part_practice_assignments a
   where a.id=p_assignment_id
     and a.owner_id=actor_id
     and a.issued_session_id=active_session;
-  if not found then
+  if matching_assignment_id is null then
     raise exception 'Practice assignment does not belong to this session'
       using errcode='42501';
   end if;
