@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(25);
+select plan(23);
 
 select has_function('public','exm03_account_practice_inventory',
  array[]::text[],'Combined owner inventory exists');
