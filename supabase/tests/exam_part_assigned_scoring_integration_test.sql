@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(32);
+select plan(35);
 
 insert into auth.users (id,email) values
  ('d3180000-0000-4000-8000-000000000001','exm03-graded-a@example.invalid')
@@ -91,6 +91,42 @@ begin
  end loop;
 end
 $fixture$;
+
+select ok(public.exm03_safe_visible_choices('["A","B"]'::jsonb),
+ 'Approved text-only visible options are safe to deliver');
+select ok(not public.exm03_safe_visible_choices(
+ '[{"text":"A","isCorrect":true},"B"]'::jsonb),
+ 'Nested choice objects cannot leak correctness flags');
+
+insert into public.assessment_items(
+ id,origin_target_version_id,interaction_type,
+ prompt,response_spec,scoring_spec
+) values (
+ 'd3110000-0000-4000-8000-000000000007',
+ 'd3160000-0000-4000-8000-000000000001',
+ 'single_choice','Unsafe object-encoded fake option',
+ '{"options":[{"text":"A","isCorrect":true},"B"]}'::jsonb,
+ '{"correct_index":0}'::jsonb
+);
+select throws_ok($unsafe_assignment$
+ insert into public.exam_part_practice_assignments(
+ owner_id,target_id,target_version_id,exam_part_key,
+ curriculum_root_node_id,manifest_revision_id,practice_kind,
+ assigned_items,expires_at
+ ) values(
+ 'd3180000-0000-4000-8000-000000000001',
+ 'd3160000-0000-4000-8000-000000000000',
+ 'd3160000-0000-4000-8000-000000000001','part_a',
+ 'd3170000-0000-4000-8000-000000000000',
+ 'd3190000-0000-4000-8000-000000000001','diagnostic',
+ (select jsonb_agg(jsonb_build_object(
+   'id',i.id,'sha256',public.exam_reference_item_fingerprint(i.id)))
+ from public.assessment_items i
+ where i.origin_target_version_id=
+ 'd3160000-0000-4000-8000-000000000001'),now()+interval '1 hour'
+ )
+$unsafe_assignment$,'42501',null,
+ 'Assignment rejects unsafe choices even if a backend tries to issue them');
 
 -- Real Supabase auth session ownership is required in addition to JWT.
 -- These synthetic sessions and their issued assignments roll back with pgTAP.
