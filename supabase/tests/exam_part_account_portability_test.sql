@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(23);
+select plan(27);
 
 select has_function('public','exm03_account_practice_inventory',
  array[]::text[],'Combined owner inventory exists');
@@ -110,6 +110,63 @@ insert into public.exam_part_practice_attempts(
  'e4090000-0000-4000-8000-000000000001',repeat('a',64)
 );
 
+-- Cross-store fixture: one approved R1-R4 event and a derived grade.
+-- Editorial scoring keys are test-only rows in this rollback transaction.
+insert into public.content_source_releases(
+ id,publisher,title,version,source_url
+) values ('e4060000-0000-4000-8000-000000000002',
+ 'Fictional','Test handbook','test','https://example.org/handbook');
+insert into public.assessment_item_reference_validity(
+ id,assessment_item_id,manifest_revision_id,item_content_revision,
+ item_content_sha256,answer_location_revision,reference_edition_key,
+ reference_edition,source_release_id,expected_locations,author_ref,
+ ai_drafted,reviewer_ref,reviewer_qualification_evidence,
+ reviewer_edition_access_evidence,rights_review_status,review_status,
+ reviewed_at,review_minutes,publication_status
+) values (
+ 'e4100000-0000-4000-8000-000000000001',
+ 'e4080000-0000-4000-8000-000000000001',
+ 'e4070000-0000-4000-8000-000000000001',1,
+ public.exam_reference_item_fingerprint(
+  'e4080000-0000-4000-8000-000000000001'),1,
+ 'book','test','e4060000-0000-4000-8000-000000000002',
+ '[{"section":"1.1","source_page":"11"}]'::jsonb,
+ 'fictional-author',true,'independent-fictional-reviewer',
+ 'Qualified fictional reviewer','Fictional edition in hand',
+ 'approved','approved',now(),8,'published');
+insert into public.exam_reference_drill_scoring_keys(
+ id,approved_binding_id,scoring_version,step_tokens,author_ref,
+ ai_drafted,publication_status
+) values (
+ 'e4110000-0000-4000-8000-000000000001',
+ 'e4100000-0000-4000-8000-000000000001',
+ 1,'{"resource_choice":["book"],"section_location":["1.1"],
+ "interpretation":["yes"],"application":["a"]}'::jsonb,
+ 'fictional-author',true,'draft');
+insert into public.exam_reference_drill_events(
+ id,owner_auth_uid,client_attempt_id,assessment_item_id,
+ approved_binding_id,manifest_revision_id,exam_part_key,
+ administration_date,item_content_revision,answer_location_revision,
+ drill_step,responded,app_elapsed_ms,started_at,completed_at
+) values (
+ 'e4120000-0000-4000-8000-000000000001',
+ 'e4010000-0000-4000-8000-000000000001',
+ 'e4130000-0000-4000-8000-000000000001',
+ 'e4080000-0000-4000-8000-000000000001',
+ 'e4100000-0000-4000-8000-000000000001',
+ 'e4070000-0000-4000-8000-000000000001',
+ 'part_a',current_date,1,1,'resource_choice',true,500,
+ now()-interval '2 seconds',now());
+insert into public.exam_reference_drill_grades(
+ event_id,owner_auth_uid,approved_binding_id,scoring_key_id,drill_step,
+ is_correct,scoring_version
+) values (
+ 'e4120000-0000-4000-8000-000000000001',
+ 'e4010000-0000-4000-8000-000000000001',
+ 'e4100000-0000-4000-8000-000000000001',
+ 'e4110000-0000-4000-8000-000000000001',
+ 'resource_choice',true,1);
+
 select throws_ok($q$select public.exm03_account_practice_export()$q$,
  '42501',null,'No JWT denies privileged practice export');
 select throws_ok($q$select public.exm03_account_practice_inventory()$q$,
@@ -124,6 +181,15 @@ do $jwt$ begin
  "is_anonymous":false,"session_id":"e4020000-0000-4000-8000-000000000001"}',true);
 end $jwt$;
 
+select is((public.exm03_account_practice_inventory()->
+ 'reference_events')::text,'1',
+ 'Combined preview contains saved R1-R4 practice evidence');
+select is((public.exm03_account_practice_inventory()->
+ 'reference_grades')::text,'1',
+ 'Combined preview includes the dependent R1-R4 grade');
+select is((public.exm03_account_practice_export()->
+ 'reference_practice'->>'record_count')::int,1,
+ 'Combined export includes exact R1-R4 record count');
 select is((public.exm03_account_practice_inventory()->
  'part_attempts')::text,'1',
  'Preview counts the owner scored assignment');
@@ -142,10 +208,10 @@ select is((public.exm03_account_practice_export()->
  'Combined export provides bounded educational score summary');
 
 select throws_ok($q$
- select public.exm03_erase_account_practice(0,1,1,repeat('0',32),'WRONG')
+ select public.exm03_erase_account_practice(1,1,1,repeat('0',32),'WRONG')
 $q$,'22023',null,'Wrong erasure phrase cannot mutate history');
 select throws_ok($q$
- select public.exm03_erase_account_practice(0,1,1,repeat('0',32),
+ select public.exm03_erase_account_practice(1,1,1,repeat('0',32),
  'DELETE ALL EXAM PRACTICE')
 $q$,'40001',null,'Stale fingerprint cannot erase rows');
 select is((public.exm03_account_practice_inventory()->
@@ -166,10 +232,13 @@ do $real$ begin
 end $real$;
 
 select is((select (public.exm03_erase_account_practice(
- 0,1,1,public.exm03_account_practice_inventory()->>
+ 1,1,1,public.exm03_account_practice_inventory()->>
  'snapshot_fingerprint','DELETE ALL EXAM PRACTICE')
  ->>'deleted_part_assignments')::int),1,
  'Confirmed owner delete removes issued assignment and dependent score');
+select is((public.exm03_account_practice_inventory()->
+ 'reference_events')::text,'0',
+ 'Confirmed deletion also removes reference event evidence');
 select is((public.exm03_account_practice_inventory()->
  'part_attempts')::text,'0',
  'Dependent scored attempts are irrecoverable after deletion');
