@@ -42,7 +42,23 @@ class FakeSupabaseClient implements SupabaseClient {
   final FakeGoTrueClient _auth;
 
   @override
-  GoTrueClient get auth => _auth;
+  FakeGoTrueClient get auth => _auth;
+
+  /// Optional handler for rpc calls
+  dynamic Function(String fn, {Map<String, dynamic>? params})? rpcHandler;
+
+  @override
+  PostgrestFilterBuilder<T> rpc<T>(
+    String fn, {
+    Map<String, dynamic>? params,
+    dynamic get,
+  }) {
+    if (rpcHandler != null) {
+      final res = rpcHandler!(fn, params: params);
+      return FakeRpcFilterBuilder<T>(res);
+    }
+    return FakeRpcFilterBuilder<T>(null);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
@@ -52,12 +68,25 @@ class FakeSupabaseClient implements SupabaseClient {
   }
 }
 
+class FakeRpcFilterBuilder<T> implements PostgrestFilterBuilder<T> {
+  final dynamic _value;
+  FakeRpcFilterBuilder(this._value);
+
+  @override
+  Future<R> then<R>(FutureOr<R> Function(T value) onValue, {Function? onError}) {
+    return Future.value(_value as T).then(onValue, onError: onError);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => this;
+}
+
 /// A fake GoTrueClient exposing a null current session/user for tests.
 class FakeGoTrueClient implements GoTrueClient {
   FakeGoTrueClient(this.currentUser);
 
   @override
-  final User? currentUser;
+  User? currentUser;
 
   @override
   Session? get currentSession => null;
@@ -104,15 +133,15 @@ class FakeSupabaseQueryBuilder implements SupabaseQueryBuilder {
     if (values is Map<String, dynamic>) {
       final record = Map<String, dynamic>.from(values);
       record.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
-      if (tableName == 'study_sets') {
-        record.putIfAbsent('created_at', () => '2026-09-29T00:00:00Z');
-        record.putIfAbsent('updated_at', () => '2026-09-29T00:00:00Z');
-      }
+      record.putIfAbsent('created_at', () => '2026-09-29T00:00:00Z');
+      record.putIfAbsent('updated_at', () => '2026-09-29T00:00:00Z');
       records = [record];
     } else if (values is List) {
       records = values.map((v) {
         final r = Map<String, dynamic>.from(v as Map);
         r.putIfAbsent('id', () => 'fake-id-${insertedRecords.length + 1}');
+        r.putIfAbsent('created_at', () => '2026-09-29T00:00:00Z');
+        r.putIfAbsent('updated_at', () => '2026-09-29T00:00:00Z');
         return r;
       }).toList();
     } else {
