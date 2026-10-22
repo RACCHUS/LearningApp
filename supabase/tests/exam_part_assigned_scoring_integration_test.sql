@@ -128,6 +128,10 @@ select throws_ok($unsafe_assignment$
 $unsafe_assignment$,'42501',null,
  'Assignment rejects unsafe choices even if a backend tries to issue them');
 
+-- Keep this rejected item out of the rest of the reviewed six-item fixture.
+delete from public.assessment_items
+where id='d3110000-0000-4000-8000-000000000007';
+
 -- Real Supabase auth session ownership is required in addition to JWT.
 -- These synthetic sessions and their issued assignments roll back with pgTAP.
 insert into auth.sessions (id,user_id) values
