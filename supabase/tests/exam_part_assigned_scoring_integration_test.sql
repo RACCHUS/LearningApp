@@ -277,6 +277,8 @@ select (i.result->>'assignment_id')::uuid as assignment_id,
 from exm03_issued i,
  lateral jsonb_array_elements(i.result->'questions') as q(value)
 group by i.result->>'assignment_id';
+-- Synthetic temp data only: grant the test's impersonated role access.
+grant select on exm03_browser_answers to authenticated;
 
 set local role authenticated;
 do $auth_submit$ begin
