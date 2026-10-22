@@ -160,7 +160,7 @@ void main(){
      _archive()..['inventory']=_inventory(assignments:2),
      _archive()..['part_practice']=<dynamic>[],
      _archive()..['part_practice']=[
-       {...(_archive()['part_practice'] as List).first,
+       {...Map<String,dynamic>.from((_archive()['part_practice'] as List).first as Map),
          'assigned_items':['secret']}
      ],
    ]){
