@@ -441,7 +441,6 @@ set search_path = ''
 as $$
 declare
   v_caller_id uuid;
-  v_verification record;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null or not private.is_moderator() then
@@ -454,7 +453,7 @@ begin
       using errcode = '22023';
   end if;
 
-  select * into v_verification
+  perform 1
     from public.educator_verifications
    where id = p_verification_id
      for update;
