@@ -17,6 +17,7 @@ import 'package:learning_pwa/widgets/targets/target_readiness_card.dart';
 import 'package:learning_pwa/widgets/progress/exam_part_progress_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_context_progress_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_account_export_card.dart';
+import 'package:learning_pwa/widgets/progress/combined_exam_practice_portability_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_erasure_card.dart';
 import 'package:learning_pwa/widgets/progress/reference_practice_batch_erasure_card.dart';
 import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
@@ -96,6 +97,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           ] else ...[
             // ALL KNOWLEDGE VIEW
             _RetentionSection(summary: retention),
+            const SizedBox(height: DesignTokens.space3),
+            const CombinedExamPracticePortabilityCard(),
             const SizedBox(height: DesignTokens.space3),
             const ReferencePracticeAccountExportCard(),
             const SizedBox(height: DesignTokens.space3),
