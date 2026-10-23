@@ -418,7 +418,7 @@ create policy educator_verifications_delete on public.educator_verifications
   for delete
   to authenticated
   using (
-    (educator_id = auth.uid() and status in ('unverified', 'pending'))
+    educator_id = auth.uid()
     or private.is_moderator()
   );
 
