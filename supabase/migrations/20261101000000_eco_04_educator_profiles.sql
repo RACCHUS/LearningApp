@@ -569,7 +569,6 @@ as $$
 declare
   v_caller_id uuid;
   v_verification record;
-  v_old_status text;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null or not private.is_moderator() then
@@ -582,7 +581,7 @@ begin
       using errcode = '22023';
   end if;
 
-  select id, educator_id, status
+  select id
     into v_verification
     from public.educator_verifications
    where id = p_verification_id
@@ -592,8 +591,6 @@ begin
     raise exception 'Verification record % not found', p_verification_id
       using errcode = 'P0002';
   end if;
-
-  v_old_status := v_verification.status;
 
   -- Set session configuration for trigger to pick up notes & internal_notes
   perform set_config('educator_verifications.audit_notes', coalesce(p_notes, ''), true);
