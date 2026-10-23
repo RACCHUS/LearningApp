@@ -194,8 +194,7 @@ class ExamAssignedPracticeService {
     final actualSession = _sessionId();
     if (ownerId.isEmpty || user == null || user.isAnonymous ||
         user.id != ownerId || !_validUuid(actualSession) ||
-        (sessionId != null || actualSession == null) &&
-            (sessionId != null && actualSession != sessionId)) {
+        (sessionId != null && actualSession != sessionId)) {
       throw StateError('EXM practice account or session changed');
     }
     return actualSession!;
