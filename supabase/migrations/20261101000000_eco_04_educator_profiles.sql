@@ -568,7 +568,6 @@ set search_path = ''
 as $$
 declare
   v_caller_id uuid;
-  v_verification record;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null or not private.is_moderator() then
@@ -581,11 +580,10 @@ begin
       using errcode = '22023';
   end if;
 
-  select id
-    into v_verification
-    from public.educator_verifications
-   where id = p_verification_id
-     for update;
+  perform 1
+     from public.educator_verifications
+    where id = p_verification_id
+      for update;
 
   if not found then
     raise exception 'Verification record % not found', p_verification_id
