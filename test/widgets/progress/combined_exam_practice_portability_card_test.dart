@@ -137,6 +137,14 @@ Widget _app({
   ),
 );
 
+Future<void> _tapVisible(WidgetTester tester, String key) async {
+  final found = find.byKey(Key(key));
+  await tester.ensureVisible(found);
+  await tester.pumpAndSettle();
+  await tester.tap(found);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   test('Archive chunk iterator produces the same validated JSON', () {
     final archive = ExamPracticeArchive.parse(_archive(), 'learner-a');
@@ -162,17 +170,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('exm-combined-counts')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('exm-combined-preview')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-preview');
     expect(find.textContaining('1 issued part assignments'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('exm-combined-prepare')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-prepare');
     expect(find.byKey(const Key('exm-combined-verified')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('exm-combined-download')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-download');
     expect(download.calls, 0);
-    await tester.tap(find.byKey(const Key('exm-combined-download-confirm')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-download-confirm');
     expect(download.calls, 1);
     expect(download.filename, matches(RegExp(
       r'^learningapp-exm-combined-practice-\d{8}T\d{6}Z\.json$')));
@@ -195,10 +199,8 @@ void main() {
     await tester.pumpWidget(_app(auth: auth, service: service,
         downloader: download));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('exm-combined-preview')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('exm-combined-prepare')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-preview');
+    await _tapVisible(tester, 'exm-combined-prepare');
     expect(find.byKey(const Key('exm-combined-error')), findsOneWidget);
     expect(find.byKey(const Key('exm-combined-download')), findsNothing);
     expect(find.byKey(const Key('exm-combined-delete')), findsNothing);
@@ -221,8 +223,7 @@ void main() {
     );
     await tester.pumpWidget(_app(auth: auth, service: service));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('exm-combined-preview')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-preview');
     expect(tester.widget<OutlinedButton>(
       find.byKey(const Key('exm-combined-delete'))).onPressed, isNull);
     await tester.enterText(find.byKey(const Key('exm-combined-phrase')),
@@ -233,12 +234,10 @@ void main() {
     await tester.enterText(find.byKey(const Key('exm-combined-phrase')),
         'DELETE ALL EXAM PRACTICE');
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('exm-combined-delete')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-delete');
     expect(deletes, 0);
     expect(find.byKey(const Key('exm-combined-delete-confirm')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('exm-combined-delete-confirm')));
-    await tester.pumpAndSettle();
+    await _tapVisible(tester, 'exm-combined-delete-confirm');
     expect(deletes, 1);
     expect(find.byKey(const Key('exm-combined-result')), findsOneWidget);
     expect(find.byKey(const Key('exm-combined-delete')), findsNothing);
