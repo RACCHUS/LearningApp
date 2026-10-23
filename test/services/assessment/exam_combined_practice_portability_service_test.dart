@@ -279,7 +279,7 @@ void main(){
    var cancelled=false;
    await expectLater(service.export(expectedOwnerId:'learner-a',
      shouldCancel:()=>cancelled,
-     onProgress:(loaded,total){cancelled=true;}),
+     onProgress:(loaded,total){cancelled=loaded>0;}),
      throwsStateError);
    expect(pages,1);
  });
