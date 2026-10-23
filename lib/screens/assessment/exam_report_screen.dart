@@ -32,7 +32,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         title: Text(
-          'Diagnostic Readiness Report',
+          'Practice Results',
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         actions: [
@@ -49,7 +49,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             children: [
-              // 1. Official Blueprint Facts Banner (Section 15.6: Kept distinct from app estimates)
+              // 1. Practice-only context: official exam standards are unverified.
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -64,15 +64,17 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.verified_outlined, size: 18, color: Color(0xFF10B981)),
+                        const Icon(Icons.info_outline, size: 18, color: Color(0xFF64748B)),
                         const SizedBox(width: 8),
-                        Text(
-                          'OFFICIAL BLUEPRINT STANDARD',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                            color: const Color(0xFF10B981),
+                        Expanded(
+                          child: Text(
+                            'PRACTICE ONLY · NOT AN OFFICIAL EXAM RESULT',
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                              color: const Color(0xFF64748B),
+                            ),
                           ),
                         ),
                       ],
@@ -91,14 +93,16 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                       spacing: 16,
                       runSpacing: 8,
                       children: [
-                        _buildFactChip('Exam Code', facts.examCode, isDark),
-                        _buildFactChip('Passing Score', '${facts.publishedPassingScore} (Scale: ${facts.scoreScale})', isDark),
-                        _buildFactChip('Time Limit', '${facts.timeLimitMinutes} min', isDark),
+                        _buildFactChip('Practice target', facts.examCode, isDark),
+                        if (report.examPartKey != null)
+                          _buildFactChip('Practice part', report.examPartKey!, isDark),
+                        _buildFactChip('Official passing score', 'Unverified', isDark),
+                        _buildFactChip('Official time limit', 'Unverified', isDark),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      facts.nonAffiliationNotice,
+                      'The countdown is a practice timer, not a verified official duration. ${facts.nonAffiliationNotice}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
@@ -146,7 +150,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'APP READINESS ESTIMATE',
+                                'PRACTICE PERFORMANCE',
                                 style: GoogleFonts.outfit(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.bold,
@@ -186,7 +190,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                         children: [
                           _buildMetricColumn('Practice Score', '${readiness.practiceScorePercentage.toStringAsFixed(1)}%', isDark),
                           Container(width: 1, height: 35, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                          _buildMetricColumn('Estimated Scaled Score', '${readiness.estimatedScaledScore}', isDark),
+                          _buildMetricColumn('Unanswered', '${readiness.unansweredCount}', isDark),
                           Container(width: 1, height: 35, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                           _buildMetricColumn('Questions Correct', '${readiness.correctCount}/${readiness.totalQuestions}', isDark),
                         ],
@@ -209,7 +213,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
 
               // 3. Domain Diagnostic Breakdown
               Text(
-                'Domain Diagnostic Breakdown',
+                'Practice Topic Breakdown',
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -218,7 +222,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Performance weighted according to the examination blueprint specifications:',
+                'Results for the practice questions shown, without claiming official exam domain weighting:',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
