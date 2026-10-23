@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/assessment/diagnostic_assessment.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/providers/diagnostic_assessment_provider.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
@@ -74,6 +75,33 @@ void main() {
       expect(service.lastItemIds, ['item-1', 'item-2']);
     },
   );
+
+  testWidgets('explicit exam part never invokes raw legacy item loader',
+      (tester) async {
+    var unsafeLoads=0;
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authProvider.overrideWith((ref)=>_ScreenAuth(AuthInitial())),
+        examPartDiagnosticItemsProvider((
+          targetId:'target-1',targetVersionId:'version-1',examPartKey:'part_a',
+        )).overrideWith((ref) async {
+          unsafeLoads++;
+          throw StateError('Protected raw item read should never run');
+        }),
+      ],
+      child: const MaterialApp(
+        home: DiagnosticAssessmentScreen(
+          targetId:'target-1',targetVersionId:'version-1',
+          examPartKey:'part_a',
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Sign in with a permanent account'),findsOneWidget);
+    expect(unsafeLoads,0);
+    expect(find.text('Complete Diagnostic'),findsNothing);
+  });
+
 }
 
 DiagnosticAssessmentItem _item(String id, String conceptName) {
@@ -103,6 +131,7 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
 
   String? lastTargetVersionId;
   List<String> lastItemIds = const [];
+  String? lastExamPartKey;
 
   @override
   Future<DiagnosticAssessmentReport> evaluateDiagnosticSession({
@@ -132,4 +161,37 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
       evidencePersisted: true,
     );
   }
+
+  @override
+  Future<DiagnosticAssessmentReport> evaluatePartDiagnosticSession({
+    required String userId,
+    required String targetId,
+    required String targetTitle,
+    required String targetVersionId,
+    required String examPartKey,
+    required List<DiagnosticAssessmentItem> items,
+    required List<DiagnosticAnswerSubmission> submissions,
+  }) async {
+    lastExamPartKey = examPartKey;
+    final result = await evaluateDiagnosticSession(
+      userId: userId,
+      targetId: targetId,
+      targetTitle: targetTitle,
+      targetVersionId: targetVersionId,
+      items: items,
+      submissions: submissions,
+    );
+    return result.copyWith(
+      examPartKey: examPartKey,
+      curriculumRootNodeId: 'root-a',
+      learnerId: userId,
+    );
+  }
+
+}
+
+class _ScreenAuth extends StateNotifier<AuthState> implements AuthNotifier {
+  _ScreenAuth(AuthState initial):super(initial);
+  @override
+  dynamic noSuchMethod(Invocation invocation)=>super.noSuchMethod(invocation);
 }
