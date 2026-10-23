@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(40);
+select plan(48);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -25,17 +25,19 @@ values ('8f8c1a20-0000-4000-8000-000000000001', 'admin', '8f8c1a20-0000-4000-800
 on conflict (user_id) do update set role = 'admin';
 
 -- -----------------------------------------------------------------------------
--- 1. Schema Structure Checks (9 tests)
+-- 1. Schema Structure Checks (11 tests)
 -- -----------------------------------------------------------------------------
 select has_table('public', 'educator_profiles', 'Table public.educator_profiles exists');
 select has_table('public', 'educator_subjects', 'Table public.educator_subjects exists');
 select has_table('public', 'educator_verifications', 'Table public.educator_verifications exists');
 select has_table('public', 'educator_verification_audits', 'Table public.educator_verification_audits exists');
 select has_column('public', 'educator_verifications', 'verified_by', 'Column educator_verifications.verified_by exists');
+select has_column('public', 'educator_verification_audits', 'internal_notes', 'Column educator_verification_audits.internal_notes exists');
 select has_table('public', 'educator_follows', 'Table public.educator_follows exists');
 select has_function('private', 'is_educator_profiles_public_enabled', 'Function private.is_educator_profiles_public_enabled exists');
 select has_function('public', 'upsert_my_educator_profile', Array['text', 'text', 'text', 'text', 'text[]', 'boolean', 'text'], 'RPC upsert_my_educator_profile exists');
-select has_function('public', 'verify_educator_credential', Array['uuid', 'text', 'timestamp with time zone', 'text'], 'RPC verify_educator_credential exists');
+select has_function('public', 'verify_educator_credential', Array['uuid', 'text', 'timestamp with time zone', 'text', 'text'], 'RPC verify_educator_credential exists');
+select has_function('public', 'fetch_my_credential_feedback', Array['uuid'], 'RPC fetch_my_credential_feedback exists');
 
 
 -- -----------------------------------------------------------------------------
@@ -243,7 +245,9 @@ select lives_ok(
     select public.verify_educator_credential(
       '00000000-0000-4000-8000-000000000011'::uuid,
       'verified',
-      now() + interval '2 years'
+      now() + interval '2 years',
+      'Credential documents validated.',
+      'Internal verification note: Registry confirmed.'
     )
   $$,
   'Moderator successfully verifies educator credential'
@@ -336,8 +340,70 @@ select throws_ok(
      where id = '00000000-0000-4000-8000-000000000011'
   $$,
   '42501',
-  'Access denied: verified credentials cannot be deleted by non-moderators',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
   'Owner cannot delete verified credential (42501)'
+);
+
+-- -----------------------------------------------------------------------------
+-- 6.1 Audit Access Separation (Finding 4) (2 tests)
+-- -----------------------------------------------------------------------------
+-- Teacher A cannot directly select from educator_verification_audits (RLS blocks confidential staff notes)
+select is(
+  (select count(*)::integer from public.educator_verification_audits),
+  0,
+  'Teacher A receives 0 rows from direct select on educator_verification_audits (internal notes shielded)'
+);
+
+-- Teacher A can fetch author-facing feedback through fetch_my_credential_feedback RPC
+select is(
+  (select feedback from public.fetch_my_credential_feedback('00000000-0000-4000-8000-000000000011'::uuid) limit 1),
+  'Credential documents validated.',
+  'Teacher A can retrieve author-facing feedback via RPC without exposing reviewer or internal notes'
+);
+
+-- -----------------------------------------------------------------------------
+-- 6.2 Direct Moderator Update Audit Accountability (Finding 2) (2 tests)
+-- -----------------------------------------------------------------------------
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+select lives_ok(
+  $$
+    update public.educator_verifications
+       set status = 'revoked'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  'Moderator directly updates educator_verifications table'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
+  1,
+  'Database trigger automatically recorded audit entry for direct moderator table UPDATE'
+);
+
+-- -----------------------------------------------------------------------------
+-- 6.3 Audit Durability & Delete Protection on Non-Verified Claims (Finding 1) (2 tests)
+-- -----------------------------------------------------------------------------
+-- Teacher A cannot delete revoked credentials
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+
+select throws_ok(
+  $$
+    delete from public.educator_verifications
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Owner cannot delete revoked credential (42501)'
+);
+
+-- Claim deletion does not cascade-delete audit history
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011';
+
+select ok(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011') >= 2,
+  'Verification audits are preserved independently after credential claim deletion (no cascading delete)'
 );
 
 

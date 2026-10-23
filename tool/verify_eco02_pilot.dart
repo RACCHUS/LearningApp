@@ -257,6 +257,24 @@ class PilotRestClient {
       'body': decoded,
     };
   }
+
+  Future<Map<String, dynamic>> adminGetUser(String userId, {required String serviceKey}) async {
+    final uri = Uri.parse('$url/auth/v1/admin/users/$userId');
+    final req = await _http.getUrl(uri);
+    setSupabaseRestAuth(req, serviceKey);
+    final resp = await req.close();
+    final body = await resp.transform(utf8.decoder).join();
+    dynamic decoded;
+    try {
+      decoded = body.isNotEmpty ? jsonDecode(body) : null;
+    } catch (_) {
+      decoded = body;
+    }
+    return {
+      'statusCode': resp.statusCode,
+      'body': decoded,
+    };
+  }
 }
 
 List<dynamic> asList(dynamic body) {
@@ -292,68 +310,30 @@ void main(List<String> args) async {
     exit(1);
   }
 
+  // 1. Environment Safety Guard: Restrict destructive administrative pilot execution to isolated test environments
+  final targetUri = Uri.tryParse(url);
+  final isLocal = targetUri != null &&
+      (targetUri.host == 'localhost' ||
+       targetUri.host == '127.0.0.1' ||
+       targetUri.host == '0.0.0.0' ||
+       targetUri.port == 54321);
+  final isExplicitTestEnv = args.contains('--test-env') || args.contains('--allow-test-env');
+
+  if (!isLocal && !isExplicitTestEnv) {
+    print('❌ Safety Guard Error: Destructive pilot testing is restricted to an isolated test environment.');
+    print('   Target Gateway: $url');
+    print('   Target must be a local Supabase instance (localhost / port 54321) or include --test-env explicitly.');
+    exit(1);
+  }
+
+  // 2. Administrative Cleanup Credentials: Fail-closed requirement
+  if (serviceKey == null || serviceKey.isEmpty) {
+    print('❌ Fail-Closed: SUPABASE_SERVICE_ROLE_KEY is strictly required to execute the pilot suite and guarantee cleanup.');
+    exit(1);
+  }
+
   print('📡 Target Gateway: $url');
   final client = PilotRestClient(url, anonKey);
-
-  // Authenticate participants
-  print('\n👥 Step 0: Authenticating Pilot Participants...');
-  final sessionLearnerA = await client.signInAnonymously();
-  if (sessionLearnerA == null) {
-    print('❌ Failed to authenticate Learner A');
-    exit(1);
-  }
-  print('  ✓ Learner A (Author): ${sessionLearnerA.userId}');
-
-  final sessionLearnerB = await client.signInAnonymously();
-  if (sessionLearnerB == null) {
-    print('❌ Failed to authenticate Learner B');
-    exit(1);
-  }
-  print('  ✓ Learner B (Peer/Switcher): ${sessionLearnerB.userId}');
-
-  // Ensure public.users profile exists
-  await client.restPost('users', {
-    'id': sessionLearnerA.userId,
-    'display_name': 'Pilot Learner A',
-    'created_at': DateTime.now().toIso8601String(),
-  }, token: sessionLearnerA.accessToken, upsert: true);
-
-  await client.restPost('users', {
-    'id': sessionLearnerB.userId,
-    'display_name': 'Pilot Learner B',
-    'created_at': DateTime.now().toIso8601String(),
-  }, token: sessionLearnerB.accessToken, upsert: true);
-
-  // Moderator participant
-  final sessionModerator = await client.signInAnonymously();
-  if (sessionModerator == null) {
-    print('❌ Failed to authenticate Moderator');
-    exit(1);
-  }
-  print('  ✓ Moderator (Reviewer): ${sessionModerator.userId}');
-
-  await client.restPost('users', {
-    'id': sessionModerator.userId,
-    'display_name': 'Pilot Moderator',
-    'created_at': DateTime.now().toIso8601String(),
-  }, token: sessionModerator.accessToken, upsert: true);
-
-  // Provision moderator role
-  if (serviceKey != null && serviceKey.isNotEmpty) {
-    print('🔑 Provisioning Moderator Role via service_role authorization...');
-    final modRoleRes = await client.restPost('moderation_roles', {
-      'user_id': sessionModerator.userId,
-      'role': 'moderator',
-      'granted_by': sessionModerator.userId,
-    }, token: serviceKey, upsert: true);
-    if (modRoleRes['statusCode'] >= 200 && modRoleRes['statusCode'] < 300) {
-      print('  ✓ Moderator role successfully provisioned for ${sessionModerator.userId}');
-    } else {
-      print('  ⚠️ Moderator role provision status: ${modRoleRes['statusCode']} (${modRoleRes['body']})');
-    }
-  } else {
-    print('ℹ️  No serviceKey provided; attempting self-insert or assuming role pre-provisioned');
-  }
 
   int passed = 0;
   int failed = 0;
@@ -369,11 +349,69 @@ void main(List<String> args) async {
     }
   }
 
+  PilotAuthSession? sessionLearnerA;
+  PilotAuthSession? sessionLearnerB;
+  PilotAuthSession? sessionModerator;
   final testQuestionId = generatePilotUuid('0001');
   final testAnswerId = generatePilotUuid('a001');
   final revisedAnswerId = generatePilotUuid('a002');
 
   try {
+    // Authenticate participants
+    print('\n👥 Step 0: Authenticating Pilot Participants...');
+    sessionLearnerA = await client.signInAnonymously();
+    if (sessionLearnerA == null) {
+      print('❌ Failed to authenticate Learner A');
+      exit(1);
+    }
+    print('  ✓ Learner A (Author): ${sessionLearnerA.userId}');
+
+    sessionLearnerB = await client.signInAnonymously();
+    if (sessionLearnerB == null) {
+      print('❌ Failed to authenticate Learner B');
+      exit(1);
+    }
+    print('  ✓ Learner B (Peer/Switcher): ${sessionLearnerB.userId}');
+
+    // Ensure public.users profile exists
+    await client.restPost('users', {
+      'id': sessionLearnerA.userId,
+      'display_name': 'Pilot Learner A',
+      'created_at': DateTime.now().toIso8601String(),
+    }, token: sessionLearnerA.accessToken, upsert: true);
+
+    await client.restPost('users', {
+      'id': sessionLearnerB.userId,
+      'display_name': 'Pilot Learner B',
+      'created_at': DateTime.now().toIso8601String(),
+    }, token: sessionLearnerB.accessToken, upsert: true);
+
+    // Moderator participant
+    sessionModerator = await client.signInAnonymously();
+    if (sessionModerator == null) {
+      print('❌ Failed to authenticate Moderator');
+      exit(1);
+    }
+    print('  ✓ Moderator (Reviewer): ${sessionModerator.userId}');
+
+    await client.restPost('users', {
+      'id': sessionModerator.userId,
+      'display_name': 'Pilot Moderator',
+      'created_at': DateTime.now().toIso8601String(),
+    }, token: sessionModerator.accessToken, upsert: true);
+
+    // Provision moderator role
+    print('🔑 Provisioning Moderator Role via service_role authorization...');
+    final modRoleRes = await client.restPost('moderation_roles', {
+      'user_id': sessionModerator.userId,
+      'role': 'moderator',
+      'granted_by': sessionModerator.userId,
+    }, token: serviceKey, upsert: true);
+    if (modRoleRes['statusCode'] >= 200 && modRoleRes['statusCode'] < 300) {
+      print('  ✓ Moderator role successfully provisioned for ${sessionModerator.userId}');
+    } else {
+      print('  ⚠️ Moderator role provision status: ${modRoleRes['statusCode']} (${modRoleRes['body']})');
+    }
     // --------------------------------------------------------------------------
     // 1. Seed FAQ Availability & Anonymous Baseline
     // --------------------------------------------------------------------------
@@ -541,20 +579,18 @@ void main(List<String> args) async {
     );
 
     // Verify community_review_audit record exists with both notes and internal_notes
-    if (serviceKey != null) {
-      final auditRes = await client.restGet(
-        'community_review_audit?target_id=eq.$testAnswerId&select=id,target_type,action,notes,internal_notes',
-        token: serviceKey,
-      );
-      final auditRows = asList(auditRes['body']);
-      expect(
-        auditRows.isNotEmpty &&
-            auditRows.first['notes'] != null &&
-            auditRows.first['internal_notes'] != null,
-        'Durable review audit created preserving both author feedback AND confidential internal notes',
-        'Audit rows: $auditRows',
-      );
-    }
+    final auditRes = await client.restGet(
+      'community_review_audit?target_id=eq.$testAnswerId&select=id,target_type,action,notes,internal_notes',
+      token: serviceKey,
+    );
+    final auditRows = asList(auditRes['body']);
+    expect(
+      auditRows.isNotEmpty &&
+          auditRows.first['notes'] != null &&
+          auditRows.first['internal_notes'] != null,
+      'Durable review audit created preserving both author feedback AND confidential internal notes',
+      'Audit rows: $auditRows',
+    );
 
     // ------------------------------------------------------------------------
     // 5. Learner Decision Feedback Query (Isolation & Zero Leaks)
@@ -650,71 +686,129 @@ void main(List<String> args) async {
     // ------------------------------------------------------------------------
     // 8. Cleanup Synthetic Pilot Test Rows with Rigorous Verification
     // ------------------------------------------------------------------------
-    print('\n🧹 8. Cleaning up Synthetic Pilot Test Data:');
-    if (serviceKey != null && serviceKey.isNotEmpty) {
-      // 1. Delete community_review_audit records
-      await client.restDelete('community_review_audit?target_id=eq.$testAnswerId', token: serviceKey);
-      await client.restDelete('community_review_audit?target_id=eq.$revisedAnswerId', token: serviceKey);
-      await client.restDelete('community_review_audit?target_id=eq.$testQuestionId', token: serviceKey);
+    print('\n🧹 8. Cleaning up Synthetic Pilot Test Data (Fail-Closed Verified):');
+    
+    // 1. Delete community_review_audit records
+    await client.restDelete('community_review_audit?target_id=eq.$testAnswerId', token: serviceKey);
+    await client.restDelete('community_review_audit?target_id=eq.$revisedAnswerId', token: serviceKey);
+    await client.restDelete('community_review_audit?target_id=eq.$testQuestionId', token: serviceKey);
 
-      // 2. Delete community_answers via service-role
-      await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: serviceKey);
-      await client.restDelete('community_answers?id=eq.$testAnswerId', token: serviceKey);
+    // 2. Delete community_answers via service-role
+    await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: serviceKey);
+    await client.restDelete('community_answers?id=eq.$testAnswerId', token: serviceKey);
 
-      // 3. Delete community_questions
-      await client.restDelete('community_questions?id=eq.$testQuestionId', token: serviceKey);
+    // 3. Delete community_questions
+    await client.restDelete('community_questions?id=eq.$testQuestionId', token: serviceKey);
 
-      // 4. Delete moderation_roles
+    // 4. Delete moderation_roles
+    if (sessionModerator != null) {
       await client.restDelete('moderation_roles?user_id=eq.${sessionModerator.userId}', token: serviceKey);
+    }
 
-      // 5. Delete public.users
-      for (final s in [sessionLearnerA, sessionLearnerB, sessionModerator]) {
-        await client.restDelete('users?id=eq.${s.userId}', token: serviceKey);
+    // 5. Delete public.users
+    final activeSessions = [sessionLearnerA, sessionLearnerB, sessionModerator].whereType<PilotAuthSession>().toList();
+    for (final s in activeSessions) {
+      await client.restDelete('users?id=eq.${s.userId}', token: serviceKey);
+    }
+
+    // 6. Delete auth.users via GoTrue admin API
+    for (final s in activeSessions) {
+      await client.adminDeleteUser(s.userId, serviceKey: serviceKey);
+    }
+
+    // 7. Rigorous verification: query REST with strict HTTP 200 checks to verify all residual test records are 0
+    final checkAnswers = await client.restGet(
+      'community_answers?id=in.($testAnswerId,$revisedAnswerId)&select=id',
+      token: serviceKey,
+    );
+    expect(
+      checkAnswers['statusCode'] == 200,
+      'Residual answers check returned HTTP 200 OK',
+      'Status: ${checkAnswers['statusCode']}, body: ${checkAnswers['body']}',
+    );
+    final residualAnswers = asList(checkAnswers['body']);
+    expect(
+      residualAnswers.isEmpty,
+      'Residual test answers cleanly purged (0 remaining)',
+      'Found residual answers: $residualAnswers',
+    );
+
+    final checkQuestions = await client.restGet(
+      'community_questions?id=eq.$testQuestionId&select=id',
+      token: serviceKey,
+    );
+    expect(
+      checkQuestions['statusCode'] == 200,
+      'Residual questions check returned HTTP 200 OK',
+      'Status: ${checkQuestions['statusCode']}, body: ${checkQuestions['body']}',
+    );
+    final residualQuestions = asList(checkQuestions['body']);
+    expect(
+      residualQuestions.isEmpty,
+      'Residual test questions cleanly purged (0 remaining)',
+      'Found residual questions: $residualQuestions',
+    );
+
+    final checkAudits = await client.restGet(
+      'community_review_audit?target_id=in.($testAnswerId,$revisedAnswerId)&select=id',
+      token: serviceKey,
+    );
+    expect(
+      checkAudits['statusCode'] == 200,
+      'Residual audits check returned HTTP 200 OK',
+      'Status: ${checkAudits['statusCode']}, body: ${checkAudits['body']}',
+    );
+    final residualAudits = asList(checkAudits['body']);
+    expect(
+      residualAudits.isEmpty,
+      'Residual test audits cleanly purged (0 remaining)',
+      'Found residual audits: $residualAudits',
+    );
+
+    if (sessionModerator != null) {
+      final checkRoles = await client.restGet(
+        'moderation_roles?user_id=eq.${sessionModerator.userId}&select=user_id',
+        token: serviceKey,
+      );
+      expect(
+        checkRoles['statusCode'] == 200,
+        'Residual moderation roles check returned HTTP 200 OK',
+        'Status: ${checkRoles['statusCode']}, body: ${checkRoles['body']}',
+      );
+      final residualRoles = asList(checkRoles['body']);
+      expect(
+        residualRoles.isEmpty,
+        'Residual moderation roles cleanly purged (0 remaining)',
+        'Found residual roles: $residualRoles',
+      );
+    }
+
+    if (activeSessions.isNotEmpty) {
+      final userIds = activeSessions.map((s) => s.userId).join(',');
+      final checkUsers = await client.restGet(
+        'users?id=in.($userIds)&select=id',
+        token: serviceKey,
+      );
+      expect(
+        checkUsers['statusCode'] == 200,
+        'Residual public users check returned HTTP 200 OK',
+        'Status: ${checkUsers['statusCode']}, body: ${checkUsers['body']}',
+      );
+      final residualUsers = asList(checkUsers['body']);
+      expect(
+        residualUsers.isEmpty,
+        'Residual public users cleanly purged (0 remaining)',
+        'Found residual users: $residualUsers',
+      );
+
+      for (final s in activeSessions) {
+        final verifyDeleted = await client.adminGetUser(s.userId, serviceKey: serviceKey);
+        expect(
+          verifyDeleted['statusCode'] == 404,
+          'Auth user ${s.userId} confirmed deleted via GoTrue admin API (HTTP 404)',
+          'Status: ${verifyDeleted['statusCode']}, body: ${verifyDeleted['body']}',
+        );
       }
-
-      // 6. Delete auth.users via GoTrue admin API
-      for (final s in [sessionLearnerA, sessionLearnerB, sessionModerator]) {
-        await client.adminDeleteUser(s.userId, serviceKey: serviceKey);
-      }
-
-      // 7. Rigorous verification: query REST to verify all residual test records are 0
-      final checkAnswers = await client.restGet(
-        'community_answers?id=in.($testAnswerId,$revisedAnswerId)&select=id',
-        token: serviceKey,
-      );
-      final residualAnswers = asList(checkAnswers['body']);
-      expect(
-        residualAnswers.isEmpty,
-        'Residual test answers cleanly purged (0 remaining)',
-        'Found residual answers: $residualAnswers',
-      );
-
-      final checkQuestions = await client.restGet(
-        'community_questions?id=eq.$testQuestionId&select=id',
-        token: serviceKey,
-      );
-      final residualQuestions = asList(checkQuestions['body']);
-      expect(
-        residualQuestions.isEmpty,
-        'Residual test questions cleanly purged (0 remaining)',
-        'Found residual questions: $residualQuestions',
-      );
-
-      final checkAudits = await client.restGet(
-        'community_review_audit?target_id=in.($testAnswerId,$revisedAnswerId)&select=id',
-        token: serviceKey,
-      );
-      final residualAudits = asList(checkAudits['body']);
-      expect(
-        residualAudits.isEmpty,
-        'Residual test audits cleanly purged (0 remaining)',
-        'Found residual audits: $residualAudits',
-      );
-    } else {
-      await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: sessionLearnerA.accessToken);
-      await client.restDelete('community_answers?id=eq.$testAnswerId', token: sessionLearnerA.accessToken);
-      await client.restDelete('community_questions?id=eq.$testQuestionId', token: sessionLearnerA.accessToken);
-      expect(true, 'Synthetic pilot test questions and answers purge attempted');
     }
   }
 

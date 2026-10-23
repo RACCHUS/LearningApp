@@ -106,7 +106,7 @@ create table if not exists public.educator_verifications (
   credential_reference text check (credential_reference is null or length(trim(credential_reference)) <= 200),
   status text not null default 'unverified' check (status in ('unverified', 'pending', 'verified', 'rejected', 'expired', 'revoked')),
   verified_at timestamptz,
-  verified_by uuid references auth.users(id) on delete set null,
+  verified_by uuid,
   expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -119,16 +119,18 @@ create index if not exists idx_educator_verifications_educator
 
 -- -----------------------------------------------------------------------------
 -- 4.1 Educator Verification Decision Audits (Immutable Governance Log)
+-- Preserved independently of claim lifecycle (no cascading deletions)
 -- -----------------------------------------------------------------------------
 create table if not exists public.educator_verification_audits (
   id uuid primary key default gen_random_uuid(),
-  verification_id uuid not null references public.educator_verifications(id) on delete cascade,
-  educator_id uuid not null references auth.users(id) on delete cascade,
-  reviewer_id uuid references auth.users(id) on delete set null,
+  verification_id uuid not null,
+  educator_id uuid not null,
+  reviewer_id uuid,
   action text not null check (action in ('verify', 'reject', 'expire', 'revoke', 'verified', 'rejected', 'expired', 'revoked')),
   previous_status text not null,
   new_status text not null,
   notes text,
+  internal_notes text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
@@ -149,8 +151,7 @@ create policy educator_verification_audits_select on public.educator_verificatio
   for select
   to authenticated
   using (
-    educator_id = auth.uid()
-    or private.is_moderator()
+    private.is_moderator()
   );
 
 revoke all on table public.educator_verification_audits from public, anon;
@@ -212,15 +213,45 @@ begin
         using errcode = '42501';
     end if;
 
-    -- 5. Non-moderators can never delete verified or revoked credentials
-    if tg_op = 'DELETE' and old.status in ('verified', 'revoked') then
-      raise exception 'Access denied: verified credentials cannot be deleted by non-moderators'
+    -- 5. Non-moderators can never delete verified, rejected, or revoked credentials
+    if tg_op = 'DELETE' and old.status in ('verified', 'rejected', 'revoked') then
+      raise exception 'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators'
         using errcode = '42501';
     end if;
   end if;
 
   if tg_op = 'DELETE' then
     return old;
+  end if;
+
+  -- 6. Trigger-enforced audit recording on any status change:
+  -- Guarantees that EVERY authorized status transition (whether executed through RPC
+  -- or direct moderator table UPDATE) writes an immutable audit record.
+  if tg_op = 'UPDATE' and new.status is distinct from old.status then
+    insert into public.educator_verification_audits (
+      verification_id,
+      educator_id,
+      reviewer_id,
+      action,
+      previous_status,
+      new_status,
+      notes,
+      internal_notes,
+      metadata
+    ) values (
+      new.id,
+      new.educator_id,
+      coalesce(new.verified_by, auth.uid()),
+      new.status,
+      old.status,
+      new.status,
+      nullif(current_setting('educator_verifications.audit_notes', true), ''),
+      nullif(current_setting('educator_verifications.audit_internal_notes', true), ''),
+      case
+        when new.expires_at is not null then jsonb_build_object('expires_at', new.expires_at)
+        else '{}'::jsonb
+      end
+    );
   end if;
 
   new.updated_at := now();
@@ -516,12 +547,15 @@ grant execute on function public.upsert_my_educator_profile(text, text, text, te
 
 -- Moderator verification RPC
 drop function if exists public.verify_educator_credential(uuid, text, timestamptz);
+drop function if exists public.verify_educator_credential(uuid, text, timestamptz, text);
+drop function if exists public.verify_educator_credential(uuid, text, timestamptz, text, text);
 
 create or replace function public.verify_educator_credential(
   p_verification_id uuid,
   p_status text,
   p_expires_at timestamptz default null,
-  p_notes text default null
+  p_notes text default null,
+  p_internal_notes text default null
 )
 returns jsonb
 language plpgsql
@@ -557,6 +591,10 @@ begin
 
   v_old_status := v_verification.status;
 
+  -- Set session configuration for trigger to pick up notes & internal_notes
+  perform set_config('educator_verifications.audit_notes', coalesce(p_notes, ''), true);
+  perform set_config('educator_verifications.audit_internal_notes', coalesce(p_internal_notes, ''), true);
+
   update public.educator_verifications
      set status = p_status,
          verified_at = case when p_status = 'verified' then now() else null end,
@@ -564,26 +602,6 @@ begin
          expires_at = p_expires_at,
          updated_at = now()
    where id = p_verification_id;
-
-  insert into public.educator_verification_audits (
-    verification_id,
-    educator_id,
-    reviewer_id,
-    action,
-    previous_status,
-    new_status,
-    notes,
-    metadata
-  ) values (
-    p_verification_id,
-    v_verification.educator_id,
-    v_caller_id,
-    p_status,
-    v_old_status,
-    p_status,
-    p_notes,
-    jsonb_build_object('expires_at', p_expires_at)
-  );
 
   return jsonb_build_object(
     'success', true,
@@ -593,11 +611,55 @@ begin
     'verified_by', case when p_status = 'verified' then v_caller_id else null end,
     'expires_at', p_expires_at,
     'reviewer_id', v_caller_id,
-    'notes', p_notes
+    'notes', p_notes,
+    'internal_notes', p_internal_notes
   );
 end;
 $$;
 
-revoke all on function public.verify_educator_credential(uuid, text, timestamptz, text) from public, anon;
-grant execute on function public.verify_educator_credential(uuid, text, timestamptz, text) to authenticated, service_role;
+revoke all on function public.verify_educator_credential(uuid, text, timestamptz, text, text) from public, anon;
+grant execute on function public.verify_educator_credential(uuid, text, timestamptz, text, text) to authenticated, service_role;
+
+-- -----------------------------------------------------------------------------
+-- 7. Educator Feedback Query RPC (Separates Author Feedback from Internal Staff Notes)
+-- -----------------------------------------------------------------------------
+create or replace function public.fetch_my_credential_feedback(
+  p_verification_id uuid default null
+)
+returns table (
+  id uuid,
+  verification_id uuid,
+  action text,
+  new_status text,
+  feedback text,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_caller_id uuid;
+begin
+  v_caller_id := auth.uid();
+  if v_caller_id is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+
+  return query
+  select a.id,
+         a.verification_id,
+         a.action,
+         a.new_status,
+         a.notes as feedback,
+         a.created_at
+    from public.educator_verification_audits a
+   where a.educator_id = v_caller_id
+     and (p_verification_id is null or a.verification_id = p_verification_id)
+   order by a.created_at desc;
+end;
+$$;
+
+revoke all on function public.fetch_my_credential_feedback(uuid) from public, anon;
+grant execute on function public.fetch_my_credential_feedback(uuid) to authenticated, service_role;
 

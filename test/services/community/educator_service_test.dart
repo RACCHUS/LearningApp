@@ -433,13 +433,14 @@ void main() {
       expect(following, isFalse);
     });
 
-    test('verifyCredential calls RPC with attribution and notes', () async {
+    test('verifyCredential calls RPC with attribution, notes, and internal notes', () async {
       fakeClient.auth.currentUser = testUser;
       fakeClient.rpcHandler = (fn, {params}) {
         expect(fn, 'verify_educator_credential');
         expect(params?['p_verification_id'], 'ev-123');
         expect(params?['p_status'], 'verified');
         expect(params?['p_notes'], 'Verified against FL DBPR official registry');
+        expect(params?['p_internal_notes'], 'State registry record confirmed');
         return {
           'success': true,
           'verification_id': 'ev-123',
@@ -448,6 +449,7 @@ void main() {
           'verified_by': 'usr-edu-42',
           'reviewer_id': 'usr-edu-42',
           'notes': 'Verified against FL DBPR official registry',
+          'internal_notes': 'State registry record confirmed',
         };
       };
 
@@ -455,11 +457,36 @@ void main() {
         verificationId: 'ev-123',
         status: 'verified',
         notes: 'Verified against FL DBPR official registry',
+        internalNotes: 'State registry record confirmed',
       );
 
       expect(res['success'], isTrue);
       expect(res['verified_by'], 'usr-edu-42');
       expect(res['status'], 'verified');
+      expect(res['internal_notes'], 'State registry record confirmed');
+    });
+
+    test('fetchMyCredentialFeedback calls RPC and returns feedback list', () async {
+      fakeClient.auth.currentUser = testUser;
+      fakeClient.rpcHandler = (fn, {params}) {
+        expect(fn, 'fetch_my_credential_feedback');
+        expect(params?['p_verification_id'], 'ev-123');
+        return [
+          {
+            'id': 'audit-001',
+            'verification_id': 'ev-123',
+            'action': 'verified',
+            'new_status': 'verified',
+            'feedback': 'Credential documents validated.',
+            'created_at': '2026-11-01T12:00:00Z',
+          }
+        ];
+      };
+
+      final feedbackList = await service.fetchMyCredentialFeedback(verificationId: 'ev-123');
+      expect(feedbackList.length, 1);
+      expect(feedbackList.first['action'], 'verified');
+      expect(feedbackList.first['feedback'], 'Credential documents validated.');
     });
   });
 }

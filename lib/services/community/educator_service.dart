@@ -276,6 +276,7 @@ class EducatorService {
     required String status,
     DateTime? expiresAt,
     String? notes,
+    String? internalNotes,
   }) async {
     try {
       final res = await _supabase.rpc(
@@ -285,11 +286,34 @@ class EducatorService {
           'p_status': status,
           if (expiresAt != null) 'p_expires_at': expiresAt.toIso8601String(),
           if (notes != null) 'p_notes': notes,
+          if (internalNotes != null) 'p_internal_notes': internalNotes,
         },
       );
       return Map<String, dynamic>.from(res as Map);
     } catch (e, stack) {
       _logger.error('Failed to verify credential $verificationId', error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
+
+  /// Fetches author-facing feedback for current user's credentials (ECO-04).
+  /// Excludes confidential moderator notes and reviewer identities.
+  Future<List<Map<String, dynamic>>> fetchMyCredentialFeedback({
+    String? verificationId,
+  }) async {
+    try {
+      final res = await _supabase.rpc(
+        'fetch_my_credential_feedback',
+        params: {
+          if (verificationId != null) 'p_verification_id': verificationId,
+        },
+      );
+      if (res is List) {
+        return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return const [];
+    } catch (e, stack) {
+      _logger.error('Failed to fetch credential feedback', error: e, stackTrace: stack);
       rethrow;
     }
   }
