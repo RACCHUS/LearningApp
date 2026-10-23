@@ -8,7 +8,7 @@ import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/services/assessment/exam_combined_practice_portability_service.dart';
 import 'package:learning_pwa/services/assessment/reference_practice_json_download.dart';
 import 'package:learning_pwa/widgets/progress/combined_exam_practice_portability_card.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../test_helpers/fake_supabase_client.dart';
 
