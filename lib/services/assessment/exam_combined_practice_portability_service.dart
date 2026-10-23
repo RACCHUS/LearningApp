@@ -240,49 +240,7 @@ class ExamCombinedPracticePortabilityService {
   static const maxPerStore=50000;
   static final _uuid=RegExp(
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
-  Future<void> erase({
-    required String expectedOwnerId,
-    required ExamPracticeInventory preview,
-    required String exactConfirmation,
-  }) async {
-    _owner(expectedOwnerId);
-    if(preview.owner!=expectedOwnerId || !preview.hasHistory ||
-       exactConfirmation!=confirmationPhrase) {
-      throw StateError('Exact EXM erasure preview and confirmation required');
-    }
-    final raw=_testErase!=null
-      ? await _testErase(preview.referenceEvents,preview.assignments,
-                       preview.attempts,preview.fingerprint,exactConfirmation)
-      : await _client.rpc('exm03_erase_account_practice',params:{
-          'p_expected_events':preview.referenceEvents,
-          'p_expected_assignments':preview.assignments,
-          'p_expected_attempts':preview.attempts,
-          'p_expected_fingerprint':preview.fingerprint,
-          'p_confirmation':exactConfirmation,
-        });
-    _owner(expectedOwnerId);
-    if(raw is! Map) throw const FormatException('Invalid EXM erase receipt');
-    final r=Map<String,dynamic>.from(raw);
-    const fields={
-      'scope','owner_id','deleted_reference_events','deleted_part_assignments',
-      'remaining_reference_events','remaining_reference_grades',
-      'remaining_part_assignments','remaining_part_attempts','irreversible'
-    };
-    if(r.length!=fields.length ||
-       r.keys.toSet().difference(fields).isNotEmpty ||
-       r['scope']!=ExamPracticeInventory.scope ||
-       r['owner_id']!=expectedOwnerId ||
-       r['deleted_reference_events']!=preview.referenceEvents ||
-       r['deleted_part_assignments']!=preview.assignments ||
-       r['remaining_reference_events']!=0 ||
-       r['remaining_reference_grades']!=0 ||
-       r['remaining_part_assignments']!=0 ||
-       r['remaining_part_attempts']!=0 || r['irreversible']!=true) {
-      throw const FormatException('Untrusted EXM erase receipt');
-    }
-  }
-}
-,
+$',
   );
 
   void _cancelIfRequested(bool Function()? shouldCancel) {
@@ -445,6 +403,48 @@ class ExamCombinedPracticePortabilityService {
     };
     _cancelIfRequested(shouldCancel);
     return ExamPracticeArchive.parse(raw,expectedOwnerId);
+  }
+
+  Future<void> erase({
+    required String expectedOwnerId,
+    required ExamPracticeInventory preview,
+    required String exactConfirmation,
+  }) async {
+    _owner(expectedOwnerId);
+    if(preview.owner!=expectedOwnerId || !preview.hasHistory ||
+       exactConfirmation!=confirmationPhrase) {
+      throw StateError('Exact EXM erasure preview and confirmation required');
+    }
+    final raw=_testErase!=null
+      ? await _testErase(preview.referenceEvents,preview.assignments,
+                       preview.attempts,preview.fingerprint,exactConfirmation)
+      : await _client.rpc('exm03_erase_account_practice',params:{
+          'p_expected_events':preview.referenceEvents,
+          'p_expected_assignments':preview.assignments,
+          'p_expected_attempts':preview.attempts,
+          'p_expected_fingerprint':preview.fingerprint,
+          'p_confirmation':exactConfirmation,
+        });
+    _owner(expectedOwnerId);
+    if(raw is! Map) throw const FormatException('Invalid EXM erase receipt');
+    final r=Map<String,dynamic>.from(raw);
+    const fields={
+      'scope','owner_id','deleted_reference_events','deleted_part_assignments',
+      'remaining_reference_events','remaining_reference_grades',
+      'remaining_part_assignments','remaining_part_attempts','irreversible'
+    };
+    if(r.length!=fields.length ||
+       r.keys.toSet().difference(fields).isNotEmpty ||
+       r['scope']!=ExamPracticeInventory.scope ||
+       r['owner_id']!=expectedOwnerId ||
+       r['deleted_reference_events']!=preview.referenceEvents ||
+       r['deleted_part_assignments']!=preview.assignments ||
+       r['remaining_reference_events']!=0 ||
+       r['remaining_reference_grades']!=0 ||
+       r['remaining_part_assignments']!=0 ||
+       r['remaining_part_attempts']!=0 || r['irreversible']!=true) {
+      throw const FormatException('Untrusted EXM erase receipt');
+    }
   }
 
   Future<void> erase({
