@@ -184,4 +184,103 @@ void main(){
        throwsFormatException);
    }
  });
+
+ test('50k per-store bound accepts 5001, rejects 50001',() {
+   final large=_inventory(assignments:5001,attempts:0)
+     ..['bound_per_store']=50000;
+   expect(ExamPracticeInventory.parse(large,'learner-a').assignments,5001);
+   final tooLarge=_inventory(assignments:50001,attempts:0)
+     ..['bound_per_store']=50000;
+   expect(()=>ExamPracticeInventory.parse(tooLarge,'learner-a'),
+     throwsFormatException);
+ });
+
+ test('5011 private assignments are paged and verified before archive release',
+     () async {
+   const count=5011;
+   final template=Map<String,dynamic>.from(
+     (_archive()['part_practice'] as List).first as Map);
+   final rows=List<Map<String,dynamic>>.generate(count,(i)=>{
+     ...template,
+     'assignment_id':'${(0xe5000000).toRadixString(16)}-0000-4000-8000-${i.toString().padLeft(12,'0')}',
+     'issued_at':DateTime.utc(2026,10,23)
+       .subtract(Duration(seconds:i)).toIso8601String(),
+     'attempt':null,
+   });
+   final inventory=_inventory(assignments:count,attempts:0)
+     ..['bound_per_store']=50000;
+   int reads=0, pages=0, progressed=0;
+   final service=ExamCombinedPracticePortabilityService(
+     client:FakeSupabaseClient(currentUser:_user('learner-a')),
+     testInventory:() async {reads++;return inventory;},
+     testPartPage:(limit,at,id) async {
+       pages++;
+       final begin=id==null?0:
+         rows.indexWhere((row)=>row['assignment_id']==id)+1;
+       if(begin<0||begin>count)throw StateError('Invalid cursor');
+       final page=rows.skip(begin).take(limit).toList();
+       return {
+         'scope':ExamPracticeInventory.scope,'owner_id':'learner-a',
+         'row_count':page.length,'rows':page,
+       };
+     },
+     testReferencePage:(limit,at,id) async =>
+       throw StateError('No saved R1-R4 history expected'),
+   );
+   final archive=await service.export(expectedOwnerId:'learner-a',
+      onProgress:(loaded,total){expect(total,count);progressed=loaded;});
+   expect(archive.inventory.assignments,count);
+   expect((jsonDecode(archive.toJson())['part_practice'] as List).length,count);
+   expect(reads,2);
+   expect(pages,21);
+   expect(progressed,count);
+   expect(archive.toJson(),isNot(contains('assigned_items')));
+   expect(archive.toJson(),isNot(contains('issued_session_id')));
+ });
+
+ test('Paged export drops all rows when postflight digest changes',() async {
+   final inventory=_inventory(assignments:1,attempts:1)
+     ..['bound_per_store']=50000;
+   var reads=0;
+   final service=ExamCombinedPracticePortabilityService(
+     client:FakeSupabaseClient(currentUser:_user('learner-a')),
+     forcePagedForTests:true,
+     testInventory:() async {
+       reads++;
+       return {...inventory,
+         'snapshot_fingerprint':reads==1?'a'*32:'b'*32};
+     },
+     testPartPage:(limit,at,id) async => {
+       'scope':ExamPracticeInventory.scope,'owner_id':'learner-a',
+       'row_count':1,'rows':_archive()['part_practice'],
+     },
+   );
+   await expectLater(service.export(expectedOwnerId:'learner-a'),
+     throwsStateError);
+   expect(reads,2);
+ });
+
+ test('Paged export respects cancellation with no completed archive',() async {
+   final inventory=_inventory(assignments:1,attempts:1)
+     ..['bound_per_store']=50000;
+   var pages=0;
+   final service=ExamCombinedPracticePortabilityService(
+     client:FakeSupabaseClient(currentUser:_user('learner-a')),
+     forcePagedForTests:true,
+     testInventory:() async =>inventory,
+     testPartPage:(limit,at,id) async {
+       pages++;
+       return {
+         'scope':ExamPracticeInventory.scope,'owner_id':'learner-a',
+         'row_count':1,'rows':_archive()['part_practice'],
+       };
+     },
+   );
+   var cancelled=false;
+   await expectLater(service.export(expectedOwnerId:'learner-a',
+     shouldCancel:()=>cancelled,
+     onProgress:(loaded,total){cancelled=true;}),
+     throwsStateError);
+   expect(pages,1);
+ });
 }
