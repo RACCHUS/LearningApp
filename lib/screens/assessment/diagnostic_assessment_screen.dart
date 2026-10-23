@@ -8,6 +8,7 @@ import '../../providers/target_readiness_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import 'diagnostic_report_screen.dart';
+import 'secure_exam_part_practice_screen.dart';
 
 class DiagnosticAssessmentScreen extends ConsumerStatefulWidget {
   final String targetId;
@@ -60,6 +61,15 @@ class _DiagnosticAssessmentScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Explicit exam-part diagnostics use the protected issuer/scorer.
+    // Never invoke legacy assessment_items SELECT('*') for this mode.
+    // Whole-target diagnostics retain their independent legacy practice path.
+    if (widget.examPartKey != null) {
+      return SecureExamPartPracticeScreen(
+        targetVersionId: widget.targetVersionId,
+        examPartKey: widget.examPartKey!,
+      );
+    }
     final learnerId = ref.watch(learnerIdProvider);
     if (widget.examPartKey != null && _lastLearnerId != learnerId) {
       _initialized = false;
