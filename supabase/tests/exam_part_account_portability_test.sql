@@ -1,12 +1,21 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(27);
+select plan(35);
 
 select has_function('public','exm03_account_practice_inventory',
  array[]::text[],'Combined owner inventory exists');
 select has_function('public','exm03_account_practice_export',
  array[]::text[],'Combined bounded archive exists');
+select has_function('public','exm03_account_part_export_page',
+ array['integer','timestamp with time zone','uuid'],
+ 'Owner-only assignment keyset exporter exists');
+select ok(not has_function_privilege('anon',
+ 'public.exm03_account_part_export_page(integer,timestamptz,uuid)','EXECUTE'),
+ 'Anonymous role cannot invoke assignment history page');
+select ok(has_function_privilege('authenticated',
+ 'public.exm03_account_part_export_page(integer,timestamptz,uuid)','EXECUTE'),
+ 'Permanent signed-in users have guarded RPC entrypoint');
 select has_function('public','exm03_erase_account_practice',
  array['integer','integer','integer','text','text'],
  'Verified all-practice erasure exists');
@@ -191,6 +200,9 @@ select is((public.exm03_account_practice_export()->
  'reference_practice'->>'record_count')::int,1,
  'Combined export includes exact R1-R4 record count');
 select is((public.exm03_account_practice_inventory()->
+ 'bound_per_store')::text,'50000',
+ 'Owner inventory advertises bounded 50k per store');
+select is((public.exm03_account_practice_inventory()->
  'part_attempts')::text,'1',
  'Preview counts the owner scored assignment');
 select is((public.exm03_account_practice_inventory()->
@@ -206,6 +218,28 @@ select ok(public.exm03_account_practice_export()::text not like '%response_sha25
 select is((public.exm03_account_practice_export()->
  'part_practice'->0->'attempt'->>'fully_correct_count')::int,4,
  'Combined export provides bounded educational score summary');
+
+select is((public.exm03_account_part_export_page(250,null,null)->
+ 'row_count')::text,'1',
+ 'Part page returns exact owner assignment count');
+select ok(public.exm03_account_part_export_page(250,null,null)::text
+ not like '%issued_session_id%' and
+ public.exm03_account_part_export_page(250,null,null)::text
+ not like '%assigned_items%' and
+ public.exm03_account_part_export_page(250,null,null)::text
+ not like '%response_sha256%',
+ 'Part page redacts session, private items and answer fingerprints');
+select is((public.exm03_account_part_export_page(
+ 250,'2099-01-01T00:00:00Z'::timestamptz,
+ 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)->
+ 'row_count')::text,'1','Stable keyset cursor can page before later instant');
+select throws_ok($q$
+ select public.exm03_account_part_export_page(251,null,null)
+$q$,'22023',null,'Oversized assignment page fails closed');
+select throws_ok($q$
+ select public.exm03_account_part_export_page(
+ 250,now()::timestamptz,null)
+$q$,'22023',null,'Incomplete page cursor fails closed');
 
 select throws_ok($q$
  select public.exm03_erase_account_practice(1,1,1,repeat('0',32),'WRONG')
@@ -225,6 +259,8 @@ do $revoked$ begin
 end $revoked$;
 select throws_ok($q$select public.exm03_account_practice_export()$q$,
  '42501',null,'Expired/revoked session cannot export');
+select throws_ok($q$select public.exm03_account_part_export_page(250,null,null)$q$,
+ '42501',null,'Revoked JWT session cannot page private assignment history');
 do $real$ begin
  perform set_config('request.jwt.claims',
  '{"sub":"e4010000-0000-4000-8000-000000000001","role":"authenticated",
