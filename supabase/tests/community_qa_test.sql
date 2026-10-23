@@ -900,6 +900,8 @@ select throws_ok(
 
 -- Admin calling seed_pilot_community_faqs succeeds (1 test)
 select set_config('request.jwt.claim.sub', '7f7c1a20-0000-4000-8000-000000000001', true);
+delete from public.community_answers where is_seeded = true and question_id <> '00000000-0000-0000-0000-000000000201';
+delete from public.community_questions where is_seeded = true and id <> '00000000-0000-0000-0000-000000000201';
 select ok(
   (select public.seed_pilot_community_faqs('7f7c1a20-0000-4000-8000-000000000001'::uuid)) >= 18,
   'Admin calling seed_pilot_community_faqs successfully seeds at least 18 reference FAQs'
