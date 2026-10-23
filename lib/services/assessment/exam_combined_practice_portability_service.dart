@@ -19,13 +19,14 @@ class ExamPracticeInventory {
     final r=Map<String,dynamic>.from(raw);
     final e=r['reference_events'],g=r['reference_grades'];
     final a=r['part_assignments'],t=r['part_attempts'],f=r['snapshot_fingerprint'];
+    final bound=r['bound_per_store'];
     if (r.length!=fields.length ||
         r.keys.toSet().difference(fields).isNotEmpty ||
         r['scope']!=scope || r['owner_id']!=owner ||
-        r['bound_per_store']!=5000 ||
-        e is! int || e<0 || e>5000 ||
+        (bound!=5000 && bound!=50000) ||
+        e is! int || e<0 || e>bound ||
         g is! int || g<0 || g>e ||
-        a is! int || a<0 || a>5000 ||
+        a is! int || a<0 || a>bound ||
         t is! int || t<0 || t>a ||
         f is! String || !RegExp(r'^[a-f0-9]{32}$').hasMatch(f)) {
       throw const FormatException('Unsafe EXM inventory');
@@ -88,7 +89,9 @@ class ExamPracticeArchive {
         r['format']!='learningapp-exm-combined-practice-v1' ||
         r['scope']!='educational-practice-history-not-entire-account' ||
         r['owner_id']!=owner ||
-        r['snapshot_consistency']!='single-stable-rpc-statement' ||
+        !{'single-stable-rpc-statement',
+          'pre-and-post-inventory-verified-not-atomic'}
+          .contains(r['snapshot_consistency']) ||
         r['includes_unsubmitted_assignments']!=true ||
         r['official_exam_result']!=false ||
         DateTime.tryParse(r['generated_at']?.toString()??'')==null) {
@@ -109,7 +112,9 @@ class ExamPracticeArchive {
        ref['format']!='learningapp-exm-reference-practice-account-v1' ||
        ref['scope']!='reference-practice-all-editions' ||
        ref['owner_auth_uid']!=owner ||
-       ref['snapshot_consistency']!='single-sql-statement' ||
+       !{'single-sql-statement',
+         'pre-and-post-inventory-verified-not-atomic'}
+         .contains(ref['snapshot_consistency']) ||
        ref['record_count']!=inventory.referenceEvents ||
        ref['steps'] is! List ||
        (ref['steps'] as List).length!=inventory.referenceEvents ||
@@ -196,15 +201,22 @@ class ExamCombinedPracticePortabilityService {
   static const confirmationPhrase='DELETE ALL EXAM PRACTICE';
   final SupabaseClient _client;
   final Future<dynamic> Function()? _testInventory, _testExport;
+  final Future<dynamic> Function(int,String?,String?)? _testReferencePage, _testPartPage;
+  final bool _forcePagedForTests;
   final Future<dynamic> Function(int,int,int,String,String)? _testErase;
 
   ExamCombinedPracticePortabilityService({
     SupabaseClient? client,
     Future<dynamic> Function()? testInventory,
     Future<dynamic> Function()? testExport,
+    Future<dynamic> Function(int,String?,String?)? testReferencePage,
+    Future<dynamic> Function(int,String?,String?)? testPartPage,
+    bool forcePagedForTests=false,
     Future<dynamic> Function(int,int,int,String,String)? testErase
   }):_client=client??Supabase.instance.client,
-     _testInventory=testInventory,_testExport=testExport,_testErase=testErase;
+     _testInventory=testInventory,_testExport=testExport,
+     _testReferencePage=testReferencePage,_testPartPage=testPartPage,
+     _forcePagedForTests=forcePagedForTests,_testErase=testErase;
 
   void _owner(String expected) {
     final user=_client.auth.currentUser;
@@ -221,11 +233,217 @@ class ExamCombinedPracticePortabilityService {
     return ExamPracticeInventory.parse(raw,expectedOwnerId);
   }
 
-  Future<ExamPracticeArchive> export({required String expectedOwnerId}) async {
+  /// For larger histories, page both stores and require identical server
+  /// fingerprints before and after all RPCs. This is NOT one MVCC snapshot.
+  /// The prepared archive is discarded on cancellation or any mismatch.
+  static const pageLimit=250;
+  static const maxPerStore=50000;
+  static final _uuid=RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
+  Future<void> erase({
+    required String expectedOwnerId,
+    required ExamPracticeInventory preview,
+    required String exactConfirmation,
+  }) async {
     _owner(expectedOwnerId);
-    final raw=_testExport!=null ? await _testExport()
-      : await _client.rpc('exm03_account_practice_export');
+    if(preview.owner!=expectedOwnerId || !preview.hasHistory ||
+       exactConfirmation!=confirmationPhrase) {
+      throw StateError('Exact EXM erasure preview and confirmation required');
+    }
+    final raw=_testErase!=null
+      ? await _testErase(preview.referenceEvents,preview.assignments,
+                       preview.attempts,preview.fingerprint,exactConfirmation)
+      : await _client.rpc('exm03_erase_account_practice',params:{
+          'p_expected_events':preview.referenceEvents,
+          'p_expected_assignments':preview.assignments,
+          'p_expected_attempts':preview.attempts,
+          'p_expected_fingerprint':preview.fingerprint,
+          'p_confirmation':exactConfirmation,
+        });
     _owner(expectedOwnerId);
+    if(raw is! Map) throw const FormatException('Invalid EXM erase receipt');
+    final r=Map<String,dynamic>.from(raw);
+    const fields={
+      'scope','owner_id','deleted_reference_events','deleted_part_assignments',
+      'remaining_reference_events','remaining_reference_grades',
+      'remaining_part_assignments','remaining_part_attempts','irreversible'
+    };
+    if(r.length!=fields.length ||
+       r.keys.toSet().difference(fields).isNotEmpty ||
+       r['scope']!=ExamPracticeInventory.scope ||
+       r['owner_id']!=expectedOwnerId ||
+       r['deleted_reference_events']!=preview.referenceEvents ||
+       r['deleted_part_assignments']!=preview.assignments ||
+       r['remaining_reference_events']!=0 ||
+       r['remaining_reference_grades']!=0 ||
+       r['remaining_part_assignments']!=0 ||
+       r['remaining_part_attempts']!=0 || r['irreversible']!=true) {
+      throw const FormatException('Untrusted EXM erase receipt');
+    }
+  }
+}
+,
+  );
+
+  void _cancelIfRequested(bool Function()? shouldCancel) {
+    if(shouldCancel?.call()==true) {
+      throw StateError('EXM export cancelled; no complete archive prepared');
+    }
+  }
+
+  Future<dynamic> _referencePage(int limit,String? at,String? id)=>
+    _testReferencePage!=null ? _testReferencePage(limit,at,id) :
+    _client.rpc('exam_reference_drill_export_page',params:{
+      'p_limit':limit,'p_before_recorded_at':at,'p_before_event_id':id,
+    });
+
+  Future<dynamic> _partPage(int limit,String? at,String? id)=>
+    _testPartPage!=null ? _testPartPage(limit,at,id) :
+    _client.rpc('exm03_account_part_export_page',params:{
+      'p_limit':limit,'p_before_issued_at':at,'p_before_assignment_id':id,
+    });
+
+  List<Map<String,dynamic>> _checkedPage(dynamic raw,{
+    required String owner,
+    required int limit,
+    required bool part,
+  }) {
+    if(raw is! Map)throw const FormatException('Invalid EXM export page');
+    final page=Map<String,dynamic>.from(raw);
+    const keys={'scope','owner_id','row_count','rows'};
+    const refKeys={'scope','owner_auth_uid','row_count','rows'};
+    final expected=part?keys:refKeys;
+    final rows=page['rows'];
+    if(page.length!=expected.length ||
+       page.keys.toSet().difference(expected).isNotEmpty ||
+       page['scope']!=(part ? ExamPracticeInventory.scope :
+                                 'reference-practice-all-editions') ||
+       page[part?'owner_id':'owner_auth_uid']!=owner ||
+       rows is! List || rows.isEmpty || rows.length>limit ||
+       page['row_count'] is! int || page['row_count']!=rows.length) {
+      throw const FormatException('Incomplete EXM export page');
+    }
+    return rows.map((row) {
+      if(row is! Map)throw const FormatException('Invalid EXM history row');
+      return Map<String,dynamic>.from(row);
+    }).toList(growable:false);
+  }
+
+  Future<ExamPracticeArchive> export({
+    required String expectedOwnerId,
+    void Function(int loaded,int total)? onProgress,
+    bool Function()? shouldCancel,
+  }) async {
+    _owner(expectedOwnerId);
+    _cancelIfRequested(shouldCancel);
+    // Preserve existing bounded single-statement RPC and test injection.
+    if(_testExport!=null) {
+      final raw=await _testExport();
+      _owner(expectedOwnerId);
+      _cancelIfRequested(shouldCancel);
+      return ExamPracticeArchive.parse(raw,expectedOwnerId);
+    }
+    final pre=await inventory(expectedOwnerId:expectedOwnerId);
+    _owner(expectedOwnerId);
+    _cancelIfRequested(shouldCancel);
+    if(!_forcePagedForTests && pre.referenceEvents<=5000 &&
+        pre.assignments<=5000) {
+      final raw=await _client.rpc('exm03_account_practice_export');
+      _owner(expectedOwnerId);
+      _cancelIfRequested(shouldCancel);
+      return ExamPracticeArchive.parse(raw,expectedOwnerId);
+    }
+    final total=pre.referenceEvents+pre.assignments;
+    onProgress?.call(0,total);
+    final reference=<Map<String,dynamic>>[];
+    final parts=<Map<String,dynamic>>[];
+    final seenReference=<String>{};
+    final seenParts=<String>{};
+    for(final part in [false,true]) {
+      final expected=part?pre.assignments:pre.referenceEvents;
+      final collected=part?parts:reference;
+      final seen=part?seenParts:seenReference;
+      DateTime? previousAt;
+      String? previousId;
+      while(collected.length<expected) {
+        _owner(expectedOwnerId);
+        _cancelIfRequested(shouldCancel);
+        final limit=(expected-collected.length).clamp(1,pageLimit);
+        final raw=part
+          ? await _partPage(limit,previousAt?.toUtc().toIso8601String(),previousId)
+          : await _referencePage(limit,previousAt?.toUtc().toIso8601String(),previousId);
+        _owner(expectedOwnerId);
+        _cancelIfRequested(shouldCancel);
+        final rows=_checkedPage(raw,owner:expectedOwnerId,limit:limit,part:part);
+        for(final row in rows) {
+          final id=row[part?'assignment_id':'event_id'];
+          final atValue=row[part?'issued_at':'recorded_at'];
+          final at=DateTime.tryParse(atValue?.toString()??'');
+          if(id is! String || !_uuid.hasMatch(id) || !seen.add(id) ||
+             at==null ||
+             (previousAt!=null &&
+               (at.isAfter(previousAt) ||
+                (at.isAtSameMomentAs(previousAt) &&
+                 id.compareTo(previousId!)>=0)))) {
+            throw const FormatException('EXM pages overlap or are unordered');
+          }
+          previousAt=at;
+          previousId=id;
+          collected.add(row);
+        }
+        if(rows.length<limit && collected.length!=expected) {
+          throw const FormatException('EXM history page ended prematurely');
+        }
+        _cancelIfRequested(shouldCancel);
+        onProgress?.call(reference.length+parts.length,total);
+        _cancelIfRequested(shouldCancel);
+      }
+    }
+    // A different snapshot can only be called complete if all owner counts
+    // and the same server-generated grade/attempt-state digest still match.
+    _owner(expectedOwnerId);
+    _cancelIfRequested(shouldCancel);
+    final post=await inventory(expectedOwnerId:expectedOwnerId);
+    _owner(expectedOwnerId);
+    _cancelIfRequested(shouldCancel);
+    if(post.fingerprint!=pre.fingerprint ||
+       post.referenceEvents!=pre.referenceEvents ||
+       post.referenceGrades!=pre.referenceGrades ||
+       post.assignments!=pre.assignments ||
+       post.attempts!=pre.attempts) {
+      throw StateError('Practice changed during export; discard all pages');
+    }
+    final now=DateTime.now().toUtc().toIso8601String();
+    final counts={
+      'scope':ExamPracticeInventory.scope,'owner_id':expectedOwnerId,
+      'reference_events':pre.referenceEvents,
+      'reference_grades':pre.referenceGrades,
+      'part_assignments':pre.assignments,
+      'part_attempts':pre.attempts,
+      'snapshot_fingerprint':pre.fingerprint,
+      'bound_per_store':maxPerStore,
+    };
+    final raw={
+      'format':'learningapp-exm-combined-practice-v1',
+      'scope':'educational-practice-history-not-entire-account',
+      'owner_id':expectedOwnerId,
+      'generated_at':now,
+      'snapshot_consistency':'pre-and-post-inventory-verified-not-atomic',
+      'inventory':counts,
+      'reference_practice':{
+        'format':'learningapp-exm-reference-practice-account-v1',
+        'scope':'reference-practice-all-editions',
+        'owner_auth_uid':expectedOwnerId,
+        'record_count':reference.length,
+        'generated_at':now,
+        'snapshot_consistency':'pre-and-post-inventory-verified-not-atomic',
+        'steps':reference,
+      },
+      'part_practice':parts,
+      'includes_unsubmitted_assignments':true,
+      'official_exam_result':false,
+    };
+    _cancelIfRequested(shouldCancel);
     return ExamPracticeArchive.parse(raw,expectedOwnerId);
   }
 
