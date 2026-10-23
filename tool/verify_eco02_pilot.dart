@@ -239,6 +239,24 @@ class PilotRestClient {
       'body': decoded,
     };
   }
+
+  Future<Map<String, dynamic>> adminDeleteUser(String userId, {required String serviceKey}) async {
+    final uri = Uri.parse('$url/auth/v1/admin/users/$userId');
+    final req = await _http.deleteUrl(uri);
+    setSupabaseRestAuth(req, serviceKey);
+    final resp = await req.close();
+    final body = await resp.transform(utf8.decoder).join();
+    dynamic decoded;
+    try {
+      decoded = body.isNotEmpty ? jsonDecode(body) : null;
+    } catch (_) {
+      decoded = body;
+    }
+    return {
+      'statusCode': resp.statusCode,
+      'body': decoded,
+    };
+  }
 }
 
 List<dynamic> asList(dynamic body) {
@@ -351,50 +369,55 @@ void main(List<String> args) async {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // 1. Seed FAQ Availability & Anonymous Baseline
-  // --------------------------------------------------------------------------
-  print('\n📖 1. Verifying Pilot Seed FAQ Baseline & Anonymous Access:');
-  final publishedQuestionsRes = await client.restGet(
-    'community_questions?status=eq.published&is_seeded=eq.true&select=id,title,concept_id,is_seeded,answer_count',
-  );
-  expect(
-    publishedQuestionsRes['statusCode'] == 200,
-    'Anonymous query to published seeded FAQs returns 200 OK',
-    'Status: ${publishedQuestionsRes['statusCode']}',
-  );
-
-  final publishedFaqs = asList(publishedQuestionsRes['body']);
-  expect(
-    publishedFaqs.length >= 18,
-    'All 18 reference pilot FAQs are active and queryable anonymously (${publishedFaqs.length} found)',
-    'Expected >= 18, found ${publishedFaqs.length}',
-  );
-
-  final sampleFaq = publishedFaqs.isNotEmpty ? publishedFaqs.first as Map<String, dynamic> : null;
-  final sampleFaqId = sampleFaq?['id'] as String?;
-  final sampleConceptId = sampleFaq?['concept_id'] as String? ?? 'literacy.cvc.basics';
-
-  // Verify anonymous user cannot insert community question
-  final anonInsertQuestionRes = await client.restPost('community_questions', {
-    'title': 'Illegal Anonymous Question',
-    'body_markdown': 'Should be rejected',
-    'status': 'draft',
-  });
-  expect(
-    anonInsertQuestionRes['statusCode'] >= 400,
-    'Anonymous user CANNOT insert community question (Security Enforced)',
-    'Status: ${anonInsertQuestionRes['statusCode']}',
-  );
-
-  // --------------------------------------------------------------------------
-  // 2. Learner A Question Draft & RLS Isolation
-  // --------------------------------------------------------------------------
-  print('\n📝 2. Verifying Learner Private Question Draft & Multi-Party Isolation:');
   final testQuestionId = generatePilotUuid('0001');
+  final testAnswerId = generatePilotUuid('a001');
+  final revisedAnswerId = generatePilotUuid('a002');
 
-  final createQuestionRes = await client.restPost('community_questions', {
-    'id': testQuestionId,
+  try {
+    // --------------------------------------------------------------------------
+    // 1. Seed FAQ Availability & Anonymous Baseline
+    // --------------------------------------------------------------------------
+    print('\n📖 1. Verifying Pilot Seed FAQ Baseline & Anonymous Access:');
+    final publishedQuestionsRes = await client.restGet(
+      'community_questions?status=eq.published&is_seeded=eq.true&select=id,title,concept_id,is_seeded,answer_count',
+    );
+    expect(
+      publishedQuestionsRes['statusCode'] == 200,
+      'Anonymous query to published seeded FAQs returns 200 OK',
+      'Status: ${publishedQuestionsRes['statusCode']}',
+    );
+
+    final publishedFaqs = asList(publishedQuestionsRes['body']);
+    expect(
+      publishedFaqs.length >= 18,
+      'All 18 reference pilot FAQs are active and queryable anonymously (${publishedFaqs.length} found)',
+      'Expected >= 18, found ${publishedFaqs.length}',
+    );
+
+    final sampleFaq = publishedFaqs.isNotEmpty ? publishedFaqs.first as Map<String, dynamic> : null;
+    final sampleFaqId = sampleFaq?['id'] as String?;
+    final sampleConceptId = sampleFaq?['concept_id'] as String? ?? 'literacy.cvc.basics';
+
+    // Verify anonymous user cannot insert community question
+    final anonInsertQuestionRes = await client.restPost('community_questions', {
+      'title': 'Illegal Anonymous Question',
+      'body_markdown': 'Should be rejected',
+      'status': 'draft',
+    });
+    expect(
+      anonInsertQuestionRes['statusCode'] >= 400,
+      'Anonymous user CANNOT insert community question (Security Enforced)',
+      'Status: ${anonInsertQuestionRes['statusCode']}',
+    );
+
+    // --------------------------------------------------------------------------
+    // 2. Learner A Question Draft & RLS Isolation
+    // --------------------------------------------------------------------------
+    print('\n📝 2. Verifying Learner Private Question Draft & Multi-Party Isolation:');
+
+    final createQuestionRes = await client.restPost('community_questions', {
+      'id': testQuestionId,
+
     'author_id': sessionLearnerA.userId,
     'title': 'How do children transition from CVC words to consonant blends?',
     'body_markdown': 'During phonics reading practice, what is the best sequence to introduce CCVC blends after mastering simple CVC words?',
@@ -445,10 +468,8 @@ void main(List<String> args) async {
   // 3. Learner A Submits Private Answer Draft on Seeded Question
   // --------------------------------------------------------------------------
   print('\n💬 3. Verifying Learner Answer Submission & Under-Review Isolation:');
-  final testAnswerId = generatePilotUuid('a001');
 
-  if (sampleFaqId != null) {
-    final submitAnswerRes = await client.restPost('community_answers', {
+  final submitAnswerRes = await client.restPost('community_answers', {
       'id': testAnswerId,
       'question_id': sampleFaqId,
       'author_id': sessionLearnerA.userId,
@@ -591,7 +612,6 @@ void main(List<String> args) async {
     // 6. Author Revision & Resubmission Workflow
     // ------------------------------------------------------------------------
     print('\n🔄 6. Verifying Author Revision & Resubmission Flow:');
-    final revisedAnswerId = generatePilotUuid('a002');
 
     final resubmitAnswerRes = await client.restPost('community_answers', {
       'id': revisedAnswerId,
@@ -626,15 +646,76 @@ void main(List<String> args) async {
       'Attempt to publish non-seeded learner answer rejected by UGC Launch Gate (22000)',
       'Response: ${illegalPublishRes['body']}',
     );
-
+  } finally {
     // ------------------------------------------------------------------------
-    // 8. Cleanup Synthetic Pilot Test Rows
+    // 8. Cleanup Synthetic Pilot Test Rows with Rigorous Verification
     // ------------------------------------------------------------------------
     print('\n🧹 8. Cleaning up Synthetic Pilot Test Data:');
-    await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: sessionLearnerA.accessToken);
-    await client.restDelete('community_answers?id=eq.$testAnswerId', token: sessionLearnerA.accessToken);
-    await client.restDelete('community_questions?id=eq.$testQuestionId', token: sessionLearnerA.accessToken);
-    expect(true, 'Synthetic pilot test questions and answers cleanly purged');
+    if (serviceKey != null && serviceKey.isNotEmpty) {
+      // 1. Delete community_review_audit records
+      await client.restDelete('community_review_audit?target_id=eq.$testAnswerId', token: serviceKey);
+      await client.restDelete('community_review_audit?target_id=eq.$revisedAnswerId', token: serviceKey);
+      await client.restDelete('community_review_audit?target_id=eq.$testQuestionId', token: serviceKey);
+
+      // 2. Delete community_answers via service-role
+      await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: serviceKey);
+      await client.restDelete('community_answers?id=eq.$testAnswerId', token: serviceKey);
+
+      // 3. Delete community_questions
+      await client.restDelete('community_questions?id=eq.$testQuestionId', token: serviceKey);
+
+      // 4. Delete moderation_roles
+      await client.restDelete('moderation_roles?user_id=eq.${sessionModerator.userId}', token: serviceKey);
+
+      // 5. Delete public.users
+      for (final s in [sessionLearnerA, sessionLearnerB, sessionModerator]) {
+        await client.restDelete('users?id=eq.${s.userId}', token: serviceKey);
+      }
+
+      // 6. Delete auth.users via GoTrue admin API
+      for (final s in [sessionLearnerA, sessionLearnerB, sessionModerator]) {
+        await client.adminDeleteUser(s.userId, serviceKey: serviceKey);
+      }
+
+      // 7. Rigorous verification: query REST to verify all residual test records are 0
+      final checkAnswers = await client.restGet(
+        'community_answers?id=in.($testAnswerId,$revisedAnswerId)&select=id',
+        token: serviceKey,
+      );
+      final residualAnswers = asList(checkAnswers['body']);
+      expect(
+        residualAnswers.isEmpty,
+        'Residual test answers cleanly purged (0 remaining)',
+        'Found residual answers: $residualAnswers',
+      );
+
+      final checkQuestions = await client.restGet(
+        'community_questions?id=eq.$testQuestionId&select=id',
+        token: serviceKey,
+      );
+      final residualQuestions = asList(checkQuestions['body']);
+      expect(
+        residualQuestions.isEmpty,
+        'Residual test questions cleanly purged (0 remaining)',
+        'Found residual questions: $residualQuestions',
+      );
+
+      final checkAudits = await client.restGet(
+        'community_review_audit?target_id=in.($testAnswerId,$revisedAnswerId)&select=id',
+        token: serviceKey,
+      );
+      final residualAudits = asList(checkAudits['body']);
+      expect(
+        residualAudits.isEmpty,
+        'Residual test audits cleanly purged (0 remaining)',
+        'Found residual audits: $residualAudits',
+      );
+    } else {
+      await client.restDelete('community_answers?id=eq.$revisedAnswerId', token: sessionLearnerA.accessToken);
+      await client.restDelete('community_answers?id=eq.$testAnswerId', token: sessionLearnerA.accessToken);
+      await client.restDelete('community_questions?id=eq.$testQuestionId', token: sessionLearnerA.accessToken);
+      expect(true, 'Synthetic pilot test questions and answers purge attempted');
+    }
   }
 
   // --------------------------------------------------------------------------

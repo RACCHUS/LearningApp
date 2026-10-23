@@ -269,4 +269,29 @@ class EducatorService {
       return false;
     }
   }
+
+  /// Moderator verification of a credential claim.
+  Future<Map<String, dynamic>> verifyCredential({
+    required String verificationId,
+    required String status,
+    DateTime? expiresAt,
+    String? notes,
+  }) async {
+    try {
+      final res = await _supabase.rpc(
+        'verify_educator_credential',
+        params: {
+          'p_verification_id': verificationId,
+          'p_status': status,
+          if (expiresAt != null) 'p_expires_at': expiresAt.toIso8601String(),
+          if (notes != null) 'p_notes': notes,
+        },
+      );
+      return Map<String, dynamic>.from(res as Map);
+    } catch (e, stack) {
+      _logger.error('Failed to verify credential $verificationId', error: e, stackTrace: stack);
+      rethrow;
+    }
+  }
 }
+

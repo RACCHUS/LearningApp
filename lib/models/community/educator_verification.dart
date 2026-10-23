@@ -17,6 +17,7 @@ class EducatorVerification {
   final String? credentialReference;
   final String status; // 'unverified', 'pending', 'verified', 'rejected', 'expired'
   final DateTime? verifiedAt;
+  final String? verifiedBy;
   final DateTime? expiresAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -31,6 +32,7 @@ class EducatorVerification {
     this.credentialReference,
     this.status = 'unverified',
     this.verifiedAt,
+    this.verifiedBy,
     this.expiresAt,
     required this.createdAt,
     required this.updatedAt,
@@ -55,6 +57,7 @@ class EducatorVerification {
       verifiedAt: json['verified_at'] != null
           ? DateTime.parse(json['verified_at'] as String)
           : null,
+      verifiedBy: json['verified_by'] as String?,
       expiresAt: json['expires_at'] != null
           ? DateTime.parse(json['expires_at'] as String)
           : null,
@@ -78,6 +81,7 @@ class EducatorVerification {
       'credential_reference': credentialReference,
       'status': status,
       'verified_at': verifiedAt?.toIso8601String(),
+      'verified_by': verifiedBy,
       'expires_at': expiresAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -94,6 +98,7 @@ class EducatorVerification {
     String? credentialReference,
     String? status,
     DateTime? verifiedAt,
+    String? verifiedBy,
     DateTime? expiresAt,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -108,6 +113,7 @@ class EducatorVerification {
       credentialReference: credentialReference ?? this.credentialReference,
       status: status ?? this.status,
       verifiedAt: verifiedAt ?? this.verifiedAt,
+      verifiedBy: verifiedBy ?? this.verifiedBy,
       expiresAt: expiresAt ?? this.expiresAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -127,6 +133,7 @@ class EducatorVerification {
         other.credentialReference == credentialReference &&
         other.status == status &&
         other.verifiedAt == verifiedAt &&
+        other.verifiedBy == verifiedBy &&
         other.expiresAt == expiresAt &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
@@ -143,6 +150,7 @@ class EducatorVerification {
         credentialReference,
         status,
         verifiedAt,
+        verifiedBy,
         expiresAt,
         createdAt,
         updatedAt,

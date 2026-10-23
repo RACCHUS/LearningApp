@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(30);
+select plan(40);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -25,15 +25,18 @@ values ('8f8c1a20-0000-4000-8000-000000000001', 'admin', '8f8c1a20-0000-4000-800
 on conflict (user_id) do update set role = 'admin';
 
 -- -----------------------------------------------------------------------------
--- 1. Schema Structure Checks (7 tests)
+-- 1. Schema Structure Checks (9 tests)
 -- -----------------------------------------------------------------------------
 select has_table('public', 'educator_profiles', 'Table public.educator_profiles exists');
 select has_table('public', 'educator_subjects', 'Table public.educator_subjects exists');
 select has_table('public', 'educator_verifications', 'Table public.educator_verifications exists');
+select has_table('public', 'educator_verification_audits', 'Table public.educator_verification_audits exists');
+select has_column('public', 'educator_verifications', 'verified_by', 'Column educator_verifications.verified_by exists');
 select has_table('public', 'educator_follows', 'Table public.educator_follows exists');
 select has_function('private', 'is_educator_profiles_public_enabled', 'Function private.is_educator_profiles_public_enabled exists');
 select has_function('public', 'upsert_my_educator_profile', Array['text', 'text', 'text', 'text', 'text[]', 'boolean', 'text'], 'RPC upsert_my_educator_profile exists');
-select has_function('public', 'verify_educator_credential', Array['uuid', 'text', 'timestamp with time zone'], 'RPC verify_educator_credential exists');
+select has_function('public', 'verify_educator_credential', Array['uuid', 'text', 'timestamp with time zone', 'text'], 'RPC verify_educator_credential exists');
+
 
 -- -----------------------------------------------------------------------------
 -- 2. Gate 2 Launch Gate Default Invariant (2 tests)
@@ -256,6 +259,87 @@ select ok(
   (select verified_at is not null from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011'),
   'verified_at timestamp populated upon verification'
 );
+
+select is(
+  (select verified_by from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011'),
+  '8f8c1a20-0000-4000-8000-000000000001'::uuid,
+  'verified_by records reviewer admin ID'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'verified' and reviewer_id = '8f8c1a20-0000-4000-8000-000000000001'),
+  1,
+  'Verification audit trail entry logged with reviewer attribution'
+);
+
+-- Regressions: Teacher A attempts to modify trust-bearing fields on verified credential -> BLOCKED (42501)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set issuer = 'Fraudulent University'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials are immutable to non-moderators',
+  'Owner cannot change issuer on verified credential (42501)'
+);
+
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set credential_reference = 'FRAUD-999'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials are immutable to non-moderators',
+  'Owner cannot change credential_reference on verified credential (42501)'
+);
+
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set verification_type = 'advanced_degree'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials are immutable to non-moderators',
+  'Owner cannot change verification_type on verified credential (42501)'
+);
+
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set jurisdiction = 'CA'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials are immutable to non-moderators',
+  'Owner cannot change jurisdiction on verified credential (42501)'
+);
+
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set subject_id = 'math.calculus'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials are immutable to non-moderators',
+  'Owner cannot change subject_id on verified credential (42501)'
+);
+
+select throws_ok(
+  $$
+    delete from public.educator_verifications
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: verified credentials cannot be deleted by non-moderators',
+  'Owner cannot delete verified credential (42501)'
+);
+
 
 -- -----------------------------------------------------------------------------
 -- 7. Follows & Anti-Self-Follow Checks (4 tests)

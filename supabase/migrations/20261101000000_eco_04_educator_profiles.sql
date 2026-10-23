@@ -104,8 +104,9 @@ create table if not exists public.educator_verifications (
   jurisdiction text check (jurisdiction is null or length(trim(jurisdiction)) <= 50),
   issuer text check (issuer is null or length(trim(issuer)) <= 200),
   credential_reference text check (credential_reference is null or length(trim(credential_reference)) <= 200),
-  status text not null default 'unverified' check (status in ('unverified', 'pending', 'verified', 'rejected', 'expired')),
+  status text not null default 'unverified' check (status in ('unverified', 'pending', 'verified', 'rejected', 'expired', 'revoked')),
   verified_at timestamptz,
+  verified_by uuid references auth.users(id) on delete set null,
   expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -116,7 +117,48 @@ alter table public.educator_verifications enable row level security;
 create index if not exists idx_educator_verifications_educator
   on public.educator_verifications (educator_id, status);
 
+-- -----------------------------------------------------------------------------
+-- 4.1 Educator Verification Decision Audits (Immutable Governance Log)
+-- -----------------------------------------------------------------------------
+create table if not exists public.educator_verification_audits (
+  id uuid primary key default gen_random_uuid(),
+  verification_id uuid not null references public.educator_verifications(id) on delete cascade,
+  educator_id uuid not null references auth.users(id) on delete cascade,
+  reviewer_id uuid references auth.users(id) on delete set null,
+  action text not null check (action in ('verify', 'reject', 'expire', 'revoke')),
+  previous_status text not null,
+  new_status text not null,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.educator_verification_audits enable row level security;
+
+create index if not exists idx_educator_verification_audits_verification
+  on public.educator_verification_audits (verification_id);
+
+create index if not exists idx_educator_verification_audits_educator
+  on public.educator_verification_audits (educator_id);
+
+create index if not exists idx_educator_verification_audits_reviewer
+  on public.educator_verification_audits (reviewer_id);
+
+drop policy if exists educator_verification_audits_select on public.educator_verification_audits;
+create policy educator_verification_audits_select on public.educator_verification_audits
+  for select
+  to authenticated
+  using (
+    educator_id = auth.uid()
+    or private.is_moderator()
+  );
+
+revoke all on table public.educator_verification_audits from public, anon;
+revoke insert, update, delete on table public.educator_verification_audits from authenticated;
+grant select on table public.educator_verification_audits to authenticated;
+grant all on table public.educator_verification_audits to service_role;
+
 -- Trigger to protect verified status tampering: only moderators can mark status='verified'
+-- and verified credentials are fully IMMUTABLE to non-moderators
 create or replace function private.guard_educator_verification_status()
 returns trigger
 language plpgsql
@@ -124,17 +166,60 @@ set search_path = ''
 as $$
 declare
   v_jwt_sub text;
+  v_is_moderator boolean;
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
-  -- If updating status to verified or setting verified_at, must be moderator
-  if (new.status = 'verified' or new.verified_at is not null) and
-     (old.status is distinct from 'verified' or old.verified_at is distinct from new.verified_at) then
-    if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated') and
-       not private.is_moderator() and
-       coalesce(auth.jwt()->>'role', '') <> 'service_role' then
+  v_is_moderator := private.is_moderator();
+
+  -- If non-moderator (or ordinary authenticated user) is modifying:
+  if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated') and
+     not v_is_moderator and
+     coalesce(auth.jwt()->>'role', '') <> 'service_role' then
+
+    -- 1. If old status is 'verified', ALL trust-bearing fields are completely IMMUTABLE to non-moderators
+    if tg_op = 'UPDATE' and old.status = 'verified' then
+      if (new.verification_type is distinct from old.verification_type or
+          new.subject_id is distinct from old.subject_id or
+          new.jurisdiction is distinct from old.jurisdiction or
+          new.issuer is distinct from old.issuer or
+          new.credential_reference is distinct from old.credential_reference or
+          new.status is distinct from old.status or
+          new.verified_at is distinct from old.verified_at or
+          new.verified_by is distinct from old.verified_by or
+          new.expires_at is distinct from old.expires_at) then
+        raise exception 'Access denied: verified credentials are immutable to non-moderators'
+          using errcode = '42501';
+      end if;
+    end if;
+
+    -- 2. Non-moderators can never transition a record to 'verified' or set verified_at / verified_by
+    if (new.status = 'verified' or new.verified_at is not null or new.verified_by is not null) and
+       (old is null or old.status is distinct from 'verified' or old.verified_at is distinct from new.verified_at or old.verified_by is distinct from new.verified_by) then
       raise exception 'Access denied: only moderators can verify credentials'
         using errcode = '42501';
     end if;
+
+    -- 3. Non-moderators can never transition out of 'rejected' or 'revoked' back into verified
+    if tg_op = 'UPDATE' and old.status in ('rejected', 'revoked') and new.status not in ('unverified', 'pending') then
+      raise exception 'Access denied: cannot alter rejected or revoked credentials without re-submission'
+        using errcode = '42501';
+    end if;
+
+    -- 4. Non-moderators can never reassign educator_id
+    if tg_op = 'UPDATE' and new.educator_id is distinct from old.educator_id then
+      raise exception 'Access denied: cannot reassign credential ownership'
+        using errcode = '42501';
+    end if;
+
+    -- 5. Non-moderators can never delete verified or revoked credentials
+    if tg_op = 'DELETE' and old.status in ('verified', 'revoked') then
+      raise exception 'Access denied: verified credentials cannot be deleted by non-moderators'
+        using errcode = '42501';
+    end if;
+  end if;
+
+  if tg_op = 'DELETE' then
+    return old;
   end if;
 
   new.updated_at := now();
@@ -144,7 +229,7 @@ $$;
 
 drop trigger if exists trg_guard_educator_verification on public.educator_verifications;
 create trigger trg_guard_educator_verification
-  before insert or update on public.educator_verifications
+  before insert or update or delete on public.educator_verifications
   for each row
   execute function private.guard_educator_verification_status();
 
@@ -332,7 +417,7 @@ create policy educator_verifications_delete on public.educator_verifications
   for delete
   to authenticated
   using (
-    educator_id = auth.uid()
+    (educator_id = auth.uid() and status in ('unverified', 'pending'))
     or private.is_moderator()
   );
 
@@ -429,10 +514,13 @@ revoke all on function public.upsert_my_educator_profile(text, text, text, text,
 grant execute on function public.upsert_my_educator_profile(text, text, text, text, text[], boolean, text) to authenticated, service_role;
 
 -- Moderator verification RPC
+drop function if exists public.verify_educator_credential(uuid, text, timestamptz);
+
 create or replace function public.verify_educator_credential(
   p_verification_id uuid,
   p_status text,
-  p_expires_at timestamptz default null
+  p_expires_at timestamptz default null,
+  p_notes text default null
 )
 returns jsonb
 language plpgsql
@@ -441,6 +529,8 @@ set search_path = ''
 as $$
 declare
   v_caller_id uuid;
+  v_verification record;
+  v_old_status text;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null or not private.is_moderator() then
@@ -448,12 +538,13 @@ begin
       using errcode = '42501';
   end if;
 
-  if p_status not in ('verified', 'rejected', 'expired') then
+  if p_status not in ('verified', 'rejected', 'revoked', 'expired') then
     raise exception 'Invalid verification decision: %', p_status
       using errcode = '22023';
   end if;
 
-  perform 1
+  select id, educator_id, status
+    into v_verification
     from public.educator_verifications
    where id = p_verification_id
      for update;
@@ -463,22 +554,49 @@ begin
       using errcode = 'P0002';
   end if;
 
+  v_old_status := v_verification.status;
+
   update public.educator_verifications
      set status = p_status,
          verified_at = case when p_status = 'verified' then now() else null end,
+         verified_by = case when p_status = 'verified' then v_caller_id else null end,
          expires_at = p_expires_at,
          updated_at = now()
    where id = p_verification_id;
+
+  insert into public.educator_verification_audits (
+    verification_id,
+    educator_id,
+    reviewer_id,
+    action,
+    previous_status,
+    new_status,
+    notes,
+    metadata
+  ) values (
+    p_verification_id,
+    v_verification.educator_id,
+    v_caller_id,
+    p_status,
+    v_old_status,
+    p_status,
+    p_notes,
+    jsonb_build_object('expires_at', p_expires_at)
+  );
 
   return jsonb_build_object(
     'success', true,
     'verification_id', p_verification_id,
     'status', p_status,
     'verified_at', case when p_status = 'verified' then now() else null end,
-    'expires_at', p_expires_at
+    'verified_by', case when p_status = 'verified' then v_caller_id else null end,
+    'expires_at', p_expires_at,
+    'reviewer_id', v_caller_id,
+    'notes', p_notes
   );
 end;
 $$;
 
-revoke all on function public.verify_educator_credential(uuid, text, timestamptz) from public, anon;
-grant execute on function public.verify_educator_credential(uuid, text, timestamptz) to authenticated, service_role;
+revoke all on function public.verify_educator_credential(uuid, text, timestamptz, text) from public, anon;
+grant execute on function public.verify_educator_credential(uuid, text, timestamptz, text) to authenticated, service_role;
+

@@ -119,6 +119,7 @@ void main() {
         credentialReference: 'CL1234567',
         status: 'verified',
         verifiedAt: now,
+        verifiedBy: 'mod-admin-1',
         expiresAt: now.add(const Duration(days: 365)),
         createdAt: now,
         updatedAt: now,
@@ -129,6 +130,7 @@ void main() {
       expect(claim.isSelfDeclared, isFalse);
       expect(claim.isVerified, isTrue);
       expect(claim.isPending, isFalse);
+      expect(claim.verifiedBy, 'mod-admin-1');
 
       final json = claim.toJson();
       final revived = EducatorVerification.fromJson(json);
@@ -139,6 +141,7 @@ void main() {
       expect(revived.credentialReference, 'CL1234567');
       expect(revived.isVerified, isTrue);
       expect(revived.verifiedAt, now);
+      expect(revived.verifiedBy, 'mod-admin-1');
       expect(revived, equals(claim));
       expect(revived.hashCode, equals(claim.hashCode));
 
@@ -429,5 +432,35 @@ void main() {
       final following = await service.isFollowing('other-educator-99');
       expect(following, isFalse);
     });
+
+    test('verifyCredential calls RPC with attribution and notes', () async {
+      fakeClient.auth.currentUser = testUser;
+      fakeClient.rpcHandler = (fn, {params}) {
+        expect(fn, 'verify_educator_credential');
+        expect(params?['p_verification_id'], 'ev-123');
+        expect(params?['p_status'], 'verified');
+        expect(params?['p_notes'], 'Verified against FL DBPR official registry');
+        return {
+          'success': true,
+          'verification_id': 'ev-123',
+          'status': 'verified',
+          'verified_at': '2026-11-01T12:00:00Z',
+          'verified_by': 'usr-edu-42',
+          'reviewer_id': 'usr-edu-42',
+          'notes': 'Verified against FL DBPR official registry',
+        };
+      };
+
+      final res = await service.verifyCredential(
+        verificationId: 'ev-123',
+        status: 'verified',
+        notes: 'Verified against FL DBPR official registry',
+      );
+
+      expect(res['success'], isTrue);
+      expect(res['verified_by'], 'usr-edu-42');
+      expect(res['status'], 'verified');
+    });
   });
 }
+
