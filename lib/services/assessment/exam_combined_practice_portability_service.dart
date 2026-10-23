@@ -368,7 +368,7 @@ class ExamCombinedPracticePortabilityService {
       while(collected.length<expected) {
         _owner(expectedOwnerId);
         _cancelIfRequested(shouldCancel);
-        final limit=(expected-collected.length).clamp(1,pageLimit);
+        final limit=(expected-collected.length).clamp(1,pageLimit).toInt();
         final raw=part
           ? await _partPage(limit,previousAt?.toUtc().toIso8601String(),previousId)
           : await _referencePage(limit,previousAt?.toUtc().toIso8601String(),previousId);
