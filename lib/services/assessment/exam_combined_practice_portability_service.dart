@@ -40,8 +40,40 @@ class ExamPracticeInventory {
 class ExamPracticeArchive {
   final String owner;
   final Map<String,dynamic> _data;
-  const ExamPracticeArchive._(this.owner,this._data);
+  final ExamPracticeInventory inventory;
+  const ExamPracticeArchive._(this.owner,this._data,this.inventory);
   String toJson()=>jsonEncode(_data);
+
+  /// Generate bounded UTF-8-friendly pieces without allocating a second
+  /// full JSON string before the browser's 64 MiB download guard runs.
+  /// The entire structured response is already validated in memory.
+  Iterable<String> toJsonChunks() sync* {
+    yield* _encodeChunks(_data);
+  }
+
+  static Iterable<String> _encodeChunks(dynamic value) sync* {
+    if (value is Map) {
+      yield '{';
+      var first=true;
+      for (final entry in value.entries) {
+        if (!first) yield ',';
+        first=false;
+        yield jsonEncode(entry.key);
+        yield ':';
+        yield* _encodeChunks(entry.value);
+      }
+      yield '}';
+    } else if (value is List) {
+      yield '[';
+      for (var i=0;i<value.length;i++) {
+        if (i>0) yield ',';
+        yield* _encodeChunks(value[i]);
+      }
+      yield ']';
+    } else {
+      yield jsonEncode(value);
+    }
+  }
 
   factory ExamPracticeArchive.parse(dynamic raw,String owner) {
     if (raw is! Map) throw const FormatException('Invalid EXM export');
@@ -155,7 +187,7 @@ class ExamPracticeArchive {
     if(completed!=inventory.attempts) {
       throw const FormatException('Missing EXM score');
     }
-    return ExamPracticeArchive._(owner,r);
+    return ExamPracticeArchive._(owner,r,inventory);
   }
 }
 
