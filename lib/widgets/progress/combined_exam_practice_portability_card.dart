@@ -73,6 +73,10 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
   ExamPracticeInventory? _inventory;
   ExamPracticeArchive? _archive;
   bool _busy = false;
+  bool _preparing = false;
+  bool _cancelRequested = false;
+  int _loaded = 0;
+  int _total = 0;
   String? _error;
   String? _result;
 
@@ -117,12 +121,25 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
     if (_busy || !_owned || preview == null) return;
     setState(() {
       _busy = true;
+      _preparing = true;
+      _cancelRequested = false;
+      _loaded = 0;
+      _total = 0;
       _archive = null;
       _error = null;
       _result = null;
     });
     try {
-      final archive = await _api.export(expectedOwnerId: widget.ownerId);
+      final archive = await _api.export(
+        expectedOwnerId: widget.ownerId,
+        shouldCancel: () => _cancelRequested || !_owned,
+        onProgress: (loaded,total) {
+          if (_owned) setState(() {
+            _loaded = loaded;
+            _total = total;
+          });
+        },
+      );
       if (!_owned) return;
       final count = archive.inventory;
       if (count.owner != preview.owner ||
@@ -140,11 +157,16 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
         _inventory = null;
         _archive = null;
         _confirmation.clear();
-        _error = 'History changed or the complete archive could not be '
-            'verified. Refresh the preview. No file was requested.';
+        _error = _cancelRequested
+            ? 'Combined export cancelled; no complete file was prepared.'
+            : 'History changed or the complete archive could not be '
+              'verified. Refresh the preview. No file was requested.';
       });
     } finally {
-      if (_owned) setState(() => _busy = false);
+      if (_owned) setState(() {
+        _busy = false;
+        _preparing = false;
+      });
     }
   }
 
@@ -308,11 +330,24 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
               label: const Text('Verify my EXM practice inventory'),
             ),
             const Text(
-              'This bounded archive supports up to 5,000 reference events '
-              'and 5,000 EXM-03 assignments. Larger histories require a '
-              'different verified export; no incomplete download is offered.',
+              'The verified combined archive supports up to 50,000 reference '
+              'steps and 50,000 EXM-03 assignments. Large exports page both '
+              'stores and verify an unchanged server fingerprint; a concurrent '
+              'history change or 64 MiB download limit fails closed.',
             ),
-            if (_busy) const LinearProgressIndicator(),
+            if (_busy)
+              LinearProgressIndicator(
+                value: _preparing && _total>0 ? _loaded/_total : null,
+              ),
+            if (_preparing) ...[
+              Text('Verified combined export: $_loaded of $_total records.',
+                  key: const Key('exm-combined-progress')),
+              TextButton(
+                key: const Key('exm-combined-cancel'),
+                onPressed: () => setState(() => _cancelRequested=true),
+                child: const Text('Cancel export'),
+              ),
+            ],
             if (_error != null)
               Text(_error!, key: const Key('exm-combined-error')),
             if (_result != null)
