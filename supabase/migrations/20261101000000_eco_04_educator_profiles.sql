@@ -125,10 +125,11 @@ create table if not exists public.educator_verification_audits (
   verification_id uuid not null references public.educator_verifications(id) on delete cascade,
   educator_id uuid not null references auth.users(id) on delete cascade,
   reviewer_id uuid references auth.users(id) on delete set null,
-  action text not null check (action in ('verify', 'reject', 'expire', 'revoke')),
+  action text not null check (action in ('verify', 'reject', 'expire', 'revoke', 'verified', 'rejected', 'expired', 'revoked')),
   previous_status text not null,
   new_status text not null,
   notes text,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 

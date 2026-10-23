@@ -300,7 +300,7 @@ select throws_ok(
 select throws_ok(
   $$
     update public.educator_verifications
-       set verification_type = 'advanced_degree'
+       set verification_type = 'platform_vetted'
      where id = '00000000-0000-4000-8000-000000000011'
   $$,
   '42501',
