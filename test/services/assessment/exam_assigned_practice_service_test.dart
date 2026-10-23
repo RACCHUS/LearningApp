@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/assessment/exam_assigned_practice_service.dart';
@@ -21,6 +22,9 @@ class _Client implements SupabaseClient {
 
 class _Auth implements GoTrueClient {
   User? user;
+  Session? session;
+  @override
+  Session? get currentSession => session;
   @override
   User? get currentUser => user;
   @override
@@ -64,6 +68,13 @@ Map<String, dynamic> _receipt({bool replay = false}) => {
   'already_recorded': replay,
   'official_exam_result': false,
 };
+
+String _token(String session) {
+  final payload = base64Url.encode(utf8.encode(
+    jsonEncode({'session_id': session}),
+  )).replaceAll('=', '');
+  return 'e30.$payload.signature';
+}
 
 void main() {
   late _Client client;
@@ -134,6 +145,39 @@ void main() {
     await expectLater(api.issue(expectedOwnerId: ownerA,
       targetVersionId: version, examPartKey: 'part_a'), throwsStateError);
     expect(requests, 0);
+  });
+
+  test('JWT session marker survives refresh but not a new sign-in', () async {
+    client.stub.session = Session(
+      accessToken: _token(sessionA), tokenType: 'bearer',
+      user: client.stub.user!,
+    );
+    final api = ExamAssignedPracticeService(
+      client: client,
+      testIssue: (v, p) async => _issued(),
+      testSubmit: (a, r) async => _receipt(),
+    );
+    final issued = await api.issue(expectedOwnerId: ownerA,
+      targetVersionId: version, examPartKey: 'part_a');
+    // A normal token refresh retains the server Auth session UUID.
+    client.stub.session = Session(
+      accessToken: _token(sessionA), tokenType: 'bearer',
+      user: client.stub.user!,
+    );
+    final receipt = await api.submit(expectedOwnerId: ownerA,
+      assignment: issued,
+      responses: {for (var i = 1; i <= 6; i++) _id(i): 0});
+    expect(receipt.questionCount, 6);
+
+    // A new login to the same account is not the original issue session.
+    client.stub.session = Session(
+      accessToken: _token(sessionB), tokenType: 'bearer',
+      user: client.stub.user!,
+    );
+    await expectLater(api.submit(expectedOwnerId: ownerA,
+      assignment: issued,
+      responses: {for (var i = 1; i <= 6; i++) _id(i): 0}),
+      throwsStateError);
   });
 
   test('in-flight account or session switch cannot reveal issued questions',
