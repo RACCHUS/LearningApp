@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/assessment/diagnostic_assessment.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/providers/diagnostic_assessment_provider.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
@@ -75,57 +76,32 @@ void main() {
     },
   );
 
-  testWidgets('explicit part flows into result without changing target-wide route',
+  testWidgets('explicit exam part never invokes raw legacy item loader',
       (tester) async {
-    final target = LearningTarget(
-      id: 'target-1',
-      targetType: TargetType.certification,
-      title: 'Synthetic Certification',
-      slug: 'synthetic-cert',
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
-    );
-    final items = [
-      _item('item-1', 'Concept One'),
-      _item('item-2', 'Concept Two'),
-    ];
-    final service = _FakeDiagnosticService();
+    var unsafeLoads=0;
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        targetDetailProvider('target-1')
-            .overrideWith((ref) => Future.value(target)),
+        authProvider.overrideWith((ref)=>_ScreenAuth(AuthInitial())),
         examPartDiagnosticItemsProvider((
-          targetId: 'target-1',
-          targetVersionId: 'version-1',
-          examPartKey: 'part_a',
-        )).overrideWith((ref) => Future.value(items)),
-        diagnosticAssessmentServiceProvider.overrideWithValue(service),
-        learnerIdProvider.overrideWith((ref) => 'user-1'),
+          targetId:'target-1',targetVersionId:'version-1',examPartKey:'part_a',
+        )).overrideWith((ref) async {
+          unsafeLoads++;
+          throw StateError('Protected raw item read should never run');
+        }),
       ],
       child: const MaterialApp(
         home: DiagnosticAssessmentScreen(
-          targetId: 'target-1',
-          targetVersionId: 'version-1',
-          examPartKey: 'part_a',
+          targetId:'target-1',targetVersionId:'version-1',
+          examPartKey:'part_a',
         ),
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Answer A'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Answer A'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Complete Diagnostic'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Diagnostic Results'), findsOneWidget);
-    expect(find.byKey(const Key('diagnostic-part-identity')), findsOneWidget);
-    expect(find.text('Practice part: part_a'), findsOneWidget);
-    expect(find.text('Start Full Curriculum'), findsOneWidget);
-    expect(service.lastExamPartKey, 'part_a');
+    expect(find.textContaining('Sign in with a permanent account'),findsOneWidget);
+    expect(unsafeLoads,0);
+    expect(find.text('Complete Diagnostic'),findsNothing);
   });
+
 }
 
 DiagnosticAssessmentItem _item(String id, String conceptName) {
@@ -212,4 +188,10 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
     );
   }
 
+}
+
+class _ScreenAuth extends StateNotifier<AuthState> implements AuthNotifier {
+  _ScreenAuth(AuthState initial):super(initial);
+  @override
+  dynamic noSuchMethod(Invocation invocation)=>super.noSuchMethod(invocation);
 }
