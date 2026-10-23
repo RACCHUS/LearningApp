@@ -164,6 +164,7 @@ grant all on table public.educator_verification_audits to service_role;
 create or replace function private.guard_educator_verification_status()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
@@ -264,6 +265,9 @@ create trigger trg_guard_educator_verification
   before insert or update or delete on public.educator_verifications
   for each row
   execute function private.guard_educator_verification_status();
+
+revoke all on function private.guard_educator_verification_status() from public, anon;
+grant execute on function private.guard_educator_verification_status() to authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
 -- 5. Educator Follows Table
