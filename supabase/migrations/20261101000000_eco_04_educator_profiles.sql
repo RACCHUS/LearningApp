@@ -234,10 +234,17 @@ begin
       end if;
     end if;
 
-    -- 2. Non-moderators can only set status to 'unverified' or 'pending', and can never set verified_at / verified_by
-    if (new.status not in ('unverified', 'pending') or new.verified_at is not null or new.verified_by is not null) and
-       (old is null or old.status is distinct from new.status or old.verified_at is distinct from new.verified_at or old.verified_by is distinct from new.verified_by) then
+    -- 2. Non-moderators can only set status to 'unverified' or 'pending'
+    if new.status not in ('unverified', 'pending') and
+       (old is null or old.status is distinct from new.status) then
       raise exception 'Access denied: only moderators can make moderation decisions (verified, rejected, expired, revoked)'
+        using errcode = '42501';
+    end if;
+
+    -- Non-moderators can never set or alter verified_at / verified_by
+    if (old is null and (new.verified_at is not null or new.verified_by is not null)) or
+       (old is not null and (new.verified_at is distinct from old.verified_at or new.verified_by is distinct from old.verified_by)) then
+      raise exception 'Access denied: only moderators can verify credentials'
         using errcode = '42501';
     end if;
 
@@ -271,7 +278,7 @@ begin
   -- is recorded as reviewer_id. If a previous verifier exists (e.g. on revocation),
   -- the original verifier and verified timestamp are preserved in audit metadata.
   if tg_op = 'UPDATE' and new.status is distinct from old.status then
-    v_reviewer_id := coalesce(v_actor_id, new.verified_by);
+    v_reviewer_id := coalesce(v_actor_id, new.verified_by, old.verified_by);
 
     insert into public.educator_verification_audits (
       verification_id,
@@ -302,6 +309,12 @@ begin
         else '{}'::jsonb
       end
     );
+
+    -- If transitioning to a non-verified status, clear verified_at and verified_by on the record
+    if new.status <> 'verified' then
+      new.verified_at := null;
+      new.verified_by := null;
+    end if;
   end if;
 
   new.updated_at := now();
