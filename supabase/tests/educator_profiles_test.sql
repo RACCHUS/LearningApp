@@ -430,6 +430,9 @@ select lives_ok(
   'Teacher A can resubmit revoked credential by transitioning status to pending'
 );
 
+-- Switch to Moderator A to verify audit entry (RLS shields direct audit query from non-moderators)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
 select is(
   (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'pending' and action = 'pending'),
   1,
@@ -437,7 +440,6 @@ select is(
 );
 
 -- 3. Moderator resets credential to 'unverified'
-select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 select lives_ok(
   $$
     update public.educator_verifications
