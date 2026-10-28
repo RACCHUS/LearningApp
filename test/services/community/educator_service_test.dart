@@ -349,6 +349,32 @@ void main() {
       expect(verifications.first.isVerified, isTrue);
     });
 
+    test('fetchPublicVerifications queries column-shielded public_educator_verifications', () async {
+      fakeClient.setTableData('public_educator_verifications', [
+        {
+          'id': 'ev-pub-001',
+          'educator_id': 'usr-edu-42',
+          'verification_type': 'platform_vetted',
+          'subject_id': 'math.algebra',
+          'jurisdiction': 'US',
+          'issuer': 'National Board',
+          'status': 'verified',
+          'verified_at': '2026-11-01T12:00:00Z',
+          'expires_at': '2028-11-01T12:00:00Z',
+          'created_at': '2026-11-01T12:00:00Z',
+        },
+      ]);
+
+      final verifications = await service.fetchPublicVerifications('usr-edu-42');
+      expect(verifications.length, 1);
+      expect(verifications.first.id, 'ev-pub-001');
+      expect(verifications.first.verificationType, 'platform_vetted');
+      expect(verifications.first.issuer, 'National Board');
+      expect(verifications.first.verifiedBy, isNull);
+      expect(verifications.first.credentialReference, isNull);
+      expect(verifications.first.isVerified, isTrue);
+    });
+
     test('submitVerificationClaim assigns default unverified status to self-declared claims', () async {
       fakeClient.auth.currentUser = testUser;
 

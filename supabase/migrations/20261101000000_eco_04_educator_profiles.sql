@@ -195,6 +195,35 @@ create trigger trg_guard_educator_verification_audits_truncate
 revoke all on function private.guard_educator_verification_audits_append_only() from public, anon;
 grant execute on function private.guard_educator_verification_audits_append_only() to authenticated, service_role;
 
+-- -----------------------------------------------------------------------------
+-- 4.2 Public Verified Credentials View (Column-Shielded for Gate 2)
+-- Shields internal moderation attribution (verified_by) and unredacted references (credential_reference).
+-- Anonymous and third-party learners query this view rather than the raw base table.
+-- -----------------------------------------------------------------------------
+create or replace view public.public_educator_verifications with (security_invoker = false) as
+select
+  id,
+  educator_id,
+  verification_type,
+  subject_id,
+  jurisdiction,
+  issuer,
+  status,
+  verified_at,
+  expires_at,
+  created_at
+from public.educator_verifications
+where private.is_educator_profiles_public_enabled()
+  and status = 'verified'
+  and exists (
+    select 1 from public.educator_profiles ep
+    where ep.id = educator_verifications.educator_id
+      and ep.status = 'active'
+  );
+
+revoke all on public.public_educator_verifications from public;
+grant select on public.public_educator_verifications to anon, authenticated, service_role;
+
 -- Trigger to protect verified status tampering: only moderators can mark status='verified'
 -- and verified credentials are fully IMMUTABLE to non-moderators
 create or replace function private.guard_educator_verification_status()
@@ -208,10 +237,20 @@ declare
   v_is_moderator boolean;
   v_actor_id uuid;
   v_reviewer_id uuid;
+  v_should_audit boolean := false;
+  v_audit_action text;
+  v_prev_status text;
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
   v_is_moderator := private.is_moderator();
   v_actor_id := auth.uid();
+  if v_actor_id is null and v_jwt_sub is not null then
+    begin
+      v_actor_id := v_jwt_sub::uuid;
+    exception when others then
+      v_actor_id := null;
+    end;
+  end if;
 
   -- If non-moderator (or ordinary authenticated user) is modifying:
   if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated') and
@@ -271,14 +310,74 @@ begin
     return old;
   end if;
 
-  -- 6. Trigger-enforced audit recording on any status change:
-  -- Guarantees that EVERY authorized status transition (whether executed through RPC
-  -- or direct moderator/user UPDATE) writes an immutable audit record.
-  -- Attribution: The authenticated actor (v_actor_id = auth.uid()) performing the transition
-  -- is recorded as reviewer_id. If a previous verifier exists (e.g. on revocation),
-  -- the original verifier and verified timestamp are preserved in audit metadata.
+  -- ---------------------------------------------------------------------------
+  -- Moderator Invariant & Provenance Enforcement:
+  -- When a credential is in 'verified' status (via direct INSERT, direct UPDATE, or RPC):
+  -- 1. verified_at must be populated (auto-populates to now() if omitted).
+  -- 2. verified_by must match the authenticated moderator actor (anti-forgery).
+  -- ---------------------------------------------------------------------------
+  if new.status = 'verified' then
+    -- Auto-populate verified_at if omitted
+    if new.verified_at is null then
+      new.verified_at := now();
+    end if;
+
+    -- Auto-populate verified_by if omitted
+    if new.verified_by is null and v_actor_id is not null then
+      new.verified_by := v_actor_id;
+    end if;
+
+    -- Anti-forgery guard: caller cannot specify a different moderator as verified_by
+    if v_actor_id is not null and
+       coalesce(auth.jwt()->>'role', '') <> 'service_role' and
+       new.verified_by is distinct from v_actor_id and
+       (tg_op = 'INSERT' or old.status <> 'verified' or new.verified_by is distinct from old.verified_by) then
+      raise exception 'Access denied: verified_by must match the authenticated moderator'
+        using errcode = '42501';
+    end if;
+
+    -- Must have non-null verification timestamp and verifier
+    if new.verified_at is null or new.verified_by is null then
+      raise exception 'Invalid verification state: verified credentials require verified_at and verified_by'
+        using errcode = '22023';
+    end if;
+  else
+    -- If transitioning to any non-verified status, clear verified_at and verified_by
+    new.verified_at := null;
+    new.verified_by := null;
+  end if;
+
+  -- ---------------------------------------------------------------------------
+  -- Audit Decision Determination:
+  -- Evaluates if an audit record must be generated.
+  -- Covers:
+  --   a) Any status transition (UPDATE where status changed).
+  --   b) Direct INSERT in decision state ('verified', 'rejected', 'expired', 'revoked').
+  --   c) Material re-verification / review update where status remains 'verified'
+  --      (verified_at changed, verified_by changed, expires_at changed, or review notes provided).
+  -- ---------------------------------------------------------------------------
   if tg_op = 'UPDATE' and new.status is distinct from old.status then
-    v_reviewer_id := coalesce(v_actor_id, new.verified_by, old.verified_by);
+    v_should_audit := true;
+    v_audit_action := new.status;
+    v_prev_status := old.status;
+  elsif tg_op = 'INSERT' and new.status in ('verified', 'rejected', 'expired', 'revoked') then
+    v_should_audit := true;
+    v_audit_action := new.status;
+    v_prev_status := 'unverified';
+  elsif tg_op = 'UPDATE' and new.status = 'verified' and old.status = 'verified' and (
+    new.verified_at is distinct from old.verified_at or
+    new.verified_by is distinct from old.verified_by or
+    new.expires_at is distinct from old.expires_at or
+    nullif(current_setting('educator_verifications.audit_notes', true), '') is not null or
+    nullif(current_setting('educator_verifications.audit_internal_notes', true), '') is not null
+  ) then
+    v_should_audit := true;
+    v_audit_action := 'verify';
+    v_prev_status := old.status;
+  end if;
+
+  if v_should_audit then
+    v_reviewer_id := coalesce(v_actor_id, new.verified_by, case when tg_op = 'UPDATE' then old.verified_by else null end);
 
     insert into public.educator_verification_audits (
       verification_id,
@@ -294,27 +393,24 @@ begin
       new.id,
       new.educator_id,
       v_reviewer_id,
-      new.status,
-      old.status,
+      v_audit_action,
+      v_prev_status,
       new.status,
       nullif(current_setting('educator_verifications.audit_notes', true), ''),
       nullif(current_setting('educator_verifications.audit_internal_notes', true), ''),
       case
-        when new.expires_at is not null or old.verified_by is not null then
+        when new.expires_at is not null or
+             (tg_op = 'UPDATE' and old.expires_at is not null) or
+             (tg_op = 'UPDATE' and old.verified_by is not null) then
           jsonb_strip_nulls(jsonb_build_object(
             'expires_at', new.expires_at,
-            'original_verified_by', old.verified_by,
-            'original_verified_at', old.verified_at
+            'original_expires_at', case when tg_op = 'UPDATE' then old.expires_at else null end,
+            'original_verified_by', case when tg_op = 'UPDATE' then old.verified_by else null end,
+            'original_verified_at', case when tg_op = 'UPDATE' then old.verified_at else null end
           ))
         else '{}'::jsonb
       end
     );
-
-    -- If transitioning to a non-verified status, clear verified_at and verified_by on the record
-    if new.status <> 'verified' then
-      new.verified_at := null;
-      new.verified_by := null;
-    end if;
   end if;
 
   new.updated_at := now();
@@ -463,25 +559,15 @@ create policy educator_subjects_delete on public.educator_subjects
   );
 
 -- 6.3 educator_verifications
+-- Direct table SELECT access is strictly restricted to the credential owner and moderators.
+-- Public reads of verified credentials are routed exclusively through public.public_educator_verifications
+-- to prevent column leakage of verified_by or unredacted credential_reference.
 drop policy if exists educator_verifications_select on public.educator_verifications;
 drop policy if exists educator_verifications_public_select on public.educator_verifications;
 drop policy if exists educator_verifications_auth_select on public.educator_verifications;
 drop policy if exists educator_verifications_insert on public.educator_verifications;
 drop policy if exists educator_verifications_update on public.educator_verifications;
 drop policy if exists educator_verifications_delete on public.educator_verifications;
-
-create policy educator_verifications_public_select on public.educator_verifications
-  for select
-  to anon, authenticated, service_role
-  using (
-    private.is_educator_profiles_public_enabled()
-    and status = 'verified'
-    and exists (
-      select 1 from public.educator_profiles ep
-      where ep.id = educator_verifications.educator_id
-        and ep.status = 'active'
-    )
-  );
 
 create policy educator_verifications_auth_select on public.educator_verifications
   for select
@@ -630,6 +716,9 @@ set search_path = ''
 as $$
 declare
   v_caller_id uuid;
+  v_final_expires_at timestamptz;
+  v_final_verified_at timestamptz;
+  v_final_verified_by uuid;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null or not private.is_moderator() then
@@ -660,17 +749,22 @@ begin
      set status = p_status,
          verified_at = case when p_status = 'verified' then now() else null end,
          verified_by = case when p_status = 'verified' then v_caller_id else null end,
-         expires_at = p_expires_at,
+         expires_at = case
+           when p_expires_at is not null then p_expires_at
+           else educator_verifications.expires_at
+         end,
          updated_at = now()
-   where id = p_verification_id;
+   where id = p_verification_id
+  returning verified_at, verified_by, expires_at
+     into v_final_verified_at, v_final_verified_by, v_final_expires_at;
 
   return jsonb_build_object(
     'success', true,
     'verification_id', p_verification_id,
     'status', p_status,
-    'verified_at', case when p_status = 'verified' then now() else null end,
-    'verified_by', case when p_status = 'verified' then v_caller_id else null end,
-    'expires_at', p_expires_at,
+    'verified_at', v_final_verified_at,
+    'verified_by', v_final_verified_by,
+    'expires_at', v_final_expires_at,
     'reviewer_id', v_caller_id,
     'notes', p_notes,
     'internal_notes', p_internal_notes

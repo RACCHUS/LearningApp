@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(60);
+select plan(83);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -29,7 +29,7 @@ values
 on conflict (user_id) do update set role = excluded.role;
 
 -- -----------------------------------------------------------------------------
--- 1. Schema Structure Checks (11 tests)
+-- 1. Schema Structure Checks (16 tests)
 -- -----------------------------------------------------------------------------
 select has_table('public', 'educator_profiles', 'Table public.educator_profiles exists');
 select has_table('public', 'educator_subjects', 'Table public.educator_subjects exists');
@@ -42,10 +42,15 @@ select has_function('private', 'is_educator_profiles_public_enabled', 'Function 
 select has_function('public', 'upsert_my_educator_profile', Array['text', 'text', 'text', 'text', 'text[]', 'boolean', 'text'], 'RPC upsert_my_educator_profile exists');
 select has_function('public', 'verify_educator_credential', Array['uuid', 'text', 'timestamp with time zone', 'text', 'text'], 'RPC verify_educator_credential exists');
 select has_function('public', 'fetch_my_credential_feedback', Array['uuid'], 'RPC fetch_my_credential_feedback exists');
+select has_view('public', 'public_educator_verifications', 'View public.public_educator_verifications exists');
+select has_column('public', 'public_educator_verifications', 'status', 'Column public_educator_verifications.status exists');
+select has_column('public', 'public_educator_verifications', 'issuer', 'Column public_educator_verifications.issuer exists');
+select hasnt_column('public', 'public_educator_verifications', 'verified_by', 'Column public_educator_verifications.verified_by does not exist (moderator ID shielded)');
+select hasnt_column('public', 'public_educator_verifications', 'credential_reference', 'Column public_educator_verifications.credential_reference does not exist (reference shielded)');
 
 
 -- -----------------------------------------------------------------------------
--- 2. Gate 2 Launch Gate Default Invariant (2 tests)
+-- 2. Gate 2 Launch Gate Default Invariant (4 tests)
 -- -----------------------------------------------------------------------------
 select is(
   (select private.is_educator_profiles_public_enabled()),
@@ -58,6 +63,18 @@ select is(
   (select count(*)::integer from public.educator_profiles),
   0,
   'Anonymous user receives 0 educator profiles while Gate 2 is closed'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verifications),
+  0,
+  'Anonymous user receives 0 verifications from direct table query (RLS shielded)'
+);
+
+select is(
+  (select count(*)::integer from public.public_educator_verifications),
+  0,
+  'Anonymous user receives 0 public verifications while Gate 2 is closed'
 );
 
 -- -----------------------------------------------------------------------------
@@ -280,6 +297,43 @@ select is(
   'Verification audit trail entry logged with reviewer attribution'
 );
 
+-- Re-verification of existing verified credential via RPC (Finding 1)
+select lives_ok(
+  $$
+    select public.verify_educator_credential(
+      '00000000-0000-4000-8000-000000000011'::uuid,
+      'verified',
+      null,
+      'Annual audit re-validation passed.',
+      'Staff internal notes: Re-checked credentials registry.'
+    )
+  $$,
+  'Moderator successfully re-verifies already verified credential'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'verify'),
+  1,
+  'Audit record created for re-verification with action verify'
+);
+
+select is(
+  (select notes from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'verify'),
+  'Annual audit re-validation passed.',
+  'Re-verification audit captures review notes'
+);
+
+select is(
+  (select internal_notes from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'verify'),
+  'Staff internal notes: Re-checked credentials registry.',
+  'Re-verification audit captures internal notes'
+);
+
+select ok(
+  (select expires_at is not null from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011'),
+  'Existing expires_at is preserved when p_expires_at is omitted during re-verification'
+);
+
 -- Regressions: Teacher A attempts to modify trust-bearing fields on verified credential -> BLOCKED (42501)
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
 
@@ -404,6 +458,127 @@ select is(
   'Audit record action accurately reflects revoked status'
 );
 
+select ok(
+  (select metadata->>'original_expires_at' is not null from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
+  'Revocation audit metadata preserves original_expires_at'
+);
+
+-- -----------------------------------------------------------------------------
+-- 6.2.1 Direct Moderator Verification & Verified Insert Invariants (Findings 1 & 2) (10 tests)
+-- -----------------------------------------------------------------------------
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status
+) values (
+  '00000000-0000-4000-8000-000000000012',
+  '8f8c1a20-0000-4000-8000-000000000002',
+  'licensed_credential',
+  'TX',
+  'Texas TEA',
+  'TX-CERT-111222',
+  'pending'
+);
+
+-- 1. Moderator B attempts direct verification with forged verified_by (Moderator A) -> BLOCKED (42501)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000004', true);
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set status = 'verified',
+           verified_by = '8f8c1a20-0000-4000-8000-000000000001'
+     where id = '00000000-0000-4000-8000-000000000012'
+  $$,
+  '42501',
+  'Access denied: verified_by must match the authenticated moderator',
+  'Direct verification rejects forged verified_by attribution (42501)'
+);
+
+-- 2. Moderator B directly verifies credential without providing timestamps or verifier -> Auto-populated
+select lives_ok(
+  $$
+    update public.educator_verifications
+       set status = 'verified'
+     where id = '00000000-0000-4000-8000-000000000012'
+  $$,
+  'Moderator B directly verifies credential without providing timestamps or verifier'
+);
+
+select ok(
+  (select verified_at is not null from public.educator_verifications where id = '00000000-0000-4000-8000-000000000012'),
+  'Direct verification auto-populates verified_at timestamp'
+);
+
+select is(
+  (select verified_by from public.educator_verifications where id = '00000000-0000-4000-8000-000000000012'),
+  '8f8c1a20-0000-4000-8000-000000000004'::uuid,
+  'Direct verification auto-populates verified_by with authenticated moderator'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000012' and action = 'verified' and reviewer_id = '8f8c1a20-0000-4000-8000-000000000004'),
+  1,
+  'Direct verification automatically records audit entry with Moderator B attribution'
+);
+
+-- 3. Direct insert with forged verified_by -> BLOCKED (42501)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000004', true);
+select throws_ok(
+  $$
+    insert into public.educator_verifications (
+      id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_by
+    ) values (
+      '00000000-0000-4000-8000-000000000013',
+      '8f8c1a20-0000-4000-8000-000000000002',
+      'licensed_credential',
+      'NY',
+      'NYSED',
+      'NY-CERT-333444',
+      'verified',
+      '8f8c1a20-0000-4000-8000-000000000001'
+    )
+  $$,
+  '42501',
+  'Access denied: verified_by must match the authenticated moderator',
+  'Direct insert of verified credential rejects forged verified_by (42501)'
+);
+
+-- 4. Direct insert of verified credential by Moderator A -> Auto-populates and audits
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$
+    insert into public.educator_verifications (
+      id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status
+    ) values (
+      '00000000-0000-4000-8000-000000000013',
+      '8f8c1a20-0000-4000-8000-000000000002',
+      'licensed_credential',
+      'NY',
+      'NYSED',
+      'NY-CERT-333444',
+      'verified'
+    )
+  $$,
+  'Moderator A directly inserts verified credential'
+);
+
+select ok(
+  (select verified_at is not null from public.educator_verifications where id = '00000000-0000-4000-8000-000000000013'),
+  'Direct insert auto-populates verified_at'
+);
+
+select is(
+  (select verified_by from public.educator_verifications where id = '00000000-0000-4000-8000-000000000013'),
+  '8f8c1a20-0000-4000-8000-000000000001'::uuid,
+  'Direct insert auto-populates verified_by with Moderator A'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000013' and action = 'verified' and previous_status = 'unverified' and new_status = 'verified' and reviewer_id = '8f8c1a20-0000-4000-8000-000000000001'),
+  1,
+  'Direct insert of verified credential automatically records decision audit entry'
+);
+
 -- -----------------------------------------------------------------------------
 -- 6.3 Lifecycle Status Transitions & Decision Authorization (Finding 3) (6 tests)
 -- -----------------------------------------------------------------------------
@@ -430,9 +605,6 @@ select lives_ok(
   'Teacher A can resubmit revoked credential by transitioning status to pending'
 );
 
--- Switch to Moderator A to verify audit entry (RLS shields direct audit query from non-moderators)
-select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
-
 select is(
   (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'pending' and action = 'pending'),
   1,
@@ -440,6 +612,7 @@ select is(
 );
 
 -- 3. Moderator resets credential to 'unverified'
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 select lives_ok(
   $$
     update public.educator_verifications

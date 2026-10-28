@@ -98,12 +98,21 @@ $$;
    - `SELECT`: `id = auth.uid() OR private.is_moderator() OR (private.is_educator_profiles_public_enabled() AND status = 'active')`
    - `INSERT`: `id = auth.uid()`
    - `UPDATE`: `id = auth.uid() OR private.is_moderator()`
-2. **Educator Verifications**:
-   - Only platform moderators (`private.is_moderator()`) can update `status` to `'verified'` or populate `verified_at`.
-   - Normal users can insert or update records with `status in ('unverified', 'pending')`.
+2. **Educator Verifications (Base Table RLS)**:
+   - Direct table `SELECT` is strictly restricted to the credential owner (`educator_id = auth.uid()`) and platform moderators (`private.is_moderator()`).
+   - Only platform moderators can update `status` to `'verified'`, and must match `verified_by` (anti-forgery).
+   - Normal users can insert or update records only with `status in ('unverified', 'pending')`.
+   - Verified, rejected, and revoked records are immutable and cannot be deleted by non-moderators.
 3. **Follows**:
    - Minors cannot be followed or create educator profiles.
    - Self-follows are blocked at both trigger and check constraint levels.
+
+### 3.3 Column-Shielded Public Verification View (`public.public_educator_verifications`)
+To protect internal reviewer identities and sensitive unredacted credential references, public access is never granted directly to the base `educator_verifications` table.
+- A secure view `public.public_educator_verifications` with `security_invoker = false` exposes strictly:
+  `id, educator_id, verification_type, subject_id, jurisdiction, issuer, status, verified_at, expires_at, created_at`.
+- Internal staff attribution (`verified_by`) and unredacted registration text (`credential_reference`) are omitted.
+- The view evaluates `private.is_educator_profiles_public_enabled() AND status = 'verified'`, returning 0 rows while Gate 2 is closed.
 
 ---
 
@@ -120,3 +129,17 @@ $$;
    - Error handling and authorization checks.
 3. **Guarded History Invariants**:
    - Migration 63 strictly append-only, verified via `verify_migration_history.dart`.
+
+---
+
+## 5. Gate 2 Launch Dependencies (Pre-requisites for Public Enablement)
+
+Before the global launch gate `educator_profiles_public_enabled` can be flipped to `true`, the following architectural safeguards must be fully implemented and verified:
+1. **Server-Side Minor Eligibility & Age Verification**:
+   Authoritative backend enforcement preventing minors from activating public educator profiles, following/being followed, or engaging in public educator interactions.
+2. **Canonical Subject Taxonomy Registry Validation**:
+   Enforce database-level validation (foreign key or authoritative registry check) on `educator_subjects.subject_id` against the canonical taxonomy before subject affiliations can be authoritatively published.
+3. **Public Column Shielding & Verification Data Redaction**:
+   Verification of the `public.public_educator_verifications` column-shielded view and ensuring any public references are validated and redacted prior to public display.
+4. **Zero Hosted Changes Pre-Launch**:
+   Production database baseline remains at 62 migrations with both `public_ugc_enabled` and `educator_profiles_public_enabled` locked at `false`.

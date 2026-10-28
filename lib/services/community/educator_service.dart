@@ -159,6 +159,7 @@ class EducatorService {
   }
 
   /// Fetches verification claims and credentials for an educator.
+  /// Direct table read: restricted to the educator owner and moderators.
   Future<List<EducatorVerification>> fetchVerifications(String educatorId) async {
     try {
       final res = await _supabase
@@ -172,6 +173,26 @@ class EducatorService {
           .toList();
     } catch (e, stack) {
       _logger.error('Failed to fetch educator verifications for $educatorId', error: e, stackTrace: stack);
+      return [];
+    }
+  }
+
+  /// Fetches publicly visible verified credentials for an educator (ECO-04).
+  /// Queries the column-shielded `public_educator_verifications` view which omits
+  /// sensitive verifier attribution (verified_by) and unredacted references (credential_reference).
+  Future<List<EducatorVerification>> fetchPublicVerifications(String educatorId) async {
+    try {
+      final res = await _supabase
+          .from('public_educator_verifications')
+          .select()
+          .eq('educator_id', educatorId)
+          .order('created_at', ascending: false);
+
+      return (res as List)
+          .map((row) => EducatorVerification.fromJson(row as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _logger.error('Failed to fetch public educator verifications for $educatorId', error: e, stackTrace: stack);
       return [];
     }
   }
