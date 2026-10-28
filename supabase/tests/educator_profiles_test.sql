@@ -5,24 +5,28 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(48);
+select plan(62);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
   ('8f8c1a20-0000-4000-8000-000000000001', 'edu-admin@example.invalid'),
   ('8f8c1a20-0000-4000-8000-000000000002', 'edu-teacher-a@example.invalid'),
-  ('8f8c1a20-0000-4000-8000-000000000003', 'edu-learner-b@example.invalid')
+  ('8f8c1a20-0000-4000-8000-000000000003', 'edu-learner-b@example.invalid'),
+  ('8f8c1a20-0000-4000-8000-000000000004', 'edu-moderator-b@example.invalid')
 on conflict (id) do nothing;
 
 insert into public.users (id, email) values
   ('8f8c1a20-0000-4000-8000-000000000001', 'edu-admin@example.invalid'),
   ('8f8c1a20-0000-4000-8000-000000000002', 'edu-teacher-a@example.invalid'),
-  ('8f8c1a20-0000-4000-8000-000000000003', 'edu-learner-b@example.invalid')
+  ('8f8c1a20-0000-4000-8000-000000000003', 'edu-learner-b@example.invalid'),
+  ('8f8c1a20-0000-4000-8000-000000000004', 'edu-moderator-b@example.invalid')
 on conflict (id) do nothing;
 
 insert into public.moderation_roles (user_id, role, granted_by)
-values ('8f8c1a20-0000-4000-8000-000000000001', 'admin', '8f8c1a20-0000-4000-8000-000000000001')
-on conflict (user_id) do update set role = 'admin';
+values
+  ('8f8c1a20-0000-4000-8000-000000000001', 'admin', '8f8c1a20-0000-4000-8000-000000000001'),
+  ('8f8c1a20-0000-4000-8000-000000000004', 'moderator', '8f8c1a20-0000-4000-8000-000000000001')
+on conflict (user_id) do update set role = excluded.role;
 
 -- -----------------------------------------------------------------------------
 -- 1. Schema Structure Checks (11 tests)
@@ -362,9 +366,10 @@ select is(
 );
 
 -- -----------------------------------------------------------------------------
--- 6.2 Direct Moderator Update Audit Accountability (Finding 2) (2 tests)
+-- 6.2 Direct Moderator Update Audit Accountability (Finding 2) (5 tests)
+-- Moderator B directly revokes Teacher A's credential originally verified by Moderator A
 -- -----------------------------------------------------------------------------
-select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000004', true);
 
 select lives_ok(
   $$
@@ -372,19 +377,37 @@ select lives_ok(
        set status = 'revoked'
      where id = '00000000-0000-4000-8000-000000000011'
   $$,
-  'Moderator directly updates educator_verifications table'
+  'Moderator B directly revokes credential originally verified by Moderator A'
 );
 
 select is(
   (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
   1,
-  'Database trigger automatically recorded audit entry for direct moderator table UPDATE'
+  'Database trigger automatically recorded audit entry for direct revocation'
+);
+
+select is(
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
+  '8f8c1a20-0000-4000-8000-000000000004'::uuid,
+  'Direct revocation records Moderator B as audit reviewer instead of original verifier'
+);
+
+select is(
+  (select metadata->>'original_verified_by' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
+  '8f8c1a20-0000-4000-8000-000000000001',
+  'Original verifier Moderator A preserved in audit metadata'
+);
+
+select is(
+  (select action from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'revoked'),
+  'revoked',
+  'Audit record action accurately reflects revoked status'
 );
 
 -- -----------------------------------------------------------------------------
--- 6.3 Audit Durability & Delete Protection on Non-Verified Claims (Finding 1) (2 tests)
+-- 6.3 Lifecycle Status Transitions & Decision Authorization (Finding 3) (6 tests)
 -- -----------------------------------------------------------------------------
--- Teacher A cannot delete revoked credentials
+-- 1. Owner cannot delete revoked credential
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
 
 select throws_ok(
@@ -397,12 +420,115 @@ select throws_ok(
   'Owner cannot delete revoked credential (42501)'
 );
 
+-- 2. Teacher A resubmits revoked credential by transitioning status to 'pending'
+select lives_ok(
+  $$
+    update public.educator_verifications
+       set status = 'pending'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  'Teacher A can resubmit revoked credential by transitioning status to pending'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'pending' and action = 'pending'),
+  1,
+  'Status transition to pending creates valid audit record with action = pending'
+);
+
+-- 3. Moderator resets credential to 'unverified'
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$
+    update public.educator_verifications
+       set status = 'unverified'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  'Moderator can reset credential status to unverified'
+);
+
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and new_status = 'unverified' and action = 'unverified'),
+  1,
+  'Status transition to unverified creates valid audit record with action = unverified'
+);
+
+-- 4. Non-moderator cannot make unilateral moderation decisions (e.g. setting status to 'rejected')
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+select throws_ok(
+  $$
+    update public.educator_verifications
+       set status = 'rejected'
+     where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  'Access denied: only moderators can make moderation decisions (verified, rejected, expired, revoked)',
+  'Non-moderator cannot set status to rejected (42501)'
+);
+
+-- -----------------------------------------------------------------------------
+-- 6.4 Append-Only Audit Integrity & service_role Protection (Finding 1) (4 tests)
+-- -----------------------------------------------------------------------------
+-- Authenticated user cannot update audit rows
+select throws_ok(
+  $$
+    update public.educator_verification_audits
+       set notes = 'tampered'
+     where verification_id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  null,
+  'Authenticated role cannot update educator_verification_audits (42501)'
+);
+
+-- Authenticated user cannot delete audit rows
+select throws_ok(
+  $$
+    delete from public.educator_verification_audits
+     where verification_id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  null,
+  'Authenticated role cannot delete educator_verification_audits (42501)'
+);
+
+-- service_role cannot update audit rows (trigger and privileges enforce append-only)
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+select throws_ok(
+  $$
+    update public.educator_verification_audits
+       set notes = 'tampered by service_role'
+     where verification_id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  null,
+  'service_role cannot update educator_verification_audits (42501 append-only guard)'
+);
+
+-- service_role cannot delete audit rows
+select throws_ok(
+  $$
+    delete from public.educator_verification_audits
+     where verification_id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  '42501',
+  null,
+  'service_role cannot delete educator_verification_audits (42501 append-only guard)'
+);
+
+set local role postgres;
+
+-- -----------------------------------------------------------------------------
+-- 6.5 Audit Durability on Claim Deletion (1 test)
+-- -----------------------------------------------------------------------------
 -- Claim deletion does not cascade-delete audit history
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011';
 
 select ok(
-  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011') >= 2,
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011') >= 3,
   'Verification audits are preserved independently after credential claim deletion (no cascading delete)'
 );
 

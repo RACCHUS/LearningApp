@@ -750,7 +750,7 @@ void main(List<String> args) async {
     );
 
     final checkAudits = await client.restGet(
-      'community_review_audit?target_id=in.($testAnswerId,$revisedAnswerId)&select=id',
+      'community_review_audit?target_id=in.($testAnswerId,$revisedAnswerId,$testQuestionId)&select=id',
       token: serviceKey,
     );
     expect(

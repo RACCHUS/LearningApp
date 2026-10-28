@@ -126,7 +126,11 @@ create table if not exists public.educator_verification_audits (
   verification_id uuid not null,
   educator_id uuid not null,
   reviewer_id uuid,
-  action text not null check (action in ('verify', 'reject', 'expire', 'revoke', 'verified', 'rejected', 'expired', 'revoked')),
+  action text not null check (action in (
+    'unverified', 'pending', 'verified', 'rejected', 'expired', 'revoked',
+    'submit', 'resubmit', 'verify', 'reject', 'expire', 'revoke', 'unverify',
+    'status_transition'
+  )),
   previous_status text not null,
   new_status text not null,
   notes text,
@@ -154,10 +158,42 @@ create policy educator_verification_audits_select on public.educator_verificatio
     private.is_moderator()
   );
 
+-- Strict append-only table privileges:
+-- Revoke all modification privileges from anon, authenticated, and service_role.
+-- Direct updates, deletions, and truncations are strictly forbidden at the engine level.
 revoke all on table public.educator_verification_audits from public, anon;
-revoke insert, update, delete on table public.educator_verification_audits from authenticated;
+revoke all on table public.educator_verification_audits from authenticated;
 grant select on table public.educator_verification_audits to authenticated;
-grant all on table public.educator_verification_audits to service_role;
+revoke all on table public.educator_verification_audits from service_role;
+grant select on table public.educator_verification_audits to service_role;
+
+-- Dedicated trigger function to strictly reject any UPDATE, DELETE, or TRUNCATE on educator_verification_audits
+create or replace function private.guard_educator_verification_audits_append_only()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  raise exception 'Access denied: educator_verification_audits is strictly append-only'
+    using errcode = '42501';
+end;
+$$;
+
+drop trigger if exists trg_guard_educator_verification_audits on public.educator_verification_audits;
+create trigger trg_guard_educator_verification_audits
+  before update or delete on public.educator_verification_audits
+  for each row
+  execute function private.guard_educator_verification_audits_append_only();
+
+drop trigger if exists trg_guard_educator_verification_audits_truncate on public.educator_verification_audits;
+create trigger trg_guard_educator_verification_audits_truncate
+  before truncate on public.educator_verification_audits
+  for each statement
+  execute function private.guard_educator_verification_audits_append_only();
+
+revoke all on function private.guard_educator_verification_audits_append_only() from public, anon;
+grant execute on function private.guard_educator_verification_audits_append_only() to authenticated, service_role;
 
 -- Trigger to protect verified status tampering: only moderators can mark status='verified'
 -- and verified credentials are fully IMMUTABLE to non-moderators
@@ -170,9 +206,12 @@ as $$
 declare
   v_jwt_sub text;
   v_is_moderator boolean;
+  v_actor_id uuid;
+  v_reviewer_id uuid;
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
   v_is_moderator := private.is_moderator();
+  v_actor_id := auth.uid();
 
   -- If non-moderator (or ordinary authenticated user) is modifying:
   if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated') and
@@ -195,14 +234,14 @@ begin
       end if;
     end if;
 
-    -- 2. Non-moderators can never transition a record to 'verified' or set verified_at / verified_by
-    if (new.status = 'verified' or new.verified_at is not null or new.verified_by is not null) and
-       (old is null or old.status is distinct from 'verified' or old.verified_at is distinct from new.verified_at or old.verified_by is distinct from new.verified_by) then
-      raise exception 'Access denied: only moderators can verify credentials'
+    -- 2. Non-moderators can only set status to 'unverified' or 'pending', and can never set verified_at / verified_by
+    if (new.status not in ('unverified', 'pending') or new.verified_at is not null or new.verified_by is not null) and
+       (old is null or old.status is distinct from new.status or old.verified_at is distinct from new.verified_at or old.verified_by is distinct from new.verified_by) then
+      raise exception 'Access denied: only moderators can make moderation decisions (verified, rejected, expired, revoked)'
         using errcode = '42501';
     end if;
 
-    -- 3. Non-moderators can never transition out of 'rejected' or 'revoked' back into verified
+    -- 3. Non-moderators can never transition out of 'rejected' or 'revoked' back into verified or decision states
     if tg_op = 'UPDATE' and old.status in ('rejected', 'revoked') and new.status not in ('unverified', 'pending') then
       raise exception 'Access denied: cannot alter rejected or revoked credentials without re-submission'
         using errcode = '42501';
@@ -227,8 +266,13 @@ begin
 
   -- 6. Trigger-enforced audit recording on any status change:
   -- Guarantees that EVERY authorized status transition (whether executed through RPC
-  -- or direct moderator table UPDATE) writes an immutable audit record.
+  -- or direct moderator/user UPDATE) writes an immutable audit record.
+  -- Attribution: The authenticated actor (v_actor_id = auth.uid()) performing the transition
+  -- is recorded as reviewer_id. If a previous verifier exists (e.g. on revocation),
+  -- the original verifier and verified timestamp are preserved in audit metadata.
   if tg_op = 'UPDATE' and new.status is distinct from old.status then
+    v_reviewer_id := coalesce(v_actor_id, new.verified_by);
+
     insert into public.educator_verification_audits (
       verification_id,
       educator_id,
@@ -242,14 +286,19 @@ begin
     ) values (
       new.id,
       new.educator_id,
-      coalesce(new.verified_by, auth.uid()),
+      v_reviewer_id,
       new.status,
       old.status,
       new.status,
       nullif(current_setting('educator_verifications.audit_notes', true), ''),
       nullif(current_setting('educator_verifications.audit_internal_notes', true), ''),
       case
-        when new.expires_at is not null then jsonb_build_object('expires_at', new.expires_at)
+        when new.expires_at is not null or old.verified_by is not null then
+          jsonb_strip_nulls(jsonb_build_object(
+            'expires_at', new.expires_at,
+            'original_verified_by', old.verified_by,
+            'original_verified_at', old.verified_at
+          ))
         else '{}'::jsonb
       end
     );
