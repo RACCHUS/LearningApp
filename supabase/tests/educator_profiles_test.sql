@@ -790,7 +790,8 @@ insert into public.community_config (key, value)
 values ('educator_profiles_public_enabled', 'true')
 on conflict (key) do update set value = 'true';
 
--- Seed active and expired verified credentials for Teacher A
+-- Seed active and expired verified credentials for Teacher A (as Moderator A)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 insert into public.educator_verifications (
   id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by, expires_at
 ) values
