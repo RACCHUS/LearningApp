@@ -281,6 +281,7 @@ as $$
 declare
   v_jwt_sub text;
   v_is_moderator boolean;
+  v_is_service_role boolean;
   v_actor_id uuid;
   v_reviewer_id uuid;
   v_should_audit boolean := false;
@@ -289,6 +290,12 @@ declare
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
   v_is_moderator := private.is_moderator();
+  v_is_service_role := (
+    coalesce(auth.jwt()->>'role', '') = 'service_role' or
+    coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role' or
+    coalesce(current_setting('role', true), '') = 'service_role' or
+    coalesce(auth.role(), '') = 'service_role'
+  );
   v_actor_id := auth.uid();
   if v_actor_id is null and v_jwt_sub is not null then
     begin
@@ -299,9 +306,9 @@ begin
   end if;
 
   -- If non-moderator (or ordinary authenticated user) is modifying:
-  if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated') and
+  if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated' or coalesce(auth.role(), '') = 'authenticated') and
      not v_is_moderator and
-     coalesce(auth.jwt()->>'role', '') <> 'service_role' then
+     not v_is_service_role then
 
     -- 1. If old status is 'verified', ALL trust-bearing fields are completely IMMUTABLE to non-moderators
     if tg_op = 'UPDATE' and old.status = 'verified' then
@@ -394,8 +401,8 @@ begin
         'deleted_by_role', case
           when v_is_moderator then 'moderator'
           when v_actor_id is not null and v_actor_id = old.educator_id then 'owner'
-          when coalesce(auth.jwt()->>'role', '') = 'service_role' then 'service_role'
-          else coalesce(nullif(current_user, ''), 'system')
+          when v_is_service_role then 'service_role'
+          else coalesce(nullif(nullif(session_user, 'postgres'), ''), 'system')
         end,
         'cascade_from_profile', (nullif(current_setting('educator_profiles.deleting_profile_id', true), '') = old.educator_id::text),
         'previous_status', old.status,
@@ -430,7 +437,7 @@ begin
 
     -- Anti-forgery guard: caller cannot specify a different moderator as verified_by
     if v_actor_id is not null and
-       coalesce(auth.jwt()->>'role', '') <> 'service_role' and
+       not v_is_service_role and
        new.verified_by is distinct from v_actor_id and
        (tg_op = 'INSERT' or old.status <> 'verified' or new.verified_by is distinct from old.verified_by) then
       raise exception 'Access denied: verified_by must match the authenticated moderator'

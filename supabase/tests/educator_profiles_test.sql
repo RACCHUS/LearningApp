@@ -751,6 +751,7 @@ insert into public.educator_verifications (
 -- Delete via service_role without authenticated user identity
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select set_config('request.jwt.claim.sub', '', true);
 
 select lives_ok(
@@ -763,6 +764,7 @@ select lives_ok(
 -- Switch to Moderator A to verify audit attribution
 set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"8f8c1a20-0000-4000-8000-000000000001"}', true);
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 
 select is(
