@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(88);
+select plan(93);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -695,14 +695,21 @@ select throws_ok(
   'service_role cannot delete educator_verification_audits (42501 append-only guard)'
 );
 
-set local role postgres;
-
 -- -----------------------------------------------------------------------------
--- 6.5 Audit Durability on Claim Deletion & Tombstone Audit Creation (3 tests)
+-- 6.5 Audit Durability on Claim Deletion & Tombstone Audit Creation (4 tests)
 -- -----------------------------------------------------------------------------
--- Claim deletion does not cascade-delete audit history, AND records a deletion tombstone
+-- Switch to authenticated moderator; exercises full RLS deletion policy
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
-delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011';
+
+-- 1. Authenticated moderator deletes credential through RLS
+select lives_ok(
+  $$
+    delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011'
+  $$,
+  'Authenticated moderator can delete credential through RLS'
+);
 
 select ok(
   (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011') >= 3,
@@ -723,7 +730,7 @@ select is(
 
 
 -- -----------------------------------------------------------------------------
--- 7. Follows & Gate 2 Protection (7 tests)
+-- 7. Follows, Follow-Read Policy & Gate 2 Protection (11 tests)
 -- -----------------------------------------------------------------------------
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
@@ -760,11 +767,36 @@ select throws_ok(
   'Duplicate follow rejected with 23505'
 );
 
--- 4. When Gate 2 is enabled, Learner B can follow an active educator
+-- 4. Follow-read policy while Gate 2 is closed:
+-- Teacher A (educator_id = auth.uid()) can see their own incoming followers even while Gate 2 is closed
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+select is(
+  (select count(*)::integer from public.educator_follows where educator_id = '8f8c1a20-0000-4000-8000-000000000002'),
+  1,
+  'Teacher A can see inbound followers while Gate 2 is closed (educator_id = auth.uid() owner visibility)'
+);
+
+-- 5. Learner B receives 0 follow records while Gate 2 is closed (learner isolation)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
+select is(
+  (select count(*)::integer from public.educator_follows),
+  0,
+  'Learner B receives 0 follow records while Gate 2 is closed (learner isolation)'
+);
+
+-- 6. When Gate 2 is enabled, Learner B can follow an active educator
 set local role postgres;
 insert into public.community_config (key, value)
 values ('educator_profiles_public_enabled', 'true')
 on conflict (key) do update set value = 'true';
+
+-- Seed active and expired verified credentials for Teacher A
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by, expires_at
+) values
+  ('00000000-0000-4000-8000-000000000021', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'ACTIVE-CERT-01', 'verified', now(), '8f8c1a20-0000-4000-8000-000000000001', now() + interval '1 year'),
+  ('00000000-0000-4000-8000-000000000022', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'EXPIRED-CERT-02', 'verified', now() - interval '2 years', '8f8c1a20-0000-4000-8000-000000000001', now() - interval '1 day')
+on conflict (id) do nothing;
 set local role authenticated;
 
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
@@ -776,13 +808,14 @@ select lives_ok(
   'Learner B can follow active educator once Gate 2 is enabled'
 );
 
+-- 7. Learner B has exactly 1 follow record after Gate 2 enablement
 select is(
   (select count(*)::integer from public.educator_follows where follower_id = '8f8c1a20-0000-4000-8000-000000000003'),
   1,
   'Learner B has exactly 1 follow record after Gate 2 enablement'
 );
 
--- 5. Self-follow rejected by check constraint (with Gate 2 enabled)
+-- 8. Self-follow rejected by check constraint (with Gate 2 enabled)
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
 select throws_ok(
   $$
@@ -794,7 +827,7 @@ select throws_ok(
   'Self-follow rejected with 23514 check constraint violation'
 );
 
--- 6. Following a user without an active profile is rejected even with Gate 2 enabled
+-- 9. Following a user without an active profile is rejected even with Gate 2 enabled
 -- Ensure Moderator B has a draft educator profile to satisfy foreign key educator_follows_educator_id_fkey
 set local role postgres;
 insert into public.educator_profiles (id, display_name, status)
@@ -811,6 +844,20 @@ select throws_ok(
   '42501',
   null,
   'Learner B cannot follow user without active educator profile (42501)'
+);
+
+-- 10. Public verification view includes active verified credential
+select is(
+  (select count(*)::integer from public.public_educator_verifications where id = '00000000-0000-4000-8000-000000000021'),
+  1,
+  'Active verified credential with future expires_at is visible in public_educator_verifications'
+);
+
+-- 11. Public verification view excludes expired verified credential
+select is(
+  (select count(*)::integer from public.public_educator_verifications where id = '00000000-0000-4000-8000-000000000022'),
+  0,
+  'Expired verified credential with past expires_at is excluded from public_educator_verifications'
 );
 
 -- Reset Gate 2 back to false

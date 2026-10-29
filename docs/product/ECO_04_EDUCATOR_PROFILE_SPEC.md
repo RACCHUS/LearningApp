@@ -108,6 +108,10 @@ $$;
    - Following is strictly gated by `private.is_educator_profiles_public_enabled()`. While Gate 2 is closed, ordinary learners cannot follow educators.
    - When Gate 2 is enabled, following is permitted only for target educators whose profiles are `status = 'active'`.
    - Self-follows are blocked at check constraint level (`follower_id <> educator_id`).
+   - Follow `SELECT` policy intentionally permits educator owner visibility (`educator_id = auth.uid()`):
+     - While Gate 2 is closed, followed educators can view their own incoming follower relationships to support private beta and pilot monitoring, while general learner visibility remains disabled.
+     - Platform moderators retain full operational visibility (`private.is_moderator()`).
+     - Once Gate 2 is open, both followers and educators can query their respective follow edges.
    - Minors cannot be followed or create educator profiles (enforced pre-condition for Gate 2 public enablement).
 
 ### 3.3 Column-Shielded Public Verification View (`public.public_educator_verifications`)
@@ -115,7 +119,7 @@ To protect internal reviewer identities and sensitive unredacted credential refe
 - A secure view `public.public_educator_verifications` with `security_invoker = false` exposes strictly:
   `id, educator_id, verification_type, subject_id, jurisdiction, issuer, status, verified_at, expires_at, created_at`.
 - Internal staff attribution (`verified_by`) and unredacted registration text (`credential_reference`) are omitted.
-- The view evaluates `private.is_educator_profiles_public_enabled() AND status = 'verified'`, returning 0 rows while Gate 2 is closed.
+- The view evaluates `private.is_educator_profiles_public_enabled() AND status = 'verified'`, requires that the educator profile is `active`, and enforces `(expires_at is null or expires_at > now())` so that expired credentials are never exposed publicly as verified. Returns 0 rows while Gate 2 is closed.
 
 ---
 
@@ -145,4 +149,4 @@ Before the global launch gate `educator_profiles_public_enabled` can be flipped 
 3. **Public Column Shielding & Verification Data Redaction**:
    Verification of the `public.public_educator_verifications` column-shielded view and ensuring any public references are validated and redacted prior to public display.
 4. **Zero Hosted Changes Pre-Launch**:
-   Production database baseline remains at 62 migrations with both `public_ugc_enabled` and `educator_profiles_public_enabled` locked at `false`.
+   Production database baseline remains at 62 migrations with Gate 1 (`public_ugc_enabled`) deployed and locked at `false`, and Gate 2 (`educator_profiles_public_enabled`) not yet deployed or present in production (the configuration key, educator profiles schema, tables, and views remain entirely absent until a future migration deployment).

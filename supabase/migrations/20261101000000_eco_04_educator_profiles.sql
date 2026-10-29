@@ -215,6 +215,7 @@ select
 from public.educator_verifications
 where private.is_educator_profiles_public_enabled()
   and status = 'verified'
+  and (expires_at is null or expires_at > now())
   and exists (
     select 1 from public.educator_profiles ep
     where ep.id = educator_verifications.educator_id
