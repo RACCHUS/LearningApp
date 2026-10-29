@@ -129,7 +129,7 @@ create table if not exists public.educator_verification_audits (
   action text not null check (action in (
     'unverified', 'pending', 'verified', 'rejected', 'expired', 'revoked',
     'submit', 'resubmit', 'verify', 'reject', 'expire', 'revoke', 'unverify',
-    'status_transition'
+    'status_transition', 'deleted', 'delete'
   )),
   previous_status text not null,
   new_status text not null,
@@ -306,7 +306,46 @@ begin
     end if;
   end if;
 
+  -- ---------------------------------------------------------------------------
+  -- Deletion Audit Tombstone:
+  -- Any authorized deletion of a credential (by owner or moderator) records
+  -- an immutable tombstone audit event capturing the deleting actor and previous status.
+  -- ---------------------------------------------------------------------------
   if tg_op = 'DELETE' then
+    v_reviewer_id := coalesce(v_actor_id, old.verified_by);
+
+    insert into public.educator_verification_audits (
+      verification_id,
+      educator_id,
+      reviewer_id,
+      action,
+      previous_status,
+      new_status,
+      notes,
+      internal_notes,
+      metadata
+    ) values (
+      old.id,
+      old.educator_id,
+      v_reviewer_id,
+      'deleted',
+      old.status,
+      'deleted',
+      nullif(current_setting('educator_verifications.audit_notes', true), ''),
+      nullif(current_setting('educator_verifications.audit_internal_notes', true), ''),
+      jsonb_strip_nulls(jsonb_build_object(
+        'deleted_at', now(),
+        'deleted_by', v_actor_id,
+        'previous_status', old.status,
+        'verification_type', old.verification_type,
+        'issuer', old.issuer,
+        'subject_id', old.subject_id,
+        'original_verified_by', old.verified_by,
+        'original_verified_at', old.verified_at,
+        'original_expires_at', old.expires_at
+      ))
+    );
+
     return old;
   end if;
 
@@ -614,9 +653,16 @@ create policy educator_follows_select on public.educator_follows
   for select
   to authenticated
   using (
-    follower_id = auth.uid()
-    or educator_id = auth.uid()
-    or private.is_moderator()
+    (
+      follower_id = auth.uid()
+      or educator_id = auth.uid()
+      or private.is_moderator()
+    )
+    and (
+      private.is_moderator()
+      or educator_id = auth.uid()
+      or private.is_educator_profiles_public_enabled()
+    )
   );
 
 create policy educator_follows_insert on public.educator_follows
@@ -624,6 +670,17 @@ create policy educator_follows_insert on public.educator_follows
   to authenticated
   with check (
     follower_id = auth.uid()
+    and (
+      private.is_moderator()
+      or (
+        private.is_educator_profiles_public_enabled()
+        and exists (
+          select 1 from public.educator_profiles ep
+          where ep.id = educator_follows.educator_id
+            and ep.status = 'active'
+        )
+      )
+    )
   );
 
 create policy educator_follows_delete on public.educator_follows

@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(83);
+select plan(88);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -698,9 +698,9 @@ select throws_ok(
 set local role postgres;
 
 -- -----------------------------------------------------------------------------
--- 6.5 Audit Durability on Claim Deletion (1 test)
+-- 6.5 Audit Durability on Claim Deletion & Tombstone Audit Creation (3 tests)
 -- -----------------------------------------------------------------------------
--- Claim deletion does not cascade-delete audit history
+-- Claim deletion does not cascade-delete audit history, AND records a deletion tombstone
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000011';
 
@@ -709,39 +709,57 @@ select ok(
   'Verification audits are preserved independently after credential claim deletion (no cascading delete)'
 );
 
-
--- -----------------------------------------------------------------------------
--- 7. Follows & Anti-Self-Follow Checks (4 tests)
--- -----------------------------------------------------------------------------
-select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
-
--- Learner B follows Teacher A
-select lives_ok(
-  $$
-    insert into public.educator_follows (follower_id, educator_id)
-    values ('8f8c1a20-0000-4000-8000-000000000003', '8f8c1a20-0000-4000-8000-000000000002')
-  $$,
-  'Learner B can follow Teacher A'
+select is(
+  (select count(*)::integer from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'deleted'),
+  1,
+  'Credential deletion creates an immutable tombstone audit event with action = deleted'
 );
 
 select is(
-  (select count(*)::integer from public.educator_follows where follower_id = '8f8c1a20-0000-4000-8000-000000000003'),
-  1,
-  'Learner B has exactly 1 follow record'
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000011' and action = 'deleted'),
+  '8f8c1a20-0000-4000-8000-000000000001'::uuid,
+  'Deletion audit records deleting moderator as reviewer_id'
 );
 
--- Duplicate follow rejected
+
+-- -----------------------------------------------------------------------------
+-- 7. Follows & Gate 2 Protection (7 tests)
+-- -----------------------------------------------------------------------------
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
+
+-- 1. Learner B cannot follow Teacher A while Gate 2 is closed
 select throws_ok(
   $$
     insert into public.educator_follows (follower_id, educator_id)
     values ('8f8c1a20-0000-4000-8000-000000000003', '8f8c1a20-0000-4000-8000-000000000002')
+  $$,
+  '42501',
+  null,
+  'Learner B cannot follow educator while Gate 2 is closed (42501)'
+);
+
+-- 2. Moderator can follow Teacher A for operational testing
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$
+    insert into public.educator_follows (follower_id, educator_id)
+    values ('8f8c1a20-0000-4000-8000-000000000001', '8f8c1a20-0000-4000-8000-000000000002')
+  $$,
+  'Moderator A can insert follow for operational testing'
+);
+
+-- 3. Duplicate follow rejected
+select throws_ok(
+  $$
+    insert into public.educator_follows (follower_id, educator_id)
+    values ('8f8c1a20-0000-4000-8000-000000000001', '8f8c1a20-0000-4000-8000-000000000002')
   $$,
   '23505',
   null,
   'Duplicate follow rejected with 23505'
 );
 
--- Self-follow rejected by check constraint
+-- 4. Self-follow rejected by check constraint
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
 select throws_ok(
   $$
@@ -752,5 +770,39 @@ select throws_ok(
   null,
   'Self-follow rejected with 23514 check constraint violation'
 );
+
+-- 5. When Gate 2 is enabled, Learner B can follow an active educator
+insert into public.community_config (key, value)
+values ('educator_profiles_public_enabled', 'true')
+on conflict (key) do update set value = 'true';
+
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
+select lives_ok(
+  $$
+    insert into public.educator_follows (follower_id, educator_id)
+    values ('8f8c1a20-0000-4000-8000-000000000003', '8f8c1a20-0000-4000-8000-000000000002')
+  $$,
+  'Learner B can follow active educator once Gate 2 is enabled'
+);
+
+select is(
+  (select count(*)::integer from public.educator_follows where follower_id = '8f8c1a20-0000-4000-8000-000000000003'),
+  1,
+  'Learner B has exactly 1 follow record after Gate 2 enablement'
+);
+
+-- 6. Following a user without an active profile is rejected even with Gate 2 enabled
+select throws_ok(
+  $$
+    insert into public.educator_follows (follower_id, educator_id)
+    values ('8f8c1a20-0000-4000-8000-000000000003', '8f8c1a20-0000-4000-8000-000000000004')
+  $$,
+  '42501',
+  null,
+  'Learner B cannot follow user without active educator profile (42501)'
+);
+
+-- Reset Gate 2 back to false
+update public.community_config set value = 'false' where key = 'educator_profiles_public_enabled';
 
 rollback;

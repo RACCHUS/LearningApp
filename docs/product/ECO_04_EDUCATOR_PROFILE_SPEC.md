@@ -103,9 +103,12 @@ $$;
    - Only platform moderators can update `status` to `'verified'`, and must match `verified_by` (anti-forgery).
    - Normal users can insert or update records only with `status in ('unverified', 'pending')`.
    - Verified, rejected, and revoked records are immutable and cannot be deleted by non-moderators.
+   - All authorized credential deletions (by owner or moderator) generate an immutable tombstone audit record in `educator_verification_audits` capturing the actor, previous status, and credential metadata.
 3. **Follows**:
-   - Minors cannot be followed or create educator profiles.
-   - Self-follows are blocked at both trigger and check constraint levels.
+   - Following is strictly gated by `private.is_educator_profiles_public_enabled()`. While Gate 2 is closed, ordinary learners cannot follow educators.
+   - When Gate 2 is enabled, following is permitted only for target educators whose profiles are `status = 'active'`.
+   - Self-follows are blocked at check constraint level (`follower_id <> educator_id`).
+   - Minors cannot be followed or create educator profiles (enforced pre-condition for Gate 2 public enablement).
 
 ### 3.3 Column-Shielded Public Verification View (`public.public_educator_verifications`)
 To protect internal reviewer identities and sensitive unredacted credential references, public access is never granted directly to the base `educator_verifications` table.
