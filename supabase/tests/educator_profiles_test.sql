@@ -760,19 +760,7 @@ select throws_ok(
   'Duplicate follow rejected with 23505'
 );
 
--- 4. Self-follow rejected by check constraint
-select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
-select throws_ok(
-  $$
-    insert into public.educator_follows (follower_id, educator_id)
-    values ('8f8c1a20-0000-4000-8000-000000000002', '8f8c1a20-0000-4000-8000-000000000002')
-  $$,
-  '23514',
-  null,
-  'Self-follow rejected with 23514 check constraint violation'
-);
-
--- 5. When Gate 2 is enabled, Learner B can follow an active educator
+-- 4. When Gate 2 is enabled, Learner B can follow an active educator
 set local role postgres;
 insert into public.community_config (key, value)
 values ('educator_profiles_public_enabled', 'true')
@@ -792,6 +780,18 @@ select is(
   (select count(*)::integer from public.educator_follows where follower_id = '8f8c1a20-0000-4000-8000-000000000003'),
   1,
   'Learner B has exactly 1 follow record after Gate 2 enablement'
+);
+
+-- 5. Self-follow rejected by check constraint (with Gate 2 enabled)
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+select throws_ok(
+  $$
+    insert into public.educator_follows (follower_id, educator_id)
+    values ('8f8c1a20-0000-4000-8000-000000000002', '8f8c1a20-0000-4000-8000-000000000002')
+  $$,
+  '23514',
+  null,
+  'Self-follow rejected with 23514 check constraint violation'
 );
 
 -- 6. Following a user without an active profile is rejected even with Gate 2 enabled
