@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(93);
+select plan(104);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -728,6 +728,55 @@ select is(
   'Deletion audit records deleting moderator as reviewer_id'
 );
 
+-- -----------------------------------------------------------------------------
+-- 6.6 System / Service-Role Deletion Audit Attribution (3 tests)
+-- -----------------------------------------------------------------------------
+-- Seed a verified credential for Teacher A by Moderator A
+set local role postgres;
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by
+) values (
+  '00000000-0000-4000-8000-000000000019',
+  '8f8c1a20-0000-4000-8000-000000000002',
+  'licensed_credential',
+  'FL',
+  'Florida DOE',
+  'SYSTEM-DEL-CERT',
+  'verified',
+  now(),
+  '8f8c1a20-0000-4000-8000-000000000001'
+);
+
+-- Delete via service_role without authenticated user identity
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+select set_config('request.jwt.claim.sub', '', true);
+
+select lives_ok(
+  $$
+    delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000019'
+  $$,
+  'service_role can delete credential for maintenance/cleanup'
+);
+
+-- Switch to Moderator A to verify audit attribution
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+select is(
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000019' and action = 'deleted'),
+  null,
+  'System/service_role deletion records NULL reviewer_id (never falsely attributes to original verifier)'
+);
+
+select is(
+  (select metadata->>'deleted_by_role' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000019' and action = 'deleted'),
+  'service_role',
+  'System/service_role deletion captures deleted_by_role = service_role in metadata'
+);
+
 
 -- -----------------------------------------------------------------------------
 -- 7. Follows, Follow-Read Policy & Gate 2 Protection (11 tests)
@@ -796,7 +845,9 @@ insert into public.educator_verifications (
   id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by, expires_at
 ) values
   ('00000000-0000-4000-8000-000000000021', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'ACTIVE-CERT-01', 'verified', now(), '8f8c1a20-0000-4000-8000-000000000001', now() + interval '1 year'),
-  ('00000000-0000-4000-8000-000000000022', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'EXPIRED-CERT-02', 'verified', now() - interval '2 years', '8f8c1a20-0000-4000-8000-000000000001', now() - interval '1 day')
+  ('00000000-0000-4000-8000-000000000022', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'EXPIRED-CERT-02', 'verified', now() - interval '2 years', '8f8c1a20-0000-4000-8000-000000000001', now() - interval '1 day'),
+  ('00000000-0000-4000-8000-000000000023', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'REJECTED-CERT-03', 'rejected', null, null, null),
+  ('00000000-0000-4000-8000-000000000024', '8f8c1a20-0000-4000-8000-000000000002', 'licensed_credential', 'FL', 'Florida DOE', 'REVOKED-CERT-04', 'revoked', null, null, null)
 on conflict (id) do nothing;
 set local role authenticated;
 
@@ -859,6 +910,74 @@ select is(
   (select count(*)::integer from public.public_educator_verifications where id = '00000000-0000-4000-8000-000000000022'),
   0,
   'Expired verified credential with past expires_at is excluded from public_educator_verifications'
+);
+
+-- -----------------------------------------------------------------------------
+-- 8. Owner Profile Deletion Cascade & Credential Deletion Guards (8 tests)
+-- -----------------------------------------------------------------------------
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000002', true);
+
+-- 1. Direct deletion of verified credential by owner is rejected
+select throws_ok(
+  $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000021' $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Owner cannot directly delete verified credential (42501)'
+);
+
+-- 2. Direct deletion of rejected credential by owner is rejected
+select throws_ok(
+  $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000023' $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Owner cannot directly delete rejected credential (42501)'
+);
+
+-- 3. Direct deletion of revoked credential by owner is rejected
+select throws_ok(
+  $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000024' $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Owner cannot directly delete revoked credential (42501)'
+);
+
+-- 4. Authenticated owner deletes their own educator profile (cascades over verifications)
+select lives_ok(
+  $$ delete from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002' $$,
+  'Authenticated owner can delete profile cascading over verified, rejected, and revoked credentials'
+);
+
+-- 5. Profile is completely deleted
+select is(
+  (select count(*)::integer from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002'),
+  0,
+  'Teacher A educator profile is deleted'
+);
+
+-- 6. Verifications are cascaded and deleted
+select is(
+  (select count(*)::integer from public.educator_verifications where educator_id = '8f8c1a20-0000-4000-8000-000000000002'),
+  0,
+  'Teacher A credentials are cascaded and deleted'
+);
+
+-- Switch to Moderator A to inspect the immutable audit log
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+-- 7. Deletion tombstone audits exist for all cascaded credentials with reviewer_id IS NULL
+select is(
+  (select count(*)::integer from public.educator_verification_audits where educator_id = '8f8c1a20-0000-4000-8000-000000000002' and action = 'deleted' and metadata->>'cascade_from_profile' = 'true' and reviewer_id is null),
+  6,
+  'Tombstone audits created for all 6 cascaded credentials with reviewer_id IS NULL'
+);
+
+-- 8. Tombstone audits capture cascade_from_profile = true and deleted_by_role = owner
+select is(
+  (select count(*)::integer from public.educator_verification_audits where educator_id = '8f8c1a20-0000-4000-8000-000000000002' and action = 'deleted' and metadata->>'cascade_from_profile' = 'true' and metadata->>'deleted_by_role' = 'owner'),
+  6,
+  'Tombstone audits record cascade_from_profile = true and deleted_by_role = owner'
 );
 
 -- Reset Gate 2 back to false

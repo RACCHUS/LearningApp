@@ -74,6 +74,51 @@ create trigger trg_educator_profiles_updated_at
   for each row
   execute function private.handle_educator_profile_updated_at();
 
+-- Profile deletion cascade tracking triggers:
+-- Captures profile ID in a transaction-local setting during delete so that
+-- cascading foreign key deletes on educator_verifications know they are part of profile deletion.
+create or replace function private.handle_educator_profile_before_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform set_config('educator_profiles.deleting_profile_id', old.id::text, true);
+  return old;
+end;
+$$;
+
+create or replace function private.handle_educator_profile_after_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform set_config('educator_profiles.deleting_profile_id', '', true);
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_educator_profile_before_delete on public.educator_profiles;
+create trigger trg_educator_profile_before_delete
+  before delete on public.educator_profiles
+  for each row
+  execute function private.handle_educator_profile_before_delete();
+
+drop trigger if exists trg_educator_profile_after_delete on public.educator_profiles;
+create trigger trg_educator_profile_after_delete
+  after delete on public.educator_profiles
+  for each row
+  execute function private.handle_educator_profile_after_delete();
+
+revoke all on function private.handle_educator_profile_before_delete() from public, anon;
+grant execute on function private.handle_educator_profile_before_delete() to authenticated, service_role;
+
+revoke all on function private.handle_educator_profile_after_delete() from public, anon;
+grant execute on function private.handle_educator_profile_after_delete() to authenticated, service_role;
+
 -- -----------------------------------------------------------------------------
 -- 3. Educator Subjects Association Table (Teacher doesn't own the subject)
 -- -----------------------------------------------------------------------------
@@ -275,17 +320,19 @@ begin
     end if;
 
     -- 2. Non-moderators can only set status to 'unverified' or 'pending'
-    if new.status not in ('unverified', 'pending') and
-       (old is null or old.status is distinct from new.status) then
-      raise exception 'Access denied: only moderators can make moderation decisions (verified, rejected, expired, revoked)'
-        using errcode = '42501';
-    end if;
+    if tg_op in ('INSERT', 'UPDATE') then
+      if new.status not in ('unverified', 'pending') and
+         (old is null or old.status is distinct from new.status) then
+        raise exception 'Access denied: only moderators can make moderation decisions (verified, rejected, expired, revoked)'
+          using errcode = '42501';
+      end if;
 
-    -- Non-moderators can never set or alter verified_at / verified_by
-    if (old is null and (new.verified_at is not null or new.verified_by is not null)) or
-       (old is not null and (new.verified_at is distinct from old.verified_at or new.verified_by is distinct from old.verified_by)) then
-      raise exception 'Access denied: only moderators can verify credentials'
-        using errcode = '42501';
+      -- Non-moderators can never set or alter verified_at / verified_by
+      if (old is null and (new.verified_at is not null or new.verified_by is not null)) or
+         (old is not null and (new.verified_at is distinct from old.verified_at or new.verified_by is distinct from old.verified_by)) then
+        raise exception 'Access denied: only moderators can verify credentials'
+          using errcode = '42501';
+      end if;
     end if;
 
     -- 3. Non-moderators can never transition out of 'rejected' or 'revoked' back into verified or decision states
@@ -300,20 +347,27 @@ begin
         using errcode = '42501';
     end if;
 
-    -- 5. Non-moderators can never delete verified, rejected, or revoked credentials
+    -- 5. Non-moderators can never delete verified, rejected, or revoked credentials directly,
+    -- UNLESS the deletion is cascading from an authorized deletion of their own educator profile.
     if tg_op = 'DELETE' and old.status in ('verified', 'rejected', 'revoked') then
-      raise exception 'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators'
-        using errcode = '42501';
+      if nullif(current_setting('educator_profiles.deleting_profile_id', true), '') is distinct from old.educator_id::text then
+        raise exception 'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators'
+          using errcode = '42501';
+      end if;
     end if;
   end if;
 
   -- ---------------------------------------------------------------------------
   -- Deletion Audit Tombstone:
-  -- Any authorized deletion of a credential (by owner or moderator) records
-  -- an immutable tombstone audit event capturing the deleting actor and previous status.
+  -- Any authorized deletion of a credential (by owner, moderator, or system cascade)
+  -- records an immutable tombstone audit event capturing the actor and previous status.
   -- ---------------------------------------------------------------------------
   if tg_op = 'DELETE' then
-    v_reviewer_id := coalesce(v_actor_id, old.verified_by);
+    if v_is_moderator then
+      v_reviewer_id := v_actor_id;
+    else
+      v_reviewer_id := null;
+    end if;
 
     insert into public.educator_verification_audits (
       verification_id,
@@ -337,6 +391,13 @@ begin
       jsonb_strip_nulls(jsonb_build_object(
         'deleted_at', now(),
         'deleted_by', v_actor_id,
+        'deleted_by_role', case
+          when v_is_moderator then 'moderator'
+          when v_actor_id is not null and v_actor_id = old.educator_id then 'owner'
+          when coalesce(auth.jwt()->>'role', '') = 'service_role' then 'service_role'
+          else coalesce(nullif(current_user, ''), 'system')
+        end,
+        'cascade_from_profile', (nullif(current_setting('educator_profiles.deleting_profile_id', true), '') = old.educator_id::text),
         'previous_status', old.status,
         'verification_type', old.verification_type,
         'issuer', old.issuer,

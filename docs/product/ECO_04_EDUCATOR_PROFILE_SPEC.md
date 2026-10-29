@@ -98,12 +98,16 @@ $$;
    - `SELECT`: `id = auth.uid() OR private.is_moderator() OR (private.is_educator_profiles_public_enabled() AND status = 'active')`
    - `INSERT`: `id = auth.uid()`
    - `UPDATE`: `id = auth.uid() OR private.is_moderator()`
+   - `DELETE`: `id = auth.uid() OR private.is_moderator()`
+     - Profile deletion cascades to dependent subjects, follows, and verifications.
+     - When an authenticated owner deletes their profile, cascading credential deletions generate durable tombstone audits without blocking deletion, preserving complete historical governance evidence.
 2. **Educator Verifications (Base Table RLS)**:
    - Direct table `SELECT` is strictly restricted to the credential owner (`educator_id = auth.uid()`) and platform moderators (`private.is_moderator()`).
    - Only platform moderators can update `status` to `'verified'`, and must match `verified_by` (anti-forgery).
    - Normal users can insert or update records only with `status in ('unverified', 'pending')`.
-   - Verified, rejected, and revoked records are immutable and cannot be deleted by non-moderators.
-   - All authorized credential deletions (by owner or moderator) generate an immutable tombstone audit record in `educator_verification_audits` capturing the actor, previous status, and credential metadata.
+   - Verified, rejected, and revoked records are immutable and cannot be directly deleted by non-moderators (preventing cherry-picking or evading moderation records).
+   - Direct deletion of verified/rejected/revoked records is reserved for platform moderators; owner deletion of these records is permitted strictly via profile deletion cascade.
+   - All authorized credential deletions (by owner, moderator, or system cascade) generate an immutable tombstone audit record in `educator_verification_audits`. Human moderator attribution (`reviewer_id`) is strictly reserved for verified human moderators (`private.is_moderator()`), while owner cascades or system/service-role deletions record `reviewer_id = null` with explicit actor role tracking in metadata (`deleted_by_role`) to prevent false attribution to earlier verifiers.
 3. **Follows**:
    - Following is strictly gated by `private.is_educator_profiles_public_enabled()`. While Gate 2 is closed, ordinary learners cannot follow educators.
    - When Gate 2 is enabled, following is permitted only for target educators whose profiles are `status = 'active'`.
