@@ -725,6 +725,7 @@ select is(
 -- -----------------------------------------------------------------------------
 -- 7. Follows & Gate 2 Protection (7 tests)
 -- -----------------------------------------------------------------------------
+set local role authenticated;
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
 
 -- 1. Learner B cannot follow Teacher A while Gate 2 is closed
@@ -772,9 +773,11 @@ select throws_ok(
 );
 
 -- 5. When Gate 2 is enabled, Learner B can follow an active educator
+set local role postgres;
 insert into public.community_config (key, value)
 values ('educator_profiles_public_enabled', 'true')
 on conflict (key) do update set value = 'true';
+set local role authenticated;
 
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
 select lives_ok(
@@ -792,6 +795,14 @@ select is(
 );
 
 -- 6. Following a user without an active profile is rejected even with Gate 2 enabled
+-- Ensure Moderator B has a draft educator profile to satisfy foreign key educator_follows_educator_id_fkey
+set local role postgres;
+insert into public.educator_profiles (id, display_name, status)
+values ('8f8c1a20-0000-4000-8000-000000000004', 'Draft Educator', 'draft')
+on conflict (id) do update set status = 'draft';
+set local role authenticated;
+
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000003', true);
 select throws_ok(
   $$
     insert into public.educator_follows (follower_id, educator_id)
@@ -803,6 +814,7 @@ select throws_ok(
 );
 
 -- Reset Gate 2 back to false
+set local role postgres;
 update public.community_config set value = 'false' where key = 'educator_profiles_public_enabled';
 
 rollback;
