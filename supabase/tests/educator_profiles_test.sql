@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(104);
+select plan(107);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -729,7 +729,7 @@ select is(
 );
 
 -- -----------------------------------------------------------------------------
--- 6.6 System / Service-Role Deletion Audit Attribution (3 tests)
+-- 6.6 System / Service-Role Deletion Audit Attribution (6 tests)
 -- -----------------------------------------------------------------------------
 -- Seed a verified credential for Teacher A by Moderator A
 set local role postgres;
@@ -777,6 +777,54 @@ select is(
   (select metadata->>'deleted_by_role' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000019' and action = 'deleted'),
   'service_role',
   'System/service_role deletion captures deleted_by_role = service_role in metadata'
+);
+
+-- Seed another verified credential for Teacher A by Moderator A
+set local role postgres;
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by
+) values (
+  '00000000-0000-4000-8000-000000000020',
+  '8f8c1a20-0000-4000-8000-000000000002',
+  'licensed_credential',
+  'FL',
+  'Florida DOE',
+  'SERVICE-ROLE-MOD-RETAINED',
+  'verified',
+  now(),
+  '8f8c1a20-0000-4000-8000-000000000001'
+);
+
+-- Delete via service_role WHILE retaining moderator user identity in claims/sub
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+select set_config('request.jwt.claims', '{"role":"service_role","sub":"8f8c1a20-0000-4000-8000-000000000001"}', true);
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+select lives_ok(
+  $$
+    delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000020'
+  $$,
+  'service_role can delete credential even when retaining moderator identity in claims'
+);
+
+-- Switch to Moderator A to verify audit attribution precedence
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"8f8c1a20-0000-4000-8000-000000000001"}', true);
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+select is(
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000020' and action = 'deleted'),
+  null,
+  'Service-role deletion retaining moderator identity records NULL reviewer_id (service-role precedence)'
+);
+
+select is(
+  (select metadata->>'deleted_by_role' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000020' and action = 'deleted'),
+  'service_role',
+  'Service-role deletion retaining moderator identity captures deleted_by_role = service_role in metadata'
 );
 
 

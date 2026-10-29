@@ -370,7 +370,9 @@ begin
   -- records an immutable tombstone audit event capturing the actor and previous status.
   -- ---------------------------------------------------------------------------
   if tg_op = 'DELETE' then
-    if v_is_moderator then
+    if v_is_service_role then
+      v_reviewer_id := null;
+    elsif v_is_moderator then
       v_reviewer_id := v_actor_id;
     else
       v_reviewer_id := null;
@@ -399,9 +401,9 @@ begin
         'deleted_at', now(),
         'deleted_by', v_actor_id,
         'deleted_by_role', case
+          when v_is_service_role then 'service_role'
           when v_is_moderator then 'moderator'
           when v_actor_id is not null and v_actor_id = old.educator_id then 'owner'
-          when v_is_service_role then 'service_role'
           else coalesce(nullif(nullif(session_user, 'postgres'), ''), 'system')
         end,
         'cascade_from_profile', (nullif(current_setting('educator_profiles.deleting_profile_id', true), '') = old.educator_id::text),
@@ -485,7 +487,13 @@ begin
   end if;
 
   if v_should_audit then
-    v_reviewer_id := coalesce(v_actor_id, new.verified_by, case when tg_op = 'UPDATE' then old.verified_by else null end);
+    if v_is_service_role then
+      v_reviewer_id := null;
+    elsif v_is_moderator then
+      v_reviewer_id := v_actor_id;
+    else
+      v_reviewer_id := coalesce(v_actor_id, new.verified_by, case when tg_op = 'UPDATE' then old.verified_by else null end);
+    end if;
 
     insert into public.educator_verification_audits (
       verification_id,
