@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(107);
+select plan(115);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -993,20 +993,44 @@ select throws_ok(
   'Owner cannot directly delete revoked credential (42501)'
 );
 
--- 4. Authenticated owner deletes their own educator profile (cascades over verifications)
+-- 4. Setting custom deleting_profile_id GUC directly cannot bypass deletion guard
+select set_config('educator_profiles.deleting_profile_id', '8f8c1a20-0000-4000-8000-000000000002', true);
+select throws_ok(
+  $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000021' $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Setting custom deleting_profile_id GUC directly cannot bypass deletion guard (42501)'
+);
+
+-- 5. Spoofing service-role JWT claim settings while authenticated cannot bypass deletion guard
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claims', '{"role":"service_role","sub":"8f8c1a20-0000-4000-8000-000000000002"}', true);
+select throws_ok(
+  $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000021' $$,
+  '42501',
+  'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
+  'Spoofing service-role JWT claim settings while authenticated cannot bypass deletion guard (42501)'
+);
+
+-- Restore authenticated claims
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"8f8c1a20-0000-4000-8000-000000000002"}', true);
+select set_config('educator_profiles.deleting_profile_id', '', true);
+
+-- 6. Authenticated owner deletes their own educator profile (cascades over verifications)
 select lives_ok(
   $$ delete from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002' $$,
   'Authenticated owner can delete profile cascading over verified, rejected, and revoked credentials'
 );
 
--- 5. Profile is completely deleted
+-- 7. Profile is completely deleted
 select is(
   (select count(*)::integer from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002'),
   0,
   'Teacher A educator profile is deleted'
 );
 
--- 6. Verifications are cascaded and deleted
+-- 8. Verifications are cascaded and deleted
 select is(
   (select count(*)::integer from public.educator_verifications where educator_id = '8f8c1a20-0000-4000-8000-000000000002'),
   0,
@@ -1016,18 +1040,86 @@ select is(
 -- Switch to Moderator A to inspect the immutable audit log
 select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
 
--- 7. Deletion tombstone audits exist for all cascaded credentials with reviewer_id IS NULL
+-- 9. Deletion tombstone audits exist for all cascaded credentials with reviewer_id IS NULL
 select is(
   (select count(*)::integer from public.educator_verification_audits where educator_id = '8f8c1a20-0000-4000-8000-000000000002' and action = 'deleted' and metadata->>'cascade_from_profile' = 'true' and reviewer_id is null),
   6,
   'Tombstone audits created for all 6 cascaded credentials with reviewer_id IS NULL'
 );
 
--- 8. Tombstone audits capture cascade_from_profile = true and deleted_by_role = owner
+-- 10. Tombstone audits capture cascade_from_profile = true and deleted_by_role = owner
 select is(
   (select count(*)::integer from public.educator_verification_audits where educator_id = '8f8c1a20-0000-4000-8000-000000000002' and action = 'deleted' and metadata->>'cascade_from_profile' = 'true' and metadata->>'deleted_by_role' = 'owner'),
   6,
   'Tombstone audits record cascade_from_profile = true and deleted_by_role = owner'
+);
+
+-- -----------------------------------------------------------------------------
+-- 8.1 Moderator Educator Profile Self-Deletion Cascade (6 tests)
+-- -----------------------------------------------------------------------------
+-- Seed an educator profile and verified credential for Moderator A
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"8f8c1a20-0000-4000-8000-000000000001"}', true);
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000001', true);
+
+insert into public.educator_profiles (id, display_name, status)
+values ('8f8c1a20-0000-4000-8000-000000000001', 'Moderator Educator', 'active')
+on conflict (id) do update set status = 'active';
+
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by
+) values (
+  '00000000-0000-4000-8000-000000000030',
+  '8f8c1a20-0000-4000-8000-000000000001',
+  'licensed_credential',
+  'FL',
+  'Florida DOE',
+  'MODERATOR-OWNED-CERT',
+  'verified',
+  now(),
+  '8f8c1a20-0000-4000-8000-000000000001'
+);
+
+-- 11. Moderator A deletes their own educator profile
+select lives_ok(
+  $$ delete from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000001' $$,
+  'Moderator can delete their own educator profile cascading over credentials'
+);
+
+-- 12. Moderator A profile is deleted
+select is(
+  (select count(*)::integer from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000001'),
+  0,
+  'Moderator educator profile is deleted'
+);
+
+-- 13. Moderator A credential is cascaded and deleted
+select is(
+  (select count(*)::integer from public.educator_verifications where id = '00000000-0000-4000-8000-000000000030'),
+  0,
+  'Moderator owned credential is cascaded and deleted'
+);
+
+-- 14. Tombstone audit for moderator self-deletion has reviewer_id IS NULL (owner cascade precedence)
+select is(
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000030' and action = 'deleted'),
+  null,
+  'Moderator profile cascade records NULL reviewer_id (owner cascade precedence)'
+);
+
+-- 15. Tombstone audit for moderator self-deletion captures deleted_by_role = owner (not moderator)
+select is(
+  (select metadata->>'deleted_by_role' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000030' and action = 'deleted'),
+  'owner',
+  'Moderator profile cascade captures deleted_by_role = owner in metadata'
+);
+
+-- 16. Tombstone audit captures cascade_from_profile = true
+select is(
+  (select metadata->>'cascade_from_profile' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000030' and action = 'deleted'),
+  'true',
+  'Moderator profile cascade captures cascade_from_profile = true in metadata'
 );
 
 -- Reset Gate 2 back to false

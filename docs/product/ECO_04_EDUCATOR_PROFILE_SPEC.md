@@ -101,13 +101,16 @@ $$;
    - `DELETE`: `id = auth.uid() OR private.is_moderator()`
      - Profile deletion cascades to dependent subjects, follows, and verifications.
      - When an authenticated owner deletes their profile, cascading credential deletions generate durable tombstone audits without blocking deletion, preserving complete historical governance evidence.
+     - Cascade authorization is derived strictly from trusted database execution context (`pg_trigger_depth() > 1` and parent registration in `private.active_profile_deletions`), preventing callers from spoofing cascade privileges via mutable session settings.
 2. **Educator Verifications (Base Table RLS)**:
    - Direct table `SELECT` is strictly restricted to the credential owner (`educator_id = auth.uid()`) and platform moderators (`private.is_moderator()`).
    - Only platform moderators can update `status` to `'verified'`, and must match `verified_by` (anti-forgery).
    - Normal users can insert or update records only with `status in ('unverified', 'pending')`.
    - Verified, rejected, and revoked records are immutable and cannot be directly deleted by non-moderators (preventing cherry-picking or evading moderation records).
    - Direct deletion of verified/rejected/revoked records is reserved for platform moderators; owner deletion of these records is permitted strictly via profile deletion cascade.
-   - All authorized credential deletions (by owner, moderator, or system cascade) generate an immutable tombstone audit record in `educator_verification_audits`. Service-role operations take strict precedence over human attribution (`reviewer_id = null` and `deleted_by_role = 'service_role'`) even if request claims retain an authenticated moderator identity. Human moderator attribution (`reviewer_id`) is strictly reserved for human moderators directly performing the action (`private.is_moderator()`), while owner cascades or system/service-role deletions record `reviewer_id = null` with explicit actor role tracking in metadata (`deleted_by_role`) to prevent false attribution to earlier verifiers.
+   - All authorized credential deletions (by owner, moderator, or system cascade) generate an immutable tombstone audit record in `educator_verification_audits`.
+   - Service-role operations take strict precedence over human attribution (`reviewer_id = null` and `deleted_by_role = 'service_role'`) based on trusted database session role (`current_setting('role') = 'service_role'`), preventing callers from obtaining service-role exemptions via mutable JWT claim settings.
+   - Owner-initiated profile cascades (including when a moderator deletes their own educator profile) take strict precedence over moderator role attribution, recording `reviewer_id = null`, `deleted_by_role = 'owner'`, and `cascade_from_profile = true`. Human moderator attribution (`reviewer_id = moderator_uid` and `deleted_by_role = 'moderator'`) is strictly reserved for human moderators directly performing an administrative deletion of an individual credential.
 3. **Follows**:
    - Following is strictly gated by `private.is_educator_profiles_public_enabled()`. While Gate 2 is closed, ordinary learners cannot follow educators.
    - When Gate 2 is enabled, following is permitted only for target educators whose profiles are `status = 'active'`.

@@ -74,9 +74,18 @@ create trigger trg_educator_profiles_updated_at
   for each row
   execute function private.handle_educator_profile_updated_at();
 
+-- Trusted tracking table for active educator profile deletions:
+-- Stored in private schema with privileges revoked from public, anon, authenticated, and service_role.
+-- Derived strictly from trusted database trigger execution context.
+create table if not exists private.active_profile_deletions (
+  profile_id uuid primary key
+);
+
+revoke all on table private.active_profile_deletions from public, anon, authenticated, service_role;
+
 -- Profile deletion cascade tracking triggers:
--- Captures profile ID in a transaction-local setting during delete so that
--- cascading foreign key deletes on educator_verifications know they are part of profile deletion.
+-- Records profile ID in trusted private.active_profile_deletions table during delete so that
+-- cascading foreign key deletes on educator_verifications know they are part of a verified profile deletion.
 create or replace function private.handle_educator_profile_before_delete()
 returns trigger
 language plpgsql
@@ -84,7 +93,9 @@ security definer
 set search_path = ''
 as $$
 begin
-  perform set_config('educator_profiles.deleting_profile_id', old.id::text, true);
+  insert into private.active_profile_deletions (profile_id)
+  values (old.id)
+  on conflict (profile_id) do nothing;
   return old;
 end;
 $$;
@@ -96,7 +107,8 @@ security definer
 set search_path = ''
 as $$
 begin
-  perform set_config('educator_profiles.deleting_profile_id', '', true);
+  delete from private.active_profile_deletions
+   where profile_id = old.id;
   return old;
 end;
 $$;
@@ -282,6 +294,7 @@ declare
   v_jwt_sub text;
   v_is_moderator boolean;
   v_is_service_role boolean;
+  v_is_profile_cascade boolean;
   v_actor_id uuid;
   v_reviewer_id uuid;
   v_should_audit boolean := false;
@@ -290,11 +303,19 @@ declare
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
   v_is_moderator := private.is_moderator();
+  -- Trusted database-role context: evaluate PostgreSQL session role, NOT mutable JWT claim settings
   v_is_service_role := (
-    coalesce(auth.jwt()->>'role', '') = 'service_role' or
-    coalesce(current_setting('request.jwt.claim.role', true), '') = 'service_role' or
-    coalesce(current_setting('role', true), '') = 'service_role' or
-    coalesce(auth.role(), '') = 'service_role'
+    coalesce(nullif(current_setting('role', true), 'none'), session_user) = 'service_role'
+    or (session_user = 'postgres' and coalesce(nullif(current_setting('role', true), 'none'), 'postgres') = 'postgres')
+  );
+  -- Trusted cascade detection: requires nesting depth > 1 and parent profile deletion registered in trusted private table
+  v_is_profile_cascade := (
+    tg_op = 'DELETE' and
+    pg_trigger_depth() > 1 and
+    exists (
+      select 1 from private.active_profile_deletions
+      where profile_id = old.educator_id
+    )
   );
   v_actor_id := auth.uid();
   if v_actor_id is null and v_jwt_sub is not null then
@@ -357,7 +378,7 @@ begin
     -- 5. Non-moderators can never delete verified, rejected, or revoked credentials directly,
     -- UNLESS the deletion is cascading from an authorized deletion of their own educator profile.
     if tg_op = 'DELETE' and old.status in ('verified', 'rejected', 'revoked') then
-      if nullif(current_setting('educator_profiles.deleting_profile_id', true), '') is distinct from old.educator_id::text then
+      if not v_is_profile_cascade then
         raise exception 'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators'
           using errcode = '42501';
       end if;
@@ -371,6 +392,8 @@ begin
   -- ---------------------------------------------------------------------------
   if tg_op = 'DELETE' then
     if v_is_service_role then
+      v_reviewer_id := null;
+    elsif v_is_profile_cascade then
       v_reviewer_id := null;
     elsif v_is_moderator then
       v_reviewer_id := v_actor_id;
@@ -402,11 +425,12 @@ begin
         'deleted_by', v_actor_id,
         'deleted_by_role', case
           when v_is_service_role then 'service_role'
+          when v_is_profile_cascade then 'owner'
           when v_is_moderator then 'moderator'
           when v_actor_id is not null and v_actor_id = old.educator_id then 'owner'
           else coalesce(nullif(nullif(session_user, 'postgres'), ''), 'system')
         end,
-        'cascade_from_profile', (nullif(current_setting('educator_profiles.deleting_profile_id', true), '') = old.educator_id::text),
+        'cascade_from_profile', v_is_profile_cascade,
         'previous_status', old.status,
         'verification_type', old.verification_type,
         'issuer', old.issuer,
