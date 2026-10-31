@@ -1099,7 +1099,7 @@ The official-content-outline observations and pilot-choice worksheet in §10 are
 
 ### A.27 — EXM-03 durable per-part attempt foundation (dormant, unlaunched)
 
-The unmerged `20261031120000_exm_03_private_part_attempt_foundation.sql`
+The unmerged `20261101120000_exm_03_private_part_attempt_foundation.sql`
 defines owner-only educational attempt summaries with SELECT/DELETE RLS and
 **no authenticated INSERT or UPDATE privilege**. A reviewed server-side
 canonical scorer is still needed before appending any real attempt.
@@ -1111,20 +1111,20 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
 
 ### A.28 — EXM-03 private issued-assignment scoring (draft)
 
-- The append-only migration `20261031130000_exm_03_assigned_practice_scoring.sql` adds a separate **service-role-only** assignment store. Client scores cannot be persisted without an exact question set preissued by a trusted backend, a current approved manifest, an unchanged canonical item fingerprint, reviewed source binding, part-exclusive core concept mapping, and at least six single-choice items spanning three concepts.
+- The append-only migration `20261101130000_exm_03_assigned_practice_scoring.sql` adds a separate **service-role-only** assignment store. Client scores cannot be persisted without an exact question set preissued by a trusted backend, a current approved manifest, an unchanged canonical item fingerprint, reviewed source binding, part-exclusive core concept mapping, and at least six single-choice items spanning three concepts.
 - The service-only `exm03_record_assigned_practice(uuid,jsonb)` uses row locking and unique assignment linkage to make identical network retries idempotent, reject conflicting replays, and grade from canonical server scoring rules. It returns only educational practice counts and score, **never official exam certification/pass/fail**. No consumer issuance path is enabled.
 - `exm03_erase_part_attempts(uuid,text)` revokes direct owner DELETE and atomically erases *both* assignment and scored evidence for a confirmed version/part to prevent post-erasure replay restoration. The Dart service calls this RPC; the user confirmation interface and complete account-wide export/retention contracts are still blocked.
 - A separate synthetic pgTAP suite tests source/role gates, a six-item verified attempt, retry, conflicts and erasure. See `docs/exm/EXM_03_ASSIGNED_CANONICAL_SCORING.md`. No production SQL, hosted account data or new learner UX is modified.
 
 ### A.29 — EXM-03 authenticated canonical assignment issuance (draft)
 
-- `20261031140000_exm_03_authenticated_assignment_issuer.sql` implements owner-verified issuer `exm03_issue_assigned_practice(uuid,text)`: exact permanent authenticated JWT identity and current `auth.sessions` membership; published typed exam part and same-version root; effective independently reviewed reference manifest; current canonical SHA-256 approved item bindings; part-exclusive concepts; six single-choice questions spanning three concepts.
+- `20261101140000_exm_03_authenticated_assignment_issuer.sql` implements owner-verified issuer `exm03_issue_assigned_practice(uuid,text)`: exact permanent authenticated JWT identity and current `auth.sessions` membership; published typed exam part and same-version root; effective independently reviewed reference manifest; current canonical SHA-256 approved item bindings; part-exclusive concepts; six single-choice questions spanning three concepts.
 - **Learner cannot pick questions.** The database randomly chooses the immutable assignment. Returned educational payload includes only visible prompts/options, not scoring specs, right answers, item hashes or protected editorial keys. Two pending assignments and 12 issuances/day per owner, guarded by advisory locking, bound misuse.
 - Scoring stays behind the previously tested service-role-only recorder; no browser-callable scoring proxy has been introduced. UI, new durable history and account-wide data portability remain **off** until release gates pass. See `docs/exm/EXM_03_TRUSTED_ASSIGNMENT_ISSUER.md`; no hosted SQL, production writes, merges or deployments.
 
 ### A.30 — EXM-03 authenticated scoring submission and legacy answer-key isolation (draft)
 
-- `20261031150000_exm_03_authenticated_submit_protected_items.sql` adds account/session-bound `exm03_submit_assigned_practice(uuid,jsonb)`: original live JWT session and exact assignment owner required, canonical private scorer and replay protections preserved. The client cannot choose the item set, submit grading rules or impersonate another learner. Client UI is not yet enabled.
+- `20261101150000_exm_03_authenticated_submit_protected_items.sql` adds account/session-bound `exm03_submit_assigned_practice(uuid,jsonb)`: original live JWT session and exact assignment owner required, canonical private scorer and replay protections preserved. The client cannot choose the item set, submit grading rules or impersonate another learner. Client UI is not yet enabled.
 - A restrictive SELECT RLS policy hides only independently published, rights-approved **EXM-protected** `assessment_items` from direct learner/anon `select('*')` queries, which otherwise exposed `scoring_spec` answer keys. Older unprotected learning activities remain under the legacy policies; protected item flows must use the trusted issuer. The assignment insert guard additionally rejects nested option objects carrying potential embedded correctness metadata.
 - Synthetic integration and security pgTAP cover revoked session, wrong owner, replay, answer read isolation, object-option rejection and atomic erasure. Architecture/security and release limitations: `docs/exm/EXM_03_AUTHENTICATED_SUBMISSION_AND_READ_GUARD.md`.
 - Still no rollout, hosted SQL, browser UX, full account-wide export and erasure coverage or deployment authorization.

@@ -4,7 +4,7 @@
 
 ## Coverage and privacy
 
-The additive migration 20261031160000_exm_03_account_practice_portability.sql combines all owned EXM-02B R1–R4 saved reference-practice events and grading receipts with all owned EXM-03 issued assignments (including unanswered and expired assignments) and scored attempt summaries. It never returns hidden assessment scoring specifications, submitted answers, response fingerprints, assignment question lists/content hashes, session IDs, private reviewer evidence or private scoring tokens.
+The additive migration 20261101160000_exm_03_account_practice_portability.sql combines all owned EXM-02B R1–R4 saved reference-practice events and grading receipts with all owned EXM-03 issued assignments (including unanswered and expired assignments) and scored attempt summaries. It never returns hidden assessment scoring specifications, submitted answers, response fingerprints, assignment question lists/content hashes, session IDs, private reviewer evidence or private scoring tokens.
 
 The owner must have a permanent account and a currently existing Auth session. The export uses one stable SQL statement snapshot; its inventory independently counts both stores and fingerprints event/grade and assignment/attempt status. The Dart facade validates owner and exact response schema before returning JSON; an account switch invalidates an in-flight result.
 

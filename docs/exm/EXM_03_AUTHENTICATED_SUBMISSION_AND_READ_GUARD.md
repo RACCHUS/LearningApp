@@ -4,7 +4,7 @@
 
 ## Trusted submission boundary
 
-Migration `20261031150000_exm_03_authenticated_submit_protected_items.sql`
+Migration `20261101150000_exm_03_authenticated_submit_protected_items.sql`
 introduces `exm03_submit_assigned_practice(uuid,jsonb)`, limited to
 authenticated permanent users. It does **not** grant `EXECUTE` on the
 underlying service-role-only canonical scorer. Instead it verifies the

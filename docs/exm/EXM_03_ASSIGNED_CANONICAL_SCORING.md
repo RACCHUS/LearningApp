@@ -5,7 +5,7 @@ display is enabled. This is *educational practice*, never an official examinatio
 
 ## Database contract
 
-Migration `20261031130000_exm_03_assigned_practice_scoring.sql`
+Migration `20261101130000_exm_03_assigned_practice_scoring.sql`
 extends the dormant attempt foundation with immutable
 `exam_part_practice_assignments`. Only a trusted service-role backend can
 issue an assignment containing the exact eligible question IDs and
