@@ -251,23 +251,27 @@ Map the proposed logical entities to existing tables first; use new tables only 
 **Tasks**
 - [x] **Architecture & Schema Audit**: Audit actual implemented features, migrations, existing assessment `questions`, Q&A components, author ownership, voice capabilities, and hosted catalog state. Produce a verified gap matrix. (Completed in [ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md](ECO_00_ARCHITECTURE_SCHEMA_AUDIT.md)).
 - [x] **Trust & Safety / Legal Framework**: Author Terms of Service and Privacy Policy (with strict minor data isolation). Establish DMCA registered agent and takedown workflow. (Delivered in [TERMS_OF_SERVICE.md](../legal/TERMS_OF_SERVICE.md), [PRIVACY_POLICY.md](../legal/PRIVACY_POLICY.md), and [DMCA_TAKEDOWN_POLICY.md](../legal/DMCA_TAKEDOWN_POLICY.md)).
-- [ ] **Moderation Tooling**: Build an administrative moderation queue and reporting UI (replacing pure service-role script approval). (Specified in [ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md](ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md)).
+- [x] **Moderation Tooling**: Build an administrative moderation queue and reporting UI (replacing pure service-role script approval). (Delivered and deployed in ECO-00B via Migrations 50 & 51, PR #61, PR #69, [ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md](ECO_00B_TRUST_SAFETY_MODERATION_SPEC.md), and `/#/moderation`).
 - [x] **Age Eligibility Determination**: Decisively enforce age eligibility rules (adults only for public posting; minors restricted to private/guardian-managed accounts). (Codified in Terms of Service and Privacy Policy).
-- [ ] **Cost & Observability Dashboards**: Establish baseline hosting, AI token, TTS/STT, and media storage cost dashboards with strict alert thresholds.
+- [x] **Cost & Observability Dashboards**: Establish baseline hosting, AI token, TTS/STT, and media storage cost dashboards with strict alert thresholds. (Delivered and deployed in ECO-00C via Migration 52, PR #70, [ECO_00C_COST_OBSERVABILITY_SPEC.md](ECO_00C_COST_OBSERVABILITY_SPEC.md), and `/#/observability`).
 
-**Exit:** Accepted domain model, legal protections live, moderation queue operational, cost dashboards in place, and zero duplicate schema models.
+**Exit:**
+- **Technical Foundations Deployed & Verified**: Database domain models, moderation queue UI (`/#/moderation`), and cost observability dashboards (`/#/observability`) are fully implemented and deployed to production (Migrations 50, 51, 52, 53).
+- **Phase 1 Engineering Clearance**: Phase 1 concept-scoped Q&A architecture, private development, seed-FAQ authoring, and test suites are cleared to proceed behind the existing disabled-public-UGC boundary.
+- **Operational Public Posting Gate (Gate 0 → 1 Qualified)**: Before public user-generated Q&A posting or external search indexing goes live, operational evidence of corporate legal registration, US Copyright Office DMCA registered agent confirmation, and tested age-assurance/parental consent enforcement must be recorded.
 
 ---
 
 ### Phase 1 — Concept-Scoped Community Q&A & Cold-Start Seeding (P1)
 
 **Tasks**
-- [ ] **Concept- & Lesson-Scoped Q&A**: Embed Q&A directly within active learning contexts (DMV, Real Estate, Literacy, GED) rather than launching a disconnected global forum.
+- [x] **Concept- & Lesson-Scoped Q&A Baseline**: Schema (`community_questions`, `community_answers`, `community_votes`), atomic upvoting RPC, least-privilege RLS policies, and private in-context learning UI drawer delivered in ECO-01 (Migrations 54 & 55).
+- [x] **Moderation Queue Integration**: Extended `moderation_reports` target types and updated `submit_moderation_report` RPC to support `community_question` and `community_answer`.
 - [ ] **Cold-Start Seeding**: Author and verify 20–50 high-quality seed FAQs and answers for initial pilot topics.
 - [ ] **Q&A Interaction**: Authenticated adult ask/answer/edit/report flows, answer history, spam rate limits, and report integration into the Phase 0 moderation queue.
 - [ ] **AI Explanation with Prompt-Injection Defense**: Labeled AI explanations with uncertainty disclosures and strict input sanitization.
 - [ ] **Web Discovery Boundary**: Deliver within Flutter app; establish architecture for external crawlable SEO pages if public indexing is pursued.
-- [ ] **Automated Testing**: Unit, database RLS policy, accessibility, and E2E widget tests.
+- [x] **Automated Testing**: Unit, database RLS policy, and widget tests for ECO-01 community models, services, and in-context sheet (`community_qa_test.sql`, `community_qa_service_test.dart`, `in_context_qa_sheet_test.dart`).
 
 **Exit:** Learner can find existing answers on pilot topics, ask questions in context, receive timely human or AI assistance, and report issues; zero unmoderated spam.
 

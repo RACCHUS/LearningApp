@@ -1,0 +1,318 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/community/community_question.dart';
+import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_review_audit.dart';
+import 'package:learning_pwa/models/community/author_review_feedback.dart';
+import 'package:learning_pwa/services/community/community_qa_service.dart';
+
+void main() {
+  group('ECO-01 & ECO-02: Community Domain Models', () {
+    test('CommunityQuestion serialization and state flags', () {
+      final question = CommunityQuestion(
+        id: 'q-101',
+        authorId: 'auth-user-1',
+        title: 'How does phonics blending work?',
+        bodyMarkdown: 'Detailed explanation of phonics blending in CVC words.',
+        status: 'draft',
+        isSeeded: false,
+        conceptId: 'literacy.cvc.basics',
+        viewCount: 10,
+        upvoteCount: 3,
+        answerCount: 1,
+        createdAt: DateTime.parse('2026-10-22T10:00:00Z'),
+        updatedAt: DateTime.parse('2026-10-22T10:30:00Z'),
+      );
+
+      expect(question.isDraft, isTrue);
+      expect(question.isPublished, isFalse);
+      expect(question.isUnderReview, isFalse);
+
+      final json = question.toJson();
+      final revived = CommunityQuestion.fromJson(json);
+
+      expect(revived.id, 'q-101');
+      expect(revived.authorId, 'auth-user-1');
+      expect(revived.title, 'How does phonics blending work?');
+      expect(revived.conceptId, 'literacy.cvc.basics');
+      expect(revived.upvoteCount, 3);
+      expect(revived.answerCount, 1);
+    });
+
+    test('CommunityAnswer serialization and AI provenance', () {
+      final answer = CommunityAnswer(
+        id: 'ans-201',
+        questionId: 'q-101',
+        authorId: 'auth-user-2',
+        bodyMarkdown: 'Blending requires smoothly transitioning from the first sound to the next without pausing.',
+        isAiGenerated: true,
+        aiModelName: 'gemini-1.5-pro',
+        isAccepted: true,
+        status: 'published',
+        upvoteCount: 7,
+        createdAt: DateTime.parse('2026-10-22T11:00:00Z'),
+        updatedAt: DateTime.parse('2026-10-22T11:05:00Z'),
+      );
+
+      expect(answer.isPublished, isTrue);
+      expect(answer.isAiGenerated, isTrue);
+      expect(answer.aiModelName, 'gemini-1.5-pro');
+      expect(answer.isAccepted, isTrue);
+
+      final json = answer.toJson();
+      final revived = CommunityAnswer.fromJson(json);
+
+      expect(revived.id, 'ans-201');
+      expect(revived.isAiGenerated, isTrue);
+      expect(revived.aiModelName, 'gemini-1.5-pro');
+      expect(revived.upvoteCount, 7);
+    });
+  });
+
+  group('ECO-02: Pilot FAQ Seeding & Offline Fallback', () {
+    test('returns 18 curated demonstration FAQs across Literacy, Workplace Safety, and Florida Licensure when client is offline', () async {
+      final service = CommunityQaService();
+      final seeds = await service.fetchSeedFaqs();
+
+      expect(seeds.length, 18);
+      expect(seeds.every((s) => s.isSeeded), isTrue);
+
+      // Verify representations of all 3 priority domains
+      expect(seeds.any((s) => s.conceptId == 'literacy.cvc.basics'), isTrue);
+      expect(seeds.any((s) => s.conceptId == 'workplace.safety.ppe'), isTrue);
+      expect(seeds.any((s) => s.conceptId == 'licensure.cosmetology.ce'), isTrue);
+      expect(seeds.any((s) => s.conceptId == 'licensure.cna.renewal'), isTrue);
+      expect(seeds.any((s) => s.conceptId == 'licensure.real_estate.post_licensing'), isTrue);
+
+      // Verify absence of fabricated engagement metrics and presence of offline-demo author
+      for (final s in seeds) {
+        expect(s.authorId, 'offline-demo');
+        expect(s.upvoteCount, 0);
+        expect(s.viewCount, 0);
+        expect(s.answerCount, 1);
+      }
+    });
+
+    test('filters offline seed FAQs by conceptId across domains', () async {
+      final service = CommunityQaService();
+
+      final cvcSeeds = await service.fetchSeedFaqs(conceptId: 'literacy.cvc.basics');
+      expect(cvcSeeds.length, 1);
+      expect(cvcSeeds.first.conceptId, 'literacy.cvc.basics');
+      expect(cvcSeeds.first.title, contains('CVC pattern'));
+
+      final ppeSeeds = await service.fetchSeedFaqs(conceptId: 'workplace.safety.ppe');
+      expect(ppeSeeds.length, 1);
+      expect(ppeSeeds.first.conceptId, 'workplace.safety.ppe');
+      expect(ppeSeeds.first.title, contains('Hierarchy of Controls'));
+
+      final ceSeeds = await service.fetchSeedFaqs(conceptId: 'licensure.cosmetology.ce');
+      expect(ceSeeds.length, 1);
+      expect(ceSeeds.first.conceptId, 'licensure.cosmetology.ce');
+      expect(ceSeeds.first.title, contains('Florida Cosmetology'));
+    });
+
+    test('returns empty list for unknown conceptId during offline fallback instead of unrelated FAQs', () async {
+      final service = CommunityQaService();
+      final unknownSeeds = await service.fetchSeedFaqs(conceptId: 'unrelated.unknown.concept');
+      expect(unknownSeeds, isEmpty);
+    });
+
+    test('returns verified offline answers for offline seed FAQs', () async {
+      final service = CommunityQaService();
+
+      final answers = await service.fetchAnswersForQuestion('seed-faq-001');
+      expect(answers.length, 1);
+      expect(answers.first.questionId, 'seed-faq-001');
+      expect(answers.first.isAccepted, isTrue);
+      expect(answers.first.bodyMarkdown, contains('Consonant-Vowel-Consonant'));
+      expect(answers.first.upvoteCount, 0);
+    });
+
+    test('verifies Florida DBPR regulatory accuracy in offline licensing FAQ answers', () async {
+      final service = CommunityQaService();
+
+      // 1. Florida Cosmetology CE (seed-faq-013)
+      final cosmoAnswers = await service.fetchAnswersForQuestion('seed-faq-013');
+      expect(cosmoAnswers.length, 1);
+      final cosmoBody = cosmoAnswers.first.bodyMarkdown;
+      expect(cosmoBody, contains('10 hours'));
+      expect(cosmoBody, contains('Rule 61G5-20.002, Florida Administrative Code'));
+      expect(cosmoBody, contains('Group 1 expires October 31 of odd-numbered years'));
+      expect(cosmoBody, contains('Group 2 expires October 31 of even-numbered years'));
+      expect(cosmoBody, contains('0.5 hour of Occupational Safety and Health Administration (OSHA)'));
+      expect(cosmoBody, contains('0.5 hour of Workers\' Compensation'));
+      expect(cosmoBody, contains('Platform-curated educational reference'));
+
+      // 2. Florida Electrical Endorsement (seed-faq-016)
+      final elecAnswers = await service.fetchAnswersForQuestion('seed-faq-016');
+      expect(elecAnswers.length, 1);
+      final elecBody = elecAnswers.first.bodyMarkdown;
+      expect(elecBody, contains('Florida does not have reciprocal licensing agreements with any other state'));
+      expect(elecBody, contains('Section 489.511, Florida Statutes'));
+      expect(elecBody, contains('Licensure by Endorsement'));
+      expect(elecBody, contains('substantially equivalent'));
+      expect(elecBody, contains('10 years'));
+      expect(elecBody, contains('Platform-curated educational reference'));
+
+      // 3. Florida General Contractor Qualifications (seed-faq-018)
+      final cgcAnswers = await service.fetchAnswersForQuestion('seed-faq-018');
+      expect(cgcAnswers.length, 1);
+      final cgcBody = cgcAnswers.first.bodyMarkdown;
+      expect(cgcBody, contains('structures of not less than four stories'));
+      expect(cgcBody, contains('Section 489.111, Florida Statutes'));
+      expect(cgcBody, contains('Rule 61G4-15.001'));
+      expect(cgcBody, contains('Platform-curated educational reference'));
+    });
+  });
+
+  group('ECO-02: Educator Review, Editorial Governance & Audit Trail', () {
+    test('CommunityReviewAudit serialization and audit properties', () {
+      final audit = CommunityReviewAudit(
+        id: 'audit-001',
+        targetType: 'question',
+        targetId: 'q-999',
+        reviewerId: 'reviewer-user-1',
+        action: 'reject',
+        previousStatus: 'under_review',
+        newStatus: 'archived',
+        notes: 'Needs clarity on regulatory statutory citation.',
+        internalNotes: 'Flagged for moderation follow-up.',
+        createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
+      );
+
+      expect(audit.isQuestion, isTrue);
+      expect(audit.isAnswer, isFalse);
+      expect(audit.action, 'reject');
+      expect(audit.notes, 'Needs clarity on regulatory statutory citation.');
+      expect(audit.internalNotes, 'Flagged for moderation follow-up.');
+
+      final json = audit.toJson();
+      final revived = CommunityReviewAudit.fromJson(json);
+
+      expect(revived.id, 'audit-001');
+      expect(revived.targetType, 'question');
+      expect(revived.targetId, 'q-999');
+      expect(revived.reviewerId, 'reviewer-user-1');
+      expect(revived.action, 'reject');
+      expect(revived.previousStatus, 'under_review');
+      expect(revived.newStatus, 'archived');
+      expect(revived.notes, 'Needs clarity on regulatory statutory citation.');
+      expect(revived.internalNotes, 'Flagged for moderation follow-up.');
+    });
+
+    test('AuthorReviewFeedback serialization and properties', () {
+      final feedback = AuthorReviewFeedback(
+        id: 'fb-001',
+        targetType: 'question',
+        targetId: 'q-999',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Please cite the relevant administrative code section.',
+        createdAt: DateTime.parse('2026-10-21T14:00:00Z'),
+      );
+
+      expect(feedback.id, 'fb-001');
+      expect(feedback.targetType, 'question');
+      expect(feedback.targetId, 'q-999');
+      expect(feedback.action, 'reject');
+      expect(feedback.newStatus, 'archived');
+      expect(feedback.feedback, 'Please cite the relevant administrative code section.');
+
+      final json = feedback.toJson();
+      final revived = AuthorReviewFeedback.fromJson(json);
+
+      expect(revived.id, 'fb-001');
+      expect(revived.targetType, 'question');
+      expect(revived.targetId, 'q-999');
+      expect(revived.action, 'reject');
+      expect(revived.newStatus, 'archived');
+      expect(revived.feedback, 'Please cite the relevant administrative code section.');
+      expect(revived.createdAt, DateTime.parse('2026-10-21T14:00:00Z'));
+    });
+
+    test('CommunityQaService handles offline empty fallbacks gracefully', () async {
+      final service = CommunityQaService();
+
+      final reviewQuestions = await service.fetchUnderReviewQuestions();
+      expect(reviewQuestions, isEmpty);
+
+      final reviewAnswers = await service.fetchUnderReviewAnswers();
+      expect(reviewAnswers, isEmpty);
+
+      final auditHistory = await service.fetchReviewAuditHistory();
+      expect(auditHistory, isEmpty);
+
+      final myDrafts = await service.fetchMyDrafts();
+      expect(myDrafts, isEmpty);
+
+      final myDraftAnswers = await service.fetchMyDraftAnswers();
+      expect(myDraftAnswers, isEmpty);
+
+      final myFeedback = await service.fetchMySubmissionFeedback();
+      expect(myFeedback, isEmpty);
+
+      final questionTitles = await service.fetchQuestionTitles(['q-1', 'q-2']);
+      expect(questionTitles, isEmpty);
+
+      final answerParentMap = await service.fetchAnswerParentQuestionMap(['ans-1', 'ans-2']);
+      expect(answerParentMap, isEmpty);
+    });
+
+    test('fetchLatestSubmissionFeedback directly exercises CommunityQaService and dedupes feedback newest-first', () async {
+      final oldestFeedback = AuthorReviewFeedback(
+        id: 'fb-old',
+        targetType: 'question',
+        targetId: 'target-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Old rejection note from initial review.',
+        createdAt: DateTime.parse('2026-10-18T10:00:00Z'),
+      );
+      final newestFeedback = AuthorReviewFeedback(
+        id: 'fb-new',
+        targetType: 'question',
+        targetId: 'target-1',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.',
+        createdAt: DateTime.parse('2026-10-21T12:00:00Z'),
+      );
+      final target2Feedback = AuthorReviewFeedback(
+        id: 'fb-target-2',
+        targetType: 'answer',
+        targetId: 'target-2',
+        action: 'reject',
+        newStatus: 'archived',
+        feedback: 'Cite OSHA 1910.1200.',
+        createdAt: DateTime.parse('2026-10-20T08:00:00Z'),
+      );
+
+      final service = _TestFeedbackQaService([newestFeedback, oldestFeedback, target2Feedback]);
+      final map = await service.fetchLatestSubmissionFeedback();
+
+      expect(map.length, 2);
+      expect(map['target-1']?.id, 'fb-new');
+      expect(map['target-1']?.feedback, 'New rejection note: Please cite Florida Administrative Code Rule 61G5-20.002.');
+      expect(map['target-2']?.id, 'fb-target-2');
+      expect(map['target-2']?.feedback, 'Cite OSHA 1910.1200.');
+
+      final filteredMap = await service.fetchLatestSubmissionFeedback(targetId: 'target-1');
+      expect(filteredMap.length, 1);
+      expect(filteredMap['target-1']?.id, 'fb-new');
+    });
+  });
+}
+
+class _TestFeedbackQaService extends CommunityQaService {
+  final List<AuthorReviewFeedback> feedbackToReturn;
+  _TestFeedbackQaService(this.feedbackToReturn);
+
+  @override
+  Future<List<AuthorReviewFeedback>> fetchMySubmissionFeedback({String? targetId}) async {
+    if (targetId != null) {
+      return feedbackToReturn.where((f) => f.targetId == targetId).toList();
+    }
+    return feedbackToReturn;
+  }
+}
+
