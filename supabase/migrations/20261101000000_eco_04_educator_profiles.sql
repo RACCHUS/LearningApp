@@ -303,7 +303,12 @@ declare
 begin
   v_jwt_sub := nullif(current_setting('request.jwt.claim.sub', true), '');
   v_is_moderator := private.is_moderator();
-  -- Trusted database-role context: evaluate PostgreSQL session role, NOT mutable JWT claim settings
+  -- Service-role trust boundary:
+  -- In Supabase, ordinary client requests route through PostgREST via the authenticator connection role.
+  -- PostgREST cryptographically verifies JWT signatures before executing SET LOCAL ROLE (anon, authenticated, service_role).
+  -- This check evaluates the PostgreSQL engine session role rather than caller-mutable JWT claim GUCs
+  -- (e.g. request.jwt.claim.role), ensuring REST callers cannot forge service-role exemptions via HTTP headers.
+  -- (Note: PostgREST's JWT validation is the system boundary; direct arbitrary SQL execution by untrusted clients is out of scope).
   v_is_service_role := (
     coalesce(nullif(current_setting('role', true), 'none'), session_user) = 'service_role'
     or (session_user = 'postgres' and coalesce(nullif(current_setting('role', true), 'none'), 'postgres') = 'postgres')
@@ -393,9 +398,7 @@ begin
   if tg_op = 'DELETE' then
     if v_is_service_role then
       v_reviewer_id := null;
-    elsif v_is_profile_cascade then
-      v_reviewer_id := null;
-    elsif v_is_moderator then
+    elsif v_is_moderator and (v_actor_id is distinct from old.educator_id) then
       v_reviewer_id := v_actor_id;
     else
       v_reviewer_id := null;
@@ -425,9 +428,9 @@ begin
         'deleted_by', v_actor_id,
         'deleted_by_role', case
           when v_is_service_role then 'service_role'
-          when v_is_profile_cascade then 'owner'
+          when v_is_moderator and (v_actor_id is distinct from old.educator_id) then 'moderator'
+          when v_is_profile_cascade or (v_actor_id is not null and v_actor_id = old.educator_id) then 'owner'
           when v_is_moderator then 'moderator'
-          when v_actor_id is not null and v_actor_id = old.educator_id then 'owner'
           else coalesce(nullif(nullif(session_user, 'postgres'), ''), 'system')
         end,
         'cascade_from_profile', v_is_profile_cascade,

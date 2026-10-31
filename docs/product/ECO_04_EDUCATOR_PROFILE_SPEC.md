@@ -109,8 +109,22 @@ $$;
    - Verified, rejected, and revoked records are immutable and cannot be directly deleted by non-moderators (preventing cherry-picking or evading moderation records).
    - Direct deletion of verified/rejected/revoked records is reserved for platform moderators; owner deletion of these records is permitted strictly via profile deletion cascade.
    - All authorized credential deletions (by owner, moderator, or system cascade) generate an immutable tombstone audit record in `educator_verification_audits`.
-   - Service-role operations take strict precedence over human attribution (`reviewer_id = null` and `deleted_by_role = 'service_role'`) based on trusted database session role (`current_setting('role') = 'service_role'`), preventing callers from obtaining service-role exemptions via mutable JWT claim settings.
-   - Owner-initiated profile cascades (including when a moderator deletes their own educator profile) take strict precedence over moderator role attribution, recording `reviewer_id = null`, `deleted_by_role = 'owner'`, and `cascade_from_profile = true`. Human moderator attribution (`reviewer_id = moderator_uid` and `deleted_by_role = 'moderator'`) is strictly reserved for human moderators directly performing an administrative deletion of an individual credential.
+   - The deletion audit rigorously distinguishes between owner self-deletion, moderator administrative actions on other users' profiles, and service-role operations:
+
+     | Deletion Scenario | `reviewer_id` | `deleted_by_role` | `cascade_from_profile` |
+     |---|---|---|---|
+     | Owner deletes own profile | `NULL` | `'owner'` | `true` |
+     | Moderator deletes own profile | `NULL` | `'owner'` | `true` |
+     | Moderator deletes another user's profile | Moderator ID | `'moderator'` | `true` |
+     | Service role deletes a profile | `NULL` | `'service_role'` | `true` |
+     | Moderator directly deletes a credential | Moderator ID | `'moderator'` | `false` |
+     | Owner directly deletes unverified credential | `NULL` | `'owner'` | `false` |
+
+   - **Service-Role Trust Boundary**:
+     - Client applications interact via PostgREST and the Supabase Flutter SDK, where the system trust boundary is PostgREST's cryptographic JWT validation and its controlled role switching (`anon`, `authenticated`, or `service_role`).
+     - In `guard_educator_verification_status()`, `v_is_service_role` evaluates the PostgreSQL session role (`current_setting('role') = 'service_role'`) rather than caller-mutable JWT claim settings (`request.jwt.claim.role`), ensuring REST clients cannot spoof service-role status via HTTP headers.
+     - While PostgreSQL allows an active `authenticator` session with arbitrary SQL execution to switch roles (since Supabase grants `service_role` membership to `authenticator` for PostgREST's operation), untrusted clients have zero arbitrary SQL capabilities. PostgREST enforces cryptographic token authenticity at the network edge.
+   - Owner-initiated profile cascades (including when a moderator deletes their own personal educator profile) take precedence over moderator role attribution, recording `reviewer_id = null`, `deleted_by_role = 'owner'`, and `cascade_from_profile = true`. Conversely, when a moderator deletes another user's profile administratively, the resulting credential tombstones record `reviewer_id = moderator_uid`, `deleted_by_role = 'moderator'`, and `cascade_from_profile = true`.
 3. **Follows**:
    - Following is strictly gated by `private.is_educator_profiles_public_enabled()`. While Gate 2 is closed, ordinary learners cannot follow educators.
    - When Gate 2 is enabled, following is permitted only for target educators whose profiles are `status = 'active'`.
@@ -127,6 +141,7 @@ To protect internal reviewer identities and sensitive unredacted credential refe
   `id, educator_id, verification_type, subject_id, jurisdiction, issuer, status, verified_at, expires_at, created_at`.
 - Internal staff attribution (`verified_by`) and unredacted registration text (`credential_reference`) are omitted.
 - The view evaluates `private.is_educator_profiles_public_enabled() AND status = 'verified'`, requires that the educator profile is `active`, and enforces `(expires_at is null or expires_at > now())` so that expired credentials are never exposed publicly as verified. Returns 0 rows while Gate 2 is closed.
+- **View Security & Anonymous Access**: Because `security_invoker = false`, the view executes with view-owner privileges to bypass base table RLS for public consumers, while projecting only safe, non-sensitive columns. All column projections and eligibility criteria (active status, Gate 2 open, non-expired) are tested under both `authenticated` and `anon` roles. Direct table queries by `anon` return 0 rows.
 
 ---
 

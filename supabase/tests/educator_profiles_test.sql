@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(115);
+select plan(124);
 
 -- 1. Setup synthetic test users
 insert into auth.users (id, email) values
@@ -962,6 +962,32 @@ select is(
   'Expired verified credential with past expires_at is excluded from public_educator_verifications'
 );
 
+-- 12. Anonymous user receives 0 records from direct table query under Gate 2 (RLS shielded)
+set local role anon;
+set local "request.jwt.claim.role" to 'anon';
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+select set_config('request.jwt.claim.sub', '', true);
+
+select is(
+  (select count(*)::integer from public.educator_verifications),
+  0,
+  'Anonymous user receives 0 verifications from direct table query under Gate 2 (RLS shielded)'
+);
+
+-- 13. Anonymous user can view active verified credential via public_educator_verifications under Gate 2
+select is(
+  (select count(*)::integer from public.public_educator_verifications where id = '00000000-0000-4000-8000-000000000021'),
+  1,
+  'Anonymous user can view active verified credential via public_educator_verifications under Gate 2'
+);
+
+-- 14. Anonymous user receives 0 expired, unverified, or revoked credentials via public view
+select is(
+  (select count(*)::integer from public.public_educator_verifications where id in ('00000000-0000-4000-8000-000000000022', '00000000-0000-4000-8000-000000000023', '00000000-0000-4000-8000-000000000024')),
+  0,
+  'Anonymous user receives 0 expired, unverified, or revoked credentials via public_educator_verifications'
+);
+
 -- -----------------------------------------------------------------------------
 -- 8. Owner Profile Deletion Cascade & Credential Deletion Guards (8 tests)
 -- -----------------------------------------------------------------------------
@@ -1002,14 +1028,14 @@ select throws_ok(
   'Setting custom deleting_profile_id GUC directly cannot bypass deletion guard (42501)'
 );
 
--- 5. Spoofing service-role JWT claim settings while authenticated cannot bypass deletion guard
+-- 5. Spoofing service-role JWT claim settings while authenticated via PostgREST cannot bypass deletion guard
 select set_config('request.jwt.claim.role', 'service_role', true);
 select set_config('request.jwt.claims', '{"role":"service_role","sub":"8f8c1a20-0000-4000-8000-000000000002"}', true);
 select throws_ok(
   $$ delete from public.educator_verifications where id = '00000000-0000-4000-8000-000000000021' $$,
   '42501',
   'Access denied: verified, rejected, or revoked credentials cannot be deleted by non-moderators',
-  'Spoofing service-role JWT claim settings while authenticated cannot bypass deletion guard (42501)'
+  'Spoofing service-role JWT claim settings while authenticated via PostgREST cannot bypass deletion guard (42501)'
 );
 
 -- Restore authenticated claims
@@ -1120,6 +1146,76 @@ select is(
   (select metadata->>'cascade_from_profile' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000030' and action = 'deleted'),
   'true',
   'Moderator profile cascade captures cascade_from_profile = true in metadata'
+);
+
+-- -----------------------------------------------------------------------------
+-- 8.2 Moderator Deletion of Another User's Profile Cascade (6 tests)
+-- -----------------------------------------------------------------------------
+-- Re-seed an educator profile and verified credential for Teacher A
+set local role postgres;
+insert into public.educator_profiles (id, display_name, status)
+values ('8f8c1a20-0000-4000-8000-000000000002', 'Teacher A Re-seeded', 'active')
+on conflict (id) do update set status = 'active';
+
+insert into public.educator_verifications (
+  id, educator_id, verification_type, jurisdiction, issuer, credential_reference, status, verified_at, verified_by
+) values (
+  '00000000-0000-4000-8000-000000000040',
+  '8f8c1a20-0000-4000-8000-000000000002',
+  'licensed_credential',
+  'FL',
+  'Florida DOE',
+  'TEACHER-A-MOD-DELETED-CERT',
+  'verified',
+  now(),
+  '8f8c1a20-0000-4000-8000-000000000001'
+);
+
+-- Moderator B (8f8c1a20-0000-4000-8000-000000000004) deletes Teacher A's educator profile administratively
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"8f8c1a20-0000-4000-8000-000000000004"}', true);
+select set_config('request.jwt.claim.sub', '8f8c1a20-0000-4000-8000-000000000004', true);
+
+-- 17. Moderator B deletes Teacher A's educator profile
+select lives_ok(
+  $$ delete from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002' $$,
+  'Moderator B can delete another user educator profile cascading over credentials'
+);
+
+-- 18. Teacher A profile is deleted
+select is(
+  (select count(*)::integer from public.educator_profiles where id = '8f8c1a20-0000-4000-8000-000000000002'),
+  0,
+  'Target educator profile is deleted by moderator'
+);
+
+-- 19. Teacher A credential is cascaded and deleted
+select is(
+  (select count(*)::integer from public.educator_verifications where id = '00000000-0000-4000-8000-000000000040'),
+  0,
+  'Target educator credential is cascaded and deleted'
+);
+
+-- 20. Tombstone audit identifies Moderator B as reviewer_id (moderator administrative action)
+select is(
+  (select reviewer_id from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000040' and action = 'deleted'),
+  '8f8c1a20-0000-4000-8000-000000000004'::uuid,
+  'Moderator deletion of another user profile identifies Moderator B as reviewer_id'
+);
+
+-- 21. Tombstone audit captures deleted_by_role = moderator in metadata
+select is(
+  (select metadata->>'deleted_by_role' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000040' and action = 'deleted'),
+  'moderator',
+  'Moderator deletion of another user profile captures deleted_by_role = moderator in metadata'
+);
+
+-- 22. Tombstone audit captures cascade_from_profile = true
+select is(
+  (select metadata->>'cascade_from_profile' from public.educator_verification_audits where verification_id = '00000000-0000-4000-8000-000000000040' and action = 'deleted'),
+  'true',
+  'Moderator deletion of another user profile captures cascade_from_profile = true in metadata'
 );
 
 -- Reset Gate 2 back to false
