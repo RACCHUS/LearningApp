@@ -614,9 +614,8 @@ begin
   return jsonb_build_object(
     'scope','exm-educational-practice-all-editions-v1',
     'owner_id',v_owner,
-    'page_row_count',v_count,
-    'has_more_rows',v_count=p_limit,
-    'assignments',v_rows
+    'row_count',v_count,
+    'rows',v_rows
   );
 end
 $page$;
@@ -671,15 +670,16 @@ begin
   end if;
 
   return jsonb_build_object(
-    'scope','exm-educational-practice-all-editions-v1',
-    'export_version',1,
-    'exported_at',now(),
+    'format','learningapp-exm-combined-practice-v1',
+    'scope','educational-practice-history-not-entire-account',
     'owner_id',v_owner,
-    'snapshot_consistency','single-sql-statement',
-    'record_count',(v_inventory->>'reference_events')::integer + (v_inventory->>'part_assignments')::integer,
+    'generated_at',now(),
+    'snapshot_consistency','single-stable-rpc-statement',
     'inventory',v_inventory,
     'reference_practice',v_reference,
-    'assigned_practice',v_parts
+    'part_practice',v_parts,
+    'includes_unsubmitted_assignments',true,
+    'official_exam_result',false
   );
 end
 $export$;

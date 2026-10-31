@@ -225,7 +225,7 @@ $q$,'42501',null,
  'Third pending assignment is denied by concurrent issuance bound');
 select throws_ok($q$
  select public.exm03_issue_assigned_practice(
- 'd3160000-0000-4000-8000-000000000001','part_a',current_date + interval '90 days')
+ 'd3160000-0000-4000-8000-000000000001','part_a',(current_date + interval '90 days')::date)
 $q$,'42501',null,
  'Date outside active manifest window throws permission denied');
 
@@ -345,7 +345,7 @@ select is((select count(*)::int from public.assessment_items
 reset role;
 update public.assessment_item_reference_validity
 set publication_status = 'retired'
-where assessment_item_id = 'd3110000-0000-4000-8000-000000000001';
+where assessment_item_id = 'd3110000-0000-4000-8000-000000000009';
 set local role authenticated;
 do $auth_retired$ begin
  perform set_config('request.jwt.claim.sub',
@@ -356,7 +356,7 @@ do $auth_retired$ begin
   "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
 end $auth_retired$;
 select is((select count(*)::int from public.assessment_items
- where id='d3110000-0000-4000-8000-000000000001'),0,
+ where id='d3110000-0000-4000-8000-000000000009'),0,
  'Retired approved items remain permanently protected by RLS against direct client reads');
 select throws_ok($q$
  select public.exm03_submit_assigned_practice(
