@@ -382,6 +382,15 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
   Widget _buildDomainCard(DomainDiagnostic domain, bool isDark) {
     final evidenceColor = _getEvidenceColor(domain.evidenceLevel);
 
+    // Normalize target practice allocation across report domains if unnormalized
+    final totalReportWeight = widget.report.domainDiagnostics.fold<double>(
+      0.0,
+      (sum, d) => sum + d.domainWeight,
+    );
+    final normalizedWeight = totalReportWeight > 0 && (totalReportWeight - 1.0).abs() > 0.001
+        ? domain.domainWeight / totalReportWeight
+        : domain.domainWeight;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -430,7 +439,7 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Practice Allocation: ${(domain.domainWeight * 100).toStringAsFixed(0)}%',
+                'Target Practice Allocation: ${(normalizedWeight * 100).toStringAsFixed(0)}%',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
