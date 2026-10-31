@@ -13,6 +13,7 @@ import '../../providers/version_governance_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/governance/target_version_migration_dialog.dart';
 import '../../widgets/targets/target_readiness_card.dart';
+import '../../widgets/targets/exam_preparation_overview_card.dart';
 import '../../widgets/targets/diagnostic_launch_banner.dart';
 import '../../widgets/targets/pathway_preparation_goal_card.dart';
 import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
@@ -301,6 +302,10 @@ class TargetDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        if (ver.metadata['exam_preparation'] is Map) ...[
+                          const SizedBox(height: DesignTokens.space3),
+                          ExamPreparationOverviewCard(targetVersion: ver),
+                        ],
                         if (updateInfo != null && updateInfo.needsUpgrade) ...[
                           const SizedBox(height: DesignTokens.space3),
                           Card(

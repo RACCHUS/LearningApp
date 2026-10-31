@@ -4,7 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_session.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/screens/assessment/mock_exam_screen.dart';
+import 'package:learning_pwa/screens/assessment/secure_exam_part_practice_screen.dart';
+
+class _TestAuthController extends StateNotifier<AuthState> implements AuthNotifier {
+  _TestAuthController(super.initial);
+  @override dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   group('Phase E: MockExamScreen Widget Tests', () {
@@ -145,6 +152,49 @@ void main() {
       expect(find.text('PRACTICE PERFORMANCE'), findsOneWidget);
       expect(find.text('Unverified'), findsWidgets);
       expect(find.textContaining('Estimated Scaled Score'), findsNothing);
+    });
+
+    testWidgets('routes to SecureExamPartPracticeScreen when examPartKey is provided', (tester) async {
+      final partBlueprint = const MockExamBlueprint(
+        targetVersionId: 'tv-test',
+        examPartKey: 'part_a',
+        examCode: 'SY0-701',
+        title: 'Security+ Part A',
+        domainWeights: [
+          DomainWeightConstraint(
+            domainId: 'dom-1',
+            domainCode: '1.0',
+            domainTitle: 'General Security Concepts',
+            weight: 1.0,
+          ),
+        ],
+      );
+
+      final partSession = MockExamSession(
+        id: 'session-part-1',
+        blueprint: partBlueprint,
+        items: [item1],
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _TestAuthController(AuthInitial())),
+          ],
+          child: MaterialApp(
+            home: MockExamScreen(initialSession: partSession),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SecureExamPartPracticeScreen), findsOneWidget);
+      expect(
+        find.text('Sign in with a permanent account for reviewed exam-part practice.'),
+        findsOneWidget,
+      );
     });
   });
 }

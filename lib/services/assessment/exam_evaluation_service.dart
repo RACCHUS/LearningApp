@@ -164,6 +164,7 @@ class ExamEvaluationService {
     return ExamDiagnosticReport(
       sessionId: session.id,
       targetVersionId: session.blueprint.targetVersionId,
+      examPartKey: session.blueprint.examPartKey,
       completedAt: session.completedAt ?? DateTime.now(),
       durationTaken: Duration(seconds: session.elapsedSeconds),
       officialFacts: OfficialExamFacts(

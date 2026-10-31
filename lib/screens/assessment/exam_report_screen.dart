@@ -94,6 +94,8 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                       runSpacing: 8,
                       children: [
                         _buildFactChip('Practice target', facts.examCode, isDark),
+                        if (report.examPartKey != null)
+                          _buildFactChip('Practice part', report.examPartKey!, isDark),
                         _buildFactChip('Official passing score', 'Unverified', isDark),
                         _buildFactChip('Official time limit', 'Unverified', isDark),
                       ],

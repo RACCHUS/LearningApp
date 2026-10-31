@@ -5,6 +5,7 @@ import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../providers/assessment_engine_provider.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import 'exam_report_screen.dart';
+import 'secure_exam_part_practice_screen.dart';
 
 class MockExamScreen extends ConsumerStatefulWidget {
   final MockExamSession initialSession;
@@ -25,9 +26,11 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(examSessionProvider.notifier).startSession(widget.initialSession);
-    });
+    if (widget.initialSession.blueprint.examPartKey == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(examSessionProvider.notifier).startSession(widget.initialSession);
+      });
+    }
   }
 
   void _onAnswerChanged(String itemId, dynamic response) {
@@ -303,6 +306,17 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Explicit exam-part mock practice routes to the protected issuer/scorer.
+    // Never invoke legacy assessment_items SELECT('*') for this mode.
+    // Whole-target mocks retain their independent legacy practice path.
+    if (widget.initialSession.blueprint.examPartKey != null) {
+      return SecureExamPartPracticeScreen(
+        targetVersionId: widget.initialSession.blueprint.targetVersionId,
+        examPartKey: widget.initialSession.blueprint.examPartKey!,
+        administrationDate: widget.initialSession.blueprint.administrationDate,
+      );
+    }
+
     final session = ref.watch(examSessionProvider) ?? widget.initialSession;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

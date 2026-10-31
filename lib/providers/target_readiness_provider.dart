@@ -27,3 +27,18 @@ final targetReadinessProvider =
     targetVersionId: targetVersionId,
   );
 });
+
+/// Keyed independently from the existing target-wide readiness provider.
+/// Only a caller that explicitly selects a configured exam part may use it.
+typedef ExamPartReadinessKey = ({String targetVersionId, String examPartKey});
+
+final examPartReadinessProvider = FutureProvider.autoDispose
+    .family<TargetReadiness, ExamPartReadinessKey>((ref, key) async {
+  final userId = ref.watch(learnerIdProvider);
+  final service = ref.watch(targetReadinessServiceProvider);
+  return service.evaluateTargetReadiness(
+    userId: userId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+});

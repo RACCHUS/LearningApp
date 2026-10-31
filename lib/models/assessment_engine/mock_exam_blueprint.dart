@@ -3,6 +3,10 @@ import '../assessment_item.dart';
 /// Specifies the blueprint and weighting constraints for generating a mock exam.
 class MockExamBlueprint {
   final String targetVersionId;
+  /// Null means legacy target-wide educational practice.
+  final String? examPartKey;
+  final String? curriculumRootNodeId;
+  final DateTime? administrationDate;
   final String examCode;
   final String title;
   /// Configurable practice countdown; never an official exam duration by itself.
@@ -19,6 +23,9 @@ class MockExamBlueprint {
 
   const MockExamBlueprint({
     required this.targetVersionId,
+    this.examPartKey,
+    this.curriculumRootNodeId,
+    this.administrationDate,
     required this.examCode,
     required this.title,
     this.timeLimitMinutes = 90,
@@ -147,6 +154,8 @@ class MockExamBlueprint {
 
     return MockExamBlueprint(
       targetVersionId: json['target_version_id'] as String? ?? '',
+      examPartKey: json['exam_part_key'] as String?,
+      curriculumRootNodeId: json['curriculum_root_node_id'] as String?,
       examCode: json['exam_code'] as String? ?? '',
       title: json['title'] as String? ?? 'Mock Exam',
       timeLimitMinutes: (json['time_limit_minutes'] as num?)?.toInt() ?? 90,
@@ -164,6 +173,8 @@ class MockExamBlueprint {
 
   Map<String, dynamic> toJson() => {
         'target_version_id': targetVersionId,
+        'exam_part_key': examPartKey,
+        'curriculum_root_node_id': curriculumRootNodeId,
         'exam_code': examCode,
         'title': title,
         'time_limit_minutes': timeLimitMinutes,

@@ -8,15 +8,21 @@ import '../../providers/target_readiness_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import 'diagnostic_report_screen.dart';
+import 'secure_exam_part_practice_screen.dart';
 
 class DiagnosticAssessmentScreen extends ConsumerStatefulWidget {
   final String targetId;
   final String targetVersionId;
+  /// Explicitly selected curriculum practice part (never inferred).
+  final String? examPartKey;
+  final DateTime? administrationDate;
 
   const DiagnosticAssessmentScreen({
     super.key,
     required this.targetId,
     required this.targetVersionId,
+    this.examPartKey,
+    this.administrationDate,
   });
 
   @override
@@ -27,31 +33,62 @@ class DiagnosticAssessmentScreen extends ConsumerStatefulWidget {
 class _DiagnosticAssessmentScreenState
     extends ConsumerState<DiagnosticAssessmentScreen> {
   bool _initialized = false;
+  String? _lastLearnerId;
 
   DiagnosticSessionKey get _sessionKey => (
         targetId: widget.targetId,
         targetVersionId: widget.targetVersionId,
       );
 
+  ScopedDiagnosticSessionKey get _scopedSessionKey => (
+        targetId: widget.targetId,
+        targetVersionId: widget.targetVersionId,
+        examPartKey: widget.examPartKey!,
+        learnerId: ref.read(learnerIdProvider),
+      );
+
+  DiagnosticSessionNotifier _notifier() => widget.examPartKey == null
+      ? ref.read(diagnosticSessionProvider(_sessionKey).notifier)
+      : ref.read(scopedDiagnosticSessionProvider(_scopedSessionKey).notifier);
+
   @override
   void didUpdateWidget(covariant DiagnosticAssessmentScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.targetId != widget.targetId ||
-        oldWidget.targetVersionId != widget.targetVersionId) {
+        oldWidget.targetVersionId != widget.targetVersionId ||
+        oldWidget.examPartKey != widget.examPartKey) {
       _initialized = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final targetAsync = ref.watch(targetDetailProvider(widget.targetId));
-    final itemsAsync = ref.watch(
-      diagnosticItemsProvider((
-        targetId: widget.targetId,
+    // Explicit exam-part diagnostics use the protected issuer/scorer.
+    // Never invoke legacy assessment_items SELECT('*') for this mode.
+    // Whole-target diagnostics retain their independent legacy practice path.
+    if (widget.examPartKey != null) {
+      return SecureExamPartPracticeScreen(
         targetVersionId: widget.targetVersionId,
-      )),
-    );
-    final session = ref.watch(diagnosticSessionProvider(_sessionKey));
+        examPartKey: widget.examPartKey!,
+        administrationDate: widget.administrationDate,
+      );
+    }
+    final learnerId = ref.watch(learnerIdProvider);
+    if (widget.examPartKey != null && _lastLearnerId != learnerId) {
+      _initialized = false;
+      _lastLearnerId = learnerId;
+    }
+    final targetAsync = ref.watch(targetDetailProvider(widget.targetId));
+    final itemsAsync = widget.examPartKey == null
+        ? ref.watch(diagnosticItemsProvider(_sessionKey))
+        : ref.watch(examPartDiagnosticItemsProvider((
+            targetId: widget.targetId,
+            targetVersionId: widget.targetVersionId,
+            examPartKey: widget.examPartKey!,
+          )));
+    final session = widget.examPartKey == null
+        ? ref.watch(diagnosticSessionProvider(_sessionKey))
+        : ref.watch(scopedDiagnosticSessionProvider(_scopedSessionKey));
     final theme = Theme.of(context);
 
     return targetAsync.when(
@@ -111,11 +148,15 @@ class _DiagnosticAssessmentScreenState
           ),
           data: (items) {
             if (!_initialized) {
+              final requestOwner = learnerId;
+              final requestPart = widget.examPartKey;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                ref
-                    .read(diagnosticSessionProvider(_sessionKey).notifier)
-                    .initialize(items);
+                if (!mounted ||
+                    ref.read(learnerIdProvider) != requestOwner ||
+                    widget.examPartKey != requestPart) {
+                  return;
+                }
+                _notifier().initialize(items);
                 setState(() => _initialized = true);
               });
             }
@@ -188,12 +229,7 @@ class _DiagnosticAssessmentScreenState
                           isExamMode: true,
                           initialResponse: response,
                           onResponseChanged: (value) {
-                            ref
-                                .read(
-                                  diagnosticSessionProvider(_sessionKey)
-                                      .notifier,
-                                )
-                                .recordResponse(current.item.id, value);
+                            _notifier().recordResponse(current.item.id, value);
                           },
                         ),
                       ),
@@ -204,12 +240,7 @@ class _DiagnosticAssessmentScreenState
                             OutlinedButton.icon(
                               onPressed: session.isSubmitting
                                   ? null
-                                  : () => ref
-                                      .read(
-                                        diagnosticSessionProvider(_sessionKey)
-                                            .notifier,
-                                      )
-                                      .previousQuestion(),
+                                  : () => _notifier().previousQuestion(),
                               icon: const Icon(Icons.arrow_back),
                               label: const Text('Previous'),
                             ),
@@ -219,12 +250,7 @@ class _DiagnosticAssessmentScreenState
                               onPressed: response == null ||
                                       session.isSubmitting
                                   ? null
-                                  : () => ref
-                                      .read(
-                                        diagnosticSessionProvider(_sessionKey)
-                                            .notifier,
-                                      )
-                                      .nextQuestion(),
+                                  : () => _notifier().nextQuestion(),
                               icon: const Icon(Icons.arrow_forward),
                               label: const Text('Next'),
                             )
@@ -234,25 +260,33 @@ class _DiagnosticAssessmentScreenState
                                       session.isSubmitting
                                   ? null
                                   : () async {
-                                      final learnerId =
+                                      final submittingLearner =
                                           ref.read(learnerIdProvider);
+                                      final submittingPart = widget.examPartKey;
                                       try {
-                                        final report = await ref
-                                            .read(
-                                              diagnosticSessionProvider(
-                                                _sessionKey,
-                                              ).notifier,
-                                            )
+                                        final report = await _notifier()
                                             .submitAssessment(
-                                              userId: learnerId,
+                                              userId: submittingLearner,
                                               targetTitle: target.title,
                                             );
+                                        if (!context.mounted ||
+                                            ref.read(learnerIdProvider) !=
+                                                submittingLearner ||
+                                            widget.examPartKey !=
+                                                submittingPart) {
+                                          return;
+                                        }
                                         ref.invalidate(
                                           targetReadinessProvider(
                                             widget.targetVersionId,
                                           ),
                                         );
-                                        if (!context.mounted) return;
+                                        if (submittingPart != null) {
+                                          ref.invalidate(examPartReadinessProvider((
+                                            targetVersionId: widget.targetVersionId,
+                                            examPartKey: submittingPart,
+                                          )));
+                                        }
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
                                             builder: (_) =>
@@ -262,7 +296,11 @@ class _DiagnosticAssessmentScreenState
                                           ),
                                         );
                                       } catch (error) {
-                                        if (!context.mounted) return;
+                                        if (!context.mounted ||
+                                            ref.read(learnerIdProvider) !=
+                                                submittingLearner) {
+                                          return;
+                                        }
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           SnackBar(

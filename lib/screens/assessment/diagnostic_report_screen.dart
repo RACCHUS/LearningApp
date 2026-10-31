@@ -34,7 +34,29 @@ class _DiagnosticReportScreenState
   }
 
   @override
+  void didUpdateWidget(covariant DiagnosticReportScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.report != oldWidget.report) {
+      _report = widget.report;
+      _isCreatingSet = false;
+      _isStarting = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final learnerId = _report.learnerId == null
+        ? null
+        : ref.watch(learnerIdProvider);
+    if (_report.learnerId != null && _report.learnerId != learnerId) {
+      // An old report must not be visible to the next signed-in account.
+      return const Scaffold(
+        key: Key('diagnostic-account-changed'),
+        body: Center(
+          child: Text('This diagnostic belongs to another learner session.'),
+        ),
+      );
+    }
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -231,7 +253,11 @@ class _DiagnosticReportScreenState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.play_arrow),
-                    label: const Text('Start Curriculum'),
+                    label: Text(
+                      _report.examPartKey == null
+                          ? 'Start Curriculum'
+                          : 'Start Full Curriculum',
+                    ),
                   ),
                 ),
               ],
@@ -265,6 +291,17 @@ class _SummaryCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (report.examPartKey != null) ...[
+              const SizedBox(height: DesignTokens.space2),
+              Text(
+                'Practice part: ${report.examPartKey}',
+                key: const Key('diagnostic-part-identity'),
+                style: theme.textTheme.titleSmall,
+              ),
+              const Text(
+                'Part-specific educational diagnostic; not an official exam result.',
+              ),
+            ],
             const SizedBox(height: DesignTokens.space2),
             Text(
               report.evidenceBand.displayName,
