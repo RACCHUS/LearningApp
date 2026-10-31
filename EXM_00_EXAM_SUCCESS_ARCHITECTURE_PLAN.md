@@ -1143,6 +1143,27 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
 - The explicit exam-part diagnostic learner route now renders only the server-issued safe question projection and calls canonical scoring; it never consumes raw `assessment_items.scoring_spec`. Ordinary whole-target diagnostics remain a separate legacy practice route. Synthetic tests cover the protected UI, sign-out redaction, over-5,000-page assembly and invalidation.
 - Full legacy **mock** transport migration, independent real pilot-source author/reviewer review, physical browser acceptance, account-wide non-EXM privacy coverage and production deployment authorization are **not** complete. No official pass predictions, merged branch, live migration or learner rollout claimed. Verification and stop/go checklist: `docs/exm/EXM_03_RELEASE_ACCEPTANCE_CHECKPOINT.md`.
 
+### A.34 — Mainline reconciliation (PR #130 & PR #62), monotonic migration timestamp advance, and cumulative validation
+
+- **Date / agent / Git commit:** 2026-10-31 / Antigravity / HEAD of `feature/exm-03-consolidated-20261023` ([PR #135](https://github.com/RACCHUS/LearningApp/pull/135))
+- **Phase / PR link:** EXM cumulative consolidation / [PR #135](https://github.com/RACCHUS/LearningApp/pull/135)
+- **Observation and status:** Coded, reconciled with `main@8e481cd`, and verified locally.
+  1. Mainline reconciliation: Merged `main` commits `a4d75b0` (PR #130, Migration 63: `20261101000000_eco_04_educator_profiles.sql`) and `8e481cd` (PR #62, EXM-P0 practice-only safety, fail-closed item domain resolution, and target practice allocation normalization).
+  2. Conflict resolution: Resolved conflicts across `exam_report_screen.dart` (retained `report.examPartKey` fact chip alongside normalized practice allocation), `exam_evaluation_service.dart` (retained `totalDomainWeight` normalization), `mock_exam_generator_service.dart` (retained `examPartKey` parameter on `loadBlueprint()` and integrated `resolveItemDomain()` fail-closed concept resolution), and `exam_evaluation_test.dart` (retained 19-domain normalization test).
+  3. Migration timestamp advance: The 17 unmerged feature-branch migrations had timestamps `20261031010000`–`20261031170000`, which predated Migration 63 on `main` (`20261101000000`). Renamed all 17 files with identical SQL content (100% similarity) to `20261101010000` through `20261101170000`. Updated all corresponding migration references in `docs/exm/` and Appendix A.
+  4. Local verification pipeline results:
+     - `dart run tool/verify_migration_history.dart --base-ref origin/main`: PASSED (80 local migrations, 63 baseline, 17 pending, monotonic 14-digit timestamps valid, append-only history preserved).
+     - `dart analyze`: PASSED (0 issues found).
+     - `flutter test`: PASSED (1,883/1,883 tests passed with 0 failures).
+     - `flutter build web --release`: PASSED (compilation cleanly completed in 91.4s).
+     - `dart run tool/lint_manifest.dart --dir content/`: PASSED (0 errors, 0 warnings).
+     - `dart run tool/ingest_curriculum.dart --dir content/ --dry-run`: PASSED (3/3 manifests valid).
+     - `flutter test --dart-define=EXM_STRESS=true test/services/assessment/reference_practice_json_load_probe_test.dart`: PASSED (50k synthetic export in 800ms).
+     - Python tools and test suite: PASSED (55/55 unit tests passed).
+     - PowerShell syntax parsing: PASSED cleanly.
+- **Impact / risk:** Reconciles all downstream EXM-00, EXM-01, EXM-02A, EXM-02B, and EXM-03 draft work with the latest mainline and resolves the migration ordering block. Hosted production Supabase database remains untouched (62 migrations applied, Gate 1 `false`, Gate 2 undeployed).
+- **Status:** Coded and locally verified; ready for remote push and CI confirmation.
+
 ---
 
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
