@@ -163,8 +163,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify that unnormalized 1.0 weight displays normalized 5%, not 100%
-      expect(find.text('Target Practice Allocation: 5%'), findsWidgets);
+      // Verify that unnormalized 1.0 weight displays normalized 5%, not 100% across all 19 cards
+      expect(find.text('Target Practice Allocation: 5%'), findsNWidgets(19));
       expect(find.text('Target Practice Allocation: 100%'), findsNothing);
       expect(find.textContaining('Blueprint Weight'), findsNothing);
     });

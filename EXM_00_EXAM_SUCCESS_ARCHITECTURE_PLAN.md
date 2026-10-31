@@ -3,7 +3,7 @@
 **Document ID:** `EXM-00`  
 **Status:** **APPROVED ARCHITECTURE v6 — owner-authorized EXM-P0 merge to main; production deployment separately unauthorized**  
 **Prepared:** October 18, 2026  
-**Revised:** October 18, 2026 (v6: staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
+**Revised:** October 31, 2026 (v6.1: EXM-P0 practice-only safety, fail-closed concept resolution, target practice allocation normalization, owner merge authorization; staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
 **Repository path:** `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
 **Repository:** `RACCHUS/LearningApp`  
 **Code baseline reviewed:** `main` at `8ef15b99092a4dcb31f1a934facfdbfc97ac96a1` (latest returned by the GitHub connector during this review). Recheck HEAD before implementation.  
@@ -745,7 +745,7 @@ These official pages establish the **types of conditions** the model must handle
 - **Observation and status:** Coded, locally verified, and prepared for merge. Reconciled with `main` at `a4d75b0` (following PR #130 merge). Addressed all code review findings:
   1. Fail-closed item domain assignment: `MockExamGeneratorService.resolveItemDomain()` fails closed (returns `null`) if any linked concept is ambiguous or unmapped, or if concepts resolve to conflicting domains, preventing mixed-concept questions from slipping into domain sets.
   2. Target Practice Allocation normalization: Replaced `'Blueprint Weight:'` with `'Target Practice Allocation:'` and normalized weights across report domains. Prevents production versions with unnormalized domain weights (such as 2026.1's 19 equal-weight domains stored as 1.0) from displaying 100% allocation; correctly displays normalized 5% allocation.
-  3. Plan authorization alignment: Updated Document Status, Section 11, and Section 16.5 to record explicit owner authorization to merge PR #62 into `main` (strictly separated from deployment/production authorization), and marked historical execution records as superseded.
+  3. Plan authorization alignment: Updated Document Status, opening Implementation Authorization, and Section 16.5 to record explicit owner authorization to merge PR #62 into `main` (strictly separated from deployment/production authorization), and marked historical execution records as superseded.
 - **Evidence:** `lib/services/assessment/mock_exam_generator_service.dart`, `lib/services/assessment/exam_evaluation_service.dart`, `lib/screens/assessment/exam_report_screen.dart`, `lib/models/assessment_engine/exam_diagnostic_report.dart`, `test/unit/assessment_engine/mock_exam_generator_test.dart` (8 fail-closed tests), `test/unit/assessment_engine/exam_evaluation_test.dart` (19-domain normalization test), and `test/widgets/exam_report_screen_test.dart` (Target Practice Allocation & 19-domain widget tests).
 - **Impact / risk:** Practice-only mock exams fail closed against unmapped or ambiguous concepts and accurately label and calculate domain breakdowns as normalized app-defined target practice allocations rather than official syllabus weights. PR #62 contains 0 database migrations; hosted Supabase production remains locked at 62 migrations with Gate 1 closed (`false`) and Gate 2 undeployed.
 - **Decision requested:** Merge PR #62 into `main` upon green CI completion. Production deployment and later phases remain unauthorized.
