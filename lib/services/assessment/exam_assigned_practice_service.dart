@@ -35,6 +35,7 @@ class IssuedExamPractice {
   final String assignmentId;
   final String targetVersionId;
   final String examPartKey;
+  final String administrationDate;
   final DateTime expiresAt;
   final List<IssuedExamQuestion> questions;
   const IssuedExamPractice._(
@@ -43,6 +44,7 @@ class IssuedExamPractice {
     this.assignmentId,
     this.targetVersionId,
     this.examPartKey,
+    this.administrationDate,
     this.expiresAt,
     this.questions,
   );
@@ -53,16 +55,21 @@ class IssuedExamPractice {
     required String expectedSessionId,
     required String expectedTargetVersionId,
     required String expectedExamPartKey,
+    String? expectedAdministrationDate,
   }) {
     final data = _exactObject(raw, {
       'assignment_id', 'target_version_id', 'exam_part_key',
-      'expires_at', 'practice_only', 'question_count', 'questions',
+      'administration_date', 'expires_at', 'practice_only',
+      'question_count', 'questions',
     });
     final entries = data['questions'];
     final expiry = DateTime.tryParse(data['expires_at']?.toString() ?? '');
+    final adminDate = data['administration_date']?.toString();
     if (!_validUuid(data['assignment_id']) ||
         data['target_version_id'] != expectedTargetVersionId ||
         data['exam_part_key'] != expectedExamPartKey ||
+        adminDate == null ||
+        (expectedAdministrationDate != null && adminDate != expectedAdministrationDate) ||
         data['practice_only'] != true ||
         data['question_count'] != 6 ||
         expiry == null ||
@@ -97,9 +104,13 @@ class IssuedExamPractice {
       ));
     }
     return IssuedExamPractice._(
-      expectedOwnerId, expectedSessionId,
+      expectedOwnerId,
+      expectedSessionId,
       data['assignment_id'] as String,
-      expectedTargetVersionId, expectedExamPartKey, expiry,
+      expectedTargetVersionId,
+      expectedExamPartKey,
+      adminDate,
+      expiry,
       List<IssuedExamQuestion>.unmodifiable(questions),
     );
   }
@@ -154,17 +165,20 @@ class IssuedExamResult {
 /// Existing mock/diagnostic UI is intentionally NOT wired to this service.
 /// The database remains the sole scorer and validates live-session ownership.
 class ExamAssignedPracticeService {
-  final SupabaseClient _client;
+  final SupabaseClient? _client;
+  final User? Function()? _testCurrentUser;
   final String? Function()? _testSessionId;
-  final Future<dynamic> Function(String, String)? _testIssue;
+  final Future<dynamic> Function(String, String, String)? _testIssue;
   final Future<dynamic> Function(String, Map<String, int>)? _testSubmit;
 
   ExamAssignedPracticeService({
     SupabaseClient? client,
+    User? Function()? testCurrentUser,
     String? Function()? testSessionId,
-    Future<dynamic> Function(String, String)? testIssue,
+    Future<dynamic> Function(String, String, String)? testIssue,
     Future<dynamic> Function(String, Map<String, int>)? testSubmit,
-  }) : _client = client ?? Supabase.instance.client,
+  }) : _client = client,
+       _testCurrentUser = testCurrentUser,
        _testSessionId = testSessionId,
        _testIssue = testIssue,
        _testSubmit = testSubmit;
@@ -173,7 +187,8 @@ class ExamAssignedPracticeService {
   // is a privacy guard, NOT a substitute for server-side JWT validation.
   String? _sessionId() {
     if (_testSessionId != null) return _testSessionId();
-    final token = _client.auth.currentSession?.accessToken;
+    final client = _client ?? Supabase.instance.client;
+    final token = client.auth.currentSession?.accessToken;
     if (token == null) return null;
     try {
       final parts = token.split('.');
@@ -190,7 +205,9 @@ class ExamAssignedPracticeService {
   }
 
   String _guard(String ownerId, {String? sessionId}) {
-    final user = _client.auth.currentUser;
+    final user = _testCurrentUser != null
+        ? _testCurrentUser()
+        : (_client ?? Supabase.instance.client).auth.currentUser;
     final actualSession = _sessionId();
     if (ownerId.isEmpty || user == null || user.isAnonymous ||
         user.id != ownerId || !_validUuid(actualSession) ||
@@ -204,23 +221,28 @@ class ExamAssignedPracticeService {
     required String expectedOwnerId,
     required String targetVersionId,
     required String examPartKey,
+    required DateTime administrationDate,
   }) async {
     if (!_validUuid(targetVersionId) || !_partKey.hasMatch(examPartKey)) {
       throw ArgumentError('Exact exam target version and part are required');
     }
     final session = _guard(expectedOwnerId);
+    final dateStr = administrationDate.toIso8601String().substring(0, 10);
     final raw = _testIssue != null
-        ? await _testIssue(targetVersionId, examPartKey)
-        : await _client.rpc('exm03_issue_assigned_practice', params: {
+        ? await _testIssue(targetVersionId, examPartKey, dateStr)
+        : await (_client ?? Supabase.instance.client).rpc('exm03_issue_assigned_practice', params: {
             'p_target_version_id': targetVersionId,
             'p_exam_part_key': examPartKey,
+            'p_administration_date': dateStr,
           });
     _guard(expectedOwnerId, sessionId: session);
     return IssuedExamPractice.parse(
-      raw, expectedOwnerId: expectedOwnerId,
+      raw,
+      expectedOwnerId: expectedOwnerId,
       expectedSessionId: session,
       expectedTargetVersionId: targetVersionId,
       expectedExamPartKey: examPartKey,
+      expectedAdministrationDate: dateStr,
     );
   }
 
@@ -248,7 +270,7 @@ class ExamAssignedPracticeService {
     }
     final raw = _testSubmit != null
         ? await _testSubmit(assignment.assignmentId, answers)
-        : await _client.rpc('exm03_submit_assigned_practice', params: {
+        : await (_client ?? Supabase.instance.client).rpc('exm03_submit_assigned_practice', params: {
             'p_assignment_id': assignment.assignmentId,
             'p_responses': answers,
           });

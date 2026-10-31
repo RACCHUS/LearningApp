@@ -154,7 +154,7 @@ class ExamPracticeArchive {
     const partFields={
       'assignment_id','target_id','target_version_id','exam_part_key',
       'curriculum_root_node_id','manifest_revision_id','practice_kind',
-      'issued_at','expires_at','attempt'
+      'administration_date','issued_at','expires_at','attempt'
     };
     const scoreFields={
       'attempt_id','completed_at','question_count','fully_correct_count',

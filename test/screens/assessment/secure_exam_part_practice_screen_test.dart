@@ -22,6 +22,7 @@ User _user(String id)=>User(id:id,appMetadata:const {},userMetadata:const {},
 
 Map<String,dynamic> _issued()=>{
  'assignment_id':assignment,'target_version_id':target,'exam_part_key':'part_a',
+ 'administration_date':'2027-04-15',
  'expires_at':'2099-01-01T00:00:00Z','practice_only':true,
  'question_count':6,
  'questions':[
@@ -52,9 +53,9 @@ void main(){
    var issuedRequests=0, scoringRequests=0;
    final service=ExamAssignedPracticeService(
      client:client,testSessionId:()=>session,
-     testIssue:(v,p) async {
+     testIssue:(v,p,d) async {
        issuedRequests++;
-       expect([v,p],[target,'part_a']);
+       expect([v,p,d],[target,'part_a','2027-04-15']);
        return _issued();
      },
      testSubmit:(id,answers) async {
@@ -68,7 +69,7 @@ void main(){
    await tester.pumpWidget(ProviderScope(
      overrides:[authProvider.overrideWith((ref)=>auth)],
      child:MaterialApp(home:SecureExamPartPracticeScreen(
-       targetVersionId:target,examPartKey:'part_a',service:service,
+       targetVersionId:target,examPartKey:'part_a',administrationDate:DateTime.utc(2027,4,15),service:service,
      )),
    ));
    await tester.pumpAndSettle();
@@ -98,13 +99,13 @@ void main(){
    final gate=Completer<dynamic>();
    final service=ExamAssignedPracticeService(
      client:client,testSessionId:()=>session,
-     testIssue:(v,p)=>gate.future,
+     testIssue:(v,p,d)=>gate.future,
      testSubmit:(id,answer) async=>_score(),
    );
    await tester.pumpWidget(ProviderScope(
      overrides:[authProvider.overrideWith((ref)=>auth)],
      child:MaterialApp(home:SecureExamPartPracticeScreen(
-       targetVersionId:target,examPartKey:'part_a',service:service,
+       targetVersionId:target,examPartKey:'part_a',administrationDate:DateTime.utc(2027,4,15),service:service,
      )),
    ));
    await tester.pump();

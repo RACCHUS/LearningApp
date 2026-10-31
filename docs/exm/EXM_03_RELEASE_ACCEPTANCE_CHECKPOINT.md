@@ -9,6 +9,11 @@ Cumulative development PR #135 starts with the existing EXM-02B/EXM-03 account-h
 ## Large combined history (new 50,000-per-store hard bound)
 
 - Forward migration `20261101170000_exm_03_verified_large_combined_export.sql` increases the owner-only inventory limit from 5,000 to **50,000 EXM-02B R1–R4 events and 50,000 EXM-03 assignments**; older single-statement combined export still applies only to <=5,000 per store. The verified client automatically chooses paged collection for larger histories.
+- Forward migration `20261101180000_exm_03_release_hardening_and_date_eligibility.sql` (Migration 81) completes the EXM-03 consolidation:
+  1. Carries actual exam administration date through assignment issuance, scoring, and portability exports.
+  2. Permanently protects retired approved items under restrictive RLS `exm03_has_protected_binding` (`published` or `retired`).
+  3. Restricts unconfirmed `exm03_erase_part_attempts` execution to `service_role`.
+  4. Enforces technical separation between practice pool items and held-out transfer / nonproduction selection probes via `usage_role = 'practice_pool'`.
 - New `exm03_account_part_export_page` returns at most 250 private assignment summaries in a descending `(issued_at,id)` keyset, checks a permanent account and a live matching Supabase Auth session, and never returns responses, scoring specs, assigned item hashes/lists, issue-session IDs or review tokens.
 - Existing owner-RLS `exam_reference_drill_export_page` supplies the R1–R4 side. The client validates every page's owner, row count, descending cursor, uniqueness and expected total; snapshots spanning multiple HTTP requests **are not atomic**. It compares preflight and postflight counts and the private server fingerprint (including newly graded evidence), discards all assembled data on any change, and never labels an incomplete collection complete.
 - Large client archives are assembled in memory, verified again against the exact parser schema, and downloaded only after an explicit gesture. JSON generation is chunked; the browser still rejects files beyond **64 MiB**, rather than offering a truncated download.

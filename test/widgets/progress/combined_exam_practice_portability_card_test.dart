@@ -89,6 +89,7 @@ Map<String, dynamic> _archive() => {
       'curriculum_root_node_id': '44444444-4444-4444-8444-444444444444',
       'manifest_revision_id': '55555555-5555-4555-8555-555555555555',
       'practice_kind': 'diagnostic',
+      'administration_date': '2026-10-23',
       'issued_at': '2026-10-23T10:00:00Z',
       'expires_at': '2026-10-23T11:30:00Z',
       'attempt': {

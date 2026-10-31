@@ -77,9 +77,9 @@ class ExamPartPracticeHistoryService {
     });
   }
 
-  /// Owner-initiated exact-part erasure. Never use an unconstrained account
-  /// delete or accept a caller's claim that a stored event belongs to them.
-  /// This will be UI-enabled only after the user-confirmation contract lands.
+  /// Administrative/service-role exact-part erasure. Authenticated client
+  /// erasure must proceed through ExamCombinedPracticePortabilityService.erase
+  /// which enforces session-bound advisory locking and typed phrase confirmation.
   Future<void> erasePart({
     required String expectedOwnerId,
     required String targetVersionId,
@@ -90,8 +90,7 @@ class ExamPartPracticeHistoryService {
       throw ArgumentError('Exact target version and part required for erasure.');
     }
     // Deletes the server-issued assignment as well as the scored row in
-    // one transaction; a late identical submit cannot recreate erased data.
-    // Caller-facing UI confirmation and account-wide erasure remain gated.
+    // one transaction; exm03_erase_part_attempts is restricted to service_role.
     await _client.rpc('exm03_erase_part_attempts', params: {
       'p_target_version_id': targetVersionId,
       'p_exam_part_key': examPartKey,

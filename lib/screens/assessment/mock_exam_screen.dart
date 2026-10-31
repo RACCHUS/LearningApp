@@ -313,6 +313,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
       return SecureExamPartPracticeScreen(
         targetVersionId: widget.initialSession.blueprint.targetVersionId,
         examPartKey: widget.initialSession.blueprint.examPartKey!,
+        administrationDate: widget.initialSession.blueprint.administrationDate,
       );
     }
 

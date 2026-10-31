@@ -6,6 +6,7 @@ class MockExamBlueprint {
   /// Null means legacy target-wide educational practice.
   final String? examPartKey;
   final String? curriculumRootNodeId;
+  final DateTime? administrationDate;
   final String examCode;
   final String title;
   /// Configurable practice countdown; never an official exam duration by itself.
@@ -24,6 +25,7 @@ class MockExamBlueprint {
     required this.targetVersionId,
     this.examPartKey,
     this.curriculumRootNodeId,
+    this.administrationDate,
     required this.examCode,
     required this.title,
     this.timeLimitMinutes = 90,

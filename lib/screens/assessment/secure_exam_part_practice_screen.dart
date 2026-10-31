@@ -10,12 +10,14 @@ import '../../services/assessment/exam_assigned_practice_service.dart';
 class SecureExamPartPracticeScreen extends ConsumerWidget {
   final String targetVersionId;
   final String examPartKey;
+  final DateTime? administrationDate;
   final ExamAssignedPracticeService? service;
 
   const SecureExamPartPracticeScreen({
     super.key,
     required this.targetVersionId,
     required this.examPartKey,
+    this.administrationDate,
     this.service,
   });
 
@@ -35,6 +37,7 @@ class SecureExamPartPracticeScreen extends ConsumerWidget {
       expectedOwnerId:owner,
       targetVersionId:targetVersionId,
       examPartKey:examPartKey,
+      initialAdministrationDate:administrationDate,
       service:service,
       stillOwner:(){
         final state=ref.read(authProvider);
@@ -49,6 +52,7 @@ class _OwnerPractice extends StatefulWidget {
   final String expectedOwnerId;
   final String targetVersionId;
   final String examPartKey;
+  final DateTime? initialAdministrationDate;
   final ExamAssignedPracticeService? service;
   final bool Function() stillOwner;
 
@@ -57,6 +61,7 @@ class _OwnerPractice extends StatefulWidget {
     required this.expectedOwnerId,
     required this.targetVersionId,
     required this.examPartKey,
+    this.initialAdministrationDate,
     required this.stillOwner,
     this.service,
   });
@@ -69,6 +74,7 @@ class _OwnerPracticeState extends State<_OwnerPractice> {
   late final ExamAssignedPracticeService _defaultService=
       ExamAssignedPracticeService();
   ExamAssignedPracticeService get _api=>widget.service??_defaultService;
+  DateTime? _selectedAdministrationDate;
   IssuedExamPractice? _issued;
   IssuedExamResult? _result;
   final Map<String,int> _answers={};
@@ -82,13 +88,40 @@ class _OwnerPracticeState extends State<_OwnerPractice> {
   @override
   void initState(){
     super.initState();
+    _selectedAdministrationDate=widget.initialAdministrationDate;
     WidgetsBinding.instance.addPostFrameCallback((_){
-      if(_owned) _load();
+      if(_owned){
+        if(_selectedAdministrationDate!=null){
+          _load();
+        }else{
+          setState(()=>_loading=false);
+        }
+      }
     });
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final chosen = await showDatePicker(
+      context: context,
+      initialDate: _selectedAdministrationDate ?? now,
+      firstDate: DateTime(2025, 1, 1),
+      lastDate: DateTime(2030, 12, 31),
+      helpText: 'Select your actual exam administration date',
+    );
+    if(chosen!=null && mounted){
+      setState(()=>_selectedAdministrationDate=chosen);
+      _load();
+    }
   }
 
   Future<void> _load() async {
     if(!_owned)return;
+    final adminDate=_selectedAdministrationDate;
+    if(adminDate==null){
+      setState(()=>_loading=false);
+      return;
+    }
     setState((){
       _loading=true;
       _error=null;
@@ -102,13 +135,14 @@ class _OwnerPracticeState extends State<_OwnerPractice> {
         expectedOwnerId:widget.expectedOwnerId,
         targetVersionId:widget.targetVersionId,
         examPartKey:widget.examPartKey,
+        administrationDate:adminDate,
       );
       if(!_owned)return;
       setState(()=>_issued=issued);
     }catch(_){
       if(!_owned)return;
       setState(()=>_error=
-        'Reviewed practice is unavailable for this exact exam part. '
+        'Reviewed practice is unavailable for this exact exam part and administration date. '
         'No questions or scores have been fabricated.');
     }finally{
       if(_owned)setState(()=>_loading=false);
@@ -155,11 +189,33 @@ class _OwnerPracticeState extends State<_OwnerPractice> {
               'Educational practice only — not an official exam score. '
               'Questions are issued by the server for your selected part.',
             ),
+            if(_selectedAdministrationDate!=null)
+              Padding(
+                padding:const EdgeInsets.symmetric(vertical:4),
+                child:Text(
+                  'Administration date: ${_selectedAdministrationDate!.toIso8601String().substring(0, 10)}',
+                  key:const Key('secure-exm-part-admin-date'),
+                  style:const TextStyle(fontWeight:FontWeight.w600),
+                ),
+              ),
             const SizedBox(height:12),
             if(_loading)const LinearProgressIndicator(),
             if(_error!=null)Text(_error!,
               key:const Key('secure-exm-part-error')),
-            if(!_loading && issued==null)
+            if(_selectedAdministrationDate==null && issued==null)...[
+              const SizedBox(height:16),
+              const Text(
+                'An actual exam administration date is required to resolve '
+                'approved reference materials for this part:',
+              ),
+              const SizedBox(height:8),
+              OutlinedButton.icon(
+                key:const Key('secure-exm-part-date-button'),
+                icon:const Icon(Icons.calendar_today_rounded, size:18),
+                label:const Text('Select exam administration date'),
+                onPressed:_pickDate,
+              ),
+            ]else if(!_loading && issued==null)
               OutlinedButton(
                 key:const Key('secure-exm-part-retry'),
                 onPressed:_load,

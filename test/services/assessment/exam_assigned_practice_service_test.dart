@@ -11,6 +11,7 @@ const sessionA = 'e5020000-0000-4000-8000-000000000001';
 const sessionB = 'e5020000-0000-4000-8000-000000000002';
 const version = 'e5030000-0000-4000-8000-000000000001';
 const assignmentId = 'e5040000-0000-4000-8000-000000000001';
+final defaultAdminDate = DateTime.utc(2027, 4, 15);
 
 class _Client implements SupabaseClient {
   final _Auth stub = _Auth();
@@ -43,6 +44,7 @@ Map<String, dynamic> _issued() => {
   'assignment_id': assignmentId,
   'target_version_id': version,
   'exam_part_key': 'part_a',
+  'administration_date': '2027-04-15',
   'expires_at': '2099-01-01T12:00:00Z',
   'practice_only': true,
   'question_count': 6,
@@ -87,20 +89,21 @@ void main() {
   });
 
   ExamAssignedPracticeService service({
-    Future<dynamic> Function(String, String)? issue,
+    Future<dynamic> Function(String, String, String)? issue,
     Future<dynamic> Function(String, Map<String, int>)? submit,
   }) => ExamAssignedPracticeService(
     client: client, testSessionId: () => activeSession,
-    testIssue: issue ?? (v, p) async => _issued(),
+    testIssue: issue ?? (v, p, d) async => _issued(),
     testSubmit: submit ?? (a, r) async => _receipt(),
   );
 
   test('safe exact issuer projection and canonical result are returned', () async {
     var requests = 0;
     final api = service(
-      issue: (v, p) async {
+      issue: (v, p, d) async {
         expect(v, version);
         expect(p, 'part_a');
+        expect(d, '2027-04-15');
         requests++;
         return _issued();
       },
@@ -113,7 +116,7 @@ void main() {
     );
     final issued = await api.issue(
       expectedOwnerId: ownerA, targetVersionId: version,
-      examPartKey: 'part_a',
+      examPartKey: 'part_a', administrationDate: defaultAdminDate,
     );
     expect(issued.questions.length, 6);
     expect(issued.questions.first.options, ['Answer A', 'Answer B']);
@@ -130,20 +133,20 @@ void main() {
 
   test('guest, different account, missing session rejected before network', () async {
     var requests = 0;
-    final api = service(issue: (v, p) async {
+    final api = service(issue: (v, p, d) async {
       requests++;
       return _issued();
     });
     client.stub.user = _user(ownerA, guest: true);
     await expectLater(api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a'), throwsStateError);
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate), throwsStateError);
     client.stub.user = _user(ownerB);
     await expectLater(api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a'), throwsStateError);
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate), throwsStateError);
     client.stub.user = _user(ownerA);
     activeSession = '';
     await expectLater(api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a'), throwsStateError);
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate), throwsStateError);
     expect(requests, 0);
   });
 
@@ -154,11 +157,11 @@ void main() {
     );
     final api = ExamAssignedPracticeService(
       client: client,
-      testIssue: (v, p) async => _issued(),
+      testIssue: (v, p, d) async => _issued(),
       testSubmit: (a, r) async => _receipt(),
     );
     final issued = await api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     // A normal token refresh retains the server Auth session UUID.
     client.stub.session = Session(
       accessToken: _token(sessionA), tokenType: 'bearer',
@@ -183,17 +186,17 @@ void main() {
   test('in-flight account or session switch cannot reveal issued questions',
       () async {
     final delayed = Completer<dynamic>();
-    final api = service(issue: (v, p) => delayed.future);
+    final api = service(issue: (v, p, d) => delayed.future);
     final pending = api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     activeSession = sessionB;
     delayed.complete(_issued());
     await expectLater(pending, throwsStateError);
     final delayed2 = Completer<dynamic>();
     activeSession = sessionA;
-    final api2 = service(issue: (v, p) => delayed2.future);
+    final api2 = service(issue: (v, p, d) => delayed2.future);
     final pending2 = api2.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     client.stub.user = _user(ownerB);
     delayed2.complete(_issued());
     await expectLater(pending2, throwsStateError);
@@ -218,9 +221,9 @@ void main() {
     (extra['questions'] as List)[0]['correct_index'] = 0;
     unsafe.add(extra);
     for (final payload in unsafe) {
-      final api = service(issue: (v, p) async => payload);
+      final api = service(issue: (v, p, d) async => payload);
       await expectLater(api.issue(expectedOwnerId: ownerA,
-        targetVersionId: version, examPartKey: 'part_a'),
+        targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate),
         throwsFormatException);
     }
   });
@@ -232,7 +235,7 @@ void main() {
       return _receipt();
     });
     final issued = await api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     await expectLater(api.submit(expectedOwnerId: ownerA,
       assignment: issued, responses: {_id(1): 0}), throwsStateError);
     await expectLater(api.submit(expectedOwnerId: ownerA,
@@ -255,7 +258,7 @@ void main() {
     final delayed = Completer<dynamic>();
     final api = service(submit: (a, r) => delayed.future);
     final issued = await api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     final pending = api.submit(expectedOwnerId: ownerA,
       assignment: issued,
       responses: {for (var i = 1; i <= 6; i++) _id(i): 0});
@@ -267,7 +270,7 @@ void main() {
   test('submission rejects untrusted or impossible scoring receipts', () async {
     final api = service();
     final issued = await api.issue(expectedOwnerId: ownerA,
-      targetVersionId: version, examPartKey: 'part_a');
+      targetVersionId: version, examPartKey: 'part_a', administrationDate: defaultAdminDate);
     final bad = <Map<String, dynamic>>[
       _receipt()..['official_exam_result'] = true,
       _receipt()..['response_sha256'] = 'secret',

@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(16);
+select plan(17);
 
 select has_table('public','exam_part_practice_assignments',
  'Backend-issued question sets have a private assignment store');
@@ -36,9 +36,12 @@ select ok(not has_function_privilege('anon',
 select ok(has_function_privilege('service_role',
  'public.exm03_record_assigned_practice(uuid,jsonb)','EXECUTE'),
  'Only backend service can use canonical scorer');
-select ok(has_function_privilege('authenticated',
+select ok(not has_function_privilege('authenticated',
  'public.exm03_erase_part_attempts(uuid,text)','EXECUTE'),
- 'Owners may request exact-part erasure through guarded RPC');
+ 'Authenticated clients cannot directly invoke erase_part_attempts');
+select ok(has_function_privilege('service_role',
+ 'public.exm03_erase_part_attempts(uuid,text)','EXECUTE'),
+ 'Service role can invoke erase_part_attempts');
 select throws_ok($q$
  select public.exm03_record_assigned_practice(null,'{}'::jsonb)
 $q$,'22023',null,'Missing trusted assignment ID fails before writes');

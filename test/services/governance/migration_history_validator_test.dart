@@ -493,6 +493,49 @@ Fatal corruption or unrecognized output
       expect(postflight.issues.any((i) => i.rule == 'partial_deployment_unapplied_migration'), isTrue);
       expect(postflight.issues.first.message, contains('Deployment was only partially applied'));
     });
+
+    test('reconciles 62 production migrations to 81 local with Gate 2 and EXM pending (19 total)', () {
+      final records = <MigrationRecord>[
+        for (var i = 1; i <= 62; i++)
+          makeRecord('${20261000000000 + i}_mig_$i.sql', 'select $i;'),
+        makeRecord(
+          '20261101000000_eco_04_educator_profiles.sql',
+          "insert into public.community_config (key, value) values ('educator_profiles_public_enabled', 'false');",
+        ),
+        for (var i = 1; i <= 17; i++)
+          makeRecord('${20261101000000 + (i * 10000)}_exm_$i.sql', 'select $i;'),
+        makeRecord(
+          '20261101180000_exm_03_release_hardening_and_date_eligibility.sql',
+          '-- release hardening',
+        ),
+      ];
+      expect(records.length, 81);
+
+      final remoteApplied = [
+        for (var i = 1; i <= 62; i++)
+          '${20261000000000 + i}',
+      ];
+      expect(remoteApplied.length, 62);
+
+      final preflight = validator.compareWithHosted(
+        localRecords: records,
+        remoteVersions: remoteApplied,
+      );
+
+      expect(preflight.isValid, isTrue);
+      expect(preflight.hasPending, isTrue);
+      expect(preflight.appliedVersions.length, 62);
+      expect(preflight.pendingVersions.length, 19);
+      expect(preflight.pendingVersions.first, '20261101000000');
+      expect(preflight.pendingVersions.last, '20261101180000');
+      expect(preflight.issues, isEmpty);
+
+      // Verify Gate 2 configuration is present and defaults to 'false'
+      final educatorRecord = records.firstWhere(
+        (r) => r.timestamp == '20261101000000',
+      );
+      expect(educatorRecord.content, contains("'educator_profiles_public_enabled', 'false'"));
+    });
   });
 }
 

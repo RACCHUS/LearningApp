@@ -15,12 +15,14 @@ class DiagnosticAssessmentScreen extends ConsumerStatefulWidget {
   final String targetVersionId;
   /// Explicitly selected curriculum practice part (never inferred).
   final String? examPartKey;
+  final DateTime? administrationDate;
 
   const DiagnosticAssessmentScreen({
     super.key,
     required this.targetId,
     required this.targetVersionId,
     this.examPartKey,
+    this.administrationDate,
   });
 
   @override
@@ -68,6 +70,7 @@ class _DiagnosticAssessmentScreenState
       return SecureExamPartPracticeScreen(
         targetVersionId: widget.targetVersionId,
         examPartKey: widget.examPartKey!,
+        administrationDate: widget.administrationDate,
       );
     }
     final learnerId = ref.watch(learnerIdProvider);

@@ -1200,6 +1200,45 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
 - **Decision requested:** Owner review and signoff on PR #135 readiness and final merge into `main`.
 - **Status:** Resolved / Ready for Owner Review.
 
+### A.36 — EXM-03 Release Hardening, Date-Specific Eligibility, Retired-Item RLS Defenses, and Migration 81 Ledger Reconciliation
+
+- **Date / agent / Git commit:** 2026-10-31 / Antigravity / HEAD of `feature/exm-03-consolidated-20261023` ([PR #135](https://github.com/RACCHUS/LearningApp/pull/135))
+- **Phase / PR link:** EXM-03 Release Hardening & Migration Governance / [PR #135](https://github.com/RACCHUS/LearningApp/pull/135)
+- **Observation and status:** Resolved & Verified (comprehensive corrective hardening addressing all review findings):
+  1. Date-Specific Learner Eligibility Pipeline:
+     - Replaced server-side `current_date` assumption with the learner's actual exam administration date.
+     - Added `administration_date date NOT NULL` to `exam_part_practice_assignments`.
+     - Replaced `exm03_issue_assigned_practice(p_target_version_id, p_exam_part_key, p_administration_date)`: validates that `p_administration_date BETWEEN m.effective_from AND m.effective_until`, filters `b.usage_role = 'practice_pool'`, records `p_administration_date` in assignment table, and returns `administration_date` in the verified envelope.
+     - Updated `exm03_record_assigned_practice` to validate the assignment's durable `administration_date` against manifest validity window.
+     - Updated `SecureExamPartPracticeScreen` to accept `DateTime? administrationDate` and render an explicit date picker if not pre-set; wired `administrationDate` through `MockExamScreen` (from blueprint), `DiagnosticAssessmentScreen`, and `ExamAssignedPracticeService.issue()`.
+     - Updated account export pages (`exm03_account_part_export_page` and `exm03_account_practice_export`) to include `administration_date`.
+  2. Permanent RLS Answer-Key Protection for Retired Approved Items:
+     - Hardened `exm03_has_protected_binding(p_item_id uuid)` to evaluate `b.publication_status IN ('published', 'retired')`.
+     - Ensures that when reference bindings are transitioned from published to retired, answer-bearing items permanently retain restrictive RLS protection and cannot be read via direct client `SELECT * FROM assessment_items`.
+  3. Unconfirmed Part Erasure Restricted to Service Role:
+     - Revoked `EXECUTE` privilege on `exm03_erase_part_attempts(uuid, text)` from `authenticated` and `anon`; granted exclusively to `service_role`.
+     - Enforces that all learner self-service practice erasure proceeds through `exm03_erase_account_practice` with session validation, confirmation phrase, and fingerprint verification.
+  4. Technical Separation of Practice Pool vs. Held-Out Transfer & Selection Probes:
+     - Added `usage_role text NOT NULL DEFAULT 'practice_pool' CHECK (usage_role IN ('practice_pool', 'held_out_transfer', 'selection_probe'))` to `assessment_item_reference_validity`.
+     - Created index `exm02a_validity_usage_role_idx` on `(manifest_revision_id, publication_status, usage_role)`.
+     - Filtered `b.usage_role = 'practice_pool'` in `exm03_issue_assigned_practice` candidate item queries, strictly preventing held-out transfer probes and nonproduction selection probes from leaking into learner practice.
+  5. Strict Append-Only Migration Invariant (Migration 81):
+     - Packaged all schema updates, DDL, and RPC definitions into Migration 81 (`20261101180000_exm_03_release_hardening_and_date_eligibility.sql`).
+     - Prior migrations 1 through 80 remain 100% immutable and untouched.
+     - Verified clean append-only history via `dart run tool/verify_migration_history.dart --base-ref origin/main`.
+  6. Migration Ledger & Gate 2 Parity Reconciliation:
+     - Reconciled hosted production state (62 migrations applied, Gate 1 `false`, Gate 2 undeployed) with `origin/main` baseline (63 migrations; Migration 63 is `20261101000000_eco_04_educator_profiles.sql`) and feature branch (81 migrations; Migrations 64–81).
+     - Confirmed that guarded preflight comparison correctly identifies exactly 19 pending migrations to deploy (1 educator migration + 18 EXM migrations).
+     - Gate 2 (`educator_profiles_public_enabled`) remains safely closed and locked at `false`.
+- **Evidence:**
+  - Migration: `supabase/migrations/20261101180000_exm_03_release_hardening_and_date_eligibility.sql`
+  - Dart services & screens: `lib/services/assessment/exam_assigned_practice_service.dart`, `lib/screens/assessment/secure_exam_part_practice_screen.dart`, `lib/models/assessment_engine/mock_exam_blueprint.dart`, `lib/screens/assessment/mock_exam_screen.dart`, `lib/screens/assessment/diagnostic_assessment_screen.dart`, `lib/services/assessment/exam_combined_practice_portability_service.dart`, `lib/services/assessment/exam_part_practice_history_service.dart`.
+  - Automated tests: `test/services/assessment/exam_assigned_practice_service_test.dart`, `test/screens/assessment/secure_exam_part_practice_screen_test.dart`, `test/unit/assessment_engine/exam_assigned_practice_service_test.dart`, `test/widgets/secure_exam_part_practice_screen_test.dart`, `test/services/governance/migration_history_validator_test.dart` (all passing).
+  - Database verification: `supabase/tests/exam_part_assigned_scoring_test.sql` (17 pgTAP tests), `supabase/tests/exam_part_assigned_scoring_integration_test.sql` (40 pgTAP tests).
+- **Impact / risk:** Eliminates all architectural release blockers and security vulnerabilities identified in the review verdict. Zero production database mutations applied. PR #135 maintained in DRAFT status awaiting owner sign-off.
+- **Decision requested:** Owner review and authorization of PR #135 for release and merging into `main`.
+- **Status:** Resolved / Release Ready (Draft PR).
+
 ---
 
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*

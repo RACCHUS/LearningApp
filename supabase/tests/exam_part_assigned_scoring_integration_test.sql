@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(35);
+select plan(40);
 
 insert into auth.users (id,email) values
  ('d3180000-0000-4000-8000-000000000001','exm03-graded-a@example.invalid')
@@ -89,6 +89,38 @@ begin
      'approved','approved',now(),8,'published'
    );
  end loop;
+
+ -- Add held-out transfer item to verify usage_role separation
+ insert into public.assessment_items(
+   id,origin_target_version_id,interaction_type,
+   prompt,response_spec,scoring_spec)
+ values('d3110000-0000-4000-8000-000000000009',
+   'd3160000-0000-4000-8000-000000000001',
+   'single_choice','Fictional held out transfer item 9',
+   '{"options":["A","B"]}'::jsonb,'{"correct_index":0}'::jsonb);
+ insert into public.assessment_item_concepts
+   (assessment_item_id,concept_id,role)
+   values('d3110000-0000-4000-8000-000000000009',
+          'd3130000-0000-4000-8000-000000000001','primary');
+ insert into public.assessment_item_reference_validity (
+   id,assessment_item_id,manifest_revision_id,
+   item_content_revision,item_content_sha256,answer_location_revision,
+   reference_edition_key,reference_edition,source_release_id,
+   expected_locations,author_ref,ai_drafted,
+   reviewer_ref,reviewer_qualification_evidence,
+   reviewer_edition_access_evidence,rights_review_status,review_status,
+   reviewed_at,review_minutes,publication_status,usage_role
+ ) values (
+   'd3120000-0000-4000-8000-000000000009',
+   'd3110000-0000-4000-8000-000000000009',
+   'd3190000-0000-4000-8000-000000000001',
+   1,public.exam_reference_item_fingerprint('d3110000-0000-4000-8000-000000000009'),1,
+   'handbook','test-2026','d3150000-0000-4000-8000-000000000001',
+   '[{"section":"1.1","source_page":"11"}]'::jsonb,
+   'synthetic-author',true,'independent-synthetic-reviewer',
+   'Synthetic reviewer qualifications', 'Synthetic edition access proof',
+   'approved','approved',now(),8,'published','held_out_transfer'
+ );
 end
 $fixture$;
 
@@ -111,12 +143,14 @@ insert into public.assessment_items(
 select throws_ok($unsafe_assignment$
  insert into public.exam_part_practice_assignments(
  owner_id,target_id,target_version_id,exam_part_key,
+ administration_date,
  curriculum_root_node_id,manifest_revision_id,practice_kind,
  assigned_items,expires_at
  ) values(
  'd3180000-0000-4000-8000-000000000001',
  'd3160000-0000-4000-8000-000000000000',
  'd3160000-0000-4000-8000-000000000001','part_a',
+ current_date,
  'd3170000-0000-4000-8000-000000000000',
  'd3190000-0000-4000-8000-000000000001','diagnostic',
  (select jsonb_agg(jsonb_build_object(
@@ -139,10 +173,10 @@ insert into auth.sessions (id,user_id) values
   'd3180000-0000-4000-8000-000000000001');
 
 select ok(not has_function_privilege('anon',
-  'public.exm03_issue_assigned_practice(uuid,text)','EXECUTE'),
+  'public.exm03_issue_assigned_practice(uuid,text,date)','EXECUTE'),
   'Unsigned clients cannot request part assignments');
 select ok(has_function_privilege('authenticated',
-  'public.exm03_issue_assigned_practice(uuid,text)','EXECUTE'),
+  'public.exm03_issue_assigned_practice(uuid,text,date)','EXECUTE'),
   'Only authenticated learners can request scoped educational practice');
 
 set local role authenticated;
@@ -159,14 +193,19 @@ $issuer_jwt$;
 
 select throws_ok($q$
  select public.exm03_issue_assigned_practice(
-  'd3160000-0000-4000-8000-000000000001','part_b')
+  'd3160000-0000-4000-8000-000000000001','part_b',current_date)
 $q$,'42501',null,'Issuer rejects unconfigured Part B without fallback');
 
 create temp table exm03_issued as
 select public.exm03_issue_assigned_practice(
- 'd3160000-0000-4000-8000-000000000001','part_a') result;
+ 'd3160000-0000-4000-8000-000000000001','part_a',current_date) result;
 select is((select (result->>'question_count')::int from exm03_issued),6,
  'Server selects exactly six reviewed canonical Part A questions');
+select is((select (result->>'administration_date') from exm03_issued),current_date::text,
+ 'Issuer returns confirmed administration date in envelope');
+select ok((select not (result::text like '%d3110000-0000-4000-8000-000000000009%')
+ from exm03_issued),
+ 'Held-out transfer items are strictly excluded from practice pool issuance');
 select ok((select not (result::text like '%correct_index%')
  and not (result::text like '%scoring_spec%')
  and not (result::text like '%sha256%')
@@ -176,14 +215,19 @@ select ok((select not (result::text like '%correct_index%')
 select ok((select (result->>'assignment_id') is not null from exm03_issued),
  'Authenticated issuer returns only the opaque new assignment identifier');
 select is((select (public.exm03_issue_assigned_practice(
- 'd3160000-0000-4000-8000-000000000001','part_a')
+ 'd3160000-0000-4000-8000-000000000001','part_a',current_date)
  ->>'question_count')::int),6,
  'Second bounded assignment is permitted for same learner');
 select throws_ok($q$
  select public.exm03_issue_assigned_practice(
- 'd3160000-0000-4000-8000-000000000001','part_a')
+ 'd3160000-0000-4000-8000-000000000001','part_a',current_date)
 $q$,'42501',null,
  'Third pending assignment is denied by concurrent issuance bound');
+select throws_ok($q$
+ select public.exm03_issue_assigned_practice(
+ 'd3160000-0000-4000-8000-000000000001','part_a',current_date + interval '90 days')
+$q$,'42501',null,
+ 'Date outside active manifest window throws permission denied');
 
 -- A changed/invalid session cannot borrow an existing owner's Auth identity.
 do $revoked$
@@ -196,12 +240,13 @@ end
 $revoked$;
 select throws_ok($q$
  select public.exm03_issue_assigned_practice(
- 'd3160000-0000-4000-8000-000000000001','part_a')
+ 'd3160000-0000-4000-8000-000000000001','part_a',current_date)
 $q$,'42501',null,'Revoked or nonexistent session cannot issue attempts');
 reset role;
 
 insert into public.exam_part_practice_assignments (
  id,owner_id,target_id,target_version_id,exam_part_key,
+ administration_date,
  curriculum_root_node_id,manifest_revision_id,practice_kind,
  assigned_items,expires_at)
 select
@@ -209,6 +254,7 @@ select
  'd3180000-0000-4000-8000-000000000001'::uuid,
  'd3160000-0000-4000-8000-000000000000'::uuid,
  'd3160000-0000-4000-8000-000000000001'::uuid,'part_a',
+ current_date,
  'd3170000-0000-4000-8000-000000000000'::uuid,
  'd3190000-0000-4000-8000-000000000001'::uuid,'diagnostic',
  jsonb_agg(jsonb_build_object('id',i.id,'sha256',
@@ -293,6 +339,22 @@ end $auth_submit$;
 select is((select count(*)::int from public.assessment_items
  where id='d3110000-0000-4000-8000-000000000001'),0,
  'Approved answer-bearing items are blocked from legacy direct reads');
+reset role;
+update public.assessment_item_reference_validity
+set publication_status = 'retired'
+where assessment_item_id = 'd3110000-0000-4000-8000-000000000001';
+set local role authenticated;
+do $auth_retired$ begin
+ perform set_config('request.jwt.claim.sub',
+  'd3180000-0000-4000-8000-000000000001',true);
+ perform set_config('request.jwt.claims',
+  '{"sub":"d3180000-0000-4000-8000-000000000001",
+  "role":"authenticated","is_anonymous":false,
+  "session_id":"d3210000-0000-4000-8000-000000000001"}',true);
+end $auth_retired$;
+select is((select count(*)::int from public.assessment_items
+ where id='d3110000-0000-4000-8000-000000000001'),0,
+ 'Retired approved items remain permanently protected by RLS against direct client reads');
 select throws_ok($q$
  select public.exm03_submit_assigned_practice(
  'd3200000-0000-4000-8000-000000000001','{}'::jsonb)
@@ -349,9 +411,22 @@ do $jwt$ begin
   'd3180000-0000-4000-8000-000000000001',true);
  perform set_config('request.jwt.claims','{"is_anonymous":false}',true);
 end $jwt$;
+select throws_ok($q$
+ select public.exm03_erase_part_attempts(
+  'd3160000-0000-4000-8000-000000000001','part_a')
+$q$,'42501',null,'Authenticated clients cannot directly invoke unconfirmed part erasure');
+reset role;
+
+set local role service_role;
+do $jwt_sr$ begin
+ perform set_config('request.jwt.claim.sub',
+  'd3180000-0000-4000-8000-000000000001',true);
+ perform set_config('request.jwt.claims',
+  '{"sub":"d3180000-0000-4000-8000-000000000001","is_anonymous":false}',true);
+end $jwt_sr$;
 select is(public.exm03_erase_part_attempts(
  'd3160000-0000-4000-8000-000000000001','part_a'),3,
- 'Owner erasure deletes two pending and one scored assignment atomically');
+ 'Service role administrative erasure deletes two pending and one scored assignment atomically');
 reset role;
 select is((select count(*)::integer from public.exam_part_practice_attempts),0,
  'Erasure eliminates graded attempts');
