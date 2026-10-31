@@ -86,6 +86,7 @@ from generate_series(1,6) n;
 
 insert into public.exam_part_practice_assignments(
  id,owner_id,target_id,target_version_id,exam_part_key,
+ administration_date,
  curriculum_root_node_id,manifest_revision_id,practice_kind,
  assigned_items,expires_at
 )
@@ -93,7 +94,9 @@ select ('e4090000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
  ('e4010000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
  'e4030000-0000-4000-8000-000000000001',
  'e4040000-0000-4000-8000-000000000001',
- 'part_a','e4050000-0000-4000-8000-000000000001',
+ 'part_a',
+ current_date,
+ 'e4050000-0000-4000-8000-000000000001',
  'e4070000-0000-4000-8000-000000000001',
  'diagnostic',
  (select jsonb_agg(jsonb_build_object(

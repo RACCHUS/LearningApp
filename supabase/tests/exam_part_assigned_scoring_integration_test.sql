@@ -262,7 +262,8 @@ select
  now()+interval '1 hour'
 from public.assessment_items i
 where i.origin_target_version_id =
-  'd3160000-0000-4000-8000-000000000001'::uuid;
+  'd3160000-0000-4000-8000-000000000001'::uuid
+  and i.id <> 'd3110000-0000-4000-8000-000000000009'::uuid;
 
 select is((select count(*)::integer from public.exam_part_practice_assignments
   where exam_part_key='part_a'),3,
@@ -279,7 +280,8 @@ select jsonb_object_agg(i.id::text,to_jsonb(
   case when right(i.id::text,1) in ('1','2','3') then 0 else 1 end))
  as answers from public.assessment_items i
 where i.origin_target_version_id =
- 'd3160000-0000-4000-8000-000000000001'::uuid;
+ 'd3160000-0000-4000-8000-000000000001'::uuid
+ and i.id <> 'd3110000-0000-4000-8000-000000000009'::uuid;
 create temp table exm03_grade as
 select public.exm03_record_assigned_practice(
  'd3200000-0000-4000-8000-000000000001',answers) as result
@@ -304,6 +306,7 @@ select throws_ok($q$
  from public.assessment_items i
  where i.origin_target_version_id =
   'd3160000-0000-4000-8000-000000000001'::uuid
+  and i.id <> 'd3110000-0000-4000-8000-000000000009'::uuid
 $q$,'23505',null,'Conflicting response replay is rejected');
 
 -- Public submission accepts only the original owner's issued live session,
