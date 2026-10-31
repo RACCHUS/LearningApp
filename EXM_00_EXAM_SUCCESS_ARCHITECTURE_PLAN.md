@@ -1161,7 +1161,8 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
      - `flutter test --dart-define=EXM_STRESS=true test/services/assessment/reference_practice_json_load_probe_test.dart`: PASSED (50k synthetic export in 800ms).
      - Python tools and test suite: PASSED (55/55 unit tests passed).
      - PowerShell syntax parsing: PASSED cleanly.
-- **Impact / risk:** Reconciles all downstream EXM-00, EXM-01, EXM-02A, EXM-02B, and EXM-03 draft work with the latest mainline and resolves the migration ordering block. Hosted production Supabase database remains untouched (62 migrations applied, Gate 1 `false`, Gate 2 undeployed).
+  5. Protected mock practice transport completion: Updated `MockExamScreen` so that when exam-part practice is initiated (`initialSession.blueprint.examPartKey != null`), it routes directly to `SecureExamPartPracticeScreen` with live authenticated session verification, server-issued question projection, and canonical server-side scoring. Legacy whole-target mocks remain separate practice sets without access to protected items (protected under database RLS policy `exm03_no_direct_read_of_approved_answers`). Verified via regression test in `mock_exam_screen_test.dart`.
+- **Impact / risk:** Reconciles all downstream EXM-00, EXM-01, EXM-02A, EXM-02B, and EXM-03 draft work with the latest mainline, completes protected part-mock practice routing, and resolves the migration ordering block. Hosted production Supabase database remains untouched (62 migrations applied, Gate 1 `false`, Gate 2 undeployed).
 - **Status:** Coded and locally verified; ready for remote push and CI confirmation.
 
 ---

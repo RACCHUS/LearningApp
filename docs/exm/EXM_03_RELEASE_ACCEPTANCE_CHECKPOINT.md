@@ -17,11 +17,9 @@ Cumulative development PR #135 starts with the existing EXM-02B/EXM-03 account-h
 
 **Not unlimited:** More than 50,000 entries in either store, unsupported browsers, files above 64 MiB, a changing server inventory, or a failed page remain **unavailable**, not silently shortened. Do not claim a full LearningApp account export: only educational EXM-02B/03 records are covered.
 
-## Protected part diagnostics
+## Protected part diagnostics and mock practice
 
-The exact-part diagnostic surface now routes to `SecureExamPartPracticeScreen`, which uses only the safe `exm03_issue_assigned_practice` and `exm03_submit_assigned_practice` APIs. It never loads answer-bearing `assessment_items.select('*')` or grades locally. Guest accounts fail closed. Owner-keyed state and after-await guards discard stale questions/scores when an account changes. Whole-target legacy study diagnostics retain their separate existing behavior.
-
-**Unfinished:** The old mock-exam generator still handles raw legacy item data and evaluates ordinary practice locally; protected approved EXM mock issuance needs a dedicated canonical backend mode before claiming the complete mock-screen migration. Do not weaken the protective RLS policy or relabel ordinary/diagnostic scores as official exam results.
+Both the exact-part diagnostic surface (`DiagnosticAssessmentScreen`) and the exact-part practice surface (`MockExamScreen`) now route directly to `SecureExamPartPracticeScreen`, which uses only the safe `exm03_issue_assigned_practice` and `exm03_submit_assigned_practice` APIs. Neither screen loads answer-bearing `assessment_items.select('*')` or grades locally when an exam part is specified. Guest accounts fail closed with a clear sign-in requirement. Owner-keyed state and after-await guards discard stale questions/scores when an account changes. Whole-target legacy study practice retains its separate existing behavior without exposing protected items (which are excluded by database RLS policy `exm03_no_direct_read_of_approved_answers`). Ordinary and diagnostic scores are never labeled as official exam results.
 
 ## Exact-head automated checks required
 
