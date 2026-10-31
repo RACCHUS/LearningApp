@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/services/assessment/mock_exam_generator_service.dart';
 
 void main() {
   group('Phase E: MockExamBlueprint & Quota Computation Tests', () {
@@ -134,6 +135,43 @@ void main() {
       expect(decoded.maxStimulusItemsRatio, 0.2);
     });
 
+    test('Missing official fields stay unknown; practice timer is a preset', () {
+      final legacy = MockExamBlueprint.fromJson({
+        'target_version_id': 'tv-legacy',
+        'exam_code': 'LEGACY',
+        'domain_weights': <Map<String, dynamic>>[],
+      });
+      expect(legacy.officialPassingScore, isNull);
+      expect(legacy.officialScoreScale, isNull);
+      expect(legacy.timeLimitMinutes, 90); // practice preset, not verified
+      final roundTrip = MockExamBlueprint.fromJson(legacy.toJson());
+      expect(roundTrip.officialPassingScore, isNull);
+      expect(roundTrip.officialScoreScale, isNull);
+    });
+
+    test('Only renderer-supported question formats are eligible', () {
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.singleChoice), isTrue);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.matrixGrid), isFalse);
+      expect(MockExamGeneratorService.renderablePracticeTypes.contains(
+          AssessmentInteractionType.numericEntry), isFalse);
+    });
+
+    test('Unmapped and invalid domains never fall back to the largest domain', () {
+      const validDomains = {'dom-a', 'dom-b'};
+      expect(MockExamGeneratorService.validPracticeDomain(null, validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('unknown', validDomains), isNull);
+      expect(MockExamGeneratorService.validPracticeDomain('dom-a', validDomains), 'dom-a');
+    });
+
+    test('Refuses underfilled practice sessions instead of claiming full length', () {
+      expect(() => MockExamGeneratorService.requireExactPracticeCount(10, 8),
+          throwsA(isA<StateError>()));
+      expect(() => MockExamGeneratorService.requireExactPracticeCount(10, 10),
+          returnsNormally);
+    });
+
     test('Normalizes unnormalized domain weights gracefully', () {
       final unnormalizedDomains = [
         const DomainWeightConstraint(
@@ -160,6 +198,87 @@ void main() {
       final quotas = unnormBlueprint.computeDomainQuotas(10);
       expect(quotas['dom-a'], equals(6));
       expect(quotas['dom-b'], equals(4));
+    });
+
+    group('resolveItemDomain fail-closed validation', () {
+      const conceptToDomain = {
+        'concept-1': 'domain-a',
+        'concept-2': 'domain-a',
+        'concept-3': 'domain-b',
+      };
+      const ambiguousConcepts = {'concept-ambiguous'};
+
+      test('resolves single valid concept to its domain', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, equals('domain-a'));
+      });
+
+      test('resolves multiple valid concepts mapping to the same domain', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-2'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, equals('domain-a'));
+      });
+
+      test('fails closed when mixed with unmapped concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-unmapped'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed when mixed with ambiguous concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-ambiguous'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed when concepts resolve to conflicting domains', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-3'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for empty concept list', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: [],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for single unmapped concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-unmapped'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for single ambiguous concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-ambiguous'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
     });
   });
 }

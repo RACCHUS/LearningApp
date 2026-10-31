@@ -104,7 +104,7 @@ void main() {
 
     final service = ExamEvaluationService();
 
-    test('Evaluates perfect exam (100%) and generates correct scaled score and evidence', () {
+    test('Evaluates perfect practice set without invented official scaled score', () {
       final session = MockExamSession(
         id: 'sess-1',
         blueprint: blueprint,
@@ -130,7 +130,7 @@ void main() {
       final report = service.evaluateExam(session);
 
       expect(report.readinessEstimate.practiceScorePercentage, equals(100.0));
-      expect(report.readinessEstimate.estimatedScaledScore, equals(900));
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
       expect(report.readinessEstimate.readinessBand, equals(TargetReadinessBand.strongCoverage));
       expect(report.readinessEstimate.correctCount, equals(4));
       expect(report.readinessEstimate.incorrectCount, equals(0));
@@ -146,9 +146,10 @@ void main() {
       expect(report.readinessEstimate.readinessHeadline.toLowerCase(), isNot(contains('mastered')));
       expect(report.readinessEstimate.readinessSummary.toLowerCase(), isNot(contains('mastered')));
 
-      // Official facts preserved separately
-      expect(report.officialFacts.publishedPassingScore, equals(750));
-      expect(report.officialFacts.scoreScale, equals('100-900'));
+      // Legacy blueprint inputs are not authoritative without source evidence.
+      expect(report.officialFacts.publishedPassingScore, isNull);
+      expect(report.officialFacts.scoreScale, isNull);
+      expect(report.officialFacts.timeLimitMinutes, isNull);
     });
 
     test('Evaluates exam with missed questions and creates concept remediation recommendations', () {
@@ -183,8 +184,8 @@ void main() {
       final report = service.evaluateExam(session);
 
       expect(report.readinessEstimate.practiceScorePercentage, equals(50.0));
-      // 100 + (0.5 * 800) = 500
-      expect(report.readinessEstimate.estimatedScaledScore, equals(500));
+      // A raw 50% practice result is not a 100-900 issuer prediction.
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
       expect(report.readinessEstimate.readinessBand, equals(TargetReadinessBand.needsReinforcement));
       expect(report.readinessEstimate.correctCount, equals(2));
       expect(report.readinessEstimate.incorrectCount, equals(2));
@@ -200,6 +201,55 @@ void main() {
       final missedConceptIds = report.remediationRecommendations.map((r) => r.conceptId).toList();
       expect(missedConceptIds, contains('concept-aaa-auth'));
       expect(missedConceptIds, contains('concept-incident-resp'));
+    });
+
+    test('Missing item-domain assignment is reported as unmapped', () {
+      final session = MockExamSession(
+        id: 'missing-domain-practice',
+        blueprint: blueprint,
+        items: [items.first],
+        userResponses: {'item-sc-1': 1},
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+      final report = ExamEvaluationService().evaluateExam(session);
+      expect(report.scoredItems.single.domainCode, 'unmapped');
+      expect(report.readinessEstimate.practiceScorePercentage, 100.0);
+    });
+
+    test('Practice percentage does not apply unverified domain weighting', () {
+      final unevenBlueprint = MockExamBlueprint(
+        targetVersionId: 'tv-uneven',
+        examCode: 'PRACTICE',
+        title: 'Practice Test',
+        domainWeights: const [
+          DomainWeightConstraint(
+            domainId: 'dom-1', domainCode: '1.0',
+            domainTitle: 'First topic', weight: 0.90,
+          ),
+          DomainWeightConstraint(
+            domainId: 'dom-2', domainCode: '2.0',
+            domainTitle: 'Second topic', weight: 0.10,
+          ),
+        ],
+      );
+      final session = MockExamSession(
+        id: 'raw-practice-session',
+        blueprint: unevenBlueprint,
+        items: [items[0], items[2]],
+        itemDomainMap: {'item-sc-1': '1.0', 'item-or-1': '2.0'},
+        userResponses: {
+          'item-sc-1': 1,
+          'item-or-1': ['Containment', 'Preparation', 'Detection'],
+        },
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+      final report = ExamEvaluationService().evaluateExam(session);
+      expect(report.readinessEstimate.practiceScorePercentage, 50.0);
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
     });
 
     test('Evaluates partial credit in multi-select (SATA)', () {
@@ -239,6 +289,62 @@ void main() {
       expect(report.readinessEstimate.partialCount, equals(1));
       expect(report.readinessEstimate.correctCount, equals(0));
       expect(report.readinessEstimate.practiceScorePercentage, closeTo(66.6, 1.0));
+      expect(report.readinessEstimate.estimatedScaledScore, isNull);
+    });
+
+    test('Normalizes equal-weight domains (e.g. 19 domains with weight 1.0) to ~5.26% target allocation', () {
+      final nineteenDomains = List.generate(
+        19,
+        (i) => DomainWeightConstraint(
+          domainId: 'dom-${i + 1}',
+          domainCode: '${i + 1}.0',
+          domainTitle: 'Domain ${i + 1}',
+          weight: 1.0, // Stored production unnormalized weight
+        ),
+      );
+
+      final nineteenBlueprint = MockExamBlueprint(
+        targetVersionId: 'tv-2026-1',
+        examCode: 'CONTRACTOR-2026.1',
+        title: 'Production 19-Domain Blueprint',
+        domainWeights: nineteenDomains,
+      );
+
+      final dummyItems = List.generate(
+        19,
+        (i) => AssessmentItem(
+          id: 'item-dom-${i + 1}',
+          interactionType: AssessmentInteractionType.singleChoice,
+          prompt: 'Question for domain ${i + 1}',
+          responseSpec: {'options': ['A', 'B'], 'answer': 'A'},
+          scoringSpec: {'correct_index': 0},
+          difficulty: 'beginner',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final session = MockExamSession(
+        id: 'sess-19-domains',
+        blueprint: nineteenBlueprint,
+        items: dummyItems,
+        itemDomainMap: {
+          for (int i = 0; i < 19; i++) 'item-dom-${i + 1}': '${i + 1}.0',
+        },
+        userResponses: {
+          for (int i = 0; i < 19; i++) 'item-dom-${i + 1}': 0,
+        },
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+
+      final report = service.evaluateExam(session);
+
+      expect(report.domainDiagnostics.length, equals(19));
+      for (final diag in report.domainDiagnostics) {
+        expect(diag.domainWeight, closeTo(1.0 / 19.0, 0.0001));
+      }
     });
   });
 }
