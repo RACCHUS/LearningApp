@@ -294,6 +294,7 @@ declare
   v_jwt_sub text;
   v_is_moderator boolean;
   v_is_service_role boolean;
+  v_is_admin_dba boolean;
   v_is_profile_cascade boolean;
   v_actor_id uuid;
   v_reviewer_id uuid;
@@ -309,10 +310,8 @@ begin
   -- This check evaluates the PostgreSQL engine session role rather than caller-mutable JWT claim GUCs
   -- (e.g. request.jwt.claim.role), ensuring REST callers cannot forge service-role exemptions via HTTP headers.
   -- (Note: PostgREST's JWT validation is the system boundary; direct arbitrary SQL execution by untrusted clients is out of scope).
-  v_is_service_role := (
-    coalesce(nullif(current_setting('role', true), 'none'), session_user) = 'service_role'
-    or (session_user = 'postgres' and coalesce(nullif(current_setting('role', true), 'none'), 'postgres') = 'postgres')
-  );
+  v_is_service_role := (coalesce(nullif(current_setting('role', true), 'none'), session_user) = 'service_role');
+  v_is_admin_dba := (session_user = 'postgres' and coalesce(nullif(current_setting('role', true), 'none'), 'postgres') = 'postgres');
   -- Trusted cascade detection: requires nesting depth > 1 and parent profile deletion registered in trusted private table
   v_is_profile_cascade := (
     tg_op = 'DELETE' and
@@ -334,7 +333,8 @@ begin
   -- If non-moderator (or ordinary authenticated user) is modifying:
   if (v_jwt_sub is not null or coalesce(auth.jwt()->>'role', '') = 'authenticated' or coalesce(auth.role(), '') = 'authenticated') and
      not v_is_moderator and
-     not v_is_service_role then
+     not v_is_service_role and
+     not v_is_admin_dba then
 
     -- 1. If old status is 'verified', ALL trust-bearing fields are completely IMMUTABLE to non-moderators
     if tg_op = 'UPDATE' and old.status = 'verified' then
@@ -396,7 +396,7 @@ begin
   -- records an immutable tombstone audit event capturing the actor and previous status.
   -- ---------------------------------------------------------------------------
   if tg_op = 'DELETE' then
-    if v_is_service_role then
+    if v_is_service_role or v_is_admin_dba then
       v_reviewer_id := null;
     elsif v_is_moderator and (v_actor_id is distinct from old.educator_id) then
       v_reviewer_id := v_actor_id;
@@ -428,6 +428,7 @@ begin
         'deleted_by', v_actor_id,
         'deleted_by_role', case
           when v_is_service_role then 'service_role'
+          when v_is_admin_dba then 'administrator'
           when v_is_moderator and (v_actor_id is distinct from old.educator_id) then 'moderator'
           when v_is_profile_cascade or (v_actor_id is not null and v_actor_id = old.educator_id) then 'owner'
           when v_is_moderator then 'moderator'
@@ -467,6 +468,7 @@ begin
     -- Anti-forgery guard: caller cannot specify a different moderator as verified_by
     if v_actor_id is not null and
        not v_is_service_role and
+       not v_is_admin_dba and
        new.verified_by is distinct from v_actor_id and
        (tg_op = 'INSERT' or old.status <> 'verified' or new.verified_by is distinct from old.verified_by) then
       raise exception 'Access denied: verified_by must match the authenticated moderator'
@@ -514,7 +516,7 @@ begin
   end if;
 
   if v_should_audit then
-    if v_is_service_role then
+    if v_is_service_role or v_is_admin_dba then
       v_reviewer_id := null;
     elsif v_is_moderator then
       v_reviewer_id := v_actor_id;

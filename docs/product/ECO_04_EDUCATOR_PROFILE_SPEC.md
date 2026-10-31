@@ -117,6 +117,7 @@ $$;
      | Moderator deletes own profile | `NULL` | `'owner'` | `true` |
      | Moderator deletes another user's profile | Moderator ID | `'moderator'` | `true` |
      | Service role deletes a profile | `NULL` | `'service_role'` | `true` |
+     | Direct DBA / superuser deletes credential | `NULL` | `'administrator'` | `false` |
      | Moderator directly deletes a credential | Moderator ID | `'moderator'` | `false` |
      | Owner directly deletes unverified credential | `NULL` | `'owner'` | `false` |
 
