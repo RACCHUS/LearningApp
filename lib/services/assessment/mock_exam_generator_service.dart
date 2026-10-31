@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/assessment_engine/mock_exam_blueprint.dart';
@@ -172,6 +173,39 @@ class MockExamGeneratorService {
     return domainId != null && allowedIds.contains(domainId) ? domainId : null;
   }
 
+  /// Resolves the single domain for an assessment item based on its linked concepts.
+  ///
+  /// Fails closed: returns `null` if the item has no linked concepts, if ANY linked
+  /// concept is ambiguous (maps to multiple domains) or unmapped (missing from [conceptToDomain]),
+  /// or if the item's concepts resolve to conflicting domains.
+  /// An item is assigned to a domain if and only if ALL linked concepts resolve unambiguously
+  /// to the same domain.
+  @visibleForTesting
+  static String? resolveItemDomain({
+    required List<String> conceptIds,
+    required Map<String, String> conceptToDomain,
+    required Set<String> ambiguousConceptIds,
+  }) {
+    if (conceptIds.isEmpty) return null;
+
+    String? resolvedDomain;
+    for (final conceptId in conceptIds) {
+      if (ambiguousConceptIds.contains(conceptId)) {
+        return null;
+      }
+      final domainId = conceptToDomain[conceptId];
+      if (domainId == null) {
+        return null;
+      }
+      if (resolvedDomain == null) {
+        resolvedDomain = domainId;
+      } else if (resolvedDomain != domainId) {
+        return null;
+      }
+    }
+    return resolvedDomain;
+  }
+
   /// Refuses partial sets instead of silently displaying a full-count practice exam.
   static void requireExactPracticeCount(int requestedCount, int actualCount) {
     if (requestedCount != actualCount) {
@@ -303,15 +337,19 @@ class MockExamGeneratorService {
         final itemId = row['assessment_item_id'] as String;
         final conceptId = row['concept_id'] as String;
         itemConceptMap.putIfAbsent(itemId, () => []).add(conceptId);
+      }
 
-        final domainId = conceptToDomain[conceptId];
-        if (domainId == null || ambiguousItemIds.contains(itemId)) continue;
-        final previousDomain = itemDomainMap[itemId];
-        if (previousDomain != null && previousDomain != domainId) {
-          itemDomainMap.remove(itemId);
-          ambiguousItemIds.add(itemId);
+      for (final item in allItems) {
+        final concepts = itemConceptMap[item.id] ?? const [];
+        final domainId = resolveItemDomain(
+          conceptIds: concepts,
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConceptIds,
+        );
+        if (domainId != null) {
+          itemDomainMap[item.id] = domainId;
         } else {
-          itemDomainMap[itemId] = domainId;
+          ambiguousItemIds.add(item.id);
         }
       }
     }
@@ -320,6 +358,7 @@ class MockExamGeneratorService {
     // highest-weight domain or fabricating domain evidence.
     final validDomainIds = domainItemsMap.keys.toSet();
     for (final item in allItems) {
+      if (ambiguousItemIds.contains(item.id)) continue;
       final domainId = validPracticeDomain(itemDomainMap[item.id], validDomainIds);
       if (domainId == null) continue;
       domainItemsMap[domainId]!.add(item);
@@ -399,6 +438,7 @@ class MockExamGeneratorService {
 
       final spareItems =
           allItems.where((item) =>
+              !ambiguousItemIds.contains(item.id) &&
               validPracticeDomain(itemDomainMap[item.id], validDomainIds) != null &&
               !selectedIds.contains(item.id)).toList()
             ..shuffle(_random);

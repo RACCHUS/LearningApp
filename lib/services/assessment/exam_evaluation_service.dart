@@ -89,18 +89,27 @@ class ExamEvaluationService {
       );
     }
 
-    // Compile Domain Diagnostics
+    // Compile Domain Diagnostics with normalized target practice allocation weights.
     final domainDiagnostics = <DomainDiagnostic>[];
+    final totalDomainWeight = session.blueprint.domainWeights.fold<double>(
+      0.0,
+      (sum, d) => sum + d.weight,
+    );
     for (final domain in session.blueprint.domainWeights) {
       final stats = domainScoreTracker[domain.domainCode] ?? (total: 0, correct: 0, earned: 0.0);
       final percentage = stats.total > 0 ? (stats.earned / stats.total) * 100.0 : 0.0;
       final evidenceLevel = DomainEvidenceLevel.fromPercentage(percentage);
+      final normalizedWeight = totalDomainWeight > 0
+          ? (domain.weight / totalDomainWeight)
+          : (session.blueprint.domainWeights.isNotEmpty
+              ? 1.0 / session.blueprint.domainWeights.length
+              : 0.0);
 
       domainDiagnostics.add(DomainDiagnostic(
         domainId: domain.domainId,
         domainCode: domain.domainCode,
         domainTitle: domain.domainTitle,
-        domainWeight: domain.weight,
+        domainWeight: normalizedWeight,
         totalQuestions: stats.total,
         correctQuestions: stats.correct,
         scoreEarned: stats.earned,

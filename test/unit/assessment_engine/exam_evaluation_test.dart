@@ -291,5 +291,60 @@ void main() {
       expect(report.readinessEstimate.practiceScorePercentage, closeTo(66.6, 1.0));
       expect(report.readinessEstimate.estimatedScaledScore, isNull);
     });
+
+    test('Normalizes equal-weight domains (e.g. 19 domains with weight 1.0) to ~5.26% target allocation', () {
+      final nineteenDomains = List.generate(
+        19,
+        (i) => DomainWeightConstraint(
+          domainId: 'dom-${i + 1}',
+          domainCode: '${i + 1}.0',
+          domainTitle: 'Domain ${i + 1}',
+          weight: 1.0, // Stored production unnormalized weight
+        ),
+      );
+
+      final nineteenBlueprint = MockExamBlueprint(
+        targetVersionId: 'tv-2026-1',
+        examCode: 'CONTRACTOR-2026.1',
+        title: 'Production 19-Domain Blueprint',
+        domainWeights: nineteenDomains,
+      );
+
+      final dummyItems = List.generate(
+        19,
+        (i) => AssessmentItem(
+          id: 'item-dom-${i + 1}',
+          interactionType: AssessmentInteractionType.singleChoice,
+          prompt: 'Question for domain ${i + 1}',
+          responseSpec: {'options': ['A', 'B'], 'answer': 'A'},
+          scoringSpec: {'correct_index': 0},
+          difficulty: 'beginner',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final session = MockExamSession(
+        id: 'sess-19-domains',
+        blueprint: nineteenBlueprint,
+        items: dummyItems,
+        itemDomainMap: {
+          for (int i = 0; i < 19; i++) 'item-dom-${i + 1}': '${i + 1}.0',
+        },
+        userResponses: {
+          for (int i = 0; i < 19; i++) 'item-dom-${i + 1}': 0,
+        },
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.completed,
+      );
+
+      final report = service.evaluateExam(session);
+
+      expect(report.domainDiagnostics.length, equals(19));
+      for (final diag in report.domainDiagnostics) {
+        expect(diag.domainWeight, closeTo(1.0 / 19.0, 0.0001));
+      }
+    });
   });
 }

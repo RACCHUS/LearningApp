@@ -84,7 +84,7 @@ class DomainDiagnostic {
   final String domainId;
   final String domainCode;
   final String domainTitle;
-  final double domainWeight; // Blueprint weight, e.g. 0.12 (12%)
+  final double domainWeight; // Normalized target practice allocation weight (0.0 to 1.0), e.g. 0.12 (12%)
   final int totalQuestions;
   final int correctQuestions;
   final double scoreEarned;

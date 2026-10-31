@@ -1,14 +1,14 @@
 # LearningApp — Exam Success, Reference Mastery & Adaptive Preparation
 
 **Document ID:** `EXM-00`  
-**Status:** **APPROVED ARCHITECTURE v6 — owner-authorized EXM-P0 development only; no production deployment**  
+**Status:** **APPROVED ARCHITECTURE v6 — owner-authorized EXM-P0 merge to main; production deployment separately unauthorized**  
 **Prepared:** October 18, 2026  
-**Revised:** October 18, 2026 (v6: staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
+**Revised:** October 31, 2026 (v6.1: EXM-P0 practice-only safety, fail-closed concept resolution, target practice allocation normalization, owner merge authorization; staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
 **Repository path:** `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
 **Repository:** `RACCHUS/LearningApp`  
 **Code baseline reviewed:** `main` at `8ef15b99092a4dcb31f1a934facfdbfc97ac96a1` (latest returned by the GitHub connector during this review). Recheck HEAD before implementation.  
 **Inputs:** Original EXM-00 proposal, two subsequent architecture reviews, direct GitHub code inspection, and primary examination authority documents listed in §15.  
-**Implementation authorization:** Owner authorized creation of a feature branch, root-level plan, and EXM-P0 implementation. No authorization to merge or deploy to production.
+**Implementation authorization:** Owner authorized creation of a feature branch, root-level plan, EXM-P0 implementation, and merging PR #62 into main conditional on verified green CI and resolved review findings. Production deployment, production database writes, reference publication, and later phases remain unauthorized without separate explicit signoff.
 **Scheduling policy:** Phases and gates define dependencies and authorization checkpoints, **not calendar deadlines or promised delivery dates**. Official examination and reference-manifest effective dates remain mandatory data because they determine which rules and answer keys are valid.  
 **Single source of truth:** **This is the only EXM planning document required for repository use.** It supersedes the earlier EXM plan and the separately circulated critique/review drafts. Technical design, phase gates, acceptance tests, and the executable Antigravity handoff are contained here. Append agent findings **only to Appendix A**; substantive changes to approved design decisions require owner review. Do not require, create or reference companion EXM audit/handoff/decision Markdown files unless the owner specifically asks.
 
@@ -713,7 +713,7 @@ These official pages establish the **types of conditions** the model must handle
 - A short PR description stating risks, code paths checked, decisions still open, tests actually run, and what remains **unverified**. Prefer PR comments to accumulating more permanent plan documents.
 - Explicit approval requests before any migration, data publication, pilot launch or work that exceeds **four separate nonproduction part-selection probes or 24 production pilot items**, or changes a reviewed probe into a production item without consuming an approved 24-item slot.
 
-**Current authorization status:** The owner has explicitly authorized **EXM-P0 development on a feature branch** and placement of this approved plan at the repository root. This does **not** authorize merging, deployment, production data writes, reference publication, or later phases.
+**Current authorization status:** The owner has explicitly authorized **merging PR #62 (EXM-P0) into main** subject to verified green CI and code review resolutions. This does **not** authorize deployment, production data writes, reference publication, or later phases (EXM-00 through EXM-05).
 
 ---
 
@@ -731,14 +731,25 @@ These official pages establish the **types of conditions** the model must handle
 - **Decision requested:** _explicit owner signoff needed, or "none"_
 - **Status:** _open, approved for specification change, resolved, or deferred_
 
-**EXM-P0 execution record (development branch; tests not yet verified in CI):**
+**EXM-P0 execution record (historical / superseded):**
 
-- **Date / scope:** Owner authorized first EXM-P0 code changes; no migrations, Supabase writes or production deployment.
+- **Date / scope:** [HISTORICAL] Owner authorized first EXM-P0 code changes; no migrations, Supabase writes or production deployment.
 - **Coded changes:** Practice-only learner UI; official values and issuer-scaled estimates withheld absent verification; remove highest-weight-domain fallback; reject underfilled practice sets; restrict displayed practice items to renderer-supported formats.
 - **Evidence:** `lib/models/assessment_engine/mock_exam_blueprint.dart`, `lib/models/assessment_engine/exam_diagnostic_report.dart`, `lib/services/assessment/mock_exam_generator_service.dart`, `lib/services/assessment/exam_evaluation_service.dart`, `lib/screens/assessment/mock_exam_screen.dart`, `lib/screens/assessment/exam_report_screen.dart`, and focused `test/unit/assessment_engine/` plus `test/widgets/mock_exam_screen_test.dart`.
-- **Verification status:** Source edits coded. Flutter/Dart commands and GitHub Actions must be checked and recorded separately; do not claim they passed until confirmed. The practice timer still uses its prior ticker mechanism; interruption-safe EXM-03 clock redesign remains deferred.
+- **Verification status:** [SUPERSEDED] Initial development branch state. CI verification completed on reconciled PR head.
 - **Impact / risk:** Old metadata passing standards and legacy timer values no longer appear as official facts. Insufficient or ambiguously mapped banks may now refuse to start instead of silently filling with unrelated items.
-- **Decision requested:** None for EXM-P0 code review; separate signoff before merge/deployment or EXM-01+.
+- **Decision requested:** [SUPERSEDED by October 31 owner review] Initially requested separate signoff before merge/deployment. Owner subsequently authorized merging PR #62 into main conditional on green CI and review resolutions; production deployment remains separately unauthorized.
+
+- **Date / agent / Git commit:** 2026-10-31 / Antigravity / HEAD of PR #62
+- **Phase / PR link:** EXM-P0 / [PR #62](https://github.com/RACCHUS/LearningApp/pull/62)
+- **Observation and status:** Coded, locally verified, and prepared for merge. Reconciled with `main` at `a4d75b0` (following PR #130 merge). Addressed all code review findings:
+  1. Fail-closed item domain assignment: `MockExamGeneratorService.resolveItemDomain()` fails closed (returns `null`) if any linked concept is ambiguous or unmapped, or if concepts resolve to conflicting domains, preventing mixed-concept questions from slipping into domain sets.
+  2. Target Practice Allocation normalization: Replaced `'Blueprint Weight:'` with `'Target Practice Allocation:'` and normalized weights across report domains. Prevents production versions with unnormalized domain weights (such as 2026.1's 19 equal-weight domains stored as 1.0) from displaying 100% allocation; correctly displays normalized 5% allocation.
+  3. Plan authorization alignment: Updated Document Status, opening Implementation Authorization, and Section 16.5 to record explicit owner authorization to merge PR #62 into `main` (strictly separated from deployment/production authorization), and marked historical execution records as superseded.
+- **Evidence:** `lib/services/assessment/mock_exam_generator_service.dart`, `lib/services/assessment/exam_evaluation_service.dart`, `lib/screens/assessment/exam_report_screen.dart`, `lib/models/assessment_engine/exam_diagnostic_report.dart`, `test/unit/assessment_engine/mock_exam_generator_test.dart` (8 fail-closed tests), `test/unit/assessment_engine/exam_evaluation_test.dart` (19-domain normalization test), and `test/widgets/exam_report_screen_test.dart` (Target Practice Allocation & 19-domain widget tests).
+- **Impact / risk:** Practice-only mock exams fail closed against unmapped or ambiguous concepts and accurately label and calculate domain breakdowns as normalized app-defined target practice allocations rather than official syllabus weights. PR #62 contains 0 database migrations; hosted Supabase production remains locked at 62 migrations with Gate 1 closed (`false`) and Gate 2 undeployed.
+- **Decision requested:** Merge PR #62 into `main` upon green CI completion. Production deployment and later phases remain unauthorized.
+- **Status:** Resolved / Ready for merge.
   
 The official-content-outline observations and pilot-choice worksheet in §10 are editorial inputs, not a verified item-level lookup study or completed 2026/2027 DBPR PDF diff. EXM-00 must record its primary-source reconciliation here before any reference-list detail is accepted as final.
 
@@ -1131,3 +1142,8 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
 - A forward additive SQL migration now supports an explicit **50,000 reference-event / 50,000 assignment** inventory bound. EXM-03 assignment summaries are exported through live-session, owner-only 250-row keyset pages; R1–R4 uses its existing safe 250-row page. The Dart exporter enforces owner binding, monotonic cursors, no duplicates, expected counts, cancellation, and exact pre/post score/assignment fingerprints. Multi-request history is **not atomic**; it is rejected as complete if history changes between inventory checks. Browser downloads retain the 64 MiB refusal boundary and require direct user confirmation.
 - The explicit exam-part diagnostic learner route now renders only the server-issued safe question projection and calls canonical scoring; it never consumes raw `assessment_items.scoring_spec`. Ordinary whole-target diagnostics remain a separate legacy practice route. Synthetic tests cover the protected UI, sign-out redaction, over-5,000-page assembly and invalidation.
 - Full legacy **mock** transport migration, independent real pilot-source author/reviewer review, physical browser acceptance, account-wide non-EXM privacy coverage and production deployment authorization are **not** complete. No official pass predictions, merged branch, live migration or learner rollout claimed. Verification and stop/go checklist: `docs/exm/EXM_03_RELEASE_ACCEPTANCE_CHECKPOINT.md`.
+
+---
+
+**Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
+

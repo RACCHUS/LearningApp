@@ -199,5 +199,86 @@ void main() {
       expect(quotas['dom-a'], equals(6));
       expect(quotas['dom-b'], equals(4));
     });
+
+    group('resolveItemDomain fail-closed validation', () {
+      const conceptToDomain = {
+        'concept-1': 'domain-a',
+        'concept-2': 'domain-a',
+        'concept-3': 'domain-b',
+      };
+      const ambiguousConcepts = {'concept-ambiguous'};
+
+      test('resolves single valid concept to its domain', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, equals('domain-a'));
+      });
+
+      test('resolves multiple valid concepts mapping to the same domain', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-2'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, equals('domain-a'));
+      });
+
+      test('fails closed when mixed with unmapped concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-unmapped'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed when mixed with ambiguous concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-ambiguous'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed when concepts resolve to conflicting domains', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-1', 'concept-3'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for empty concept list', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: [],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for single unmapped concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-unmapped'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+
+      test('fails closed for single ambiguous concept', () {
+        final result = MockExamGeneratorService.resolveItemDomain(
+          conceptIds: ['concept-ambiguous'],
+          conceptToDomain: conceptToDomain,
+          ambiguousConceptIds: ambiguousConcepts,
+        );
+        expect(result, isNull);
+      });
+    });
   });
 }
