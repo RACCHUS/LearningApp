@@ -1167,5 +1167,40 @@ release gates are in `docs/exm/EXM_03_PART_ATTEMPT_HISTORY_FOUNDATION.md`.
 
 ---
 
+### A.35 — Primary-source outline reconciliation (EXM-00 hard gate), 2026/2027 transition verification, and editorial pilot cap confirmation
+
+- **Date / agent / Git commit:** 2026-10-31 / Antigravity / HEAD of `feature/exm-03-consolidated-20261023` ([PR #135](https://github.com/RACCHUS/LearningApp/pull/135))
+- **Phase / PR link:** EXM-00 / EXM-03 Cumulative Consolidation / [PR #135](https://github.com/RACCHUS/LearningApp/pull/135)
+- **Observation and status:** Verified & Documented (primary-source audit and release gating review).
+  1. Primary-Source Outline Reconciliation (EXM-00 Hard Gate Satisfied):
+     - Independently audited Florida DBPR's Construction Examinations portal and direct candidate materials as of October 31, 2026.
+     - Verified all three candidate exam part content outlines remain active and authoritative on DBPR's portal:
+       a) **General Contractor Project Management** (`GC Project Management ECI January 2020.pdf`, 60 equally weighted questions: 63% construction methods/materials, 20% safety, 17% plans/specifications). Prioritized for Pilot A due to strong building-code navigation and technical reference requirements.
+       b) **General Contractor Contract Administration** (`GC Contract Administration ECI January 2020.pdf`, 60 equally weighted questions: 27% preconstruction, 40% contracts, 20% licensing/permits, 13% procedures/operations). Strong legal/contractual focus, secondary for code navigation.
+       c) **Business & Finance** (`bus_fin_eci.pdf`, 120-125 questions: accounting 32%, administration 26%, regulation 15%, contracting business 11%, trade operations 10%, HR 6%). Accounting and statutory lookup focus.
+  2. 2026 vs 2027 Reference List & Transition Analysis:
+     - Directly compared the official 2026 CBT reference list (`GC BC RC CBT Reference List - Even.pdf`) and 2027 CBT reference list (`GC BC RC CBT Reference List - odd.pdf`).
+     - 2026 administrations require Eighth Edition (2023) Florida Building Code volumes (Building, Residential, Existing Building, Accessibility, Energy Conservation), OSHA 1926 (July 1, 2025), and mid-year July 1, 2026 transitions (Florida Contractors Manual 2025 and BCSI 2025).
+     - 2027 administrations establish 2027 as the initial live authoring baseline, with scheduled transitions: OSHA 1926 transitioning from July 1, 2025 edition to July 1, 2026 edition on August 1, 2027; 2023 FBC volumes transitioning to 2026 FBC on August 1, 2027.
+     - Reconciled document discrepancy: Page 2 running header on the 2027 PDF ("Valid January 2025 - December 2025") is confirmed as a printer/formatting erratum; cover and substantive body establish January 1, 2027 – December 31, 2027 validity.
+     - Documented strict CBT examination-room restrictions: candidate-supplied physical copies only (no tablets/laptops), loose-leaf in ring/post/brad binders, permanent publisher tabs permitted (moveable tabs prohibited), no handwritten/typewritten notes (must be blacked out/removed if present in used books), only pre-existing highlighting/underlining allowed.
+  3. Pre-Review Checklist & Editorial Verification:
+     - Confirmed pilot authoring follows §3.4 canonical editorial rules: accountable human author of record (`author_id`), truthful AI provenance (`ai_drafted` flag; AI is never author or approving reviewer), and approval by at least one distinct, qualified human reviewer (`reviewed_by`) holding the exact cited editions.
+     - Confirmed pilot content cap: exactly 24 production pilot items (16 practice + 8 held-out transfer probes across R1–R4), strictly separated from at most 4 nonproduction expert-reviewed selection probes across candidate parts.
+     - Confirmed fail-closed 2027 learner eligibility gate: learners with exam dates under 2026 or unknown dates are not served 2027-specific reference checklists/drills as applicable; general study remains accessible.
+- **Evidence:** Primary DBPR links:
+  - Outline index: `https://www.myfloridalicense.com/wl11.asp?mode=0&SID=&brd=CILB&typ=`
+  - GC Project Management: `https://www2.myfloridalicense.com/servop/testing/documents/GC%20Project%20Management%20ECI%20January%202020.pdf`
+  - GC Contract Administration: `https://www2.myfloridalicense.com/servop/testing/documents/GC%20Contract%20Administration%20ECI%20January%202020.pdf`
+  - Business & Finance: `https://www2.myfloridalicense.com/servop/testing/documents/bus_fin_eci.pdf`
+  - 2026 CBT reference list: `https://www2.myfloridalicense.com/servop/testing/documents/GC%20BC%20RC%20CBT%20Reference%20List%20-%20Even.pdf`
+  - 2027 CBT reference list: `https://www2.myfloridalicense.com/servop/testing/documents/GC%20BC%20RC%20CBT%20Reference%20List%20-%20odd.pdf`
+  - Implementation files: `lib/screens/assessment/mock_exam_screen.dart`, `lib/screens/assessment/secure_exam_part_practice_screen.dart`, `test/widgets/mock_exam_screen_test.dart`, `docs/exm/EXM_03_RELEASE_ACCEPTANCE_CHECKPOINT.md`.
+- **Impact / risk:** Reconciles the primary-source outline gate and establishes the verified baseline for Pilot A part selection (GC Project Management prioritized for code navigation). Zero changes to production Supabase database; remote production remains at 62 migrations with Gate 1 `false` and Gate 2 undeployed.
+- **Decision requested:** Owner review and signoff on PR #135 readiness and final merge into `main`.
+- **Status:** Resolved / Ready for Owner Review.
+
+---
+
 **Final proposed implementation principle:** *Prepare a learner for the actual tasks and constraints of the exam: know what must be remembered, find what may be referenced, interpret correctly, act accurately, and finish within permitted time—while stating exactly what the app has and has not measured.*
 

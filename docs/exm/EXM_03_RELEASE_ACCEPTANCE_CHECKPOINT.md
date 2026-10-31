@@ -41,4 +41,4 @@ Record **latest** CI run and exact SHA before any next approval; older green run
 
 ## Stop/go verdict
 
-**NO-GO for learner rollout** until the open mock migration, independent content approvals, on-device acceptance, retention decisions and explicit owner authorization are completed. A green branch remains eligible for engineering review only.
+**NO-GO for learner rollout** until independent content approvals, on-device acceptance, retention decisions and explicit owner authorization are completed (mock transport routing migration completed in commit `7736185`). A green branch remains eligible for engineering review only.
