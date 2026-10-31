@@ -713,7 +713,7 @@ These official pages establish the **types of conditions** the model must handle
 - A short PR description stating risks, code paths checked, decisions still open, tests actually run, and what remains **unverified**. Prefer PR comments to accumulating more permanent plan documents.
 - Explicit approval requests before any migration, data publication, pilot launch or work that exceeds **four separate nonproduction part-selection probes or 24 production pilot items**, or changes a reviewed probe into a production item without consuming an approved 24-item slot.
 
-**Current authorization status:** The owner has explicitly authorized **EXM-P0 development on a feature branch** and placement of this approved plan at the repository root. This does **not** authorize merging, deployment, production data writes, reference publication, or later phases.
+**Current authorization status:** The owner has explicitly authorized **merging PR #62 (EXM-P0) into main** subject to verified green CI and code review resolutions. This does **not** authorize deployment, production data writes, reference publication, or later phases (EXM-00 through EXM-05).
 
 ---
 
@@ -739,6 +739,17 @@ These official pages establish the **types of conditions** the model must handle
 - **Verification status:** Source edits coded. Flutter/Dart commands and GitHub Actions must be checked and recorded separately; do not claim they passed until confirmed. The practice timer still uses its prior ticker mechanism; interruption-safe EXM-03 clock redesign remains deferred.
 - **Impact / risk:** Old metadata passing standards and legacy timer values no longer appear as official facts. Insufficient or ambiguously mapped banks may now refuse to start instead of silently filling with unrelated items.
 - **Decision requested:** None for EXM-P0 code review; separate signoff before merge/deployment or EXM-01+.
+
+- **Date / agent / Git commit:** 2026-10-31 / Antigravity / HEAD of PR #62
+- **Phase / PR link:** EXM-P0 / [PR #62](https://github.com/RACCHUS/LearningApp/pull/62)
+- **Observation and status:** Coded, locally verified, and prepared for merge. Reconciled with `main` at `a4d75b0` (following PR #130 merge). Addressed remaining code review findings:
+  1. Fail-closed item domain assignment: `MockExamGeneratorService.resolveItemDomain()` fails closed (returns `null`) if any linked concept is ambiguous or unmapped, or if concepts resolve to conflicting domains, preventing mixed-concept questions from slipping into domain sets.
+  2. Blueprint weight claim removed: Replaced `'Blueprint Weight:'` with `'Practice Allocation:'` in `ExamReportScreen` and updated `DomainDiagnostic.domainWeight` doc comment. Added widget test verifying `'Practice Allocation:'` presence and asserting `'Blueprint Weight'` is strictly absent.
+  3. Plan authorization alignment: Updated Section 16.5 to record explicit owner authorization to merge PR #62 into `main` (strictly separated from deployment/production authorization).
+- **Evidence:** `lib/services/assessment/mock_exam_generator_service.dart`, `lib/screens/assessment/exam_report_screen.dart`, `lib/models/assessment_engine/exam_diagnostic_report.dart`, `test/unit/assessment_engine/mock_exam_generator_test.dart` (8 fail-closed tests), and `test/widgets/exam_report_screen_test.dart`.
+- **Impact / risk:** Practice-only mock exams fail closed against unmapped or ambiguous concepts and accurately label domain breakdowns as app-defined practice allocation rather than official syllabus weights. PR #62 contains 0 database migrations; hosted Supabase production remains locked at 62 migrations with Gate 1 closed (`false`) and Gate 2 undeployed.
+- **Decision requested:** Merge PR #62 into `main` upon green CI completion. Production deployment and later phases remain unauthorized.
+- **Status:** Resolved / Ready for merge.
   
 The official-content-outline observations and pilot-choice worksheet in §10 are editorial inputs, not a verified item-level lookup study or completed 2026/2027 DBPR PDF diff. EXM-00 must record its primary-source reconciliation here before any reference-list detail is accepted as final.
 
