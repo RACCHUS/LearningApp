@@ -22,24 +22,24 @@ insert into public.courses (id, title, description, user_id) values
 on conflict (id) do nothing;
 
 insert into public.lessons (id, title, user_id) values
- ('l0000000-0000-0000-0000-000000000001', 'Test Lesson', 'cc111111-0000-4000-8000-000000000001')
+ ('b0000000-0000-0000-0000-000000000001', 'Test Lesson', 'cc111111-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
 insert into public.user_progress (id, user_id, lesson_id, date, questions_answered, correct_count, lesson_completed) values
- ('p0000000-0000-0000-0000-000000000001', 'cc111111-0000-4000-8000-000000000001', 'l0000000-0000-0000-0000-000000000001', current_date, 5, 5, true),
- ('p0000000-0000-0000-0000-000000000002', 'cc111111-0000-4000-8000-000000000002', 'l0000000-0000-0000-0000-000000000001', current_date, 10, 8, true)
+ ('d0000000-0000-0000-0000-000000000001', 'cc111111-0000-4000-8000-000000000001', 'b0000000-0000-0000-0000-000000000001', current_date, 5, 5, true),
+ ('d0000000-0000-0000-0000-000000000002', 'cc111111-0000-4000-8000-000000000002', 'b0000000-0000-0000-0000-000000000001', current_date, 10, 8, true)
 on conflict (id) do nothing;
 
 insert into public.skills (id, name, slug, category, description) values
- ('s0000000-0000-0000-0000-000000000001', 'Test Skill', 'test-skill', 'Technical', 'Skill description')
+ ('e0000000-0000-0000-0000-000000000001', 'Test Skill', 'test-skill', 'Technical', 'Skill description')
 on conflict (id) do nothing;
 
 insert into public.skill_assessments (id, skill_id, title, is_active) values
- ('a0000000-0000-0000-0000-000000000001', 's0000000-0000-0000-0000-000000000001', 'Skill Assessment 1', true)
+ ('a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Skill Assessment 1', true)
 on conflict (id) do nothing;
 
 insert into public.assessment_questions (id, assessment_id, question_text, options, correct_answer) values
- ('q0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'What is 1+1?', '["1", "2"]'::jsonb, 1)
+ ('f0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'What is 1+1?', '["1", "2"]'::jsonb, 1)
 on conflict (id) do nothing;
 
 -- 3. Test anon role permissions
@@ -111,7 +111,7 @@ select is(
 
 -- User 1 cannot directly INSERT into user_skill_stats (privilege revoked, strictly server-side trigger)
 select throws_ok(
-  $$ insert into public.user_skill_stats (user_id, skill_id, level) values ('cc111111-0000-4000-8000-000000000001', 's0000000-0000-0000-0000-000000000001', 99) $$,
+  $$ insert into public.user_skill_stats (user_id, skill_id, level) values ('cc111111-0000-4000-8000-000000000001', 'e0000000-0000-0000-0000-000000000001', 99) $$,
   '42501',
   null,
   'Authenticated user cannot directly INSERT into user_skill_stats'
@@ -119,7 +119,7 @@ select throws_ok(
 
 -- User 1 cannot execute calculate_skill_level RPC directly (service_role only)
 select throws_ok(
-  $$ select calculate_skill_level('cc111111-0000-4000-8000-000000000001'::uuid, 's0000000-0000-0000-0000-000000000001'::uuid) $$,
+  $$ select calculate_skill_level('cc111111-0000-4000-8000-000000000001'::uuid, 'e0000000-0000-0000-0000-000000000001'::uuid) $$,
   '42501',
   null,
   'Authenticated user cannot execute calculate_skill_level directly'
