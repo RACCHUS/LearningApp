@@ -273,7 +273,7 @@ There's no localization infrastructure. Add `flutter gen-l10n` (ARB) for the app
 | Service | Free limit | Note |
 |---|---|---|
 | Supabase | 500 MB DB, 5 GB egress, 50k MAU, 500k Edge invocations, 1 GB storage | No backups; 1-day logs; pauses after 7 idle days (keepalive exists) |
-| Firebase Hosting (Spark) | 360 MB/day transfer | ≈150 first visits/day at current bundle size |
+| Firebase Hosting (Spark) | 10 GiB/month transfer | ≈360 MB/day average; site paused after grace period if exceeded |
 | Cloudflare Pages | Unlimited static bandwidth and requests | 500 builds/month |
 | AI | BYOK / MCP / on-device | **$0 to the operator** |
 

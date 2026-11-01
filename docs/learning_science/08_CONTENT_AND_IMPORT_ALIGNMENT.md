@@ -1,63 +1,127 @@
-# 08 — Content & Import Alignment Pipeline
+# 08 — Content & Import Alignment Pipeline & Representation Security
 
-This document specifies how existing repository content and future imported material (YouTube, PDFs, official manuals, Anki/CSV decks, and BYOK/MCP AI outputs) receive validated learning-design and provenance metadata.
-
----
-
-## 1. The 6-Stage Content Pipeline
-
-All content enters LearningApp through a unified six-stage architecture:
-
-### Stage 1: Source Acquisition
-- **Supported Inputs**: Official regulator outlines/manuals, open textbooks/PDFs, public YouTube URLs (embedded via `youtube-nocookie`, with optional Gemini API transcript/video analysis via user BYOK within free-tier limits), Anki/CSV/Quizlet exports, and structured BYOK/MCP AI generation.
-
-### Stage 2: Extraction & Provenance
-- Records source identity, license/rights, effective date/version, and verbatim citation locators (`source_ref`).
-- Assigns initial `content_trust_level`:
-  - User/AI imports default to `personal_import` (`is_public = false`).
-  - Curated manifest imports with verified source hashes enter as `automated_checked` or `authoritatively_verified` according to the guarded ingestion workflow.
-
-### Stage 3: Knowledge Organization
-- Maps extracted topics to canonical taxonomy `fields`, `knowledge_concepts`, prerequisite edges (`concept_relations`), and `confusable_group_id` clusters where applicable.
-
-### Stage 4: Learning Design (`LearningTaskProfile` Assignment)
-- Assigns the multidimensional `LearningTaskProfile` (`02_LEARNING_TASK_TAXONOMY.md`) and `content_complexity_profile` (`06_MEASUREMENT_AND_SCHEDULING.md`) to each instructional block and assessment item:
-  - Identifies `knowledge_facet`, `cognitive_operation`, `stimulus_channel`, `response_channel`, and `reference_policy`.
-  - Attaches adaptive worked-example steps for `procedural_quantitative` items.
-  - Formats `structured_choice` options with stable `option_id`, `is_correct`, `rationale`, and optional `misconception_tag`.
-
-### Stage 5: Quality Assurance & Trust Gating
-- Runs deterministic validation (`ContentQualityValidator`):
-  - Verifies schema completeness, option count/balance, absence of positional cues (`FIX-1`), citation presence for verified tiers, and reading complexity metadata.
-- Enforces the readiness boundary: `personal_import` and unreviewed `automated_checked` items are immediately available for personal learning and FSRS review, but cannot enter authoritative exam-readiness calculations until promoted through editorial/authoritative verification (`ECO-02` / `ECO-04`).
-
-### Stage 6: Personalized Learning Delivery
-- Routes validated items into the task-aware Study View, adaptive scaffolding controller, and versioned scheduler (`review_items`), recording attempts under the Unified Evidence Contract.
+This document specifies the six-stage content ingestion pipeline, the **three content representations required to protect answer keys (`FIX-12`)**, and the **proposed versioned schema extensions** for `content/schema/curriculum_manifest.schema.json`.
 
 ---
 
-## 2. Manifest Schema Extensions (`content/schema/curriculum_manifest.schema.json`)
+## 1. Three Content Representations (Answer-Key Security — `FIX-12`)
 
-To support this pipeline without breaking existing manifests on `main` (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, `software_engineer_career.yaml`), the manifest schema adds optional, backwards-compatible objects on concepts and assessment items:
+To prevent answer-key leakage in network payloads while supporting rich authoring and misconception analytics (coordinated with Antigravity's PR `#136` `FIX-12`), structured-choice items are separated into three distinct representations:
 
+### 1.1 Authoring & Manifest Representation (Repository / Ingestion Only)
+Used during content authoring, import validation, and manifest ingestion (`ingest_curriculum_manifest`). Contains the full instructional and scoring specification:
+```json
+{
+  "item_id": "fl_ins_042",
+  "prompt": "Which policy provision specifies how loss valuation is handled when insured property is partially destroyed?",
+  "options": [
+    {
+      "option_id": "opt_a",
+      "text": "Coinsurance clause",
+      "is_correct": true,
+      "rationale": "The coinsurance clause governs partial loss reimbursement relative to required insurance-to-value percentage.",
+      "misconception_tag": null
+    },
+    {
+      "option_id": "opt_b",
+      "text": "Subrogation clause",
+      "is_correct": false,
+      "rationale": "Subrogation transfers recovery rights against a negligent third party to the insurer.",
+      "misconception_tag": "confuses_recovery_rights_with_valuation"
+    }
+  ]
+}
+```
+
+### 1.2 Learner Presentation Representation (Delivered to Client Before Submission)
+Delivered to the client for diagnostic, mock exam, and readiness-eligible assessments. **Strips `is_correct`, `scoring_spec`, `misconception_tag`, and answer-revealing `rationale` fields**:
+```json
+{
+  "item_id": "fl_ins_042",
+  "prompt": "Which policy provision specifies how loss valuation is handled when insured property is partially destroyed?",
+  "options": [
+    { "option_id": "opt_b", "text": "Subrogation clause" },
+    { "option_id": "opt_a", "text": "Coinsurance clause" }
+  ],
+  "presented_option_ids": ["opt_b", "opt_a"]
+}
+```
+
+### 1.3 Server Scoring & Post-Submission Feedback Representation
+Stored in protected server tables/views (`scoring_spec`) and evaluated via authenticated scoring RPCs (`EXM-03` and general assessment submission RPCs in PR `#136`).
+- In **study/acquisition mode (`feedback_policy == immediate_explanatory`)**: Submitting the attempt returns the scored outcome plus the relevant option rationales.
+- In **timed exam mode (`timing_regime == exam_clock_enforced`, `feedback_policy == deferred_until_submission`)**: Rationales and correctness are withheld until the exam part is submitted.
+
+---
+
+## 2. The 6-Stage Content & Import Pipeline
+
+1. **Source Acquisition**: Official outlines/manuals, PDFs, YouTube URLs (embedded via `youtube-nocookie`; optional Gemini API YouTube URL analysis via user BYOK within its 8-hour daily free-tier allowance), Anki/CSV exports, and BYOK/MCP AI generation.
+2. **Extraction & 6-Property Provenance**: Records `origin`, `visibility` (`private` by default for imports), `rights_status`, `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
+3. **Knowledge Organization**: Maps content to canonical `fields`, `knowledge_concepts`, `concept_relations` prerequisites, and `confusable_group_id` clusters.
+4. **Learning Design**: Assigns the canonical `LearningTaskProfile`, `ContentComplexityProfile`, `InstructionalPolicy`, and `AssessmentPolicy` (`02_LEARNING_TASK_TAXONOMY.md`).
+5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, readability) and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
+6. **Personalized Delivery**: Delivers the Learner Presentation DTO through the task-aware Study View and versioned scheduler (`review_items`), recording attempts via `record_events` (`public.learning_events`).
+
+---
+
+## 3. Proposed Versioned Schema Extension for `curriculum_manifest.schema.json`
+
+> **Implementation Status Note**: On `main` (`e538585`), [`content/schema/curriculum_manifest.schema.json`](../../content/schema/curriculum_manifest.schema.json) specifies `additionalProperties: false` on manifest objects, represents MCQ `options` as string arrays, and stores answer keys in `scoring_spec.correct_index`.
+>
+> Therefore, the metadata blocks below are **proposed schema extensions (target schema version `2.1.0`)**, not fields already accepted by the `main` validator. A versioned update to `curriculum_manifest.schema.json` and backwards-compatibility tests for existing YAML manifests (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, `software_engineer_career.yaml`) must be merged in Phase 2/4 before adding these fields to production manifests.
+
+### Proposed Schema `2.1.0` Activity Metadata Block (Exact Canonical Alignment with `02` & `07`)
 ```json
 {
   "learning_task_profile": {
     "knowledge_facet": "conceptual_relational",
-    "cognitive_operation": "apply_to_scenario",
+    "cognitive_operation": "distinguish_confusable",
     "stimulus_channel": "visual_text",
     "response_channel": "structured_choice",
-    "reference_policy": "closed_book",
-    "timing_regime": "untimed_mastery",
-    "error_criticality": "standard_compensatory"
+    "reference_policy": "closed_book"
   },
   "content_complexity_profile": {
+    "reading_demand": {
+      "word_count": 42,
+      "reading_grade_estimate": 9.5,
+      "lexical_rarity_tier": "standard"
+    },
     "reasoning_step_count": 2,
-    "reading_grade_estimate": 10.5,
-    "has_confusable_distractors": true,
+    "quantitative_complexity": "none",
+    "prerequisite_depth": 1,
+    "confusable_density": "high_confusable_group",
+    "response_format_demand": "recognition_choice",
+    "reference_foraging_depth": "none",
     "has_statutory_exception": false
   },
-  "content_trust_level": "authoritatively_verified",
+  "instructional_policy": {
+    "eligible_strategies": [
+      "active_retrieval_first",
+      "contrastive_interleaving",
+      "elaborative_rationale_feedback"
+    ],
+    "scaffolding_policy": "adaptive_on_error",
+    "feedback_policy": "immediate_explanatory"
+  },
+  "assessment_policy": {
+    "timing_regime": "untimed_mastery",
+    "error_criticality": "standard_compensatory",
+    "scoring_protection": "server_protected_scoring"
+  },
+  "provenance_metadata": {
+    "origin": "official_source",
+    "visibility": "public_catalog",
+    "rights_status": "verified_permissive_or_public_domain",
+    "review_status": "authoritatively_verified",
+    "source_authority": "primary_regulator_or_statute",
+    "version_validity": {
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "superseded_by_version_id": null,
+      "status": "active"
+    }
+  },
   "measurement_quality_level": "research_informed_prior",
   "blueprint_alignment_state": "blueprint_weighted"
 }

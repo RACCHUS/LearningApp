@@ -1,36 +1,31 @@
-# 03 — Instructional Strategies & Moderator Rules
+# 03 — Instructional Strategies, Option Shuffling & Moderator Rules
 
-This specification defines the reusable **Instructional Strategies** available in LearningApp's delivery engine and the empirical moderators that govern when each strategy is activated or suppressed.
+This specification defines how the adaptive delivery engine selects strategies from `InstructionalPolicy.eligible_strategies[]` ([`02_LEARNING_TASK_TAXONOMY.md`](02_LEARNING_TASK_TAXONOMY.md)) and specifies the reconciled option-shuffling contract (`FIX-1`).
 
 ---
 
-## 1. Strategy Catalog & Activation Conditions
+## 1. Strategy Selection & Moderator Guardrails (`ER-01`–`ER-05`)
 
-| Strategy ID | Description | Activated When (`LearningTaskProfile`) | Suppressed When (Moderator Guardrail) |
+| Strategy ID | Evidence Basis | Activated When | Moderator Suppression Rule |
 |---|---|---|---|
-| `active_retrieval_first` | Prompt learner to retrieve or commit to an answer before revealing explanation or options | Default across retention reviews and quiz blocks (`ER-02`, `ER-03`) | First exposure to a complex multi-step `procedural_quantitative` procedure where learner has zero prior schema (`ER-04`) |
-| `contrastive_interleaving` | Mix items from competing/confusable concepts within the same practice set | Items share a verified `confusable_group_id` or require problem-type selection (`ER-02`) | Unrelated introductory vocabulary where interleaving adds extraneous switching cost without discriminative benefit |
-| `worked_example_backward_fading` | Present complete worked solution, then progressively fade final $\to$ setup steps | `knowledge_facet == procedural_quantitative` AND learner prior competence is low or learner just erred (`ER-04`) | Learner demonstrates prior competence on diagnostic or unassisted item (`ER-05` Expertise Reversal) |
-| `elaborative_rationale_feedback` | Show why the target rule applies and why specific misconception distractors fail | `conceptual_relational`, `apply_to_scenario`, or high-confidence errors | Rapid perceptual classification bursts where long text interrupts visual feature tuning |
-| `reference_foraging_decomposition` | Decompose open-book lookup into resource selection $\to$ section $\to$ provision $\to$ exception (`EXM R1–R4`) | `reference_policy == open_book_manifest` (`ER-07`) | Closed-book recall tasks |
-| `multimodal_audio_orthographic` | Synchronized phoneme/word audio + visual grapheme highlighting + minimal-pair contrast | `knowledge_facet == sublexical_orthographic` or learner selects audio-first support (`ER-06`) | Learner opts into silent fast-reading mode |
+| `active_retrieval_first` | `ER-01` ($g = 0.37$), `ER-03` | Default on retention reviews and concept/fact practice | Suppressed on first exposure to an unfamiliar multi-step `procedural_quantitative` task where worked examples are needed first (`ER-05`) |
+| `contrastive_interleaving` | `ER-01` ($g = 0.40$), `ER-04` | `ContentComplexityProfile.confusable_density == high_confusable_group` or problem-type discrimination | Suppressed when concepts have no confusable boundary (`confusable_density == none`) |
+| `worked_example_backward_fading` | `ER-05` (Novice benefit $d = 0.505$; Expert reversal $d = -0.428$) | `knowledge_facet == procedural_quantitative` AND learner diagnostic/prior state indicates novice or recent error | Suppressed when learner demonstrates competence on diagnostic pretest or unassisted execution |
+| `elaborative_rationale_feedback` | `ER-03` (Butler, 2010) | `feedback_policy == immediate_explanatory` on conceptual/application items | Deferred during `timing_regime == exam_clock_enforced` until exam part submission |
+| `reference_foraging_decomposition` | `ER-07`, `EXM_00` | `reference_policy == open_book_manifest` | Closed-book tasks |
+| `multimodal_audio_orthographic` | `ER-06` | `knowledge_facet == sublexical_orthographic` or audio-first accessibility mode | Learner selects silent reading mode |
 
 ---
 
-## 2. Option Shuffling & Anti-Cueing Invariant (`FIX-1`)
+## 2. Reconciled Option Shuffling & Presentation Persistence Contract (`FIX-1`)
 
-Across all `structured_choice` items (including standard MCQs, diagnostics, and USCIS/DMV/GED simulators):
-1. **Deterministic Per-Attempt Shuffling**:
-   - Options must never be rendered in static authored order when `correctOptionIndex == 0` or LLM B/C bias exists.
-   - Use a deterministic seed `Object.hash(sessionId, itemId, attemptOrdinal)` so options remain stable across widget rebuilds within a single attempt, while randomizing across attempts and learners.
-2. **Per-Option Metadata**:
-   - Options carry stable option IDs (`option_id`), `is_correct`, `rationale`, and optional `misconception_tag` so shuffled presentation never corrupts scoring or distractor analytics.
+To eliminate positional answer cues across all structured-choice items (USCIS, DMV, GED, lesson MCQs, and `AssessmentItemRenderer`) while maintaining full compatibility with Antigravity's PR `#136` implementation:
 
----
-
-## 3. Feedback Timing Rules
-
-1. **Acquisition, Literacy & Diagnostic Remediation (`immediate_explanatory`)**:
-   - During initial learning, worked-example fading, and literacy decoding, feedback is delivered immediately after each response so errors are not reinforced.
-2. **Exam Execution & Timed Part Practice (`deferred_until_submission`)**:
-   - During timed mock exams and `EXM-03` assigned part practice, item-by-item answer keys are withheld until part submission to preserve assessment validity and time-management realism, followed by a structured post-session diagnostic review.
+1. **Universal Shuffling Default**:
+   - **Every** `structured_choice` (`singleChoice` and `multiSelect`) item shuffles its non-anchor options by default (`shuffleOptions = true`), not merely items where `correct_index == 0` or where LLM B/C bias is suspected.
+   - Anchor options (e.g., legacy items containing `"none of the above"` or `"all of the above"`, where still present in imported material) remain pinned at the bottom while all preceding options shuffle.
+2. **In-Session Seed Stability (Coordinated with PR `#136`)**:
+   - Within a live widget lifecycle, `AssessmentItemRenderer` derives a deterministic PRNG seed from the session/presentation nonce combined with the item identifier (`presentationSeed ^ item.id.hashCode`), ensuring that UI rebuilds or theme changes never reshuffle options mid-attempt.
+3. **Cross-Restart Persistence Invariant (Why Hash Recomputation Is Not Used for History)**:
+   - Dart's `Object.hash` and `String.hashCode` are randomized per isolate/process execution and are **not guaranteed to produce the same integer across app restarts** ([Dart `Object.hash` API docs](https://api.dart.dev/stable/dart-core/Object/hash.html)).
+   - Therefore, audit and event records (`public.learning_events`) **must persist the actual presented option order (`presented_option_ids` / `presentation_order: List<int>`)** generated at presentation time rather than attempting to reconstruct option order later from a seed.
