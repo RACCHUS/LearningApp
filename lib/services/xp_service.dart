@@ -84,7 +84,7 @@ class XpService {
     }
   }
 
-  /// Award XP to user
+  /// Award XP to user via transactional, idempotent RPC
   Future<XpEvent?> awardXp({
     required XpEventType type,
     int? customAmount,
@@ -95,30 +95,28 @@ class XpService {
 
     try {
       final xpAmount = customAmount ?? type.baseXp;
+      final eventId = _uuid.v4();
 
-      // Create XP event
-      final event = XpEvent(
-        id: _uuid.v4(),
+      final result = await _supabase.rpc('record_xp_award', params: {
+        'p_event_id': eventId,
+        'p_event_type': type.name,
+        'p_xp_amount': xpAmount,
+        'p_source_id': sourceId,
+        'p_description': description,
+      });
+
+      final awardedXp = (result is Map)
+          ? (result['awarded_xp'] as int? ?? xpAmount)
+          : xpAmount;
+
+      return XpEvent(
+        id: eventId,
         type: type,
-        xpAmount: xpAmount,
+        xpAmount: awardedXp,
         sourceId: sourceId,
         description: description,
-        earnedAt: DateTime.now(),
+        earnedAt: DateTime.now().toUtc(),
       );
-
-      // Insert event
-      await _supabase.from('xp_events').insert({
-        ...event.toJson(),
-        'user_id': _userId,
-      });
-
-      // Update total XP (upsert)
-      await _supabase.rpc('increment_user_xp', params: {
-        'p_user_id': _userId,
-        'p_xp_amount': xpAmount,
-      });
-
-      return event;
     } catch (e) {
       if (kDebugMode) {
         print('Error awarding XP: $e');

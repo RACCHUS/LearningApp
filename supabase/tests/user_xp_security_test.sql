@@ -1,8 +1,8 @@
--- pgTAP test for user_xp security and increment_user_xp RPC hardening
+-- pgTAP test for user_xp security, record_xp_award idempotency, and increment_user_xp hardening
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(8);
+select plan(11);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -19,56 +19,74 @@ select throws_ok(
   'Anon role cannot execute increment_user_xp'
 );
 
--- 3. Switch to authenticated User 1
+-- 3. Test unauthenticated call to record_xp_award fails
+select throws_ok(
+  $$ select record_xp_award('11111111-1111-1111-1111-111111111111'::uuid, 'questionCorrect', 10) $$,
+  '42501',
+  null,
+  'Anon role cannot execute record_xp_award'
+);
+
+-- 4. Switch to authenticated User 1
 set local role authenticated;
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'ee111111-0000-4000-8000-000000000001', true);
 end $$;
 
--- 4. Valid XP increment succeeds for own user
+-- 5. Valid transactional XP award succeeds for own user
 select lives_ok(
-  $$ select increment_user_xp(50) $$,
-  'Authenticated user can increment own XP'
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
+  'Authenticated user can award XP via record_xp_award'
 );
 
 select is(
   (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  50,
-  'User 1 total XP is 50'
+  10,
+  'User 1 total XP is 10 after award'
 );
 
--- 5. User 1 cannot increment User 2's XP
-select throws_ok(
-  $$ select increment_user_xp(50, 'ee111111-0000-4000-8000-000000000002'::uuid) $$,
-  'P0001',
-  'Cannot modify XP for another user',
-  'User cannot modify another user XP'
+-- 6. Idempotency test: calling record_xp_award with same event_id does not double-award
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
+  'Retrying same event_id executes safely'
 );
 
--- 6. Negative or out of bounds XP amount fails
-select throws_ok(
-  $$ select increment_user_xp(-10) $$,
-  'P0001',
-  'Invalid XP increment amount (must be 1..1000)',
-  'Negative XP amount throws exception'
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  10,
+  'User 1 total XP remains 10 (idempotent duplicate was ignored)'
 );
 
-select throws_ok(
-  $$ select increment_user_xp(1001) $$,
-  'P0001',
-  'Invalid XP increment amount (must be 1..1000)',
-  'XP amount > 1000 throws exception'
+-- 7. Server-side capping: questionCorrect requested with 999 XP is capped at 25 XP
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'questionCorrect', 999, 'lesson-2', 'Tampered amount') $$,
+  'Tampered XP amount is capped server-side'
 );
 
--- 7. Direct client update on user_xp is blocked
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  35,
+  'User 1 total XP is 35 (10 + capped 25)'
+);
+
+-- 8. Direct client INSERT on xp_events is blocked by RLS
+insert into public.xp_events (id, user_id, event_type, xp_amount)
+values ('bbbbbbbb-0000-0000-0000-000000000001'::uuid, 'ee111111-0000-4000-8000-000000000001', 'hacked', 1000);
+select is(
+  (select count(*)::integer from public.xp_events where id = 'bbbbbbbb-0000-0000-0000-000000000001'::uuid),
+  0,
+  'Direct client INSERT into xp_events is blocked by RLS'
+);
+
+-- 9. Direct client UPDATE on user_xp is blocked by RLS
 update public.user_xp set total_xp = 999999 where user_id = 'ee111111-0000-4000-8000-000000000001';
 select is(
   (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  50,
+  35,
   'Direct client UPDATE on user_xp is blocked by RLS'
 );
 
--- 8. User 1 cannot see User 2's XP row
+-- 10. User 1 cannot view User 2 XP
 do $$ begin
   -- create row for User 2 via service_role
   set local role service_role;
@@ -88,4 +106,3 @@ select is(
 
 select * from finish();
 rollback;
-

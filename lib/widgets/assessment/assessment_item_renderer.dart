@@ -12,6 +12,7 @@ class AssessmentItemRenderer extends StatefulWidget {
   final dynamic initialResponse;
   final ValueChanged<dynamic>? onResponseChanged;
   final bool shuffleOptions;
+  final int? presentationSeed;
 
   const AssessmentItemRenderer({
     super.key,
@@ -22,6 +23,7 @@ class AssessmentItemRenderer extends StatefulWidget {
     this.initialResponse,
     this.onResponseChanged,
     this.shuffleOptions = true,
+    this.presentationSeed,
   });
 
   @override
@@ -86,17 +88,33 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       final optionsRaw = spec['options'] as List? ?? [];
       final count = optionsRaw.length;
       _presentationOrder = List.generate(count, (i) => i);
-      final hasAnchor = optionsRaw.any((opt) {
-        final text = opt.toString().toLowerCase();
-        return text.contains('all of the above') ||
-            text.contains('none of the above') ||
-            text.contains('both a and') ||
-            text.contains('both b and') ||
-            text.contains('neither a nor');
-      });
-      if (widget.shuffleOptions && !hasAnchor && count > 1) {
-        final rand = math.Random(widget.item.id.hashCode);
-        _presentationOrder.shuffle(rand);
+
+      if (widget.shuffleOptions && count > 1) {
+        final anchorIndices = <int>[];
+        final nonAnchorIndices = <int>[];
+
+        for (int i = 0; i < count; i++) {
+          final text = optionsRaw[i].toString().toLowerCase();
+          final isAnchor = text.contains('all of the above') ||
+              text.contains('none of the above') ||
+              text.contains('both a and') ||
+              text.contains('both b and') ||
+              text.contains('neither a nor') ||
+              text.contains('neither of the above');
+          if (isAnchor) {
+            anchorIndices.add(i);
+          } else {
+            nonAnchorIndices.add(i);
+          }
+        }
+
+        final seed = widget.presentationSeed != null
+            ? (widget.presentationSeed! ^ widget.item.id.hashCode)
+            : (widget.item.id.hashCode ^ 0x5bf03635);
+        final rand = math.Random(seed);
+        nonAnchorIndices.shuffle(rand);
+
+        _presentationOrder = [...nonAnchorIndices, ...anchorIndices];
       }
     }
 

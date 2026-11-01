@@ -221,5 +221,143 @@ void main() {
       expect(isCorrectResult, isTrue);
       expect(find.text('Practice evidence: All relationships accurately paired'), findsOneWidget);
     });
+
+    testWidgets('Anchor option (None of the above) is kept at the end while others shuffle', (tester) async {
+      final anchorItem = AssessmentItem(
+        id: 'item-anchor-1',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Which protocol operates at the Transport layer?',
+        responseSpec: {
+          'options': ['HTTP', 'SMTP', 'FTP', 'None of the above'],
+        },
+        scoringSpec: {
+          'correct_index': 3,
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: anchorItem,
+              presentationSeed: 42,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state = tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+      final presentation = state.presentationOrder as List<int>;
+
+      // Original index 3 ('None of the above') must remain at the last slot
+      expect(presentation.last, equals(3));
+      expect(presentation.length, equals(4));
+    });
+
+    testWidgets('Different presentation seeds yield different permutations for the same item', (tester) async {
+      final item = AssessmentItem(
+        id: 'item-shuffle-demo',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Pick the correct letter:',
+        responseSpec: {
+          'options': ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'],
+        },
+        scoringSpec: {
+          'correct_index': 0,
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Render with seed 1
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              key: const ValueKey('seed-1'),
+              item: item,
+              presentationSeed: 1,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final state1 = tester.state(find.byKey(const ValueKey('seed-1'))) as dynamic;
+      final order1 = List<int>.from(state1.presentationOrder as List<int>);
+
+      // Render with seed 250
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              key: const ValueKey('seed-250'),
+              item: item,
+              presentationSeed: 250,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final state2 = tester.state(find.byKey(const ValueKey('seed-250'))) as dynamic;
+      final order2 = List<int>.from(state2.presentationOrder as List<int>);
+
+      // Both orders are permutations of [0, 1, 2, 3, 4]
+      expect(order1.toSet(), equals({0, 1, 2, 3, 4}));
+      expect(order2.toSet(), equals({0, 1, 2, 3, 4}));
+      // Different seeds should produce different orderings
+      expect(order1, isNot(equals(order2)));
+    });
+
+    testWidgets('Grading evaluates correctly regardless of option permutation', (tester) async {
+      bool? isCorrectResult;
+
+      final item = AssessmentItem(
+        id: 'item-perm-grade',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'What is the capital of France?',
+        responseSpec: {
+          'options': ['Paris', 'London', 'Berlin', 'Rome'],
+        },
+        scoringSpec: {
+          'correct_index': 0, // 'Paris' is correct
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: item,
+              presentationSeed: 99,
+              onAnswerSubmitted: (correct, score) {
+                isCorrectResult = correct;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state = tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+      final order = state.presentationOrder as List<int>;
+      // Verify Paris is not necessarily slot 0
+      final parisSlot = order.indexOf(0);
+      expect(parisSlot, isNotNull);
+
+      // Select Paris
+      await tester.tap(find.text('Paris'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Check Answer'));
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+
+      expect(isCorrectResult, isTrue);
+    });
   });
 }

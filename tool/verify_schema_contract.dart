@@ -105,6 +105,7 @@ void main() {
     exit(1);
   }
 
-  print('✅ Contract check passed: all ${referencedTables.length} client tables and ${referencedFunctions.length} RPCs exist in migrations.');
+  final totalClientTargets = referencedTables.length + referencedFunctions.length;
+  print('✅ Contract check passed: all ${referencedTables.length} client tables and ${referencedFunctions.length} client RPCs ($totalClientTargets client targets total) exist in migrations.');
   print('====================================================');
 }
