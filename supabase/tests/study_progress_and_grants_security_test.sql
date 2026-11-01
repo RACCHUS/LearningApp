@@ -1,8 +1,8 @@
--- pgTAP test for study_progress security_invoker view, Data API grants, and skill assessment RLS
+-- pgTAP test for study_progress security_invoker view, Data API grants, lesson_texts visibility, and skill assessment RLS
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(15);
+select plan(32);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -15,14 +15,20 @@ insert into public.users (id, email, display_name, show_on_leaderboards) values
  ('cc111111-0000-4000-8000-000000000002', 'learner2@example.invalid', 'Learner Two', true)
 on conflict (id) do nothing;
 
--- 2. Insert test course, lesson, skill, and progress for User 2 via service_role
+-- 2. Insert test course, lessons (public & private), lesson_texts, skill, and progress via service_role
 set local role service_role;
 insert into public.courses (id, title, description, user_id) values
  ('c0000000-0000-0000-0000-000000000001', 'Test Course', 'Course Description', 'cc111111-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
-insert into public.lessons (id, title, user_id) values
- ('b0000000-0000-0000-0000-000000000001', 'Test Lesson', 'cc111111-0000-4000-8000-000000000001')
+insert into public.lessons (id, title, user_id, visibility) values
+ ('b0000000-0000-0000-0000-000000000001', 'Test Public Lesson', 'cc111111-0000-4000-8000-000000000001', 'public'),
+ ('b0000000-0000-0000-0000-000000000002', 'Test Private Lesson', 'cc111111-0000-4000-8000-000000000001', 'private')
+on conflict (id) do nothing;
+
+insert into public.lesson_texts (id, lesson_id, text) values
+ ('ee000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'Public Supplementary Text'),
+ ('ee000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000002', 'Private Confidential Text')
 on conflict (id) do nothing;
 
 insert into public.user_progress (id, user_id, lesson_id, date, questions_answered, correct_count, lesson_completed) values
@@ -42,7 +48,37 @@ insert into public.assessment_questions (id, assessment_id, question_text, optio
  ('f0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'What is 1+1?', '["1", "2"]'::jsonb, 1)
 on conflict (id) do nothing;
 
--- 3. Test anon role permissions
+-- 3. Explicit Table-Level Privilege Assertions (has_table_privilege)
+select ok(
+  has_table_privilege('authenticated', 'public.user_skill_stats', 'SELECT'),
+  'authenticated role has SELECT privilege on user_skill_stats'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.user_skill_stats', 'INSERT'),
+  'authenticated role has no INSERT privilege on user_skill_stats'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.user_skill_stats', 'UPDATE'),
+  'authenticated role has no UPDATE privilege on user_skill_stats'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.user_skill_stats', 'DELETE'),
+  'authenticated role has no DELETE privilege on user_skill_stats'
+);
+select ok(
+  not has_table_privilege('anon', 'public.user_skill_stats', 'SELECT'),
+  'anon role has no SELECT privilege on user_skill_stats'
+);
+select ok(
+  not has_table_privilege('anon', 'public.study_progress', 'SELECT'),
+  'anon role has no SELECT privilege on study_progress'
+);
+select ok(
+  has_table_privilege('authenticated', 'public.study_progress', 'SELECT'),
+  'authenticated role has SELECT privilege on study_progress'
+);
+
+-- 4. Test anon role permissions & lesson_texts visibility
 set local role anon;
 
 -- Anon CAN read public catalog tables
@@ -83,8 +119,41 @@ select throws_ok(
   'Anon cannot SELECT from public.user_skill_stats'
 );
 
--- 4. Switch to authenticated User 1
+-- Anon CAN read text of public lesson
+select is(
+  (select count(*)::integer from public.lesson_texts where id = 'ee000000-0000-0000-0000-000000000001'),
+  1,
+  'Anon can SELECT lesson_texts of public lesson'
+);
+
+-- P1 SECURITY VERIFICATION: Anon CANNOT read text of private lesson
+select is(
+  (select count(*)::integer from public.lesson_texts where id = 'ee000000-0000-0000-0000-000000000002'),
+  0,
+  'Anon CANNOT read lesson_texts belonging to private lesson'
+);
+
+-- 5. Test unrelated authenticated user (User 2)
 set local role authenticated;
+do $$ begin
+  perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000002', true);
+end $$;
+
+-- User 2 CAN read text of public lesson
+select is(
+  (select count(*)::integer from public.lesson_texts where id = 'ee000000-0000-0000-0000-000000000001'),
+  1,
+  'Unrelated authenticated user can SELECT lesson_texts of public lesson'
+);
+
+-- P1 SECURITY VERIFICATION: User 2 CANNOT read text of User 1 private lesson
+select is(
+  (select count(*)::integer from public.lesson_texts where id = 'ee000000-0000-0000-0000-000000000002'),
+  0,
+  'Unrelated authenticated user CANNOT read lesson_texts belonging to private lesson'
+);
+
+-- 6. Switch to authenticated User 1 (owner)
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 end $$;
@@ -156,6 +225,56 @@ select is(
   'Unverified skill stats do not appear on public skill_leaderboard'
 );
 
+-- User 1 (owner) CAN read own private lesson text
+select is(
+  (select count(*)::integer from public.lesson_texts where id = 'ee000000-0000-0000-0000-000000000002'),
+  1,
+  'Lesson owner can SELECT lesson_texts belonging to own private lesson'
+);
+
+-- 7. P2 VERIFICATION: Verified attempt populates stats; soft-deletion recalculates and clears leaderboard
+set local role service_role;
+insert into public.assessment_attempts (id, assessment_id, user_id, score, is_verified, is_deleted, started_at, completed_at)
+values ('aa000000-0000-0000-0000-000000000099', 'a0000000-0000-0000-0000-000000000001', 'cc111111-0000-4000-8000-000000000001', 95, true, false, now(), now());
+
+-- Stat has become verified
+select is(
+  (select is_verified from public.user_skill_stats where user_id = 'cc111111-0000-4000-8000-000000000001' and skill_id = 'e0000000-0000-0000-0000-000000000001'),
+  true,
+  'Verified completed attempt updates user_skill_stats with is_verified = TRUE'
+);
+
+-- User appears on skill_leaderboard
+select is(
+  (select count(*)::integer from public.skill_leaderboard where user_id = 'cc111111-0000-4000-8000-000000000001'),
+  1,
+  'User 1 appears on skill_leaderboard with verified skill stats'
+);
+
+-- User 1 soft deletes all attempts for this skill
+set local role authenticated;
+do $$ begin
+  perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
+end $$;
+
+select lives_ok(
+  $$ select soft_delete_skill_attempts('cc111111-0000-4000-8000-000000000001'::uuid, 'e0000000-0000-0000-0000-000000000001'::uuid) $$,
+  'User 1 can execute soft_delete_skill_attempts'
+);
+
+-- Trigger recalculates on soft deletion: no eligible attempts remain, so user_skill_stats is cleaned up
+select is(
+  (select count(*)::integer from public.user_skill_stats where user_id = 'cc111111-0000-4000-8000-000000000001' and skill_id = 'e0000000-0000-0000-0000-000000000001'),
+  0,
+  'user_skill_stats aggregate record deleted after all skill attempts are soft-deleted'
+);
+
+-- User 1 is immediately cleared from skill_leaderboard
+select is(
+  (select count(*)::integer from public.skill_leaderboard where user_id = 'cc111111-0000-4000-8000-000000000001'),
+  0,
+  'User 1 immediately removed from skill_leaderboard after soft deletion of verified attempts'
+);
+
 select * from finish();
 rollback;
-

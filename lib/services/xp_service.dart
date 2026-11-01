@@ -178,18 +178,25 @@ class XpService {
   }
 
   /// Award XP for review session.
-  /// [contextId] is required to ensure callers provide a stable session identifier,
-  /// preventing retries or re-renders from bypassing the 15-minute replay cooldown.
+  /// [sessionId] is required to uniquely identify this specific review session instance,
+  /// preventing retries or re-renders of the same session from claiming multiple awards,
+  /// while ensuring subsequent sessions in the same learning context are not blocked.
+  /// [contextId] is accepted as an optional alias/parameter for backward compatibility.
   Future<XpEvent?> awardReviewSessionXp(
     int itemsReviewed, {
-    required String contextId,
+    String? sessionId,
+    String? contextId,
     String? eventId,
   }) async {
+    final effectiveSessionId = sessionId ?? contextId;
+    if (effectiveSessionId == null) {
+      throw ArgumentError('Either sessionId or contextId must be provided');
+    }
     final bonusXp = (itemsReviewed * 2).clamp(0, 50); // Max 50 bonus
     return awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: contextId,
+      sourceId: effectiveSessionId,
       eventId: eventId,
       description: 'Reviewed $itemsReviewed items',
     );
@@ -318,14 +325,19 @@ class XpNotifier extends StateNotifier<XpState> {
   /// Award XP for review session completion via notifier
   Future<void> awardReviewSessionXp(
     int itemsReviewed, {
-    required String contextId,
+    String? sessionId,
+    String? contextId,
     String? eventId,
   }) async {
+    final effectiveSessionId = sessionId ?? contextId;
+    if (effectiveSessionId == null) {
+      throw ArgumentError('Either sessionId or contextId must be provided');
+    }
     final bonusXp = (itemsReviewed * 2).clamp(0, 50);
     await awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: contextId,
+      sourceId: effectiveSessionId,
       eventId: eventId,
       description: 'Reviewed $itemsReviewed items',
     );

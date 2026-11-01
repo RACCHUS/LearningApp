@@ -303,6 +303,40 @@ void main() {
       expect(capturedCalls[0]['params']['p_xp_amount'], 35);
     });
 
+    test('awardReviewSessionXp distinguishes two different sessions in the same learning context', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'review_session',
+          'xp_amount': 25,
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      // Two distinct review sessions in the same 'biology' learning context
+      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-1');
+      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-2');
+
+      expect(capturedCalls.length, 2);
+      expect(capturedCalls[0]['params']['p_source_id'], 'review_biology:session-uuid-1');
+      expect(capturedCalls[1]['params']['p_source_id'], 'review_biology:session-uuid-2');
+      expect(capturedCalls[0]['params']['p_source_id'], isNot(equals(capturedCalls[1]['params']['p_source_id'])));
+    });
+
     test('awardReviewSessionXp clamps bonus XP to maximum of 50', () async {
       final capturedCalls = <Map<String, dynamic>>[];
       final user = User(

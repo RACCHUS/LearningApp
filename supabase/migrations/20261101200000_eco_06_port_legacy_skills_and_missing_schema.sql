@@ -321,16 +321,26 @@ DROP POLICY IF EXISTS user_data_snapshots_own ON public.user_data_snapshots;
 CREATE POLICY user_data_snapshots_own ON public.user_data_snapshots FOR ALL USING (user_id = (SELECT auth.uid()));
 
 DROP POLICY IF EXISTS lesson_texts_read ON public.lesson_texts;
-CREATE POLICY lesson_texts_read ON public.lesson_texts FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS lesson_texts_read_all ON public.lesson_texts;
+DROP POLICY IF EXISTS lesson_texts_read_visible ON public.lesson_texts;
+CREATE POLICY lesson_texts_read_visible ON public.lesson_texts
+  FOR SELECT TO authenticated, anon
+  USING (public.is_lesson_visible(lesson_id));
 
 DROP POLICY IF EXISTS lesson_texts_write ON public.lesson_texts;
-CREATE POLICY lesson_texts_write ON public.lesson_texts FOR ALL USING (
-  EXISTS (
+DROP POLICY IF EXISTS lesson_texts_owner_write ON public.lesson_texts;
+CREATE POLICY lesson_texts_owner_write ON public.lesson_texts
+  FOR ALL TO authenticated
+  USING (EXISTS (
     SELECT 1 FROM public.lessons 
     WHERE lessons.id = lesson_texts.lesson_id 
     AND lessons.user_id = (SELECT auth.uid())
-  )
-);
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.lessons 
+    WHERE lessons.id = lesson_texts.lesson_id 
+    AND lessons.user_id = (SELECT auth.uid())
+  ));
 
 -- 10. RPCs: calculate_skill_level, update_skill_stats_after_assessment, soft_delete_skill_attempts, increment_course_time
 CREATE OR REPLACE FUNCTION public.calculate_skill_level(p_user_id UUID, p_skill_id UUID) 
@@ -370,80 +380,107 @@ DECLARE
   v_avg_score NUMERIC(5,2) := 0;
   v_total INTEGER := 0;
   v_has_verified BOOLEAN := FALSE;
+  v_user_id UUID;
 BEGIN
-  IF NEW.completed_at IS NOT NULL AND NEW.is_deleted = FALSE THEN
-    SELECT skill_id INTO v_skill_id
-    FROM public.skill_assessments
-    WHERE id = NEW.assessment_id;
+  v_user_id := COALESCE(NEW.user_id, OLD.user_id);
+
+  SELECT skill_id INTO v_skill_id
+  FROM public.skill_assessments
+  WHERE id = COALESCE(NEW.assessment_id, OLD.assessment_id);
+
+  IF v_skill_id IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- Count eligible, non-deleted, completed attempts with a score
+  SELECT COUNT(*) INTO v_total
+  FROM public.assessment_attempts aa
+  JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+  WHERE aa.user_id = v_user_id
+    AND sa.skill_id = v_skill_id
+    AND aa.is_deleted = FALSE
+    AND aa.completed_at IS NOT NULL
+    AND aa.score IS NOT NULL;
+
+  -- If no completed non-deleted attempts remain, remove aggregate record from user_skill_stats
+  IF v_total = 0 THEN
+    DELETE FROM public.user_skill_stats
+    WHERE user_id = v_user_id
+      AND skill_id = v_skill_id;
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- Check if any verified, non-deleted attempts exist for this user and skill
+  SELECT EXISTS (
+    SELECT 1 FROM public.assessment_attempts aa
+    JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+    WHERE aa.user_id = v_user_id
+      AND sa.skill_id = v_skill_id
+      AND aa.is_verified = TRUE
+      AND aa.is_deleted = FALSE
+      AND aa.completed_at IS NOT NULL
+      AND aa.score IS NOT NULL
+  ) INTO v_has_verified;
+
+  IF v_has_verified THEN
+    v_new_level := public.calculate_skill_level(v_user_id, v_skill_id);
     
-    -- Check if any verified, non-deleted attempts exist for this user and skill
-    SELECT EXISTS (
-      SELECT 1 FROM public.assessment_attempts aa
+    SELECT 
+      MAX(score),
+      AVG(score)::NUMERIC(5,2),
+      COUNT(*)
+    INTO v_best_score, v_avg_score, v_total
+    FROM public.assessment_attempts aa
+    JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+    WHERE aa.user_id = v_user_id
+      AND sa.skill_id = v_skill_id
+      AND aa.is_verified = TRUE
+      AND aa.is_deleted = FALSE
+      AND aa.completed_at IS NOT NULL
+      AND aa.score IS NOT NULL;
+  ELSE
+    -- Practice / unverified aggregate derived from all non-deleted completed attempts
+    SELECT COALESCE(AVG(score)::INTEGER, 0) INTO v_new_level
+    FROM (
+      SELECT aa.score
+      FROM public.assessment_attempts aa
       JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-      WHERE aa.user_id = NEW.user_id
+      WHERE aa.user_id = v_user_id
         AND sa.skill_id = v_skill_id
-        AND aa.is_verified = TRUE
         AND aa.is_deleted = FALSE
+        AND aa.completed_at IS NOT NULL
         AND aa.score IS NOT NULL
-    ) INTO v_has_verified;
+      ORDER BY aa.score DESC
+      LIMIT 3
+    ) recent_attempts;
 
-    IF v_has_verified THEN
-      v_new_level := public.calculate_skill_level(NEW.user_id, v_skill_id);
-      
-      SELECT 
-        MAX(score),
-        AVG(score)::NUMERIC(5,2),
-        COUNT(*)
-      INTO v_best_score, v_avg_score, v_total
-      FROM public.assessment_attempts aa
-      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-      WHERE aa.user_id = NEW.user_id
-        AND sa.skill_id = v_skill_id
-        AND aa.is_verified = TRUE
-        AND aa.is_deleted = FALSE
-        AND aa.score IS NOT NULL;
-    ELSE
-      -- Practice / unverified aggregate derived from all non-deleted attempts
-      SELECT COALESCE(AVG(score)::INTEGER, 0) INTO v_new_level
-      FROM (
-        SELECT aa.score
-        FROM public.assessment_attempts aa
-        JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-        WHERE aa.user_id = NEW.user_id
-          AND sa.skill_id = v_skill_id
-          AND aa.is_deleted = FALSE
-          AND aa.score IS NOT NULL
-        ORDER BY aa.score DESC
-        LIMIT 3
-      ) recent_attempts;
-
-      SELECT 
-        MAX(score),
-        AVG(score)::NUMERIC(5,2),
-        COUNT(*)
-      INTO v_best_score, v_avg_score, v_total
-      FROM public.assessment_attempts aa
-      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-      WHERE aa.user_id = NEW.user_id
-        AND sa.skill_id = v_skill_id
-        AND aa.is_deleted = FALSE
-        AND aa.score IS NOT NULL;
-    END IF;
-    
-    INSERT INTO public.user_skill_stats (user_id, skill_id, level, best_score, average_score, total_assessments, last_assessed_at, is_verified)
-    VALUES (NEW.user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), v_has_verified)
-    ON CONFLICT (user_id, skill_id) 
-    DO UPDATE SET
-      level = v_new_level,
-      best_score = COALESCE(v_best_score, user_skill_stats.best_score),
-      average_score = COALESCE(v_avg_score, user_skill_stats.average_score),
-      total_assessments = COALESCE(v_total, user_skill_stats.total_assessments),
-      is_verified = v_has_verified,
-      last_assessed_at = NOW(),
-      updated_at = NOW();
+    SELECT 
+      MAX(score),
+      AVG(score)::NUMERIC(5,2),
+      COUNT(*)
+    INTO v_best_score, v_avg_score, v_total
+    FROM public.assessment_attempts aa
+    JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+    WHERE aa.user_id = v_user_id
+      AND sa.skill_id = v_skill_id
+      AND aa.is_deleted = FALSE
+      AND aa.completed_at IS NOT NULL
+      AND aa.score IS NOT NULL;
   END IF;
   
-  RETURN NEW;
+  INSERT INTO public.user_skill_stats (user_id, skill_id, level, best_score, average_score, total_assessments, last_assessed_at, is_verified)
+  VALUES (v_user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), v_has_verified)
+  ON CONFLICT (user_id, skill_id) 
+  DO UPDATE SET
+    level = v_new_level,
+    best_score = COALESCE(v_best_score, user_skill_stats.best_score),
+    average_score = COALESCE(v_avg_score, user_skill_stats.average_score),
+    total_assessments = COALESCE(v_total, user_skill_stats.total_assessments),
+    is_verified = v_has_verified,
+    last_assessed_at = NOW(),
+    updated_at = NOW();
+
+  RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
 
@@ -454,7 +491,7 @@ GRANT EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() TO servic
 
 DROP TRIGGER IF EXISTS trg_update_skill_stats ON public.assessment_attempts;
 CREATE TRIGGER trg_update_skill_stats
-AFTER INSERT OR UPDATE OF score, completed_at, is_deleted, is_verified
+AFTER INSERT OR UPDATE OF score, completed_at, is_deleted, is_verified OR DELETE
 ON public.assessment_attempts
 FOR EACH ROW
 EXECUTE FUNCTION public.update_skill_stats_after_assessment();
@@ -510,13 +547,22 @@ GRANT EXECUTE ON FUNCTION public.increment_course_time(UUID, UUID, INTEGER) TO s
 
 -- 11. Explicit Least-Privilege Grants for PostgREST / Data API Exposure
 
--- Revoke all by default from PUBLIC and anon for sensitive tables and views
-REVOKE ALL ON public.assessment_attempts FROM PUBLIC, anon;
-REVOKE ALL ON public.user_skill_stats FROM PUBLIC, anon;
-REVOKE ALL ON public.user_career_paths FROM PUBLIC, anon;
-REVOKE ALL ON public.user_data_snapshots FROM PUBLIC, anon;
-REVOKE ALL ON public.study_progress FROM PUBLIC, anon;
-REVOKE ALL ON public.skill_leaderboard FROM PUBLIC;
+-- Revoke all by default from PUBLIC, anon, and authenticated to eliminate legacy blanket grants
+REVOKE ALL ON public.career_paths,
+              public.career_path_courses,
+              public.skills,
+              public.career_path_skills,
+              public.course_skills,
+              public.skill_assessments,
+              public.assessment_questions,
+              public.user_skill_stats,
+              public.assessment_attempts,
+              public.user_career_paths,
+              public.user_data_snapshots,
+              public.lesson_texts,
+              public.study_progress,
+              public.skill_leaderboard
+FROM PUBLIC, anon, authenticated;
 
 -- Public / Catalog tables: read-only for anon, authenticated
 GRANT SELECT ON public.skills TO anon, authenticated;
@@ -528,6 +574,8 @@ GRANT SELECT ON public.career_path_skills TO anon, authenticated;
 GRANT SELECT ON public.course_skills TO anon, authenticated;
 GRANT SELECT ON public.skill_assessments TO anon, authenticated;
 GRANT SELECT ON public.assessment_questions TO anon, authenticated;
+
+-- Supplementary lesson texts: visibility-gated SELECT for anon & authenticated, owner writes
 GRANT SELECT ON public.lesson_texts TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.lesson_texts TO authenticated;
 
