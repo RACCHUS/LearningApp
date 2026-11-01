@@ -17,12 +17,12 @@ on conflict (id) do nothing;
 
 -- 2. Insert test course, lesson, skill, and progress for User 2 via service_role
 set local role service_role;
-insert into public.courses (id, title, description, category, user_id) values
- ('c0000000-0000-0000-0000-000000000001', 'Test Course', 'Course Description', 'Test', 'cc111111-0000-4000-8000-000000000001')
+insert into public.courses (id, title, description, user_id) values
+ ('c0000000-0000-0000-0000-000000000001', 'Test Course', 'Course Description', 'cc111111-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
-insert into public.lessons (id, course_id, title, order_index, user_id) values
- ('l0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Test Lesson', 1, 'cc111111-0000-4000-8000-000000000001')
+insert into public.lessons (id, title, user_id) values
+ ('l0000000-0000-0000-0000-000000000001', 'Test Lesson', 'cc111111-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
 insert into public.user_progress (id, user_id, lesson_id, date, questions_answered, correct_count, lesson_completed) values

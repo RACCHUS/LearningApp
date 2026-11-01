@@ -164,11 +164,10 @@ select lives_ok(
 );
 
 -- 16. Retrying the same question with a fresh event ID triggers cooldown
-select throws_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000012'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1 retry') $$,
-  'P0001',
-  null,
-  'Retrying same question with new event ID triggers cooldown'
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000012'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1 retry')->>'status')),
+  'already_processed',
+  'Retrying same question with new event ID triggers cooldown and returns already_processed'
 );
 
 -- 17. Review session with context ID succeeds
@@ -178,11 +177,10 @@ select lives_ok(
 );
 
 -- 18. Retrying the same review session with a fresh event ID triggers cooldown
-select throws_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000014'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1 retry') $$,
-  'P0001',
-  null,
-  'Retrying same review session context ID triggers cooldown'
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000014'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1 retry')->>'status')),
+  'already_processed',
+  'Retrying same review session context ID triggers cooldown and returns already_processed'
 );
 
 select * from finish();
