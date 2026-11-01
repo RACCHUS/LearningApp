@@ -19,9 +19,9 @@ This specification defines how the adaptive delivery engine selects strategies f
 
 ## 2. Universal Option Shuffling Contract & Implementation Gaps (`FIX-1`)
 
-> **Cross-PR Implementation Status (`main` `e538585` vs. PR `#136` current head `dc8f49f`)**:
-> Antigravity's PR `#136` (`feature/arch-review-phase-0`) currently lists `FIX-1` as `RESOLVED` in its pull-request description, **which is inaccurate against the actual code at current PR head `dc8f49f`**. While PR `#136` implements option shuffling inside `AssessmentItemRenderer` (`lib/widgets/assessment/assessment_item_renderer.dart`), **`FIX-1` is only `PARTIALLY RESOLVED` (`INCOMPLETE`)**:
-> 1. [`lib/widgets/mcq_options.dart`](../../lib/widgets/mcq_options.dart) (`options.asMap().entries`) still renders authored order for [`lib/widgets/question_widgets/mcq_question_widget.dart`](../../lib/widgets/question_widgets/mcq_question_widget.dart) (`widget.content.options`).
+> **Cross-PR Implementation Status (`main` `e538585` vs. PR `#136` current head `e67a3d5`, re-verified after earlier snapshot `dc8f49f`)**:
+> Antigravity's PR `#136` (`feature/arch-review-phase-0`) currently lists `FIX-1` as `RESOLVED` in its pull-request description, **which is inaccurate against the actual code at current PR head `e67a3d5`**. While PR `#136` implements option shuffling inside `AssessmentItemRenderer` (`lib/widgets/assessment/assessment_item_renderer.dart`), **`FIX-1` is only `PARTIALLY RESOLVED` (`INCOMPLETE`)**:
+> 1. [`lib/widgets/mcq_options.dart`](../../lib/widgets/mcq_options.dart) (`options.asMap().entries`) still renders authored order for [`lib/widgets/question_widgets/mcq_question_widget.dart`](../../lib/widgets/question_widgets/mcq_question_widget.dart) (`widget.content.options`), and both legacy voice-input paths still map `A`–`D` directly to authored indices.
 > 2. `AdaptivePracticeScreen` (`lib/screens/assessment/adaptive_practice_screen.dart`) currently only defines `_sessionNonce` (initialized once in `initState`, session-scoped) and passes `_sessionNonce ^ _currentItem!.id.hashCode`, which `AssessmentItemRenderer` XORs a second time with `widget.item.id.hashCode`, cancelling the item hash.
 > 3. [`lib/widgets/lesson/rich_lesson_reader.dart`](../../lib/widgets/lesson/rich_lesson_reader.dart) instantiates `AssessmentItemRenderer(item: item)` without a `presentationSeed`.
 >
@@ -36,13 +36,14 @@ This specification defines how the adaptive delivery engine selects strategies f
      ```dart
      final int effectiveSeed = attemptNonce ^ item.id.hashCode;
      ```
-3. **Single Canonical Persistence Field (`presented_option_ids`)**:
-   - Because Dart's `Object.hash` and `String.hashCode` are randomized per isolate/execution ([Dart `Object.hash` API](https://api.dart.dev/stable/dart-core/Object/hash.html)), historical attempt records in `public.learning_events` standardize on a **single canonical field**:
+3. **Single Canonical Persistence Field (`presented_option_ids` — Separate Phase 1 Event-Ledger Work `FIX-3`, Not a Phase 0 `FIX-1` Acceptance Criterion)**:
+   - Phase 0 `FIX-1` acceptance criteria cover only the three client/UI option-shuffling, legacy MCQ/voice-input mapping, and raw per-presentation nonce items in §2.2 below.
+   - Durable event-ledger persistence of the displayed option order is tracked separately as **Phase 1 event-ledger work (`FIX-3`, specified in [`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md))**. Because Dart's `Object.hash` and `String.hashCode` are randomized per isolate/execution ([Dart `Object.hash` API](https://api.dart.dev/stable/dart-core/Object/hash.html)), Phase 1 historical attempt records in `public.learning_events` standardize on a **single canonical field**:
      - **`presented_option_ids: text[]`** — The ordered list of stable `option_id` values in the exact order displayed to the learner (see [`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md) for server-issued vs. client-reported trust rules).
-   - Do **not** use raw integer index arrays (`presentation_order: List<int>`) in the event ledger, as stable option IDs remain unambiguous even if an item's options are later edited.
+   - Do **not** use raw integer index arrays (`presentation_order: List<int>`) in the Phase 1 event ledger, as stable option IDs remain unambiguous even if an item's options are later edited.
 
-### 2.2 Remaining Implementation Gaps to Close in Code (`main` & PR `#136` Audit)
-Code inspection of `main` and PR `#136` (current head `dc8f49f`) identifies three specific code gaps and two voice-input mapping paths that must be resolved to complete `FIX-1`:
+### 2.2 Remaining Implementation Gaps to Close in Code (`main` & PR `#136` Audit at `e67a3d5`)
+Code inspection of `main` and PR `#136` (re-verified at current head `e67a3d5`, following earlier snapshot `dc8f49f`) identifies three specific code gaps and two voice-input mapping paths that must be resolved to complete Phase 0 `FIX-1`:
 
 1. **Gap 1 — Legacy Lesson MCQs Remain Unshuffled (`McqQuestionWidget` & `McqOptions`)**:
    - [`lib/widgets/question_widgets/mcq_question_widget.dart`](../../lib/widgets/question_widgets/mcq_question_widget.dart) passes `options: widget.content.options` (with `widget.content.correctAnswer` holding the authored index) directly to [`lib/widgets/mcq_options.dart`](../../lib/widgets/mcq_options.dart), which renders `options.asMap().entries` in authored order.
