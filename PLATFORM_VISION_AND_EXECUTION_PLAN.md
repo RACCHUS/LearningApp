@@ -28,27 +28,32 @@ Rather than collapsing origin, review status, and statistical calibration into a
 5. **`source_authority`**: `primary_regulator_or_statute` | `accredited_publisher_or_standard` | `secondary_educational` | `user_supplied_unverified`
 6. **`version_validity`**: `{ effective_from, effective_to, superseded_by_version_id, status: 'active' | 'expired' | 'superseded' }`
 
-### B. Measurement Quality (`measurement_quality_level`)
-- `unobserved` ($N = 0$) $\to$ `research_informed_prior` (`ContentComplexityProfile`) $\to$ `observed` ($1 \le N < N_{\text{min}}$) $\to$ `calibrated` (validated statistical estimates with verified convergence and bounded $\text{SE}$) $\to$ `validated_for_intended_use`.
+### B. Separated Complexity Status, Item Psychometric Status & Readiness Validation
+Rather than conflating a cold-start `ContentComplexityProfile` with empirical item calibration, the platform separates them into three distinct status fields:
+- **`complexity_assessment_status`** (Cold-start `ContentComplexityProfile` status): `unassessed` | `deterministic_profile` | `expert_reviewed_profile`.
+- **`item_psychometric_status`** (Empirical item measurement status): `unobserved` ($N = 0$) $\to$ `observed_preliminary` ($N \ge 1$, online Elo ordering per `ER-09b`) $\to$ `calibrated` (statistical IRT item estimates $a_i, b_i$ with verified convergence and bounded $\text{SE}$ per `ER-09a`).
+- **`readiness_validation_status`** (Target/model validation status): `unvalidated` $\to$ `pilot_observed` $\to$ `validated_for_intended_use`.
 
 ### C. Blueprint Alignment (`blueprint_alignment_state`)
 - `unmapped` | `concept_mapped` | `blueprint_weighted` (mapped to an active `TargetVersion` exam domain/part).
 
 ### D. Four Separate Evidence & State Layers
 1. **FSRS-6 Card Retrievability $R(t)$ (`v2_fsrs6`)**: Memory recall probability for an individual memory-review card (`Again`, `Hard`, `Good`, `Easy`).
-2. **Concept Evidence (`user_concept_state`)**: Server-maintained projection of competence across a concept's facets and cognitive operations.
+2. **Concept Evidence (`user_concept_state`)**: Server-maintained projection of competence across a concept's facets and cognitive operations (updated by `record_events`; kept separate from `EXM-03` `exam_part_practice_attempts`).
 3. **Reference-Navigation Evidence (`EXM-02B`)**: Open-book lookup accuracy and timing across `R1–R4`.
 4. **Examination Readiness**: Synthesizes blueprint coverage, delayed retention, transfer to held-out items, and execution under actual exam conditions (e.g., **open-book reference navigation** for Pilot A Florida Certified Contractor vs. **closed-book timed MCQ** for Pilot B Florida Insurance).
 
 ---
 
-## 3. Security & Contract Coordination Between Branches
+## 3. Security, Supersession & Contract Coordination Between Branches
 
 To ensure clean integration between this documentation branch (`docs/architecture-and-learning-science-plans`) and Antigravity's engineering branch (`feature/arch-review-phase-0` / PR `#136`):
 
-1. **`ARCHITECTURE_REVIEW.md` Synchronized**:
+1. **`ARCHITECTURE_REVIEW.md` Synchronized & Provisional Details Explicitly Superseded**:
    - Both branches use the identical 320-line `ARCHITECTURE_REVIEW.md` file (SHA `5fe779d3db382d03ad034dc03742409b9a6c1c7b`, including the official `10 GiB/month transfer` Firebase Hosting Spark limit), preventing any add/add merge conflict.
-2. **Accurate `FIX-12` Status & Target Contract**:
-   - The three-representation model (Authoring representation $\to$ Learner presentation DTO without answer keys $\to$ Server scoring representation) is the proposed Phase 1 target. Existing `EXM-03` on `main` is a `service_role`-only scoring backend for assigned practice, and PR `#136` schedules general learner-facing answer-key isolation and server scoring RPCs for Phase 1.
+   - Where `ARCHITECTURE_REVIEW.md` contains provisional Phase 0 event-ledger or scheduler sketches (`presented_order`, conflated confidence/FSRS ratings, or synthetic FSRS initialization), **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` formally supersede them**.
+2. **Accurate `EXM-03` Surface & Phase 1 `FIX-12` Target Contract**:
+   - On `main`, `EXM-03` (`20261101130000_exm_03_assigned_practice_scoring.sql`, `20261101140000_exm_03_authenticated_assignment_issuer.sql`, and `20261101150000_exm_03_authenticated_submit_protected_items.sql`) already provides answer-key-stripped assignment issuance (`exm03_start_assigned_practice`), authenticated session-bound submission (`exm03_submit_assigned_practice`), and restrictive RLS (`exm03_no_direct_read_of_approved_answers`) for approved `EXM-02A` items (recording attempts in `exam_part_practice_attempts` without updating `user_concept_state`).
+   - Extending the three-representation answer-key isolation model to all non-EXM diagnostic, mock exam, and adaptive practice items remains a **Phase 1 deliverable (`FIX-12`)**.
 3. **Universal Option Shuffling & Single Canonical `presented_option_ids` Field (`FIX-1`)**:
-   - Documents the single-XOR per-item seed contract (`sessionNonce ^ item.id.hashCode`), the remaining legacy `McqOptions`/`McqQuestionWidget` and rich lesson reader routes to migrate, and standardizes exclusively on `presented_option_ids: text[]` in `public.learning_events` (`03_INSTRUCTIONAL_STRATEGIES.md`, `06_MEASUREMENT_AND_SCHEDULING.md`).
+   - Documents the per-presentation/attempt nonce & single-XOR seed contract (`attemptNonce ^ item.id.hashCode`), the remaining legacy [`lib/widgets/question_widgets/mcq_question_widget.dart`](lib/widgets/question_widgets/mcq_question_widget.dart) (`widget.content.options`), [`lib/widgets/mcq_options.dart`](lib/widgets/mcq_options.dart), [`lib/widgets/lesson/rich_lesson_reader.dart`](lib/widgets/lesson/rich_lesson_reader.dart), and dual voice-input routes (`LessonContentRenderer` and `QuestionContentRenderer`) to close across branches, and standardizes on `presented_option_ids: text[]` (trusted when bound to a server-issued presentation record; otherwise labeled `untrusted_client_reported` metadata) in `public.learning_events` (`03_INSTRUCTIONAL_STRATEGIES.md`, `06_MEASUREMENT_AND_SCHEDULING.md`).

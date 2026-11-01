@@ -7,10 +7,13 @@ This document specifies the six-stage content ingestion pipeline, the **proposed
 ## 1. Three Content Representations & Accurate `FIX-12` Implementation Status
 
 > **Current Implementation Status (`main` `e538585` & PR `#136`)**:
-> The three-representation architecture below is the **proposed `FIX-12` target**.
-> - On `main`, existing `EXM-03` (`20261101130000_exm_03_assigned_practice_scoring.sql` and `20261101140000_exm_03_authenticated_assignment_issuer.sql`) provides a separate **`service_role`-only scoring backend for assigned exam part practice**; it is deliberately not connected to the learner UI as a general assessment submission API.
-> - On Antigravity's PR `#136`, general `FIX-12` is explicitly scheduled for **Phase 1**, and `AssessmentItemRenderer` still performs client-side scoring using `item.scoringSpec` and `correct_index`.
-> - General assessment answer-key isolation and learner-facing server scoring RPCs therefore remain **scheduled for Phase 1 implementation** and must not be assumed to be active on `main` today.
+> The general three-representation architecture below is the **proposed Phase 1 `FIX-12` target** across all assessment routes:
+> - On `main` (`e538585`), **`EXM-03` already implements answer-key isolation and authenticated server-side scoring specifically for approved `EXM-02A` assigned exam-part practice** across three migrations:
+>   1. `20261101130000_exm_03_assigned_practice_scoring.sql` (private canonical scorer `public.exm03_record_assigned_practice` writing to `public.exam_part_practice_attempts`),
+>   2. `20261101140000_exm_03_authenticated_assignment_issuer.sql` (authenticated safe projection issuer `public.exm03_start_assigned_practice` stripping `scoring_spec`), and
+>   3. `20261101150000_exm_03_authenticated_submit_protected_items.sql` (authenticated session- and owner-bound submission wrapper `public.exm03_submit_assigned_practice`, plus restrictive RLS policy `exm03_no_direct_read_of_approved_answers` on `public.assessment_items` blocking direct table reads of approved `EXM-02A` items).
+> - However, **non-EXM assessment items on `main` remain readable via general `assessment_items` RLS**, and on Antigravity's PR `#136` general `FIX-12` is scheduled for **Phase 1** (`AssessmentItemRenderer` still performs client-side scoring using `item.scoringSpec` and `correct_index`).
+> - Extending the three-representation DTO and server scoring RPCs to **all** non-EXM diagnostic, mock exam, and adaptive practice items therefore remains a **Phase 1 deliverable**.
 
 ### 1.1 Target Representation 1: Authoring & Ingestion Representation (Repository / Server Storage Only)
 Used during content authoring, import validation, and manifest ingestion (`ingest_curriculum_manifest`). Contains the full instructional and scoring specification:
@@ -38,9 +41,10 @@ Used during content authoring, import validation, and manifest ingestion (`inges
 ```
 
 ### 1.2 Target Representation 2: Learner Presentation DTO (Delivered to Client Prior to Submission)
-In Phase 1 (`FIX-12`), diagnostic, mock exam, and readiness-eligible assessments deliver only the prompt, stimulus, and shuffled options (`option_id`, `text`) **without** `is_correct`, `correct_index`, `scoring_spec`, `misconception_tag`, or answer-revealing `rationale` fields:
+In Phase 1 (`FIX-12`), diagnostic, mock exam, and readiness-eligible assessments deliver only the prompt, stimulus, and shuffled options (`option_id`, `text`) **without** `is_correct`, `correct_index`, `scoring_spec`, `misconception_tag`, or answer-revealing `rationale` fields (and bind `presented_option_ids` to a server-issued `attempt_id` whenever authoritative order verification is required; see [`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md)):
 ```json
 {
+  "attempt_id": "0192e8b0-7c2a-7000-8000-000000000001",
   "item_id": "fl_ins_042",
   "prompt": "Which policy provision specifies how loss valuation is handled when insured property is partially destroyed?",
   "options": [
@@ -52,9 +56,9 @@ In Phase 1 (`FIX-12`), diagnostic, mock exam, and readiness-eligible assessments
 ```
 
 ### 1.3 Target Representation 3: Server Scoring & Controlled Feedback Release
-Stored in protected server tables (`scoring_spec`) and evaluated by Phase 1 server scoring RPCs:
+Stored in protected server tables (`scoring_spec`) and evaluated by server scoring RPCs:
 - In **study/acquisition mode (`feedback_policy == immediate_explanatory`)**: Submitting the attempt returns the server-computed score plus the relevant option rationales.
-- In **timed exam mode (`timing_regime == exam_clock_enforced`, `feedback_policy == deferred_until_submission`)**: Rationales and correctness are withheld until the exam part is submitted.
+- In **timed exam mode (`timing_regime == exam_clock_enforced`, `feedback_policy == deferred_until_submission`)**: Rationales and correctness are withheld until the exam part is submitted, and timing is verified using server-computed `server_elapsed_ms`.
 
 ---
 
@@ -64,7 +68,7 @@ Stored in protected server tables (`scoring_spec`) and evaluated by Phase 1 serv
 2. **Extraction & 6-Property Provenance**: Records `origin`, `visibility` (`private` by default for imports), `rights_status` (`rights_review_required` by default for unverified imports), `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
 3. **Knowledge Organization**: Maps content to canonical `fields`, `knowledge_concepts`, `concept_relations` prerequisites, and `confusable_group_id` clusters.
 4. **Learning Design**: Assigns the canonical `LearningTaskProfile`, `ContentComplexityProfile`, `InstructionalPolicy`, and `AssessmentPolicy` (`02_LEARNING_TASK_TAXONOMY.md`).
-5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, passage reading demand) and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
+5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, passage reading demand), sets `complexity_assessment_status = 'deterministic_profile'`, and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
 6. **Personalized Delivery**: Delivers the Learner Presentation DTO through the task-aware Study View and versioned scheduler (`review_items`), recording attempts via `record_events` (`public.learning_events`).
 
 ---
@@ -126,7 +130,9 @@ Stored in protected server tables (`scoring_spec`) and evaluated by Phase 1 serv
       "status": "active"
     }
   },
-  "measurement_quality_level": "research_informed_prior",
+  "complexity_assessment_status": "deterministic_profile",
+  "item_psychometric_status": "unobserved",
+  "readiness_validation_status": "unvalidated",
   "blueprint_alignment_state": "blueprint_weighted"
 }
 ```

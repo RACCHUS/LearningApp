@@ -1,32 +1,33 @@
-# 01 — Evidence Register & Peer-Reviewed Research Baseline
+# 01 — Research & Technical Evidence Register
 
-This register records the primary scientific literature governing LearningApp's instructional strategies, task profiles, and measurement rules. In accordance with [`README.md`](README.md), every entry documents its **exact bibliographic citation and DOI/source**, **evidence grade**, **population and sample size**, **effect sizes with 95% confidence intervals and heterogeneity** (where reported), **study-specific limitations and negative/mixed findings**, and **whether a resulting design rule has direct empirical support or is an implementation hypothesis to test**.
+This register records the primary scientific literature, research synthesis reports, psychometric simulations, and technical implementation references governing LearningApp's instructional strategies, task profiles, and measurement rules. In accordance with [`README.md`](README.md), every empirical entry documents its **exact bibliographic citation and DOI/URL**, **evidence grade**, **population and sample size (including subgroup sample sizes where applicable)**, **effect sizes with 95% confidence intervals and heterogeneity ($I^2$)**, **study-specific limitations and negative/mixed findings**, and **whether a resulting design rule has direct empirical support or is an implementation hypothesis to test**. Technical software references are explicitly labeled so they are never conflated with empirical educational-outcome studies.
 
 ---
 
 ## Evidence Grade & Claim Status Scale
 - **Grade A (Strong Meta-Analytic / Replicated Experimental Consensus)**: Multiple meta-analyses or large-scale experiments with well-characterized confidence intervals and moderators.
 - **Grade B (Domain-Specific Experimental / Systematic Review Evidence)**: Peer-reviewed evidence or formal research synthesis within a specific population or task domain; requires verification when generalizing to new adult cohorts.
-- **Grade C (Indirect Theoretical Mechanism / Simulation / Mixed Evidence)**: Supports a partial mechanism or simulation condition, but direct transfer to the target learning or assessment context is unverified.
+- **Grade C (Indirect Theoretical Mechanism / Simulation / Mixed Evidence)**: Supports a partial mechanism or Monte Carlo simulation condition, but direct transfer to the target learning or assessment context is unverified.
+- **Technical Implementation Reference (Non-Empirical)**: Software library or algorithmic specification; documents implementation mechanics rather than empirical learner outcomes.
 - **Claim Status**:
   - `Direct Empirical Support`: The cited study directly measures the target intervention and outcome in a comparable task.
-  - `Implementation Hypothesis`: An engineering or instructional design rule motivated by related cognitive findings that requires empirical validation inside LearningApp before being claimed as proven.
+  - `Implementation Hypothesis`: An engineering or instructional design rule motivated by related cognitive or simulation findings that requires empirical validation inside LearningApp before being claimed as proven.
 
 ---
 
 ## 1. Retrieval Practice, Spacing, Interleaving & Prequestioning
 
 ### ER-01: Retrieval Practice, Distributed Practice & Interleaved Practice in Classrooms (2026 Meta-Analysis)
-- **Citation**: Ruitenburg, S. K., et al. (2026, published October 29, 2026). A Meta-Analysis of the Effectiveness and Boundary Conditions of Retrieval Practice, Distributed Practice, and Interleaved Practice in Authentic School Classrooms. *Educational Psychology Review* (Springer Nature). `https://doi.org/10.1007/s10648-026-10225-5`
+- **Citation**: Ruitenburg, S. K., Goos, M., Lambert, K., Kirschner, P. A., Jarodzka, H., & Camp, G. (2026, published October 29, 2026). A Meta-Analysis of the Effectiveness and Boundary Conditions of Retrieval Practice, Distributed Practice, and Interleaved Practice in Authentic School Classrooms. *Educational Psychology Review* (Springer Nature). `https://doi.org/10.1007/s10648-026-10225-5`
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support` for strategy effectiveness & moderator sensitivity; `Implementation Hypothesis` when extrapolating from K–12 classroom cohorts to adult vocational/licensing learners).
-- **Methodology**: Meta-analysis of 53 classroom studies.
-- **Population & Sample Size**: Overall synthesis covers $k = 53$ studies and $N = 7,303$ learners in primary and secondary school classrooms *(note: the specific number of studies $k$ and participants $n$ contributing to each strategy subgroup differs across retrieval, spacing, and interleaving)*.
-- **Measured Outcome & Effect Sizes (with 95% CIs)**:
-  - **Retrieval practice**: $g = .37$, **95% CI $[.18, .56]$**
-  - **Distributed (spaced) practice**: $g = .20$, **95% CI $[.03, .36]$**
-  - **Interleaved practice**: $g = .40$, **95% CI $[.10, .71]$**
+- **Methodology**: Meta-analysis of 53 authentic classroom studies across three desirable-difficulty strategies.
+- **Population, Subgroup Sample Sizes & Heterogeneity ($I^2$)**:
+  - **Overall synthesis pool**: $k = 53$ studies, $N = 7,303$ learners in primary and secondary school classrooms *(note: some studies contribute to more than one strategy comparison; strategy-specific subgroup samples and heterogeneity are listed below)*.
+  - **Retrieval practice subgroup**: **$k = 31$ studies, $n = 3,391$ participants**, **$g = .37$, 95% CI $[.18, .56]$**, between-study heterogeneity **$I^2 = 85.29\%$**.
+  - **Distributed (spaced) practice subgroup**: **$k = 15$ studies, $n = 2,010$ participants**, **$g = .20$, 95% CI $[.03, .36]$**, between-study heterogeneity **$I^2 = 73.18\%$**.
+  - **Interleaved practice subgroup**: **$k = 10$ studies, $n = 1,902$ participants**, **$g = .40$, 95% CI $[.10, .71]$**, between-study heterogeneity **$I^2 = 73.52\%$**.
 - **Limitations & Moderators**:
-  1. **Moderator sensitivity**: Effects are moderated by **knowledge type**, **assessment format**, and **feedback**, supporting task-profile-dependent strategy selection over a rigid one-size-fits-all loop.
+  1. **Substantial heterogeneity ($I^2 = 73.18\%\text{--}85.29\%$) & moderator sensitivity**: Effects vary considerably across studies and are moderated by **knowledge type**, **assessment format**, and **feedback**, supporting task-profile-dependent strategy selection over a rigid one-size-fits-all loop.
   2. **Population boundary**: Because the synthesized studies come from primary and secondary school classrooms, this meta-analysis must **not** be cited as direct empirical proof of adult licensing or vocational exam pass rates.
 - **Applicability**: `InstructionalPolicy.eligible_strategies[]` selection rules (`03_INSTRUCTIONAL_STRATEGIES.md`).
 - **Recommended Implementation**: Configure retrieval, spacing, and interleaving dynamically according to `LearningTaskProfile` and `InstructionalPolicy`.
@@ -65,11 +66,11 @@ This register records the primary scientific literature governing LearningApp's 
 - **Test Plan**: Verify session builder applies contrastive interleaving only to linked confusable concept groups.
 
 ### ER-10: The Prequestion Effect vs. Diagnostic Testing (2023/2024 Meta-Analysis)
-- **Citation**: St. Hilaire, K. J., Chan, J. C. K., & Ahn, D. (2023 online / 2024 print). Guessing as a learning intervention: A meta-analytic review of the prequestion effect. *Psychonomic Bulletin & Review*, 31, 537–563. `https://doi.org/10.3758/s13423-023-02353-8`
+- **Citation**: St. Hilaire, K. J., Chan, J. C. K., & Ahn, D. (2023 online / 2024 print). Guessing as a learning intervention: A meta-analytic review of the prequestion effect. *Psychonomic Bulletin & Review*, 31, 411–441. `https://doi.org/10.3758/s13423-023-02353-8` (PubMed PMID: `37550561`)
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support` for item-specific prequestioning; `Implementation Hypothesis` for diagnostic prior-knowledge routing).
 - **Methodology**: Meta-analysis separating prequestioned content from non-prequestioned content within subsequent study material.
 - **Measured Outcome & Effect Sizes (with 95% CIs)**:
-  - **Specific prequestion effect** (retention of the exact information targeted by the prequestion): **$g = .54$, 95% CI $[.42, .66]$, $k = 97$**
+- **Specific prequestion effect** (retention of the exact information targeted by the prequestion): **$g = .54$, 95% CI $[.42, .66]$, $k = 97$**
   - **General prequestion effect** (retention of untested information in the same material): **$g = .04$, 95% CI $[-.04, .11]$, $k = 91$** (statistically indistinguishable from zero)
 - **Limitations & Critical Distinction (Prequestioning $\ne$ Diagnostic Test Validity)**:
   1. **No general spillover**: Asking prequestions improves learning of the targeted question's concept, not unrelated material in the lesson.
@@ -84,11 +85,11 @@ This register records the primary scientific literature governing LearningApp's 
 
 ### ER-05: Expertise Reversal Meta-Analysis (2025) & Worked-Example Backward Fading
 - **Citations**:
-  1. Tetzlaff, L., et al. (2025). A cornerstone of adaptivity – A meta-analysis of the expertise reversal effect. *Learning and Instruction*, 98, 102142. `https://doi.org/10.1016/j.learninstruc.2025.102142`
+  1. Tetzlaff, L., Simonsmeier, B. A., Peters, M., & Brod, G. (2025). A cornerstone of adaptivity – A meta-analysis of the expertise reversal effect. *Learning and Instruction*, 98, 102142. `https://doi.org/10.1016/j.learninstruc.2025.102142`
   2. Kalyuga, S., Ayres, P., Chandler, P., & Sweller, J. (2003). The expertise reversal effect. *Educational Psychologist*, 38(1), 23–31. `https://doi.org/10.1207/S15326985EP3801_4`
   3. Renkl, A., Atkinson, R. K., & Große, C. S. (2004). How fading worked solution steps works—A cognitive load perspective. *Instructional Science*, 32(1–2), 59–82. `https://doi.org/10.1023/B:TRUC.0000021815.74806.f6`
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support` for adapting instructional assistance to prior knowledge; specific step-transition thresholds are `Implementation Hypotheses`).
-- **Methodology & Sample Size**: Meta-analysis of **$k = 60$ studies, $N = 5,924$ participants** (Tetzlaff et al., 2025), alongside experimental backward-fading studies (Renkl et al., 2004, Experiments 1 & 2).
+- **Methodology & Sample Size**: Meta-analysis of **$k = 60$ studies, $N = 5,924$ participants** (Tetzlaff, Simonsmeier, Peters, & Brod, 2025), alongside experimental backward-fading studies (Renkl et al., 2004, Experiments 1 & 2).
 - **Measured Outcome & Effect Sizes (with 95% CIs and Heterogeneity)**:
   - **Low-prior-knowledge learners (novices)**: High instructional assistance significantly improves learning compared to low assistance, **$d = .505$, 95% CI $[.260, .750]$**, with **substantial heterogeneity ($I^2 = 90.87\%$)**.
   - **High-prior-knowledge learners (experienced)**: High instructional assistance significantly impairs learning relative to low assistance / unassisted practice, **$d = -.428$, 95% CI $[-.647, -.209]$**.
@@ -104,21 +105,25 @@ This register records the primary scientific literature governing LearningApp's 
 
 ### ER-06: Adult Reading Component Interventions (2026 Systematic Review) & Orthographic Mapping
 - **Citations**:
-  1. Tighe, E., Greenberg, D., Feinberg, I., Ogrodnick, M., Sun, C., & Jarrard, C. (2026). *Systematic Review of Effective Reading Component Interventions for Adult Literacy Learners*. Kentucky Reading Research Center Report (`https://kyreadingresearch.org`). *(Research report synthesizing 15 peer-reviewed studies of adult literacy learners; not a journal article).*
+  1. Tighe, E., Greenberg, D., Feinberg, I., Ogrodnick, M., Sun, C., & Jarrard, C. (2026, September 2, 2026). *Systematic Review of Effective Reading Component Interventions for Adult Literacy Learners*. Kentucky Reading Research Center Report (`https://kyreadingresearch.org/wp-content/uploads/2026/09/Adult-Literacy-Systematic-Review.pdf` ; `https://kyreadingresearch.org`). *(Research report synthesizing 15 peer-reviewed studies of adult literacy learners; not a journal article).*
   2. Ehri, L. C. (2005). Learning to read words: Theory, findings, and issues. *Scientific Studies of Reading*, 9(2), 167–188. `https://doi.org/10.1207/s1532799xssr0902_4`
   3. Castles, A., Rastle, K., & Nation, K. (2018). Ending the reading wars: Reading acquisition from novice to expert. *Psychological Science in the Public Interest*, 19(1), 5–51. `https://doi.org/10.1177/1529100618772271`
-- **Evidence Grade**: **Grade B** (`Direct Empirical Support` for untimed decoding improvements in adults; **mixed/limited evidence** for timed decoding, fluency, vocabulary, spelling, and comprehension).
+- **Evidence Grade**: **Grade B** (`Direct Empirical Support` for untimed decoding improvements in adults; **mixed/limited evidence** across other reading components; **not direct evidence for ESL-only programs**).
 - **Population & Sample Size**:
-  - Tighe et al. (2026) synthesizes **15 peer-reviewed studies** covering **adult learners aged 16–76** in adult basic education, English literacy, and correctional/workforce settings.
+  - Tighe et al. (2026) synthesizes **15 peer-reviewed studies** covering **adult learners aged 16–76** in adult basic education, English literacy, and correctional/workforce settings. **Importantly, the review excluded studies focused only on English as a Second Language (ESL) populations.**
 - **Measured Outcome & Verified Findings (Including Limitations)**:
   - **Decoding**: Explicit reading component interventions produced their most consistent positive effects on **untimed decoding accuracy (effect sizes generally around $d = .12\text{--}.46$)**, but showed **much smaller gains on timed decoding assessments**.
-  - **Broader Reading Components**: Evidence across **fluency, vocabulary, spelling, and reading comprehension** in adult learners was **limited and mixed**.
-  - **Child Grade-Equivalency Caution**: Tighe et al. (2026) specifically caution that **child-based reading-grade equivalencies do not accurately characterize adult reading ability** (adults have markedly different spoken vocabulary, life knowledge, and component profiles than children at the same decoding level).
+  - **Fluency, Vocabulary, Spelling, Morphology, Phonological Skills & Comprehension**:
+    - **Fluency** findings were **generally positive but mixed**.
+    - Evidence for **vocabulary, spelling, morphology, and phonological skills** was **limited**.
+    - **Reading comprehension** outcomes **varied by assessment**, with some larger RCTs showing gains.
+  - **Child Grade-Equivalency Caution**: Tighe et al. (2026) note that **it has not been empirically determined whether child-based reading-grade equivalencies accurately describe adult reading ability** (adults have markedly different spoken vocabulary, life knowledge, and component profiles than children at the same decoding level).
+  - **ESL Boundary**: Because ESL-only studies were excluded from the synthesis, Tighe et al. (2026) must **not** be cited as direct evidence for ESL-only learner programs.
 - **Applicability**: `sublexical_orthographic` tasks, `ContentComplexityProfile.reading_demand`, and `LITERACY_ACCESSIBILITY_PLAN.md`.
 - **Recommended Implementation**:
   1. Keep literacy progressions as **recommendations, never hard gates** (no 95% grapheme lock).
   2. Do **not** impose timed decoding gates on adult learners (given the small/weak timed decoding gains in Tighe et al., 2026).
-  3. Define `reading_grade_estimate` strictly as a measure of **text/passage linguistic demand**, never as a label of an adult learner's ability level.
+  3. Define `reading_grade_estimate` strictly as a measure of **text/passage linguistic demand**, never as a verified label of an adult learner's reading ability level.
 - **Test Plan**: Evaluate untimed decoding accuracy, functional word recognition, and comprehension separately in adult literacy validation.
 
 ---
@@ -161,15 +166,21 @@ This register records the primary scientific literature governing LearningApp's 
 
 ---
 
-## 6. Small-Sample IRT Calibration, Elo & FSRS-6 Memory Modeling
+## 6. Small-Sample IRT Simulation, Elo Ratings & FSRS-6 Technical Reference
 
-### ER-09: Small-Sample Bayesian IRT Calibration, Elo Ratings & FSRS-6
-- **Citations**:
-  1. König, C., Spoden, C., & Frey, A. (2020). An Optimized Bayesian Hierarchical Two-Parameter Logistic Model for Small-Sample Item Calibration. *Applied Psychological Measurement*, 44(4), 311–326. `https://doi.org/10.1177/0146621619893786` (PMC: `PMC7245598`)
-  2. Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*, 98, 169–179. `https://doi.org/10.1016/j.compedu.2016.03.017`
-  3. `package:fsrs` v2.0.1 (Dart implementation of **FSRS-6**, verified in package changelog v2.0.0+; `https://pub.dev/packages/fsrs`).
-- **Evidence Grade**: **Grade A/B** (`Direct Empirical Support` for model properties; real-world calibration thresholds in LearningApp are governed by empirical convergence and $\text{SE}$).
-- **Boundaries & Limitations**:
-  1. **Simulation Boundary on König et al. (2020)**: König et al. (2020) demonstrated accurate item parameter recovery down to $N = 100$ **in a Monte Carlo simulation study using a specific optimized hierarchical Bayesian 2PL model with well-behaved assumptions**. This does **not** mean 100 real-world LearningApp users automatically yield calibrated 2PL parameters (where sparse item coverage, non-random item selection, and skewed ability distributions occur). Item promotion to `calibrated` requires verifying actual parameter standard errors ($\text{SE}$) and model fit.
-  2. **Elo $\ne$ IRT**: Online Elo provides a relative rating for adaptive item ordering, not a calibrated IRT parameter ($a_i, b_i$).
-  3. **FSRS-6 Retrievability $\ne$ Concept Mastery $\ne$ Exam Readiness**: FSRS-6 estimates memory recall probability $R(t)$ for an individual review card based on card ratings (`Again`, `Hard`, `Good`, `Easy`); it does not measure multi-facet concept mastery or exam readiness (`06_MEASUREMENT_AND_SCHEDULING.md`).
+### ER-09: Small-Sample Bayesian IRT Simulation (`Grade C`), Elo Ratings (`Grade B`) & `package:fsrs` Technical Reference
+To avoid conflating Monte Carlo simulation studies, empirical adaptive rating research, and software library documentation, `ER-09` separates its three sub-entries explicitly:
+
+1. **ER-09a — Small-Sample Bayesian 2PL IRT Calibration (Monte Carlo Simulation Evidence — `Grade C`)**:
+   - **Citation**: König, C., Spoden, C., & Frey, A. (2020). An Optimized Bayesian Hierarchical Two-Parameter Logistic Model for Small-Sample Item Calibration. *Applied Psychological Measurement*, 44(4), 311–326. `https://doi.org/10.1177/0146621619893786` (PMC: `PMC7245598`)
+   - **Evidence Grade**: **Grade C (Monte Carlo Simulation Evidence — `Implementation Hypothesis` for real-world calibration thresholds)**.
+   - **Methodology & Simulation Design**: Monte Carlo simulation evaluating an optimized Bayesian hierarchical 2PL model across **sample sizes of $N \in \{50, 75, 100, 150, 200, 500\}$**, **test lengths of $25$ and $50$ items**, and **$100$ simulated datasets per condition**.
+   - **Findings & Real-World Boundary**: Demonstrated accurate parameter recovery down to $N = 100$ under well-behaved simulated conditions. Because real-world LearningApp data involves sparse item matrices, adaptive item selection, and skewed learner ability distributions, $N = 100$ is **not** an automatic guarantee of calibration; promoting an item to `item_psychometric_status = 'calibrated'` requires verifying actual MCMC/model convergence and bounded parameter standard errors ($\text{SE}$).
+2. **ER-09b — Elo Rating System in Adaptive Educational Systems (`Grade B`)**:
+   - **Citation**: Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*, 98, 169–179. `https://doi.org/10.1016/j.compedu.2016.03.017`
+   - **Evidence Grade**: **Grade B** (`Direct Empirical Support` for online ordering utility; distinct from IRT calibration).
+   - **Findings & Boundary**: Online Elo updates provide fast, small-sample relative difficulty estimates useful for adaptive item ordering (`item_psychometric_status = 'observed_preliminary'`), but Elo ratings are **not** calibrated IRT item parameters ($a_i, b_i$).
+3. **ER-09c — `package:fsrs` v2.0.1 (`Technical Implementation Reference`, Non-Empirical)**:
+   - **Reference**: `package:fsrs` v2.0.1 (Dart implementation of **FSRS-6**, verified in package changelog v2.0.0+; `https://pub.dev/packages/fsrs`).
+   - **Classification**: **Technical Implementation Reference** (documents the FSRS-6 memory scheduling state machine and parameter formulas used in `scheduler_version = 'v2_fsrs6'`; not cited as an empirical educational-outcome study).
+   - **Boundary Rule**: FSRS-6 estimates memory recall probability $R(t)$ for an individual review card based on card recall ratings (`Again`, `Hard`, `Good`, `Easy`); it does not measure multi-facet concept mastery or exam readiness (`06_MEASUREMENT_AND_SCHEDULING.md`).

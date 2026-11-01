@@ -30,13 +30,20 @@ Items that do not meet this bar (such as `unreviewed` personal imports or AI-gen
 
 ---
 
-## 2. Measurement Quality vs. Learner Mastery vs. Exam Readiness
+## 2. Separating Complexity Status, Item Psychometric Status & Readiness Validation
 
-1. **Measurement Quality (`measurement_quality_level`)**:
-   - `unobserved` ($N = 0$) $\to$ `research_informed_prior` (`ContentComplexityProfile`) $\to$ `observed` $\to$ `calibrated` (statistical item estimates with verified convergence and bounded $\text{SE}$; see `ER-09`) $\to$ `validated_for_intended_use`.
-2. **Three Distinct Learner State Layers**:
-   - **FSRS-6 Card Retrievability $R(t)$**: Probability of recalling a specific memory-review card.
+A research-informed or deterministic estimate of content complexity (`ContentComplexityProfile`) describes **intrinsic task features at cold start**—it is **not** a psychometric measurement-quality level for an assessment item. To prevent conflating cold-start content profiling with empirical item calibration or target-level readiness validation, the platform tracks three separate status fields:
+
+1. **Content Complexity Assessment Status (`complexity_assessment_status` — Construct 1)**:
+   - `unassessed` $\to$ `deterministic_profile` (`ContentComplexityProfile` computed by deterministic linguistic/structural analyzers) $\to$ `expert_reviewed_profile` (`ContentComplexityProfile` verified by a domain/editorial reviewer).
+2. **Item Psychometric Status (`item_psychometric_status` — Construct 2, Empirical Item Measurement Only)**:
+   - `unobserved` ($N = 0$ empirical learner responses) $\to$ `observed_preliminary` ($N \ge 1$ responses; raw summary statistics and online Elo ordering estimates available per `ER-09b`, uncalibrated) $\to$ `calibrated` (statistical IRT item parameters $a_i, b_i$ estimated with verified model convergence and bounded standard errors $\text{SE}$ per `ER-09a`).
+3. **Readiness Model Validation Status (`readiness_validation_status` — Target / Blueprint Level)**:
+   - `unvalidated` $\to$ `pilot_observed` (internal delayed-retention and held-out transfer correlations observed) $\to$ `validated_for_intended_use` (empirically validated against held-out transfer and real target exam/competency outcomes).
+4. **Four Distinct Learner Evidence & State Layers**:
+   - **FSRS-6 Card Retrievability $R(t)$ (`v2_fsrs6`)**: Probability of recalling a specific memory-review card.
    - **Concept Evidence (`user_concept_state`)**: Server-maintained projection of demonstrated competence across the facets (`concept_facets[]`) and cognitive operations of a `knowledge_concept`.
+   - **Reference-Navigation Evidence (`EXM-02B`)**: Lookup accuracy and timing across `R1–R4`.
    - **Examination Readiness**: Synthesizes (a) authoritative blueprint coverage, (b) delayed spaced retention, (c) transfer accuracy on **held-out unfamiliar items**, and (d) execution under actual exam conditions.
 
 ---

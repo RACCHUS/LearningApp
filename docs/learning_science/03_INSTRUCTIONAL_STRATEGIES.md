@@ -19,31 +19,38 @@ This specification defines how the adaptive delivery engine selects strategies f
 
 ## 2. Universal Option Shuffling Contract & Implementation Gaps (`FIX-1`)
 
+> **Cross-PR Implementation Status (`main` `e538585` vs. PR `#136`)**:
+> While Antigravity's PR `#136` (`feature/arch-review-phase-0`) implements option shuffling inside `AssessmentItemRenderer`, **`FIX-1` is not yet complete across all structured-choice routes**. Specifically, legacy lesson MCQs (`McqQuestionWidget` / `McqOptions`), `RichLessonReader` call sites, both legacy voice-input selection handlers, and the `AdaptivePracticeScreen` double-XOR seed cancellation remain open and must be resolved before `FIX-1` is marked fully closed.
+
 ### 2.1 Target Architecture Contract
 1. **Universal Default Across All Structured-Choice Routes**:
    - Every `structured_choice` (`singleChoice` and `multiSelect`) activity must shuffle its non-anchor options by default, preserving any legacy anchor options (e.g., `"none of the above"`, `"all of the above"`) at the end of the list.
-2. **Single-XOR Per-Item Seed Rule (Preventing Seed Cancellation)**:
-   - **Contract**: The parent screen or session controller passes a **session/attempt-level nonce (`sessionNonce`)** to the presentation component, and the presentation component combines that nonce with the item identifier **exactly once**:
+2. **Per-Presentation / Per-Attempt Nonce & Single-XOR Seed Rule (Preventing Seed Cancellation & Same-Session Repeats)**:
+   - **Per-Attempt Nonce Requirement**: A session-wide nonce alone produces the identical option permutation if the same item is re-presented or retried within the same study or lesson session. Whenever a fresh permutation is required on each presentation, the controller must generate or increment a **per-presentation / per-attempt nonce (`attemptNonce`)** when advancing to or retrying an item.
+   - **Single-XOR Combination Contract**: The parent screen or controller passes `attemptNonce` to the presentation component, and the presentation component combines that nonce with the item identifier **exactly once**:
      ```dart
-     final int effectiveSeed = sessionNonce ^ item.id.hashCode;
+     final int effectiveSeed = attemptNonce ^ item.id.hashCode;
      ```
-   - *(Alternatively, if a caller passes a pre-mixed `itemPresentationSeed`, the renderer must use it directly without XORing `item.id.hashCode` a second time).*
+   - *(If a caller passes an already-combined `itemPresentationSeed`, the renderer must use it directly without XORing `item.id.hashCode` a second time).*
 3. **Single Canonical Persistence Field (`presented_option_ids`)**:
    - Because Dart's `Object.hash` and `String.hashCode` are randomized per isolate/execution ([Dart `Object.hash` API](https://api.dart.dev/stable/dart-core/Object/hash.html)), historical attempt records in `public.learning_events` standardize on a **single canonical field**:
-     - **`presented_option_ids: text[]`** — The ordered list of stable `option_id` values in the exact order displayed to the learner.
+     - **`presented_option_ids: text[]`** — The ordered list of stable `option_id` values in the exact order displayed to the learner (see [`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md) for server-issued vs. client-reported trust rules).
    - Do **not** use raw integer index arrays (`presentation_order: List<int>`) in the event ledger, as stable option IDs remain unambiguous even if an item's options are later edited.
 
 ### 2.2 Remaining Implementation Gaps to Close in Code (`main` & PR `#136` Audit)
-Code inspection of `main` and PR `#136` identifies three specific gaps that must be resolved during `FIX-1` completion:
+Code inspection of `main` and PR `#136` identifies three specific code gaps and two voice-input mapping paths that must be resolved to complete `FIX-1`:
 
-1. **Gap 1 — Legacy Lesson MCQs Remain Unshuffled**:
-   - [`lib/widgets/mcq_options.dart`](../../lib/widgets/mcq_options.dart) (used by [`lib/widgets/study/mcq_question_widget.dart`](../../lib/widgets/study/mcq_question_widget.dart), which is called by both `LessonContentRenderer` and `QuestionContentRenderer`) still renders `widget.question.options` in authored order.
-   - **Required Fix**: Either route legacy lesson MCQs through the unified shuffled presentation component or apply deterministic per-attempt shuffling inside `McqQuestionWidget`/`McqOptions` while ensuring voice-input option letter selection (`"Option A"`, `"Option B"`) maps through the shuffled presentation order to the underlying option.
+1. **Gap 1 — Legacy Lesson MCQs Remain Unshuffled (`McqQuestionWidget` & `McqOptions`)**:
+   - [`lib/widgets/question_widgets/mcq_question_widget.dart`](../../lib/widgets/question_widgets/mcq_question_widget.dart) passes `options: widget.content.options` (with `widget.content.correctAnswer` holding the authored index) directly to [`lib/widgets/mcq_options.dart`](../../lib/widgets/mcq_options.dart), which renders `options.asMap().entries` in authored order.
+   - `McqQuestionWidget` is invoked by both [`lib/widgets/lesson_content_renderer.dart`](../../lib/widgets/lesson_content_renderer.dart) and [`lib/widgets/content_renderers/question_content_renderer.dart`](../../lib/widgets/content_renderers/question_content_renderer.dart).
+   - **Required Fix**: Apply deterministic per-presentation shuffling to `widget.content.options` (or route legacy lesson MCQs through the unified shuffled choice presenter) and update **both** legacy voice-input paths so spoken letter commands map through the displayed shuffled order to the underlying authored option:
+     - **Voice Path A**: [`lib/widgets/lesson_content_renderer.dart`](../../lib/widgets/lesson_content_renderer.dart) (which processes spoken answers via `VoiceInputHandler`).
+     - **Voice Path B**: [`lib/widgets/content_renderers/question_content_renderer.dart`](../../lib/widgets/content_renderers/question_content_renderer.dart) (which performs its own spoken letter-to-index mapping `a->0, b->1, c->2, d->3`).
 2. **Gap 2 — Seed XOR Cancellation in `AdaptivePracticeScreen` (PR `#136`)**:
    - In PR `#136`, `AdaptivePracticeScreen` passes `presentationSeed: _sessionNonce ^ _currentItem!.id.hashCode`, and `AssessmentItemRenderer` then computes `widget.presentationSeed! ^ widget.item.id.hashCode`. Because $(A \oplus B) \oplus B = A$, the two XOR operations cancel `item.id.hashCode`, reducing the seed to `_sessionNonce` and giving every item with the same option count the identical permutation within a session.
-   - **Required Fix**: Pass `_sessionNonce` from `AdaptivePracticeScreen` and perform the `^ item.id.hashCode` combination **only once** inside `AssessmentItemRenderer`.
-3. **Gap 3 — Missing Session Seed in Rich Lesson Reader**:
-   - Call sites that instantiate `AssessmentItemRenderer(item: item)` without a `presentationSeed` fall back to `item.id.hashCode ^ 0x5bf03635`, producing a static permutation across attempts within the same app session.
-   - **Required Fix**: Pass a session/attempt nonce from the lesson reader state so re-attempting an item produces a fresh permutation.
+   - **Required Fix**: Pass a per-attempt nonce (`_attemptNonce`) from `AdaptivePracticeScreen` and perform the `^ item.id.hashCode` combination **only once** inside `AssessmentItemRenderer`.
+3. **Gap 3 — Missing Per-Presentation Seed in `RichLessonReader`**:
+   - In [`lib/widgets/lesson/rich_lesson_reader.dart`](../../lib/widgets/lesson/rich_lesson_reader.dart), `AssessmentItemRenderer(item: item, ...)` is instantiated without a `presentationSeed`, falling back to `item.id.hashCode ^ 0x5bf03635` and producing a static permutation across retries within the same app process.
+   - **Required Fix**: Pass a per-presentation/per-attempt nonce from `RichLessonReader` state so presenting or retrying an item produces a fresh permutation.
 4. **Required Verification Tests**:
-   - Widget/unit tests must verify: (a) legacy `McqOptions`/`McqQuestionWidget` shuffling, (b) voice-input selection mapping on shuffled options, (c) distinct permutations across consecutive 4-option items within the same `AdaptivePracticeScreen` session (regression test for XOR cancellation), and (d) variation across separate sessions.
+   - Widget/unit tests must verify: (a) shuffling in `lib/widgets/question_widgets/mcq_question_widget.dart` and `lib/widgets/mcq_options.dart` on `widget.content.options`, (b) spoken `"Option A"`/`"B"`/`"C"`/`"D"` voice-input mapping in **both** `LessonContentRenderer` (`VoiceInputHandler`) and `QuestionContentRenderer`, (c) distinct permutations across consecutive 4-option items within the same `AdaptivePracticeScreen` session (regression test for XOR cancellation), and (d) fresh permutations when re-presenting an item in `RichLessonReader` or across sessions.
