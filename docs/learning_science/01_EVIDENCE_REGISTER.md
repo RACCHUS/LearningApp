@@ -105,7 +105,7 @@ This register records the primary scientific literature, research synthesis repo
 
 ### ER-06: Adult Reading Component Interventions (2026 Systematic Review) & Orthographic Mapping
 - **Citations**:
-  1. Tighe, E., Greenberg, D., Feinberg, I., Ogrodnick, M., Sun, C., & Jarrard, C. (2026, September 2, 2026). *Systematic Review of Effective Reading Component Interventions for Adult Literacy Learners*. Kentucky Reading Research Center Report (`https://kyreadingresearch.org/wp-content/uploads/2026/09/Adult-Literacy-Systematic-Review.pdf` ; `https://kyreadingresearch.org`). *(Research report synthesizing 15 peer-reviewed studies of adult literacy learners; not a journal article).*
+  1. Tighe, E. L., Greenberg, D., Feinberg, I., Ogrodnick, M. M., Sun, C. D., & Jarrard, C. (2026, September 2, 2026). *Systematic Review of Effective Reading Component Interventions for Adult Literacy Learners*. Kentucky Reading Research Center Report (`https://www.kyreadingresearch.org/wp-content/uploads/2026/10/Effective-Adult-Reading-Interventions.pdf` ; `https://kyreadingresearch.org`). *(Research report synthesizing 15 peer-reviewed studies of adult literacy learners; not a journal article).*
   2. Ehri, L. C. (2005). Learning to read words: Theory, findings, and issues. *Scientific Studies of Reading*, 9(2), 167–188. `https://doi.org/10.1207/s1532799xssr0902_4`
   3. Castles, A., Rastle, K., & Nation, K. (2018). Ending the reading wars: Reading acquisition from novice to expert. *Psychological Science in the Public Interest*, 19(1), 5–51. `https://doi.org/10.1177/1529100618772271`
 - **Evidence Grade**: **Grade B** (`Direct Empirical Support` for untimed decoding improvements in adults; **mixed/limited evidence** across other reading components; **not direct evidence for ESL-only programs**).
@@ -168,18 +168,23 @@ This register records the primary scientific literature, research synthesis repo
 
 ## 6. Small-Sample IRT Simulation, Elo Ratings & FSRS-6 Technical Reference
 
-### ER-09: Small-Sample Bayesian IRT Simulation (`Grade C`), Elo Ratings (`Grade B`) & `package:fsrs` Technical Reference
-To avoid conflating Monte Carlo simulation studies, empirical adaptive rating research, and software library documentation, `ER-09` separates its three sub-entries explicitly:
+### ER-09: Small-Sample Bayesian IRT Simulation (`Grade C`), Elo Ratings & Measurement Limitations (`Grade B/C`) & `package:fsrs` Technical Reference
+To avoid conflating Monte Carlo simulation studies, adaptive Elo rating research, and software library documentation, `ER-09` separates its three sub-entries explicitly:
 
 1. **ER-09a — Small-Sample Bayesian 2PL IRT Calibration (Monte Carlo Simulation Evidence — `Grade C`)**:
    - **Citation**: König, C., Spoden, C., & Frey, A. (2020). An Optimized Bayesian Hierarchical Two-Parameter Logistic Model for Small-Sample Item Calibration. *Applied Psychological Measurement*, 44(4), 311–326. `https://doi.org/10.1177/0146621619893786` (PMC: `PMC7245598`)
    - **Evidence Grade**: **Grade C (Monte Carlo Simulation Evidence — `Implementation Hypothesis` for real-world calibration thresholds)**.
    - **Methodology & Simulation Design**: Monte Carlo simulation evaluating an optimized Bayesian hierarchical 2PL model across **sample sizes of $N \in \{50, 75, 100, 150, 200, 500\}$**, **test lengths of $25$ and $50$ items**, and **$100$ simulated datasets per condition**.
    - **Findings & Real-World Boundary**: Demonstrated accurate parameter recovery down to $N = 100$ under well-behaved simulated conditions. Because real-world LearningApp data involves sparse item matrices, adaptive item selection, and skewed learner ability distributions, $N = 100$ is **not** an automatic guarantee of calibration; promoting an item to `item_psychometric_status = 'calibrated'` requires verifying actual MCMC/model convergence and bounded parameter standard errors ($\text{SE}$).
-2. **ER-09b — Elo Rating System in Adaptive Educational Systems (`Grade B`)**:
-   - **Citation**: Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*, 98, 169–179. `https://doi.org/10.1016/j.compedu.2016.03.017`
-   - **Evidence Grade**: **Grade B** (`Direct Empirical Support` for online ordering utility; distinct from IRT calibration).
-   - **Findings & Boundary**: Online Elo updates provide fast, small-sample relative difficulty estimates useful for adaptive item ordering (`item_psychometric_status = 'observed_preliminary'`), but Elo ratings are **not** calibrated IRT item parameters ($a_i, b_i$).
+2. **ER-09b — Elo Rating Systems in Adaptive Learning & Their Measurement Limitations (`Grade B` Overview / `Grade C` Simulation Critique)**:
+   - **Citations**:
+     1. Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*, 98, 169–179. `https://doi.org/10.1016/j.compedu.2016.03.017`
+     2. Bolsinova, M., Gergely, B., & Brinkhuis, M. J. S. (2026; first published online June 2025). Keeping Elo alive: Evaluating and improving measurement properties of learning systems based on Elo ratings. *British Journal of Mathematical and Statistical Psychology*, 79(1), 95–110. `https://doi.org/10.1111/bmsp.12395` (PubMed PMID: `40528359`)
+   - **Evidence Grade**: **Grade B/C** (Pelánek, 2016 provides a practical overview and case study for heuristic ordering; Bolsinova et al., 2026 provide simulation evidence demonstrating measurement limitations in adaptive Elo systems).
+   - **Findings, Limitations & Boundaries**:
+     - Pelánek (2016) shows that online Elo updates can serve as a lightweight heuristic for preliminary adaptive ordering, but does **not** establish that every Elo implementation produces reliable item-difficulty estimates.
+     - **Bolsinova, Gergely, & Brinkhuis (2026)** demonstrate via simulation analysis that when item selection and learner/item Elo ratings update jointly in an adaptive learning system, standard Elo ratings can exhibit **systematic bias**, **context-dependent variance**, and **failure to converge**, and propose **parallel rating chains** to address these pathologies.
+     - **Implication for LearningApp**: (a) A single learner response ($N = 1$) only marks an item as empirically observed (`observed_uncalibrated`), **not** as having a meaningful item-difficulty estimate; (b) standard Elo ratings (`preliminary_elo_ordering`) are treated strictly as low-stakes ordering heuristics, never as unbiased or calibrated psychometric parameters ($b_i$); and (c) any adaptive item-selection loop using Elo must guard against joint selection/update drift (e.g., via parallel/anchored rating chains or calibrated IRT).
 3. **ER-09c — `package:fsrs` v2.0.1 (`Technical Implementation Reference`, Non-Empirical)**:
    - **Reference**: `package:fsrs` v2.0.1 (Dart implementation of **FSRS-6**, verified in package changelog v2.0.0+; `https://pub.dev/packages/fsrs`).
    - **Classification**: **Technical Implementation Reference** (documents the FSRS-6 memory scheduling state machine and parameter formulas used in `scheduler_version = 'v2_fsrs6'`; not cited as an empirical educational-outcome study).

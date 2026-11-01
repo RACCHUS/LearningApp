@@ -32,12 +32,17 @@ Items that do not meet this bar (such as `unreviewed` personal imports or AI-gen
 
 ## 2. Separating Complexity Status, Item Psychometric Status & Readiness Validation
 
-A research-informed or deterministic estimate of content complexity (`ContentComplexityProfile`) describes **intrinsic task features at cold start**—it is **not** a psychometric measurement-quality level for an assessment item. To prevent conflating cold-start content profiling with empirical item calibration or target-level readiness validation, the platform tracks three separate status fields:
+A research-informed or deterministic estimate of content complexity (`ContentComplexityProfile`) describes **intrinsic task features at cold start**—it is **not** a psychometric measurement-quality level for an assessment item. Similarly, recording a single learner response ($N = 1$) only establishes that an empirical observation exists; it is **not** sufficient to claim a meaningful item-difficulty estimate.
+
+To prevent conflating cold-start content profiling, raw observation existence, heuristic Elo ordering, empirical item calibration, and target-level readiness validation, the platform tracks three separate status fields:
 
 1. **Content Complexity Assessment Status (`complexity_assessment_status` — Construct 1)**:
    - `unassessed` $\to$ `deterministic_profile` (`ContentComplexityProfile` computed by deterministic linguistic/structural analyzers) $\to$ `expert_reviewed_profile` (`ContentComplexityProfile` verified by a domain/editorial reviewer).
 2. **Item Psychometric Status (`item_psychometric_status` — Construct 2, Empirical Item Measurement Only)**:
-   - `unobserved` ($N = 0$ empirical learner responses) $\to$ `observed_preliminary` ($N \ge 1$ responses; raw summary statistics and online Elo ordering estimates available per `ER-09b`, uncalibrated) $\to$ `calibrated` (statistical IRT item parameters $a_i, b_i$ estimated with verified model convergence and bounded standard errors $\text{SE}$ per `ER-09a`).
+   - `unobserved` ($N = 0$ empirical learner responses)
+   - $\to$ `observed_uncalibrated` ($N \ge 1$ responses recorded; **observation-existence label only**—indicates empirical response logging has begun, not that a reliable item-difficulty estimate exists)
+   - $\to$ `preliminary_elo_ordering` (minimum observation count reached to compute a heuristic Elo rating for low-stakes adaptive sequencing per Pelánek, 2016, `ER-09b`; subject to the bias, context-dependent variance, and non-convergence limitations in joint adaptive systems identified by Bolsinova, Gergely, & Brinkhuis, 2026, and **never treated as a calibrated psychometric parameter**)
+   - $\to$ `calibrated` (statistical IRT item parameters $a_i, b_i$ estimated with verified model convergence and bounded standard errors $\text{SE}$ per König, Spoden, & Frey, 2020, `ER-09a`).
 3. **Readiness Model Validation Status (`readiness_validation_status` — Target / Blueprint Level)**:
    - `unvalidated` $\to$ `pilot_observed` (internal delayed-retention and held-out transfer correlations observed) $\to$ `validated_for_intended_use` (empirically validated against held-out transfer and real target exam/competency outcomes).
 4. **Four Distinct Learner Evidence & State Layers**:

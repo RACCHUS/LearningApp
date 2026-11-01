@@ -10,7 +10,7 @@ This document specifies the six-stage content ingestion pipeline, the **proposed
 > The general three-representation architecture below is the **proposed Phase 1 `FIX-12` target** across all assessment routes:
 > - On `main` (`e538585`), **`EXM-03` already implements answer-key isolation and authenticated server-side scoring specifically for approved `EXM-02A` assigned exam-part practice** across three migrations:
 >   1. `20261101130000_exm_03_assigned_practice_scoring.sql` (private canonical scorer `public.exm03_record_assigned_practice` writing to `public.exam_part_practice_attempts`),
->   2. `20261101140000_exm_03_authenticated_assignment_issuer.sql` (authenticated safe projection issuer `public.exm03_start_assigned_practice` stripping `scoring_spec`), and
+>   2. `20261101140000_exm_03_authenticated_assignment_issuer.sql` (authenticated safe projection issuer `public.exm03_issue_assigned_practice` stripping `scoring_spec`), and
 >   3. `20261101150000_exm_03_authenticated_submit_protected_items.sql` (authenticated session- and owner-bound submission wrapper `public.exm03_submit_assigned_practice`, plus restrictive RLS policy `exm03_no_direct_read_of_approved_answers` on `public.assessment_items` blocking direct table reads of approved `EXM-02A` items).
 > - However, **non-EXM assessment items on `main` remain readable via general `assessment_items` RLS**, and on Antigravity's PR `#136` general `FIX-12` is scheduled for **Phase 1** (`AssessmentItemRenderer` still performs client-side scoring using `item.scoringSpec` and `correct_index`).
 > - Extending the three-representation DTO and server scoring RPCs to **all** non-EXM diagnostic, mock exam, and adaptive practice items therefore remains a **Phase 1 deliverable**.
