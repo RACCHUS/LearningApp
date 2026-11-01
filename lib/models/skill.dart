@@ -94,7 +94,7 @@ class UserSkillStats {
     this.bestScore = 0,
     this.averageScore = 0,
     this.lastAssessedAt,
-    this.isVerified = true,
+    this.isVerified = false,
     required this.createdAt,
     required this.updatedAt,
     this.skill,
@@ -112,7 +112,7 @@ class UserSkillStats {
       lastAssessedAt: json['last_assessed_at'] != null
           ? DateTime.parse(json['last_assessed_at'] as String)
           : null,
-      isVerified: json['is_verified'] as bool? ?? true,
+      isVerified: json['is_verified'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       skill: json['skills'] != null ? Skill.fromJson(json['skills']) : null,

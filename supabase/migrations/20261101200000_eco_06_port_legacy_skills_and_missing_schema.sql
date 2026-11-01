@@ -189,7 +189,8 @@ CREATE INDEX IF NOT EXISTS idx_lesson_texts_lesson_id ON public.lesson_texts(les
 CREATE INDEX IF NOT EXISTS idx_lesson_texts_order ON public.lesson_texts(lesson_id, order_index);
 
 -- 8. Views
-CREATE OR REPLACE VIEW public.study_progress AS
+CREATE OR REPLACE VIEW public.study_progress
+WITH (security_invoker = true) AS
 SELECT 
   id,
   user_id,
@@ -364,40 +365,80 @@ CREATE OR REPLACE FUNCTION public.update_skill_stats_after_assessment()
 RETURNS TRIGGER AS $$
 DECLARE
   v_skill_id UUID;
-  v_new_level INTEGER;
-  v_best_score INTEGER;
-  v_avg_score NUMERIC(5,2);
-  v_total INTEGER;
+  v_new_level INTEGER := 0;
+  v_best_score INTEGER := 0;
+  v_avg_score NUMERIC(5,2) := 0;
+  v_total INTEGER := 0;
+  v_has_verified BOOLEAN := FALSE;
 BEGIN
   IF NEW.completed_at IS NOT NULL AND NEW.is_deleted = FALSE THEN
     SELECT skill_id INTO v_skill_id
     FROM public.skill_assessments
     WHERE id = NEW.assessment_id;
     
-    v_new_level := public.calculate_skill_level(NEW.user_id, v_skill_id);
-    
-    SELECT 
-      MAX(score),
-      AVG(score)::NUMERIC(5,2),
-      COUNT(*)
-    INTO v_best_score, v_avg_score, v_total
-    FROM public.assessment_attempts aa
-    JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-    WHERE aa.user_id = NEW.user_id
-      AND sa.skill_id = v_skill_id
-      AND aa.is_verified = TRUE
-      AND aa.is_deleted = FALSE
-      AND aa.score IS NOT NULL;
+    -- Check if any verified, non-deleted attempts exist for this user and skill
+    SELECT EXISTS (
+      SELECT 1 FROM public.assessment_attempts aa
+      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+      WHERE aa.user_id = NEW.user_id
+        AND sa.skill_id = v_skill_id
+        AND aa.is_verified = TRUE
+        AND aa.is_deleted = FALSE
+        AND aa.score IS NOT NULL
+    ) INTO v_has_verified;
+
+    IF v_has_verified THEN
+      v_new_level := public.calculate_skill_level(NEW.user_id, v_skill_id);
+      
+      SELECT 
+        MAX(score),
+        AVG(score)::NUMERIC(5,2),
+        COUNT(*)
+      INTO v_best_score, v_avg_score, v_total
+      FROM public.assessment_attempts aa
+      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+      WHERE aa.user_id = NEW.user_id
+        AND sa.skill_id = v_skill_id
+        AND aa.is_verified = TRUE
+        AND aa.is_deleted = FALSE
+        AND aa.score IS NOT NULL;
+    ELSE
+      -- Practice / unverified aggregate derived from all non-deleted attempts
+      SELECT COALESCE(AVG(score)::INTEGER, 0) INTO v_new_level
+      FROM (
+        SELECT aa.score
+        FROM public.assessment_attempts aa
+        JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+        WHERE aa.user_id = NEW.user_id
+          AND sa.skill_id = v_skill_id
+          AND aa.is_deleted = FALSE
+          AND aa.score IS NOT NULL
+        ORDER BY aa.score DESC
+        LIMIT 3
+      ) recent_attempts;
+
+      SELECT 
+        MAX(score),
+        AVG(score)::NUMERIC(5,2),
+        COUNT(*)
+      INTO v_best_score, v_avg_score, v_total
+      FROM public.assessment_attempts aa
+      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
+      WHERE aa.user_id = NEW.user_id
+        AND sa.skill_id = v_skill_id
+        AND aa.is_deleted = FALSE
+        AND aa.score IS NOT NULL;
+    END IF;
     
     INSERT INTO public.user_skill_stats (user_id, skill_id, level, best_score, average_score, total_assessments, last_assessed_at, is_verified)
-    VALUES (NEW.user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), NEW.is_verified)
+    VALUES (NEW.user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), v_has_verified)
     ON CONFLICT (user_id, skill_id) 
     DO UPDATE SET
       level = v_new_level,
       best_score = COALESCE(v_best_score, user_skill_stats.best_score),
       average_score = COALESCE(v_avg_score, user_skill_stats.average_score),
       total_assessments = COALESCE(v_total, user_skill_stats.total_assessments),
-      is_verified = NEW.is_verified,
+      is_verified = v_has_verified,
       last_assessed_at = NOW(),
       updated_at = NOW();
   END IF;
@@ -466,4 +507,55 @@ REVOKE EXECUTE ON FUNCTION public.increment_course_time(UUID, UUID, INTEGER) FRO
 REVOKE EXECUTE ON FUNCTION public.increment_course_time(UUID, UUID, INTEGER) FROM anon;
 GRANT EXECUTE ON FUNCTION public.increment_course_time(UUID, UUID, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_course_time(UUID, UUID, INTEGER) TO service_role;
+
+-- 11. Explicit Least-Privilege Grants for PostgREST / Data API Exposure
+
+-- Revoke all by default from PUBLIC and anon for sensitive tables and views
+REVOKE ALL ON public.assessment_attempts FROM PUBLIC, anon;
+REVOKE ALL ON public.user_skill_stats FROM PUBLIC, anon;
+REVOKE ALL ON public.user_career_paths FROM PUBLIC, anon;
+REVOKE ALL ON public.user_data_snapshots FROM PUBLIC, anon;
+REVOKE ALL ON public.study_progress FROM PUBLIC, anon;
+REVOKE ALL ON public.skill_leaderboard FROM PUBLIC;
+
+-- Public / Catalog tables: read-only for anon, authenticated
+GRANT SELECT ON public.skills TO anon, authenticated;
+GRANT SELECT ON public.career_paths TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.career_paths TO authenticated;
+GRANT SELECT ON public.career_path_courses TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.career_path_courses TO authenticated;
+GRANT SELECT ON public.career_path_skills TO anon, authenticated;
+GRANT SELECT ON public.course_skills TO anon, authenticated;
+GRANT SELECT ON public.skill_assessments TO anon, authenticated;
+GRANT SELECT ON public.assessment_questions TO anon, authenticated;
+GRANT SELECT ON public.lesson_texts TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.lesson_texts TO authenticated;
+
+-- User-specific tables: authenticated access matching RLS policies
+GRANT SELECT, INSERT, UPDATE ON public.assessment_attempts TO authenticated;
+GRANT SELECT ON public.user_skill_stats TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_career_paths TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_data_snapshots TO authenticated;
+
+-- Views: authenticated user access for private study progress, public read for leaderboard
+GRANT SELECT ON public.study_progress TO authenticated;
+GRANT SELECT ON public.skill_leaderboard TO anon, authenticated;
+
+-- Service role: full access on all ported tables and views
+GRANT ALL ON public.career_paths,
+              public.career_path_courses,
+              public.skills,
+              public.career_path_skills,
+              public.course_skills,
+              public.skill_assessments,
+              public.assessment_questions,
+              public.user_skill_stats,
+              public.assessment_attempts,
+              public.user_career_paths,
+              public.user_data_snapshots,
+              public.lesson_texts,
+              public.study_progress,
+              public.skill_leaderboard
+TO service_role;
+
 

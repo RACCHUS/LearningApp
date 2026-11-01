@@ -72,6 +72,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => McqScreen(
+              lessonId: widget.lessonId,
               questions: lessonContent.whereType<QuestionContent>().map((c) => Question(
                 id: c.id,
                 questionText: c.questionText,

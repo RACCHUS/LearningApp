@@ -6,23 +6,33 @@ import 'package:uuid/uuid.dart';
 
 /// Service for managing user XP and levels
 class XpService {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _injectedClient;
   static const _uuid = Uuid();
 
-  XpService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+  XpService({SupabaseClient? supabase}) : _injectedClient = supabase;
 
-  String? get _userId => _supabase.auth.currentUser?.id;
+  SupabaseClient? get _client {
+    if (_injectedClient != null) return _injectedClient;
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? get _userId => _client?.auth.currentUser?.id;
 
   /// Get user's total XP
   Future<int> getTotalXp() async {
-    if (_userId == null) return 0;
+    final client = _client;
+    final userId = _userId;
+    if (client == null || userId == null) return 0;
 
     try {
-      final response = await _supabase
+      final response = await client
           .from('user_xp')
           .select('total_xp')
-          .eq('user_id', _userId!)
+          .eq('user_id', userId)
           .maybeSingle();
 
       if (response == null) return 0;
@@ -37,7 +47,9 @@ class XpService {
 
   /// Get comprehensive XP summary
   Future<UserXpSummary> getXpSummary() async {
-    if (_userId == null) return UserXpSummary.empty();
+    final client = _client;
+    final userId = _userId;
+    if (client == null || userId == null) return UserXpSummary.empty();
 
     try {
       // Get total XP
@@ -48,10 +60,10 @@ class XpService {
       final todayStart = DateTime(now.year, now.month, now.day);
       final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
 
-      final todayEvents = await _supabase
+      final todayEvents = await client
           .from('xp_events')
           .select('xp_amount')
-          .eq('user_id', _userId!)
+          .eq('user_id', userId)
           .gte('earned_at', todayStart.toIso8601String());
 
       int todayXp = 0;
@@ -60,10 +72,10 @@ class XpService {
       }
 
       // Get this week's XP
-      final weekEvents = await _supabase
+      final weekEvents = await client
           .from('xp_events')
           .select('xp_amount')
-          .eq('user_id', _userId!)
+          .eq('user_id', userId)
           .gte('earned_at', weekStart.toIso8601String());
 
       int weekXp = 0;
@@ -92,13 +104,15 @@ class XpService {
     String? description,
     String? eventId,
   }) async {
-    if (_userId == null) return null;
+    final client = _client;
+    final userId = _userId;
+    if (client == null || userId == null) return null;
 
     try {
       final xpAmount = customAmount ?? type.baseXp;
       final effectiveEventId = eventId ?? _uuid.v4();
 
-      final result = await _supabase.rpc('record_xp_award', params: {
+      final result = await client.rpc('record_xp_award', params: {
         'p_event_id': effectiveEventId,
         'p_event_type': type.name,
         'p_xp_amount': xpAmount,
@@ -126,41 +140,57 @@ class XpService {
     }
   }
 
-  /// Award XP for completing a question correctly
-  Future<XpEvent?> awardQuestionXp(String lessonId, {String? questionId}) async {
-    final source = questionId != null ? '$lessonId:$questionId' : lessonId;
+  /// Award XP for completing a question correctly.
+  /// [lessonId] and [questionId] are both required to construct a stable source
+  /// identifier ('$lessonId:$questionId'), ensuring distinct questions do not collide
+  /// and repeated attempts for the same question adhere to replay cooldowns.
+  Future<XpEvent?> awardQuestionXp(
+    String lessonId, {
+    required String questionId,
+    String? eventId,
+  }) async {
+    final source = '$lessonId:$questionId';
     return awardXp(
       type: XpEventType.questionCorrect,
       sourceId: source,
+      eventId: eventId,
     );
   }
 
   /// Award XP for completing a lesson
-  Future<XpEvent?> awardLessonCompleteXp(String lessonId, String lessonTitle) async {
+  Future<XpEvent?> awardLessonCompleteXp(String lessonId, String lessonTitle, {String? eventId}) async {
     return awardXp(
       type: XpEventType.lessonComplete,
       sourceId: lessonId,
+      eventId: eventId,
       description: 'Completed "$lessonTitle"',
     );
   }
 
   /// Award XP for completing a course
-  Future<XpEvent?> awardCourseCompleteXp(String courseId, String courseTitle) async {
+  Future<XpEvent?> awardCourseCompleteXp(String courseId, String courseTitle, {String? eventId}) async {
     return awardXp(
       type: XpEventType.courseComplete,
       sourceId: courseId,
+      eventId: eventId,
       description: 'Completed "$courseTitle"',
     );
   }
 
-  /// Award XP for review session
-  Future<XpEvent?> awardReviewSessionXp(int itemsReviewed, {String? contextId}) async {
+  /// Award XP for review session.
+  /// [contextId] is required to ensure callers provide a stable session identifier,
+  /// preventing retries or re-renders from bypassing the 15-minute replay cooldown.
+  Future<XpEvent?> awardReviewSessionXp(
+    int itemsReviewed, {
+    required String contextId,
+    String? eventId,
+  }) async {
     final bonusXp = (itemsReviewed * 2).clamp(0, 50); // Max 50 bonus
-    final source = contextId ?? 'session_${DateTime.now().toUtc().millisecondsSinceEpoch}';
     return awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: source,
+      sourceId: contextId,
+      eventId: eventId,
       description: 'Reviewed $itemsReviewed items',
     );
   }
@@ -177,13 +207,15 @@ class XpService {
 
   /// Get recent XP events
   Future<List<XpEvent>> getRecentEvents({int limit = 20}) async {
-    if (_userId == null) return [];
+    final client = _client;
+    final userId = _userId;
+    if (client == null || userId == null) return [];
 
     try {
-      final response = await _supabase
+      final response = await client
           .from('xp_events')
           .select()
-          .eq('user_id', _userId!)
+          .eq('user_id', userId)
           .order('earned_at', ascending: false)
           .limit(limit);
 
@@ -268,6 +300,35 @@ class XpNotifier extends StateNotifier<XpState> {
 
   void clearLevelUpNotification() {
     state = state.copyWith(didLevelUp: false, newLevel: null);
+  }
+
+  /// Award XP for question completion via notifier
+  Future<void> awardQuestionXp(
+    String lessonId, {
+    required String questionId,
+    String? eventId,
+  }) async {
+    await awardXp(
+      type: XpEventType.questionCorrect,
+      sourceId: '$lessonId:$questionId',
+      eventId: eventId,
+    );
+  }
+
+  /// Award XP for review session completion via notifier
+  Future<void> awardReviewSessionXp(
+    int itemsReviewed, {
+    required String contextId,
+    String? eventId,
+  }) async {
+    final bonusXp = (itemsReviewed * 2).clamp(0, 50);
+    await awardXp(
+      type: XpEventType.reviewSession,
+      customAmount: XpConstants.perReviewSession + bonusXp,
+      sourceId: contextId,
+      eventId: eventId,
+      description: 'Reviewed $itemsReviewed items',
+    );
   }
 }
 

@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(18);
+select plan(23);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -145,6 +145,44 @@ select is(
   (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
   235,
   'User 1 total XP reflects service_role increment (185 + 50 = 235)'
+);
+
+-- 15. Two different questions in the same lesson both succeed without collision
+set local role authenticated;
+do $$ begin
+  perform set_config('request.jwt.claim.sub', 'ee111111-0000-4000-8000-000000000001', true);
+end $$;
+
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000010'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1') $$,
+  'Question 1 in lesson succeeds'
+);
+
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000011'::uuid, 'question_correct', 10, 'lesson-multi:q-2', 'Question 2') $$,
+  'Question 2 in same lesson succeeds without collision'
+);
+
+-- 16. Retrying the same question with a fresh event ID triggers cooldown
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000012'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1 retry') $$,
+  'P0001',
+  null,
+  'Retrying same question with new event ID triggers cooldown'
+);
+
+-- 17. Review session with context ID succeeds
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000013'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1') $$,
+  'Review session with context ID succeeds'
+);
+
+-- 18. Retrying the same review session with a fresh event ID triggers cooldown
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000014'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1 retry') $$,
+  'P0001',
+  null,
+  'Retrying same review session context ID triggers cooldown'
 );
 
 select * from finish();
