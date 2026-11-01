@@ -26,7 +26,9 @@ class McqOptions extends StatelessWidget {
         if (showCorrect && correctIndex != null) {
           if (idx == correctIndex) {
             color = Colors.green;
-          } else if (selectedIndex == idx && idx != correctIndex) color = Colors.red;
+          } else if (selectedIndex == idx && idx != correctIndex) {
+            color = Colors.red;
+          }
         }
         return ListTile(
           title: Text(text),

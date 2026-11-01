@@ -381,10 +381,11 @@ class ReviewSummary {
     int itemsWithReviews = 0;
 
     for (final item in items) {
+      final localReviewDate = item.nextReviewDate.toLocal();
       final reviewDay = DateTime(
-        item.nextReviewDate.year,
-        item.nextReviewDate.month,
-        item.nextReviewDate.day,
+        localReviewDate.year,
+        localReviewDate.month,
+        localReviewDate.day,
       );
 
       if (reviewDay.isBefore(today)) {

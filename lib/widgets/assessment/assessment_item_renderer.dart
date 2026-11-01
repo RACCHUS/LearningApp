@@ -63,7 +63,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   @override
   void didUpdateWidget(covariant AssessmentItemRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.id != widget.item.id || oldWidget.initialResponse != widget.initialResponse) {
+    if (oldWidget.item.id != widget.item.id ||
+        oldWidget.initialResponse != widget.initialResponse ||
+        oldWidget.presentationSeed != widget.presentationSeed) {
       _resetState();
       _initInteractionState();
     }

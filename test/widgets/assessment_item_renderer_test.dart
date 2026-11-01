@@ -359,5 +359,56 @@ void main() {
 
       expect(isCorrectResult, isTrue);
     });
+
+    testWidgets('Same mounted widget regenerates option permutation when presentationSeed changes', (tester) async {
+      final item = AssessmentItem(
+        id: 'item-seed-change-demo',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Pick an option:',
+        responseSpec: {
+          'options': ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'],
+        },
+        scoringSpec: {
+          'correct_index': 0,
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Mount widget with seed 1
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: item,
+              presentationSeed: 1,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state1 = tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+      final order1 = List<int>.from(state1.presentationOrder as List<int>);
+
+      // Re-pump same widget with new presentationSeed (no key change)
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: item,
+              presentationSeed: 250,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state2 = tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+      final order2 = List<int>.from(state2.presentationOrder as List<int>);
+
+      // Verify permutation changed on the same mounted instance
+      expect(order1, isNot(equals(order2)));
+    });
   });
 }

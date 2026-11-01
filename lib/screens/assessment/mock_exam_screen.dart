@@ -489,6 +489,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
                             isExamMode: true,
                             initialResponse: session.userResponses[currentItem.id],
                             onResponseChanged: (res) => _onAnswerChanged(currentItem.id, res),
+                            presentationSeed: session.id.hashCode,
                           ),
                         ),
                       ],

@@ -39,8 +39,7 @@ flutter build web --release
 *Output Directory:* `build/web/`  
 *Contents:*
 - `index.html` — HTML5 entrypoint with PWA shell
-- `main.dart.js` / `flutter_bootstrap.js` — Compiled, tree-shaken Dart web bundle
-- `flutter_service_worker.js` — Offline cache manager
+- `main.dart.js` / `flutter_bootstrap.js` — Compiled, tree-shaken Dart web bundle with async bootstrap loader (online-first architecture; local offline review outbox scheduled for Phase 1)
 - `manifest.json` — PWA installation metadata and icons
 - `assets/` — Application images, fonts, and data catalogs
 
@@ -48,7 +47,7 @@ flutter build web --release
 
 ### Step 2: Verify the Build Locally (Optional Smoke Test)
 
-Before pushing to production, serve the compiled bundle locally to verify headers and offline caching:
+Before pushing to production, serve the compiled bundle locally to verify headers and asset delivery:
 
 ```bash
 # Using Python

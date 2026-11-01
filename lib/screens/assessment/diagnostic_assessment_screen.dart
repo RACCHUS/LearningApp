@@ -228,6 +228,7 @@ class _DiagnosticAssessmentScreenState
                           item: current.item,
                           isExamMode: true,
                           initialResponse: response,
+                          presentationSeed: target.id.hashCode ^ (widget.examPartKey?.hashCode ?? 0) ^ session.currentIndex,
                           onResponseChanged: (value) {
                             _notifier().recordResponse(current.item.id, value);
                           },

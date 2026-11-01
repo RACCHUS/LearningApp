@@ -260,6 +260,7 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                                   item: _currentItem!,
                                   onAnswerSubmitted: _onAnswerSubmitted,
                                   onCompleted: _pickNextQuestion,
+                                  presentationSeed: widget.targetVersionId.hashCode ^ state.responses.length,
                                 ),
                               ),
                             ],

@@ -225,13 +225,21 @@ ALTER TABLE public.user_career_paths ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_data_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lesson_texts ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS career_paths_read ON public.career_paths;
 CREATE POLICY career_paths_read ON public.career_paths FOR SELECT USING (
   is_public = TRUE OR created_by = (SELECT auth.uid())
 );
-CREATE POLICY career_paths_write ON public.career_paths FOR ALL USING (
-  created_by = (SELECT auth.uid())
+
+DROP POLICY IF EXISTS career_paths_write ON public.career_paths;
+CREATE POLICY career_paths_write ON public.career_paths FOR ALL 
+USING (created_by = (SELECT auth.uid()))
+WITH CHECK (
+  created_by = (SELECT auth.uid()) 
+  AND is_official = FALSE 
+  AND is_featured = FALSE
 );
 
+DROP POLICY IF EXISTS career_path_courses_read ON public.career_path_courses;
 CREATE POLICY career_path_courses_read ON public.career_path_courses FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.career_paths 
@@ -239,6 +247,8 @@ CREATE POLICY career_path_courses_read ON public.career_path_courses FOR SELECT 
     AND (career_paths.is_public = TRUE OR career_paths.created_by = (SELECT auth.uid()))
   )
 );
+
+DROP POLICY IF EXISTS career_path_courses_write ON public.career_path_courses;
 CREATE POLICY career_path_courses_write ON public.career_path_courses FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.career_paths 
@@ -247,8 +257,10 @@ CREATE POLICY career_path_courses_write ON public.career_path_courses FOR ALL US
   )
 );
 
+DROP POLICY IF EXISTS skills_read ON public.skills;
 CREATE POLICY skills_read ON public.skills FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS career_path_skills_read ON public.career_path_skills;
 CREATE POLICY career_path_skills_read ON public.career_path_skills FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.career_paths 
@@ -257,10 +269,13 @@ CREATE POLICY career_path_skills_read ON public.career_path_skills FOR SELECT US
   )
 );
 
+DROP POLICY IF EXISTS course_skills_read ON public.course_skills;
 CREATE POLICY course_skills_read ON public.course_skills FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS skill_assessments_read ON public.skill_assessments;
 CREATE POLICY skill_assessments_read ON public.skill_assessments FOR SELECT USING (is_active = TRUE);
 
+DROP POLICY IF EXISTS assessment_questions_read ON public.assessment_questions;
 CREATE POLICY assessment_questions_read ON public.assessment_questions FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.skill_assessments 
@@ -269,12 +284,37 @@ CREATE POLICY assessment_questions_read ON public.assessment_questions FOR SELEC
   )
 );
 
-CREATE POLICY user_skill_stats_own ON public.user_skill_stats FOR ALL USING (user_id = (SELECT auth.uid()));
-CREATE POLICY assessment_attempts_own ON public.assessment_attempts FOR ALL USING (user_id = (SELECT auth.uid()));
+-- user_skill_stats: client can only read own stats; modifications are strictly server-side
+DROP POLICY IF EXISTS user_skill_stats_own ON public.user_skill_stats;
+DROP POLICY IF EXISTS user_skill_stats_select ON public.user_skill_stats;
+CREATE POLICY user_skill_stats_select ON public.user_skill_stats FOR SELECT 
+USING (user_id = (SELECT auth.uid()));
+
+-- assessment_attempts: client can read and submit own attempts, but cannot self-certify verified status
+DROP POLICY IF EXISTS assessment_attempts_own ON public.assessment_attempts;
+DROP POLICY IF EXISTS assessment_attempts_select ON public.assessment_attempts;
+CREATE POLICY assessment_attempts_select ON public.assessment_attempts FOR SELECT 
+USING (user_id = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS assessment_attempts_insert ON public.assessment_attempts;
+CREATE POLICY assessment_attempts_insert ON public.assessment_attempts FOR INSERT 
+WITH CHECK (user_id = (SELECT auth.uid()) AND is_verified = FALSE);
+
+DROP POLICY IF EXISTS assessment_attempts_update ON public.assessment_attempts;
+CREATE POLICY assessment_attempts_update ON public.assessment_attempts FOR UPDATE 
+USING (user_id = (SELECT auth.uid())) 
+WITH CHECK (user_id = (SELECT auth.uid()) AND is_verified = FALSE);
+
+DROP POLICY IF EXISTS user_career_paths_own ON public.user_career_paths;
 CREATE POLICY user_career_paths_own ON public.user_career_paths FOR ALL USING (user_id = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS user_data_snapshots_own ON public.user_data_snapshots;
 CREATE POLICY user_data_snapshots_own ON public.user_data_snapshots FOR ALL USING (user_id = (SELECT auth.uid()));
 
+DROP POLICY IF EXISTS lesson_texts_read ON public.lesson_texts;
 CREATE POLICY lesson_texts_read ON public.lesson_texts FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS lesson_texts_write ON public.lesson_texts;
 CREATE POLICY lesson_texts_write ON public.lesson_texts FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.lessons 
@@ -306,6 +346,11 @@ BEGIN
   RETURN v_level;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.update_skill_stats_after_assessment() 
 RETURNS TRIGGER AS $$
@@ -351,6 +396,11 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() FROM anon;
+GRANT EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() TO service_role;
 
 DROP TRIGGER IF EXISTS trg_update_skill_stats ON public.assessment_attempts;
 CREATE TRIGGER trg_update_skill_stats

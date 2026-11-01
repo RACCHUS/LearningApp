@@ -1,12 +1,12 @@
 -- Migration 82: Secure User XP Progression & Definer Hardening
 -- Closes FIX-2: Prohibits direct client tampering with user_xp balances and xp_events.
 -- Implements single authenticated, idempotent server-side award operation (record_xp_award)
--- and hardens increment_user_xp RPC.
+-- with strict semantic deduplication, daily rate ceiling, and restricts increment_user_xp to service_role.
 
 -- 1. Drop old insecure function signature
 DROP FUNCTION IF EXISTS public.increment_user_xp(UUID, INTEGER);
 
--- 2. Define hardened increment_user_xp function
+-- 2. Define hardened increment_user_xp function (service_role only)
 CREATE OR REPLACE FUNCTION public.increment_user_xp(
   p_xp_amount INTEGER,
   p_user_id UUID DEFAULT NULL
@@ -39,7 +39,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
 
--- 3. Define transactional, idempotent record_xp_award RPC
+-- 3. Define transactional, idempotent record_xp_award RPC with semantic deduplication
 CREATE OR REPLACE FUNCTION public.record_xp_award(
   p_event_id UUID,
   p_event_type TEXT,
@@ -54,12 +54,13 @@ DECLARE
   v_current_total INTEGER;
   v_new_total INTEGER;
   v_existing_event UUID;
+  v_today_xp INTEGER;
 BEGIN
   IF v_auth_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  -- 1. Idempotency guard: if this event id was already processed for this user, return without re-awarding
+  -- 1. Exact UUID Idempotency: if this exact event id was already processed, return current state
   SELECT id INTO v_existing_event
   FROM public.xp_events
   WHERE id = p_event_id AND user_id = v_auth_uid;
@@ -77,11 +78,77 @@ BEGIN
     );
   END IF;
 
-  -- 2. Validate event type and cap XP server-side to prevent tampering
+  -- 2. Strict event type validation (reject arbitrary or unrecognized event types)
+  IF p_event_type NOT IN (
+    'questionCorrect', 'question_correct',
+    'lessonComplete', 'lesson_complete',
+    'courseComplete', 'course_complete',
+    'reviewSession', 'review_session',
+    'streakBonus', 'streak_bonus',
+    'achievement',
+    'dailyGoal', 'daily_goal'
+  ) THEN
+    RAISE EXCEPTION 'Invalid XP event type: %', p_event_type;
+  END IF;
+
   IF p_xp_amount <= 0 THEN
     RAISE EXCEPTION 'XP amount must be positive';
   END IF;
 
+  -- 3. Semantic deduplication: prevent repeated claims on same lesson/course/day
+  IF p_source_id IS NOT NULL AND p_event_type IN ('lessonComplete', 'lesson_complete', 'courseComplete', 'course_complete') THEN
+    SELECT id INTO v_existing_event
+    FROM public.xp_events
+    WHERE user_id = v_auth_uid
+      AND event_type = p_event_type
+      AND source_id = p_source_id
+      AND earned_at > NOW() - INTERVAL '24 hours';
+
+    IF v_existing_event IS NOT NULL THEN
+      SELECT COALESCE(total_xp, 0) INTO v_current_total
+      FROM public.user_xp
+      WHERE user_id = v_auth_uid;
+
+      RETURN jsonb_build_object(
+        'status', 'already_processed',
+        'event_id', v_existing_event,
+        'awarded_xp', 0,
+        'total_xp', v_current_total
+      );
+    END IF;
+  END IF;
+
+  IF p_event_type IN ('dailyGoal', 'daily_goal', 'streakBonus', 'streak_bonus') THEN
+    SELECT id INTO v_existing_event
+    FROM public.xp_events
+    WHERE user_id = v_auth_uid
+      AND event_type = p_event_type
+      AND earned_at > NOW() - INTERVAL '20 hours';
+
+    IF v_existing_event IS NOT NULL THEN
+      SELECT COALESCE(total_xp, 0) INTO v_current_total
+      FROM public.user_xp
+      WHERE user_id = v_auth_uid;
+
+      RETURN jsonb_build_object(
+        'status', 'already_processed',
+        'event_id', v_existing_event,
+        'awarded_xp', 0,
+        'total_xp', v_current_total
+      );
+    END IF;
+  END IF;
+
+  -- 4. Daily rate ceiling: max 2000 XP in any rolling 24-hour window
+  SELECT COALESCE(SUM(xp_amount), 0) INTO v_today_xp
+  FROM public.xp_events
+  WHERE user_id = v_auth_uid AND earned_at > NOW() - INTERVAL '24 hours';
+
+  IF v_today_xp >= 2000 THEN
+    RAISE EXCEPTION 'Daily XP limit reached (maximum 2000 XP per 24 hours)';
+  END IF;
+
+  -- 5. Server-side capping per event type
   CASE p_event_type
     WHEN 'questionCorrect', 'question_correct' THEN
       v_capped_xp := LEAST(p_xp_amount, 25);
@@ -98,10 +165,15 @@ BEGIN
     WHEN 'dailyGoal', 'daily_goal' THEN
       v_capped_xp := LEAST(p_xp_amount, 100);
     ELSE
-      v_capped_xp := LEAST(p_xp_amount, 50);
+      RAISE EXCEPTION 'Unhandled XP event type: %', p_event_type;
   END CASE;
 
-  -- 3. Insert event in same transaction
+  -- Ensure award doesn't breach the daily ceiling
+  IF v_today_xp + v_capped_xp > 2000 THEN
+    v_capped_xp := 2000 - v_today_xp;
+  END IF;
+
+  -- 6. Insert event atomically
   INSERT INTO public.xp_events (
     id,
     user_id,
@@ -120,7 +192,7 @@ BEGIN
     NOW()
   );
 
-  -- 4. Increment user total XP atomically
+  -- 7. Increment user total XP atomically
   INSERT INTO public.user_xp (user_id, total_xp, created_at, updated_at)
   VALUES (v_auth_uid, v_capped_xp, NOW(), NOW())
   ON CONFLICT (user_id)
@@ -138,22 +210,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
 
--- 4. Revoke public/anon execute, grant to authenticated and service_role
+-- 4. Function execution permissions
+-- increment_user_xp is strictly revoked from public, anon, AND authenticated (service_role only)
 REVOKE EXECUTE ON FUNCTION public.increment_user_xp(INTEGER, UUID) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.increment_user_xp(INTEGER, UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.increment_user_xp(INTEGER, UUID) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.increment_user_xp(INTEGER, UUID) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_user_xp(INTEGER, UUID) TO service_role;
 
+-- record_xp_award is granted to authenticated users (asserts auth.uid())
 REVOKE EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT) FROM anon;
 GRANT EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT) TO service_role;
 
--- 5. Revoke direct client write DML on user_xp and xp_events tables
--- Direct client writes are prohibited: awards MUST go through record_xp_award RPC.
+-- 5. Revoke ALL direct client write DML on user_xp and xp_events tables
+-- Drop policies from Migration 20250101000002_create_user_xp.sql AND 20260528000000_secure_rls_with_anonymous_guests.sql
+DROP POLICY IF EXISTS "user_xp_owner_all" ON public.user_xp;
 DROP POLICY IF EXISTS "Users can insert own XP" ON public.user_xp;
 DROP POLICY IF EXISTS "Users can update own XP" ON public.user_xp;
+DROP POLICY IF EXISTS "Users can delete own XP" ON public.user_xp;
+
+DROP POLICY IF EXISTS "xp_events_owner_all" ON public.xp_events;
 DROP POLICY IF EXISTS "Users can insert own XP events" ON public.xp_events;
+DROP POLICY IF EXISTS "Users can update own XP events" ON public.xp_events;
+DROP POLICY IF EXISTS "Users can delete own XP events" ON public.xp_events;
 
 -- Ensure SELECT policy uses optimized initplan (SELECT auth.uid())
 DROP POLICY IF EXISTS "Users can view own XP" ON public.user_xp;

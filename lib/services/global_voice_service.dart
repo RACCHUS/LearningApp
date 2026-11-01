@@ -22,7 +22,7 @@ class GlobalVoiceService {
   
   /// Voice recognition locale (e.g., 'en_US', 'en-US')
   /// Set this to match the user's preferred language from settings
-  String _voiceLocale = 'en_US';
+  String voiceLocale = 'en_US';
   
   // Voice command correction
   final VoiceCommandCorrector _voiceCorrector = VoiceCommandCorrector();
@@ -49,11 +49,6 @@ class GlobalVoiceService {
   bool get isListening => _isListening;
   bool get isAvailable => _voiceService?.isAvailable ?? false;
   bool get hasPermissions => _voiceService?.hasPermissions ?? false;
-  String get voiceLocale => _voiceLocale;
-  
-  /// Update the voice recognition locale
-  /// Call this when user changes language preference in settings
-  set voiceLocale(String locale) => _voiceLocale = locale;
 
   /// Initialize the global voice service
   Future<void> initialize({
@@ -164,12 +159,12 @@ class GlobalVoiceService {
     
     try {
       if (kDebugMode) {
-        print('🌐 Starting global voice listening with locale: $_voiceLocale');
+        print('🌐 Starting global voice listening with locale: $voiceLocale');
       }
 
       // Start voice recognition with longer timeout for multi-word commands
       final success = await _voiceService!.startListening(
-        localeId: _voiceLocale,
+        localeId: voiceLocale,
         listenFor: const Duration(seconds: 10), // Increased from 5 to 10
         pauseFor: const Duration(milliseconds: 800), // Wait for natural pauses
       );

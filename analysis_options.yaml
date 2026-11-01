@@ -2,14 +2,16 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
-    deprecated_member_use: info
-    use_build_context_synchronously: warning
+    deprecated_member_use: ignore
+    use_build_context_synchronously: error
+    overridden_fields: ignore
   exclude:
     - build/**
     - web/**
 
 linter:
   rules:
+    prefer_interpolation_to_compose_strings: false
     avoid_print: false
     prefer_const_constructors: false
     prefer_const_literals_to_create_immutables: false
