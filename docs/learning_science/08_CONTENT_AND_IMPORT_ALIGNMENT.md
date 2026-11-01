@@ -77,7 +77,7 @@ Stored in protected server tables (`scoring_spec`) and evaluated by server scori
 
 > **Implementation Status Note**: On `main` (`e538585`), [`content/schema/curriculum_manifest.schema.json`](../../content/schema/curriculum_manifest.schema.json) specifies `additionalProperties: false` on manifest objects, represents MCQ `options` as string arrays, and stores answer keys in `scoring_spec.correct_index`.
 >
-> Therefore, the metadata blocks below are **proposed schema extensions (target schema version `2.1.0`)**, not fields already accepted by the `main` validator. A versioned update to `curriculum_manifest.schema.json` and backwards-compatibility tests for existing YAML manifests (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, `software_engineer_career.yaml`) must be merged in Phase 2/4 before adding these fields to production manifests.
+> Therefore, the metadata blocks below are **proposed schema extensions (target schema version `2.1.0`)**, not fields already accepted by the `main` validator. A versioned update to `curriculum_manifest.schema.json` and backwards-compatibility tests for existing YAML manifests (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, `software_engineer_career.yaml`) must be merged in Phase 2 (`ARCH-5`) before adding these fields to production manifests.
 
 ### Proposed Schema `2.1.0` Activity Metadata Block (Exact Canonical Alignment with `02` & `07`)
 ```json

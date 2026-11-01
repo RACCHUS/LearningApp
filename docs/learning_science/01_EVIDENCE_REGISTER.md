@@ -31,7 +31,7 @@ This register records the primary scientific literature, research synthesis repo
   2. **Population boundary**: Because the synthesized studies come from primary and secondary school classrooms, this meta-analysis must **not** be cited as direct empirical proof of adult licensing or vocational exam pass rates.
 - **Applicability**: `InstructionalPolicy.eligible_strategies[]` selection rules (`03_INSTRUCTIONAL_STRATEGIES.md`).
 - **Recommended Implementation**: Configure retrieval, spacing, and interleaving dynamically according to `LearningTaskProfile` and `InstructionalPolicy`.
-- **Test Plan**: Evaluate delayed retention and held-out transfer across adult cohorts in Phase 6/7 (`07_READINESS_AND_VALIDATION.md`).
+- **Test Plan**: Evaluate delayed retention and held-out transfer across adult cohorts in Phase 1 empirical validation (`07_READINESS_AND_VALIDATION.md`).
 
 ### ER-02: Distributed Practice & Retention Lag Scaling
 - **Citation**: Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. *Psychological Bulletin*, 132(3), 354–380. `https://doi.org/10.1037/0033-2909.132.3.354`

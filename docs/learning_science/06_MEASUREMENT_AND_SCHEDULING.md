@@ -2,7 +2,7 @@
 
 This specification defines the **client vs. server security trust boundary** for the proposed `public.learning_events` ledger and `record_events` RPC, reconciles the `user_concept_state` projection discrepancy on `main` (`e538585`), documents the complete `EXM-03` scoring surface, and enforces strict separation between **FSRS-6 memory card ratings**, **concept evidence**, **reference-navigation telemetry**, and **scored assessment results**.
 
-> **Implementation Status Note**: Neither `public.learning_events` nor `record_events` exists on the `main` (`e538585`) baseline or in PR `#136`'s changed files. They are **proposed Phase 1/5 specifications** designed to be implemented via guarded migrations.
+> **Implementation Status Note**: Neither `public.learning_events` nor `record_events` exists on the `main` (`e538585`) baseline or in PR `#136`'s changed files. They are **proposed Phase 1 (`ARCH-1`) specifications** designed to be implemented via guarded migrations.
 >
 > **Explicit Supersession of Provisional `ARCHITECTURE_REVIEW.md` Details**:
 > `/ARCHITECTURE_REVIEW.md` is retained at exact blob SHA `5fe779d3db382d03ad034dc03742409b9a6c1c7b` as a historical point-in-time Phase 0 audit across branches. Where `ARCHITECTURE_REVIEW.md` contains provisional event-ledger or scheduler sketches, **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` formally supersede them**:
@@ -102,7 +102,7 @@ On `main`, the `EXM-03` assigned exam-part practice workflow comprises **three g
    - **Important Boundary (`EXM-03` Does Not Update `user_concept_state`)**: `public.exm03_record_assigned_practice` and `public.exm03_submit_assigned_practice` write scored attempt rows to `public.exam_part_practice_attempts`; they **do not** write to or update `public.user_concept_state`. `EXM-03` remains a dedicated assigned-practice workflow unless an explicit concept-projection integration migration is introduced in a future phase.
 
 ### 4.2 Reconciling `ConceptEvidenceService` and `user_concept_state` on `main`
-Inspection of `main` (`e538585`) confirmed two issues to resolve in Phase 5:
+Inspection of `main` (`e538585`) confirmed two issues to resolve in Phase 1 (`ARCH-1`):
 1. [`lib/services/concept_evidence_service.dart`](../../lib/services/concept_evidence_service.dart) currently performs client-side select-then-upsert operations on `public.user_concept_state`.
 2. [`supabase/migrations/20260925000001_v2_additive_schema.sql`](../../supabase/migrations/20260925000001_v2_additive_schema.sql) grants authenticated owners `FOR ALL` (`SELECT, INSERT, UPDATE, DELETE`) on `user_concept_state`, conflicting with `LEARNING_ARCHITECTURE_V2.md` §3.4's rule that `user_concept_state` is a server-maintained projection.
 

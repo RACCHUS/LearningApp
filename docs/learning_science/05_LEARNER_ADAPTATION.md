@@ -18,7 +18,7 @@ Two distinct mechanisms must not be conflated:
 - A single 4-option multiple-choice item has a $25\%$ random guessing probability. Allowing a learner to automatically bypass instruction or scaffolding on Concept $A$ based on a single lucky MCQ guess risks leaving knowledge gaps unaddressed.
 - **Design Rule**:
   1. **Direct Access Preserved**: Learners may always manually choose to jump straight to practice or unassisted problems (`UI_ARCHITECTURE_LOCKED.md`).
-  2. **Automated Scaffolding Bypass Requires Stronger Evidence (`Implementation Hypothesis`)**: Automatically routing a learner past introductory worked examples on Concept $A$ requires stronger evidence than a single MCQ hit—such as passing an uncued/numeric/free-recall check, demonstrating competence across multiple items/facets of Concept $A$ with high confidence and low latency, or holding established `user_concept_state` stability from a cross-target concept match. The exact bypass threshold is treated as an `Implementation Hypothesis` to be calibrated in Phase 6.
+  2. **Automated Scaffolding Bypass Requires Stronger Evidence (`Implementation Hypothesis`)**: Automatically routing a learner past introductory worked examples on Concept $A$ requires stronger evidence than a single MCQ hit—such as passing an uncued/numeric/free-recall check, demonstrating competence across multiple items/facets of Concept $A$ with high confidence and low latency, or holding established `user_concept_state` stability from a cross-target concept match. The exact bypass threshold is treated as an `Implementation Hypothesis` to be calibrated in Phase 1 (`ARCH-1`).
 
 ---
 

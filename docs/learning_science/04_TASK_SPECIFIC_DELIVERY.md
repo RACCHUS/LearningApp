@@ -60,7 +60,7 @@ Because memorizing a definition is not equivalent to understanding a concept, th
 
 1. **Experimental Spoken Free-Recall Practice (`ER-08`)**:
    - Where the target assessment is oral (e.g., USCIS 128-question 2025 Civics Test and Form N-400 interview), practice transitions from audio-assisted recognition to **acoustic prompt + spoken/free-recall response** matched against official `acceptableAnswers[]`.
-   - Because Morris et al. (1977) and MacLeod et al. (2010) studied recognition rather than spoken free-recall exam performance, this workflow carries `experimental` maturity status and will be validated empirically in Phase 6 (`07_READINESS_AND_VALIDATION.md`).
+   - Because Morris et al. (1977) and MacLeod et al. (2010) studied recognition rather than spoken free-recall exam performance, this workflow carries `experimental` maturity status and will be validated empirically in Phase 1 (`07_READINESS_AND_VALIDATION.md`).
 2. **Non-Punitive Response Timing**:
    - Speech-onset latency is **never** used as a mastery gate.
 
