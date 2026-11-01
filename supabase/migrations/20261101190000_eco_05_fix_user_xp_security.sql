@@ -102,6 +102,13 @@ BEGIN
     RAISE EXCEPTION 'XP amount must be positive';
   END IF;
 
+  -- Require non-null source_id for event types that rely on source-based deduplication
+  IF v_canonical_event_type IN ('achievement', 'lesson_complete', 'course_complete', 'question_correct', 'review_session') THEN
+    IF p_source_id IS NULL OR TRIM(p_source_id) = '' THEN
+      RAISE EXCEPTION 'source_id is required for event type: %', v_canonical_event_type;
+    END IF;
+  END IF;
+
   -- 3. Semantic deduplication:
   -- A. Permanent deduplication for achievements: an achievement can only be claimed once in a lifetime per source_id
   IF p_source_id IS NOT NULL AND v_canonical_event_type = 'achievement' THEN

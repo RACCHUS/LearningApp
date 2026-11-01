@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(23);
+select plan(25);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -181,6 +181,20 @@ select is(
   (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000014'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1 retry')->>'status')),
   'already_processed',
   'Retrying same review session context ID triggers cooldown and returns already_processed'
+);
+
+-- 19. Calling record_xp_award with NULL source_id for question_correct fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000015'::uuid, 'question_correct', 10, null, 'No source') $$,
+  'source_id is required for event type: question_correct',
+  'Calling record_xp_award with null source_id for question_correct throws exception'
+);
+
+-- 20. Calling record_xp_award with NULL source_id for lesson_complete fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000016'::uuid, 'lesson_complete', 50, null, 'No source') $$,
+  'source_id is required for event type: lesson_complete',
+  'Calling record_xp_award with null source_id for lesson_complete throws exception'
 );
 
 select * from finish();
