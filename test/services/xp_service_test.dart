@@ -269,7 +269,7 @@ void main() {
       expect(capturedCalls[1]['params']['p_source_id'], 'lesson-1:q-1');
     });
 
-    test('awardReviewSessionXp requires stable contextId and forwards it to RPC without timestamp drift', () async {
+    test('awardReviewSessionXp requires stable sessionId and forwards it to RPC without timestamp drift', () async {
       final capturedCalls = <Map<String, dynamic>>[];
       final user = User(
         id: 'test-user-id',
@@ -293,8 +293,8 @@ void main() {
 
       final service = XpService(supabase: fakeClient);
 
-      await service.awardReviewSessionXp(5, contextId: 'session_20261101_userA');
-      await service.awardReviewSessionXp(5, contextId: 'session_20261101_userA');
+      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
+      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
 
       expect(capturedCalls.length, 2);
       expect(capturedCalls[0]['params']['p_source_id'], 'session_20261101_userA');
@@ -362,7 +362,7 @@ void main() {
       final service = XpService(supabase: fakeClient);
 
       // 100 items * 2 = 200 bonus, clamped to 50 max bonus -> baseXp (25) + 50 = 75
-      await service.awardReviewSessionXp(100, contextId: 'big-session');
+      await service.awardReviewSessionXp(100, sessionId: 'big-session');
 
       expect(capturedCalls.first['params']['p_xp_amount'], 75);
     });

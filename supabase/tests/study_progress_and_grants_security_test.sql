@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(32);
+select plan(37);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -37,11 +37,13 @@ insert into public.user_progress (id, user_id, lesson_id, date, questions_answer
 on conflict (id) do nothing;
 
 insert into public.skills (id, name, slug, category, description) values
- ('e0000000-0000-0000-0000-000000000001', 'Test Skill', 'test-skill', 'Technical', 'Skill description')
+ ('e0000000-0000-0000-0000-000000000001', 'Test Skill 1', 'test-skill-1', 'Technical', 'Skill 1 description'),
+ ('e0000000-0000-0000-0000-000000000002', 'Test Skill 2', 'test-skill-2', 'Technical', 'Skill 2 description')
 on conflict (id) do nothing;
 
 insert into public.skill_assessments (id, skill_id, title, is_active) values
- ('a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Skill Assessment 1', true)
+ ('a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Skill Assessment 1', true),
+ ('a0000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000002', 'Skill Assessment 2', true)
 on conflict (id) do nothing;
 
 insert into public.assessment_questions (id, assessment_id, question_text, options, correct_answer) values
@@ -251,12 +253,54 @@ select is(
   'User 1 appears on skill_leaderboard with verified skill stats'
 );
 
--- User 1 soft deletes all attempts for this skill
+-- 8. P2 VERIFICATION: Assessment and User immutability on attempts (prevent reassignment bypass)
 set local role authenticated;
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 end $$;
 
+-- Attempting to reassign assessment_id to Skill Assessment 2 is strictly blocked by trigger
+select throws_ok(
+  $$ update public.assessment_attempts
+     set assessment_id = 'a0000000-0000-0000-0000-000000000002',
+         is_verified = false
+     where id = 'aa000000-0000-0000-0000-000000000099' $$,
+  'assessment_id is immutable once an attempt is created',
+  'Attempting to reassign assessment_id on an existing attempt is strictly rejected'
+);
+
+-- Attempting to reassign user_id to User 2 is strictly blocked by trigger
+select throws_ok(
+  $$ update public.assessment_attempts
+     set user_id = 'cc111111-0000-4000-8000-000000000002',
+         is_verified = false
+     where id = 'aa000000-0000-0000-0000-000000000099' $$,
+  'user_id is immutable once an attempt is created',
+  'Attempting to reassign user_id on an existing attempt is strictly rejected'
+);
+
+-- Assessment attempt retains original assessment_id
+select is(
+  (select assessment_id from public.assessment_attempts where id = 'aa000000-0000-0000-0000-000000000099'),
+  'a0000000-0000-0000-0000-000000000001'::uuid,
+  'Attempt assessment_id remains unchanged after rejected reassignment'
+);
+
+-- Original Skill 1 stats remain valid and verified
+select is(
+  (select is_verified from public.user_skill_stats where user_id = 'cc111111-0000-4000-8000-000000000001' and skill_id = 'e0000000-0000-0000-0000-000000000001'),
+  true,
+  'Original Skill 1 stats remain valid and verified'
+);
+
+-- Skill 2 has no stats created for User 1
+select is(
+  (select count(*)::integer from public.user_skill_stats where user_id = 'cc111111-0000-4000-8000-000000000001' and skill_id = 'e0000000-0000-0000-0000-000000000002'),
+  0,
+  'Skill 2 has no stats created for User 1'
+);
+
+-- User 1 soft deletes all attempts for this skill
 select lives_ok(
   $$ select soft_delete_skill_attempts('cc111111-0000-4000-8000-000000000001'::uuid, 'e0000000-0000-0000-0000-000000000001'::uuid) $$,
   'User 1 can execute soft_delete_skill_attempts'

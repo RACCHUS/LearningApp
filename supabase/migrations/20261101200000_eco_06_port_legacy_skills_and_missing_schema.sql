@@ -371,33 +371,25 @@ REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.update_skill_stats_after_assessment() 
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.recompute_user_skill_stat(p_user_id UUID, p_skill_id UUID) 
+RETURNS VOID AS $$
 DECLARE
-  v_skill_id UUID;
   v_new_level INTEGER := 0;
   v_best_score INTEGER := 0;
   v_avg_score NUMERIC(5,2) := 0;
   v_total INTEGER := 0;
   v_has_verified BOOLEAN := FALSE;
-  v_user_id UUID;
 BEGIN
-  v_user_id := COALESCE(NEW.user_id, OLD.user_id);
-
-  SELECT skill_id INTO v_skill_id
-  FROM public.skill_assessments
-  WHERE id = COALESCE(NEW.assessment_id, OLD.assessment_id);
-
-  IF v_skill_id IS NULL THEN
-    RETURN COALESCE(NEW, OLD);
+  IF p_user_id IS NULL OR p_skill_id IS NULL THEN
+    RETURN;
   END IF;
 
   -- Count eligible, non-deleted, completed attempts with a score
   SELECT COUNT(*) INTO v_total
   FROM public.assessment_attempts aa
   JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-  WHERE aa.user_id = v_user_id
-    AND sa.skill_id = v_skill_id
+  WHERE aa.user_id = p_user_id
+    AND sa.skill_id = p_skill_id
     AND aa.is_deleted = FALSE
     AND aa.completed_at IS NOT NULL
     AND aa.score IS NOT NULL;
@@ -405,17 +397,17 @@ BEGIN
   -- If no completed non-deleted attempts remain, remove aggregate record from user_skill_stats
   IF v_total = 0 THEN
     DELETE FROM public.user_skill_stats
-    WHERE user_id = v_user_id
-      AND skill_id = v_skill_id;
-    RETURN COALESCE(NEW, OLD);
+    WHERE user_id = p_user_id
+      AND skill_id = p_skill_id;
+    RETURN;
   END IF;
 
   -- Check if any verified, non-deleted attempts exist for this user and skill
   SELECT EXISTS (
     SELECT 1 FROM public.assessment_attempts aa
     JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-    WHERE aa.user_id = v_user_id
-      AND sa.skill_id = v_skill_id
+    WHERE aa.user_id = p_user_id
+      AND sa.skill_id = p_skill_id
       AND aa.is_verified = TRUE
       AND aa.is_deleted = FALSE
       AND aa.completed_at IS NOT NULL
@@ -423,7 +415,7 @@ BEGIN
   ) INTO v_has_verified;
 
   IF v_has_verified THEN
-    v_new_level := public.calculate_skill_level(v_user_id, v_skill_id);
+    v_new_level := public.calculate_skill_level(p_user_id, p_skill_id);
     
     SELECT 
       MAX(score),
@@ -432,8 +424,8 @@ BEGIN
     INTO v_best_score, v_avg_score, v_total
     FROM public.assessment_attempts aa
     JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-    WHERE aa.user_id = v_user_id
-      AND sa.skill_id = v_skill_id
+    WHERE aa.user_id = p_user_id
+      AND sa.skill_id = p_skill_id
       AND aa.is_verified = TRUE
       AND aa.is_deleted = FALSE
       AND aa.completed_at IS NOT NULL
@@ -445,8 +437,8 @@ BEGIN
       SELECT aa.score
       FROM public.assessment_attempts aa
       JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-      WHERE aa.user_id = v_user_id
-        AND sa.skill_id = v_skill_id
+      WHERE aa.user_id = p_user_id
+        AND sa.skill_id = p_skill_id
         AND aa.is_deleted = FALSE
         AND aa.completed_at IS NOT NULL
         AND aa.score IS NOT NULL
@@ -461,15 +453,15 @@ BEGIN
     INTO v_best_score, v_avg_score, v_total
     FROM public.assessment_attempts aa
     JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-    WHERE aa.user_id = v_user_id
-      AND sa.skill_id = v_skill_id
+    WHERE aa.user_id = p_user_id
+      AND sa.skill_id = p_skill_id
       AND aa.is_deleted = FALSE
       AND aa.completed_at IS NOT NULL
       AND aa.score IS NOT NULL;
   END IF;
   
   INSERT INTO public.user_skill_stats (user_id, skill_id, level, best_score, average_score, total_assessments, last_assessed_at, is_verified)
-  VALUES (v_user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), v_has_verified)
+  VALUES (p_user_id, p_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), v_has_verified)
   ON CONFLICT (user_id, skill_id) 
   DO UPDATE SET
     level = v_new_level,
@@ -479,6 +471,44 @@ BEGIN
     is_verified = v_has_verified,
     last_assessed_at = NOW(),
     updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION public.recompute_user_skill_stat(UUID, UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.recompute_user_skill_stat(UUID, UUID) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.recompute_user_skill_stat(UUID, UUID) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.recompute_user_skill_stat(UUID, UUID) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.update_skill_stats_after_assessment() 
+RETURNS TRIGGER AS $$
+DECLARE
+  v_old_skill_id UUID;
+  v_new_skill_id UUID;
+BEGIN
+  IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+    SELECT skill_id INTO v_old_skill_id
+    FROM public.skill_assessments
+    WHERE id = OLD.assessment_id;
+
+    IF v_old_skill_id IS NOT NULL AND OLD.user_id IS NOT NULL THEN
+      PERFORM public.recompute_user_skill_stat(OLD.user_id, v_old_skill_id);
+    END IF;
+  END IF;
+
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    SELECT skill_id INTO v_new_skill_id
+    FROM public.skill_assessments
+    WHERE id = NEW.assessment_id;
+
+    IF v_new_skill_id IS NOT NULL AND NEW.user_id IS NOT NULL THEN
+      -- If UPDATE touched neither user_id nor skill_id, it was already recomputed in the block above
+      IF TG_OP = 'UPDATE' AND NEW.user_id = OLD.user_id AND v_new_skill_id = v_old_skill_id THEN
+        NULL;
+      ELSE
+        PERFORM public.recompute_user_skill_stat(NEW.user_id, v_new_skill_id);
+      END IF;
+    END IF;
+  END IF;
 
   RETURN COALESCE(NEW, OLD);
 END;
@@ -491,10 +521,34 @@ GRANT EXECUTE ON FUNCTION public.update_skill_stats_after_assessment() TO servic
 
 DROP TRIGGER IF EXISTS trg_update_skill_stats ON public.assessment_attempts;
 CREATE TRIGGER trg_update_skill_stats
-AFTER INSERT OR UPDATE OF score, completed_at, is_deleted, is_verified OR DELETE
+AFTER INSERT OR UPDATE OF score, completed_at, is_deleted, is_verified, assessment_id, user_id OR DELETE
 ON public.assessment_attempts
 FOR EACH ROW
 EXECUTE FUNCTION public.update_skill_stats_after_assessment();
+
+CREATE OR REPLACE FUNCTION public.check_assessment_attempt_immutability()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.assessment_id IS DISTINCT FROM OLD.assessment_id THEN
+    RAISE EXCEPTION 'assessment_id is immutable once an attempt is created';
+  END IF;
+  IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
+    RAISE EXCEPTION 'user_id is immutable once an attempt is created';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION public.check_assessment_attempt_immutability() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.check_assessment_attempt_immutability() FROM anon;
+GRANT EXECUTE ON FUNCTION public.check_assessment_attempt_immutability() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_assessment_attempt_immutability() TO service_role;
+
+DROP TRIGGER IF EXISTS trg_assessment_attempt_immutability ON public.assessment_attempts;
+CREATE TRIGGER trg_assessment_attempt_immutability
+BEFORE UPDATE OF assessment_id, user_id ON public.assessment_attempts
+FOR EACH ROW
+EXECUTE FUNCTION public.check_assessment_attempt_immutability();
 
 CREATE OR REPLACE FUNCTION public.soft_delete_skill_attempts(p_user_id UUID, p_skill_id UUID)
 RETURNS VOID AS $$

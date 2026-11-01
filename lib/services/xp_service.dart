@@ -181,22 +181,16 @@ class XpService {
   /// [sessionId] is required to uniquely identify this specific review session instance,
   /// preventing retries or re-renders of the same session from claiming multiple awards,
   /// while ensuring subsequent sessions in the same learning context are not blocked.
-  /// [contextId] is accepted as an optional alias/parameter for backward compatibility.
   Future<XpEvent?> awardReviewSessionXp(
     int itemsReviewed, {
-    String? sessionId,
-    String? contextId,
+    required String sessionId,
     String? eventId,
   }) async {
-    final effectiveSessionId = sessionId ?? contextId;
-    if (effectiveSessionId == null) {
-      throw ArgumentError('Either sessionId or contextId must be provided');
-    }
     final bonusXp = (itemsReviewed * 2).clamp(0, 50); // Max 50 bonus
     return awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: effectiveSessionId,
+      sourceId: sessionId,
       eventId: eventId,
       description: 'Reviewed $itemsReviewed items',
     );
@@ -325,19 +319,14 @@ class XpNotifier extends StateNotifier<XpState> {
   /// Award XP for review session completion via notifier
   Future<void> awardReviewSessionXp(
     int itemsReviewed, {
-    String? sessionId,
-    String? contextId,
+    required String sessionId,
     String? eventId,
   }) async {
-    final effectiveSessionId = sessionId ?? contextId;
-    if (effectiveSessionId == null) {
-      throw ArgumentError('Either sessionId or contextId must be provided');
-    }
     final bonusXp = (itemsReviewed * 2).clamp(0, 50);
     await awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: effectiveSessionId,
+      sourceId: sessionId,
       eventId: eventId,
       description: 'Reviewed $itemsReviewed items',
     );
