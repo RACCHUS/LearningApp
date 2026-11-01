@@ -243,7 +243,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           return;
         }
         
-        if (!mounted) return;
+        if (!mounted || !context.mounted) return;
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -373,7 +373,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                   final didShare = await shareText(url, title: 'Lesson Link');
                   if (!didShare) {
                     await Clipboard.setData(ClipboardData(text: url));
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Lesson link copied!'),

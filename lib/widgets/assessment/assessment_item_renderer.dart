@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
@@ -10,6 +11,7 @@ class AssessmentItemRenderer extends StatefulWidget {
   final bool isExamMode;
   final dynamic initialResponse;
   final ValueChanged<dynamic>? onResponseChanged;
+  final bool shuffleOptions;
 
   const AssessmentItemRenderer({
     super.key,
@@ -19,6 +21,7 @@ class AssessmentItemRenderer extends StatefulWidget {
     this.isExamMode = false,
     this.initialResponse,
     this.onResponseChanged,
+    this.shuffleOptions = true,
   });
 
   @override
@@ -26,6 +29,10 @@ class AssessmentItemRenderer extends StatefulWidget {
 }
 
 class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
+  // Option presentation mapping: index in presentation -> original option index
+  List<int> _presentationOrder = [];
+  List<int> get presentationOrder => List.unmodifiable(_presentationOrder);
+
   // State for single choice
   int? _selectedSingleChoice;
 
@@ -61,6 +68,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   }
 
   void _resetState() {
+    _presentationOrder.clear();
     _selectedSingleChoice = null;
     _selectedMultiIndices.clear();
     _userMatches.clear();
@@ -73,6 +81,25 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   void _initInteractionState() {
     final spec = widget.item.responseSpec;
+    if (widget.item.interactionType == AssessmentInteractionType.singleChoice ||
+        widget.item.interactionType == AssessmentInteractionType.multiSelect) {
+      final optionsRaw = spec['options'] as List? ?? [];
+      final count = optionsRaw.length;
+      _presentationOrder = List.generate(count, (i) => i);
+      final hasAnchor = optionsRaw.any((opt) {
+        final text = opt.toString().toLowerCase();
+        return text.contains('all of the above') ||
+            text.contains('none of the above') ||
+            text.contains('both a and') ||
+            text.contains('both b and') ||
+            text.contains('neither a nor');
+      });
+      if (widget.shuffleOptions && !hasAnchor && count > 1) {
+        final rand = math.Random(widget.item.id.hashCode);
+        _presentationOrder.shuffle(rand);
+      }
+    }
+
     if (widget.item.interactionType == AssessmentInteractionType.orderedResponse) {
       if (widget.initialResponse is List) {
         _orderedItems = (widget.initialResponse as List).map((e) => e.toString()).toList();
@@ -427,17 +454,22 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         widget.item.scoringSpec['correct_answer'] as int? ??
         0;
 
+    final presentation = _presentationOrder.isNotEmpty && _presentationOrder.length == options.length
+        ? _presentationOrder
+        : List.generate(options.length, (i) => i);
+
     return Column(
-      children: options.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final text = entry.value;
-        final isSelected = _selectedSingleChoice == idx;
+      children: presentation.asMap().entries.map((presentationEntry) {
+        final slotIndex = presentationEntry.key;
+        final origIdx = presentationEntry.value;
+        final text = options[origIdx];
+        final isSelected = _selectedSingleChoice == origIdx;
 
         Color? borderColor;
         Color? bgColor;
 
         if (_submitted) {
-          if (idx == correctIdx) {
+          if (origIdx == correctIdx) {
             borderColor = const Color(0xFF10B981);
             bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.08);
           } else if (isSelected) {
@@ -455,9 +487,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             onTap: _submitted
                 ? null
                 : () {
-                    setState(() => _selectedSingleChoice = idx);
+                    setState(() => _selectedSingleChoice = origIdx);
                     if (widget.isExamMode) {
-                      widget.onResponseChanged?.call(idx);
+                      widget.onResponseChanged?.call(origIdx);
                     }
                   },
             borderRadius: BorderRadius.circular(10),
@@ -468,7 +500,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: borderColor ?? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                  width: isSelected || (_submitted && idx == correctIdx) ? 1.5 : 1.0,
+                  width: isSelected || (_submitted && origIdx == correctIdx) ? 1.5 : 1.0,
                 ),
               ),
               child: Row(
@@ -489,7 +521,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       ),
                     ),
                     child: Text(
-                      String.fromCharCode(65 + idx),
+                      String.fromCharCode(65 + slotIndex),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -507,9 +539,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       ),
                     ),
                   ),
-                  if (_submitted && idx == correctIdx)
+                  if (_submitted && origIdx == correctIdx)
                     const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
-                  if (_submitted && isSelected && idx != correctIdx)
+                  if (_submitted && isSelected && origIdx != correctIdx)
                     const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 20),
                 ],
               ),
@@ -526,6 +558,10 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     final options = optionsRaw.map((o) => o.toString()).toList();
     final List<dynamic> correctIndicesRaw = widget.item.scoringSpec['correct_indices'] as List? ?? [];
     final correctSet = correctIndicesRaw.map((e) => (e as num).toInt()).toSet();
+
+    final presentation = _presentationOrder.isNotEmpty && _presentationOrder.length == options.length
+        ? _presentationOrder
+        : List.generate(options.length, (i) => i);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,11 +590,11 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             ],
           ),
         ),
-        ...options.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final text = entry.value;
-          final isSelected = _selectedMultiIndices.contains(idx);
-          final isCorrectChoice = correctSet.contains(idx);
+        ...presentation.asMap().entries.map((presentationEntry) {
+          final origIdx = presentationEntry.value;
+          final text = options[origIdx];
+          final isSelected = _selectedMultiIndices.contains(origIdx);
+          final isCorrectChoice = correctSet.contains(origIdx);
 
           Color? borderColor;
           Color? bgColor;
@@ -583,10 +619,10 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                   ? null
                   : () {
                       setState(() {
-                        if (_selectedMultiIndices.contains(idx)) {
-                          _selectedMultiIndices.remove(idx);
+                        if (_selectedMultiIndices.contains(origIdx)) {
+                          _selectedMultiIndices.remove(origIdx);
                         } else {
-                          _selectedMultiIndices.add(idx);
+                          _selectedMultiIndices.add(origIdx);
                         }
                       });
                       if (widget.isExamMode) {

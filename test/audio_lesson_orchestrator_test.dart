@@ -66,7 +66,7 @@ void main() {
     });
 
     test('should update settings correctly', () {
-      final newSettings = const AudioLessonSettings(
+      const newSettings = AudioLessonSettings(
         handsFreeModeEnabled: true,
         voiceNavigationEnabled: true,
       );
@@ -543,7 +543,7 @@ void main() {
     });
 
     test('should respect hands-free mode setting', () {
-      final settings = const AudioLessonSettings(
+      const settings = AudioLessonSettings(
         handsFreeModeEnabled: true,
       );
 
@@ -553,7 +553,7 @@ void main() {
     });
 
     test('should respect voice navigation setting', () {
-      final settings = const AudioLessonSettings(
+      const settings = AudioLessonSettings(
         voiceNavigationEnabled: true,
       );
 
@@ -563,7 +563,7 @@ void main() {
     });
 
     test('should respect auto-progression setting', () {
-      final settings = const AudioLessonSettings(
+      const settings = AudioLessonSettings(
         autoProgressAfterReading: true,
         autoProgressDelay: Duration(seconds: 2),
       );
@@ -575,7 +575,7 @@ void main() {
     });
 
     test('should respect confirmations setting', () {
-      final settings = const AudioLessonSettings(
+      const settings = AudioLessonSettings(
         confirmationsEnabled: true,
       );
 
@@ -591,7 +591,7 @@ void main() {
 
       await orchestrator.startLesson(content);
 
-      final newSettings = const AudioLessonSettings(
+      const newSettings = AudioLessonSettings(
         handsFreeModeEnabled: true,
       );
 

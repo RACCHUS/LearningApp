@@ -149,7 +149,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                         ),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<ModerationActionType>(
-                          value: selectedAction,
+                          initialValue: selectedAction,
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(),
@@ -280,7 +280,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                             await _loadReports();
                           } catch (e) {
                             setDialogState(() => isSubmitting = false);
-                            if (!mounted) return;
+                            if (!mounted || !context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Failed to apply action: $e'),

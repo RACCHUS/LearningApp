@@ -203,7 +203,7 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
         state = (state as ProgressLoaded).copyWith(error: null);
       }
     } catch (e, stackTrace) {
-      final errorMsg = 'Failed to sync progress data';
+      const errorMsg = 'Failed to sync progress data';
       debugPrint('$errorMsg - $e');
       debugPrint('Stack trace: $stackTrace');
       

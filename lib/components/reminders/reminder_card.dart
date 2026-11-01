@@ -47,7 +47,7 @@ class ReminderCard extends ConsumerWidget {
                     onChanged: (value) => ref
                         .read(reminderProvider.notifier)
                         .toggleReminder(reminder.id, value),
-                    activeColor: colorScheme.primary,
+                    activeThumbColor: colorScheme.primary,
                   ),
                 ],
               ),

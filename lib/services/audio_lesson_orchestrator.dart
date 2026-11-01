@@ -537,7 +537,7 @@ class AudioLessonOrchestrator {
     try {
       // Listen for voice commands with configurable timeout AND manual timeout wrapper
       final timeoutDuration = _settings.voiceInputTimeout;
-      final maxTimeout = const Duration(seconds: 30); // Hard limit
+      const maxTimeout = Duration(seconds: 30); // Hard limit
       final actualTimeout = timeoutDuration.compareTo(maxTimeout) > 0
           ? maxTimeout
           : timeoutDuration;

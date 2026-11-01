@@ -12,7 +12,7 @@ void main() {
 
     group('Settings management', () {
       test('updateSettings() applies new AudioLessonSettings', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           handsFreeModeEnabled: true,
           voiceNavigationEnabled: true,
           voiceInputTimeout: Duration(seconds: 10),
@@ -27,10 +27,10 @@ void main() {
       });
 
       test('updateSettings() handles different timeout values', () {
-        final settings1 = const AudioLessonSettings(
+        const settings1 = AudioLessonSettings(
           voiceInputTimeout: Duration(seconds: 5),
         );
-        final settings2 = const AudioLessonSettings(
+        const settings2 = AudioLessonSettings(
           voiceInputTimeout: Duration(seconds: 15),
         );
 
@@ -41,7 +41,7 @@ void main() {
       });
 
       test('updateSettings() handles retry attempts', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           voiceRetryAttempts: 5,
         );
 
@@ -174,7 +174,7 @@ void main() {
 
     group('Settings scenarios', () {
       test('handles hands-free mode enabled', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           handsFreeModeEnabled: true,
           voiceNavigationEnabled: true,
         );
@@ -183,7 +183,7 @@ void main() {
       });
 
       test('handles hands-free mode disabled', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           handsFreeModeEnabled: false,
           voiceNavigationEnabled: false,
         );
@@ -192,7 +192,7 @@ void main() {
       });
 
       test('handles confirmation settings', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           confirmationsEnabled: true,
           handsFreeModeEnabled: true,
         );
@@ -221,7 +221,7 @@ void main() {
       });
 
       test('handles very short timeout', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           voiceInputTimeout: Duration(milliseconds: 100),
         );
 
@@ -229,7 +229,7 @@ void main() {
       });
 
       test('handles very long timeout', () {
-        final settings = const AudioLessonSettings(
+        const settings = AudioLessonSettings(
           voiceInputTimeout: Duration(minutes: 5),
         );
 

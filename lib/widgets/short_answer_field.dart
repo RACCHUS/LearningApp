@@ -6,11 +6,11 @@ class ShortAnswerField extends StatelessWidget {
   final String? feedback;
 
   const ShortAnswerField({
-    Key? key,
+    super.key,
     required this.controller,
     this.enabled = true,
     this.feedback,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -442,7 +442,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('MCQ answer resolution', () {
-    GenerationSession _sessionWithMcq(Map<String, dynamic> mcq) {
+    GenerationSession sessionWithMcq(Map<String, dynamic> mcq) {
       return GenerationSession(
         id: 'test',
         createdAt: DateTime.utc(2025),
@@ -465,7 +465,7 @@ void main() {
     }
 
     test('exact match resolves correctly', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
         'correct_answer': 'Banana',
@@ -479,7 +479,7 @@ void main() {
     });
 
     test('case-insensitive match resolves correctly', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
         'correct_answer': 'banana',
@@ -493,7 +493,7 @@ void main() {
     });
 
     test('trimmed match resolves correctly', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
         'correct_answer': '  Banana  ',
@@ -507,7 +507,7 @@ void main() {
     });
 
     test('no match flags for review', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
         'correct_answer': 'Dragonfruit',
@@ -521,7 +521,7 @@ void main() {
     });
 
     test('duplicate options flagged for review', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Apple', 'Cherry'],
         'correct_answer': 'Apple',
@@ -534,7 +534,7 @@ void main() {
     });
 
     test('missing explanation flagged for review', () {
-      final session = _sessionWithMcq({
+      final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
         'correct_answer': 'Apple',

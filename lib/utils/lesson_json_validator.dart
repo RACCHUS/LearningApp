@@ -76,6 +76,9 @@ class LessonJsonValidator {
       return;
     }
 
+    final mcqCorrectCounts = <int, int>{};
+    int totalMcq = 0;
+
     for (int i = 0; i < content.length; i++) {
       final item = content[i];
       if (item is! Map<String, dynamic>) {
@@ -84,6 +87,24 @@ class LessonJsonValidator {
       }
 
       _validateContentItem(item, i + 1, errors, warnings);
+
+      if (item['type'] == 'mcq' && item['correctIndex'] is int) {
+        final cIdx = item['correctIndex'] as int;
+        mcqCorrectCounts[cIdx] = (mcqCorrectCounts[cIdx] ?? 0) + 1;
+        totalMcq++;
+      }
+    }
+
+    if (totalMcq >= 3) {
+      for (final entry in mcqCorrectCounts.entries) {
+        final ratio = entry.value / totalMcq;
+        if (ratio >= 0.75) {
+          final pct = (ratio * 100).toInt();
+          warnings.add(
+            'Position imbalance detected: $pct% of MCQ items have the correct answer at option index ${entry.key}. Rotate correct answer positions across options to prevent spatial cues.',
+          );
+        }
+      }
     }
   }
 

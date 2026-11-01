@@ -1770,7 +1770,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                     String targetTitle;
                     if (audit.isQuestion) {
                       final qTitle = _questionTitles[audit.targetId];
-                      targetTitle = qTitle != null ? qTitle : 'Question #${_formatAuthorId(audit.targetId)}';
+                      targetTitle = qTitle ?? 'Question #${_formatAuthorId(audit.targetId)}';
                     } else {
                       final parentQuestionId = _answerParentQuestionIds[audit.targetId];
                       final parentTitle = parentQuestionId != null ? _questionTitles[parentQuestionId] : null;

@@ -181,7 +181,7 @@ class SupabaseRestClient {
   }) async {
     var url = '$baseUrl/rest/v1/$endpoint';
     if (onConflict != null) {
-      url += (url.contains('?') ? '&' : '?') + 'on_conflict=$onConflict';
+      url += '${url.contains('?') ? '&' : '?'}on_conflict=$onConflict';
     }
     final uri = Uri.parse(url);
     final req = await _client.postUrl(uri);

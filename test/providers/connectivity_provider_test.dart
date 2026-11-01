@@ -89,14 +89,14 @@ void main() {
     group('Offline mode handling', () {
       test('should enable offline features when disconnected', () {
         const isConnected = false;
-        final offlineModeEnabled = !isConnected;
+        const offlineModeEnabled = !isConnected;
 
         expect(offlineModeEnabled, true);
       });
 
       test('should disable offline features when connected', () {
         const isConnected = true;
-        final offlineModeEnabled = !isConnected;
+        const offlineModeEnabled = !isConnected;
 
         expect(offlineModeEnabled, false);
       });

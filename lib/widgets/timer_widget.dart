@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/timer_provider.dart';
 
 class TimerWidget extends ConsumerWidget {
-  const TimerWidget({Key? key}) : super(key: key);
+  const TimerWidget({super.key});
 
   String _formatTime(int seconds) {
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');

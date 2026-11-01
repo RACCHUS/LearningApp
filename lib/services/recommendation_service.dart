@@ -293,7 +293,7 @@ class RecommendationService {
         return Recommendation(
           id: lesson['id'] as String,
           title: lesson['title'] as String,
-          description: '${progressPercent}% complete',
+          description: '$progressPercent% complete',
           type: RecommendationType.continueProgress,
           targetId: lesson['id'] as String,
           targetType: 'lesson',

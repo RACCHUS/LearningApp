@@ -1,5 +1,6 @@
 /// Stub implementation for browser compatibility when dart:html is not available
 /// Used during testing on non-web platforms
+library;
 
 class _Window {
   _Navigator get navigator => _Navigator();

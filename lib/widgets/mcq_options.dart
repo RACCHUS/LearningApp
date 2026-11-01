@@ -8,13 +8,13 @@ class McqOptions extends StatelessWidget {
   final int? correctIndex;
 
   const McqOptions({
-    Key? key,
+    super.key,
     required this.options,
     required this.selectedIndex,
     required this.onChanged,
     this.showCorrect = false,
     this.correctIndex,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +24,9 @@ class McqOptions extends StatelessWidget {
         final text = entry.value;
         Color? color;
         if (showCorrect && correctIndex != null) {
-          if (idx == correctIndex) color = Colors.green;
-          else if (selectedIndex == idx && idx != correctIndex) color = Colors.red;
+          if (idx == correctIndex) {
+            color = Colors.green;
+          } else if (selectedIndex == idx && idx != correctIndex) color = Colors.red;
         }
         return ListTile(
           title: Text(text),

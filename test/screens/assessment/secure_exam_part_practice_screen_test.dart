@@ -40,7 +40,7 @@ Map<String,dynamic> _score()=>{
  'official_exam_result':false,
 };
 class _AuthController extends StateNotifier<AuthState> implements AuthNotifier {
- _AuthController(AuthState initial):super(initial);
+ _AuthController(super.initial);
  void switchTo(AuthState next)=>state=next;
  @override dynamic noSuchMethod(Invocation invocation)=>super.noSuchMethod(invocation);
 }

@@ -8,18 +8,22 @@ class _FakeHiveService implements HiveService {
   noSuchMethod(Invocation invocation) => null;
   final Map<String, LocalLesson> _store = {};
 
+  @override
   Future<void> cacheLocalLesson(LocalLesson lesson) async {
     _store[lesson.id] = lesson;
   }
 
+  @override
   Future<void> deleteLocalLesson(String lessonId) async {
     _store.remove(lessonId);
   }
 
+  @override
   Future<List<LocalLesson>> getLocalLessons(String userId) async {
     return _store.values.where((l) => l.userId == userId).toList();
   }
 
+  @override
   Future<LocalLesson?> getLocalLesson(String lessonId) async {
     return _store[lessonId];
   }

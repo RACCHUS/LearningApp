@@ -174,7 +174,7 @@ Create a feature branch, write appropriate regression tests, and submit a PR int
 
 ## License
 
-This repository is **public**, but no `LICENSE` file is included. Public visibility by itself does not grant reuse or redistribution permission. A license may be added later.
+This repository is licensed under the [Apache License 2.0](LICENSE). Brand names, logos, and hosted service marks remain the property of the project owner. User-generated content submitted to public areas is shared under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ### Catalog population and hosted coverage audits
 

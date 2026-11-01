@@ -6,6 +6,7 @@
 /// - +100 XP per course completed
 /// - +25 XP per review session completed
 /// - Streak bonuses: +10 XP per day of streak (e.g., 7-day streak = +70 XP)
+library;
 
 class XpConstants {
   /// XP awarded per correct question

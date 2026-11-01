@@ -142,7 +142,7 @@ class _SkillsSummaryCard extends StatelessWidget {
                   icon: Icons.psychology,
                 ),
                 _SummaryItem(
-                  value: '${avgLevel.toStringAsFixed(0)}',
+                  value: avgLevel.toStringAsFixed(0),
                   label: 'Avg Level',
                   icon: Icons.trending_up,
                 ),

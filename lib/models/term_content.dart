@@ -17,21 +17,16 @@ class TermContent extends LessonContent {
   final String? example;
 
   TermContent({
-    required String id,
-    required String lessonId,
-    required int order,
+    required super.id,
+    required super.lessonId,
+    required super.order,
     required this.term,
     required this.definition,
     this.example,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    required super.createdAt,
+    required super.updatedAt,
   }) : super(
-          id: id,
-          lessonId: lessonId,
-          order: order,
           type: 'term',
-          createdAt: createdAt,
-          updatedAt: updatedAt,
         );
 
   factory TermContent.fromJson(Map<String, dynamic> json) => 

@@ -164,7 +164,7 @@ class AudioQualitySection extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: DropdownButtonFormField<String?>(
-            value: voicesToShow.any((v) => v.name == settings.preferredVoice)
+            initialValue: voicesToShow.any((v) => v.name == settings.preferredVoice)
                 ? settings.preferredVoice
                 : null,
             isExpanded: true,

@@ -134,10 +134,12 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
         expectedOwnerId: widget.ownerId,
         shouldCancel: () => _cancelRequested || !_owned,
         onProgress: (loaded,total) {
-          if (_owned) setState(() {
+          if (_owned) {
+            setState(() {
             _loaded = loaded;
             _total = total;
           });
+          }
         },
       );
       if (!_owned) return;
@@ -163,10 +165,12 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
               'verified. Refresh the preview. No file was requested.';
       });
     } finally {
-      if (_owned) setState(() {
+      if (_owned) {
+        setState(() {
         _busy = false;
         _preparing = false;
       });
+      }
     }
   }
 
@@ -174,7 +178,9 @@ class _OwnedCombinedPracticeState extends State<_OwnedCombinedPractice> {
   /// a dialog Future; otherwise browsers may block the download request.
   void _requestDownload(ExamPracticeArchive archive) {
     if (_busy || !_owned || !identical(_archive, archive) ||
-        !_download.isSupported) return;
+        !_download.isSupported) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       _download.requestChunkedDownload(

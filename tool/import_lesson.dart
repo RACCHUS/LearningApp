@@ -417,7 +417,7 @@ Future<void> _listLessons(_Config cfg) async {
   }
 
   print('📚 Lessons in database (${lessons.length}):');
-  print('${'─' * 70}');
+  print('─' * 70);
   for (final lesson in lessons) {
     final tags = (lesson['tags'] as List?)?.join(', ') ?? '';
     final visibility = lesson['user_id'] == null ? 'public' : 'owned';

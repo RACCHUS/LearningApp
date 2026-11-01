@@ -6,27 +6,34 @@ part 'local_lesson.g.dart';
 
 @HiveType(typeId: 9)
 class LocalLesson extends BaseLesson {
+  @override
   @HiveField(0)
   final String id;
 
+  @override
   @HiveField(1)
   final String title;
 
+  @override
   @HiveField(2)
   final String description;
 
+  @override
   @HiveField(3)
   final List<String> tags;
 
   @HiveField(4)
   final bool isLocal;
 
+  @override
   @HiveField(5)
   final DateTime createdAt;
 
+  @override
   @HiveField(6)
   final DateTime updatedAt;
 
+  @override
   @HiveField(7)
   final String userId;
 

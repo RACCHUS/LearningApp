@@ -22,7 +22,7 @@ User _user(String id, {bool guest=false}) => User(
 );
 
 class _AuthController extends StateNotifier<AuthState> implements AuthNotifier {
-  _AuthController(AuthState initial) : super(initial);
+  _AuthController(super.initial);
 
   void switchTo(AuthState next) => state = next;
   @override

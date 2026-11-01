@@ -5,8 +5,8 @@ import 'package:learning_pwa/models/word_learning.dart';
 import 'package:learning_pwa/services/word_learning_transfer.dart';
 
 void main() {
-  final originUser = '11111111-1111-4111-8111-111111111111';
-  final sourceList = '22222222-2222-4222-8222-222222222222';
+  const originUser = '11111111-1111-4111-8111-111111111111';
+  const sourceList = '22222222-2222-4222-8222-222222222222';
   final key = WordFormIdentity.formKey(word: 'liability');
   final reviewId = WordFormIdentity.spellingReviewContentId(key);
 

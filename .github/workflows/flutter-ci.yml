@@ -47,6 +47,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Validate schema contract (client to migrations)
+        run: dart run tool/verify_schema_contract.dart
+
       - name: Validate catalog source registry and rights review
         run: |
           dart run tool/taxonomy_coverage.dart --registry-only

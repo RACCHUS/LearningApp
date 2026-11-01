@@ -172,7 +172,7 @@ void main() {
       });
 
       test('handles malformed JSON gracefully', () async {
-        final badJson = '{invalid json}';
+        const badJson = '{invalid json}';
 
         expect(
           () => service.importLessonFromJson(badJson, 'user-1'),

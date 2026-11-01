@@ -204,7 +204,7 @@ class _GuidedGenerationScreenState
 
           // Prior Knowledge Level
           DropdownButtonFormField<String>(
-            value: _targetAudience,
+            initialValue: _targetAudience,
             decoration: const InputDecoration(
               labelText: 'Prior Knowledge Level',
               border: OutlineInputBorder(),
@@ -235,7 +235,7 @@ class _GuidedGenerationScreenState
 
           // Difficulty
           DropdownButtonFormField<String>(
-            value: _difficulty,
+            initialValue: _difficulty,
             decoration: const InputDecoration(
               labelText: 'Difficulty',
               border: OutlineInputBorder(),
@@ -251,7 +251,7 @@ class _GuidedGenerationScreenState
 
           // Content Focus
           DropdownButtonFormField<String>(
-            value: _contentFocus,
+            initialValue: _contentFocus,
             decoration: const InputDecoration(
               labelText: 'Content Focus',
               border: OutlineInputBorder(),
@@ -316,7 +316,7 @@ class _GuidedGenerationScreenState
   }
 
   Widget _buildStepper(GenerationSession session, ThemeData theme) {
-    final phases = GenerationPhase.values;
+    const phases = GenerationPhase.values;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1024,6 +1024,8 @@ class _GuidedGenerationScreenState
       final lesson = await lessonService.importLessonFromJson(jsonString, userId);
       ref.invalidate(availableLessonsCatalogProvider);
       ref.invalidate(remoteCatalogLessonsProvider);
+
+      if (!mounted || !context.mounted) return;
 
       if (widget.attachmentIntent == 'personal_study' &&
           widget.nodeId != null &&

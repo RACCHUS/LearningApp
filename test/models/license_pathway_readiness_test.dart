@@ -81,7 +81,7 @@ void main() {
     });
 
     test('filters to specific route when selectedRouteLabel is provided', () {
-      final selectedRoute =
+      const selectedRoute =
           'Graduate from a Florida-approved nursing education program';
       final steps = PathwayTreeParser.extractApplicableSteps(
         sampleTree,
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('computes readiness progress correctly', () {
-      final selectedRoute =
+      const selectedRoute =
           'Graduate from a Florida-approved nursing education program';
       final steps = PathwayTreeParser.extractApplicableSteps(
         sampleTree,
@@ -119,7 +119,7 @@ void main() {
     });
 
     test('computes isComplete when all applicable steps are checked', () {
-      final selectedRoute =
+      const selectedRoute =
           'Graduate from a Florida-approved nursing education program';
       final steps = PathwayTreeParser.extractApplicableSteps(
         sampleTree,

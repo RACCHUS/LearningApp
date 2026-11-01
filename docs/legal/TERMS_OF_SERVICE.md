@@ -57,10 +57,10 @@ If you are using the Service on behalf of an institution, organization, or famil
 
 ## 5. Intellectual Property & User Content
 
-1. **Platform Property**: The LearningApp interface, source code, logos, curated classification graphs, and original platform curricula are the intellectual property of LearningApp and its licensors.
+1. **Platform Property & Open Source Code**: The LearningApp software and source code is open source under the **Apache License 2.0**. Brand names, logos, and hosted service marks remain the property of the project owner.
 2. **User-Generated Content (UGC)**:
    - You retain ownership of any original questions, answers, comments, or educational resources you author ("User Content").
-   - By submitting User Content to public areas of the Service, you grant LearningApp a worldwide, royalty-free, non-exclusive license to host, display, index, format, and organize that content solely for educational purposes within the Service.
+   - By submitting User Content to public areas of the Service, you license that content to the community under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license, and grant LearningApp a worldwide, royalty-free, non-exclusive license to host, display, index, format, and organize that content for educational purposes and community exports.
 3. **Respect for Third-Party Rights**:
    - You represent and warrant that your User Content does not infringe the copyright, trademark, or intellectual property rights of any third party.
    - Unauthorized reproduction of proprietary textbooks, commercial question banks, or copyrighted curriculum materials is strictly prohibited.

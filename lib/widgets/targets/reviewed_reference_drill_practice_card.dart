@@ -174,7 +174,9 @@ class _OwnedPracticeState extends State<_OwnedPractice> {
 
   Future<void> _submit() async {
     if (_working || _recorder == null ||
-        (_recorder!.isComplete && _pendingEventId == null)) return;
+        (_recorder!.isComplete && _pendingEventId == null)) {
+      return;
+    }
     final step = _awaitingStep ?? _recorder!.nextStep!;
     final token = _pendingAnswer ?? _selected;
     final isRetry = _recorder!.hasPendingWrite;

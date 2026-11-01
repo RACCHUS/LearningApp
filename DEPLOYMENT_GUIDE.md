@@ -77,7 +77,7 @@ firebase login
 firebase deploy --only hosting
 ```
 
-*Target Project:* `learningpwa-928be` (configured in `.firebaserc`)  
+*Target Project:* `learningapp-2ed8a` (configured in `.firebaserc`)  
 *Hosting Config:* Defined in `firebase.json` with cache-control headers on `flutter_service_worker.js`, `index.html`, and `version.json`.
 
 ---
@@ -88,8 +88,8 @@ Once the deployment completes:
 
 1. **Cache Control Verification:**
    - `flutter_service_worker.js` and `index.html` are configured with `Cache-Control: no-cache, no-store, must-revalidate` to guarantee learners receive new app versions immediately on reload.
-2. **Offline Support:**
-   - Service worker caches core assets for offline usage.
+2. **Connectivity & Synchronization:**
+   - The app currently operates online-first with progressive outbox sync; persistent offline queueing is scheduled for Phase 1.
 3. **PWA Installability:**
    - Verify the install prompt appears on mobile and desktop Chrome ("Install LearningApp").
 4. **Supabase Connectivity:**
@@ -103,6 +103,6 @@ If a production defect is discovered:
 
 ```bash
 # Roll back to previous Firebase Hosting release via Firebase CLI
-firebase hosting:clone learningpwa-928be:previous-release learningpwa-928be:live
+firebase hosting:clone learningapp-2ed8a:previous-release learningapp-2ed8a:live
 ```
 Or open the [Firebase Console](https://console.firebase.google.com/) $\rightarrow$ **Hosting** $\rightarrow$ select the previous release and click **Rollback**.
