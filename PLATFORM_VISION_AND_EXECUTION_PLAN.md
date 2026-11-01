@@ -1,209 +1,181 @@
-# LearningApp — Platform Vision, Critique Response & Full-Scope Execution Plan
+# LearningApp — Platform Vision, Trust Architecture & Full-Scope Execution Plan
 
-**Date:** 2026-11-01 · **Baseline Commit:** `main` (`e538585` + `ARCHITECTURE_REVIEW.md`) · **Status:** Actionable Architecture & Execution Plan
-
----
-
-## 1. Strategic Assessment: Why Shrinking the Scope Is the Wrong Conclusion
-
-The recent review (`ARCHITECTURE_REVIEW.md` and the follow-up critique) makes two very different kinds of claims:
-
-1. **Valid Technical Diagnostics (Keep & Fix Immediately):**
-   - The spaced-repetition scheduler uses a static `[1, 3, 7, 14, 30, 60, 120]` ladder with an ease factor capped at its starting value (`2.5`), ignoring actual elapsed time and forgetting curves.
-   - There is no per-attempt `learning_events` log, which prevents item calibration, forgetting-curve validation, and empirical pass-rate prediction.
-   - MCQ options in simulators (USCIS, DMV, GED) have `correctOptionIndex: 0` without shuffling (`FIX-1`), `increment_user_xp` lacks an `auth.uid()` check (`FIX-2`), 12 legacy client table references drift from `supabase/migrations` (`FIX-3`), web semantics aren't auto-enabled (`FIX-6`), and boot bundle weight can be trimmed (`PERF-1..6`).
-
-2. **Flawed Strategic Prescription (Reject):**
-   - The critique argues that because the repo currently bundles only a handful of static seed lessons while having 81 migrations across taxonomy, exam prep (`EXM`), community Q&A (`ECO-01/02`), educator profiles (`ECO-04`), and adult literacy, you should **"abandon the general platform vision and shrink the app to a single hand-written exam prep tool."**
-
-### Why the "Shrink It" Prescription Misunderstands the Product
-
-1. **Confusing the Engine with the Initial Seed Data**
-   - Saying LearningApp is an "empty product" because `assets/lessons/` only has 8 JSON files is like looking at YouTube in 2005 with 30 test videos and concluding video hosting should be pivoted into a single niche documentary channel.
-   - In the era of structured AI generation, MCP, open educational resources (OER), official government/regulator handbooks, and YouTube transcripts, **raw educational content is abundant and free—what is missing everywhere is the structure, verification, and retention engine that turns scattered content into provable exam/skill mastery.**
-
-2. **Ripping Out Already-Built Foundations Creates Debt, Not Speed**
-   - The hardest multi-tenant schemas are *already built and tested* in those 81 migrations and 40 pgTAP suites:
-     - **Dual-Layer Canonical Taxonomy (`CANONICAL_TAXONOMY_ARCHITECTURE.md`)**: Lets one concept (`asymmetric-encryption`, `ohm-law`, `cvc-short-a`) transfer mastery across degrees, certifications, job roles, and life skills.
-     - **Scoped Curriculum vs. Global Concept State (`LEARNING_ARCHITECTURE_V2.md`)**: Prevents content collision while preserving cross-goal retention credit.
-     - **Open-Book Reference Mastery & Server-Scored Exam Parts (`EXM-01..03`)**: Solves open-book tabbing/navigation speed, blueprint weighting, and tamper-proof scoring.
-     - **Community Q&A, Moderation & Educator Verification (`ECO-00..04`)**: Provides the human-in-the-loop review queue needed to turn AI-drafted or user-imported content into trusted public curricula.
-   - Deleting or freezing these systems would break the exact flywheel that allows the platform to scale content without hiring a $5M textbook publishing team.
-
-3. **Why "Just Use ChatGPT Study Mode / NotebookLM" Doesn't Replace This Platform**
-   - Chatbots are stateless conversation loops. They generate plausible explanations and ad-hoc quizzes in a chat scroll, but they **do not** maintain a longitudinal psychometric model of what you will forget 19 days before your licensing exam, **do not** enforce official exam blueprint weights or reference-book navigation under time pressure, and **cannot** prove with calibrated statistical confidence that you will pass.
-   - When LearningApp exposes its **Evidence Engine + Taxonomy + Exam Blueprints via MCP and BYOK**, ChatGPT, Claude, and Gemini stop being competitors and become **free content & tutoring workers** that plug directly into LearningApp's structured state.
+**Date:** 2026-11-01 · **Baseline Commit:** `main` (`e538585` + `ARCHITECTURE_REVIEW.md`) · **Status:** Converged Full-Scope Architecture & Execution Plan (v2.0)
 
 ---
 
-## 2. How to Keep the Full Vision High-Quality & Free to Operate
+## 1. Strategic Convergence: Big Vision + Hard Trust Boundaries
 
-Instead of shrinking the product, we solve the "scope vs. solo-founder bandwidth" problem through **four architectural mechanisms**:
+Following the technical review (`ARCHITECTURE_REVIEW.md`) and architectural synthesis, the core product strategy is now aligned around **five foundational truths**:
 
-| Challenge Raised in Review | Wrong Fix (Shrinking) | Right Fix (Platform Architecture) |
-|---|---|---|
-| **"Not enough content in the catalog"** | Hand-write 500 questions for one Florida exam and drop everything else | **Universal Ingestion + On-Demand AI/MCP Compiler:** Let users/educators import any official syllabus, PDF, URL, or YouTube video/playlist—or request any goal—and compile it into the `curriculum_manifest` schema with automated psychometric linting. |
-| **"Headline promise ('prove you can pass') isn't backed by data yet"** | Give up on broad learning analytics | **The Efficacy & Proof Engine:** Ship compact `learning_events` + FSRS v5/v6 + Elo/IRT item calibration + Exam-Date Retrievability $R(t)$ so *every* target on the platform gets mathematically rigorous pass-readiness proof. |
-| **"Too many features (Community, Educators, Literacy, Careers, Exams) look empty at launch"** | Delete or abandon Community, Educators, and Taxonomy | **Progressive Surface Activation & Trust Tiers:** Keep all schemas live, but progressively reveal UI surfaces based on context density (e.g., in-context Q&A and educator badges appear automatically when content exists, never as empty ghost towns). |
-| **"Hosting, DB storage, and AI costs will blow up the free tier"** | Restrict who can use the platform | **Zero-Marginal-Cost Architecture:** BYOK + MCP + browser-side AI (`WebLLM`/`transformers.js`) = $0 AI cost; compact 64-byte event rows + local-first SQLite/Hive outbox = 7× DB efficiency; Cloudflare Pages + R2 = $0 static/media egress. |
+1. **This Is a Pipeline & Verification Platform, Not a Closed Textbook Publisher**
+   - Counting bundled JSON questions in `assets/lessons/` was the wrong metric. Raw educational material already exists everywhere (YouTube lectures, official regulator handbooks, PDFs, Anki/Quizlet decks, OER textbooks, and AI generation).
+   - The platform's real moat is **how fast and accurately a learner or educator can turn any source into structured practice, and how reliably the engine proves they can pass the real exam.**
+
+2. **Limits & Maturity Gates Beat Feature Cuts ("Don't Pause What's Already Built")**
+   - Pausing or ripping out built foundations (`CANONICAL_TAXONOMY_ARCHITECTURE.md`, `LEARNING_ARCHITECTURE_V2.md`, `EXM-01..03` open-book reference drills, `ECO-00..04` community Q&A & educator verification, and the Adult Literacy track) causes code rot and painful rewrites later.
+   - Instead of shrinking the scope, every surface stays alive under **explicit maturity levels (`experimental` | `beta` | `stable`), hard free-tier cost limits, feature kill switches, and content trust tiers.**
+
+3. **Where the YouTube Analogy Holds—and Where High-Stakes Exams Require More**
+   - *Where it holds*: Just as YouTube didn't shoot the videos, LearningApp doesn't need to hand-author every course from scratch; it makes importing, structuring, and practicing effortless.
+   - *Where exam prep is higher-stakes*: A bad YouTube video wastes 10 minutes; a bad answer key or hallucinated rule on a contractor, nursing, or citizenship exam can cost someone hundreds of dollars in exam fees and months of delayed employment.
+   - *Architectural resolution*: **Strict separation between "Schedule Anything for Review" (`Personal` Tier) and "Counts Toward Official Exam Pass Proof" (`Verified` & `Calibrated` Tiers).**
+
+4. **"Proof You Can Pass" Must Be Empirically Measured, Not Just Designed**
+   - True pass prediction requires three closed loops working together:
+     1. An append-only **per-attempt answer log (`learning_events`)** driving an evidence-based scheduler (**FSRS**) and item difficulty/discrimination calibration (**Elo / IRT**).
+     2. **Real-world outcome capture (`exam_outcome_reports`)**: Self-reported exam pass/fail + score breakdowns, upgraded to **registry-verified passes** where public license lookup APIs/registries exist (e.g., Florida DBPR contractor licenses) with learner consent.
+     3. **Published Calibration Accuracy**: Measuring and publishing how often learners rated "Ready to Pass" actually pass on exam day.
+
+5. **One Proving-Ground Exam as a Calibration Lab (Not a Scope Cut)**
+   - We use **Pilot A (Florida DBPR Certified Contractor)** and **Pilot B (Florida Insurance)** as the high-rigor **Tier 4 (`Calibrated`) Test Lab** to prove empirical pass prediction with real candidates—while keeping **every other goal, career, literacy skill, and user-imported topic 100% open** across the `Personal`, `Community`, and `Verified` tiers. Because the engine is generic, calibrating the math on one proving-ground exam validates the machinery for the entire platform.
 
 ---
 
-## 3. Pillar 1 — The Efficacy & Proof Engine ("Study That Proves You Can Pass")
+## 2. The 4-Tier Content Trust & Readiness Eligibility Model
 
-The #1 priority where we agree with the technical review is making the core study loop **measurably superior to Anki, Quizlet, and raw LLM chat**. A learner who completes their plan in LearningApp must have **statistical proof of exam readiness**.
+To allow **"import or generate anything on demand"** to coexist safely with **"provable exam readiness,"** every assessment item, flashcard, and lesson block carries a machine-enforced `trust_tier`:
 
-### 3.1 Replace the Fixed Interval Ladder with FSRS + Exam-Date Retrievability
-- **Current Flaw (`lib/models/spaced_repetition.dart`)**:
-  - Uses `intervals = [1, 3, 7, 14, 30, 60, 120]` multiplied by `easeFactor.clamp(1.3, 2.5)`. Because `easeFactor` starts at `2.5`, ease can never increase above its initial value, overdue elapsed days are ignored on successful recall, and a lapse schedules the item 1–2 days out with no intraday relearning step.
-- **Solution**:
-  - Integrate the MIT-licensed [`fsrs`](https://pub.dev/packages/fsrs) Dart package across `ReviewableItem` and `SpacedRepetitionService`.
-  - Track the two true memory variables per item and per `knowledge_concept`:
-    - **Stability ($S$)**: Time in days for recall probability to decay from 100% to 90%.
-    - **Difficulty ($D \in [1, 10]$)**: Inherent complexity of the item for this learner.
-  - **Exam-Date Target Compression**: Allow learners to set an optional `target_exam_date` on any `LearningContext`. As `target_exam_date` approaches, dynamically raise desired retention ($R_{\text{desired}}$ from `0.90` up to `0.95`) and prioritize concepts whose predicted retrievability on exam day $R(t_{\text{exam}}) = (1 + \text{factor} \cdot \frac{t_{\text{exam}}}{S})^{\text{decay}}$ falls below passing threshold.
-  - **Intraday Relearning Queue**: Failed items (`Again` / incorrect MCQ) enter an in-session relearning step (1 min / 10 min) until recalled without cues before graduating back to day-level intervals.
+| Trust Tier | What Qualifies | Scheduled in FSRS? | Counts Toward Official Exam Readiness Proof? | Promotion Bar to Next Tier |
+|---|---|---|---|---|
+| **Tier 1: `personal`** | Any user-imported source (YouTube, PDF, Anki/Quizlet/CSV, or BYOK/MCP AI generation). Labeled **Unverified / Personal Study**; private to creator (`is_public = false`). | **Yes** (full spaced repetition & personal progress tracking) | **No (0% weight in official pass prediction)** — tracked in a separate *Personal Study Mastery* meter so unverified items never inflate official exam readiness. | Author opts to share (`CC BY-SA 4.0`) + passes deterministic psychometric linter (`ContentQualityValidator`) + moderation check (`ECO-02`). |
+| **Tier 2: `community`** | Passed automated quality gates (option length balance, no stem leakage, reading level check) and community/moderator review. | **Yes** | **Low Confidence (capped diagnostic weight, labeled *Community Practice*)** | Mapped to an active `TargetVersion` official blueprint node + verified `source_ref` citation locator + domain Educator sign-off (`ECO-04`). |
+| **Tier 3: `verified`** | Mapped to the official regulator/issuer exam outline (`curriculum_node_concepts`), pinned to an effective date/version, and backed by a verified primary source citation (`content_provenance`). | **Yes** | **Yes (Counts toward Official Blueprint Readiness)** | Accumulates $N \ge 30$ real learner attempts in `learning_events` with positive point-biserial discrimination ($r_{pb} \ge 0.15$) and non-degenerate difficulty ($0.10 \le p \le 0.95$). |
+| **Tier 4: `calibrated`** | `verified` item with empirical difficulty ($b_i$), discrimination ($a_i$), and distractor selection telemetry derived from real learner attempts. | **Yes** | **Yes — High Confidence (Powers Calibrated Predicted Exam Score Range & Pass Probability)** | Continuous monitoring; auto-quarantined back to review queue if regulator syllabus changes or discrimination turns negative ($r_{pb} < 0$). |
 
-### 3.2 Compact, High-Runway `learning_events` Telemetry
-- **Current Flaw**:
-  - No append-only attempt log exists, and storing verbose JSON blobs per attempt would exhaust Supabase's 500 MB free tier quickly.
-- **Solution — Ultra-Compact `learning_events` Schema (~64–80 bytes/row)**:
-  - Use client-generated **UUIDv7** (`id`) for time-ordered idempotency (`ON CONFLICT (id) DO NOTHING`).
-  - Store fixed-width columns instead of multi-kilobyte JSON snapshots:
+---
+
+## 3. Feature Maturity Levels, Free-Tier Limits & Kill Switches
+
+Nothing built in the repository is deleted. Instead, every subsystem is governed by a lightweight `app_feature_gates` configuration (cached locally, overridable server-side without redeploying) with explicit cost guardrails that keep operator spend near **$0/month**:
+
+### 3.1 Hard Free-Tier Cost Rules (Operator Cost = ~$0)
+1. **Runtime AI Is 100% BYOK, MCP, or On-Device**:
+   - Users supply their own API key (Gemini, OpenRouter, OpenAI, Anthropic—stored strictly in local device storage, never on our servers), connect via **MCP** from the AI subscription they already pay for, or use local browser inference (`WebLLM` / `transformers.js`).
+   - Server-side quota tables (`usage_quotas` from `ECO-00C`) guard any platform-sponsored pilot credits.
+2. **Zero Video or Heavy Media Hosting**:
+   - Video lessons use privacy-safe embeds (`youtube-nocookie`, Vimeo, PeerTube) + timestamped retrieval overlays. Any static reference artifacts or archived logs use Cloudflare R2 (zero egress fee).
+3. **Private-by-Default Ingestion**:
+   - Every AI-generated or user-imported deck lands in the user's private overlay (`Tier 1: personal`). Publishing to the public catalog requires passing the deterministic linter and `ECO-02` review queue.
+4. **Local-First Guest Data**:
+   - Anonymous guest progress and `Personal` tier decks live on-device (`hive_ce` / SQLite WASM) until the learner links a permanent account (`linkIdentity`) or enters a server-scored `EXM` session.
+
+### 3.2 Subsystem Maturity & Promotion Matrix
+
+| Subsystem | Initial Maturity | Free-Tier Guardrail & Scope | Kill Switch Key | Bar to Promote to Next Level |
+|---|---|---|---|---|
+| **Core SRS, Learn/Library/Progress, Direct Access** | `stable` | Local-first outbox + compact DB sync | `core.study_loop` (always on) | Upgrade scheduler to FSRS + ship `learning_events` |
+| **EXM Open-Book Reference Drills & Mock Exams (`EXM-01..03`)** | `stable` | Server-scored for `verified`/`calibrated` blueprints | `exm.reference_drills` | Complete 20–50 candidate calibration run on Pilot A/B |
+| **Universal Importer (YouTube, Anki, Quizlet/CSV, PDF, BYOK AI)** | `beta` | Private (`Tier 1`) by default; uses user's BYOK key / client CPU | `ingest.universal_importer` | $\ge 90\%$ parse success rate + zero unflagged broken items |
+| **Adult Literacy & Civic Milestones (USCIS 128, DMV, GED, Phonics)** | `beta` | Bundled offline-capable manifests + browser STT/TTS | `literacy.milestone_tracks` | Expand USCIS pool to all 128 items (2025 spec) + oral recall default + `ensureSemantics()` |
+| **Community Q&A (`ECO-01/02`) & Educator Profiles (`ECO-04`)** | `beta` | Contextual-only UI (no empty forum feeds; compact 1-line prompt when `count == 0`); rate-limited by `usage_quotas` | `eco.community_qa`, `eco.educator_profiles` | $\ge 5$ verified domain educators actively reviewing `Tier 2 -> Tier 3` items |
+| **MCP Server (`OPP-1`: Remote Edge + Local Stdio)** | `experimental` | Read learner state + write `Tier 1` private drafts only; rate-limited via Supabase OAuth 2.1 | `platform.mcp_server` | End-to-end verification in Claude Desktop, ChatGPT, and VS Code |
+| **Physical Skills & Pose Rubric Checklists (`OPP-4`)** | `experimental` | On-device MediaPipe WASM only; zero server video upload | `skills.physical_rubrics` | Validated checklist rubric schema on 1 practical trade/clinical skill exam |
+
+---
+
+## 4. Pillar 1 — The Evidence & Pass-Proof Engine (Build First)
+
+Everything in the platform plugs into the Evidence Engine. It turns practice into **verifiable pass prediction**.
+
+### 4.1 Ultra-Compact `learning_events` Log (~72 Bytes/Row)
+- **Migration (`supabase/migrations/20261103000000_learning_events_and_fsrs.sql`)**:
+  - Uses client-generated **UUIDv7** (`id`) for chronological sorting and idempotent retries (`ON CONFLICT (id) DO NOTHING`).
+  - Avoids bloated JSON columns in favor of compact typed fields so Supabase's 500 MB free database holds **5,000,000+ attempts** before cold archival to Cloudflare R2 Parquet files:
     - `id uuid primary key` (UUIDv7)
-    - `user_id uuid not null`
+    - `user_id uuid not null references auth.users(id) on delete cascade`
     - `context_id uuid`
     - `item_id uuid not null`
-    - `item_type smallint not null` (`1=mcq, 2=flashcard, 3=cloze, 4=ref_drill, 5=oral_stt, 6=word_skill`)
+    - `item_type smallint not null` (`1=mcq, 2=flashcard, 3=cloze, 4=ref_drill, 5=oral_stt, 6=word_skill, 7=numeric, 8=checklist`)
+    - `trust_tier smallint not null` (`1=personal, 2=community, 3=verified, 4=calibrated`)
     - `rating smallint not null` (`1=Again, 2=Hard, 3=Good, 4=Easy`)
     - `score_bps smallint not null` (`0..10000` basis points)
-    - `confidence smallint` (`1=Guess, 2=Unsure, 3=Certain` — powers hypercorrection & calibration curves)
+    - `confidence smallint` (`1=Guess, 2=Unsure, 3=Certain` — measures metacognitive calibration & hypercorrection)
     - `latency_ms integer not null`
-    - `option_permutation smallint` (compact encoding of the 24 possible 4-option shuffle orders `0..23`, replacing a JSON array!)
-    - `selected_index smallint` (authored option index chosen, enabling distractor analytics)
+    - `option_permutation smallint` (`0..23` Lehmer code encoding the exact 4-option presentation order in 2 bytes)
+    - `selected_option_id smallint` (identifies which distractor was chosen)
     - `stability_before real`, `stability_after real`, `difficulty_after real`
     - `occurred_at timestamptz not null default now()`
-  - **Capacity Math**: At ~72 bytes per row, 500 MB holds **~5 million+ learning events** on the free tier before archiving older raw logs to Cloudflare R2 Parquet/NDJSON files.
 
-### 3.3 Atomic `record_learning_events(jsonb)` RPC + Offline Outbox
-- **Solution**:
-  - Build a local-first outbox (`hive_ce` / SQLite WASM) that immediately updates local FSRS state and queues compact event payloads.
-  - Sync batches via a single `record_learning_events(p_events jsonb)` RPC that:
-    1. Inserts into `public.learning_events` (`ON CONFLICT (id) DO NOTHING`).
-    2. Atomically updates `review_items` and `user_concept_state` only when `occurred_at > last_event_at` (eliminating offline replay double-counting and multi-tab races).
-    3. Updates aggregate item psychometrics (`attempt_count`, `correct_count`, online Elo difficulty rating, per-distractor selection counts) so poor items are automatically flagged for review.
+### 4.2 FSRS v5/v6 Scheduler + Exam-Date Retrievability $R(t)$
+- Replace the static `[1, 3, 7, 14, 30, 60, 120]` interval ladder in `lib/models/spaced_repetition.dart` with the MIT [`fsrs`](https://pub.dev/packages/fsrs) package:
+  - **True Forgetting Curve**: Every `ReviewableItem` and `user_concept_state` tracks **Stability ($S$)** and **Difficulty ($D$)**, allowing instantaneous calculation of current recall probability $R(t)$ and **Exam-Day Recall Probability $R(t_{\text{exam}})$**.
+  - **Intraday Relearning Queue**: Lapsed items (`Again`) enter an in-session relearning queue (`1m → 10m`) rather than disappearing for 1–2 days.
+  - **Daily Plan Balancing**: Instead of starving reviews behind new material, blend due reviews whose $R(t) < R_{\text{desired}}$ with forward progress within the learner's daily time budget.
 
-### 3.4 Calibrated Readiness Score ("Proof You Can Pass")
-- Replace lifetime cumulative accuracy (`weighted_correct / weighted_total`, which never forgets) with a **3-Factor Exam Readiness Proof**:
-  1. **Blueprint Coverage**: % of required `curriculum_node_concepts` with $\ge 3$ spaced retrievals.
-  2. **Predicted Exam-Day Recall $\bar{R}(t_{\text{exam}})$**: Blueprint-weighted mean FSRS retrievability across all target concepts.
-  3. **Timed Simulation & Reference Speed (`EXM`)**: Performance under realistic time-per-item and open-book lookup constraints.
-- Keep the honest heuristic labels from `UI_ARCHITECTURE_LOCKED.md` until a learner crosses the minimum evidence threshold, then display their **Calibrated Readiness Band + Predicted Score Range**.
+### 4.3 Atomic `record_learning_events(jsonb)` RPC + Item Calibration
+- A single idempotent RPC writes `learning_events` and atomically updates:
+  1. `review_items` (FSRS stability, difficulty, due date, lapses).
+  2. `user_concept_state` (separating `verified_retrievability` from `personal_retrievability` so `Tier 1` items never spoof official exam readiness).
+  3. `item_psychometrics` (online **Elo difficulty update** on every attempt + distractor selection counters + point-biserial discrimination $r_{pb}$). Once an item in `Tier 3 (verified)` reaches $N \ge 30$ attempts with $r_{pb} \ge 0.15$, it automatically qualifies for `Tier 4 (calibrated)`.
 
----
-
-## 4. Pillar 2 — Universal Content, YouTube & On-Demand AI Pipeline
-
-To make "empty catalog" impossible without narrowing the platform, LearningApp should treat **content creation and organization as an automated, user-triggerable pipeline**.
-
-### 4.1 Four Content Channels Feeding One Canonical Schema
-All content—regardless of origin—compiles into the same `curriculum_manifest.schema.json` and `v2` primitives (`knowledge_concepts`, `lesson_blocks`, `assessment_items`, `flashcards`, `content_provenance`):
-
-1. **Channel A — Official & Regulator Blueprints (Pre-Seeded & Versioned)**
-   - Official taxonomies (BLS/O\*NET/CIP), state licensing blueprints (FL DBPR Contractors, FL DFS Insurance, Security+, NCLEX), and civic/life milestones (full 128-question USCIS 2025 pool + oral STT mode, state DMV manuals, GED bridge).
-2. **Channel B — YouTube & Open Web Resource Overlay ("Structured Practice Over Any Video/Doc")**
-   - Learners or educators paste a YouTube URL/playlist, open textbook chapter, or official handbook PDF/URL into `PersonalCurriculumOverlay` or the Course Builder.
-   - The app embeds the video via privacy-safe `youtube-nocookie` / oEmbed, extracts the transcript/sections, maps timestamps to `knowledge_concepts`, and generates **interactive timestamp checkpoints** (retrieval questions that pause the video at key concepts and schedule those concepts into FSRS).
-   - Zero video hosting or bandwidth cost to LearningApp.
-3. **Channel C — On-Demand AI Generation via BYOK & Browser AI ($0 Operator Cost)**
-   - Upgrade `AiPromptService` from copy-paste prompts to **direct runtime generation** when the user provides their own API key (Gemini, OpenRouter, OpenAI, Anthropic—stored strictly in local device storage) or uses on-device browser AI (`WebLLM` / Chrome Built-in AI).
-   - Enforce **JSON Schema Structured Outputs** matching `curriculum_manifest.schema.json` so users can request *any* course, lesson, or practice drill on demand and have it compiled directly into their private study overlay (`user_id = auth.uid(), is_public = false`).
-4. **Channel D — MCP Server (`OPP-1`) for External AI Assistants**
-   - Expose LearningApp's catalog, learner state (`get_due_items`, `get_weak_concepts`), and draft ingestion (`create_lesson_draft`, `submit_review`) via a lightweight Supabase Edge Function MCP Server (using Supabase Auth OAuth 2.1) and local `dart_mcp` stdio server.
-   - Users studying inside ChatGPT, Claude, or VS Code can say *"Build me a 30-question drill on my weakest Florida General Contractor concepts"* and have it land directly in their LearningApp queue with full provenance (`origin = mcp:<client>`).
-
-### 4.2 Deterministic Quality Gate (Keeping AI & Community Content High-Quality)
-To prevent low-quality AI slop from polluting study sessions, every imported or generated item runs through a **Deterministic Psychometric Validator** in Dart (`lib/services/content_quality_validator.dart`) before activation:
-- **Structure (`FIX-1`)**: Options stored with per-option `{text, is_correct, rationale, misconception_tag}` rather than raw positional indices; shuffled deterministically at render time.
-- **Cue Detection**: Rejects items where the correct option is $>1.4\times$ longer than the mean distractor length, contains "all/none of the above", or leaks stem keywords.
-- **Grounding Check**: For licensing/exam targets, requires a `source_ref` citation locator + quote excerpt.
-- **Literacy Grade Guard**: Computes Flesch-Kincaid / SCOWL lexicon coverage (`assets/lexicons/en_us_scowl_roots.txt`) so adult literacy and ESL items never exceed target reading complexity.
-- **Community Promotion Flywheel**: User/AI-generated content starts **private (`Tier 1`)**. If the author opts to share it (`CC BY-SA 4.0`) and it passes deterministic validation + educator/moderator review (`ECO-02`/`ECO-04`) + empirical item discrimination ($r_{pb} > 0.20$ after 30+ attempts), it can be promoted to the shared community catalog (`Tier 2`).
+### 4.4 Real-World Outcome Loop & Published Pass Accuracy (`exam_outcome_reports`)
+- **Closing the Loop with Real Candidates**:
+  - When a learner's `target_exam_date` passes (or anytime from the Target Detail / Progress screen), prompt them to log their official exam result:
+    - `outcome_status` (`passed`, `failed`, `rescheduled`)
+    - `reported_score` / domain sub-scores
+    - `readiness_snapshot_at_exam` (automatically snapshotted from their `Tier 3/4` predicted exam score and FSRS $\bar{R}(t_{\text{exam}})$ on test day)
+    - `verification_method`:
+      - `self_reported` (default)
+      - `score_report_redacted_hash` (optional verification)
+      - `public_registry_verified` (for state licenses with public lookup registries such as **Florida DBPR** or **Florida DFS**, learners can optionally consent to verify their issued license number against the state roster)
+  - **Published Calibration Table**: Display an honest, live **Readiness Calibration Card** showing predicted pass probability vs. observed pass rate across cohorts (e.g., Pilot A Florida Contractor test lab).
 
 ---
 
-## 5. Pillar 3 — Progressive Guardrails & Rollout Rules (Keeping Everything Without Clutter)
+## 5. Pillar 2 — Universal Single-Pipeline Importer & Declarative Exam Profiles
 
-We do **not** delete features; instead, we define **runtime guardrails and visibility rules** so the app feels focused, fast, and complete at every stage of growth:
+### 5.1 One Import Pipeline for Every Source
+All external sources pass through a single **Source-to-Manifest Compiler (`lib/services/ingestion/universal_import_pipeline.dart`)** that outputs canonical `curriculum_manifest.schema.json` packages:
 
-1. **Zero-Ghost-Town UI Rule for Community & Educators (`ECO-01..04`)**
-   - In-context Q&A (`InContextQaSheet`) and Educator badges (`educator_profiles`) remain first-class features, but if a concept has `0` questions, show a compact single-line prompt (*"Ask a question or attach a study note for this concept"*) rather than an empty forum feed.
-2. **Tiered Provenance Badges (Already Aligned with `ECO-00` & `P2`)**
-   - Every target and item clearly displays its provenance tier:
-     - **Official / Verified Blueprint** (Regulator-cited, version-locked)
-     - **Educator Reviewed** (Verified domain educator sign-off via `ECO-04`)
-     - **Personal / AI Study Overlay** (Generated on-demand or imported by the learner—clearly scoped to their private overlay until reviewed)
-3. **Free-Tier Resource Quotas (Already Built in `ECO-00C`, Now Wired to Runtime)**
-   - Keep the existing `usage_quotas` and rate-limiting tables active for server-side actions while making BYOK, local FSRS scheduling, and YouTube embeds completely unmetered.
+1. **YouTube URL / Playlist Importer (Zero Hosting Cost)**:
+   - Uses `youtube-nocookie` embed + transcript/timestamp extraction.
+   - When the learner provides a Gemini API BYOK key, passes the public YouTube URL directly to Gemini 2.5 Flash/Pro with `responseSchema: curriculumManifestSchema` to generate **timestamped retrieval checkpoints** mapped to target concepts.
+2. **Anki (`.apkg` / TSV), Quizlet & CSV Deck Importer**:
+   - Parses existing flashcards/questions directly in the browser, normalizes cloze/MCQ/term cards into `v2` primitives, maps them to the active target's `knowledge_concepts` via lexical/embedding match, runs `ContentQualityValidator`, and assigns `Tier 1 (personal)`.
+3. **Official Outlines, Regulator Handbooks & PDFs**:
+   - Extracts section hierarchies + page/table locators (`source_ref`), generating cited practice items and `EXM` open-book reference navigation drills (`R1–R4`).
+
+### 5.2 Declarative Exam Profiles (`exam_profile_spec` — Configuration, Not Custom Code)
+Adding a new licensing exam, certification, or civic test must **never** require writing a new Dart screen or custom service. Every exam target is defined by a declarative JSON/SQL profile (`learning_target_exam_profiles`):
+- `delivery_mode`: `standard_mcq` | `open_book_reference` | `cat_adaptive` | `oral_interview_stt` | `calculation_numeric` | `practical_checklist`
+- `timing_policy`: total minutes, per-part locks, pause rules (`exam_practice_elapsed_clock`)
+- `scoring_policy`: cut score (e.g. `70%`), domain weights, early-stop rule (e.g. USCIS 2025: 128 pool, 20 asked, stop at 12 correct or 9 incorrect), critical-fail checklist steps
+- `allowed_references`: array of `exam_reference_manifest` IDs (for open-book exams)
+- `readiness_policy`: minimum `Tier 3/4` blueprint coverage and target $\bar{R}(t_{\text{exam}})$ required to display "Ready to Pass"
 
 ---
 
-## 6. Pillar 4 — Complete Technical Remediation Matrix (`FIX-1`..`FIX-14` & `ARCH-1`..`ARCH-10`)
-
-Every concrete bug and bottleneck identified in `ARCHITECTURE_REVIEW.md` is resolved below **without** shrinking the application's scope.
+## 6. Pillar 3 — Sequenced Engineering Roadmap (`FIX-1`..`FIX-14` + Core Engine)
 
 ### Phase 0 — Security, Validity & Accessibility Hotfixes (Days 1–5)
+1. **`FIX-1` (Eliminate Option-A Bias & Shuffle Deterministically)**:
+   - Implement seeded Fisher-Yates shuffling (`Random(Object.hash(sessionId, itemId, attemptCount))`) across `McqContent`, `McqOptions`, assessment renderer, and USCIS/DMV/GED simulators.
+   - Store per-option `{text, is_correct, rationale, misconception_tag}` and record the 2-byte `option_permutation` (`0..23`) + `selected_option_id`.
+2. **`FIX-2` (Harden `increment_user_xp` RPC)**:
+   - Append-only migration enforcing `auth.uid() = p_user_id`, `p_xp_amount BETWEEN 1 AND 500`, `SET search_path = public, pg_temp`, and revoking execute from `anon, public`.
+3. **`FIX-3` (Client ↔ Migration Schema Contract Check)**:
+   - Reconcile the 12 legacy table references (`database/` vs `supabase/migrations/`), remove dead legacy calls, and add `tool/verify_client_schema_contract.dart` in CI so every `.from()` and `.rpc()` in `lib/` is verified against `supabase/migrations/`.
+4. **`FIX-6` (Web Screen-Reader Semantics)**:
+   - Call `SemanticsBinding.instance.ensureSemantics()` at web startup in `lib/main.dart`.
+5. **`FIX-7` & `FIX-8` (UTC Timestamps & Error Visibility in SRS)**:
+   - Normalize all timestamp writes to `.toUtc().toIso8601String()`, bucket days in local time, and replace silent `catch (_) { return []; }` in `SpacedRepetitionService` with typed error propagation + local cache fallback.
+6. **`FIX-10` & `FIX-13` (Lints, Async Context Guards & RLS Initplan Optimization)**:
+   - Enable `flutter_lints`, declare `crypto`, `json_annotation`, and `timezone` in `pubspec.yaml`, fix the 17 `use_build_context_synchronously` sites, pin `search_path` on remaining `SECURITY DEFINER` RPCs, and wrap `auth.uid()` as `(select auth.uid())` in hot RLS policies.
 
-| Review ID | Issue | Concrete Fix (Preserving Full Architecture) |
-|---|---|---|
-| **FIX-1** | Correct answer is always Option A (`correctOptionIndex: 0`) in USCIS/DMV/GED simulators; MCQs don't shuffle | Add deterministic seeded shuffling (`Random(Object.hash(sessionId, itemId, attemptCount))`) in `McqContent`, `McqOptions`, assessment renderer, and USCIS/DMV/GED simulators. Record `option_permutation` and `selected_index`. Expand `officialUscisCivicsCatalog` to all 128 questions and enable oral STT free-recall mode by default. |
-| **FIX-2** | `increment_user_xp(p_user_id, p_xp_amount)` is `SECURITY DEFINER` without checking `auth.uid()` | Add a new append-only migration (`supabase/migrations/20261102000000_harden_xp_and_rls_initplans.sql`) that enforces `auth.uid() = p_user_id`, `p_xp_amount BETWEEN 1 AND 500`, `SET search_path = public, pg_temp`, and revokes execute from `anon, public`. |
-| **FIX-3** | 12 legacy tables and 2 RPCs called in `lib/` are missing from `supabase/migrations/` | Reconcile legacy `career_paths`/`skills` references into the canonical v2 taxonomy/target equivalents or add a clean compatibility view migration, archive the legacy `database/` directory, and add `tool/verify_client_schema_contract.dart` in CI. |
-| **FIX-6** | Screen readers on Flutter Web only see "Enable accessibility" button | Call `SemanticsBinding.instance.ensureSemantics()` on web initialization in `lib/main.dart` so screen readers and Playwright/DevTools MCP snapshots work immediately on boot. |
-| **FIX-7** | Timezone-naive `DateTime.now().toIso8601String()` shifts due dates by UTC offset | Standardize all DB writes to `.toUtc().toIso8601String()` and compute "due today" buckets using local midnight boundaries in a shared `TimeUtils` helper. |
-| **FIX-8** | `SpacedRepetitionService.getDueItems()` catches errors and returns `[]` ("nothing due") | Propagate typed errors (`AsyncValue.error`) to the UI with a retry banner and fall back to the local Hive/outbox cache when offline. |
-| **FIX-10** | `flutter_lints` disabled in `analysis_options.yaml`; 17 `use_build_context_synchronously` warnings; undeclared transitive imports | Enable `include: package:flutter_lints/flutter.yaml`, explicitly declare `crypto`, `json_annotation`, and `timezone` in `pubspec.yaml`, and add `if (!context.mounted) return;` guards across all 17 async `BuildContext` call sites. |
-| **FIX-12 / FIX-13** | Non-EXM `assessment_items.scoring_spec` readable by `anon`; bare `auth.uid()` in RLS policies; unpinned `search_path` in 2 functions | Pin `SET search_path = public, pg_temp` on `finalize_official_taxonomy_import` and `resolve_taxonomy_lineage`; wrap `auth.uid()` as `(select auth.uid())` on high-traffic RLS policies (`review_items`, `user_concept_state`, `learning_contexts`); move diagnostic/exam answer key evaluation behind server-side scoring RPCs while keeping practice explanations accessible post-attempt. |
+### Phase 1 — Evidence Engine, FSRS & Proving-Ground Calibration Lab (Weeks 2–3)
+1. **Ship `learning_events` + `record_learning_events` RPC + `item_psychometrics`**.
+2. **Replace fixed interval ladder with `package:fsrs`** and separate `Verified Readiness` (`Tier 3/4`) from `Personal Study Progress` (`Tier 1/2`).
+3. **Ship `exam_outcome_reports`** (self-reported + optional FL DBPR / state registry verification) and the **Calibration Accuracy Card**.
+4. **Seed Pilot A (FL DBPR Certified Contractor) / Pilot B (FL Insurance)** with 300–500 cited, blueprint-mapped `Tier 3 (verified)` items as the live calibration lab while keeping all other domains open.
 
-### Phase 1 — Web Delivery Speed, PWA & Zero-Cost Hosting (Days 6–12)
+### Phase 2 — Universal Import Pipeline, BYOK AI & MCP Server (Weeks 4–5)
+1. **Universal Importer (`YouTube URL + timestamps`, `Anki .apkg / Quizlet / CSV`, `PDF / Official Outlines`)** compiling into `Tier 1 (personal)` manifests with automated `ContentQualityValidator` checks.
+2. **Runtime BYOK AI Generation** (Gemini / OpenRouter / OpenAI / WebLLM) with strict JSON Schema output and citation locators.
+3. **MCP Server (`OPP-1`)** on Supabase Edge Functions (OAuth 2.1) + local `dart_mcp` stdio server.
 
-| Review ID | Issue | Concrete Fix |
-|---|---|---|
-| **FIX-4 / PERF-1** | Deprecated `flutter_service_worker.js` manual registration throws `InvalidStateError` in `web/index.html`; blocking `<script src="main.dart.js">` | Replace manual loader in `web/index.html` with `{{flutter_bootstrap_js}}` and a clean Workbox/cache-first app-shell asset worker for offline study. |
-| **PERF-2 / PERF-5** | 7.35 MB `main.dart.js` and 20 KaTeX fonts loaded eagerly at boot | Add `deferred as` imports for heavy secondary modules (Moderation console, Course Builder, Taxonomy Explorer, EXM Portability Export, KaTeX math renderer) so the initial `Learn` screen boots in a fraction of the payload. |
-| **PERF-4** | Runtime Google Fonts fetching (5 families) slows boot and breaks offline | Bundle `Inter` and `JetBrains Mono` variable fonts in `assets/fonts/` and set `GoogleFonts.config.allowRuntimeFetching = false`. |
-| **PERF-6 / ARCH-8** | `flutter build web --wasm` blocked by `connectivity_plus 3.0.6` and legacy `package:js` | Upgrade `connectivity_plus` to `^7.0.0` and `supabase_flutter` to `^2.18.3` so `--wasm` (Skwasm) compiles cleanly. |
-| **FIX-5 / FIX-11 / FIX-14** | `.env` bundled in `pubspec.yaml` assets; Firebase push notifications non-functional on web; missing CSP/security headers | Remove `.env` from `pubspec.yaml` assets in favor of `--dart-define-from-file`; replace broken FCM stub with standard **Web Push (VAPID)** via a Supabase Edge Function; add `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` headers. |
-| **ARCH-2 / FIX-9** | `ScopeResolver` makes ~35 round-trip queries; unpaginated `.select()` calls | Collapse `ScopeResolver.resolve()` into a single `resolve_learning_scope(p_context_id uuid)` PostgreSQL RPC (as envisioned in `LEARNING_ARCHITECTURE_V2.md §12`), cutting 35 network round-trips down to 1. |
-
-### Phase 2 — The Evidence Engine (`learning_events` + FSRS + Offline Outbox) (Weeks 3–4)
-
-1. **Migration (`20261103000000_learning_events_and_fsrs_state.sql`)**:
-   - Create compact `public.learning_events` table + `record_learning_events(jsonb)` atomic RPC.
-   - Add FSRS state columns (`stability real`, `difficulty real`, `elapsed_days integer`, `scheduled_days integer`, `lapses integer`, `state smallint`) to `review_items` and `user_concept_state` with non-destructive backfill from existing `repetition_level` and `ease_factor`.
-2. **Client FSRS & Outbox Integration**:
-   - Upgrade `ReviewableItem.processReview()` to run FSRS (`package:fsrs`) while preserving backwards-compatible getters.
-   - Route all flashcard, MCQ, word-learning, and drill completions through a unified `LearningEventOutboxService` (`hive_ce`) so offline reviews never get lost and sync idempotently on reconnect.
-3. **Daily Plan & Overdue Retrievability Guard**:
-   - Enhance `NextActionEngine` so it respects `UI_ARCHITECTURE_LOCKED.md` while surfacing an urgent review batch whenever predicted retrievability $R(t)$ on core target concepts drops below `0.75`.
-
-### Phase 3 — On-Demand AI (BYOK + MCP) & YouTube/Resource Compiler (Weeks 5–7)
-
-1. **Runtime BYOK + Browser AI Studio (`lib/services/ai_runtime_service.dart`)**:
-   - Let users optionally configure a local-only API key (Gemini / OpenRouter / OpenAI) or use local browser inference to generate structured `curriculum_manifest` lessons, flashcards, and blueprint-aligned MCQs directly in the app—validated automatically by `ContentQualityValidator`.
-2. **YouTube & Document Practice Overlay**:
-   - Allow pasting any YouTube URL or official PDF/webpage into a Goal or Personal Curriculum Overlay to extract concepts, attach timestamped retrieval questions, and schedule them into FSRS.
-3. **MCP Server (`supabase/functions/mcp-server` + `tool/mcp_stdio_server.dart`)**:
-   - Expose catalog search, learner weak-concept state, due reviews, and validated draft creation to external AI assistants via Supabase OAuth 2.1.
-
-### Phase 4 — Open Ecosystem & Fork Kit (`LICENSE` + Content Portability) (Week 8)
-
-1. **Code & Content Licensing (`FIX-12` / `ARCH-10`)**:
-   - Add root `LICENSE` (**Apache-2.0** for code) + `TRADEMARK_POLICY.md` (protecting the LearningApp name and verified badges) + update `TERMS_OF_SERVICE.md` so public community-contributed curricula use **CC BY-SA 4.0**, enabling the VS Code / Code-OSS ecosystem model without giving away brand trust.
-
----
-
-## 7. Summary of Position
-
-- **Do not shrink the vision.** Your architecture (global concept graph + scoped curricula + verified licensing pathways + open-book reference drills + adult literacy + community/educator moderation) is already built and is what separates LearningApp from disposable AI flashcard toys.
-- **Fix the engine, automate content ingestion, and tighten the 14 defects.** By upgrading the scheduler to FSRS with compact `learning_events` telemetry, collapsing `ScopeResolver` into 1 RPC, fixing the 14 concrete bugs (`FIX-1`..`FIX-14`), and wiring BYOK/MCP + YouTube/resource ingestion into the existing manifest pipeline, the platform stays **100% true to its full vision, near-$0 to run, and empirically stronger than commercial prep tools.**
+### Phase 3 — Web Speed, WASM, PWA Offline & Open Ecosystem (Weeks 6–7)
+1. **Web Bundle & WASM (`FIX-4`, `FIX-5`, `FIX-9`, `FIX-11`, `FIX-14`, `PERF-1..8`)**:
+   - Switch `web/index.html` to `{{flutter_bootstrap_js}}`, bundle `Inter` and `JetBrains Mono` locally (`allowRuntimeFetching = false`), add `deferred as` lazy loading for secondary screens/KaTeX, upgrade `connectivity_plus` to unblock `flutter build web --wasm`, collapse `ScopeResolver` into 1 RPC (`resolve_learning_scope`), and replace unused FCM stubs with VAPID Web Push.
+2. **Open-Core Licensing (`ARCH-10`)**:
+   - Commit `LICENSE` (**Apache-2.0**), `TRADEMARK_POLICY.md`, and update `TERMS_OF_SERVICE.md` for **CC BY-SA 4.0** community content portability.
