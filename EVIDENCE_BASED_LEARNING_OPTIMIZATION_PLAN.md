@@ -1,227 +1,247 @@
-# LearningApp — Evidence-Based Learning Science & Cold-Start Optimization Plan
+# LearningApp — Evidence-Based Learning Science & Instructional Optimization Plan
 
-**Date:** 2026-11-01 · **Scope:** Cold-Start Efficacy ($N=0$ User Data), Content-Modality Routing, and Research-Backed App Configuration
-**Research Directory:** `/docs/learning_science/` · **Status:** Master Architectural & Scientific Plan for Review
-
----
-
-## 1. Executive Summary: Solving the Cold-Start Problem with Science
-
-At launch—and whenever a learner imports a new topic, YouTube lecture, or niche licensing syllabus—**we will not have thousands of historical user attempts to empirically calibrate question difficulty, forgetting curves, or pass probability.**
-
-If the app relies on crowd data before it can work well, early users get a weak experience. Conversely, if the app uses a "one-size-fits-all" study loop (standard flashcards + 4-option multiple choice + a fixed interval ladder), it violates fundamental findings in cognitive psychology:
-- **Pre-readers and emergent adult readers** cannot learn grapheme-phoneme mappings through text-heavy cards or multi-day initial intervals.
-- **Open-book licensing candidates** (e.g., Florida DBPR Contractors, NEC Electrical, PE) fail when they try to memorize 1,200-page code tables instead of training **mental indexing + timed lookup fluency**—or when they look up everything and run out of time.
-- **Conceptual & technical learners** (e.g., Security+, Nursing, Insurance, CS) develop an **illusion of competence** when they recognize familiar phrasing in blocked MCQs, then fail on exam day when tested on near-neighbor confusable concepts or novel scenarios.
-- **Calculation & procedural learners** suffer working-memory overload when thrown straight into unassisted multi-step word problems without **worked-example fading**.
-- **Oral interview candidates** (e.g., USCIS 128 Civics & N-400) fail when they practice visual recognition (MCQ) for a test that requires **uncued acoustic comprehension and spoken production**.
-
-### The Architectural Solution
-We replace "wait for user data" and "one-size-fits-all study" with a **3-Layer Scientific Optimization Architecture**:
-1. **7 Content-Modality Pedagogical Engines (`PedagogicalModality`)**: Content is classified at ingestion time by the *cognitive mechanism required to master it*, and the app automatically reconfigures its delivery UI, scaffolding progression, spacing parameters, and mastery rules per modality.
-2. **Research-Backed Cold-Start Psychometric Priors ($N=0$)**: Before a single user answers an item, its initial FSRS stability ($S_0$), difficulty ($D_0$), and IRT difficulty prior ($b_0$) are computed deterministically from linguistic, structural, and cognitive-load features grounded in published educational measurement research—and blended smoothly into empirical data via **Empirical Bayes Shrinkage** as attempts accumulate ($N=1 \to 30+$).
-3. **Multi-Angle Concept Triangulation & Modality-Specific Readiness Proof**: A concept is never marked "Exam-Ready" from a single recognition hit; it must satisfy the verification criteria of its modality (e.g., *Definition + Contrastive Boundary + Scenario Application* for conceptual knowledge; *$\le 45\text{s}$ Table Lookup Accuracy* for open-book code items).
+**Date:** 2026-11-01 · **Authoritative Baseline:** `main` at `e538585` (PR `#135`)
+**Concurrent Engineering Workstream:** `feature/arch-review-phase-0` (PR `#136`, kept strictly independent)
+**Research Directory:** `/docs/learning_science/` · **Status:** Reconciled Root Specification (v2.0)
 
 ---
 
-## 2. The 7 Pedagogical Modalities (Replacing One-Size-Fits-All)
+## 1. Architectural Baseline & Honest Implementation Audit
 
-Every `knowledge_concept`, `lesson_block`, and `assessment_item` in LearningApp maps to one of **7 research-verified pedagogical modalities**. Each modality governs how content is structured on import, how the Study View renders it, how FSRS schedules it, and how readiness is proven.
+This plan builds directly on the authoritative `main` branch (`e538585`) without assuming unmerged changes from `feature/arch-review-phase-0` (PR `#136`) and without dismantling any existing platform foundation.
 
-| # | Modality Slug | Target Content & Learners | Primary Cognitive Bottleneck | Core Scientific Literature |
-|---|---|---|---|---|
-| **M1** | `orthographic_phonological` | Pre-readers, adult literacy, ESL phonics, decoding & sight/survival words | Sub-lexical grapheme-phoneme mapping & auditory-visual binding | Ehri (2005); Share (1995) *Self-Teaching Hypothesis*; Castles, Rastle & Nation (2018); National Reading Panel (2000) |
-| **M2** | `open_book_index_navigation` | Open-book licensing & code exams (FL Contractor, NEC, IBC, OSHA, PE) | Information foraging speed, book routing, index traversal & exception parsing under time pressure | Pirolli & Card (1999) *Information Foraging*; Sparrow et al. (2011) *Transactive Memory*; Sweller (1988) |
-| **M3** | `conceptual_schema_discrimination` | Technical vocabulary, domain theory, law/policy rules (Security+, Insurance, Nursing, CS) | Confusing near-neighbor concepts; surface-stem memorization without deep schema transfer | Roediger & Karpicke (2006); Rohrer & Taylor (2007) *Interleaving*; Chi et al. (1994) *Self-Explanation*; Butterfield & Metcalfe (2001) |
-| **M4** | `procedural_calculation_fading` | Trade math, construction estimating, clinical dosage, engineering, GED math, currency | Working-memory overload ($>4$ interacting elements) during multi-step setup & unit conversion | Sweller & Cooper (1985) *Worked-Example Effect*; Renkl, Atkinson & Große (2004) *Backward Fading*; Kalyuga et al. (2003) |
-| **M5** | `oral_production_fluency` | Oral exams & interviews (USCIS 128 Civics, N-400, clinical handoffs, emergency callouts) | Transfer mismatch: visual recognition (MCQ) does not transfer to uncued spoken retrieval | Morris, Bransford & Franks (1977) *Transfer-Appropriate Processing*; MacLeod et al. (2010) *Production Effect* |
-| **M6** | `perceptual_pattern_classification` | DMV road signs, blueprint symbols, hazard recognition, clinical rhythms/labs | Slow verbal rule translation instead of fast, automatic visual feature extraction | Kellman & Garrigan (2009) *Perceptual Learning Modules (PLMs)*; Gibson (1969) |
-| **M7** | `critical_step_checklist` | Practical skills, safety procedures, CNA clinical tasks, CDL pre-trip, food safety | Omission of high-consequence safety steps or sequence inversions under stress | Gawande (2009); Hales & Pronovost (2006) *Checklist Science*; Ericsson (2008) *Deliberate Practice* |
+To keep engineering and scientific claims rigorous, we explicitly distinguish **what is already implemented and tested on `main`**, **what exists as partial implementation or architectural specification**, and **what requires new implementation and real-world empirical validation**:
 
----
-
-## 3. Deep-Dive: Scientific Delivery & Configuration Rules per Modality
-
-### 3.1 Modality M1 — `orthographic_phonological` (Pre-Readers & Adult Literacy)
-* **Why One-Size-Fits-All Fails**: Standard flashcards assume the user can read the prompt and schedule a 1–3 day gap after a single hit. Per **Ehri's Phase Theory (2005)** and **Share's Self-Teaching Hypothesis (1995)**, orthographic mapping requires **high-density phonological recoding trials** with immediate auditory-visual feedback before consolidating into sight-word memory.
-* **App & Content Configuration Rules**:
-  1. **Zero-Text-Assumption Chrome**: All instructions and stems auto-play via TTS/recorded phoneme audio with synchronized grapheme highlighting; visual UI uses high-contrast icons and $\ge 56\text{dp}$ touch targets (`LITERACY_ACCESSIBILITY_PLAN.md`).
-  2. **Minimal-Pair Contrastive Foils**: Distractors are never random words; they are generated from **phonemic confusion matrices** (e.g., voicing pairs `/b/`–`/p/`, nasal `/m/`–`/n/`, short vowel shifts `cat`–`cut`–`cot`) so every wrong tap diagnoses the exact phoneme or grapheme confusion.
-  3. **Strict Decodability Gate (95% Rule)**: Decodable stories and sentence items only unlock when $\ge 95\%$ of their constituent graphemes and sight words have reached FSRS `Familiar` state in the learner's profile (preventing guessing from pictures or context).
-  4. **FSRS Cold-Start Priors**: Short initial stability ($S_0 = 0.2\text{ days}$, intraday review loop), high desired retention ($R_{\text{desired}} = 0.95$), and mandatory **3-modality verification** (`Hear -> Tap Grapheme`, `See Grapheme -> Speak/Blend`, `Trace/Build Word`) before graduating to multi-day intervals.
-
-### 3.2 Modality M2 — `open_book_index_navigation` (Open-Book Reference & Code Exams)
-* **Why One-Size-Fits-All Fails**: In open-book exams (e.g., Florida DBPR Certified Contractor with 9+ reference volumes, or NEC Electrical exams), candidates fail for two opposite reasons:
-  1. They treat it like a closed-book exam and try to memorize thousands of tabular numbers (impossible cognitive load).
-  2. They treat it as "I can look everything up on test day," spending 3–4 minutes hunting through the wrong book when the exam only allows 90–120 seconds per question.
-* **Scientific Principle — Transactive Memory & Information Foraging (Sparrow et al., 2011; Pirolli & Card, 1999)**:
-  - High performers on open-book exams do **not** memorize the payload of the tables; they memorize the **Index & Routing Ontology** (which volume owns the topic, the exact keyword taxonomy of the index, and the structure of the exceptions) and train **timed retrieval foraging**.
-* **App & Content Configuration Rules**:
-  1. **Mandatory Split-Memory Tagging (`memory_division`)**: Every concept and item in an open-book target is tagged at ingestion into one of two tracks:
-     - **`internalize_cold` (~30% of blueprint)**: Core definitions, book-to-domain routing ("Which volume governs truss bracing vs. concrete formwork?"), high-frequency statutory deadlines (e.g., Florida Construction Lien Law 45-day Notice to Owner / 90-day Claim of Lien), and core math formulas. Practiced **closed-book** via FSRS.
-     - **`lookup_fluency` (~70% of blueprint)**: Specific code tables, wind-load/span charts, safety tolerances, and multi-condition exceptions. Practiced via the **EXM R1–R4 Reference Drill Engine**.
-  2. **4-Step Timed Foraging Decomposition (`EXM R1–R4`)**:
-     - `R1 (Book Routing — Target <= 8s)`: Given a scenario stem, select the authoritative reference manual immediately.
-     - `R2 (Anchor/Index Keyword Selection — Target <= 12s)`: Identify the exact index term or chapter/section path (training the learner out of using colloquial terms that aren't in the book's index).
-     - `R3 (Table/Clause Extraction — Target <= 20s)`: Locate the exact section/table and extract the base value.
-     - `R4 (Exception & Footnote Verification — Target <= 15s)`: Check footnotes/exceptions (where exam writers hide 60%+ of distractors).
-  3. **Speed-Gated FSRS Rating**: For `lookup_fluency` items, accuracy alone is insufficient. If the learner answers correctly but exceeds the target lookup budget (e.g., $> 90\text{s}$), FSRS automatically caps the rating at `Hard (2)` rather than `Good (3)` or `Easy (4)`, keeping the item in high-frequency drill rotation until lookup speed drops below the exam pace threshold.
-
-### 3.3 Modality M3 — `conceptual_schema_discrimination` (Vocabulary, Theory & Domain Rules)
-* **Why One-Size-Fits-All Fails**: Standard flashcards test isolated pairs ($A \leftrightarrow B$). Research by **Rohrer & Taylor (2007)**, **Birnbaum et al. (2013)**, and **Kornell & Bjork (2008)** proves that blocked practice of isolated concepts creates high in-session accuracy (*retrieval fluency*) but poor exam transfer because learners never practice **discriminating between similar concepts** that share surface features.
-* **App & Content Configuration Rules**:
-  1. **Confusable-Cluster Tagging (`confusable_group_id`) & Mandatory Interleaving**:
-     - During content ingestion, closely related or commonly confused concepts are linked under a `confusable_group_id` (e.g., *HMO vs. PPO vs. POS vs. EPO*; *RAID 0 vs. RAID 1 vs. RAID 5 vs. RAID 10*; *Negligence vs. Malpractice vs. Assault vs. Battery*).
-     - The session builder **never** schedules two identical-stem items back-to-back, and intentionally interleaves contrasting members of a `confusable_group_id` within the same practice block.
-  2. **3-Angle Concept Triangulation (Progressive Cognitive Ladder)**:
-     - Every `knowledge_concept` in Modality M3 requires items across three distinct cognitive angles (`cognitive_angle`):
-       - **Angle 1 — `core_definition` (Recall-First)**: Cloze / free-recall / term-to-concept mapping before MCQ recognition.
-       - **Angle 2 — `contrastive_boundary` ("Why X and not Y?")**: Scenario or comparison question where the primary distractor is the concept's closest neighbor in `confusable_group_id`.
-       - **Angle 3 — `novel_application` (Transfer)**: A realistic case/scenario where the concept name never appears in the stem, requiring the learner to diagnose the underlying principle and apply it.
-     - **Readiness Gate**: A concept's mastery score is capped at `0.65 (Developing)` until the learner succeeds on at least one `contrastive_boundary` or `novel_application` item.
-  3. **Confidence-Weighted Hypercorrection (Butterfield & Metcalfe, 2001)**:
-     - Learners tap a fast 3-level confidence selector (`Guess`, `Think So`, `Certain`) on diagnostic and review items.
-     - High-confidence errors (`Certain` + Incorrect) trigger the **Hypercorrection Protocol**: an expanded misconception-specific rationale explaining *why* that distractor felt right, paired with an immediate intraday relearning step.
-
-### 3.4 Modality M4 — `procedural_calculation_fading` (Math, Estimating, Dosage & Formulas)
-* **Why One-Size-Fits-All Fails**: Per **Sweller & Cooper (1985)** and **Renkl, Atkinson & Große (2004)**, throwing a learner into a full multi-step calculation problem when their schema is weak consumes all working memory on search rather than schema acquisition. Conversely, showing full worked examples to an advanced learner triggers the **Expertise Reversal Effect** (Kalyuga et al., 2003).
-* **App & Content Configuration Rules**:
-  1. **4-Stage Backward Fading Ladder (`fading_stage: 0..3`)**:
-     - Every calculation/procedural template in the manifest contains structured `solution_steps[]`:
-       - **Stage 0 (`worked_example_inspect`)**: Shows the full step-by-step setup and asks a single conceptual self-explanation question (*"Why did we divide by 27 in Step 2?"*).
-       - **Stage 1 (`fade_final_step`)**: Shows Steps 1..$k-1$ completed; learner performs the final computation and selects the unit.
-       - **Stage 2 (`fade_setup_and_solve`)**: Shows only the governing formula/principle; learner plugs in the values from the scenario and solves.
-       - **Stage 3 (`unassisted_parameterized`)**: Full exam-condition problem with no scaffolding, **randomized numeric parameters** (so the learner cannot memorize "the answer is 42"), numeric input (`numeric_entry`), and unit-trap verification (e.g., feet vs. cubic yards, mg vs. mL).
-  2. **Automatic Stage Promotion/Demotion**:
-     - If a learner fails a Stage 3 calculation item, the intraday relearning queue automatically drops them down to **Stage 1 or Stage 2** on a sibling problem to rebuild the broken step, then re-tests Stage 3 before advancing FSRS stability.
-
-### 3.5 Modality M5 — `oral_production_fluency` (USCIS Civics, N-400 & Spoken Assessments)
-* **Why One-Size-Fits-All Fails**: **Transfer-Appropriate Processing (Morris et al., 1977)** demonstrates that memory retrieval is highly dependent on matching the encoding/practice cue to the test cue. Practicing an oral interview via silent visual multiple-choice trains visual recognition, leaving acoustic parsing and spoken motor production untrained.
-* **App & Content Configuration Rules**:
-  1. **Acoustic-First Prompting**: The stem is delivered via spoken TTS/audio first (`spokenQuestion`), with text blurred or hidden unless the learner taps *"Show text hint"* (which caps the FSRS rating at `Hard`).
-  2. **3-Step Cue Fading**:
-     - `Level 1`: Audio prompt + 4 shuffled options (initial encoding only).
-     - `Level 2`: Audio prompt + first-word / cloze scaffold.
-     - `Level 3 (Exam Standard)`: Audio prompt + **Spoken STT / Self-Graded Oral Recall** matched against the official `acceptableAnswers[]` synonym set within a $\le 5\text{s}$ speech-onset window.
-
-### 3.6 Modality M6 — `perceptual_pattern_classification` (Visual Signs, Diagrams & Symbols)
-* **Scientific Basis**: **Perceptual Learning Modules (Kellman & Garrigan, 2009)** show that rapid, high-volume classification of visual stimuli builds automatic feature extraction in visual cortex pathways that verbal rules cannot replicate.
-* **App & Content Configuration Rules**:
-  - Short-latency visual classification bursts (target response $< 3.5\text{s}$), grouping visually confusable signs/diagrams together with immediate visual overlay feedback.
-
-### 3.7 Modality M7 — `critical_step_checklist` (Practical Trade, Clinical & Safety Protocols)
-* **Scientific Basis**: High-reliability checklist engineering (Pronovost; Ericsson, 2008).
-* **App & Content Configuration Rules**:
-  - Multi-step sequence ordering and scenario verification where steps flagged `is_critical_safety_step: true` act as a **hard binary gate**: missing a critical step scores `0` for the trial regardless of partial credit on minor steps, immediately routing the learner to a critical-fail remediation drill.
+| Foundation on `main` (`e538585`) | Current Implementation Status | What Still Requires Reconciliation or Validation |
+|---|---|---|
+| **Learning Architecture V2** (`LEARNING_ARCHITECTURE_V2.md`, `lib/services/scope_resolver.dart`) | **Implemented & tested:** Global `knowledge_concepts`, scoped curricula (`ResolvedScope`), `TargetVersion` visibility guards, and curriculum manifest ingestion. | `LEARNING_ARCHITECTURE_V2.md` defines `user_concept_state` as a read-only analytical projection, whereas `ConceptEvidenceService` currently upserts `user_concept_state` directly and aggregates without a general answer-level history. |
+| **Canonical Taxonomy v2.4** (`CANONICAL_TAXONOMY_ARCHITECTURE.md`) | **Implemented & tested:** Dual-layer ontology (`fields` decoupled from CIP/SOC/O\*NET), crosswalks, and statistical privacy guards. | Needs task-profile metadata alignment so concepts can declare multi-dimensional learning requirements across targets. |
+| **Curriculum Manifest Pipeline** (`content/schema/curriculum_manifest.schema.json`) | **Implemented & tested:** JSON Schema validation, provenance hashes, source citations, and dry-run/production ingestion RPCs. | Needs extension to carry multidimensional `learning_task_profile` and instructional strategy metadata for imported and authored content. |
+| **Literacy Architecture** (`LITERACY_ACCESSIBILITY_PLAN.md`, `lib/screens/literacy/`) | **Implemented (Foundational):** Audio-first hub, phonics/CVC items, letter tracing, decodable stories, and milestone simulators (USCIS, DMV, GED, survival). | Pedagogical stages are recommendations (not gates); needs adult-specific reading evidence calibration, option shuffling (`FIX-1`), and expanded item pools. |
+| **EXM Exam Success Architecture** (`EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`, `EXM-01..03`) | **Implemented & pgTAP-tested:** Reference manifest revisions (`EXM-01`), R1–R4 reference navigation drills, durable drill events (`EXM-02B`), server-validated protected part scoring (`EXM-03`), and account portability/erasure. | Needs live candidate validation on the Florida contractor pilot (`Pilot A`) and integration with longitudinal retention scheduling. |
+| **ECO Community & Educator Architecture** (`ECO-00..04`) | **Implemented & pgTAP-tested:** Trust/safety moderation (`ECO-00B`), usage quotas (`ECO-00C`), concept-scoped Q&A (`ECO-01`), moderator review workflow (`ECO-02`), and educator profiles/verification (`ECO-04`). | Needs integration with the 6-stage content ingestion pipeline so educator reviews promote content provenance tiers. |
+| **Spaced Repetition & Concept Evidence** (`lib/models/spaced_repetition.dart`, `review_items`, `ConceptEvidenceService`) | **Implemented (Heuristic baseline):** Persistent `review_items` table with a simplified SM-2 interval ladder (`[1, 3, 7, 14, 30, 60, 120]`) and cumulative concept evidence weighting. | Scheduler ignores actual elapsed overdue time, clamps ease at its initial value (`2.5`), lacks an intraday relearning queue, and does not yet separate content complexity from psychometric item difficulty or memory stability. |
 
 ---
 
-## 4. Solving "Zero User Data at Launch": Cold-Start Psychometric Priors ($N=0$)
+## 2. Multidimensional Learning Task Profiles (Replacing Mutually Exclusive Modalities)
 
-Until an item accumulates $N \ge 30$ real learner attempts (`Tier 4: calibrated`), the platform cannot rely on empirical pass/fail ratios. Instead, we compute **Research-Verified Cold-Start Priors** at the moment content is imported or generated, using established findings from psychometric item-difficulty modeling (Freedle & Kostin, 1993; Bejar, 1993; Haladyna, Downing & Rodriguez, 2002; FSRS-5/6 population parameters).
+### 2.1 Why Mutually Exclusive Modalities Are the Wrong Abstraction
+An earlier draft proposed assigning every concept and item to one of seven mutually exclusive modalities (`M1..M7`). As architectural review demonstrated, those seven categories actually describe **different dimensions of a learning task**:
+- *Open-book* describes an **assessment & reference condition** and a set of foraging competencies.
+- *Oral production* describes a **response and communication requirement**.
+- *Vocabulary* and *conceptual understanding* describe **knowledge objectives**.
+- *Visual classification* describes a **stimulus and perceptual task demand**.
+- *Safety checklists* describe **procedural execution and error-criticality criteria**.
 
-### 4.1 Deterministic Cold-Start Difficulty Estimator ($b_0$ and $D_0$)
-Every item ingested into LearningApp receives an initial IRT difficulty prior $b_0 \in [-2.5, +2.5]$ (logit scale) and FSRS initial difficulty $D_0 \in [1.0, 10.0]$ computed from six objective item features:
+A single concept often requires multiple instructional experiences across these dimensions. For example, mastering **electrical circuit protection** requires:
+1. Understanding the **vocabulary** (*ampacity, overcurrent, ground fault*).
+2. Visually recognizing the **schematic/blueprint symbols**.
+3. Understanding the **conceptual relationship** between conductor gauge, load, and breaker rating.
+4. **Calculating** electrical values using worked examples and adaptive fading.
+5. **Navigating the reference code book** (NEC tables and exceptions) under open-book exam conditions.
+6. Executing a **critical-step safety procedure** (Lockout/Tagout checklist) without omitting life-safety steps.
 
-$$b_0 = \beta_{\text{bloom}} + \beta_{\text{steps}} + \beta_{\text{foil}} + \beta_{\text{lexical}} + \beta_{\text{format}} + \beta_{\text{exception}}$$
+Research strongly supports this multidimensional view: a 2026 meta-analysis across 53 studies and 7,303 learners confirmed substantial benefits from retrieval practice, spacing, and interleaving, while demonstrating that effectiveness is significantly moderated by **knowledge type, assessment format, and feedback structure** ([`/docs/learning_science/01_EVIDENCE_REGISTER.md`](docs/learning_science/01_EVIDENCE_REGISTER.md)).
 
-1. **Cognitive Level ($\beta_{\text{bloom}}$)**:
-   - Verbatim Recall / Identification: `-0.80`
-   - Concept Comprehension / Classification: `-0.20`
-   - Scenario Application / Lookup (`R3`): `+0.40`
-   - Multi-Variable Analysis / Exception Synthesis (`R4`): `+0.95`
-2. **Inferential / Calculation Step Count ($\beta_{\text{steps}}$)**:
-   - $+0.30 \times \max(0, \text{step\_count} - 1)$ (capped at $+1.20$).
-3. **Distractor Similarity / Confusable Density ($\beta_{\text{foil}}$)**:
-   - $+0.45$ if distractors belong to the same `confusable_group_id` or share $>60\%$ semantic/lexical overlap; $0.0$ otherwise.
-4. **Linguistic & Reading Load ($\beta_{\text{lexical}}$)**:
-   - $+0.25$ if stem + options exceed 75 words or Flesch-Kincaid grade exceeds target baseline by $\ge 2$ grades.
-5. **Response Format Demand ($\beta_{\text{format}}$)**:
-   - 4-option MCQ: `0.00`
-   - Multi-select (`select all that apply`) / Matrix: `+0.50`
-   - Cloze / Oral Free Recall / Unassisted Numeric Entry: `+0.65`
-6. **Statutory Exception / Negation Clause ($\beta_{\text{exception}}$)**:
-   - $+0.35$ if the item tests a code footnote/exception or regulatory conditional override.
+### 2.2 The Multidimensional `LearningTaskProfile` Model
+Instead of a single rigid modality enum, every learning objective, concept, or activity is configured via a composable **`LearningTaskProfile`** along five orthogonal axes:
 
-From $b_0$, the initial FSRS parameters at $N=0$ are seeded as:
-- **Initial FSRS Difficulty**: $D_0 = \text{clamp}(5.5 + 1.5 \cdot b_0,\; 1.0,\; 10.0)$
-- **Initial FSRS Stability Multiplier**: Modality-specific baseline $S_0(M) \times \exp(-0.25 \cdot b_0)$
+1. **`knowledge_facets[]` (What kind of knowledge is being built?)**:
+   - `sublexical_orthographic` (phoneme-grapheme mapping, decoding, encoding/spelling)
+   - `verbal_terminology` (definitions, labels, nomenclature, symbol names)
+   - `conceptual_relational` (principles, cause-and-effect, boundary distinctions, mental models)
+   - `procedural_quantitative` (multi-step math, formula setup, unit conversion, algorithms)
+   - `procedural_execution` (ordered physical/clinical/safety steps, inspection sequences)
+   - `perceptual_diagnostic` (visual pattern recognition, sign/diagram/rhythm classification)
+   - `reference_navigation` (resource routing, index/TOC foraging, clause/exception extraction)
 
-### 4.2 Empirical Bayes Shrinkage (Seamless Transition from $N=0 \to N=30+$)
-As real learners answer the item in `learning_events`, we never suffer a jarring jump between "prior" and "data." On every attempt $N$, effective difficulty $b_{\text{eff}}$ is updated via **Empirical Bayes Shrinkage** with pseudo-count weight $N_0 = 15$:
+2. **`cognitive_operations[]` (What must the learner do with the knowledge?)**:
+   - `define_or_identify`
+   - `explain_mechanism`
+   - `distinguish_confusable` (when verified confusable neighbors exist)
+   - `classify_example_non_example`
+   - `apply_to_scenario`
+   - `calculate_and_verify_units`
+   - `locate_and_interpret_provision`
+   - `justify_why_correct`
 
-$$b_{\text{eff}}(N) = \frac{N_0 \cdot b_0 + N \cdot \hat{b}_{\text{Elo}}(N)}{N_0 + N}$$
+3. **`stimulus_and_response_channel` (How is the prompt delivered and answered?)**:
+   - `Prompt`: `visual_text` | `audio_first` | `diagram_or_image` | `scenario_with_reference_manifest`
+   - `Response`: `structured_choice` | `free_recall_text` | `spoken_production` | `numeric_with_unit` | `ordered_checklist` | `reference_locator_step`
 
-- **At $N = 0$ (Day 1 Launch / Newly Imported Content)**: $100\%$ driven by the research-verified structural prior $b_0$.
-- **At $N = 15$**: $50\%$ research prior + $50\%$ empirical learner performance.
-- **At $N \ge 45$**: $\ge 75\%$ empirical learner data (promoting the item to `Tier 4: calibrated`).
+4. **`assessment_conditions` (What constraints govern execution?)**:
+   - `reference_policy`: `closed_book` | `open_book_manifest` | `formula_sheet_only`
+   - `timing_regime`: `untimed_mastery` | `paced_practice` | `exam_clock_enforced`
+   - `error_criticality`: `standard_compensatory` | `authoritative_critical_step_gate`
+
+5. **`instructional_strategies[]` (Which evidence-based delivery strategies apply?)**:
+   - Composable strategies selected dynamically based on the task profile and the learner's current state (detailed in §2.3).
+
+### 2.3 Corrected Domain Delivery Rules across the Seven Approaches
+
+| Approach | Retained Core Strengths | Corrections & Guardrails Enforced in v2.0 |
+|---|---|---|
+| **1. Literacy & Phonics** | Phonemic awareness, grapheme-phoneme mapping, decoding, encoding/spelling, and audio-first zero-text-assumption UI. | **Removed universal 95% grapheme gate.** Preserves `LITERACY_ACCESSIBILITY_PLAN.md` rule that pedagogical stages are **recommendations, not hard locks** (Direct Access Rule). Grounds adult literacy separately from child reading research—reflecting the 2026 systematic review of adult reading interventions (consistent decoding gains, mixed transfer across broader reading comprehension components). |
+| **2. Open-Book Navigation (`EXM`)** | Explicit training of reference navigation rather than assuming open-book exams require no preparation or pure memorization. | **Removed arbitrary 30/70 internalize/lookup split.** Aligns directly with `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md` by independently measuring six competencies: **(1) Resource selection, (2) Finding the correct section, (3) Locating the relevant provision, (4) Understanding exceptions, (5) Applying the provision, and (6) Completing within available time.** |
+| **3. Concepts & Vocabulary** | Going beyond definition memorization; supporting contrastive learning and interleaving where concepts are genuinely confusable. | **Removed mandatory 3-angle lock on every concept.** Supports six cognitive tasks (*Define, Explain, Distinguish from similar concepts, Recognize examples/non-examples, Apply in a new situation, Explain why an answer is correct*) and activates contrastive interleaving selectively when concepts have a documented `confusable_group_id`. |
+| **4. Calculations & Procedures** | Worked examples followed by gradually reduced assistance (fading) and unit-aware numeric validation. | **Replaced fixed 4-stage lockstep with prior-knowledge-adaptive scaffolding.** Per the 2025 meta-analysis on instructional assistance for low vs. high prior knowledge (and the Expertise Reversal Effect), novices receive worked examples and step fading while learners demonstrating prior competence bypass redundant scaffolding. |
+| **5. Oral Production** | Acoustic-first prompting and spoken/free-recall practice where the target assessment or real-world task requires spoken output (e.g., USCIS civics interview). | **Removed speech-onset latency as a universal mastery gate.** Response time is recorded as an informational observation, never used to fail or penalize learners with speech differences, accents, or thoughtful retrieval pacing. |
+| **6. Visual Classification** | Perceptual discrimination training with visually confusable distractors for signs, symbols, and diagrams. | **Accuracy established before speed; removed universal latency targets.** Fluency pacing is introduced only after reliable classification accuracy is demonstrated, with no arbitrary 200ms or 3.5s hard gate. |
+| **7. Critical-Step Checklists** | Procedural sequence training and explicit handling of high-consequence safety steps. | **Critical failures must be grounded strictly in authoritative assessment or safety requirements.** A step may only be marked `critical_fail` when backed by an official exam rubric or regulatory safety standard (`content_provenance`). |
 
 ---
 
-## 5. Dedicated Research & Optimization Folder (`/docs/learning_science/`)
+## 3. Solving Cold-Start ($N=0$) Without Conflating the Three Types of Difficulty
 
-To make this research permanent, auditable, and directly wired into both the codebase and AI content-generation prompts, we establish `/docs/learning_science/` with the following structure:
+When the platform launches—or when new content is imported—we need strong initial instructional and scheduling behavior before crowd telemetry exists. However, our model must **strictly separate three non-interchangeable constructs**:
+
+| Difficulty Construct | What It Measures | How It Is Determined at Cold Start ($N=0$) | How It Evolves with Data ($N > 0$) |
+|---|---|---|---|
+| **1. Cognitive / Content Complexity** | Intrinsic demand of the material and task (vocabulary rarity, reading load, number of reasoning/calculation steps, prerequisite depth, confusable similarity, response format, reference-navigation steps). | Established deterministically at ingestion via automated linguistic/structural analysis and expert/author metadata (`content_complexity_profile`). | Remains an intrinsic descriptor of the task; refined if content or scaffolding is edited. |
+| **2. Psychometric Item Difficulty ($b_i$, $a_i$)** | How difficult and discriminating a specific assessment item is for a defined candidate population. | **Unobserved (`null` empirical parameter).** Uses `content_complexity_profile` solely as a labeled **research-informed prior** with wide explicit uncertainty—never presented as a calibrated IRT parameter. | Updated via online estimation / small-sample-aware IRT calibration (respecting ETS small-sample calibration constraints) with explicit standard errors ($\text{SE}(b_i)$). |
+| **3. Individual Memory Difficulty ($D_{\text{FSRS}}$, $S_{\text{FSRS}}$)** | How difficult it is for a *specific learner* to retain and retrieve a specific memory trace over time. | Initialized per learner from population-baseline FSRS priors modulated conservatively by task type on first exposure. | Updated individually from that learner's own longitudinal review ratings and elapsed intervals. |
+
+### 3.1 Versioned Scheduler Architecture (SM-2 $\to$ FSRS)
+Rather than overwriting `lib/models/spaced_repetition.dart` in place and risking disruption to existing learner schedules, FSRS is introduced via a **Versioned Scheduler Architecture (`SchedulerEngineVersion`)**:
+1. **Preserve Existing Schedules (`v1_sm2_ladder`)**: Existing `review_items` rows retain their valid `next_review_date`, `repetition_level`, and `ease_factor`.
+2. **Non-Destructive Migration Path (`v2_fsrs`)**: Add nullable FSRS state columns (`scheduler_version`, `fsrs_stability`, `fsrs_difficulty`, `fsrs_state`, `fsrs_lapses`) to `review_items`. Items migrate cleanly on their next review event (or via deterministic state mapping) without resetting learner progress.
+3. **Separate Initial Acquisition from Long-Term Retention**: Intraday learning/relearning steps (short-term working/episodic consolidation within a session) are managed separately from multi-day FSRS stability scheduling.
+4. **Separate Exam-Date Planning from Baseline Retention**: Ordinary FSRS scheduling optimizes long-term retention efficiency; optional exam-date compression is layered as a distinct **Study Plan Policy** so underlying memory parameters ($S, D$) are never distorted by calendar deadlines.
+
+---
+
+## 4. Two Independent Evidence & Trust Systems (Plus Blueprint Alignment & Learner Mastery)
+
+An official regulator statute can be 100% authoritative at $N=0$ learner responses, while a viral community quiz can have $N=10,000$ responses and still teach an outdated or factually wrong rule. Furthermore, verified content does not equal learner mastery.
+
+We therefore replace the single 4-tier ladder with **four orthogonal dimensions**:
+
+### Dimension A — Content Trust & Provenance (`content_trust_level`)
+1. **`personal_import`**: Private to the importing user (`is_public = false`), source recorded, unverified. Usable immediately for personal study and retention scheduling; **excluded from authoritative exam-readiness claims**.
+2. **`automated_checked`**: Passed deterministic schema, citation format, option-structure, and consistency checks (`ContentQualityValidator`).
+3. **`editorially_reviewed`**: Passed human/educator review (`ECO-02` / `ECO-04`) for factual accuracy, distractor quality, and instructional clarity.
+4. **`authoritatively_verified`**: Verified against the primary regulator/issuer source and pinned to an effective `TargetVersion` and source release window (`content_provenance`).
+
+### Dimension B — Measurement Quality (`measurement_quality_level`)
+1. **`unobserved`**: $N = 0$ learner responses; no empirical item statistics.
+2. **`research_informed_prior`**: Complexity profile (`content_complexity_profile`) computed from deterministic task features; zero empirical calibration claimed.
+3. **`observed`**: Empirical learner responses recorded ($1 \le N < N_{\text{min}}$), providing preliminary p-value and latency observations with high uncertainty.
+4. **`calibrated`**: Sufficient representative sample size and validated statistical estimates (item difficulty, discrimination, distractor functioning) with bounded standard error.
+5. **`validated_for_intended_use`**: Demonstrated predictive/construct validity in the target candidate population and examination context.
+
+### Dimension C — Blueprint Alignment (`blueprint_alignment_state`)
+- Recorded independently: whether an item/activity is `unmapped`, `concept_mapped` (linked to canonical `knowledge_concepts`), or `blueprint_weighted` (linked to an official `TargetVersion` exam part/domain with verified blueprint weight).
+
+### Dimension D — Learner Mastery & Readiness Evidence
+Evaluated per learner across distinct questions that are never conflated into a single opaque percentage:
+1. **Comprehension & Acquisition**: Did the learner understand the concept during instruction/scaffolding?
+2. **Delayed Retrieval**: Can the learner recall it across spaced intervals without cues?
+3. **Transfer to Unfamiliar Problems**: Can the learner apply it to **held-out / novel items** they have not memorized?
+4. **Exam-Condition Execution**: Can the learner perform within the actual time budget and reference constraints (`EXM`) of the exam?
+
+---
+
+## 5. Reconciling the Answer-History & Evidence Architecture on `main`
+
+Inspection of `main` (`e538585`) shows several existing evidence mechanisms that must be **reconciled and unified**, not duplicated by a competing parallel architecture:
+- **`review_items`** (`20250101000001_create_review_items.sql`): Current SRS state store.
+- **`ConceptEvidenceService` & `user_concept_state`** (`lib/services/concept_evidence_service.dart`, `20260925000001_v2_additive_schema.sql`): Currently performs client-side select-then-upsert of aggregate weighted counters, which diverges from `LEARNING_ARCHITECTURE_V2.md` §3.4's specification that `user_concept_state` should be a read-only analytical projection.
+- **`EXM-02B` (`exam_reference_drill_events`)**: Durable, ungraded event recording for open-book R1–R4 reference navigation observations, complete with owner export and batched erasure RPCs.
+- **`EXM-03` (`exam_part_practice_attempts` & server-scored RPCs)**: Protected server-side scoring path that keeps answer keys (`scoring_spec`) hidden from anonymous/untrusted reads on protected exam items.
+
+### Architectural Resolution: Unified Evidence Contract
+1. **Preserve `EXM-02B` and `EXM-03` Security & Scoring Boundaries**:
+   - Protected exam items continue to score exclusively through `EXM-03`'s server-validated submission RPCs.
+   - Ungraded reference-foraging telemetry continues to use `EXM-02B`'s durable drill event contract and portability/erasure guarantees.
+2. **Resolve the `ConceptEvidenceService` / `user_concept_state` Discrepancy**:
+   - Introduce an append-only general learning attempt ledger (`learning_attempt_events`) for standard practice, flashcards, literacy, and concept quizzes, following the exact same owner-isolation, export, and erasure patterns established in `EXM-02B`/`EXM-03`.
+   - Transition `user_concept_state` to an atomic server-maintained projection updated when attempt events or `EXM-03` scored attempts are recorded, eliminating client-side read-modify-write races.
+3. **Standardized Evidence Fields Across Activity Types**:
+   - Every recorded learning or assessment event captures (where applicable to the activity):
+     - Content ID, item ID, and `TargetVersion` / manifest revision
+     - Canonical `knowledge_concept` and curriculum objective mappings
+     - Task profile & assessment format (`structured_choice`, `free_recall`, `spoken_production`, `numeric_with_unit`, `reference_locator_step`, `checklist`)
+     - Presented option order (`presented_option_ids`) and selected response
+     - Scored outcome / correctness (scored server-side for protected items)
+     - Response latency (`latency_ms`)
+     - Scaffolding / hints / fading stage used
+     - Learner self-reported confidence (when collected)
+     - Active exam conditions (`open_book_manifest`, timer state)
+     - Provenance tier (`content_trust_level`) so `personal_import` attempts are never mixed into `authoritatively_verified` exam readiness projections.
+4. **Measured Storage Discipline (No Unverified Byte Promises)**:
+   - Rather than claiming a theoretical 72-byte row size, we benchmark actual PostgreSQL tuple header + index + TOAST overhead under `supabase db reset` before setting retention/archival thresholds.
+
+---
+
+## 6. The 6-Stage Content & Import Pipeline (AI, YouTube, PDFs, Manuals, Decks)
+
+Content availability is solved as a structured pipeline problem while keeping generated/imported material strictly distinguishable from authoritatively verified material:
 
 ```text
-/docs/learning_science/
-├── README.md                                      # Master index, architecture link, and citation standards
-├── 01_MODALITY_TAXONOMY_AND_DELIVERY_RULES.md     # Full scientific rules & UI/FSRS configs for Modalities M1–M7
-├── 02_COLD_START_PSYCHOMETRICS_AND_FSRS_PRIORS.md # Mathematical specification of b_0, D_0, S_0, and Empirical Bayes shrinkage
-├── 03_CONTENT_INGESTION_AND_MANIFEST_SCHEMA.md    # How existing & future imported content (YouTube, PDF, AI, Anki) is tagged
-├── 04_CONTRASTIVE_INTERLEAVING_AND_TRIANGULATION.md # Confusable concept clusters, 3-angle mastery, and hypercorrection rules
-└── 05_EXAM_READINESS_AND_PASS_PREDICTION_MATH.md  # Combining FSRS R(t_exam), blueprint weights, and speed gates into Pass Proof
+[1. Source Acquisition]  --> YouTube URLs · PDFs · Official Manuals · Anki/CSV · BYOK/MCP AI
+          │
+          ▼
+[2. Extraction & Provenance] --> Source identity · License/rights · Version/effective date · Citations & passages
+          │
+          ▼
+[3. Knowledge Organization]  --> Map to Canonical Taxonomy fields · Knowledge concepts · Prerequisites · Confusable links
+          │
+          ▼
+[4. Learning Design]         --> Assign LearningTaskProfile · Cognitive operations · Adaptive scaffolding · Distractors
+          │
+          ▼
+[5. Quality Assurance]       --> Deterministic validator · Citation check · Editorial review (ECO-02/04) · Trust level assignment
+          │
+          ▼
+[6. Personalized Delivery]   --> Task-specific instruction · Retrieval & fading · Versioned SRS · Evidence recording
 ```
 
----
-
-## 6. How Existing & Future Imported Content Will Be Organized Around This
-
-### 6.1 Extending `content/schema/curriculum_manifest.schema.json`
-Every manifest—whether official seed content (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, Florida DBPR/Insurance, USCIS/Literacy) or dynamically imported from YouTube/PDF/Anki/BYOK AI—will include these standardized learning-science fields:
-
-1. **On `knowledge_concepts[]`**:
-   - `primary_modality`: enum (`orthographic_phonological`, `open_book_index_navigation`, `conceptual_schema_discrimination`, `procedural_calculation_fading`, `oral_production_fluency`, `perceptual_pattern_classification`, `critical_step_checklist`)
-   - `confusable_group_id`: optional string grouping frequently confused concepts for mandatory contrastive interleaving
-   - `memory_division`: `internalize_cold` | `lookup_fluency` | `hybrid` (critical for open-book exams)
-   - `required_angles`: array of cognitive angles required before concept mastery can exceed `0.65` (e.g., `["core_definition", "contrastive_boundary", "novel_application"]`)
-
-2. **On `assessment_items[]` and `flashcards[]`**:
-   - `modality`: inherits from concept or overrides per item
-   - `cognitive_angle`: `core_definition` | `contrastive_boundary` | `novel_application` | `lookup_routing` | `lookup_extraction` | `faded_step` | `oral_recall`
-   - `fading_stage`: integer `0..3` (for procedural/calculation items)
-   - `target_latency_ms`: modality-specific time budget (e.g., `45000` for open-book table lookup, `4000` for perceptual sign recognition, `60000` for standard MCQ)
-   - `cold_start_features`: `{ bloom_level, step_count, has_exception_clause, distractor_similarity_tier, reading_grade }` → automatically computes `b_0` and `D_0` on ingestion!
-   - `options[]`: upgraded from positional strings to `{ id, text, is_correct, rationale, misconception_tag, confusable_concept_slug }`
-
-### 6.2 Retrofitting Existing Content in the Repo
-As part of executing this plan, we reorganize our existing repository content into this framework immediately:
-1. **Literacy & Pre-Reader Catalog (`cvc_word_item.dart`, `phonics_item.dart`, `decodable_story_item.dart`, `survival_word_item.dart`)** → Migrated to **Modality M1 (`orthographic_phonological`)** with phoneme-confusion foil tags and the 95% decodability gate.
-2. **Florida Contractor & Regulator Pathways (`data/catalog/florida_contractors_p2g_*`, `EXM-01..03`)** → Configured as **Modality M2 (`open_book_index_navigation`)** with explicit `internalize_cold` vs. `lookup_fluency` splits and latency-gated FSRS scoring.
-3. **Security+, CS Degree & Florida Insurance (`content/*.yaml`, `assets/lessons/*.json`)** → Upgraded to **Modality M3 (`conceptual_schema_discrimination`)** with `confusable_group_id` clusters and 3-angle concept triangulation.
-4. **Currency Survival, GED Math & Engineering/Estimating Items (`currency_survival_item.dart`, `ged_bridge_item.dart`)** → Configured as **Modality M4 (`procedural_calculation_fading`)** with 4-stage backward-faded solution steps.
-5. **USCIS 128 Civics & N-400 (`uscis_civics_item.dart`)** → Configured as **Modality M5 (`oral_production_fluency`)** with acoustic-first delivery and 3-step cue fading.
-6. **DMV Road Signs & Workplace/Food/Health Safety (`dmv_exam_item.dart`, `food_safety_item.dart`, `workplace_safety_item.dart`, `health_safety_item.dart`)** → Split cleanly between **Modality M6 (`perceptual_pattern_classification`)** for visual signs/hazards and **Modality M7 (`critical_step_checklist`)** for safety procedures.
+### Guardrails Preserving Both Openness and Free-Tier Sustainability
+- **Optional Provider Integrations (BYOK / MCP / Local)**: Users may connect their own API keys (including Gemini's public YouTube URL analysis within its free-tier allowance, OpenRouter, OpenAI, or Anthropic) or local browser models. None are mandatory server-paid dependencies.
+- **Embed, Never Re-Host**: Video sources use privacy-enhanced embeds + timestamped retrieval checkpoints.
+- **Strict Readiness Quarantine for Unverified Imports**: Material at `content_trust_level = personal_import` or `automated_checked` is immediately usable for personal study and spaced review, but **cannot** contribute to official Exam Readiness claims until promoted to `editorially_reviewed` / `authoritatively_verified`.
 
 ---
 
-## 7. Phased Implementation Plan (Coordinated with Antigravity)
+## 7. Research Governance & `/docs/learning_science/` Directory Structure
 
-While Antigravity upgrades platform infrastructure, security fixes, and general quality, this Learning Science & Cold-Start Optimization track executes in **4 cleanly bounded workstreams**:
+To replace informal heuristics and secondary summaries (such as Wikipedia citations in legacy UI notes) with auditable primary science, `/docs/learning_science/` is organized into **eight specification documents**:
 
-### Workstream LS-1 — Research Repository & Cold-Start Psychometric Spec (`/docs/learning_science/`)
-- Complete all 5 specification documents inside `/docs/learning_science/`.
-- Implement the pure-Dart `ColdStartPsychometricEstimator` (`lib/services/learning_science/cold_start_estimator.dart`) that computes $b_0$, $D_0$, $S_0$, and `target_latency_ms` deterministically for any item at $N=0$ and blends with empirical Elo ratings via Empirical Bayes shrinkage.
+| Document | Responsibility |
+|---|---|
+| **[`README.md`](docs/learning_science/README.md)** | Research governance, evidence grading standards, and reconciliation with legacy `docs/design/LEARNING_UI_RESEARCH.md` |
+| **[`01_EVIDENCE_REGISTER.md`](docs/learning_science/01_EVIDENCE_REGISTER.md)** | Peer-reviewed research register (DOI/source, methodology, population, sample size, effect size, limitations, negative/mixed findings, applicability, and test plan) |
+| **[`02_LEARNING_TASK_TAXONOMY.md`](docs/learning_science/02_LEARNING_TASK_TAXONOMY.md)** | Multidimensional `LearningTaskProfile` taxonomy across knowledge facets, cognitive operations, channels, and conditions |
+| **[`03_INSTRUCTIONAL_STRATEGIES.md`](docs/learning_science/03_INSTRUCTIONAL_STRATEGIES.md)** | Retrieval practice, spacing, interleaving, worked examples, feedback timing, backward fading, and empirical moderators |
+| **[`04_TASK_SPECIFIC_DELIVERY.md`](docs/learning_science/04_TASK_SPECIFIC_DELIVERY.md)** | Delivery specifications for literacy, vocabulary/concepts, open-book navigation, calculations, oral production, visual classification, and checklists |
+| **[`05_LEARNER_ADAPTATION.md`](docs/learning_science/05_LEARNER_ADAPTATION.md)** | Prior-knowledge diagnostics, adaptive scaffolding, and preventing the Expertise Reversal Effect |
+| **[`06_MEASUREMENT_AND_SCHEDULING.md`](docs/learning_science/06_MEASUREMENT_AND_SCHEDULING.md)** | Unified evidence contract, reconciling `ConceptEvidenceService` & `user_concept_state`, versioned SM-2 $\to$ FSRS scheduling, and the 3 difficulty constructs |
+| **[`07_READINESS_AND_VALIDATION.md`](docs/learning_science/07_READINESS_AND_VALIDATION.md)** | Assessment validity, held-out transfer evaluation, domain-specific validation plans, and real-world outcome verification |
+| **[`08_CONTENT_AND_IMPORT_ALIGNMENT.md`](docs/learning_science/08_CONTENT_AND_IMPORT_ALIGNMENT.md)** | Schema & pipeline rules for assigning `LearningTaskProfile` and provenance metadata to existing and imported content |
 
-### Workstream LS-2 — Manifest Schema & Content Classifier Upgrade
-- Extend `content/schema/curriculum_manifest.schema.json` and `ContentQualityValidator` to require and validate `primary_modality`, `cognitive_angle`, `confusable_group_id`, `memory_division`, and per-option `misconception_tag`.
-- Update the AI Generation & Universal Import prompts (`.github/prompts/generate-lesson.prompt.md` and `AiPromptService`) so **every newly imported or AI-generated lesson automatically produces modality-specific item sets** (e.g., generating a 3-angle triangulation set + confusable pairs for concepts, or a 4-stage faded worked example for calculations).
+---
 
-### Workstream LS-3 — Modality-Adaptive Session Builder & FSRS Scheduler
-- Upgrade `SpacedRepetitionService` and `NextActionEngine` to use modality-aware scheduling rules:
-  - Contrastive interleaving of `confusable_group_id` siblings in Modality M3.
-  - Latency-adjusted FSRS grading in Modality M2 (penalizing slow open-book lookups even when accurate).
-  - Automatic backward-fading step-down (`Stage 3 -> Stage 1/2`) on calculation errors in Modality M4.
-  - 3-angle triangulation cap (`max 0.65 mastery` until application/contrastive angles pass).
+## 8. Phased Implementation Plan & Branch Coordination
 
-### Workstream LS-4 — Retrofitting Bundled Curricula & Simulators
-- Tag and upgrade the bundled curricula (`content/*.yaml`, `assets/lessons/*.json`, and the Literacy/Civic simulators) into the 7-modality schema, fixing the Option-A bias (`FIX-1`) and validating cold-start readiness calculations end-to-end with unit tests.
+### 8.1 Coordination Between `main` and Antigravity (`feature/arch-review-phase-0` / PR `#136`)
+- **Stream 1 — Learning Science & Instructional Optimization (this plan, anchored on `main` `e538585`)**: Focuses on the research register, multidimensional task taxonomy, content organization, instructional delivery rules, and unified evidence/readiness specifications.
+- **Stream 2 — Engineering & Security Hardening (Antigravity's `feature/arch-review-phase-0`, PR `#136`)**: Continues independently on security fixes, migrations, schema contract checks, lints, and runtime reliability.
+- **Integration Rule**: Neither stream assumes unmerged code from the other; both integrate into `main` through reviewed PRs passing all 3 required GitHub Actions status checks.
+
+### 8.2 Seven Implementation Phases & Acceptance Gates
+
+1. **Phase 1 — Research Audit & Evidence Register (`docs/learning_science/01_EVIDENCE_REGISTER.md`)**
+   - Audit existing claims in `docs/design/LEARNING_UI_RESEARCH.md` and `LITERACY_ACCESSIBILITY_PLAN.md`; remove unsupported hard rules (e.g., mandatory Pomodoro locks, universal 95% grapheme gates, universal latency thresholds); record positive, mixed, and null findings with DOIs and sample sizes.
+2. **Phase 2 — Multidimensional Learning Task Architecture (`02_LEARNING_TASK_TAXONOMY.md`)**
+   - Formalize `LearningTaskProfile` and `InstructionalStrategy` schemas and align them with `curriculum_manifest.schema.json` and `CANONICAL_TAXONOMY_ARCHITECTURE.md`.
+3. **Phase 3 — Task-Specific Delivery & Adaptive Scaffolding Rules (`03`–`05`)**
+   - Specify teaching, adaptive worked-example fading, contrastive interleaving, feedback timing, and assessment rules for each task profile.
+4. **Phase 4 — Content Ingestion & Retrofitting Existing Curricula (`08_CONTENT_AND_IMPORT_ALIGNMENT.md`)**
+   - Upgrade existing bundled manifests (`content/*.yaml`, `assets/lessons/*.json`, literacy/civic items) and the 6-stage import pipeline to assign `LearningTaskProfile`, `content_complexity_profile`, and `content_trust_level` metadata automatically.
+5. **Phase 5 — Unified Evidence Contract & Versioned Scheduler Integration (`06_MEASUREMENT_AND_SCHEDULING.md`)**
+   - Reconcile `review_items`, `ConceptEvidenceService`, `user_concept_state`, `EXM-02B`, and `EXM-03`; introduce versioned FSRS scheduling (`v2_fsrs`) alongside preserved `v1_sm2_ladder` schedules.
+6. **Phase 6 — Domain-Appropriate Cold-Start Validation (`07_READINESS_AND_VALIDATION.md`)**
+   - Validate cold-start defaults using expert-reviewed material, held-out transfer items, and representative learner testing across **each distinct task family** (Florida contractor open-book `EXM` pilot for reference navigation; separate targeted evaluations for adult literacy/decoding, oral civics production, and procedural calculations).
+7. **Phase 7 — Empirical Refinement & Outcome Calibration**
+   - Update item parameters ($b_i, a_i$ with standard errors), instructional strategy selection, retention scheduling, and readiness calibration as real learner observations and exam outcomes accumulate.

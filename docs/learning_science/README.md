@@ -1,38 +1,50 @@
-# LearningApp — Learning Science & Cold-Start Optimization Research (`/docs/learning_science/`)
+# LearningApp — Learning Science Research Governance & Standards (`/docs/learning_science/`)
 
-This directory houses the peer-reviewed cognitive psychology, psychometric measurement, and instructional design specifications that drive LearningApp's **Modality-Adaptive Delivery Engine** and **Cold-Start Psychometric Priors ($N=0$ User Data)**.
-
-See the master execution plan in the repository root: **[`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../../EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)**.
-
----
-
-## Why This Folder Exists
-
-Most learning apps use a single, uniform loop (e.g., a flashcard or 4-option multiple-choice question scheduled on a static interval ladder) regardless of *what* is being learned or *who* is learning it, and require thousands of user attempts before they can estimate item difficulty or pass readiness.
-
-LearningApp solves both the **One-Size-Fits-All Fallacy** and the **Cold-Start ($N=0$) Problem** by routing every concept and assessment item through **7 Research-Backed Pedagogical Modalities (`M1`–`M7`)** and computing deterministic **Cold-Start Psychometric Priors ($b_0, D_0, S_0$)** at content ingestion time.
+**Master Root Plan:** [`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../../EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)
+**Authoritative Baseline:** `main` (`e538585`)
 
 ---
 
-## Directory Index
+## 1. Purpose & Governance Rules
 
-| Document | Scope | Key Scientific Foundations |
-|---|---|---|
-| **[`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../../EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)** | Root Master Plan: 7 Modalities, Cold-Start Priors, Content Tagging & Implementation Roadmap | Dunlosky et al. (2013); Cepeda et al. (2006); Roediger & Karpicke (2006) |
-| **`01_MODALITY_TAXONOMY_AND_DELIVERY_RULES.md`** *(Planned — LS-1)* | Exact UI rendering, scaffolding, time budgets, and FSRS multipliers for Modalities `M1`–`M7` | Ehri (2005); Share (1995); Pirolli & Card (1999); Sparrow et al. (2011); Sweller & Cooper (1985); Renkl et al. (2004); Morris et al. (1977); Kellman & Garrigan (2009) |
-| **`02_COLD_START_PSYCHOMETRICS_AND_FSRS_PRIORS.md`** *(Planned — LS-1)* | Feature-based difficulty estimation ($b_0$), initial FSRS stability/difficulty ($S_0, D_0$), and Empirical Bayes shrinkage ($N=0 \to N=30+$) | Freedle & Kostin (1993); Bejar (1993); Haladyna, Downing & Rodriguez (2002); Pelánek (2016); FSRS-5/6 benchmark priors |
-| **`03_CONTENT_INGESTION_AND_MANIFEST_SCHEMA.md`** *(Planned — LS-2)* | How official blueprints, YouTube transcripts, PDFs, Anki/Quizlet imports, and BYOK AI outputs are compiled into modality-tagged manifests | Retrieval-augmented grounding, deterministic psychometric linting, SCOWL/Flesch-Kincaid readability |
-| **`04_CONTRASTIVE_INTERLEAVING_AND_TRIANGULATION.md`** *(Planned — LS-3)* | Confusable concept clusters (`confusable_group_id`), 3-angle concept triangulation, and confidence-weighted hypercorrection | Rohrer & Taylor (2007); Birnbaum et al. (2013); Chi et al. (1994); Butterfield & Metcalfe (2001) |
-| **`05_EXAM_READINESS_AND_PASS_PREDICTION_MATH.md`** *(Planned — LS-3)* | Mathematical formulation of Exam-Day Retrievability $\bar{R}(t_{\text{exam}})$, latency-gated lookup fluency, and Brier-score outcome calibration | IRT 1PL/2PL, FSRS power-law forgetting curves, Bayesian readiness bounds |
+This directory governs the scientific foundations, task taxonomy, instructional delivery rules, and measurement architecture of LearningApp.
+
+To prevent informal folk-pedagogy or secondary summaries (such as Wikipedia references in earlier UI notes like `docs/design/LEARNING_UI_RESEARCH.md`) from becoming rigid application rules, **no instructional rule, gate, or psychometric assumption may be hard-coded into the learning engine unless it is registered in [`01_EVIDENCE_REGISTER.md`](01_EVIDENCE_REGISTER.md) with its full evidentiary profile.**
+
+### Mandatory Fields for Every Research Claim in `01_EVIDENCE_REGISTER.md`
+1. **Citation & Identifier**: Exact primary publication, authors, year, journal/institution, and DOI or official URL.
+2. **Methodology**: Meta-analysis, randomized controlled trial (RCT), quasi-experimental study, longitudinal cohort, or psychometric simulation.
+3. **Population Studied**: K–12, university undergraduates, adult vocational/licensing candidates, or adult emergent readers/ESL.
+4. **Sample Size ($N$)**: Number of studies ($k$) and total participants ($N$).
+5. **Measured Outcome**: Immediate recall, delayed retention, far transfer, lookup fluency, or exam pass rate.
+6. **Effect Size**: Standardized effect size ($d$, $g$, $r$, odds ratio) and confidence interval where published.
+7. **Limitations & Moderators**: Boundary conditions, populations where the effect weakens or reverses (including **null, mixed, or negative findings**).
+8. **Applicability to LearningApp**: Which `LearningTaskProfile` dimensions the finding governs.
+9. **Recommended Implementation**: How the engine configures instruction, scaffolding, or scheduling (distinguishing *default recommendations* from *hard gates*).
+10. **Verification & Test Plan**: How we test that the implementation works as intended in LearningApp.
 
 ---
 
-## Summary of the 7 Pedagogical Modalities
+## 2. Reconciliation with Legacy `docs/design/LEARNING_UI_RESEARCH.md`
 
-1. **`M1: orthographic_phonological`** — Pre-readers, adult emergent literacy, phonics, and decoding (high-density micro-spacing, phonemic minimal-pair distractors, 95% decodability gate, zero-text audio chrome).
-2. **`M2: open_book_index_navigation`** — Open-book licensing & code exams (splits blueprint into `internalize_cold` mental index vs. `lookup_fluency` timed `EXM R1–R4` drills; penalizes slow lookups in FSRS even when accurate).
-3. **`M3: conceptual_schema_discrimination`** — Vocabulary, domain theory, and regulatory rules (mandatory contrastive interleaving of `confusable_group_id` pairs, 3-angle triangulation cap at `0.65` until application/contrastive items pass, and confidence hypercorrection).
-4. **`M4: procedural_calculation_fading`** — Trade math, estimating, clinical dosage, and GED/engineering calculations (4-stage backward worked-example fading ladder `Stage 0 -> Stage 3` with parameterized numbers and automatic step-down on error).
-5. **`M5: oral_production_fluency`** — Oral interviews and spoken recall such as USCIS 128 Civics & N-400 (acoustic-first prompt with hidden text, 3-stage cue fading, and spoken STT/production latency check).
-6. **`M6: perceptual_pattern_classification`** — Visual signs, blueprint symbols, and rapid hazard/pattern recognition (short-exposure perceptual learning bursts $<3.5\text{s}$).
-7. **`M7: critical_step_checklist`** — Practical trade, clinical, and safety protocols (sequence verification with hard binary gates on `is_critical_safety_step` omissions).
+Earlier UI research (`docs/design/LEARNING_UI_RESEARCH.md`) synthesized useful general ideas but stated several claims more definitively than primary evidence supports. The following corrections apply across the codebase:
+
+- **Fixed Pomodoro Intervals**: Structured breaks can reduce subjective fatigue (Biwer et al., 2023), but fixed 25/5 timers are **optional learner tools**, never mandatory session locks that interrupt an active retrieval or open-book simulation flow.
+- **Universal Microlearning Claims**: Breaking complex material into manageable segments reduces extraneous load, but complex open-book scenarios and multi-step calculations require sustained problem-solving windows.
+- **Immediate vs. Delayed Feedback**: Immediate corrective feedback helps during initial acquisition and error correction, whereas delayed feedback can benefit transfer in certain advanced retrieval tasks. Feedback timing is configured per `LearningTaskProfile` rather than globally locked.
+- **Universal 95% Grapheme Gate (Removed)**: In alignment with `LITERACY_ACCESSIBILITY_PLAN.md`, literacy stages remain **recommendations, not hard locks** (Direct Access Rule).
+
+---
+
+## 3. Directory Map
+
+| File | Responsibility |
+|---|---|
+| **[`01_EVIDENCE_REGISTER.md`](01_EVIDENCE_REGISTER.md)** | Peer-reviewed research register, DOIs, effect sizes, moderators, negative/mixed findings, and evidence grades |
+| **[`02_LEARNING_TASK_TAXONOMY.md`](02_LEARNING_TASK_TAXONOMY.md)** | Multidimensional `LearningTaskProfile` specification replacing mutually exclusive modalities |
+| **[`03_INSTRUCTIONAL_STRATEGIES.md`](03_INSTRUCTIONAL_STRATEGIES.md)** | Retrieval practice, spacing, interleaving, worked examples, feedback timing, and backward fading rules |
+| **[`04_TASK_SPECIFIC_DELIVERY.md`](04_TASK_SPECIFIC_DELIVERY.md)** | Delivery rules for literacy, open-book exams (`EXM`), concepts/vocabulary, calculations, oral production, visual classification, and critical-step checklists |
+| **[`05_LEARNER_ADAPTATION.md`](05_LEARNER_ADAPTATION.md)** | Prior-knowledge diagnostics, adaptive scaffolding, and preventing the Expertise Reversal Effect |
+| **[`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md)** | Reconciling `review_items`, `ConceptEvidenceService`, `user_concept_state`, `EXM-02B`/`EXM-03`, versioned SM-2 $\to$ FSRS scheduling, and the 3 difficulty constructs |
+| **[`07_READINESS_AND_VALIDATION.md`](07_READINESS_AND_VALIDATION.md)** | Assessment validity, held-out transfer tasks, domain-specific cold-start validation, and real-world outcome calibration |
+| **[`08_CONTENT_AND_IMPORT_ALIGNMENT.md`](08_CONTENT_AND_IMPORT_ALIGNMENT.md)** | 6-stage ingestion pipeline assigning `LearningTaskProfile`, provenance trust levels, and complexity priors to existing and imported content |
