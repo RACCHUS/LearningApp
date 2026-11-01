@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(37);
+select plan(38);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -251,6 +251,17 @@ select is(
   (select count(*)::integer from public.skill_leaderboard where user_id = 'cc111111-0000-4000-8000-000000000001'),
   1,
   'User 1 appears on skill_leaderboard with verified skill stats'
+);
+
+-- Advisory transaction lock was acquired during recalculation to serialize concurrent submissions
+select ok(
+  exists (
+    select 1 from pg_locks 
+    where locktype = 'advisory' 
+      and classid = hashtext('cc111111-0000-4000-8000-000000000001')::oid
+      and objid = hashtext('e0000000-0000-0000-0000-000000000001')::oid
+  ),
+  'recompute_user_skill_stat acquires advisory transaction lock for (user_id, skill_id)'
 );
 
 -- 8. P2 VERIFICATION: Assessment and User immutability on attempts (prevent reassignment bypass)

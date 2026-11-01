@@ -384,6 +384,9 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Advisory transaction lock to serialize concurrent recalculations per user and skill
+  PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text), hashtext(p_skill_id::text));
+
   -- Count eligible, non-deleted, completed attempts with a score
   SELECT COUNT(*) INTO v_total
   FROM public.assessment_attempts aa
