@@ -90,15 +90,16 @@ class XpService {
     int? customAmount,
     String? sourceId,
     String? description,
+    String? eventId,
   }) async {
     if (_userId == null) return null;
 
     try {
       final xpAmount = customAmount ?? type.baseXp;
-      final eventId = _uuid.v4();
+      final effectiveEventId = eventId ?? _uuid.v4();
 
       final result = await _supabase.rpc('record_xp_award', params: {
-        'p_event_id': eventId,
+        'p_event_id': effectiveEventId,
         'p_event_type': type.name,
         'p_xp_amount': xpAmount,
         'p_source_id': sourceId,
@@ -110,7 +111,7 @@ class XpService {
           : xpAmount;
 
       return XpEvent(
-        id: eventId,
+        id: effectiveEventId,
         type: type,
         xpAmount: awardedXp,
         sourceId: sourceId,

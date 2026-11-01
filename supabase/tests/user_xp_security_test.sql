@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(12);
+select plan(16);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -77,7 +77,29 @@ select is(
   'User 1 total XP is 35 (10 + capped 25)'
 );
 
--- 9. Direct client INSERT on xp_events is rejected
+-- 9. Semantic deduplication across casing aliases: lessonComplete vs lesson_complete
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'lessonComplete', 50, 'lesson-alias', 'First completion') $$,
+  'First lesson completion awards XP'
+);
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000004'::uuid, 'lesson_complete', 50, 'lesson-alias', 'Duplicate attempt')->>'status')),
+  'already_processed',
+  'Casing alias (lesson_complete) cannot bypass semantic cooldown'
+);
+
+-- 10. Permanent achievement deduplication
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000005'::uuid, 'achievement', 100, 'badge-first-quiz', 'First Quiz') $$,
+  'First achievement awards XP'
+);
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000006'::uuid, 'achievement', 100, 'badge-first-quiz', 'Duplicate Quiz')->>'status')),
+  'already_processed',
+  'Permanent achievement deduplication blocks duplicate claims'
+);
+
+-- 11. Direct client INSERT on xp_events is rejected
 select throws_ok(
   $$ insert into public.xp_events (id, user_id, event_type, xp_amount)
      values ('bbbbbbbb-0000-0000-0000-000000000001'::uuid, 'ee111111-0000-4000-8000-000000000001', 'questionCorrect', 100) $$,
@@ -86,7 +108,7 @@ select throws_ok(
   'Direct client INSERT into xp_events is rejected'
 );
 
--- 10. Direct client UPDATE on user_xp is rejected
+-- 12. Direct client UPDATE on user_xp is rejected
 select throws_ok(
   $$ update public.user_xp set total_xp = 999999 where user_id = 'ee111111-0000-4000-8000-000000000001' $$,
   '42501',
@@ -94,7 +116,7 @@ select throws_ok(
   'Direct client UPDATE on user_xp is rejected'
 );
 
--- 11. User 1 cannot view User 2 XP
+-- 13. User 1 cannot view User 2 XP
 do $$ begin
   -- create row for User 2 via service_role
   set local role service_role;

@@ -50,6 +50,7 @@ CREATE OR REPLACE FUNCTION public.record_xp_award(
 RETURNS JSONB AS $$
 DECLARE
   v_auth_uid UUID := (SELECT auth.uid());
+  v_canonical_event_type TEXT;
   v_capped_xp INTEGER;
   v_current_total INTEGER;
   v_new_total INTEGER;
@@ -81,29 +82,52 @@ BEGIN
     );
   END IF;
 
-  -- 2. Strict event type validation (reject arbitrary or unrecognized event types)
-  IF p_event_type NOT IN (
-    'questionCorrect', 'question_correct',
-    'lessonComplete', 'lesson_complete',
-    'courseComplete', 'course_complete',
-    'reviewSession', 'review_session',
-    'streakBonus', 'streak_bonus',
-    'achievement',
-    'dailyGoal', 'daily_goal'
-  ) THEN
-    RAISE EXCEPTION 'Invalid XP event type: %', p_event_type;
-  END IF;
+  -- 2. Strict event type validation & canonicalization to snake_case (eliminates alias cooldown bypass)
+  CASE p_event_type
+    WHEN 'questionCorrect', 'question_correct' THEN v_canonical_event_type := 'question_correct';
+    WHEN 'lessonComplete', 'lesson_complete' THEN v_canonical_event_type := 'lesson_complete';
+    WHEN 'courseComplete', 'course_complete' THEN v_canonical_event_type := 'course_complete';
+    WHEN 'reviewSession', 'review_session' THEN v_canonical_event_type := 'review_session';
+    WHEN 'streakBonus', 'streak_bonus' THEN v_canonical_event_type := 'streak_bonus';
+    WHEN 'achievement' THEN v_canonical_event_type := 'achievement';
+    WHEN 'dailyGoal', 'daily_goal' THEN v_canonical_event_type := 'daily_goal';
+    ELSE
+      RAISE EXCEPTION 'Invalid XP event type: %', p_event_type;
+  END CASE;
 
   IF p_xp_amount <= 0 THEN
     RAISE EXCEPTION 'XP amount must be positive';
   END IF;
 
-  -- 3. Semantic deduplication: prevent repeated claims on same lesson/course/day
-  IF p_source_id IS NOT NULL AND p_event_type IN ('lessonComplete', 'lesson_complete', 'courseComplete', 'course_complete') THEN
+  -- 3. Semantic deduplication:
+  -- A. Permanent deduplication for achievements: an achievement can only be claimed once in a lifetime per source_id
+  IF p_source_id IS NOT NULL AND v_canonical_event_type = 'achievement' THEN
     SELECT id INTO v_existing_event
     FROM public.xp_events
     WHERE user_id = v_auth_uid
-      AND event_type = p_event_type
+      AND event_type = 'achievement'
+      AND source_id = p_source_id;
+
+    IF v_existing_event IS NOT NULL THEN
+      SELECT COALESCE(total_xp, 0) INTO v_current_total
+      FROM public.user_xp
+      WHERE user_id = v_auth_uid;
+
+      RETURN jsonb_build_object(
+        'status', 'already_processed',
+        'event_id', v_existing_event,
+        'awarded_xp', 0,
+        'total_xp', v_current_total
+      );
+    END IF;
+  END IF;
+
+  -- B. Lessons and courses: 24-hour cooldown on same source_id
+  IF p_source_id IS NOT NULL AND v_canonical_event_type IN ('lesson_complete', 'course_complete') THEN
+    SELECT id INTO v_existing_event
+    FROM public.xp_events
+    WHERE user_id = v_auth_uid
+      AND event_type = v_canonical_event_type
       AND source_id = p_source_id
       AND earned_at > NOW() - INTERVAL '24 hours';
 
@@ -121,12 +145,36 @@ BEGIN
     END IF;
   END IF;
 
-  IF p_event_type IN ('dailyGoal', 'daily_goal', 'streakBonus', 'streak_bonus') THEN
+  -- C. Daily goals and streak bonuses: 20-hour cooldown
+  IF v_canonical_event_type IN ('daily_goal', 'streak_bonus') THEN
     SELECT id INTO v_existing_event
     FROM public.xp_events
     WHERE user_id = v_auth_uid
-      AND event_type = p_event_type
+      AND event_type = v_canonical_event_type
       AND earned_at > NOW() - INTERVAL '20 hours';
+
+    IF v_existing_event IS NOT NULL THEN
+      SELECT COALESCE(total_xp, 0) INTO v_current_total
+      FROM public.user_xp
+      WHERE user_id = v_auth_uid;
+
+      RETURN jsonb_build_object(
+        'status', 'already_processed',
+        'event_id', v_existing_event,
+        'awarded_xp', 0,
+        'total_xp', v_current_total
+      );
+    END IF;
+  END IF;
+
+  -- D. Rapid question and review replay protection: 15-minute cooldown on same source_id
+  IF p_source_id IS NOT NULL AND v_canonical_event_type IN ('question_correct', 'review_session') THEN
+    SELECT id INTO v_existing_event
+    FROM public.xp_events
+    WHERE user_id = v_auth_uid
+      AND event_type = v_canonical_event_type
+      AND source_id = p_source_id
+      AND earned_at > NOW() - INTERVAL '15 minutes';
 
     IF v_existing_event IS NOT NULL THEN
       SELECT COALESCE(total_xp, 0) INTO v_current_total
@@ -151,24 +199,24 @@ BEGIN
     RAISE EXCEPTION 'Daily XP limit reached (maximum 2000 XP per 24 hours)';
   END IF;
 
-  -- 5. Server-side capping per event type
-  CASE p_event_type
-    WHEN 'questionCorrect', 'question_correct' THEN
+  -- 5. Server-side capping per canonical event type
+  CASE v_canonical_event_type
+    WHEN 'question_correct' THEN
       v_capped_xp := LEAST(p_xp_amount, 25);
-    WHEN 'lessonComplete', 'lesson_complete' THEN
+    WHEN 'lesson_complete' THEN
       v_capped_xp := LEAST(p_xp_amount, 100);
-    WHEN 'courseComplete', 'course_complete' THEN
+    WHEN 'course_complete' THEN
       v_capped_xp := LEAST(p_xp_amount, 500);
-    WHEN 'reviewSession', 'review_session' THEN
+    WHEN 'review_session' THEN
       v_capped_xp := LEAST(p_xp_amount, 100);
-    WHEN 'streakBonus', 'streak_bonus' THEN
+    WHEN 'streak_bonus' THEN
       v_capped_xp := LEAST(p_xp_amount, 150);
     WHEN 'achievement' THEN
       v_capped_xp := LEAST(p_xp_amount, 250);
-    WHEN 'dailyGoal', 'daily_goal' THEN
+    WHEN 'daily_goal' THEN
       v_capped_xp := LEAST(p_xp_amount, 100);
     ELSE
-      RAISE EXCEPTION 'Unhandled XP event type: %', p_event_type;
+      RAISE EXCEPTION 'Unhandled XP event type: %', v_canonical_event_type;
   END CASE;
 
   -- Ensure award doesn't breach the daily ceiling
@@ -176,7 +224,7 @@ BEGIN
     v_capped_xp := 2000 - v_today_xp;
   END IF;
 
-  -- 6. Insert event atomically
+  -- 6. Insert event atomically with canonicalized event type
   INSERT INTO public.xp_events (
     id,
     user_id,
@@ -188,7 +236,7 @@ BEGIN
   ) VALUES (
     p_event_id,
     v_auth_uid,
-    p_event_type,
+    v_canonical_event_type,
     v_capped_xp,
     p_source_id,
     p_description,

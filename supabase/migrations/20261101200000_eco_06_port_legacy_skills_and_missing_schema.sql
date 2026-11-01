@@ -131,6 +131,10 @@ CREATE INDEX IF NOT EXISTS idx_assessment_attempts_assessment ON public.assessme
 CREATE INDEX IF NOT EXISTS idx_assessment_attempts_verified ON public.assessment_attempts(user_id, is_verified);
 CREATE INDEX IF NOT EXISTS idx_assessment_attempts_deleted ON public.assessment_attempts(is_deleted);
 
+-- Reconcile legacy column defaults from TRUE to FALSE for already-existing schemas
+ALTER TABLE public.assessment_attempts ALTER COLUMN is_verified SET DEFAULT FALSE;
+ALTER TABLE public.user_skill_stats ALTER COLUMN is_verified SET DEFAULT FALSE;
+
 -- 6. User Career Paths & Snapshots
 CREATE TABLE IF NOT EXISTS public.user_career_paths (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
