@@ -410,5 +410,72 @@ void main() {
       // Verify permutation changed on the same mounted instance
       expect(order1, isNot(equals(order2)));
     });
+
+    testWidgets('Parent rebuild with same presentationSeed preserves submitted feedback and selection', (tester) async {
+      final item = AssessmentItem(
+        id: 'item-rebuild-stable',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Which protocol is secure?',
+        responseSpec: {
+          'options': ['HTTP', 'HTTPS', 'Telnet'],
+        },
+        scoringSpec: {
+          'correct_index': 1,
+        },
+        explanation: 'HTTPS uses TLS encryption.',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      int rebuildCount = 0;
+      late StateSetter triggerRebuild;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                triggerRebuild = setState;
+                return Column(
+                  children: [
+                    Text('Rebuild Count: $rebuildCount'),
+                    Expanded(
+                      child: AssessmentItemRenderer(
+                        key: ValueKey(item.id),
+                        item: item,
+                        presentationSeed: 777,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap HTTPS
+      await tester.tap(find.text('HTTPS'));
+      await tester.pumpAndSettle();
+
+      // Submit
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Practice evidence: Correct retrieval'), findsOneWidget);
+      expect(find.text('HTTPS uses TLS encryption.'), findsOneWidget);
+
+      // Trigger parent rebuild without changing item or presentationSeed
+      triggerRebuild(() {
+        rebuildCount++;
+      });
+      await tester.pumpAndSettle();
+
+      // Feedback and explanation must still be visible
+      expect(find.text('Rebuild Count: 1'), findsOneWidget);
+      expect(find.text('Practice evidence: Correct retrieval'), findsOneWidget);
+      expect(find.text('HTTPS uses TLS encryption.'), findsOneWidget);
+    });
   });
 }

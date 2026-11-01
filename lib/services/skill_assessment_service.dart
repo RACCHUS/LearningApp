@@ -171,7 +171,7 @@ class SkillAssessmentService {
             'user_id': userId,
             'started_at': DateTime.now().toIso8601String(),
             'total_questions': assessment.questions?.length ?? 0,
-            'is_verified': true,
+            'is_verified': false,
             'is_deleted': false,
           })
           .select()

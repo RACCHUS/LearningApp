@@ -77,21 +77,21 @@ select is(
   'User 1 total XP is 35 (10 + capped 25)'
 );
 
--- 9. Direct client INSERT on xp_events is blocked by RLS
-insert into public.xp_events (id, user_id, event_type, xp_amount)
-values ('bbbbbbbb-0000-0000-0000-000000000001'::uuid, 'ee111111-0000-4000-8000-000000000001', 'questionCorrect', 100);
-select is(
-  (select count(*)::integer from public.xp_events where id = 'bbbbbbbb-0000-0000-0000-000000000001'::uuid),
-  0,
-  'Direct client INSERT into xp_events is blocked by RLS'
+-- 9. Direct client INSERT on xp_events is rejected
+select throws_ok(
+  $$ insert into public.xp_events (id, user_id, event_type, xp_amount)
+     values ('bbbbbbbb-0000-0000-0000-000000000001'::uuid, 'ee111111-0000-4000-8000-000000000001', 'questionCorrect', 100) $$,
+  '42501',
+  null,
+  'Direct client INSERT into xp_events is rejected'
 );
 
--- 10. Direct client UPDATE on user_xp is blocked by RLS
-update public.user_xp set total_xp = 999999 where user_id = 'ee111111-0000-4000-8000-000000000001';
-select is(
-  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  35,
-  'Direct client UPDATE on user_xp is blocked by RLS'
+-- 10. Direct client UPDATE on user_xp is rejected
+select throws_ok(
+  $$ update public.user_xp set total_xp = 999999 where user_id = 'ee111111-0000-4000-8000-000000000001' $$,
+  '42501',
+  null,
+  'Direct client UPDATE on user_xp is rejected'
 );
 
 -- 11. User 1 cannot view User 2 XP

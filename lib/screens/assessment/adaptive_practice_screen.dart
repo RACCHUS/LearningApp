@@ -26,10 +26,12 @@ class AdaptivePracticeScreen extends ConsumerStatefulWidget {
 
 class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen> {
   AssessmentItem? _currentItem;
+  late final int _sessionNonce;
 
   @override
   void initState() {
     super.initState();
+    _sessionNonce = DateTime.now().millisecondsSinceEpoch;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adaptivePracticeProvider.notifier).startSession(
             userId: widget.userId,
@@ -260,7 +262,7 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                                   item: _currentItem!,
                                   onAnswerSubmitted: _onAnswerSubmitted,
                                   onCompleted: _pickNextQuestion,
-                                  presentationSeed: widget.targetVersionId.hashCode ^ state.responses.length,
+                                  presentationSeed: _sessionNonce ^ _currentItem!.id.hashCode,
                                 ),
                               ),
                             ],

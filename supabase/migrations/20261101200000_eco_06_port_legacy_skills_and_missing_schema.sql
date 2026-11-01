@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS public.user_skill_stats (
   best_score INTEGER DEFAULT 0,
   average_score NUMERIC(5,2) DEFAULT 0,
   last_assessed_at TIMESTAMPTZ,
-  is_verified BOOLEAN DEFAULT TRUE,
+  is_verified BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, skill_id)
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS public.assessment_attempts (
   total_questions INTEGER DEFAULT 0,
   time_taken_seconds INTEGER,
   was_overtime BOOLEAN DEFAULT FALSE,
-  is_verified BOOLEAN DEFAULT TRUE,
+  is_verified BOOLEAN DEFAULT FALSE,
   is_deleted BOOLEAN DEFAULT FALSE,
   answers JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -349,7 +349,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_te
 
 REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.calculate_skill_level(UUID, UUID) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.update_skill_stats_after_assessment() 
@@ -382,7 +382,7 @@ BEGIN
       AND aa.score IS NOT NULL;
     
     INSERT INTO public.user_skill_stats (user_id, skill_id, level, best_score, average_score, total_assessments, last_assessed_at, is_verified)
-    VALUES (NEW.user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), TRUE)
+    VALUES (NEW.user_id, v_skill_id, v_new_level, COALESCE(v_best_score, 0), COALESCE(v_avg_score, 0), COALESCE(v_total, 0), NOW(), NEW.is_verified)
     ON CONFLICT (user_id, skill_id) 
     DO UPDATE SET
       level = v_new_level,

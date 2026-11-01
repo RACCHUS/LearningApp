@@ -191,10 +191,11 @@ class ReviewableItem {
   bool get isDueToday {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final localReview = nextReviewDate.toLocal();
     final reviewDay = DateTime(
-      nextReviewDate.year,
-      nextReviewDate.month,
-      nextReviewDate.day,
+      localReview.year,
+      localReview.month,
+      localReview.day,
     );
     return reviewDay.isAtSameMomentAs(today) || reviewDay.isBefore(today);
   }

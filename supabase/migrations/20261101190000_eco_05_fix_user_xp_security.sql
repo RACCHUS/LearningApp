@@ -60,6 +60,9 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  -- Advisory transaction lock to serialize concurrent calls per user
+  PERFORM pg_advisory_xact_lock(hashtext(v_auth_uid::text));
+
   -- 1. Exact UUID Idempotency: if this exact event id was already processed, return current state
   SELECT id INTO v_existing_event
   FROM public.xp_events
@@ -224,6 +227,12 @@ GRANT EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT
 GRANT EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT) TO service_role;
 
 -- 5. Revoke ALL direct client write DML on user_xp and xp_events tables
+-- Revoke table-level DML privileges from public, anon, and authenticated
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.user_xp FROM PUBLIC, anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.xp_events FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.user_xp TO authenticated;
+GRANT SELECT ON TABLE public.xp_events TO authenticated;
+
 -- Drop policies from Migration 20250101000002_create_user_xp.sql AND 20260528000000_secure_rls_with_anonymous_guests.sql
 DROP POLICY IF EXISTS "user_xp_owner_all" ON public.user_xp;
 DROP POLICY IF EXISTS "Users can insert own XP" ON public.user_xp;
