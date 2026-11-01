@@ -79,8 +79,9 @@ This single schema is used identically in [`06_MEASUREMENT_AND_SCHEDULING.md`](0
 }
 ```
 
-### Fields
+### Fields & Adult Literacy Interpretation Guardrail
 - **`reading_demand`**: `{ word_count: integer, reading_grade_estimate: number, lexical_rarity_tier: 'decodable' | 'high_frequency' | 'standard' | 'technical_specialized' }`
+  - **Important Qualification (`ER-06`, Tighe et al., 2026)**: `reading_grade_estimate` strictly describes the **linguistic/syntactic reading demand of the text passage** (e.g., Flesch-Kincaid text complexity). Because child-based reading-grade equivalencies do not accurately describe adult reading competence, this value must **never** be used to label or report an adult learner's reading ability as a child grade level.
 - **`reasoning_step_count`**: integer ($\ge 1$)
 - **`quantitative_complexity`**: `none` | `arithmetic` | `single_formula` | `multi_step_with_unit_conversion`
 - **`prerequisite_depth`**: integer ($\ge 0$, topological depth in `concept_relations`)
@@ -123,4 +124,4 @@ This single schema is used identically in [`06_MEASUREMENT_AND_SCHEDULING.md`](0
 
 - **`timing_regime`**: `untimed_mastery` | `paced_practice` | `exam_clock_enforced`.
 - **`error_criticality`**: `standard_compensatory` | `authoritative_critical_step_gate`.
-- **`scoring_protection`**: `client_practice` | `server_protected_scoring` (determines whether answer keys remain server-only per `FIX-12` / `08_CONTENT_AND_IMPORT_ALIGNMENT.md`).
+- **`scoring_protection`**: `client_practice` | `server_protected_scoring` (target state for `FIX-12`; see implementation status in [`08_CONTENT_AND_IMPORT_ALIGNMENT.md`](08_CONTENT_AND_IMPORT_ALIGNMENT.md)).

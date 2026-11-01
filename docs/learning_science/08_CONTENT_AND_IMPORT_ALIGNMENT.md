@@ -1,14 +1,18 @@
-# 08 — Content & Import Alignment Pipeline & Representation Security
+# 08 — Content & Import Alignment Pipeline & Representation Security (`FIX-12`)
 
-This document specifies the six-stage content ingestion pipeline, the **three content representations required to protect answer keys (`FIX-12`)**, and the **proposed versioned schema extensions** for `content/schema/curriculum_manifest.schema.json`.
+This document specifies the six-stage content ingestion pipeline, the **proposed three-representation architecture for `FIX-12` answer-key isolation (and its accurate current implementation status)**, and the **proposed versioned schema extensions** for `content/schema/curriculum_manifest.schema.json`.
 
 ---
 
-## 1. Three Content Representations (Answer-Key Security — `FIX-12`)
+## 1. Three Content Representations & Accurate `FIX-12` Implementation Status
 
-To prevent answer-key leakage in network payloads while supporting rich authoring and misconception analytics (coordinated with Antigravity's PR `#136` `FIX-12`), structured-choice items are separated into three distinct representations:
+> **Current Implementation Status (`main` `e538585` & PR `#136`)**:
+> The three-representation architecture below is the **proposed `FIX-12` target**.
+> - On `main`, existing `EXM-03` (`20261101130000_exm_03_assigned_practice_scoring.sql` and `20261101140000_exm_03_authenticated_assignment_issuer.sql`) provides a separate **`service_role`-only scoring backend for assigned exam part practice**; it is deliberately not connected to the learner UI as a general assessment submission API.
+> - On Antigravity's PR `#136`, general `FIX-12` is explicitly scheduled for **Phase 1**, and `AssessmentItemRenderer` still performs client-side scoring using `item.scoringSpec` and `correct_index`.
+> - General assessment answer-key isolation and learner-facing server scoring RPCs therefore remain **scheduled for Phase 1 implementation** and must not be assumed to be active on `main` today.
 
-### 1.1 Authoring & Manifest Representation (Repository / Ingestion Only)
+### 1.1 Target Representation 1: Authoring & Ingestion Representation (Repository / Server Storage Only)
 Used during content authoring, import validation, and manifest ingestion (`ingest_curriculum_manifest`). Contains the full instructional and scoring specification:
 ```json
 {
@@ -33,8 +37,8 @@ Used during content authoring, import validation, and manifest ingestion (`inges
 }
 ```
 
-### 1.2 Learner Presentation Representation (Delivered to Client Before Submission)
-Delivered to the client for diagnostic, mock exam, and readiness-eligible assessments. **Strips `is_correct`, `scoring_spec`, `misconception_tag`, and answer-revealing `rationale` fields**:
+### 1.2 Target Representation 2: Learner Presentation DTO (Delivered to Client Prior to Submission)
+In Phase 1 (`FIX-12`), diagnostic, mock exam, and readiness-eligible assessments deliver only the prompt, stimulus, and shuffled options (`option_id`, `text`) **without** `is_correct`, `correct_index`, `scoring_spec`, `misconception_tag`, or answer-revealing `rationale` fields:
 ```json
 {
   "item_id": "fl_ins_042",
@@ -47,9 +51,9 @@ Delivered to the client for diagnostic, mock exam, and readiness-eligible assess
 }
 ```
 
-### 1.3 Server Scoring & Post-Submission Feedback Representation
-Stored in protected server tables/views (`scoring_spec`) and evaluated via authenticated scoring RPCs (`EXM-03` and general assessment submission RPCs in PR `#136`).
-- In **study/acquisition mode (`feedback_policy == immediate_explanatory`)**: Submitting the attempt returns the scored outcome plus the relevant option rationales.
+### 1.3 Target Representation 3: Server Scoring & Controlled Feedback Release
+Stored in protected server tables (`scoring_spec`) and evaluated by Phase 1 server scoring RPCs:
+- In **study/acquisition mode (`feedback_policy == immediate_explanatory`)**: Submitting the attempt returns the server-computed score plus the relevant option rationales.
 - In **timed exam mode (`timing_regime == exam_clock_enforced`, `feedback_policy == deferred_until_submission`)**: Rationales and correctness are withheld until the exam part is submitted.
 
 ---
@@ -57,10 +61,10 @@ Stored in protected server tables/views (`scoring_spec`) and evaluated via authe
 ## 2. The 6-Stage Content & Import Pipeline
 
 1. **Source Acquisition**: Official outlines/manuals, PDFs, YouTube URLs (embedded via `youtube-nocookie`; optional Gemini API YouTube URL analysis via user BYOK within its 8-hour daily free-tier allowance), Anki/CSV exports, and BYOK/MCP AI generation.
-2. **Extraction & 6-Property Provenance**: Records `origin`, `visibility` (`private` by default for imports), `rights_status`, `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
+2. **Extraction & 6-Property Provenance**: Records `origin`, `visibility` (`private` by default for imports), `rights_status` (`rights_review_required` by default for unverified imports), `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
 3. **Knowledge Organization**: Maps content to canonical `fields`, `knowledge_concepts`, `concept_relations` prerequisites, and `confusable_group_id` clusters.
 4. **Learning Design**: Assigns the canonical `LearningTaskProfile`, `ContentComplexityProfile`, `InstructionalPolicy`, and `AssessmentPolicy` (`02_LEARNING_TASK_TAXONOMY.md`).
-5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, readability) and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
+5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, passage reading demand) and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
 6. **Personalized Delivery**: Delivers the Learner Presentation DTO through the task-aware Study View and versioned scheduler (`review_items`), recording attempts via `record_events` (`public.learning_events`).
 
 ---

@@ -1,32 +1,36 @@
-# 05 — Learner Adaptation, Diagnostic Pretesting & Adaptive Scaffolding
+# 05 — Learner Adaptation, Prequestioning vs. Diagnostic Validity & Adaptive Scaffolding
 
-This specification defines how LearningApp adapts instruction and scaffolding to prior knowledge using evidence from the 2023 Prequestioning Meta-Analysis (`ER-10`) and the 2025 Expertise Reversal Meta-Analysis (`ER-05`).
+This specification defines how LearningApp distinguishes **prequestioning as a learning intervention** from **diagnostic prior-knowledge assessment**, and how it adapts instructional scaffolding (`ER-05`, `ER-10`).
 
 ---
 
-## 1. Diagnostic Pretesting: Specific Routing, Not Universal Transfer (`ER-10`)
+## 1. Distinguishing Prequestioning from Diagnostic-Test Validity (`ER-10`)
 
-The 2023 prequestioning meta-analysis demonstrates a strong positive effect on the **specific material pretested ($g = 0.54$)**, but a near-zero effect on **untested material in the same lesson ($g = 0.04$)**.
+Two distinct mechanisms must not be conflated:
 
-### Design Rules for Diagnostic Pretesting
-1. **Objective-Specific Routing**:
-   - Diagnostic pretests are used to measure baseline competence on the specific `knowledge_concepts` tested by the diagnostic items and to prime attention on those exact objectives.
-   - Passing a diagnostic item for Concept $A$ allows the learner to bypass introductory scaffolding on Concept $A$, but **never** skips instruction or scaffolding on untested Concept $B$.
-2. **Honesty Invariant**:
-   - Consistent with `UI_ARCHITECTURE_LOCKED.md`, diagnostics only run when mapped items exist for the target concepts.
+### 1.1 Prequestioning as a Learning Intervention (`Direct Empirical Support` — St. Hilaire, Chan & Ahn, 2023/2024)
+- Asking a learner a question *before* they study the target material significantly improves subsequent learning of **that specific prequestioned material ($g = .54$, 95% CI $[.42, .66]$, $k = 97$)**, even when the learner's initial guess is wrong.
+- However, prequestioning has virtually **no general transfer effect on untested material in the same lesson ($g = .04$, 95% CI $[-.04, .11]$, $k = 91$)**.
+- **Design Rule**: Optional pre-lesson prequestions are used to prime attention on the specific core concepts they ask about, never to claim broad enhancement of untested content.
+
+### 1.2 Diagnostic Assessment for Skipping Scaffolding (`Implementation Hypothesis` — Requires Multi-Signal Evidence)
+- St. Hilaire et al. (2023/2024) do **not** establish that answering a single prequestion correctly is a psychometrically valid measure of prior competence.
+- A single 4-option multiple-choice item has a $25\%$ random guessing probability. Allowing a learner to automatically bypass instruction or scaffolding on Concept $A$ based on a single lucky MCQ guess risks leaving knowledge gaps unaddressed.
+- **Design Rule**:
+  1. **Direct Access Preserved**: Learners may always manually choose to jump straight to practice or unassisted problems (`UI_ARCHITECTURE_LOCKED.md`).
+  2. **Automated Scaffolding Bypass Requires Stronger Evidence (`Implementation Hypothesis`)**: Automatically routing a learner past introductory worked examples on Concept $A$ requires stronger evidence than a single MCQ hit—such as passing an uncued/numeric/free-recall check, demonstrating competence across multiple items/facets of Concept $A$ with high confidence and low latency, or holding established `user_concept_state` stability from a cross-target concept match. The exact bypass threshold is treated as an `Implementation Hypothesis` to be calibrated in Phase 6.
 
 ---
 
 ## 2. Adaptive Scaffolding & Expertise Reversal Prevention (`ER-05`)
 
-The 2025 meta-analysis ($k = 60$ studies, $N = 5,924$) shows that high instructional assistance benefits novices ($d = 0.505$) while low assistance benefits experienced learners ($d = -0.428$), with substantial heterogeneity across tasks.
+Tetzlaff et al. (2025, *Learning and Instruction*, $k = 60$, $N = 5,924$) demonstrate that high assistance benefits novices ($d = .505$, 95% CI $[.260, .750]$, $I^2 = 90.87\%$) while low assistance benefits experienced learners ($d = -.428$, 95% CI $[-.647, -.209]$).
 
 ### Adaptive Scaffolding Controller (`InstructionalPolicy.scaffolding_policy`)
-1. **Initial Routing**:
-   - If `user_concept_state` has no prior observations (or low accuracy), `procedural_quantitative` tasks start with high assistance (worked example + backward fading).
-   - If the learner passes the concept's diagnostic pretest or selects a direct unassisted challenge, scaffolding is bypassed immediately.
-2. **Dynamic Adjustment (Tunable Heuristic — `Implementation Hypothesis`)**:
-   - Because the 2025 meta-analysis exhibits substantial heterogeneity, specific step-up/step-down rules (such as promoting to unassisted practice after consecutive correct responses or stepping back to a faded step after an error or hint request) are implemented as **configurable policy parameters** rather than claimed as universal psychological constants, and are evaluated empirically in Phase 6/7.
+1. **Novice / Unobserved State**:
+   - Starts `procedural_quantitative` tasks with high instructional assistance (worked example + backward step fading) unless the learner explicitly selects unassisted practice or satisfies the multi-signal competence check above.
+2. **Dynamic Fading & Remediation (`Implementation Hypothesis`)**:
+   - Because of the high between-study heterogeneity ($I^2 = 90.87\%$), step-up and step-down rules (fading assistance as unassisted steps succeed; re-introducing step guidance when an error or hint occurs) are implemented as configurable policy parameters rather than fixed universal constants.
 
 ---
 
