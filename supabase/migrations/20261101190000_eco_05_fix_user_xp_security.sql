@@ -6,7 +6,7 @@
 -- 1. Drop old insecure function signature
 DROP FUNCTION IF EXISTS public.increment_user_xp(UUID, INTEGER);
 
--- 2. Define hardened increment_user_xp function (service_role only)
+-- 2. Define hardened increment_user_xp function (service_role only for admin/batch awards)
 CREATE OR REPLACE FUNCTION public.increment_user_xp(
   p_xp_amount INTEGER,
   p_user_id UUID DEFAULT NULL
@@ -16,19 +16,22 @@ DECLARE
   v_auth_uid UUID := (SELECT auth.uid());
   v_target_user_id UUID;
 BEGIN
-  IF v_auth_uid IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
-
-  IF p_user_id IS NOT NULL AND p_user_id <> v_auth_uid THEN
-    RAISE EXCEPTION 'Cannot modify XP for another user';
+  -- Determine target user: for authenticated callers, must be own uid; for service_role, p_user_id is required
+  IF v_auth_uid IS NOT NULL THEN
+    IF p_user_id IS NOT NULL AND p_user_id <> v_auth_uid THEN
+      RAISE EXCEPTION 'Cannot modify XP for another user';
+    END IF;
+    v_target_user_id := v_auth_uid;
+  ELSE
+    IF p_user_id IS NULL THEN
+      RAISE EXCEPTION 'Target user_id is required when calling increment_user_xp via service_role';
+    END IF;
+    v_target_user_id := p_user_id;
   END IF;
 
   IF p_xp_amount <= 0 OR p_xp_amount > 1000 THEN
     RAISE EXCEPTION 'Invalid XP increment amount (must be 1..1000)';
   END IF;
-
-  v_target_user_id := v_auth_uid;
 
   INSERT INTO public.user_xp (user_id, total_xp, created_at, updated_at)
   VALUES (v_target_user_id, p_xp_amount, NOW(), NOW())
@@ -302,3 +305,16 @@ DROP POLICY IF EXISTS "Users can view own XP events" ON public.xp_events;
 CREATE POLICY "Users can view own XP events"
   ON public.xp_events FOR SELECT
   USING ((SELECT auth.uid()) = user_id);
+
+-- 6. Backfill historical camelCase event types to canonical snake_case
+UPDATE public.xp_events
+SET event_type = CASE event_type
+  WHEN 'questionCorrect' THEN 'question_correct'
+  WHEN 'lessonComplete' THEN 'lesson_complete'
+  WHEN 'courseComplete' THEN 'course_complete'
+  WHEN 'reviewSession' THEN 'review_session'
+  WHEN 'streakBonus' THEN 'streak_bonus'
+  WHEN 'dailyGoal' THEN 'daily_goal'
+  ELSE event_type
+END
+WHERE event_type IN ('questionCorrect', 'lessonComplete', 'courseComplete', 'reviewSession', 'streakBonus', 'dailyGoal');

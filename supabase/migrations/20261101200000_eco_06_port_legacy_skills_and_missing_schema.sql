@@ -135,6 +135,10 @@ CREATE INDEX IF NOT EXISTS idx_assessment_attempts_deleted ON public.assessment_
 ALTER TABLE public.assessment_attempts ALTER COLUMN is_verified SET DEFAULT FALSE;
 ALTER TABLE public.user_skill_stats ALTER COLUMN is_verified SET DEFAULT FALSE;
 
+-- Quarantine existing legacy client-asserted attempts and stats as unverified
+UPDATE public.assessment_attempts SET is_verified = FALSE WHERE is_verified = TRUE;
+UPDATE public.user_skill_stats SET is_verified = FALSE WHERE is_verified = TRUE;
+
 -- 6. User Career Paths & Snapshots
 CREATE TABLE IF NOT EXISTS public.user_career_paths (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -393,6 +397,7 @@ BEGIN
       best_score = COALESCE(v_best_score, user_skill_stats.best_score),
       average_score = COALESCE(v_avg_score, user_skill_stats.average_score),
       total_assessments = COALESCE(v_total, user_skill_stats.total_assessments),
+      is_verified = NEW.is_verified,
       last_assessed_at = NOW(),
       updated_at = NOW();
   END IF;

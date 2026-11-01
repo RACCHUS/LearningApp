@@ -127,10 +127,11 @@ class XpService {
   }
 
   /// Award XP for completing a question correctly
-  Future<XpEvent?> awardQuestionXp(String lessonId) async {
+  Future<XpEvent?> awardQuestionXp(String lessonId, {String? questionId}) async {
+    final source = questionId != null ? '$lessonId:$questionId' : lessonId;
     return awardXp(
       type: XpEventType.questionCorrect,
-      sourceId: lessonId,
+      sourceId: source,
     );
   }
 
@@ -153,11 +154,13 @@ class XpService {
   }
 
   /// Award XP for review session
-  Future<XpEvent?> awardReviewSessionXp(int itemsReviewed) async {
+  Future<XpEvent?> awardReviewSessionXp(int itemsReviewed, {String? contextId}) async {
     final bonusXp = (itemsReviewed * 2).clamp(0, 50); // Max 50 bonus
+    final source = contextId ?? 'session_${DateTime.now().toUtc().millisecondsSinceEpoch}';
     return awardXp(
       type: XpEventType.reviewSession,
       customAmount: XpConstants.perReviewSession + bonusXp,
+      sourceId: source,
       description: 'Reviewed $itemsReviewed items',
     );
   }
@@ -232,6 +235,7 @@ class XpNotifier extends StateNotifier<XpState> {
     int? customAmount,
     String? sourceId,
     String? description,
+    String? eventId,
   }) async {
     final previousXp = state.totalXp;
 
@@ -240,6 +244,7 @@ class XpNotifier extends StateNotifier<XpState> {
       customAmount: customAmount,
       sourceId: sourceId,
       description: description,
+      eventId: eventId,
     );
 
     if (event != null) {

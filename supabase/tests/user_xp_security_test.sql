@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(16);
+select plan(18);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -132,6 +132,19 @@ select is(
   (select count(*)::integer from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000002'),
   0,
   'User 1 cannot view User 2 XP'
+);
+
+-- 14. service_role can increment XP with target user_id
+set local role service_role;
+select lives_ok(
+  $$ select increment_user_xp(50, 'ee111111-0000-4000-8000-000000000001'::uuid) $$,
+  'service_role can execute increment_user_xp with target user_id'
+);
+
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  235,
+  'User 1 total XP reflects service_role increment (185 + 50 = 235)'
 );
 
 select * from finish();

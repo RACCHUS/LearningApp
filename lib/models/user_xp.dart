@@ -114,6 +114,38 @@ enum XpEventType {
         return 'Daily Goal';
     }
   }
+
+  /// Parse from either camelCase (legacy) or snake_case (canonical) string
+  static XpEventType fromString(String? raw) {
+    if (raw == null) return XpEventType.questionCorrect;
+    switch (raw) {
+      case 'questionCorrect':
+      case 'question_correct':
+        return XpEventType.questionCorrect;
+      case 'lessonComplete':
+      case 'lesson_complete':
+        return XpEventType.lessonComplete;
+      case 'courseComplete':
+      case 'course_complete':
+        return XpEventType.courseComplete;
+      case 'reviewSession':
+      case 'review_session':
+        return XpEventType.reviewSession;
+      case 'streakBonus':
+      case 'streak_bonus':
+        return XpEventType.streakBonus;
+      case 'achievement':
+        return XpEventType.achievement;
+      case 'dailyGoal':
+      case 'daily_goal':
+        return XpEventType.dailyGoal;
+      default:
+        return XpEventType.values.firstWhere(
+          (e) => e.name.toLowerCase() == raw.replaceAll('_', '').toLowerCase(),
+          orElse: () => XpEventType.questionCorrect,
+        );
+    }
+  }
 }
 
 /// Record of an XP gain event
@@ -137,10 +169,7 @@ class XpEvent {
   factory XpEvent.fromJson(Map<String, dynamic> json) {
     return XpEvent(
       id: json['id'] as String,
-      type: XpEventType.values.firstWhere(
-        (e) => e.name == json['event_type'],
-        orElse: () => XpEventType.questionCorrect,
-      ),
+      type: XpEventType.fromString(json['event_type'] as String?),
       xpAmount: json['xp_amount'] as int,
       sourceId: json['source_id'] as String?,
       description: json['description'] as String?,
