@@ -1,3 +1,5 @@
+import 'package:fsrs/fsrs.dart' as fsrs;
+
 /// Spaced repetition intervals in days (simplified SM-2 algorithm)
 /// Intervals: 1, 3, 7, 14, 30, 60, 120 days
 class SpacedRepetitionIntervals {
@@ -34,6 +36,24 @@ enum RecallQuality {
 
   final int value;
   const RecallQuality(this.value);
+}
+
+/// Extension mapping RecallQuality to FSRS Rating
+extension RecallQualityFsrs on RecallQuality {
+  fsrs.Rating toFsrsRating() {
+    switch (this) {
+      case RecallQuality.blackout:
+      case RecallQuality.incorrect:
+        return fsrs.Rating.again;
+      case RecallQuality.difficult:
+        return fsrs.Rating.hard;
+      case RecallQuality.hesitant:
+      case RecallQuality.good:
+        return fsrs.Rating.good;
+      case RecallQuality.perfect:
+        return fsrs.Rating.easy;
+    }
+  }
 }
 
 /// Content types that can be reviewed
@@ -168,6 +188,13 @@ class ReviewableItem {
   /// This allows any content type to store its unique data
   final Map<String, dynamic>? metadata;
 
+  /// FSRS algorithm properties
+  final double? stability;
+  final double? difficulty;
+  final int fsrsState;
+  final double? retrievability;
+  final int step;
+
   ReviewableItem({
     required this.id,
     required this.contentId,
@@ -182,7 +209,45 @@ class ReviewableItem {
     this.totalReviews = 0,
     this.correctReviews = 0,
     this.metadata,
+    this.stability,
+    this.difficulty,
+    this.fsrsState = 1,
+    this.retrievability,
+    this.step = 0,
   });
+
+  /// FSRS State conversion helper
+  fsrs.State get _cardState {
+    switch (fsrsState) {
+      case 2:
+        return fsrs.State.review;
+      case 3:
+        return fsrs.State.relearning;
+      case 1:
+      default:
+        return fsrs.State.learning;
+    }
+  }
+
+  /// Current retrievability estimate
+  double currentRetrievability({DateTime? asOf}) {
+    if (stability == null || lastReviewedAt == null) return retrievability ?? 0.0;
+    try {
+      final scheduler = fsrs.Scheduler(desiredRetention: 0.9);
+      final card = fsrs.Card(
+        cardId: id.hashCode,
+        state: _cardState,
+        step: _cardState == fsrs.State.review ? null : step,
+        stability: stability,
+        difficulty: difficulty,
+        due: nextReviewDate.toUtc(),
+        lastReview: lastReviewedAt?.toUtc(),
+      );
+      return scheduler.getCardRetrievability(card, currentDateTime: (asOf ?? DateTime.now()).toUtc());
+    } catch (_) {
+      return retrievability ?? 0.0;
+    }
+  }
 
   /// Check if this item is due for review
   bool get isDue => DateTime.now().isAfter(nextReviewDate);
@@ -219,11 +284,12 @@ class ReviewableItem {
     return DifficultyCategory.mastered;
   }
 
-  /// Calculate next review state using simplified SM-2 algorithm
-  ReviewableItem processReview(RecallQuality quality) {
+  /// Calculate next review state using FSRS algorithm with SM-2 synchronization
+  ReviewableItem processReview(RecallQuality quality, {DateTime? reviewDateTime}) {
+    final now = (reviewDateTime ?? DateTime.now()).toUtc();
     final isCorrect = quality.value >= 3;
     
-    // Update repetition level
+    // 1. SM-2 calculation (kept in sync for backward compatibility)
     int newLevel;
     if (isCorrect) {
       newLevel = repetitionLevel + 1;
@@ -236,14 +302,51 @@ class ReviewableItem {
     // EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
     double newEaseFactor = easeFactor +
         (0.1 - (5 - quality.value) * (0.08 + (5 - quality.value) * 0.02));
-    
-    // EF should not go below 1.3
     newEaseFactor = newEaseFactor.clamp(1.3, 2.5);
 
-    // Calculate next review date
-    final interval = SpacedRepetitionIntervals.getInterval(newLevel);
-    final adjustedInterval = (interval * newEaseFactor).round();
-    final nextDate = DateTime.now().add(Duration(days: adjustedInterval));
+    // 2. FSRS calculation
+    final scheduler = fsrs.Scheduler(desiredRetention: 0.9);
+    final isBrandNew = stability == null && lastReviewedAt == null && repetitionLevel == 0;
+
+    final double? seedStability;
+    final double? seedDifficulty;
+    final DateTime? cardLastReview;
+    final fsrs.State currentCardState;
+    final int? cardStep;
+
+    if (isBrandNew) {
+      seedStability = null;
+      seedDifficulty = null;
+      cardLastReview = null;
+      currentCardState = fsrs.State.learning;
+      cardStep = 0;
+    } else {
+      seedStability = stability ??
+          (repetitionLevel > 0
+              ? (SpacedRepetitionIntervals.getInterval(repetitionLevel) * easeFactor).clamp(1.0, 365.0)
+              : null);
+      seedDifficulty = difficulty ??
+          ((2.5 - easeFactor) * 5.0 + 4.0).clamp(1.0, 10.0);
+      cardLastReview = (lastReviewedAt ??
+          now.subtract(Duration(days: SpacedRepetitionIntervals.getInterval(repetitionLevel)))).toUtc();
+      currentCardState = repetitionLevel > 0 ? fsrs.State.review : _cardState;
+      cardStep = currentCardState == fsrs.State.review ? null : step;
+    }
+
+    final card = fsrs.Card(
+      cardId: id.hashCode,
+      state: currentCardState,
+      step: cardStep,
+      stability: seedStability,
+      difficulty: seedDifficulty,
+      due: nextReviewDate.toUtc(),
+      lastReview: cardLastReview,
+    );
+
+    final fsrsRating = quality.toFsrsRating();
+    final reviewResult = scheduler.reviewCard(card, fsrsRating, reviewDateTime: now);
+    final updatedCard = reviewResult.card;
+    final newRetrievability = scheduler.getCardRetrievability(updatedCard, currentDateTime: now);
 
     return ReviewableItem(
       id: id,
@@ -254,11 +357,16 @@ class ReviewableItem {
       subtitle: subtitle,
       repetitionLevel: newLevel,
       easeFactor: newEaseFactor,
-      nextReviewDate: nextDate,
-      lastReviewedAt: DateTime.now(),
+      nextReviewDate: updatedCard.due.toLocal(),
+      lastReviewedAt: now.toLocal(),
       totalReviews: totalReviews + 1,
       correctReviews: isCorrect ? correctReviews + 1 : correctReviews,
       metadata: metadata,
+      stability: updatedCard.stability,
+      difficulty: updatedCard.difficulty,
+      fsrsState: updatedCard.state.value,
+      retrievability: newRetrievability,
+      step: updatedCard.step ?? 0,
     );
   }
 
@@ -284,6 +392,11 @@ class ReviewableItem {
       metadata: json['metadata'] != null
           ? Map<String, dynamic>.from(json['metadata'] as Map)
           : null,
+      stability: (json['stability'] as num?)?.toDouble(),
+      difficulty: (json['difficulty'] as num?)?.toDouble(),
+      fsrsState: json['fsrs_state'] as int? ?? 1,
+      retrievability: (json['retrievability'] as num?)?.toDouble(),
+      step: json['step'] as int? ?? 0,
     );
   }
 
@@ -303,6 +416,11 @@ class ReviewableItem {
       'total_reviews': totalReviews,
       'correct_reviews': correctReviews,
       'metadata': metadata,
+      'stability': stability,
+      'difficulty': difficulty,
+      'fsrs_state': fsrsState,
+      'retrievability': retrievability,
+      'step': step,
     };
   }
 
@@ -321,6 +439,11 @@ class ReviewableItem {
     int? totalReviews,
     int? correctReviews,
     Map<String, dynamic>? metadata,
+    double? stability,
+    double? difficulty,
+    int? fsrsState,
+    double? retrievability,
+    int? step,
   }) {
     return ReviewableItem(
       id: id ?? this.id,
@@ -336,6 +459,11 @@ class ReviewableItem {
       totalReviews: totalReviews ?? this.totalReviews,
       correctReviews: correctReviews ?? this.correctReviews,
       metadata: metadata ?? this.metadata,
+      stability: stability ?? this.stability,
+      difficulty: difficulty ?? this.difficulty,
+      fsrsState: fsrsState ?? this.fsrsState,
+      retrievability: retrievability ?? this.retrievability,
+      step: step ?? this.step,
     );
   }
 }

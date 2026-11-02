@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/models/learning_event.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+import 'package:learning_pwa/services/offline/learning_event_outbox.dart';
 import 'package:uuid/uuid.dart';
 import 'concept_evidence_service.dart';
 
@@ -12,13 +14,16 @@ import 'concept_evidence_service.dart';
 class SpacedRepetitionService {
   final SupabaseClient _supabase;
   final ConceptEvidenceService? _evidenceService;
+  final LearningEventOutbox? _outbox;
   static const _uuid = Uuid();
 
   SpacedRepetitionService({
     SupabaseClient? supabase,
     ConceptEvidenceService? evidenceService,
+    LearningEventOutbox? outbox,
   })  : _supabase = supabase ?? Supabase.instance.client,
-        _evidenceService = evidenceService;
+        _evidenceService = evidenceService,
+        _outbox = outbox;
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
@@ -194,6 +199,38 @@ class SpacedRepetitionService {
           .eq('id', item.id)
           .eq('user_id', _userId!);
 
+      // Log append-only learning event via outbox (ARCH-1, FIX-2)
+      final event = LearningEvent(
+        eventType: 'review',
+        itemType: item.contentType.dbValue,
+        itemId: item.contentId,
+        contextId: item.lessonId,
+        rating: quality.toFsrsRating().value,
+        score: quality.value >= 3 ? 1.0 : 0.0,
+        schedulerStateBefore: {
+          'stability': item.stability,
+          'difficulty': item.difficulty,
+          'state': item.fsrsState,
+          'step': item.step,
+          'repetition_level': item.repetitionLevel,
+          'ease_factor': item.easeFactor,
+        },
+        schedulerStateAfter: {
+          'due': updatedItem.nextReviewDate.toUtc().toIso8601String(),
+          'stability': updatedItem.stability,
+          'difficulty': updatedItem.difficulty,
+          'state': updatedItem.fsrsState,
+          'step': updatedItem.step,
+          'repetition_level': updatedItem.repetitionLevel,
+          'ease_factor': updatedItem.easeFactor,
+        },
+        metadata: {
+          'review_item_id': item.id,
+          'quality': quality.name,
+        },
+      );
+      _outbox?.enqueue(event);
+
       // Word-skill evidence does not identify a canonical knowledge concept.
       if (item.contentType != ReviewableContentType.wordSkill) {
         // Propagate ordinary review evidence to linked concepts.
@@ -272,6 +309,7 @@ class SpacedRepetitionService {
 final spacedRepetitionServiceProvider = Provider<SpacedRepetitionService>((ref) {
   return SpacedRepetitionService(
     evidenceService: ConceptEvidenceService(),
+    outbox: ref.read(learningEventOutboxProvider),
   );
 });
 

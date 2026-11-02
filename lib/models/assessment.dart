@@ -46,7 +46,9 @@ class SkillAssessment {
       difficulty:
           AssessmentDifficulty.fromString(json['difficulty'] as String?),
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
@@ -121,7 +123,7 @@ class AssessmentQuestion {
   final String assessmentId;
   final String questionText;
   final List<String> options;
-  final int correctAnswer; // 0-based index
+  final int? correctAnswer; // 0-based index; null when taking test (answer key withheld)
   final String? explanation;
   final int orderIndex;
   final DateTime createdAt;
@@ -131,7 +133,7 @@ class AssessmentQuestion {
     required this.assessmentId,
     required this.questionText,
     required this.options,
-    required this.correctAnswer,
+    this.correctAnswer,
     this.explanation,
     this.orderIndex = 0,
     required this.createdAt,
@@ -143,10 +145,12 @@ class AssessmentQuestion {
       assessmentId: json['assessment_id'] as String,
       questionText: json['question_text'] as String,
       options: (json['options'] as List).cast<String>(),
-      correctAnswer: json['correct_answer'] as int,
+      correctAnswer: json['correct_answer'] as int?,
       explanation: json['explanation'] as String?,
       orderIndex: json['order_index'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -161,7 +165,8 @@ class AssessmentQuestion {
         'created_at': createdAt.toIso8601String(),
       };
 
-  bool isCorrect(int answerIndex) => answerIndex == correctAnswer;
+  bool isCorrect(int answerIndex) =>
+      correctAnswer != null && answerIndex == correctAnswer;
 }
 
 /// User's attempt at an assessment
@@ -222,7 +227,9 @@ class AssessmentAttempt {
           ? (json['answers'] as Map<String, dynamic>)
               .map((k, v) => MapEntry(k, v as int))
           : null,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
       assessment: json['skill_assessments'] != null
           ? SkillAssessment.fromJson(json['skill_assessments'])
           : null,
