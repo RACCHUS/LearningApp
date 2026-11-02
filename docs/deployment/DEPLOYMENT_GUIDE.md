@@ -77,7 +77,7 @@ firebase deploy --only hosting
 ```
 
 *Target Project:* `learningapp-2ed8a` (configured in `.firebaserc`)  
-*Hosting Config:* Defined in `firebase.json` with cache-control headers on `flutter_service_worker.js`, `index.html`, and `version.json`.
+*Hosting Config:* Defined in `firebase.json` with no-cache headers on `index.html`, `flutter_bootstrap.js`, and `version.json`. The retired custom `flutter_service_worker.js` is not part of the source tree.
 
 ---
 
