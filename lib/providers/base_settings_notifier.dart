@@ -76,9 +76,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
     if (!mounted) return;
     try {
       if (storage == SettingsStorage.sharedPreferences) {
-        if (_prefs == null) {
-          _prefs = await SharedPreferences.getInstance();
-        }
+        _prefs ??= await SharedPreferences.getInstance();
         if (!mounted) return;
         final data = serialize(state);
         await _prefs?.setString(storageKey, data);

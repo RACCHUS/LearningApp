@@ -179,7 +179,7 @@ class NotificationService {
       ongoing: reminder.isRepeating,
     );
 
-    final iOSDetails = const DarwinNotificationDetails(
+    const iOSDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,

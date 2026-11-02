@@ -24,9 +24,9 @@ class SpeechRecognitionManager {
   SpeechRecognitionManager._internal();
 
   SpeechRecognitionProvider? _currentProvider;
-  List<SpeechRecognitionProvider> _availableProviders = [];
+  final List<SpeechRecognitionProvider> _availableProviders = [];
   bool _isInitialized = false;
-  List<String> _statusLog = [];
+  final List<String> _statusLog = [];
   
   // Event controllers
   final StreamController<ProviderInfo> _providerChangesController = StreamController<ProviderInfo>.broadcast();

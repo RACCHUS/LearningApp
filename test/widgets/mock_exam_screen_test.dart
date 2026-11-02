@@ -17,7 +17,7 @@ void main() {
   group('Phase E: MockExamScreen Widget Tests', () {
     final now = DateTime.now();
 
-    final blueprint = const MockExamBlueprint(
+    const blueprint = MockExamBlueprint(
       targetVersionId: 'tv-test',
       examCode: 'SY0-701',
       title: 'CompTIA Security+ Exam Simulation',
@@ -155,7 +155,7 @@ void main() {
     });
 
     testWidgets('routes to SecureExamPartPracticeScreen when examPartKey is provided', (tester) async {
-      final partBlueprint = const MockExamBlueprint(
+      const partBlueprint = MockExamBlueprint(
         targetVersionId: 'tv-test',
         examPartKey: 'part_a',
         examCode: 'SY0-701',

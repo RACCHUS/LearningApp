@@ -218,7 +218,7 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
                     children: [
                       // Question type dropdown
                       DropdownButtonFormField<QuestionType>(
-                        value: _questionType,
+                        initialValue: _questionType,
                         decoration: const InputDecoration(
                           labelText: 'Question Type',
                           border: OutlineInputBorder(),

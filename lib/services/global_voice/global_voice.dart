@@ -8,6 +8,7 @@
 /// - [CommandSynonymMapper] - Maps speech variants to standard commands
 /// - [GlobalCommandExecutor] - Executes navigation and actions
 /// - [ContextualHelpProvider] - Provides route-specific help text
+library;
 
 export 'phrase_accumulator.dart';
 export 'command_synonym_mapper.dart';

@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/user_xp.dart';
+import 'package:learning_pwa/services/xp_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../test_helpers/fake_supabase_client.dart';
 
 void main() {
   group('XpConstants', () {
@@ -197,6 +200,171 @@ void main() {
       expect(XpConstants.levelFromXp(0), 1); // Zero XP
       expect(XpConstants.levelFromXp(1), 1); // Small XP
       expect(XpConstants.levelFromXp(999999), greaterThan(50)); // Very high XP
+    });
+  });
+
+  group('XpService stable identifiers and cooldown semantics', () {
+    test('awardQuestionXp builds distinct sourceIds for different questions in the same lesson', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'question_correct',
+          'xp_amount': 10,
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
+      await service.awardQuestionXp('lesson-1', questionId: 'q-2');
+
+      expect(capturedCalls.length, 2);
+      expect(capturedCalls[0]['params']['p_source_id'], 'lesson-1:q-1');
+      expect(capturedCalls[1]['params']['p_source_id'], 'lesson-1:q-2');
+      expect(capturedCalls[0]['params']['p_source_id'], isNot(equals(capturedCalls[1]['params']['p_source_id'])));
+    });
+
+    test('awardQuestionXp reuses identical sourceId for repeated attempts of same question', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'question_correct',
+          'xp_amount': 10,
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
+      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
+
+      expect(capturedCalls.length, 2);
+      expect(capturedCalls[0]['params']['p_source_id'], 'lesson-1:q-1');
+      expect(capturedCalls[1]['params']['p_source_id'], 'lesson-1:q-1');
+    });
+
+    test('awardReviewSessionXp requires stable sessionId and forwards it to RPC without timestamp drift', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'review_session',
+          'xp_amount': 25,
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
+      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
+
+      expect(capturedCalls.length, 2);
+      expect(capturedCalls[0]['params']['p_source_id'], 'session_20261101_userA');
+      expect(capturedCalls[1]['params']['p_source_id'], 'session_20261101_userA');
+      // Base XP is 25 + 10 bonus = 35
+      expect(capturedCalls[0]['params']['p_xp_amount'], 35);
+    });
+
+    test('awardReviewSessionXp distinguishes two different sessions in the same learning context', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'review_session',
+          'xp_amount': 25,
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      // Two distinct review sessions in the same 'biology' learning context
+      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-1');
+      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-2');
+
+      expect(capturedCalls.length, 2);
+      expect(capturedCalls[0]['params']['p_source_id'], 'review_biology:session-uuid-1');
+      expect(capturedCalls[1]['params']['p_source_id'], 'review_biology:session-uuid-2');
+      expect(capturedCalls[0]['params']['p_source_id'], isNot(equals(capturedCalls[1]['params']['p_source_id'])));
+    });
+
+    test('awardReviewSessionXp clamps bonus XP to maximum of 50', () async {
+      final capturedCalls = <Map<String, dynamic>>[];
+      final user = User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      final fakeClient = FakeSupabaseClient(currentUser: user);
+      fakeClient.rpcHandler = (fn, {params}) {
+        capturedCalls.add({'fn': fn, 'params': params});
+        return {
+          'id': 'event-1',
+          'user_id': 'test-user-id',
+          'event_type': 'review_session',
+          'xp_amount': params?['p_xp_amount'],
+          'earned_at': DateTime.now().toIso8601String(),
+          'source_id': params?['p_source_id'],
+        };
+      };
+
+      final service = XpService(supabase: fakeClient);
+
+      // 100 items * 2 = 200 bonus, clamped to 50 max bonus -> baseXp (25) + 50 = 75
+      await service.awardReviewSessionXp(100, sessionId: 'big-session');
+
+      expect(capturedCalls.first['params']['p_xp_amount'], 75);
     });
   });
 }

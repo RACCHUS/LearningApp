@@ -1,5 +1,6 @@
 /// Extended taxonomy crosswalk projection models
 /// Used by the Canonical Taxonomy & Career Pathway Explorer UI.
+library;
 
 enum TaxonomyItemKind {
   occupation,

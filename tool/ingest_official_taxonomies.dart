@@ -5,10 +5,10 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 
-import '../lib/models/taxonomy/external_classification_node.dart';
-import '../lib/models/taxonomy/occupation_node.dart';
-import '../lib/services/taxonomy/official_taxonomy_sources.dart';
-import '../lib/services/taxonomy/taxonomy_importer.dart';
+import 'package:learning_pwa/models/taxonomy/external_classification_node.dart';
+import 'package:learning_pwa/models/taxonomy/occupation_node.dart';
+import 'package:learning_pwa/services/taxonomy/official_taxonomy_sources.dart';
+import 'package:learning_pwa/services/taxonomy/taxonomy_importer.dart';
 import 'supabase_rest_auth.dart';
 
 /// Downloads, validates, and optionally ingests the complete authoritative

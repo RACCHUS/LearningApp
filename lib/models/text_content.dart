@@ -4,19 +4,14 @@ class TextContent extends LessonContent {
   final String text;
 
   TextContent({
-    required String id,
-    required String lessonId,
-    required int order,
+    required super.id,
+    required super.lessonId,
+    required super.order,
     required this.text,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    required super.createdAt,
+    required super.updatedAt,
   }) : super(
-          id: id,
-          lessonId: lessonId,
-          order: order,
           type: 'text',
-          createdAt: createdAt,
-          updatedAt: updatedAt,
         );
 
   factory TextContent.fromJson(Map<String, dynamic> json) {

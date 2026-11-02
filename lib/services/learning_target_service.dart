@@ -250,8 +250,7 @@ class LearningTargetService {
     String? emoji,
   }) async {
     try {
-      final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '') +
-          '-${DateTime.now().millisecondsSinceEpoch % 10000}';
+      final slug = '${title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '')}-${DateTime.now().millisecondsSinceEpoch % 10000}';
       final userId = _supabase.auth.currentUser?.id;
 
       final res = await _supabase

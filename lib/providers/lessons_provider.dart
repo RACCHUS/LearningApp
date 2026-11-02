@@ -58,7 +58,7 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
       
       debugPrint('✅ Successfully loaded ${lessons.length} lessons');
     } catch (e, stackTrace) {
-      final errorMsg = 'Failed to load lessons from database';
+      const errorMsg = 'Failed to load lessons from database';
       debugPrint('$errorMsg - $e');
       debugPrint('Stack trace: $stackTrace');
       state = state.copyWith(error: errorMsg, isLoading: false);

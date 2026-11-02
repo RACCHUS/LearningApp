@@ -524,6 +524,8 @@ class _PathwayPreparationSheetState
           .read(pathwayReadinessServiceProvider)
           .linkToGoal(targetId: createdTarget.id, pathwayKey: pathwayKey);
 
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

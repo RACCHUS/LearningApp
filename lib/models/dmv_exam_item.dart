@@ -198,12 +198,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     spokenQuestion:
         'At a four-way stop, two cars arrive at the exact same time. Who goes first?',
     options: [
-      'The driver on the right goes first',
       'The driver on the left goes first',
+      'The driver on the right goes first',
       'The larger vehicle goes first',
       'Whoever honks their horn first',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 1,
     explanation:
         'When two vehicles arrive at a four-way stop at the same time, the driver on the left must yield to the driver on the right.',
     spokenExplanation:
@@ -219,12 +219,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     question: 'What does a flashing red traffic light mean?',
     spokenQuestion: 'What does a flashing red traffic light mean?',
     options: [
-      'Stop completely, then proceed when safe (like a stop sign)',
       'Slow down and proceed without stopping',
       'The traffic signal is broken; ignore it',
+      'Stop completely, then proceed when safe (like a stop sign)',
       'Wait for the light to turn solid green',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 2,
     explanation:
         'A flashing red light must be treated exactly like a stop sign: come to a complete stop, look in all directions, and proceed only when clear.',
     spokenExplanation:
@@ -240,12 +240,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     question: 'What does a flashing yellow traffic signal mean?',
     spokenQuestion: 'What does a flashing yellow light mean?',
     options: [
-      'Slow down and proceed with caution',
       'Stop completely and wait for green',
       'Pedestrians have right-of-way only',
       'Speed up before the light turns red',
+      'Slow down and proceed with caution',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 3,
     explanation:
         'A flashing yellow light warns drivers of a hazard or intersection: slow down, be alert, and proceed with caution.',
     spokenExplanation:
@@ -263,12 +263,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     spokenQuestion:
         'What does a solid yellow line on your side of the center line mean?',
     options: [
-      'Passing is prohibited on your side',
       'Passing is allowed if clear',
+      'Passing is prohibited on your side',
       'The speed limit is 25 miles per hour',
       'You are driving on a one-way street',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 1,
     explanation:
         'A solid yellow line on your side indicates a no-passing zone. You may not cross it to pass other vehicles.',
     spokenExplanation:
@@ -286,12 +286,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     spokenQuestion:
         'In Florida, what is the maximum speed limit in an active school zone?',
     options: [
-      '20 mph',
       '30 mph',
       '15 mph',
+      '20 mph',
       '25 mph',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 2,
     explanation:
         'Florida law sets the speed limit in active school zones at 20 mph unless posted otherwise.',
     spokenExplanation:
@@ -307,12 +307,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     question: 'When entering a roundabout (traffic circle), who must you yield to?',
     spokenQuestion: 'When entering a roundabout, who must you yield to?',
     options: [
-      'Traffic already circulating inside the roundabout and pedestrians',
       'Vehicles entering from the left only',
       'Vehicles behind you',
       'No one; entering vehicles have priority',
+      'Traffic already circulating inside the roundabout and pedestrians',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 3,
     explanation:
         'Drivers entering a roundabout must yield right-of-way to circulating traffic already inside the circle and to pedestrians in crosswalks.',
     spokenExplanation:
@@ -353,12 +353,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     spokenQuestion:
         'If you cannot see a truck driver in their side mirror, what does that mean?',
     options: [
-      'The truck driver cannot see you (you are in their blind spot)',
       'The truck driver is speeding',
+      'The truck driver cannot see you (you are in their blind spot)',
       'The truck is about to turn right',
       'You are safely outside their blind spot',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 1,
     explanation:
         'If you cannot see the truck driver\'s face in their side view mirror, you are in their blind spot (No-Zone) and they cannot see you.',
     spokenExplanation:
@@ -376,12 +376,12 @@ const List<DmvQuestionItem> floridaDmvQuestionsCatalog = [
     spokenQuestion:
         'Who must wear a seat belt in Florida?',
     options: [
-      'The driver and all front-seat passengers, plus all passengers under age 18',
       'Only the driver',
       'Only children under age 6',
+      'The driver and all front-seat passengers, plus all passengers under age 18',
       'Only on highways over 55 mph',
     ],
-    correctOptionIndex: 0,
+    correctOptionIndex: 2,
     explanation:
         'In Florida, the driver, all front-seat passengers, and all passengers under 18 years old anywhere in the vehicle must wear seat belts.',
     spokenExplanation:

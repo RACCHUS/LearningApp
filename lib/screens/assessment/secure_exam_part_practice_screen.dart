@@ -152,7 +152,9 @@ class _OwnerPracticeState extends State<_OwnerPractice> {
   Future<void> _submit() async {
     final issued=_issued;
     if(!_owned || _loading || _submitting || issued==null ||
-       _answers.length!=issued.questions.length)return;
+       _answers.length!=issued.questions.length) {
+      return;
+    }
     setState((){
       _submitting=true;
       _error=null;

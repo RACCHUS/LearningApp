@@ -109,7 +109,9 @@ class DisposableReferenceDrillSession {
   ReferenceDrillStep? get nextStep {
     for (final step in ReferenceDrillStep.values) {
       if (permittedSteps.contains(step) &&
-          !_results.any((r) => r.step == step)) return step;
+          !_results.any((r) => r.step == step)) {
+        return step;
+      }
     }
     return null;
   }

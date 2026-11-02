@@ -712,7 +712,7 @@ void main() {
 
   group('VoiceCommandRouter - Integration with VoiceInputHandler', () {
     test('should integrate with MCQ handler pattern', () {
-      final userInput = 'option b';
+      const userInput = 'option b';
       final command = VoiceCommandRouter.parseContextAwareCommand(
         userInput,
         context: 'mcq',
@@ -728,7 +728,7 @@ void main() {
     });
 
     test('should integrate with true/false handler pattern', () {
-      final userInput = 'yes';
+      const userInput = 'yes';
       final command = VoiceCommandRouter.parseContextAwareCommand(
         userInput,
         context: 'true_false',

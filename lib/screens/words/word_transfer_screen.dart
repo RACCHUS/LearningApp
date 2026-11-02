@@ -90,7 +90,8 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
     if (_export.text.isEmpty) return;
     try {
       await Clipboard.setData(ClipboardData(text: _export.text));
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         // Clipboard success does not prove there is a recoverable copy.
         // Switching accounts requires a separate affirmative acknowledgement.
         _copiedBackup = true;
@@ -98,9 +99,12 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
         _message = 'Copied. Save the backup somewhere private, then confirm below.';
         _error = null;
       });
+      }
     } catch (_) {
-      if (mounted) setState(() =>
+      if (mounted) {
+        setState(() =>
           _error = 'Clipboard unavailable. Manually select and copy the backup text.');
+      }
     }
   }
 
@@ -269,8 +273,10 @@ class _WordTransferScreenState extends ConsumerState<_WordTransferSession> {
             TextButton(
               onPressed: () async {
                 await Clipboard.setData(const ClipboardData(text: ''));
-                if (mounted) setState(() => _message =
+                if (mounted) {
+                  setState(() => _message =
                     'Clipboard cleared. Keep your private saved copy.');
+                }
               },
               child: const Text('Clear clipboard'),
             ),

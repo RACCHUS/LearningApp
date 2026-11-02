@@ -197,7 +197,9 @@ class _OwnerExportState extends State<_OwnerExport> {
     // If the owning account changes while the dialog is open, Flutter
     // disposes this keyed widget. Never copy an old account's payload.
     if (!mounted || confirmed != true || _busy ||
-        !widget.ownerStillCurrent() || !identical(data, _export)) return;
+        !widget.ownerStillCurrent() || !identical(data, _export)) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       await Clipboard.setData(ClipboardData(text: data.toJsonExport()));
@@ -253,7 +255,9 @@ class _OwnerExportState extends State<_OwnerExport> {
 
   void _requestFileDownload(ReferencePracticeAccountExport data) {
     if (!mounted || _busy || !widget.ownerStillCurrent() ||
-        !identical(data, _export)) return;
+        !identical(data, _export)) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       // No giant intermediate JSON string; the browser collects bounded

@@ -123,10 +123,12 @@ class _SkillsSummaryCard extends StatelessWidget {
 
     // Calculate summary stats
     final totalSkills = stats.length;
-    final avgLevel = stats.isEmpty
+    final verifiedStats = stats.where((s) => s.isVerified).toList();
+    final verifiedCount = verifiedStats.length;
+    final unverifiedCount = totalSkills - verifiedCount;
+    final verifiedAvgLevel = verifiedStats.isEmpty
         ? 0.0
-        : stats.map((s) => s.level).reduce((a, b) => a + b) / stats.length;
-    final verified = stats.where((s) => s.isVerified).length;
+        : verifiedStats.map((s) => s.level).reduce((a, b) => a + b) / verifiedStats.length;
 
     return Card(
       child: Padding(
@@ -138,29 +140,38 @@ class _SkillsSummaryCard extends StatelessWidget {
               children: [
                 _SummaryItem(
                   value: '$totalSkills',
-                  label: 'Skills',
+                  label: 'Total Skills',
                   icon: Icons.psychology,
                 ),
                 _SummaryItem(
-                  value: '${avgLevel.toStringAsFixed(0)}',
-                  label: 'Avg Level',
+                  value: verifiedAvgLevel.toStringAsFixed(0),
+                  label: 'Verified Level',
                   icon: Icons.trending_up,
                 ),
                 _SummaryItem(
-                  value: '$verified',
+                  value: '$verifiedCount',
                   label: 'Verified',
                   icon: Icons.verified,
                 ),
               ],
             ),
+            if (unverifiedCount > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                '$unverifiedCount practice/unverified skill${unverifiedCount == 1 ? '' : 's'} excluded from verified level',
+                style: TextStyle(fontSize: 11, color: Colors.orange[800], fontStyle: FontStyle.italic),
+              ),
+            ],
             const SizedBox(height: 16),
             LinearProgressIndicator(
-              value: avgLevel / 100,
+              value: verifiedAvgLevel / 100,
               borderRadius: BorderRadius.circular(4),
             ),
             const SizedBox(height: 8),
             Text(
-              'Overall Skill Level',
+              verifiedCount > 0
+                  ? 'Overall Verified Skill Level'
+                  : 'No verified skill assessments yet (Practice mode)',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -254,12 +265,23 @@ class _SkillStatCard extends StatelessWidget {
                           ),
                         ),
                         if (!stat.isVerified)
-                          Tooltip(
-                            message: 'Unverified - Take an assessment',
-                            child: Icon(
-                              Icons.warning_amber,
-                              size: 16,
-                              color: Colors.orange,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.orange, width: 0.5),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.info_outline, size: 12, color: Colors.orange),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Practice',
+                                  style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
+                                ),
+                              ],
                             ),
                           ),
                       ],

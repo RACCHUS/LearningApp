@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
+import 'package:learning_pwa/services/xp_service.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
+import 'package:uuid/uuid.dart';
 
 /// Main review screen for spaced repetition
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -32,10 +34,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
   bool _showAnswer = false;
+  late final String _sessionId;
+  bool _xpAwarded = false;
 
   @override
   void initState() {
     super.initState();
+    final contextPrefix = widget.contextId != null ? '${widget.contextId}:' : '';
+    _sessionId = 'review_$contextPrefix${const Uuid().v4()}';
     _flipController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -191,6 +197,16 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
     ReviewSessionState session,
     ThemeData theme,
   ) {
+    if (!_xpAwarded && session.reviewedCount > 0) {
+      _xpAwarded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(xpServiceProvider).awardReviewSessionXp(
+          session.reviewedCount,
+          sessionId: _sessionId,
+        );
+      });
+    }
+
     final accuracy = (session.sessionAccuracy * 100).toInt();
 
     return Center(

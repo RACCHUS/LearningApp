@@ -172,7 +172,7 @@ void main() {
 
     group('Settings persistence', () {
       test('updateSettings() updates state', () async {
-        final newSettings = const AudioLessonSettings(
+        const newSettings = AudioLessonSettings(
           handsFreeModeEnabled: true,
           voiceNavigationEnabled: true,
           autoProgressDelay: Duration(seconds: 10),

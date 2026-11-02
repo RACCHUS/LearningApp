@@ -7,9 +7,9 @@ class TemplateSelectionWidget extends StatefulWidget {
   final Function(Map<String, dynamic>) onTemplateGenerated;
 
   const TemplateSelectionWidget({
-    Key? key,
+    super.key,
     required this.onTemplateGenerated,
-  }) : super(key: key);
+  });
 
   @override
   State<TemplateSelectionWidget> createState() => _TemplateSelectionWidgetState();
@@ -20,7 +20,7 @@ class _TemplateSelectionWidgetState extends State<TemplateSelectionWidget>
   late TabController _tabController;
   String _selectedCategory = 'Programming';
   LessonTemplate? _selectedTemplate;
-  Map<String, String> _placeholderValues = {};
+  final Map<String, String> _placeholderValues = {};
   final Map<String, TextEditingController> _controllers = {};
   bool _showPreview = false;
   Map<String, dynamic>? _generatedTemplate;
@@ -35,7 +35,9 @@ class _TemplateSelectionWidgetState extends State<TemplateSelectionWidget>
   @override
   void dispose() {
     _tabController.dispose();
-    _controllers.values.forEach((controller) => controller.dispose());
+    for (var controller in _controllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 

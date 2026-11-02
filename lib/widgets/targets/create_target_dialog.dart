@@ -359,7 +359,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
                 ],
                 DropdownButtonFormField<TargetType>(
                   key: const Key('goal-type'),
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: InputDecoration(
                     labelText: 'Goal Type',
                     prefixIcon: const Icon(Icons.category_outlined),

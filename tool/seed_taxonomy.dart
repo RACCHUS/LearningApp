@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import '../lib/services/taxonomy/taxonomy_importer.dart';
+import 'package:learning_pwa/services/taxonomy/taxonomy_importer.dart';
 import 'taxonomy_status.dart' as status;
 
 /// Canonical Taxonomy Seeding & Ingestion CLI

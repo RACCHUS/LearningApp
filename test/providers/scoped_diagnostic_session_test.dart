@@ -173,13 +173,13 @@ void main() {
       diagnosticAssessmentServiceProvider.overrideWithValue(service),
     ]);
     addTearDown(container.dispose);
-    final keyA = (
+    const keyA = (
       targetId: 'target-1',
       targetVersionId: 'version-1',
       examPartKey: 'part_a',
       learnerId: 'learner-a',
     );
-    final keyB = (
+    const keyB = (
       targetId: 'target-1',
       targetVersionId: 'version-1',
       examPartKey: 'part_b',

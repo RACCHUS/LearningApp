@@ -218,7 +218,7 @@ class _CourseBuilderScreenState extends ConsumerState<CourseBuilderScreen> {
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: state.category,
+                                    initialValue: state.category,
                                     decoration: const InputDecoration(
                                       labelText: 'Category',
                                       border: OutlineInputBorder(),
@@ -239,7 +239,7 @@ class _CourseBuilderScreenState extends ConsumerState<CourseBuilderScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    value: state.difficulty,
+                                    initialValue: state.difficulty,
                                     decoration: const InputDecoration(
                                       labelText: 'Difficulty',
                                       border: OutlineInputBorder(),

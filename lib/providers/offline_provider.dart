@@ -146,7 +146,7 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
 
       debugPrint('✅ Successfully synced ${merged.length} progress records');
     } catch (e, stackTrace) {
-      final errorMsg = 'Failed to sync offline progress';
+      const errorMsg = 'Failed to sync offline progress';
       debugPrint('$errorMsg - $e');
       debugPrint('Stack trace: $stackTrace');
       state = state.copyWith(

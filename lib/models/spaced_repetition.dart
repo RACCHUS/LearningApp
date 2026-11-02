@@ -191,10 +191,11 @@ class ReviewableItem {
   bool get isDueToday {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final localReview = nextReviewDate.toLocal();
     final reviewDay = DateTime(
-      nextReviewDate.year,
-      nextReviewDate.month,
-      nextReviewDate.day,
+      localReview.year,
+      localReview.month,
+      localReview.day,
     );
     return reviewDay.isAtSameMomentAs(today) || reviewDay.isBefore(today);
   }
@@ -297,8 +298,8 @@ class ReviewableItem {
       'subtitle': subtitle,
       'repetition_level': repetitionLevel,
       'ease_factor': easeFactor,
-      'next_review_date': nextReviewDate.toIso8601String(),
-      'last_reviewed_at': lastReviewedAt?.toIso8601String(),
+      'next_review_date': nextReviewDate.toUtc().toIso8601String(),
+      'last_reviewed_at': lastReviewedAt?.toUtc().toIso8601String(),
       'total_reviews': totalReviews,
       'correct_reviews': correctReviews,
       'metadata': metadata,
@@ -381,10 +382,11 @@ class ReviewSummary {
     int itemsWithReviews = 0;
 
     for (final item in items) {
+      final localReviewDate = item.nextReviewDate.toLocal();
       final reviewDay = DateTime(
-        item.nextReviewDate.year,
-        item.nextReviewDate.month,
-        item.nextReviewDate.day,
+        localReviewDate.year,
+        localReviewDate.month,
+        localReviewDate.day,
       );
 
       if (reviewDay.isBefore(today)) {

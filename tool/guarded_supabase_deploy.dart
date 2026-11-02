@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../lib/services/governance/guarded_deployment_manager.dart';
+import 'package:learning_pwa/services/governance/guarded_deployment_manager.dart';
 
 /// Single Guarded Deployment CLI Entrypoint for Supabase Production Migrations.
 void main(List<String> args) async {

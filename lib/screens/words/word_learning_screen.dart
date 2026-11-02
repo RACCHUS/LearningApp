@@ -257,7 +257,9 @@ class _WordLearningScreenState extends ConsumerState<_WordLearningSession> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (name == null || name.trim().isEmpty ||
-        name.trim() == selected.title) return;
+        name.trim() == selected.title) {
+      return;
+    }
     await _run(() async {
       await _service.renameList(selected.id, name);
       final lists = await _service.getLists();
@@ -293,7 +295,9 @@ class _WordLearningScreenState extends ConsumerState<_WordLearningSession> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
     if (replacement == null || replacement.trim().isEmpty ||
-        replacement.trim() == entry.word) return;
+        replacement.trim() == entry.word) {
+      return;
+    }
     // When the actual target changes, there must be an explicit acknowledgement
     // that old mastery is retained only for the old form, not falsely moved.
     final changedIdentity = WordFormIdentity.formKey(
@@ -514,8 +518,10 @@ class _WordLearningScreenState extends ConsumerState<_WordLearningSession> {
             'Audio was unavailable. You can reveal the word as assisted practice.');
       }
     } catch (_) {
-      if (mounted) setState(() =>
+      if (mounted) {
+        setState(() =>
           _error = 'Audio was unavailable. Try assisted practice.');
+      }
     }
   }
 
@@ -742,7 +748,7 @@ class _WordLearningScreenState extends ConsumerState<_WordLearningSession> {
                       OutlinedButton(
                         onPressed: _busy ? null : () => setState(
                           () => _pendingWords![warning.key] = suggestion),
-                        child: Text('Use ${suggestion}'),
+                        child: Text('Use $suggestion'),
                       ),
                   ]),
               ],

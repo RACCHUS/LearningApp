@@ -11,7 +11,7 @@ import '../test_helpers/fake_supabase_client.dart';
 class _FakeHealthService extends SupabaseHealthService {
   _FakeHealthService(this._result) : super(client: FakeSupabaseClient());
 
-  SupabaseStatus _result;
+  final SupabaseStatus _result;
   int callCount = 0;
 
   @override

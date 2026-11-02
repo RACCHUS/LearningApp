@@ -30,7 +30,7 @@ void main() {
     test('should update settings', () async {
       // Arrange
       await service.initialize();
-      final newSettings = const AudioSettings(
+      const newSettings = AudioSettings(
         isEnabled: true,
         speechRate: 1.5,
         volume: 0.8,

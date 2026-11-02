@@ -1,5 +1,6 @@
 /// Custom exception hierarchy for type-safe error handling
 /// Replaces generic Exception usage across the application
+library;
 
 abstract class AppException implements Exception {
   final String message;
@@ -30,15 +31,12 @@ abstract class AppException implements Exception {
 
 class AuthenticationException extends AppException {
   AuthenticationException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: code ?? 'AUTH_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -47,9 +45,9 @@ class AuthenticationException extends AppException {
 
 class AuthorizationException extends AppException {
   AuthorizationException(
-    String message, {
+    super.message, {
     String? code,
-  }) : super(message, code: code ?? 'AUTHZ_ERROR');
+  }) : super(code: code ?? 'AUTHZ_ERROR');
 
   @override
   String getUserMessage() => 'Access denied. Please check your permissions.';
@@ -61,15 +59,12 @@ class AuthorizationException extends AppException {
 
 class DatabaseException extends AppException {
   DatabaseException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: code ?? 'DB_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -80,10 +75,10 @@ class DataValidationException extends AppException {
   final Map<String, String> fieldErrors;
 
   DataValidationException(
-    String message,
+    super.message,
     this.fieldErrors, {
     String? code,
-  }) : super(message, code: code ?? 'VALIDATION_ERROR');
+  }) : super(code: code ?? 'VALIDATION_ERROR');
 
   @override
   String getUserMessage() {
@@ -94,14 +89,11 @@ class DataValidationException extends AppException {
 
 class DataCorruptionException extends AppException {
   DataCorruptionException(
-    String message, {
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.message, {
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: 'DATA_CORRUPT',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -113,15 +105,12 @@ class SyncException extends AppException {
   final String entityType;
 
   SyncException(
-    String message,
+    super.message,
     this.entityType, {
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: 'SYNC_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -136,16 +125,13 @@ class NetworkException extends AppException {
   final int? statusCode;
 
   NetworkException(
-    String message, {
+    super.message, {
     this.statusCode,
     String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: code ?? 'NETWORK_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -171,9 +157,9 @@ class ServiceUnavailableException extends AppException {
 
 class TimeoutException extends AppException {
   TimeoutException(
-    String message, {
+    super.message, {
     String? code,
-  }) : super(message, code: code ?? 'TIMEOUT');
+  }) : super(code: code ?? 'TIMEOUT');
 
   @override
   String getUserMessage() => 'Request timed out. Please try again.';
@@ -185,9 +171,9 @@ class TimeoutException extends AppException {
 
 class InvalidInputException extends AppException {
   InvalidInputException(
-    String message, {
+    super.message, {
     String? code,
-  }) : super(message, code: code ?? 'INVALID_INPUT');
+  }) : super(code: code ?? 'INVALID_INPUT');
 
   @override
   String getUserMessage() =>
@@ -216,15 +202,12 @@ class PermissionDeniedException extends AppException {
 
 class StudySessionException extends AppException {
   StudySessionException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: code ?? 'STUDY_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -236,14 +219,11 @@ class LessonLoadException extends AppException {
 
   LessonLoadException(
     this.lessonId,
-    String message, {
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.message, {
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: 'LESSON_LOAD_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -252,13 +232,11 @@ class LessonLoadException extends AppException {
 
 class AudioServiceException extends AppException {
   AudioServiceException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
+    super.originalError,
   }) : super(
-          message,
           code: code ?? 'AUDIO_ERROR',
-          originalError: originalError,
         );
 
   @override
@@ -267,13 +245,11 @@ class AudioServiceException extends AppException {
 
 class VoiceInputException extends AppException {
   VoiceInputException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
+    super.originalError,
   }) : super(
-          message,
           code: code ?? 'VOICE_ERROR',
-          originalError: originalError,
         );
 
   @override
@@ -287,15 +263,12 @@ class VoiceInputException extends AppException {
 
 class CacheException extends AppException {
   CacheException(
-    String message, {
+    super.message, {
     String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
+    super.originalError,
+    super.stackTrace,
   }) : super(
-          message,
           code: code ?? 'CACHE_ERROR',
-          originalError: originalError,
-          stackTrace: stackTrace,
         );
 
   @override
@@ -304,8 +277,8 @@ class CacheException extends AppException {
 
 class StorageFullException extends AppException {
   StorageFullException(
-    String message,
-  ) : super(message, code: 'STORAGE_FULL');
+    super.message,
+  ) : super(code: 'STORAGE_FULL');
 
   @override
   String getUserMessage() =>

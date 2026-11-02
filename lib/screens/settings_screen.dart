@@ -15,7 +15,7 @@ import 'package:learning_pwa/services/push_notification_service.dart';
 const String _dailyGoalKey = 'dailyGoalMinutes';
 
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -87,6 +87,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!mounted) return;
 
     await _refreshPwaInstallState();
+    if (!mounted || !context.mounted) return;
 
     if (accepted) {
       ScaffoldMessenger.of(context).showSnackBar(

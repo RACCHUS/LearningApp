@@ -20,22 +20,17 @@ class QuestionContent extends LessonContent {
   final String? explanation;
 
   QuestionContent({
-    required String id,
-    required String lessonId,
-    required int order,
+    required super.id,
+    required super.lessonId,
+    required super.order,
     required this.questionText,
     required this.options,
     required this.correctAnswer,
     this.explanation,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    required super.createdAt,
+    required super.updatedAt,
   }) : super(
-          id: id,
-          lessonId: lessonId,
-          order: order,
           type: 'question',
-          createdAt: createdAt,
-          updatedAt: updatedAt,
         );
 
   factory QuestionContent.fromJson(Map<String, dynamic> json) => 

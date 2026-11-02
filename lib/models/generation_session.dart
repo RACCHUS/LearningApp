@@ -224,19 +224,19 @@ class GenerationSession {
       final uniqueOptions = options.map((o) => o.trim().toLowerCase()).toSet();
       if (uniqueOptions.length < options.length) {
         result['_needs_review'] = true;
-        result['_review_reason'] =
-            (result['_review_reason'] ?? '') +
-            (result['_review_reason'] != null ? '; ' : '') +
-            'duplicate options detected';
+        final currentReason = result['_review_reason'];
+        result['_review_reason'] = currentReason != null
+            ? '$currentReason; duplicate options detected'
+            : 'duplicate options detected';
       }
 
       // Cross-check: missing explanation
       if ((result['explanation'] as String).trim().isEmpty) {
         result['_needs_review'] = true;
-        result['_review_reason'] =
-            (result['_review_reason'] ?? '') +
-            (result['_review_reason'] != null ? '; ' : '') +
-            'missing explanation';
+        final currentReason = result['_review_reason'];
+        result['_review_reason'] = currentReason != null
+            ? '$currentReason; missing explanation'
+            : 'missing explanation';
       }
 
       return result;

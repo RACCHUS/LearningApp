@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="description" content="LearningApp — evidence-based learning, practice, and licensure preparation.">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1976d2">
@@ -73,34 +74,6 @@
     
     // Log feature detection results
     console.log('🌐 Browser Speech Support:', window.speechSupport);
-    
-    // Safari-compatible service worker registration with active update checking
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/flutter_service_worker.js')
-          .then(function(registration) {
-            console.log('🔧 Service Worker registered successfully');
-            registration.update();
-            registration.addEventListener('updatefound', function() {
-              const installingWorker = registration.installing;
-              if (installingWorker) {
-                installingWorker.addEventListener('statechange', function() {
-                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('🔄 New version detected! Reloading page to update...');
-                    window.location.reload();
-                  }
-                });
-              }
-            });
-          })
-          .catch(function(error) {
-            console.log('🔧 Service Worker registration failed:', error);
-            if (window.speechSupport.isSafari) {
-              console.log('🍎 Safari may have service worker restrictions');
-            }
-          });
-      });
-    }
     
     // Safari-specific audio context handling
     if (window.speechSupport.isSafari) {
@@ -266,6 +239,6 @@
   </script>
 </head>
 <body>
-  <script src="main.dart.js" type="application/javascript"></script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

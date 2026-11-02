@@ -283,6 +283,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
     final audioNotifier = ref.read(audioPlaybackProvider.notifier);
     final granted = await audioNotifier.requestMicrophonePermissions();
 
+    if (!mounted || !context.mounted) return;
+
     setState(() {
       _permissionsGranted = granted;
     });
@@ -308,6 +310,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
         timeout: const Duration(seconds: 5),
       );
 
+      if (!mounted || !context.mounted) return;
+
       setState(() {
         _voiceTestPassed =
             command != null && command.phrase.toLowerCase().contains('next');
@@ -331,6 +335,8 @@ class _HandsFreeOnboardingState extends ConsumerState<HandsFreeOnboarding> {
         );
       }
     } catch (e) {
+      if (!mounted || !context.mounted) return;
+
       setState(() {
         _isTestingVoice = false;
       });
