@@ -49,67 +49,7 @@ select throws_ok(
   'Authenticated role cannot execute record_xp_award'
 );
 
--- 7. Switch to service_role to verify internal server idempotency, capping, and deduplication
-set local role service_role;
-
-select lives_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
-  'Service role can execute record_xp_award'
-);
-
-select is(
-  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  10,
-  'User 1 total XP is 10 after award'
-);
-
--- 7. Idempotency test: calling record_xp_award with same event_id does not double-award
-select lives_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
-  'Retrying same event_id executes safely'
-);
-
-select is(
-  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  10,
-  'User 1 total XP remains 10 (idempotent duplicate was ignored)'
-);
-
--- 8. Server-side capping: questionCorrect requested with 999 XP is capped at 25 XP
-select lives_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'questionCorrect', 999, 'lesson-2', 'Tampered amount') $$,
-  'Tampered XP amount is capped server-side'
-);
-
-select is(
-  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
-  35,
-  'User 1 total XP is 35 (10 + capped 25)'
-);
-
--- 9. Semantic deduplication across casing aliases: lessonComplete vs lesson_complete
-select lives_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'lessonComplete', 50, 'lesson-alias', 'First completion') $$,
-  'First lesson completion awards XP'
-);
-select is(
-  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000004'::uuid, 'lesson_complete', 50, 'lesson-alias', 'Duplicate attempt')->>'status')),
-  'already_processed',
-  'Casing alias (lesson_complete) cannot bypass semantic cooldown'
-);
-
--- 10. Permanent achievement deduplication
-select lives_ok(
-  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000005'::uuid, 'achievement', 100, 'badge-first-quiz', 'First Quiz') $$,
-  'First achievement awards XP'
-);
-select is(
-  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000006'::uuid, 'achievement', 100, 'badge-first-quiz', 'Duplicate Quiz')->>'status')),
-  'already_processed',
-  'Permanent achievement deduplication blocks duplicate claims'
-);
-
--- 11. Direct client INSERT on xp_events is rejected
+-- 7. Direct client INSERT on xp_events is rejected
 select throws_ok(
   $$ insert into public.xp_events (id, user_id, event_type, xp_amount)
      values ('bbbbbbbb-0000-0000-0000-000000000001'::uuid, 'ee111111-0000-4000-8000-000000000001', 'questionCorrect', 100) $$,
@@ -118,7 +58,7 @@ select throws_ok(
   'Direct client INSERT into xp_events is rejected'
 );
 
--- 12. Direct client UPDATE on user_xp is rejected
+-- 8. Direct client UPDATE on user_xp is rejected
 select throws_ok(
   $$ update public.user_xp set total_xp = 999999 where user_id = 'ee111111-0000-4000-8000-000000000001' $$,
   '42501',
@@ -126,7 +66,7 @@ select throws_ok(
   'Direct client UPDATE on user_xp is rejected'
 );
 
--- 13. User 1 cannot view User 2 XP
+-- 9. User 1 cannot view User 2 XP
 do $$ begin
   -- create row for User 2 via service_role
   set local role service_role;
@@ -144,8 +84,71 @@ select is(
   'User 1 cannot view User 2 XP'
 );
 
--- 14. service_role can increment XP with target user_id
+-- Switch to service_role to verify internal server idempotency, capping, and deduplication
 set local role service_role;
+do $$ begin
+  perform set_config('request.jwt.claim.sub', 'ee111111-0000-4000-8000-000000000001', true);
+end $$;
+
+-- 10. Service role can execute record_xp_award
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
+  'Service role can execute record_xp_award'
+);
+
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  10,
+  'User 1 total XP is 10 after award'
+);
+
+-- 11. Idempotency test: calling record_xp_award with same event_id does not double-award
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
+  'Retrying same event_id executes safely'
+);
+
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  10,
+  'User 1 total XP remains 10 (idempotent duplicate was ignored)'
+);
+
+-- 12. Server-side capping: questionCorrect requested with 999 XP is capped at 25 XP
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'questionCorrect', 999, 'lesson-2', 'Tampered amount') $$,
+  'Tampered XP amount is capped server-side'
+);
+
+select is(
+  (select total_xp from public.user_xp where user_id = 'ee111111-0000-4000-8000-000000000001'),
+  35,
+  'User 1 total XP is 35 (10 + capped 25)'
+);
+
+-- 13. Semantic deduplication across casing aliases: lessonComplete vs lesson_complete
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'lessonComplete', 50, 'lesson-alias', 'First completion') $$,
+  'First lesson completion awards XP'
+);
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000004'::uuid, 'lesson_complete', 50, 'lesson-alias', 'Duplicate attempt')->>'status')),
+  'already_processed',
+  'Casing alias (lesson_complete) cannot bypass semantic cooldown'
+);
+
+-- 14. Permanent achievement deduplication
+select lives_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000005'::uuid, 'achievement', 100, 'badge-first-quiz', 'First Quiz') $$,
+  'First achievement awards XP'
+);
+select is(
+  (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000006'::uuid, 'achievement', 100, 'badge-first-quiz', 'Duplicate Quiz')->>'status')),
+  'already_processed',
+  'Permanent achievement deduplication blocks duplicate claims'
+);
+
+-- 15. service_role can increment XP with target user_id
 select lives_ok(
   $$ select increment_user_xp(50, 'ee111111-0000-4000-8000-000000000001'::uuid) $$,
   'service_role can execute increment_user_xp with target user_id'
@@ -157,12 +160,7 @@ select is(
   'User 1 total XP reflects service_role increment (185 + 50 = 235)'
 );
 
--- 15. Two different questions in the same lesson both succeed without collision
-set local role authenticated;
-do $$ begin
-  perform set_config('request.jwt.claim.sub', 'ee111111-0000-4000-8000-000000000001', true);
-end $$;
-
+-- 16. Two different questions in the same lesson both succeed without collision
 select lives_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000010'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1') $$,
   'Question 1 in lesson succeeds'
@@ -173,62 +171,62 @@ select lives_ok(
   'Question 2 in same lesson succeeds without collision'
 );
 
--- 16. Retrying the same question with a fresh event ID triggers cooldown
+-- 17. Retrying the same question with a fresh event ID triggers cooldown
 select is(
   (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000012'::uuid, 'question_correct', 10, 'lesson-multi:q-1', 'Question 1 retry')->>'status')),
   'already_processed',
   'Retrying same question with new event ID triggers cooldown and returns already_processed'
 );
 
--- 17. Review session with context ID succeeds
+-- 18. Review session with context ID succeeds
 select lives_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000013'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1') $$,
   'Review session with context ID succeeds'
 );
 
--- 18. Retrying the same review session with a fresh event ID triggers cooldown
+-- 19. Retrying the same review session with a fresh event ID triggers cooldown
 select is(
   (select (record_xp_award('aaaaaaaa-0000-0000-0000-000000000014'::uuid, 'review_session', 20, 'review-session-test-alpha', 'Review session 1 retry')->>'status')),
   'already_processed',
   'Retrying same review session context ID triggers cooldown and returns already_processed'
 );
 
--- 19. Calling record_xp_award with NULL source_id for question_correct fails
+-- 20. Calling record_xp_award with NULL source_id for question_correct fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000015'::uuid, 'question_correct', 10, null, 'No source') $$,
   'source_id is required for event type: question_correct',
   'Calling record_xp_award with null source_id for question_correct throws exception'
 );
 
--- 20. Calling record_xp_award with NULL source_id for lesson_complete fails
+-- 21. Calling record_xp_award with NULL source_id for lesson_complete fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000016'::uuid, 'lesson_complete', 50, null, 'No source') $$,
   'source_id is required for event type: lesson_complete',
   'Calling record_xp_award with null source_id for lesson_complete throws exception'
 );
 
--- 21. Calling record_xp_award with NULL source_id for course_complete fails
+-- 22. Calling record_xp_award with NULL source_id for course_complete fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000017'::uuid, 'course_complete', 100, null, 'No source') $$,
   'source_id is required for event type: course_complete',
   'Calling record_xp_award with null source_id for course_complete throws exception'
 );
 
--- 22. Calling record_xp_award with NULL source_id for review_session fails
+-- 23. Calling record_xp_award with NULL source_id for review_session fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000018'::uuid, 'review_session', 20, null, 'No source') $$,
   'source_id is required for event type: review_session',
   'Calling record_xp_award with null source_id for review_session throws exception'
 );
 
--- 23. Calling record_xp_award with NULL source_id for achievement fails
+-- 24. Calling record_xp_award with NULL source_id for achievement fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000019'::uuid, 'achievement', 50, null, 'No source') $$,
   'source_id is required for event type: achievement',
   'Calling record_xp_award with null source_id for achievement throws exception'
 );
 
--- 24. Calling record_xp_award with whitespace-only source_id for question_correct fails
+-- 25. Calling record_xp_award with whitespace-only source_id for question_correct fails
 select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000020'::uuid, 'question_correct', 10, '   ', 'Whitespace source') $$,
   'source_id is required for event type: question_correct',

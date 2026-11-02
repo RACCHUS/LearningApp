@@ -257,7 +257,6 @@ BEGIN
   UPDATE public.review_items SET
     repetition_level = 0,
     ease_factor = 2.5,
-    interval_days = 1,
     next_review_date = NOW() + INTERVAL '1 day',
     total_reviews = 0,
     correct_reviews = 0,
@@ -729,7 +728,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.user_skill_stats (
-    user_id, skill_id, level, best_score, average_score, total_attempts, is_verified, last_assessed_at, updated_at
+    user_id, skill_id, level, best_score, average_score, total_assessments, is_verified, last_assessed_at, updated_at
   ) VALUES (
     p_user_id, p_skill_id, v_new_level, v_best_score, v_avg_score, v_total, v_has_verified, NOW(), NOW()
   )
@@ -737,7 +736,7 @@ BEGIN
     level = EXCLUDED.level,
     best_score = EXCLUDED.best_score,
     average_score = EXCLUDED.average_score,
-    total_attempts = EXCLUDED.total_attempts,
+    total_assessments = EXCLUDED.total_assessments,
     is_verified = EXCLUDED.is_verified,
     last_assessed_at = EXCLUDED.last_assessed_at,
     updated_at = NOW();

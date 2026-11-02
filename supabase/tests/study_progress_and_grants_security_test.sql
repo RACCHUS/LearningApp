@@ -212,13 +212,23 @@ select throws_ok(
   'User 1 cannot create verified assessment attempt (RLS rejects is_verified = true)'
 );
 
--- Completing unverified attempt updates user_skill_stats as is_verified = FALSE
-select lives_ok(
+-- Completing unverified attempt directly by client is forbidden under Phase 1 server-scoring
+select throws_ok(
   $$ update public.assessment_attempts
      set completed_at = now(), score = 80, correct_count = 1, total_questions = 1
      where id = 'aa000000-0000-0000-0000-000000000001' $$,
-  'User 1 completes unverified assessment attempt'
+  '42501',
+  null,
+  'Client cannot directly modify completion or scoring fields of an assessment attempt'
 );
+
+-- Complete unverified attempt via service_role to verify unverified leaderboard isolation
+set local role service_role;
+update public.assessment_attempts
+   set completed_at = now(), score = 80, correct_count = 1, total_questions = 1
+   where id = 'aa000000-0000-0000-0000-000000000001';
+set local role authenticated;
+perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 
 -- Leaderboard isolation: unverified stats do NOT appear on skill_leaderboard view
 select is(
