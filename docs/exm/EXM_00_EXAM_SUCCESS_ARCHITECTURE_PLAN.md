@@ -4,7 +4,7 @@
 **Status:** **APPROVED ARCHITECTURE v6 — owner-authorized EXM-P0 merge to main; production deployment separately unauthorized**  
 **Prepared:** October 18, 2026  
 **Revised:** October 31, 2026 (v6.1: EXM-P0 practice-only safety, fail-closed concept resolution, target practice allocation normalization, owner merge authorization; staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
-**Repository path:** `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
+**Repository path:** `docs/exm/EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
 **Repository:** `RACCHUS/LearningApp`  
 **Code baseline reviewed:** `main` at `8ef15b99092a4dcb31f1a934facfdbfc97ac96a1` (latest returned by the GitHub connector during this review). Recheck HEAD before implementation.  
 **Inputs:** Original EXM-00 proposal, two subsequent architecture reviews, direct GitHub code inspection, and primary examination authority documents listed in §15.  
@@ -642,7 +642,7 @@ Introduce contributions only when rights, provenance, expert review, moderation 
 
 ### Repository files inspected (selected traceable audit pointers)
 
-- [`../../LEARNING_ARCHITECTURE_V2.md`](https://github.com/RACCHUS/LearningApp/blob/main/../../LEARNING_ARCHITECTURE_V2.md)
+- [LEARNING_ARCHITECTURE_V2.md](../../LEARNING_ARCHITECTURE_V2.md)
 - [`README.md`](https://github.com/RACCHUS/LearningApp/blob/main/README.md)
 - [`AGENTS.md`](https://github.com/RACCHUS/LearningApp/blob/main/AGENTS.md)
 - [`lib/models/assessment_engine/mock_exam_blueprint.dart`](https://github.com/RACCHUS/LearningApp/blob/main/lib/models/assessment_engine/mock_exam_blueprint.dart)
