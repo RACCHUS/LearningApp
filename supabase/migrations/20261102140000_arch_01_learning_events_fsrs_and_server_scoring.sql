@@ -370,7 +370,6 @@ BEGIN
       total_questions = v_total_questions,
       time_taken_seconds = v_time_spent_seconds,
       was_overtime = v_is_overtime,
-      is_passed = v_passed,
       is_verified = TRUE,
       answers = p_answers
     WHERE id = v_attempt_id;
@@ -378,11 +377,11 @@ BEGIN
     INSERT INTO public.assessment_attempts (
       id, assessment_id, user_id, started_at, completed_at, score,
       correct_count, total_questions, time_taken_seconds, was_overtime,
-      is_passed, is_verified, is_deleted, answers
+      is_verified, is_deleted, answers
     ) VALUES (
       v_attempt_id, p_assessment_id, v_user_id, v_started_at, NOW(), v_score,
       v_correct_count, v_total_questions, v_time_spent_seconds, v_is_overtime,
-      v_passed, TRUE, FALSE, p_answers
+      TRUE, FALSE, p_answers
     );
   END IF;
 
