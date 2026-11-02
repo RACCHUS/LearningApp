@@ -10,8 +10,8 @@ This document defines the concrete instructional and assessment delivery rules f
    - Consistent with `LITERACY_ACCESSIBILITY_PLAN.md` and the Direct Access Rule, phonics/decoding stages guide recommended next actions without locking learners out of functional survival words (`survival_word_item.dart`), decodable stories, or civic preparation.
    - **No universal 95% grapheme gate** is enforced.
 2. **Adult-Specific Evidence Alignment (`ER-06`, Tighe et al., 2026)**:
-   - Tighe et al. (2026, September 2; 15 studies of adults aged 16–76, excluding ESL-only studies) report consistent adult gains on **untimed decoding ($d = .12\text{--}.46$)**, much smaller gains on **timed decoding**, **generally positive but mixed** findings for **fluency**, **limited** evidence for **vocabulary, spelling, morphology, and phonological skills**, and **comprehension outcomes that varied by assessment** (with some larger RCTs showing gains).
-   - Therefore, adult decoding drills operate under `timing_regime = untimed_mastery` (never penalizing adult emergent readers with speed timers), and because **it has not been empirically determined whether child-based reading-grade equivalencies accurately describe adult reading ability**, `reading_grade_estimate` is used strictly to describe **text passage complexity**, never to assign a child grade-level label to an adult learner.
+   - **Empirical Finding (`Direct Empirical Support`)**: Tighe et al. (2026, September 2; 15 studies of adults aged 16–76, excluding ESL-only studies) report consistent adult gains on **untimed decoding ($d = .12\text{--}.46$)**, much smaller gains on **timed decoding assessments**, **generally positive but mixed** findings for **fluency**, **limited** evidence for **vocabulary, spelling, morphology, and phonological skills**, and **comprehension outcomes that varied by assessment** (with some larger RCTs showing gains).
+   - **LearningApp Product & Accessibility Policy (`Implementation Policy`)**: Tighe et al. (2026) show smaller intervention transfer to timed decoding measures rather than proving that all timed practice is harmful. Informed by those smaller timed-decoding gains and the adult accessibility goals in `LITERACY_ACCESSIBILITY_PLAN.md`, LearningApp sets core adult decoding mastery drills to `timing_regime = untimed_mastery` (never gating mastery progression on speed timers), while keeping **optional, learner-initiated fluency practice** available without speed penalties. In addition, because **it has not been empirically determined whether child-based reading-grade equivalencies accurately describe adult reading ability**, `reading_grade_estimate` is used strictly to describe **text passage complexity**, never to assign a child grade-level label to an adult learner.
 3. **Zero-Text-Assumption Chrome & Web Semantics**:
    - Audio instructions and spoken stems play automatically or via clear icon controls, and `SemanticsBinding.instance.ensureSemantics()` is enabled on web startup (`FIX-6`) so screen readers function immediately.
 
@@ -38,7 +38,7 @@ Because memorizing a definition is not equivalent to understanding a concept, th
 
 1. **Define / Identify**: Recall the term or core definition.
 2. **Explain**: Describe how the mechanism or rule works.
-3. **Distinguish from Confusable Neighbors**: When a concept belongs to a `confusable_group_id`, deliver contrastive questions (`ER-01` interleaving $g = .40$, CI $[.10, .71]$) that force discrimination along the exact boundary attribute.
+3. **Distinguish from Confusable Neighbors**: When a concept belongs to a `confusable_group_id`, deliver contrastive questions (`ER-01` interleaving $g = .40$, CI $[.10, .71]$, $I^2_{\text{total}} = 73.52\%$, $I^2_{\text{within}} = 3.70\%$, $I^2_{\text{between}} = 69.82\%$) that force discrimination along the exact boundary attribute.
 4. **Recognize Examples & Non-Examples**: Classify concrete cases.
 5. **Apply to Novel Scenarios**: Solve unfamiliar cases where textbook phrasing is absent (`ER-03`).
 6. **Explain Why Correct**: Identify the governing rationale or why a tempting distractor is invalid.
@@ -49,7 +49,7 @@ Because memorizing a definition is not equivalent to understanding a concept, th
 
 1. **Adaptive Worked-Example Fading (`ER-05`, Tetzlaff et al., 2025)**:
    - Supports full worked examples, partially faded steps, and unassisted parameterized problems.
-   - Novices benefit significantly from high assistance ($d = .505$, CI $[.260, .750]$), while experienced learners are harmed by redundant guidance ($d = -.428$, CI $[-.647, -.209]$).
+   - Novices benefit significantly from high assistance ($d = .505$, CI $[.260, .750]$, $I^2 = 90.87\%$), while experienced learners are harmed by redundant guidance ($d = -.428$, CI $[-.647, -.209]$, $I^2 = 87.55\%$).
    - If a learner fails an unassisted calculation, the remediation loop steps down to the faded step where the error occurred (formula selection vs. substitution vs. unit conversion).
 2. **Parameterized Values & Unit Verification**:
    - Calculation templates vary numerical inputs across attempts so learners cannot memorize a static answer key, and validate both numeric tolerance and measurement units.

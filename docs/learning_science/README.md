@@ -17,7 +17,7 @@ To prevent informal folk-pedagogy or secondary summaries (such as Wikipedia refe
 3. **Population Studied**: K–12, university undergraduates, adult vocational/licensing candidates, or adult emergent readers/ESL.
 4. **Sample Size ($N$)**: Number of studies ($k$) and total participants ($N$).
 5. **Measured Outcome**: Immediate recall, delayed retention, far transfer, lookup fluency, or exam pass rate.
-6. **Effect Size**: Standardized effect size ($d$, $g$, $r$, odds ratio) and confidence interval where published.
+6. **Effect Size & Heterogeneity**: Standardized effect size ($d$, $g$, $r$, odds ratio), 95% confidence interval, and heterogeneity ($I^2$, including within- vs. between-study components where multilevel models are used) wherever published by the source study, or an explicit statement when not reported / not applicable (e.g., narrative systematic reviews or simulation studies).
 7. **Limitations & Moderators**: Boundary conditions, populations where the effect weakens or reverses (including **null, mixed, or negative findings**).
 8. **Applicability to LearningApp**: Which `LearningTaskProfile` dimensions the finding governs.
 9. **Recommended Implementation**: How the engine configures instruction, scaffolding, or scheduling (distinguishing *default recommendations* from *hard gates*).
@@ -27,11 +27,12 @@ To prevent informal folk-pedagogy or secondary summaries (such as Wikipedia refe
 
 ## 2. Supersession of Provisional `ARCHITECTURE_REVIEW.md` Details & Legacy UI Research
 
-### 2.1 Supersession of Provisional Event-Ledger & Scheduler Sketches in `/ARCHITECTURE_REVIEW.md`
-`/ARCHITECTURE_REVIEW.md` is preserved at exact blob SHA `5fe779d3db382d03ad034dc03742409b9a6c1c7b` as a historical point-in-time Phase 0 audit across branches. Where `/ARCHITECTURE_REVIEW.md` contains provisional event-ledger or FSRS-6 migration recommendations, **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` formally supersede them**:
+### 2.1 Alignment & Supersession of Summary Sketches in `/ARCHITECTURE_REVIEW.md`
+`/ARCHITECTURE_REVIEW.md` serves as the point-in-time Phase 0 architectural audit, while **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` provide the full normative specifications**:
 - **`presented_option_ids: text[]`** supersedes `presented_order` (`List<int>`), and is treated as authoritative display order only when bound to a server-issued presentation/attempt record (`06_MEASUREMENT_AND_SCHEDULING.md`).
 - **`fsrs_rating`** (`1..4`, restricted strictly to `memory_card_review` events) is kept separate from **`learner_confidence`** (`1..3` metacognitive self-report) and `user_concept_state.confidence` (observation-count sufficiency band).
 - **FSRS-6 (`scheduler_version = 'v2_fsrs6'`)** estimates individual card retrievability $R(t)$ only—it is never equated with concept mastery or exam readiness, never initialized by fabricating parameters from SM-2 counters or `ContentComplexityProfile` priors, and kept separate from exam-date workload planning.
+- **Offline Reviews & Canonical Scheduling (`06_MEASUREMENT_AND_SCHEDULING.md` §2.4)**: On-device FSRS computes provisional local schedule state for offline responsiveness, while server `record_events` validates `client_occurred_at` within bounded plausibility rules (`effective_occurred_at`) and deterministically replays `(effective_occurred_at ASC, id ASC)` to compute the canonical server state.
 
 ### 2.2 Reconciliation with Legacy `docs/design/LEARNING_UI_RESEARCH.md`
 Earlier UI research (`docs/design/LEARNING_UI_RESEARCH.md`) synthesized useful general ideas but stated several claims more definitively than primary evidence supports. The following corrections apply across the codebase:

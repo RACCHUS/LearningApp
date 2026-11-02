@@ -4,11 +4,12 @@ This specification defines the **client vs. server security trust boundary** for
 
 > **Implementation Status Note**: Neither `public.learning_events` nor `record_events` exists on the `main` (`e538585`) baseline or in PR `#136`'s changed files. They are **proposed Phase 1 (`ARCH-1`) specifications** designed to be implemented via guarded migrations.
 >
-> **Explicit Supersession of Provisional `ARCHITECTURE_REVIEW.md` Details**:
-> `/ARCHITECTURE_REVIEW.md` is retained at exact blob SHA `5fe779d3db382d03ad034dc03742409b9a6c1c7b` as a historical point-in-time Phase 0 audit across branches. Where `ARCHITECTURE_REVIEW.md` contains provisional event-ledger or scheduler sketches, **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` formally supersede them**:
+> **Alignment & Supersession of Summary Sketches in `/ARCHITECTURE_REVIEW.md`**:
+> `/ARCHITECTURE_REVIEW.md` serves as the Phase 0 architectural audit, while **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` provide the full normative specifications**:
 > 1. **`presented_option_ids: text[]`** supersedes `presented_order` (`List<int>`).
 > 2. **`fsrs_rating`** (`1..4`, populated **only** on `memory_card_review` events) is kept strictly separate from **`learner_confidence`** (`1..3` metacognitive self-report) and from `user_concept_state.confidence` (observation-count sufficiency band).
 > 3. **FSRS-6 (`scheduler_version = 'v2_fsrs6'`)** models individual memory-card retrievability $R(t)$ only—it is never equated with multi-facet concept mastery or exam readiness, never initialized by fabricating parameters from SM-2 counters or `ContentComplexityProfile` priors, and kept separate from exam-date daily workload planning.
+> 4. **Offline Provisional vs. Server-Canonical Scheduling (§2.4)**: On-device FSRS computes provisional local schedule state for offline responsiveness, while server `record_events` validates `client_occurred_at` within bounded plausibility rules (`effective_occurred_at`) to preserve true offline elapsed intervals and deterministically replays `(effective_occurred_at ASC, id ASC)` to compute the canonical server state.
 
 ---
 
@@ -35,16 +36,18 @@ To prevent clients from forging scores, scheduler states, user identities, timin
 | Field | Type | Trust Ownership | Validation & Derivation Rule |
 |---|---|---|---|
 | **`id`** | `uuid primary key` | Client-submitted | Client-generated UUIDv7; validated for format |
-| **`idempotency_key`** | `text unique not null` | Client-submitted | Used for idempotent deduplication (`ON CONFLICT DO NOTHING`) |
+| **`idempotency_key`** | `text not null` (`UNIQUE (user_id, idempotency_key)`) | Client-submitted, **User-scoped uniqueness** | Composite constraint `UNIQUE (user_id, idempotency_key)` used for idempotent deduplication (`ON CONFLICT (user_id, idempotency_key) DO NOTHING`), preventing cross-user collisions or key probing |
 | **`user_id`** | `uuid not null` | **Server-owned** | Derived strictly from `auth.uid()`; never accepted from client payload |
 | **`event_type`** | `text not null` | Client-submitted, **Server-validated** | Enum (`memory_card_review`, `concept_practice_attempt`, `scaffolded_step_attempt`, `diagnostic_attempt`); validated against item type |
-| **`event_schema_version`** | `text not null` | **Server-enforced** | Schema version of the event contract (e.g., `'1.0.0'`) |
-| **`session_id`** & **`attempt_id`** | `uuid not null` | Client-submitted, **Server-validated** | Verified against active session / server-issued attempt record where applicable |
-| **`client_occurred_at`** | `timestamptz not null` | Client-submitted (**Untrusted client clock**) | Recorded strictly as informational client timestamp metadata; **never trusted as authoritative scheduling or audit time** |
-| **`received_at`** | `timestamptz not null` | **Server-owned** | Set to server `now()` (UTC); used as the authoritative timestamp for scheduling and audit ordering |
+| **`event_schema_version`** | `text not null` | **Server-enforced** | Schema version of the event contract (`'1.0-phase1-derived'` in Phase 1 before full manifest `2.1.0` migration; `'2.1.0'` once catalog items carry explicit `2.1.0` metadata; see §2.3) |
+| **`session_id`** | `uuid not null` | Client-submitted, **Server-validated** | Client-generated UUIDv4/v7 created locally when a study, review, or assessment session begins (allowing offline sessions to generate a valid `session_id` without a prior server round-trip) |
+| **`attempt_id`** | `uuid null` | **Conditional by assessment mode** | **Nullable (`uuid`)**: required (`NOT NULL`) and verified against an active server-issued assignment/attempt record owned by `auth.uid()` when `assessment_conditions.scoring_protection == 'server_protected_scoring'` (e.g., `EXM-03`, diagnostics, timed mocks); `NULL` (or optional local group UUID) for standalone/offline `memory_card_review` and unissued low-stakes practice |
+| **`client_occurred_at`** | `timestamptz not null` | Client-submitted (**Bounded validation**) | Client-recorded UTC timestamp when the review/attempt occurred; validated against server plausibility bounds to derive `effective_occurred_at` (see §2.4) |
+| **`received_at`** | `timestamptz not null` | **Server-owned** | Set to server `now()` (UTC); authoritative for **ledger ingestion audit time** and **timed/high-stakes assessment cutoffs (`server_elapsed_ms`)** |
+| **`effective_occurred_at`** | `timestamptz not null` | **Server-derived** | Authoritative timestamp for **FSRS-6 elapsed-interval calculations ($t$)**: equals `client_occurred_at` if and only if `client_occurred_at` passes server plausibility & monotonicity checks (§2.4); otherwise clamped to `received_at` with `timestamp_clamped = true` |
 | **`content_id`** & **`item_id`** | `uuid not null` | Client-submitted, **Server-validated** | Verified to exist and be accessible to `auth.uid()` |
 | **`content_version`** & **`target_version_id`** | `text not null` / `uuid` | **Server-owned** | Resolved by the server from the canonical item/target version record |
-| **`task_profile`** & **`strategy_version`** | `jsonb not null` / `text` | **Server-owned** | Resolved by the server from canonical item metadata (`LearningTaskProfile`) |
+| **`task_profile`** & **`strategy_version`** | `jsonb not null` / `text` | **Server-owned** | Resolved by the server from explicit item `learning_task_profile` when populated (`profile_source = 'manifest_v2_1'`), or deterministically derived in Phase 1 from existing item columns (`item_type`, `practice_kind`, modality/EXM tables; `profile_source = 'phase1_server_derived'`; see §2.3) |
 | **`presented_option_ids`** | `text[]` | **Trust depends on issuance mode** (See §2.2) | Ordered array of stable `option_id` values. Server validates that the array is a valid permutation of the item's option IDs; however, **set-permutation validation alone only proves valid option IDs, not that the client actually displayed that order**. Considered **trusted audit order (`server_issued`)** only when bound to a server-issued presentation/attempt record; otherwise labeled **`untrusted_client_reported` metadata** |
 | **`learner_response`** | `jsonb not null` | Client-submitted | Selected `option_id`(s), free-recall text, or numeric/unit entry |
 | **`scored_outcome`** | `jsonb` | **Server-owned** | Calculated authoritatively on the server against protected `scoring_spec` |
@@ -54,8 +57,8 @@ To prevent clients from forging scores, scheduler states, user identities, timin
 | **`learner_confidence`** | `smallint` | Client-submitted (Optional) | Self-reported metacognitive rating (`1=low, 2=medium, 3=high`), kept distinct from `user_concept_state.confidence` |
 | **`fsrs_rating`** | `smallint` | Client-submitted / Server-validated (Memory cards only) | `1=Again, 2=Hard, 3=Good, 4=Easy` — populated **only** when `event_type == 'memory_card_review'`; `null` for non-SRS tasks |
 | **`scheduler_version`** | `text` | **Server-owned** | `'v1_sm2_ladder'` or `'v2_fsrs6'` (standardized identifier across all docs) |
-| **`scheduler_state_before`** & **`scheduler_state_after`** | `jsonb` | **Server-owned** | Authoritative scheduler transition computed by the server; never trusted from client |
-| **`provenance_snapshot`** | `jsonb not null` | **Server-owned** | Captures **all six** provenance properties (`origin`, `visibility`, `rights_status`, `review_status`, `source_authority`, `version_validity`) from the canonical item record |
+| **`scheduler_state_before`** & **`scheduler_state_after`** | `jsonb` | **Server-owned (Canonical)** | Authoritative scheduler transition computed by the server over the canonical `(effective_occurred_at ASC, id ASC)` event stream (reconciling any provisional local offline schedule; see §2.4) |
+| **`provenance_snapshot`** | `jsonb not null` | **Server-owned** | Captures **all six** provenance properties (`origin`, optional `origin_client_id`, `visibility`, `rights_status`, `review_status`, `source_authority`, `version_validity`) from explicit item metadata (`provenance_source = 'manifest_v2_1'`) or Phase 1 deterministic server derivation (`provenance_source = 'phase1_server_derived'`; see §2.3) |
 | **`assessment_conditions`** | `jsonb not null` | **Server-owned** | Captures the complete active `AssessmentPolicy` (`timing_regime`, `error_criticality`, `scoring_protection`) and `reference_policy` so assessment conditions are fully reproducible |
 
 ### 2.2 Critical Trust Qualifications on `presented_option_ids` and Timing (`client_latency_ms` vs. `server_elapsed_ms`)
@@ -66,6 +69,33 @@ To prevent clients from forging scores, scheduler states, user identities, timin
 2. **Authoritative Timing Requires `server_elapsed_ms`**:
    - `client_latency_ms` is untrusted client-reported telemetry and must never govern timed exam cutoffs, paced pass/fail criteria, or high-stakes readiness scores.
    - Any timing-critical or high-stakes assessment (`timing_regime == 'exam_clock_enforced'` or `'paced_practice'` used for readiness) must record a server-side `attempt_issued_at` / `started_at` timestamp and evaluate elapsed time using server-computed **`server_elapsed_ms`**.
+
+### 2.3 Phase 1 (`ARCH-1`) vs. Phase 2 (`ARCH-5`) Metadata & Snapshot Contract
+Because `public.learning_events` ships in **Phase 1 (`ARCH-1`)** while the `curriculum_manifest.schema.json` `2.1.0` authoring enforcement ships in **Phase 2 (`ARCH-5`)**, the database and `record_events` RPC follow an explicit two-phase contract:
+1. **Phase 1 Database Columns & Deterministic Server Derivation (`event_schema_version = '1.0-phase1-derived'`)**:
+   - The Phase 1 `learning_events` migration adds nullable/defaulted metadata columns (`learning_task_profile jsonb`, `provenance_metadata jsonb`, `complexity_assessment_status`, `item_psychometric_status`, `readiness_validation_status`) on canonical item tables alongside `public.learning_events`.
+   - When an item row does not yet have explicit `2.1.0` `learning_task_profile` or `provenance_metadata` populated, `record_events` deterministically derives both snapshots on the server from existing `main` catalog columns:
+     - **`task_profile`**: Derived from `item_type`, `practice_kind`, and domain table context (`exm` open-book manifest vs. closed-book, audio literacy vs. visual text) and tagged with `"profile_source": "phase1_server_derived"`.
+     - **`provenance_snapshot`**: Derived from existing pack/item columns (`origin` mapped from pack source type, `origin_client_id: null`, `visibility` from pack visibility, `rights_status` from pack license or `'rights_review_required'`, `review_status` from `exm02a_item_reviews` / `eco02` editorial state or `'unreviewed'`, `source_authority` from citation tier, and `version_validity` from `target_versions`), tagged with `"provenance_source": "phase1_server_derived"`.
+2. **Phase 2 Manifest `2.1.0` Enforcement & Catalog Backfill (`event_schema_version = '2.1.0'`)**:
+   - Phase 2 updates `curriculum_manifest.schema.json` to `2.1.0` ([`08_CONTENT_AND_IMPORT_ALIGNMENT.md`](08_CONTENT_AND_IMPORT_ALIGNMENT.md)), backfills explicit `learning_task_profile` and 6-property `provenance_metadata` across existing catalog items (`"profile_source": "manifest_v2_1"`, `"provenance_source": "manifest_v2_1"`), and leaves historical Phase 1 `learning_events` rows immutable with their `"1.0-phase1-derived"` snapshot tags preserved.
+
+### 2.4 Offline Reviews, Timestamp Plausibility (`effective_occurred_at`) & Deterministic Multi-Device Replay
+To support offline reviews (`ARCH-3`) without allowing forged scheduling histories or corrupting FSRS intervals when offline batches sync hours or days later:
+1. **Local Provisional vs. Server-Canonical Scheduler State**:
+   - During offline study, on-device `package:fsrs` computes **provisional local schedule state** (`provisional_scheduler_state_after`) in the local outbox/cache (`hive_ce` / `drift`) so the learner's review queue updates immediately offline.
+   - Upon network reconnection, the client submits batched events to `record_events(jsonb[])`. The server computes and stores the **canonical `scheduler_state_before/after`** on `public.learning_events`, updates `public.review_items` and `public.user_concept_state`, and returns the canonical state so the client overwrites its provisional cache.
+2. **Timestamp Driving FSRS (`effective_occurred_at` vs. `received_at`)**:
+   - Using `received_at` (sync arrival time) for FSRS interval math would distort memory stability whenever a learner studies offline at $t_0$ and syncs hours or days later at $t_1$.
+   - Conversely, trusting an unvalidated `client_occurred_at` would allow arbitrary backdating or future-dating.
+   - Therefore, `record_events` keeps **`received_at`** (`now()` UTC) strictly authoritative for **audit arrival time** and **high-stakes timed-exam cutoffs (`server_elapsed_ms`)**, while computing **`effective_occurred_at`** for **FSRS-6 elapsed-interval calculations ($t$)**:
+     - `effective_occurred_at = client_occurred_at` **if and only if**:
+       1. `client_occurred_at <= received_at + interval '5 minutes'` (no future-dating beyond minor clock skew),
+       2. `client_occurred_at >= received_at - interval '14 days'` (bounded offline sync horizon), and
+       3. `client_occurred_at` is monotonic with respect to prior events in the same session/batch.
+     - If `client_occurred_at` fails any check, the server clamps `effective_occurred_at = received_at` and records `timestamp_clamped = true` in event audit metadata.
+3. **Deterministic Out-of-Order & Multi-Device Replay**:
+   - If an offline batch from Device A arrives with `effective_occurred_at` earlier than an already-synced review from Device B for the same `(user_id, item_id)` (or concept), `record_events` deterministically replays the card's `memory_card_review` history ordered by `(effective_occurred_at ASC, id ASC)` through the FSRS-6 state machine (and recomputes `user_concept_state` over the ordered concept event stream) so projections converge to a single deterministic state across all devices.
 
 ---
 

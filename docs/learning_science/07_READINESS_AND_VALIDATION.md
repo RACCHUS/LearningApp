@@ -12,7 +12,7 @@ Furthermore, private visibility is an access control—it does **not** automatic
 
 | Property | Allowed Values | Purpose |
 |---|---|---|
-| **1. `origin`** | `official_source`, `curated_editorial`, `community_contribution`, `user_import`, `ai_generated` | Tracks how the material entered the platform (preserved permanently even if later reviewed/promoted) |
+| **1. `origin`** (+ optional `origin_client_id`) | `official_source`, `curated_editorial`, `community_contribution`, `user_import`, `ai_generated` (plus optional `origin_client_id: string \| null`, e.g. `'mcp:<client_id>'`) | Tracks how the material entered the platform using a closed 5-value enum (preserved permanently even if later reviewed/promoted). MCP-created drafts use `origin = 'ai_generated'` (or `'user_import'`) and record client attribution in `origin_client_id = 'mcp:<client_id>'` |
 | **2. `visibility`** | `private`, `shared_unlisted`, `public_catalog` | Controls access scope (`user_import` and `ai_generated` default to `private`) |
 | **3. `rights_status`** | `verified_permissive_or_public_domain`, `licensed_embed_or_link`, `rights_review_required`, `restricted_or_unknown` | Governs whether content may be shared or published (`public_catalog` requires `verified_permissive_or_public_domain` or `licensed_embed_or_link`) |
 | **4. `review_status`** | `unreviewed`, `automated_checks_passed`, `editorially_reviewed`, `authoritatively_verified` | Tracks quality assurance and human/educator verification (`ECO-02` / `ECO-04`) |

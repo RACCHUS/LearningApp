@@ -24,13 +24,13 @@ Two distinct mechanisms must not be conflated:
 
 ## 2. Adaptive Scaffolding & Expertise Reversal Prevention (`ER-05`)
 
-Tetzlaff et al. (2025, *Learning and Instruction*, $k = 60$, $N = 5,924$) demonstrate that high assistance benefits novices ($d = .505$, 95% CI $[.260, .750]$, $I^2 = 90.87\%$) while low assistance benefits experienced learners ($d = -.428$, 95% CI $[-.647, -.209]$).
+Tetzlaff et al. (2025, *Learning and Instruction*, $k = 60$, $N = 5,924$) demonstrate that high assistance benefits novices ($d = .505$, 95% CI $[.260, .750]$, $I^2 = 90.87\%$) while low assistance benefits experienced learners ($d = -.428$, 95% CI $[-.647, -.209]$, $I^2 = 87.55\%$).
 
 ### Adaptive Scaffolding Controller (`InstructionalPolicy.scaffolding_policy`)
 1. **Novice / Unobserved State**:
    - Starts `procedural_quantitative` tasks with high instructional assistance (worked example + backward step fading) unless the learner explicitly selects unassisted practice or satisfies the multi-signal competence check above.
 2. **Dynamic Fading & Remediation (`Implementation Hypothesis`)**:
-   - Because of the high between-study heterogeneity ($I^2 = 90.87\%$), step-up and step-down rules (fading assistance as unassisted steps succeed; re-introducing step guidance when an error or hint occurs) are implemented as configurable policy parameters rather than fixed universal constants.
+   - Because of the high heterogeneity across both novice ($I^2 = 90.87\%$) and experienced ($I^2 = 87.55\%$) subgroups, step-up and step-down rules (fading assistance as unassisted steps succeed; re-introducing step guidance when an error or hint occurs) are implemented as configurable policy parameters rather than fixed universal constants.
 
 ---
 

@@ -1,6 +1,6 @@
 # 01 — Research & Technical Evidence Register
 
-This register records the primary scientific literature, research synthesis reports, psychometric simulations, and technical implementation references governing LearningApp's instructional strategies, task profiles, and measurement rules. In accordance with [`README.md`](README.md), every empirical entry documents its **exact bibliographic citation and DOI/URL**, **evidence grade**, **population and sample size (including subgroup sample sizes where applicable)**, **effect sizes with 95% confidence intervals and heterogeneity ($I^2$)**, **study-specific limitations and negative/mixed findings**, and **whether a resulting design rule has direct empirical support or is an implementation hypothesis to test**. Technical software references are explicitly labeled so they are never conflated with empirical educational-outcome studies.
+This register records the primary scientific literature, research synthesis reports, psychometric simulations, and technical implementation references governing LearningApp's instructional strategies, task profiles, and measurement rules. In accordance with [`README.md`](README.md), every empirical entry documents its **exact bibliographic citation and DOI/URL**, **evidence grade**, **population and sample size (including subgroup sample sizes where applicable)**, **effect sizes with 95% confidence intervals and heterogeneity ($I^2$) wherever reported by the source study (and explicitly notes when a statistic is not reported or not applicable, such as in qualitative syntheses, multi-experiment studies without a pooled meta-analytic $I^2$, or Monte Carlo simulations)**, **study-specific limitations and negative/mixed findings**, and **whether a resulting design rule has direct empirical support or is an implementation hypothesis/policy**. Technical software references are explicitly labeled so they are never conflated with empirical educational-outcome studies.
 
 ---
 
@@ -22,12 +22,12 @@ This register records the primary scientific literature, research synthesis repo
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support` for strategy effectiveness & moderator sensitivity; `Implementation Hypothesis` when extrapolating from K–12 classroom cohorts to adult vocational/licensing learners).
 - **Methodology**: Meta-analysis of 53 authentic classroom studies across three desirable-difficulty strategies.
 - **Population, Subgroup Sample Sizes & Heterogeneity ($I^2$)**:
-  - **Overall synthesis pool**: $k = 53$ studies, $N = 7,303$ learners in primary and secondary school classrooms *(note: some studies contribute to more than one strategy comparison; strategy-specific subgroup samples and heterogeneity are listed below)*.
-  - **Retrieval practice subgroup**: **$k = 31$ studies, $n = 3,391$ participants**, **$g = .37$, 95% CI $[.18, .56]$**, between-study heterogeneity **$I^2 = 85.29\%$**.
-  - **Distributed (spaced) practice subgroup**: **$k = 15$ studies, $n = 2,010$ participants**, **$g = .20$, 95% CI $[.03, .36]$**, between-study heterogeneity **$I^2 = 73.18\%$**.
-  - **Interleaved practice subgroup**: **$k = 10$ studies, $n = 1,902$ participants**, **$g = .40$, 95% CI $[.10, .71]$**, between-study heterogeneity **$I^2 = 73.52\%$**.
+  - **Overall synthesis pool**: $k = 53$ studies, $N = 7,303$ learners in primary and secondary school classrooms *(note: some studies contribute to more than one strategy comparison; strategy-specific subgroup samples and three-level variance decompositions—total $I^2_{\text{total}}$, within-study $I^2_{\text{within}}$, and between-study $I^2_{\text{between}}$—are listed below)*.
+  - **Retrieval practice subgroup**: **$k = 31$ studies, $n = 3,391$ participants**, **$g = .37$, 95% CI $[.18, .56]$**, total heterogeneity **$I^2_{\text{total}} = 85.29\%$** (within-study **$I^2_{\text{within}} = 24.50\%$**, between-study **$I^2_{\text{between}} = 60.79\%$**).
+  - **Distributed (spaced) practice subgroup**: **$k = 15$ studies, $n = 2,010$ participants**, **$g = .20$, 95% CI $[.03, .36]$**, total heterogeneity **$I^2_{\text{total}} = 73.18\%$** (within-study **$I^2_{\text{within}} = 19.68\%$**, between-study **$I^2_{\text{between}} = 53.50\%$**).
+  - **Interleaved practice subgroup**: **$k = 10$ studies, $n = 1,902$ participants**, **$g = .40$, 95% CI $[.10, .71]$**, total heterogeneity **$I^2_{\text{total}} = 73.52\%$** (within-study **$I^2_{\text{within}} = 3.70\%$**, between-study **$I^2_{\text{between}} = 69.82\%$**).
 - **Limitations & Moderators**:
-  1. **Substantial heterogeneity ($I^2 = 73.18\%\text{--}85.29\%$) & moderator sensitivity**: Effects vary considerably across studies and are moderated by **knowledge type**, **assessment format**, and **feedback**, supporting task-profile-dependent strategy selection over a rigid one-size-fits-all loop.
+  1. **Substantial total and between-study heterogeneity ($I^2_{\text{total}} = 73.18\%\text{--}85.29\%$, $I^2_{\text{between}} = 53.50\%\text{--}69.82\%$) & moderator sensitivity**: Effects vary considerably across and within studies and are moderated by **knowledge type**, **assessment format**, and **feedback**, supporting task-profile-dependent strategy selection over a rigid one-size-fits-all loop.
   2. **Population boundary**: Because the synthesized studies come from primary and secondary school classrooms, this meta-analysis must **not** be cited as direct empirical proof of adult licensing or vocational exam pass rates.
 - **Applicability**: `InstructionalPolicy.eligible_strategies[]` selection rules (`03_INSTRUCTIONAL_STRATEGIES.md`).
 - **Recommended Implementation**: Configure retrieval, spacing, and interleaving dynamically according to `LearningTaskProfile` and `InstructionalPolicy`.
@@ -38,7 +38,7 @@ This register records the primary scientific literature, research synthesis repo
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support`).
 - **Methodology**: Meta-analysis of 184 articles (317 experiments, 839 assessments).
 - **Population & Sample Size**: Primarily adult and undergraduate cohorts ($N > 14,000$).
-- **Measured Outcome & Effect Size**: Spaced practice outperformed massed practice in 259 of 271 comparisons; optimal inter-study gap scales non-linearly with the target retention interval.
+- **Measured Outcome & Effect Size**: Spaced practice outperformed massed practice in 259 of 271 comparisons; optimal inter-study gap scales non-linearly with the target retention interval *(single pooled $I^2$ across all 839 assessments is not reported, as analyses are stratified across lag/retention-interval surface bins)*.
 - **Limitations & Moderators**: Primarily verbal recall tasks; items that fail initial encoding require short-lag relearning before multi-day intervals.
 - **Applicability**: Long-term memory scheduling (`review_items`).
 - **Recommended Implementation**: Separate intraday acquisition/relearning from multi-day retention scheduling (`06_MEASUREMENT_AND_SCHEDULING.md`).
@@ -59,7 +59,7 @@ This register records the primary scientific literature, research synthesis repo
 - **Citation**: Dunlosky, J., Rawson, K. A., Marsh, E. J., Nathan, M. J., & Willingham, D. T. (2013). Improving students' learning with effective learning techniques: Promising directions from cognitive and educational psychology. *Psychological Science in the Public Interest*, 14(1), 4–58. `https://doi.org/10.1177/1529100612453266`
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support`).
 - **Methodology**: Systematic review of 10 learning techniques across learner characteristics, materials, and criterion tasks.
-- **Measured Outcome & Findings**: High utility for *Practice Testing* and *Distributed Practice*; Moderate utility for *Interleaved Practice*, *Elaborative Interrogation*, and *Self-Explanation*; Low utility for passive rereading and highlighting.
+- **Measured Outcome & Findings**: High utility for *Practice Testing* and *Distributed Practice*; Moderate utility for *Interleaved Practice*, *Elaborative Interrogation*, and *Self-Explanation*; Low utility for passive rereading and highlighting *(qualitative/narrative systematic utility synthesis; pooled meta-analytic effect sizes, 95% CIs, and $I^2$ are not applicable)*.
 - **Limitations & Moderators**: Interleaving benefits category/problem-type discrimination where concepts are confusable, but shows weak or null results for unrelated vocabulary lists.
 - **Applicability**: Strategy eligibility rules in `03_INSTRUCTIONAL_STRATEGIES.md`.
 - **Recommended Implementation**: Activate `contrastive_interleaving` selectively when `ContentComplexityProfile.confusable_density == high_confusable_group`.
@@ -70,8 +70,8 @@ This register records the primary scientific literature, research synthesis repo
 - **Evidence Grade**: **Grade A** (`Direct Empirical Support` for item-specific prequestioning; `Implementation Hypothesis` for diagnostic prior-knowledge routing).
 - **Methodology**: Meta-analysis separating prequestioned content from non-prequestioned content within subsequent study material.
 - **Measured Outcome & Effect Sizes (with 95% CIs)**:
-- **Specific prequestion effect** (retention of the exact information targeted by the prequestion): **$g = .54$, 95% CI $[.42, .66]$, $k = 97$**
-  - **General prequestion effect** (retention of untested information in the same material): **$g = .04$, 95% CI $[-.04, .11]$, $k = 91$** (statistically indistinguishable from zero)
+  - **Specific prequestion effect** (retention of the exact information targeted by the prequestion): **$g = .54$, 95% CI $[.42, .66]$, $k = 97$**
+  - **General prequestion effect** (retention of untested information in the same material): **$g = .04$, 95% CI $[-.04, .11]$, $k = 91$** (statistically indistinguishable from zero; *specific $I^2$ percentages are not reported in the abstract, though substantial moderator variation across study designs is analyzed*)
 - **Limitations & Critical Distinction (Prequestioning $\ne$ Diagnostic Test Validity)**:
   1. **No general spillover**: Asking prequestions improves learning of the targeted question's concept, not unrelated material in the lesson.
   2. **Prequestioning vs. Prior-Knowledge Assessment**: St. Hilaire et al. (2023/2024) evaluate prequestioning as a *learning intervention* (guessing before studying), **not** as a psychometric proof that answering a single pre-lesson MCQ correctly proves prior mastery. Because a single 4-option MCQ has a $25\%$ random guessing floor, using a pre-test to skip scaffolding is a separate measurement problem (`05_LEARNER_ADAPTATION.md`).
@@ -92,9 +92,9 @@ This register records the primary scientific literature, research synthesis repo
 - **Methodology & Sample Size**: Meta-analysis of **$k = 60$ studies, $N = 5,924$ participants** (Tetzlaff, Simonsmeier, Peters, & Brod, 2025), alongside experimental backward-fading studies (Renkl et al., 2004, Experiments 1 & 2).
 - **Measured Outcome & Effect Sizes (with 95% CIs and Heterogeneity)**:
   - **Low-prior-knowledge learners (novices)**: High instructional assistance significantly improves learning compared to low assistance, **$d = .505$, 95% CI $[.260, .750]$**, with **substantial heterogeneity ($I^2 = 90.87\%$)**.
-  - **High-prior-knowledge learners (experienced)**: High instructional assistance significantly impairs learning relative to low assistance / unassisted practice, **$d = -.428$, 95% CI $[-.647, -.209]$**.
+  - **High-prior-knowledge learners (experienced)**: High instructional assistance significantly impairs learning relative to low assistance / unassisted practice, **$d = -.428$, 95% CI $[-.647, -.209]$**, also with **substantial heterogeneity ($I^2 = 87.55\%$)**.
 - **Limitations & Moderators**:
-  - The high heterogeneity ($I^2 = 90.87\%$) demonstrates that optimal assistance depends heavily on task structure and reliable prior-knowledge measurement. It does **not** validate a universal "1 or 2 correct answers" threshold for removing scaffolding.
+  - The high heterogeneity in both novice ($I^2 = 90.87\%$) and experienced ($I^2 = 87.55\%$) subgroups demonstrates that optimal assistance depends heavily on task structure and reliable prior-knowledge measurement. It does **not** validate a universal "1 or 2 correct answers" threshold for removing scaffolding.
 - **Applicability**: `procedural_quantitative` tasks and `InstructionalPolicy.scaffolding_policy` (`05_LEARNER_ADAPTATION.md`).
 - **Recommended Implementation**: Adapt worked-example fading based on multi-signal prior-knowledge evidence rather than a fixed 4-stage lockstep; treat specific step-up/step-down thresholds as tunable `Implementation Hypotheses`.
 - **Test Plan**: Measure error rates and time-to-competence across adaptive vs. static scaffolding rules.
@@ -112,7 +112,7 @@ This register records the primary scientific literature, research synthesis repo
 - **Population & Sample Size**:
   - Tighe et al. (2026) synthesizes **15 peer-reviewed studies** covering **adult learners aged 16–76** in adult basic education, English literacy, and correctional/workforce settings. **Importantly, the review excluded studies focused only on English as a Second Language (ESL) populations.**
 - **Measured Outcome & Verified Findings (Including Limitations)**:
-  - **Decoding**: Explicit reading component interventions produced their most consistent positive effects on **untimed decoding accuracy (effect sizes generally around $d = .12\text{--}.46$)**, but showed **much smaller gains on timed decoding assessments**.
+  - **Decoding**: Explicit reading component interventions produced their most consistent positive effects on **untimed decoding accuracy (study-level effect sizes generally around $d = .12\text{--}.46$; narrative systematic review across 15 studies without a single pooled meta-analytic CI or $I^2$)**, but showed **much smaller gains on timed decoding assessments**.
   - **Fluency, Vocabulary, Spelling, Morphology, Phonological Skills & Comprehension**:
     - **Fluency** findings were **generally positive but mixed**.
     - Evidence for **vocabulary, spelling, morphology, and phonological skills** was **limited**.
@@ -122,7 +122,7 @@ This register records the primary scientific literature, research synthesis repo
 - **Applicability**: `sublexical_orthographic` tasks, `ContentComplexityProfile.reading_demand`, and `LITERACY_ACCESSIBILITY_PLAN.md`.
 - **Recommended Implementation**:
   1. Keep literacy progressions as **recommendations, never hard gates** (no 95% grapheme lock).
-  2. Do **not** impose timed decoding gates on adult learners (given the small/weak timed decoding gains in Tighe et al., 2026).
+  2. **Product & Accessibility Policy Informed by Empirical Findings**: Because Tighe et al. (2026) report consistent gains on untimed decoding ($d = .12\text{--}.46$) but much smaller gains on timed decoding assessments (while fluency findings are generally positive but mixed), LearningApp sets core adult decoding mastery to `timing_regime = untimed_mastery` (no punitive speed gates for mastery progression) as a **product and accessibility policy**, while keeping optional, learner-initiated fluency practice available without speed penalties.
   3. Define `reading_grade_estimate` strictly as a measure of **text/passage linguistic demand**, never as a verified label of an adult learner's reading ability level.
 - **Test Plan**: Evaluate untimed decoding accuracy, functional word recognition, and comprehension separately in adult literacy validation.
 
@@ -135,7 +135,7 @@ This register records the primary scientific literature, research synthesis repo
   1. Durning, S. J., Dong, T., Ratcliffe, T., Schuwirth, L., Artino, A. R., Boulet, J. R., & Eva, K. (2016). Comparing open-book and closed-book examinations: A systematic review. *Academic Medicine*, 91(4), 583–599. `https://doi.org/10.1097/ACM.0000000000000977` (PubMed PMID: `26826066`)
   2. Pirolli, P., & Card, S. (1999). Information foraging. *Psychological Review*, 106(4), 643–675. `https://doi.org/10.1037/0033-295X.106.4.643`
 - **Evidence Grade**: **Grade B** (`Direct Empirical Support` for longer open-book completion times and equivocal preparation findings; timeout-from-underpreparation causation is an `Implementation Hypothesis`).
-- **Methodology & Sample**: Systematic review of **37 peer-reviewed studies** comparing open-book examinations (OBEs) and closed-book examinations (CBEs).
+- **Methodology & Sample**: Narrative systematic review of **37 peer-reviewed studies** comparing open-book examinations (OBEs) and closed-book examinations (CBEs) *(qualitative synthesis across heterogeneous study designs; pooled meta-analytic effect size, 95% CI, and $I^2$ are not reported)*.
 - **Verified Findings vs. Implementation Hypotheses**:
   - **Established by Durning et al. (2016)**:
     1. Study findings on examinee preparation behavior were **equivocal**.
@@ -157,8 +157,8 @@ This register records the primary scientific literature, research synthesis repo
   2. MacLeod, C. M., Gopie, N., Hourihan, K. L., Neary, K. R., & Ozubko, J. D. (2010). The production effect: Delineation of a phenomenon. *Journal of Experimental Psychology: Learning, Memory, and Cognition*, 36(3), 671–685. `https://doi.org/10.1037/a0018785`
 - **Evidence Grade**: **Grade C for Oral Free-Recall Exams** (`Direct Empirical Support` for recognition memory mechanisms; `Implementation Hypothesis` for spoken free-recall exam preparation).
 - **Methodology & Boundaries**:
-  1. **Transfer-Appropriate Processing (Morris et al., 1977)**: Recognition experiments demonstrating that memory performance depends on the match between encoding and test processing demands.
-  2. **The Production Effect (MacLeod et al., 2010)**: **8 recognition experiments** demonstrating that reading words aloud improves subsequent recognition relative to silent reading.
+  1. **Transfer-Appropriate Processing (Morris et al., 1977)**: Primary recognition experiments ($N = 32$ per experiment) demonstrating that memory performance depends on the match between encoding and test processing demands *(multi-experiment primary study; meta-analytic $I^2$ not applicable)*.
+  2. **The Production Effect (MacLeod et al., 2010)**: **8 recognition experiments** demonstrating that reading words aloud improves subsequent recognition relative to silent reading *(multi-experiment primary study; meta-analytic $I^2$ not applicable)*.
   3. **Spoken Free-Recall Production (`Implementation Hypothesis`, `experimental` status)**: Neither study tests spoken free-recall answers on oral examinations (such as the USCIS civics interview). Spoken answer practice and evaluation is therefore designated as an **`experimental` implementation hypothesis**.
 - **Applicability**: `spoken_production` tasks (`04_TASK_SPECIFIC_DELIVERY.md`).
 - **Recommended Implementation**: Provide spoken/free-recall practice for oral exams; never enforce speech-onset latency as a mastery gate; evaluate transfer to oral mock interviews empirically.

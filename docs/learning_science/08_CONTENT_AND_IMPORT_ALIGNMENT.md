@@ -65,7 +65,7 @@ Stored in protected server tables (`scoring_spec`) and evaluated by server scori
 ## 2. The 6-Stage Content & Import Pipeline
 
 1. **Source Acquisition**: Official outlines/manuals, PDFs, YouTube URLs (embedded via `youtube-nocookie`; optional Gemini API YouTube URL analysis via user BYOK within its 8-hour daily free-tier allowance), Anki/CSV exports, and BYOK/MCP AI generation.
-2. **Extraction & 6-Property Provenance**: Records `origin`, `visibility` (`private` by default for imports), `rights_status` (`rights_review_required` by default for unverified imports), `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
+2. **Extraction & 6-Property Provenance**: Records `origin` (`official_source` | `curated_editorial` | `community_contribution` | `user_import` | `ai_generated`, plus optional `origin_client_id` such as `'mcp:<client_id>'`), `visibility` (`private` by default for imports), `rights_status` (`rights_review_required` by default for unverified imports), `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
 3. **Knowledge Organization**: Maps content to canonical `fields`, `knowledge_concepts`, `concept_relations` prerequisites, and `confusable_group_id` clusters.
 4. **Learning Design**: Assigns the canonical `LearningTaskProfile`, `ContentComplexityProfile`, `InstructionalPolicy`, and `AssessmentPolicy` (`02_LEARNING_TASK_TAXONOMY.md`).
 5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, passage reading demand), sets `complexity_assessment_status = 'deterministic_profile'`, and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
@@ -73,11 +73,12 @@ Stored in protected server tables (`scoring_spec`) and evaluated by server scori
 
 ---
 
-## 3. Proposed Versioned Schema Extension for `curriculum_manifest.schema.json`
+## 3. Proposed Versioned Schema Extension for `curriculum_manifest.schema.json` & Phase 1 / Phase 2 Transition Contract
 
-> **Implementation Status Note**: On `main` (`e538585`), [`content/schema/curriculum_manifest.schema.json`](../../content/schema/curriculum_manifest.schema.json) specifies `additionalProperties: false` on manifest objects, represents MCQ `options` as string arrays, and stores answer keys in `scoring_spec.correct_index`.
->
-> Therefore, the metadata blocks below are **proposed schema extensions (target schema version `2.1.0`)**, not fields already accepted by the `main` validator. A versioned update to `curriculum_manifest.schema.json` and backwards-compatibility tests for existing YAML manifests (`bs_computer_science.yaml`, `security_plus_sy0_701.yaml`, `software_engineer_career.yaml`) must be merged in Phase 2 (`ARCH-5`) before adding these fields to production manifests.
+> **Implementation & Phase Transition Note (`Phase 1 ARCH-1` vs. `Phase 2 ARCH-5`)**:
+> - On `main` (`e538585`), [`content/schema/curriculum_manifest.schema.json`](../../content/schema/curriculum_manifest.schema.json) (`2.0.0`) specifies `additionalProperties: false` on manifest objects, represents MCQ `options` as string arrays, and stores answer keys in `scoring_spec.correct_index`.
+> - **Phase 1 (`ARCH-1` Event Ledger)**: Adds nullable/defaulted item-level storage columns (`learning_task_profile`, `provenance_metadata`, `complexity_assessment_status`, `item_psychometric_status`, `readiness_validation_status`) on canonical item tables alongside `public.learning_events`. Before existing YAML manifests are migrated to `2.1.0` in Phase 2, `record_events` populates `task_profile` and `provenance_snapshot` using **deterministic server derivation from existing `main` item/pack columns** (`event_schema_version = '1.0-phase1-derived'`, `profile_source = 'phase1_server_derived'`, `provenance_source = 'phase1_server_derived'`; see [`06_MEASUREMENT_AND_SCHEDULING.md` §2.3](06_MEASUREMENT_AND_SCHEDULING.md)).
+> - **Phase 2 (`ARCH-5` Content Unification)**: Updates `curriculum_manifest.schema.json` to **`2.1.0`** to accept and enforce the metadata blocks below at manifest ingestion time, backfills existing catalog items (`profile_source = 'manifest_v2_1'`, `provenance_source = 'manifest_v2_1'`), and preserves historical Phase 1 event snapshots immutably.
 
 ### Proposed Schema `2.1.0` Activity Metadata Block (Exact Canonical Alignment with `02` & `07`)
 ```json
@@ -119,6 +120,7 @@ Stored in protected server tables (`scoring_spec`) and evaluated by server scori
   },
   "provenance_metadata": {
     "origin": "official_source",
+    "origin_client_id": null,
     "visibility": "public_catalog",
     "rights_status": "verified_permissive_or_public_domain",
     "review_status": "authoritatively_verified",
