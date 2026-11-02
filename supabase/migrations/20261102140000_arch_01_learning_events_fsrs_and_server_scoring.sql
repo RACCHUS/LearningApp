@@ -63,7 +63,8 @@ ALTER TABLE public.review_items
 REVOKE ALL ON public.assessment_items FROM PUBLIC, anon, authenticated;
 GRANT SELECT (
   id, lesson_id, stimulus_id, interaction_type, prompt, response_spec,
-  sort_order, origin_target_version_id, content_node_id, created_at, updated_at
+  difficulty, cognitive_level, metadata, user_id, origin_target_version_id,
+  created_at, updated_at
 ) ON public.assessment_items TO anon, authenticated;
 GRANT ALL ON public.assessment_items TO service_role;
 
