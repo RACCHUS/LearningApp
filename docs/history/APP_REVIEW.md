@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** This review reflects an earlier app snapshot. Several orphaned UI widgets mentioned in it have since been removed after a current import/reference audit. Check the live `lib/` tree before using this file as an inventory.
+
 # LearningApp — Code Review Report
 
 _Reviewed: 2026-06-30 • Scope: backend/data layer, UI/UX, and free-only improvement opportunities._

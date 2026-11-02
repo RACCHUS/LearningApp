@@ -1,4 +1,4 @@
-> **Historical follow-up (2026-11-02):** This July cleanup plan remains a completion record. Since then, the unused enhanced lesson creation screen was removed after a fresh reference audit, and the deployment guide was relocated to `docs/deployment/DEPLOYMENT_GUIDE.md`.
+ > **Historical follow-up (2026-11-02):** This July cleanup plan remains a completion record. Since then, the unused enhanced lesson creation screen and additional unreferenced widget modules were removed after fresh source/import audits. The deployment guide was relocated to `docs/deployment/DEPLOYMENT_GUIDE.md`. Do not treat the file list in this historical plan as a current inventory.
 
 # Workspace Cleanup & Fix Plan
 

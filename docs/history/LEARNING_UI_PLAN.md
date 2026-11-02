@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** The standalone `ContinueLearningHero` widget was removed because no current screen used it. The continue-learning suggestion provider remains and is used by the desktop sidebar. Status statements below reflect the original plan, not a current implementation inventory.
+
 # Learning UI Implementation Plan
 
 Actionable implementation plan derived from LEARNING_UI_RESEARCH.md, scoped against current codebase.
