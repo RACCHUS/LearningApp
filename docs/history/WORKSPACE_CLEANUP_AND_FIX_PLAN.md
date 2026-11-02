@@ -173,7 +173,7 @@ Not defects — deferred product features. Listed here so nothing is lost when t
   [lesson_card.dart](../../lib/widgets/lesson_card.dart)). Tests added.
 - ✅ **P6.4** Sprint 3 — **complete.** `difficultyCategory` on
   [spaced_repetition.dart](../../lib/models/spaced_repetition.dart) + `DifficultyBadge` UI in
-  [review_content_widgets.dart](../../lib/widgets/review_content_widgets.dart); **session summary duration**
+  `review_content_widgets.dart` (removed in Nov 2026 cleanup); **session summary duration**
   ([session_result.dart](../../lib/models/session_result.dart) `duration/formattedDuration`, shown
   in [session_results_screen.dart](../../lib/screens/study/session_results_screen.dart)); **category color
   stripe** already present via `DesignTokens.getTagColor` on
