@@ -1,3 +1,7 @@
+> **ARCHIVED — legacy MVP design draft.** This document describes an earlier data model and permissive RLS policies. It is retained only for historical context and is **not** an implementation, security, or deployment source of truth. Use the current architecture documents and `supabase/migrations/` instead.
+
+---
+
 📘 Software Design Document (SDD)
 **App Name:** Learning PWA  
 **Type:** Learning PWA (Web, Android, iOS via browser install)  
