@@ -1,4 +1,4 @@
- > **Historical follow-up (2026-11-02):** This July cleanup plan remains a completion record. Since then, the unused enhanced lesson creation screen and additional unreferenced widget modules were removed after fresh source/import audits. The deployment guide was relocated to `docs/deployment/DEPLOYMENT_GUIDE.md`. Do not treat the file list in this historical plan as a current inventory.
+> **Historical follow-up (2026-11-02):** This July cleanup plan remains a completion record. Since then, the unused enhanced lesson creation screen and additional unreferenced widget modules were removed after fresh source/import audits. The deployment guide was relocated to `docs/deployment/DEPLOYMENT_GUIDE.md`. Do not treat the file list in this historical plan as a current inventory.
 
 # Workspace Cleanup & Fix Plan
 
@@ -78,7 +78,7 @@ Failing tests (all in [test/services/lesson/lesson_crud_service_test.dart](../..
 - ✅ **P2.2** No stray temp logs remain at root.
 
 ### 2b. Orphaned source modules (0 import references anywhere)
-- ✅ **P2.3** Deleted [lib/models/offline_content.dart](../../lib/models/offline_content.dart) — plain model,
+- ✅ **P2.3** Deleted `lib/models/offline_content.dart` (removed in prior cleanup) — plain model,
   no Hive adapter, zero imports.
 - ✅ **P2.4** **Kept** `text_content.dart` — the earlier audit was wrong; `TextContent` is exported by
   `content_types.dart` and used in `lesson_provider`, `lesson_content_list_widget`, and
@@ -163,7 +163,7 @@ Not defects — deferred product features. Listed here so nothing is lost when t
   including the documented 20-minute recovery break after every fourth work block;
   [break_overlay.dart](../../lib/widgets/study/break_overlay.dart) wired into flashcard/mcq screens,
   toggle in [timer_widget.dart](../../lib/widgets/timer_widget.dart)); **recall-before-reveal** already
-  present ([review_content_widgets.dart](../../lib/widgets/review_content_widgets.dart) `_QualityButtons`);
+  present (`lib/widgets/review_content_widgets.dart` (removed in Nov 2026 cleanup) `_QualityButtons`);
   **Quick Review batch mode** (`startSession({int? limit})` in
   [spaced_repetition_service.dart](../../lib/services/spaced_repetition_service.dart),
   [review_screen.dart](../../lib/screens/review_screen.dart) `limit`, `_startQuickReview` in
