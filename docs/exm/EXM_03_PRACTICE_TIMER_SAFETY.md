@@ -53,4 +53,4 @@ changes. Record browser/OS version, actual elapsed time, status and whether
 a report was produced. Do not interpret this as official exam fidelity evidence.
 
 The full EXM-03 profile policy, part-scope and interruption/refresh design
-remain tracked in `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`.
+remain tracked in `docs/exm/EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`.

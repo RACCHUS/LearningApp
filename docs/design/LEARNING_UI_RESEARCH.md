@@ -335,7 +335,7 @@ No image generation API, no asset management, no storage costs. Just text.
 
 6. **No session summary screen** — Study sessions end abruptly. No recap of what was learned, no stats, no "come back" scheduling. **Action**: Add end-of-session summary: cards reviewed, accuracy, next review date.
 
-7. **Images directory unused** — `assets/images/` exists but is empty. This is fine — emoji-based dual-coding doesn't need image assets at all. **Action**: No immediate action needed. If future paid-tier features add diagram/image support, this directory is ready.
+7. **Images directory unused** — `assets/images/` exists but is empty. This is fine — emoji-based dual-coding doesn't need image assets at all. **Status (2026-11-02):** The unused `assets/images/` directory was removed. PWA icons remain under `web/icons/`; keep image files out of the Flutter asset bundle unless application code uses them.
 
 #### Lower Priority
 8. **No lesson category color-coding** — All lesson cards on the home screen use the same color scheme. Interleaving benefit is lost because users can't visually distinguish topics. **Action**: Use tag color palette from design tokens to color-code lesson categories.

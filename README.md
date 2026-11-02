@@ -97,6 +97,19 @@ These goals are **not claims of shipped functionality**:
 | Voice | `flutter_tts`, `speech_to_text` |
 | CI/data validation | GitHub Actions, Flutter tests and web build, Supabase/pgTAP, manifest and official taxonomy tooling |
 
+## Repository structure
+
+- `lib/models/` — persisted and domain models.
+- `lib/providers/` — Riverpod state and application providers.
+- `lib/screens/` — route-level screens, grouped by feature where practical.
+- `lib/services/` — domain, backend, sync, and integration services.
+- `lib/widgets/` — reusable UI; feature-specific widgets belong in subfolders (for example, `widgets/reminders/`).
+- `assets/lessons/` — bundled lesson fixtures/content; `assets/lexicons/` — licensed language data.
+- `content/` — curriculum manifests; `data/catalog/` and `data/taxonomy/` — reviewed source/manifests.
+- `supabase/migrations/` and `supabase/tests/` — append-only database changes and pgTAP tests.
+- `tool/` and `tool/tests/` — developer/ingestion tooling and its Python tests.
+- `test/` — Flutter unit/widget tests; `docs/` — current product/architecture docs and historical records.
+
 ## Getting started
 
 ### Prerequisites
@@ -163,7 +176,8 @@ PRs targeting the protected `main` branch run automated Flutter analysis, tests,
 - [Canonical Taxonomy Architecture](CANONICAL_TAXONOMY_ARCHITECTURE.md): education and occupation classification ingestion and mapping.
 - [First-Run Zero State and Help](docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md): no-wizard first visit and searchable help behavior.
 - [Hosted Migration Rollout](docs/HOSTED_MIGRATION_ROLLOUT.md): hosted database considerations.
-- [Deployment Guide](DEPLOYMENT_GUIDE.md): older deployment reference; verify steps against the present setup before release.
+- [Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md): Firebase Hosting deployment reference; verify the target hosting provider and steps before release.
+- [Literacy & Accessibility Plan](docs/product/LITERACY_ACCESSIBILITY_PLAN.md): literacy, accessibility, and connected-reading product direction.
 - [Testing Guide](test/README.md): test conventions.
 
 The current architecture documents supersede outdated navigation material in `docs/history/`.
