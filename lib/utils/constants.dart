@@ -2,6 +2,7 @@
 /// 
 /// This file contains all constants used throughout the Learning PWA application.
 /// Constants are organized by category for better maintainability.
+library;
 
 /// API and Network Constants
 class ApiConstants {

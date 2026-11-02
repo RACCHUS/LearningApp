@@ -317,6 +317,26 @@ void main() {
         expect(result.isValid, isFalse);
         expect(result.errors.length, greaterThanOrEqualTo(2));
       });
+
+      test('warns when >= 75% of MCQ items have identical correct answer position', () {
+        final json = {
+          'lesson': {'title': 'Position Bias Test', 'description': 'Testing cue'},
+          'content': [
+            {'type': 'mcq', 'question': 'Q1', 'options': ['A', 'B', 'C'], 'correctIndex': 0},
+            {'type': 'mcq', 'question': 'Q2', 'options': ['A', 'B', 'C'], 'correctIndex': 0},
+            {'type': 'mcq', 'question': 'Q3', 'options': ['A', 'B', 'C'], 'correctIndex': 0},
+            {'type': 'mcq', 'question': 'Q4', 'options': ['A', 'B', 'C'], 'correctIndex': 1},
+          ],
+        };
+
+        final result = LessonJsonValidator.validate(json);
+
+        expect(result.isValid, isTrue);
+        expect(
+          result.warnings.any((w) => w.contains('Position imbalance detected')),
+          isTrue,
+        );
+      });
     });
   });
 }

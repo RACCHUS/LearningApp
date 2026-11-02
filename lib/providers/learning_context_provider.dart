@@ -114,12 +114,11 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
 
   /// Fixed state with no storage behind it, for widget tests.
   @visibleForTesting
-  LearningContextsNotifier.stub(LearningContextsState initial)
+  LearningContextsNotifier.stub(super.initial)
       : _service = null,
         _sync = null,
         _engine = const NextActionEngine(),
-        _userId = 'test-user',
-        super(initial);
+        _userId = 'test-user';
 
   Future<void> load() async {
     final service = _service;

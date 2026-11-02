@@ -116,7 +116,7 @@ void main() {
         )).overrideWith((ref) async => diagnostic),
       ]);
       addTearDown(container.dispose);
-      final key = (
+      const key = (
         targetId: _targetId,
         targetVersionId: _versionId,
         examPartKey: _partKey,
@@ -128,7 +128,7 @@ void main() {
       expect(snapshot.hasVerifiedPartAttemptHistory, isFalse);
       expect(snapshot.nextStep.canLaunchDiagnostic, isTrue);
 
-      final badKey = (
+      const badKey = (
         targetId: _targetId,
         targetVersionId: _versionId,
         examPartKey: 'part_b',
@@ -138,7 +138,7 @@ void main() {
         container.read(examPartProgressProvider(badKey).future),
         throwsStateError,
       );
-      final wrongTarget = (
+      const wrongTarget = (
         targetId: 'target-b',
         targetVersionId: _versionId,
         examPartKey: _partKey,
@@ -148,7 +148,7 @@ void main() {
         container.read(examPartProgressProvider(wrongTarget).future),
         throwsStateError,
       );
-      final wrongOwner = (
+      const wrongOwner = (
         targetId: _targetId,
         targetVersionId: _versionId,
         examPartKey: _partKey,

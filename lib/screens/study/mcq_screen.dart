@@ -8,6 +8,7 @@ import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:learning_pwa/services/xp_service.dart';
 import 'package:learning_pwa/widgets/study/break_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +17,7 @@ class McqScreen extends ConsumerStatefulWidget {
   final int initialIndex;
   final VoidCallback? onComplete;
   final bool isEmbeddedInLesson;
+  final String? lessonId;
 
   const McqScreen({
     super.key,
@@ -23,6 +25,7 @@ class McqScreen extends ConsumerStatefulWidget {
     this.initialIndex = 0,
     this.onComplete,
     this.isEmbeddedInLesson = false,
+    this.lessonId,
   });
 
   @override
@@ -174,6 +177,10 @@ class _McqScreenState extends ConsumerState<McqScreen> {
 
     if (_isCorrect) {
       ref.read(studyProvider.notifier).markAnswerCorrect();
+      ref.read(xpServiceProvider).awardQuestionXp(
+        widget.lessonId ?? 'practice',
+        questionId: currentQuestion.id,
+      );
     } else {
       ref.read(studyProvider.notifier).markAnswerIncorrect();
     }

@@ -96,7 +96,7 @@ class _ExamPartProgressCardState extends ConsumerState<ExamPartProgressCard> {
                 const SizedBox(height: DesignTokens.space3),
                 DropdownButtonFormField<String>(
                   key: const Key('exam-part-progress-select'),
-                  value: selectedKey,
+                  initialValue: selectedKey,
                   decoration: const InputDecoration(
                     labelText: 'Practice exam part',
                     border: OutlineInputBorder(),

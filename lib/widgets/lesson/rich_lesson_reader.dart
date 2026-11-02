@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/unified_lesson.dart';
@@ -26,6 +27,7 @@ class RichLessonReader extends StatefulWidget {
 
 class _RichLessonReaderState extends State<RichLessonReader> {
   final ScrollController _scrollController = ScrollController();
+  late final int _sessionNonce = math.Random().nextInt(0x7FFFFFFF);
   double _scrollProgress = 0.0;
   double _fontSizeFactor = 1.0;
   bool _showAssessmentSection = false;
@@ -295,7 +297,11 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                         const Divider(height: 24),
                         ...items.map((item) => Padding(
                               padding: const EdgeInsets.only(bottom: 20),
-                              child: AssessmentItemRenderer(item: item),
+                              child: AssessmentItemRenderer(
+                                key: ValueKey(item.id),
+                                item: item,
+                                presentationSeed: _sessionNonce,
+                              ),
                             )),
                       ],
                     ],

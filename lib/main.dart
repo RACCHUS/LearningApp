@@ -1,6 +1,7 @@
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -21,6 +22,11 @@ import 'package:learning_pwa/core/logging/error_reporting_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // FIX-6: Ensure screen readers and assistive technologies receive semantics immediately on Web
+  if (kIsWeb) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
 
   // Initialize error reporting service FIRST
   await ErrorReportingService.instance.initialize();

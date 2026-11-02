@@ -128,7 +128,7 @@ Lesson _parseAssetLesson(String path, Map<String, dynamic> json) {
       .replaceAll(RegExp(r'\.json$'), '')
       .replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
   final now = DateTime.utc(2026, 1, 1);
-  final userId = 'asset-lessons';
+  const userId = 'asset-lessons';
 
   final concepts = (json['concepts'] as List? ?? const [])
       .whereType<Map<String, dynamic>>()

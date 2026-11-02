@@ -113,7 +113,7 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
 
   void _navigateToPage(int pageIndex) {
     if (kDebugMode) {
-      print('🎓 Navigating to page: $pageIndex (from ${_currentPageIndex})');
+      print('🎓 Navigating to page: $pageIndex (from $_currentPageIndex)');
       // Log global voice state before navigation
       final globalVoiceState = ref.read(globalVoiceProvider);
       print('🎙️ Global voice state before navigation: enabled=${globalVoiceState.isEnabled}, listening=${globalVoiceState.isListening}');
@@ -388,13 +388,13 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
                 // Use traditional individual screens when not in orchestrator mode
                 if (content is TermContent) {
                   final term = Term.fromTermContent(content);
-                  final finish = () {
+                  void finish() {
                     if (isLastItem) {
                       widget.onLessonComplete?.call();
                     } else {
                       _navigateToPage(index + 1);
                     }
-                  };
+                  }
                   contentWidget = FlashcardScreen(
                     terms: [term],
                     onComplete: finish,
@@ -410,26 +410,26 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
                     explanation: content.explanation,
                     createdBy: 'system',
                   );
-                  final finish = () {
+                  void finish() {
                     if (isLastItem) {
                       widget.onLessonComplete?.call();
                     } else {
                       _navigateToPage(index + 1);
                     }
-                  };
+                  }
                   contentWidget = McqScreen(
                     questions: [question],
                     onComplete: finish,
                     isEmbeddedInLesson: true, // Embedded in lesson mode
                   );
                 } else if (content is ConceptContent) {
-                  final finish = () {
+                  void finish() {
                     if (isLastItem) {
                       widget.onLessonComplete?.call();
                     } else {
                       _navigateToPage(index + 1);
                     }
-                  };
+                  }
                   contentWidget = ConceptScreen(
                     concepts: [content],
                     isLastInLesson: isLastItem,

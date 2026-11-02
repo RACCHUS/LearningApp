@@ -274,8 +274,8 @@ void main() {
 }
 
 class _StubContextsNotifier extends LearningContextsNotifier {
-  _StubContextsNotifier(LearningContextsState initial)
-      : super.stub(initial);
+  _StubContextsNotifier(super.initial)
+      : super.stub();
 }
 
 class _RouteRecorder extends NavigatorObserver {

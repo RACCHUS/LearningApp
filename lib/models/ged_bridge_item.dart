@@ -114,12 +114,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         question: 'What color is his work vest?',
         spokenQuestion: 'What color is his work vest?',
         options: [
-          'Blue',
           'Red',
+          'Blue',
           'Yellow',
           'Green',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 1,
         explanation: 'The story says: "He puts on his blue work vest."',
       ),
     ],
@@ -144,12 +144,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         question: 'What number is on Rosa\'s bus?',
         spokenQuestion: 'What number is on Rosa\'s bus?',
         options: [
-          'Number 10',
           'Number 5',
           'Number 20',
+          'Number 10',
           'Number 100',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 2,
         explanation: 'The story says: "The bus has the number ten on the front."',
       ),
       GedComprehensionQuestion(
@@ -157,12 +157,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         question: 'Where does the bus take Rosa?',
         spokenQuestion: 'Where does the bus take Rosa?',
         options: [
-          'To the grocery store',
           'To the airport',
           'To the bank',
           'To the dentist',
+          'To the grocery store',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 3,
         explanation:
             'The story states: "The bus takes her to the grocery store."',
       ),
@@ -190,12 +190,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         spokenQuestion:
             'Why should you not use the elevator during a fire alarm?',
         options: [
-          'Elevators can lose power or fill with smoke; always use stairs',
           'Elevators are only for managers',
+          'Elevators can lose power or fill with smoke; always use stairs',
           'Elevators cost extra money',
           'Elevators are too fast',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 1,
         explanation:
             'Elevators are dangerous during fires because electrical power can fail. Always use stairs.',
       ),
@@ -204,12 +204,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         question: 'When is it safe to return into the building?',
         spokenQuestion: 'When is it safe to return into the building?',
         options: [
-          'Only when the fire chief says it is safe',
           'As soon as the alarm stops ringing',
           'After 5 minutes',
+          'Only when the fire chief says it is safe',
           'When you want to grab your jacket',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 2,
         explanation:
             'The notice says: "Never go back inside until the fire chief says it is safe."',
       ),
@@ -254,12 +254,12 @@ const List<GedBridgePassage> officialGedBridgeCatalog = [
         spokenQuestion:
             'What gas do plants release that humans and animals breathe?',
         options: [
-          'Oxygen',
           'Carbon dioxide',
+          'Oxygen',
           'Helium',
           'Smoke',
         ],
-        correctOptionIndex: 0,
+        correctOptionIndex: 1,
         explanation:
             'Plants release fresh oxygen as a byproduct of photosynthesis.',
       ),

@@ -58,7 +58,7 @@ class SpacedRepetitionService {
           .from('review_items')
           .select()
           .eq('user_id', _userId!)
-          .lte('next_review_date', today.toIso8601String())
+          .lte('next_review_date', today.toUtc().toIso8601String())
           .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 

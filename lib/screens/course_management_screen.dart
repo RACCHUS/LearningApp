@@ -307,7 +307,7 @@ class CourseCard extends StatelessWidget {
                   const SizedBox(width: 16),
                   Icon(Icons.star, size: 16, color: Colors.amber),
                   const SizedBox(width: 4),
-                  Text('${course.rating.toStringAsFixed(1)}'),
+                  Text(course.rating.toStringAsFixed(1)),
                 ],
               ),
             ],
@@ -470,7 +470,7 @@ class _CreateCourseFormState extends State<CreateCourseForm> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _difficulty,
+                    initialValue: _difficulty,
                     decoration: const InputDecoration(
                       labelText: 'Difficulty *',
                       border: OutlineInputBorder(),
@@ -671,7 +671,7 @@ class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
   final CourseService _courseService = CourseService();
   List<Course> _courses = [];
   String? _selectedCourseId;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -703,7 +703,7 @@ class _CourseAnalyticsViewState extends State<CourseAnalyticsView> {
           const SizedBox(height: 16),
           if (_courses.isNotEmpty)
             DropdownButtonFormField<String>(
-              value: _selectedCourseId,
+              initialValue: _selectedCourseId,
               decoration: const InputDecoration(
                 labelText: 'Select Course',
                 border: OutlineInputBorder(),

@@ -164,7 +164,7 @@ class ErrorReportingService {
         // ));
       } else if (kDebugMode) {
         print(
-            '🍞 [BREADCRUMB] $category: $message ${data != null ? data : ""}');
+            '🍞 [BREADCRUMB] $category: $message ${data ?? ""}');
       }
     } catch (e) {
       if (kDebugMode) {

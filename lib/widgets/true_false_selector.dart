@@ -7,12 +7,12 @@ class TrueFalseSelector extends StatelessWidget {
   final bool? correctValue;
 
   const TrueFalseSelector({
-    Key? key,
+    super.key,
     required this.value,
     required this.onChanged,
     this.showCorrect = false,
     this.correctValue,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

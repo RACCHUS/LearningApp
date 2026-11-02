@@ -355,7 +355,7 @@ void main() {
         );
 
         // Simulate answering correctly
-        final elapsedSeconds = 15;
+        const elapsedSeconds = 15;
         
         final updatedProgress = initialProgress.copyWith(
           questionsAnswered: initialProgress.questionsAnswered + 1,
@@ -382,7 +382,7 @@ void main() {
         );
 
         // Simulate answering incorrectly
-        final elapsedSeconds = 20;
+        const elapsedSeconds = 20;
         
         final updatedProgress = initialProgress.copyWith(
           questionsAnswered: initialProgress.questionsAnswered + 1,
@@ -409,7 +409,7 @@ void main() {
         );
 
         // Simulate completing lesson
-        final elapsedSeconds = 60;
+        const elapsedSeconds = 60;
         final completedAt = DateTime.now().toIso8601String();
         
         final updatedProgress = initialProgress.copyWith(

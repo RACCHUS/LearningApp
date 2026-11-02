@@ -195,7 +195,7 @@ class AssessmentAttempt {
     this.totalQuestions = 0,
     this.timeTakenSeconds,
     this.wasOvertime = false,
-    this.isVerified = true,
+    this.isVerified = false,
     this.isDeleted = false,
     this.answers,
     required this.createdAt,
@@ -216,7 +216,7 @@ class AssessmentAttempt {
       totalQuestions: json['total_questions'] as int? ?? 0,
       timeTakenSeconds: json['time_taken_seconds'] as int?,
       wasOvertime: json['was_overtime'] as bool? ?? false,
-      isVerified: json['is_verified'] as bool? ?? true,
+      isVerified: json['is_verified'] as bool? ?? false,
       isDeleted: json['is_deleted'] as bool? ?? false,
       answers: json['answers'] != null
           ? (json['answers'] as Map<String, dynamic>)

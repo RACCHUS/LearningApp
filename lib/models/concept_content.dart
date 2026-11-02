@@ -17,21 +17,16 @@ class ConceptContent extends LessonContent {
   final List<String>? keyPoints;
 
   ConceptContent({
-    required String id,
-    required String lessonId,
-    required int order,
+    required super.id,
+    required super.lessonId,
+    required super.order,
     required this.conceptText,
     this.exampleText,
     this.keyPoints,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    required super.createdAt,
+    required super.updatedAt,
   }) : super(
-          id: id,
-          lessonId: lessonId,
-          order: order,
           type: 'concept',
-          createdAt: createdAt,
-          updatedAt: updatedAt,
         );
 
   factory ConceptContent.fromJson(Map<String, dynamic> json) => 

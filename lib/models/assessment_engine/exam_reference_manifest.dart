@@ -22,7 +22,7 @@ class ExamOfficialFact {
       (s) => _snakeCase(s.name) == stateText,
     );
     if (states.isEmpty) {
-      throw FormatException('Unsupported exam official fact state: ' + stateText);
+      throw FormatException('Unsupported exam official fact state: $stateText');
     }
     final state = states.first;
     final ids = _stringList(row['evidence_ids'], 'evidence_ids');
@@ -73,7 +73,7 @@ class ExamPartSpec {
       }
       for (final entry in source.entries) {
         if (entry.value is! Map) {
-          throw FormatException('Invalid official requirement: ' + entry.key.toString());
+          throw FormatException('Invalid official requirement: ${entry.key}');
         }
         requirements[entry.key.toString()] = ExamOfficialFact.fromJson(
           Map<String, dynamic>.from(entry.value as Map),
@@ -133,7 +133,7 @@ class ExamPreparationProfile {
         final evidence = Map<String, dynamic>.from(rawEvidence);
         final id = _requiredText(evidence['id'], 'source_evidence.id');
         if (!seenIds.add(id)) {
-          throw FormatException('Duplicate source evidence ID: ' + id);
+          throw FormatException('Duplicate source evidence ID: $id');
         }
         final url = evidence['official_url']?.toString();
         final page = evidence['source_page']?.toString();
@@ -154,13 +154,13 @@ class ExamPreparationProfile {
       }
       final part = ExamPartSpec.fromJson(Map<String, dynamic>.from(rawPart));
       if (!keys.add(part.key)) {
-        throw FormatException('Duplicate exam part key: ' + part.key);
+        throw FormatException('Duplicate exam part key: ${part.key}');
       }
       for (final fact in part.officialRequirements.values) {
         if (fact.state == ExamFactState.verified &&
             fact.evidenceIds.any((id) => !checkedEvidence.contains(id))) {
           throw FormatException(
-            'Verified official requirement lacks checkable primary-source evidence for part: ' + part.key,
+            'Verified official requirement lacks checkable primary-source evidence for part: ${part.key}',
           );
         }
       }
@@ -241,7 +241,7 @@ class ExamReferenceManifestRevision {
       (s) => _snakeCase(s.name) == name,
     );
     if (matching.isEmpty) {
-      throw FormatException('Unknown publication status: ' + name);
+      throw FormatException('Unknown publication status: $name');
     }
     final sources = _objectList(row['reference_entries'], 'reference_entries');
     final rules = _objectList(row['room_rules'], 'room_rules');
@@ -392,26 +392,26 @@ class ExamReferenceManifestResolver {
 }
 
 String _snakeCase(String value) => value.replaceAllMapped(
-  RegExp(r'[A-Z]'), (match) => '_' + match.group(0)!.toLowerCase(),
+  RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}',
 );
 
 String _requiredText(Object? value, String field) {
   if (value is! String || value.trim().isEmpty) {
-    throw FormatException('Missing ' + field);
+    throw FormatException('Missing $field');
   }
   return value.trim();
 }
 
 void _requirePartKey(String key) {
   if (!RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(key)) {
-    throw FormatException('Invalid stable exam part key: ' + key);
+    throw FormatException('Invalid stable exam part key: $key');
   }
 }
 
 List<String> _stringList(Object? value, String field) {
   if (value == null) return const [];
   if (value is! List || value.any((e) => e is! String || e.isEmpty)) {
-    throw FormatException(field + ' must be a list of source IDs');
+    throw FormatException('$field must be a list of source IDs');
   }
   return List.unmodifiable(value.cast<String>());
 }
@@ -419,7 +419,7 @@ List<String> _stringList(Object? value, String field) {
 List<Map<String, dynamic>> _objectList(Object? value, String field) {
   if (value == null) return const [];
   if (value is! List || value.any((e) => e is! Map)) {
-    throw FormatException(field + ' must be a list of objects');
+    throw FormatException('$field must be a list of objects');
   }
   return value.map((e) => Map<String, dynamic>.from(e as Map)).toList();
 }
@@ -427,12 +427,12 @@ List<Map<String, dynamic>> _objectList(Object? value, String field) {
 DateTime _dateOnly(Object? value, String field) {
   if (value is! String ||
       !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
-    throw FormatException(field + ' must be YYYY-MM-DD');
+    throw FormatException('$field must be YYYY-MM-DD');
   }
   final parts = value.split('-').map(int.parse).toList();
   final date = DateTime.utc(parts[0], parts[1], parts[2]);
   if (date.year != parts[0] || date.month != parts[1] || date.day != parts[2]) {
-    throw FormatException('Invalid date ' + field);
+    throw FormatException('Invalid date $field');
   }
   return date;
 }

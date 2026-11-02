@@ -3,6 +3,7 @@
 ///
 /// This file uses dart:js_interop for modern Flutter web compatibility
 /// Compatible with Dart 3.8.x and Flutter 3.32.x
+library;
 
 // ignore_for_file: avoid_web_libraries_in_flutter
 

@@ -164,10 +164,10 @@ class SafariCompatibilityService extends BrowserCompatibilityService {
     final warnings = <String>[];
     
     if (!supportsSpeechRecognition) {
-      warnings.add('Voice recognition not supported in Safari ${safariVersion}');
+      warnings.add('Voice recognition not supported in Safari $safariVersion');
       warnings.add('Manual text input will be used instead');
     } else if (!hasReliableSpeechSupport) {
-      warnings.add('Voice recognition may be unreliable in Safari ${safariVersion}');
+      warnings.add('Voice recognition may be unreliable in Safari $safariVersion');
       warnings.add('Consider updating to Safari 17+ for better performance');
     }
     
@@ -212,11 +212,11 @@ class SafariCompatibilityService extends BrowserCompatibilityService {
     
     if (kDebugMode && isSafari) {
       print('🍎 Safari Compatibility Analysis:');
-      print('   Version: ${safariVersion}');
+      print('   Version: $safariVersion');
       print('   Platform: ${isSafariMobile ? 'Mobile' : 'Desktop'}');
-      print('   Speech Support: ${supportsSpeechRecognition}');
-      print('   Reliable Speech: ${hasReliableSpeechSupport}');
-      print('   Private Browsing: ${isPrivateBrowsing}');
+      print('   Speech Support: $supportsSpeechRecognition');
+      print('   Reliable Speech: $hasReliableSpeechSupport');
+      print('   Private Browsing: $isPrivateBrowsing');
       print('   Warnings: ${compatibilityWarnings.length}');
     }
     
@@ -259,7 +259,7 @@ class SafariCompatibilityService extends BrowserCompatibilityService {
             : 'Microphone access denied. Please allow microphone access in your browser settings and try again.';
       case 'speech_not_supported':
         return isSafari
-            ? 'Voice recognition is not supported in Safari ${safariVersion}. Please use manual text input.'
+            ? 'Voice recognition is not supported in Safari $safariVersion. Please use manual text input.'
             : 'Voice recognition is not supported in this browser. Please use manual text input.';
       case 'audio_context_failed':
         return isSafari

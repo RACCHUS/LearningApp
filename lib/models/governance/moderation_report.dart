@@ -1,5 +1,6 @@
 /// Domain models for ECO-00B: Trust, Safety, Legal & Moderation Architecture.
 /// Canonical database contract aligned with `public.moderation_*` tables and RPCs.
+library;
 
 enum ModerationTargetType {
   course('course', 'Course'),

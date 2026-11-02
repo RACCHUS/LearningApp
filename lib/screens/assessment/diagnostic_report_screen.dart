@@ -135,7 +135,7 @@ class _DiagnosticReportScreenState
                                 _isCreatingSet = false;
                               });
                             } catch (error) {
-                              if (!mounted) return;
+                              if (!mounted || !context.mounted) return;
                               setState(() => _isCreatingSet = false);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -232,7 +232,7 @@ class _DiagnosticReportScreenState
                                   rootId: _report.targetId,
                                   targetVersionId: _report.targetVersionId,
                                 );
-                            if (!mounted) return;
+                            if (!mounted || !context.mounted) return;
                             setState(() => _isStarting = false);
                             if (contextCreated != null) {
                               context.go('/learn');

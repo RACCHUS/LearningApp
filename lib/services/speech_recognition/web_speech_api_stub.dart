@@ -1,5 +1,6 @@
 /// Stub implementation for non-web platforms
 /// This file is used when running on non-web platforms (VM tests, mobile, etc.)
+library;
 
 /// Check if SpeechRecognition API is available - always false on non-web
 bool get isSpeechRecognitionSupported => false;

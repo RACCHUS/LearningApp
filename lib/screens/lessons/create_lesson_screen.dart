@@ -390,7 +390,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _difficulty,
+              initialValue: _difficulty,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'beginner', child: Text('Beginner - Basic concepts and definitions')),
@@ -411,7 +411,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _contentFocus,
+              initialValue: _contentFocus,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'theoretical', child: Text('Theoretical - Theory and understanding')),

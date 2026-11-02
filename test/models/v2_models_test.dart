@@ -133,28 +133,28 @@ void main() {
     });
 
     test('serializes curriculum bindings', () {
-      final courseBinding = const CurriculumNodeCourse(
+      const courseBinding = CurriculumNodeCourse(
         curriculumNodeId: 'node-1',
         courseId: 'course-thermo',
         sortOrder: 1,
       );
       expect(courseBinding.toJson()['course_id'], 'course-thermo');
 
-      final moduleBinding = const CurriculumNodeModule(
+      const moduleBinding = CurriculumNodeModule(
         curriculumNodeId: 'node-1',
         moduleId: 'mod-cycles',
         sortOrder: 2,
       );
       expect(moduleBinding.toJson()['module_id'], 'mod-cycles');
 
-      final lessonBinding = const CurriculumNodeLesson(
+      const lessonBinding = CurriculumNodeLesson(
         curriculumNodeId: 'node-1',
         lessonId: 'lesson-superheat',
         sortOrder: 3,
       );
       expect(lessonBinding.toJson()['lesson_id'], 'lesson-superheat');
 
-      final conceptBinding = const CurriculumNodeConcept(
+      const conceptBinding = CurriculumNodeConcept(
         curriculumNodeId: 'node-1',
         conceptId: 'concept-superheat',
         relevance: ConceptRelevance.core,
@@ -214,7 +214,7 @@ void main() {
     });
 
     test('serializes ConceptRelation with prerequisite kind', () {
-      final relation = const ConceptRelation(
+      const relation = ConceptRelation(
         fromConceptId: 'kc-latent-heat',
         toConceptId: 'kc-superheat',
         relationType: ConceptRelationType.prerequisite,
@@ -282,7 +282,7 @@ void main() {
 
   group('Scope & Deterministic Sequence Models', () {
     test('serializes ScopedLearningActivity and ResolvedScope', () {
-      final activity = const ScopedLearningActivity(
+      const activity = ScopedLearningActivity(
         activityId: 'lesson-compressors',
         kind: ScopedActivityKind.lesson,
         curriculumNodeId: 'node-1',

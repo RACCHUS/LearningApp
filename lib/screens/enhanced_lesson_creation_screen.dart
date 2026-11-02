@@ -301,7 +301,7 @@ class _EnhancedLessonCreationScreenState
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _difficulty,
+              initialValue: _difficulty,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'beginner', child: Text('Beginner - Basic concepts and definitions')),
@@ -322,7 +322,7 @@ class _EnhancedLessonCreationScreenState
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _contentFocus,
+              initialValue: _contentFocus,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'conceptual', child: Text('Conceptual - Theory and understanding')),

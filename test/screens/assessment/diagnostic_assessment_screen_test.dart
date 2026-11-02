@@ -191,7 +191,7 @@ class _FakeDiagnosticService extends DiagnosticAssessmentService {
 }
 
 class _ScreenAuth extends StateNotifier<AuthState> implements AuthNotifier {
-  _ScreenAuth(AuthState initial):super(initial);
+  _ScreenAuth(super.initial);
   @override
   dynamic noSuchMethod(Invocation invocation)=>super.noSuchMethod(invocation);
 }

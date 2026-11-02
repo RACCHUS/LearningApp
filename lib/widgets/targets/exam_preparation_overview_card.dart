@@ -124,8 +124,7 @@ class _ExamPreparationOverviewCardState
             if (_lookup != null) ...[
               const SizedBox(height: 14),
               Text(
-                'Reference check for ' + (_partKey ?? 'selected part') + ' · ' +
-                    (_examDate?.toIso8601String().substring(0, 10) ?? ''),
+                'Reference check for ${_partKey ?? 'selected part'} · ${_examDate?.toIso8601String().substring(0, 10) ?? ''}',
                 style: theme.textTheme.titleSmall,
               ),
               FutureBuilder<ExamManifestSelection>(
@@ -187,15 +186,12 @@ class _ExamPreparationOverviewCardState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Reviewed reference list (revision ' +
-              revision.revision.toString() +
-              '). Confirm the latest rules with the exam provider.',
+          'Reviewed reference list (revision ${revision.revision}). Confirm the latest rules with the exam provider.',
           key: const Key('exam-reference-reviewed'),
         ),
         const SizedBox(height: 8),
         for (final book in revision.references)
-          Text('• ' + (book['title'] ?? book['key']).toString() +
-              ' — Edition ' + book['edition'].toString()),
+          Text('• ${book['title'] ?? book['key']} — Edition ${book['edition']}'),
         const SizedBox(height: 8),
         Text(
           'Only reviewed reference metadata is shown. '

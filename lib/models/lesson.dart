@@ -16,20 +16,28 @@ class Lesson extends BaseLesson {
   final List<Concept> concepts;
 
   // BaseLesson fields need to be redeclared for Hive
+  @override
   @HiveField(3)
   final String id;
+  @override
   @HiveField(4)
   final String title;
+  @override
   @HiveField(5)
   final String? description;
+  @override
   @HiveField(6)
   final List<String> tags;
+  @override
   @HiveField(7)
   final DateTime createdAt;
+  @override
   @HiveField(8)
   final DateTime updatedAt;
+  @override
   @HiveField(9)
   final String userId;
+  @override
   @HiveField(10)
   final String? emoji;
   @HiveField(11, defaultValue: 'public')

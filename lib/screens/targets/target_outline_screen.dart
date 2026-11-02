@@ -355,6 +355,7 @@ class _TargetOutlineScreenState extends ConsumerState<TargetOutlineScreen> {
       );
       if (node != null && context.mounted) {
         await _invalidateNodeAndScope(ref, versionId);
+        if (!context.mounted) return;
         final uri = Uri(
           path: '/create-lesson',
           queryParameters: {

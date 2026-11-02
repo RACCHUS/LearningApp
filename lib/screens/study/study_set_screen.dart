@@ -20,8 +20,7 @@ class StudySetScreen extends StatefulWidget {
   final List<String> lessonIds;
   final String? studySetId;
 
-  const StudySetScreen({Key? key, this.lessonIds = const [], this.studySetId})
-    : super(key: key);
+  const StudySetScreen({super.key, this.lessonIds = const [], this.studySetId});
 
   @override
   State<StudySetScreen> createState() => _StudySetScreenState();

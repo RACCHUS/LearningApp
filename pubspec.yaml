@@ -43,6 +43,9 @@ dependencies:
   device_info_plus: ^10.1.0
   percent_indicator: ^4.2.3
   flutter_markdown_plus: ^1.0.12
+  crypto: ^3.0.6
+  json_annotation: ^4.9.0
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:
@@ -56,6 +59,8 @@ dev_dependencies:
   json_schema: 5.2.2
   excel: ^4.0.6
 
+  supabase: any
+  flutter_local_notifications_platform_interface: any
 flutter:
   uses-material-design: true
   

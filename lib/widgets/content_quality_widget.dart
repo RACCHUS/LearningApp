@@ -6,10 +6,10 @@ class ContentQualityWidget extends StatefulWidget {
   final Function(List<ContentSuggestion>) onSuggestionsApplied;
 
   const ContentQualityWidget({
-    Key? key,
+    super.key,
     required this.lessonData,
     required this.onSuggestionsApplied,
-  }) : super(key: key);
+  });
 
   @override
   State<ContentQualityWidget> createState() => _ContentQualityWidgetState();
@@ -350,7 +350,7 @@ class _ContentQualityWidgetState extends State<ContentQualityWidget>
                   ),
                   const SizedBox(height: 12),
                   _buildReadabilityMetric('Reading Level', readability.readabilityLevel),
-                  _buildReadabilityMetric('Grade Level', '${readability.fleschKincaidGrade.toStringAsFixed(1)}'),
+                  _buildReadabilityMetric('Grade Level', readability.fleschKincaidGrade.toStringAsFixed(1)),
                   _buildReadabilityMetric('Avg. Sentence Length', '${readability.averageSentenceLength.toStringAsFixed(1)} words'),
                   _buildReadabilityMetric('Avg. Word Length', '${readability.averageWordLength.toStringAsFixed(1)} chars'),
                   _buildReadabilityMetric('Complex Words', '${readability.complexWordPercentage.toStringAsFixed(1)}%'),

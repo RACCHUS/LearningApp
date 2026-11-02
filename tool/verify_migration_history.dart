@@ -124,7 +124,7 @@ void main(List<String> args) async {
     }
   }
 
-  final validator = const MigrationHistoryValidator();
+  const validator = MigrationHistoryValidator();
   final allIssues = <MigrationValidationIssue>[];
 
   // 1. Run local static checks

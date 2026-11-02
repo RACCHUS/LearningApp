@@ -193,7 +193,7 @@ class _PersonalAttachmentResultDialogState
                   setState(() => _isRetrying = false);
                   if (ok && mounted) {
                     await widget.onAttached?.call();
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(kPersonalAttachmentSuccessMessage),
