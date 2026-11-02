@@ -316,7 +316,7 @@ No image generation API, no asset management, no storage costs. Just text.
 6. **Progress indicator** — LinearProgressIndicator on MCQ screens and "X of Y" badges on flashcards. Leverages Zeigarnik effect.
 7. **Color-coded MCQ feedback** — green = correct, red = incorrect. Immediate, clear, and scientifically sound.
 8. **Generous spacing** — 8-level spacing system (4-64px) with consistent 12-16px border radius. Clean visual rhythm.
-9. **Reduce-motion support** — `performance_animations.dart` respects system accessibility settings. Inclusive design.
+9. **Reduce-motion support** — The former `performance_animations.dart` helper was unreferenced and removed in the 2026-11-02 cleanup; reduced-motion behavior should be verified in active animation paths before claiming comprehensive support.
 10. **Audio integration** — TTS + voice commands support dual-channel encoding (visual + auditory).
 
 ### What's Missing / Needs Improvement ⚠️
