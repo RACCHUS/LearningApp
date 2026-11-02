@@ -228,7 +228,9 @@ update public.assessment_attempts
    set completed_at = now(), score = 80, correct_count = 1, total_questions = 1
    where id = 'aa000000-0000-0000-0000-000000000001';
 set local role authenticated;
-perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
+do $$ begin
+  perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
+end $$;
 
 -- Leaderboard isolation: unverified stats do NOT appear on skill_leaderboard view
 select is(
