@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** The legacy `assets/sample_lesson.json` mentioned in this plan was later removed after a repository-wide reference audit found no runtime consumer. Bundled lesson assets under `assets/lessons/` remain.
+
 # Implementation Plan — Remove First-Run Wizard + Add Searchable Help
 
 **Depends on:** `docs/design/FIRST_RUN_ZERO_STATE_HELP_SPEC.md`  

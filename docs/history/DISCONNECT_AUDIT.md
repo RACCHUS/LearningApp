@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** The earlier decision to keep `enhanced_lesson_creation_screen.dart` for future wiring was revisited during the owner-requested repository cleanup. A fresh source-reference audit found no route/import/test consumer, so the abandoned screen was removed. The decision was valid at the time of this audit but is no longer current.
+
 # Disconnect Audit & Remediation Plan
 
 Comprehensive audit of unused code, broken wiring, and underused features in the LearningApp codebase, with concrete fixes for each.
