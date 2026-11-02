@@ -58,8 +58,24 @@ ALTER TABLE public.review_items
   ADD COLUMN IF NOT EXISTS retrievability DOUBLE PRECISION,
   ADD COLUMN IF NOT EXISTS step SMALLINT DEFAULT 0;
 
--- 3. RECORD_EVENTS TRANSACTIONAL RPC (ARCH-1, FIX-2)
--- Atomically logs append-only events, updates projections, and awards verified XP
+-- 3. CLOSE DIRECT READ OF PROTECTED ANSWER DATA (FIX-12)
+-- A. assessment_items (scoring_spec contains answer keys and rubrics)
+REVOKE ALL ON public.assessment_items FROM PUBLIC, anon, authenticated;
+GRANT SELECT (
+  id, lesson_id, stimulus_id, interaction_type, prompt, response_spec,
+  sort_order, origin_target_version_id, content_node_id, created_at, updated_at
+) ON public.assessment_items TO anon, authenticated;
+GRANT ALL ON public.assessment_items TO service_role;
+
+-- B. assessment_questions (correct_answer and explanation contain answer keys)
+REVOKE ALL ON public.assessment_questions FROM PUBLIC, anon, authenticated;
+GRANT SELECT (
+  id, assessment_id, question_text, options, order_index, created_at
+) ON public.assessment_questions TO anon, authenticated;
+GRANT ALL ON public.assessment_questions TO service_role;
+
+-- 4. RECORD_EVENTS TRANSACTIONAL RPC (ARCH-1, ARCH-3, FIX-2, FIX-4)
+-- Atomically logs append-only events and updates review projections idempotently.
 CREATE OR REPLACE FUNCTION public.record_events(
   p_events JSONB[]
 )
@@ -82,6 +98,7 @@ DECLARE
   v_rating SMALLINT;
   v_score REAL;
   v_response JSONB;
+  v_presented_order SMALLINT[];
   v_latency_ms INTEGER;
   v_hints_used SMALLINT;
   v_confidence SMALLINT;
@@ -90,8 +107,7 @@ DECLARE
   v_metadata JSONB;
   v_app_version TEXT;
   v_processed_count INTEGER := 0;
-  v_total_xp_awarded INTEGER := 0;
-  v_xp_res JSONB;
+  v_inserted BOOLEAN := FALSE;
 BEGIN
   v_auth_uid := (SELECT auth.uid());
   IF v_auth_uid IS NULL THEN
@@ -118,27 +134,38 @@ BEGIN
     v_metadata := COALESCE(v_event->'metadata', '{}'::JSONB);
     v_app_version := v_event->>'app_version';
 
+    -- Parse presented_order array
+    IF v_event->'presented_order' IS NOT NULL AND jsonb_typeof(v_event->'presented_order') = 'array' THEN
+      SELECT array_agg(elem::SMALLINT)
+      INTO v_presented_order
+      FROM jsonb_array_elements_text(v_event->'presented_order') AS elem;
+    ELSE
+      v_presented_order := NULL;
+    END IF;
+
     IF v_item_id = '' THEN
       CONTINUE; -- skip invalid event
     END IF;
 
-    -- 1. Insert into learning_events
+    -- 1. Insert into learning_events (idempotent via ON CONFLICT DO NOTHING)
+    v_inserted := FALSE;
     INSERT INTO public.learning_events (
       id, user_id, occurred_at, event_type, item_type, item_id, item_version,
-      context_id, session_id, rating, score, response,
+      context_id, session_id, rating, score, response, presented_order,
       latency_ms, hints_used, confidence, scheduler_state_before,
       scheduler_state_after, metadata, app_version
     ) VALUES (
       v_event_id, v_auth_uid, v_occurred_at, v_event_type, v_item_type, v_item_id, v_item_version,
-      v_context_id, v_session_id, v_rating, v_score, v_response,
+      v_context_id, v_session_id, v_rating, v_score, v_response, v_presented_order,
       v_latency_ms, v_hints_used, v_confidence, v_sched_before,
       v_sched_after, v_metadata, v_app_version
-    ) ON CONFLICT (id) DO NOTHING;
+    ) ON CONFLICT (id) DO NOTHING
+    RETURNING TRUE INTO v_inserted;
 
     v_processed_count := v_processed_count + 1;
 
-    -- 2. Update review_items projection if this was an SRS review event
-    IF v_event_type = 'review' AND v_sched_after IS NOT NULL THEN
+    -- 2. Update review_items projection ONLY if the event was newly inserted (prevent replay duplication)
+    IF v_inserted IS TRUE AND v_event_type = 'review' AND v_sched_after IS NOT NULL THEN
       UPDATE public.review_items SET
         last_reviewed_at = v_occurred_at,
         next_review_date = COALESCE(
@@ -150,52 +177,18 @@ BEGIN
         difficulty = (v_sched_after->>'difficulty')::DOUBLE PRECISION,
         fsrs_state = COALESCE((v_sched_after->>'state')::SMALLINT, fsrs_state),
         step = COALESCE((v_sched_after->>'step')::SMALLINT, step),
-        repetition_level = COALESCE((v_sched_after->>'repetition_level')::INTEGER, repetition_level + 1),
+        repetition_level = COALESCE((v_sched_after->>'repetition_level')::INTEGER, repetition_level),
         ease_factor = COALESCE((v_sched_after->>'ease_factor')::DECIMAL(3,2), ease_factor),
-        total_reviews = total_reviews + 1,
-        correct_reviews = CASE WHEN COALESCE(v_score, 0) >= 0.7 OR COALESCE(v_rating, 0) >= 3 THEN correct_reviews + 1 ELSE correct_reviews END,
+        total_reviews = COALESCE((v_sched_after->>'total_reviews')::INTEGER, total_reviews + 1),
+        correct_reviews = COALESCE((v_sched_after->>'correct_reviews')::INTEGER, correct_reviews),
         updated_at = NOW()
       WHERE user_id = v_auth_uid AND (id::TEXT = v_item_id OR content_id = v_item_id);
-    END IF;
-
-    -- 3. Automatic Server-Side XP Award for verified event occurrences (FIX-2)
-    IF v_event_type IN ('question_answered', 'question_correct') AND COALESCE(v_score, 0) >= 1.0 THEN
-      BEGIN
-        v_xp_res := public.record_xp_award(
-          v_event_id,
-          'question_correct',
-          10,
-          v_item_id,
-          'Question correct verified by learning event'
-        );
-        IF (v_xp_res->>'status') = 'awarded' THEN
-          v_total_xp_awarded := v_total_xp_awarded + COALESCE((v_xp_res->>'xp_awarded')::INTEGER, 0);
-        END IF;
-      EXCEPTION WHEN OTHERS THEN
-        NULL;
-      END;
-    ELSIF v_event_type IN ('lesson_completed', 'lesson_complete') THEN
-      BEGIN
-        v_xp_res := public.record_xp_award(
-          v_event_id,
-          'lesson_complete',
-          50,
-          v_item_id,
-          'Lesson complete verified by learning event'
-        );
-        IF (v_xp_res->>'status') = 'awarded' THEN
-          v_total_xp_awarded := v_total_xp_awarded + COALESCE((v_xp_res->>'xp_awarded')::INTEGER, 0);
-        END IF;
-      EXCEPTION WHEN OTHERS THEN
-        NULL;
-      END;
     END IF;
   END LOOP;
 
   RETURN jsonb_build_object(
     'status', 'success',
-    'processed_count', v_processed_count,
-    'awarded_xp', v_total_xp_awarded
+    'processed_count', v_processed_count
   );
 END;
 $$;
@@ -203,7 +196,7 @@ $$;
 REVOKE ALL ON FUNCTION public.record_events(JSONB[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_events(JSONB[]) TO authenticated;
 
--- 4. SANITIZED ASSESSMENT QUESTIONS RPC (ARCH-1, FIX-12)
+-- 5. SANITIZED ASSESSMENT QUESTIONS RPC (ARCH-1, FIX-12)
 -- Returns assessment questions WITHOUT exposing correct_answer or explanation
 CREATE OR REPLACE FUNCTION public.get_assessment_questions_for_taking(
   p_assessment_id UUID
@@ -236,14 +229,13 @@ $$;
 REVOKE ALL ON FUNCTION public.get_assessment_questions_for_taking(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_assessment_questions_for_taking(UUID) TO anon, authenticated;
 
--- 5. SERVER-SIDE ASSESSMENT ATTEMPT SUBMISSION & GRADING RPC (ARCH-1, FIX-12)
+-- 6. SERVER-SIDE ASSESSMENT ATTEMPT SUBMISSION & GRADING RPC (ARCH-1, FIX-12)
 -- Evaluates submitted answers against actual correct answers on the server,
 -- computes final score, records attempt with is_verified = TRUE, and recomputes stats.
 CREATE OR REPLACE FUNCTION public.submit_and_grade_assessment(
   p_assessment_id UUID,
   p_answers JSONB,
-  p_time_taken_seconds INTEGER DEFAULT NULL,
-  p_was_overtime BOOLEAN DEFAULT FALSE
+  p_attempt_id UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -253,6 +245,11 @@ AS $$
 DECLARE
   v_user_id UUID;
   v_assessment public.skill_assessments%ROWTYPE;
+  v_attempt public.assessment_attempts%ROWTYPE;
+  v_attempt_id UUID;
+  v_started_at TIMESTAMPTZ;
+  v_time_spent_seconds INTEGER := 0;
+  v_is_overtime BOOLEAN := FALSE;
   v_q RECORD;
   v_user_answer INTEGER;
   v_is_correct BOOLEAN;
@@ -260,17 +257,18 @@ DECLARE
   v_total_questions INTEGER := 0;
   v_score INTEGER := 0;
   v_passed BOOLEAN := FALSE;
-  v_attempt_id UUID := gen_random_uuid();
   v_prev_level INTEGER := 0;
   v_new_level INTEGER := 0;
   v_question_results JSONB := '[]'::JSONB;
+  v_xp_awarded INTEGER := 0;
+  v_xp_res JSONB;
 BEGIN
   v_user_id := (SELECT auth.uid());
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required to submit assessment';
   END IF;
 
-  -- Fetch assessment
+  -- 1. Fetch and validate assessment
   SELECT * INTO v_assessment
   FROM public.skill_assessments
   WHERE id = p_assessment_id AND is_active = TRUE;
@@ -279,7 +277,47 @@ BEGIN
     RAISE EXCEPTION 'Active assessment not found: %', p_assessment_id;
   END IF;
 
-  -- Fetch previous level
+  -- 2. Validate or initialize attempt
+  IF p_attempt_id IS NOT NULL THEN
+    SELECT * INTO v_attempt
+    FROM public.assessment_attempts
+    WHERE id = p_attempt_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Assessment attempt not found: %', p_attempt_id;
+    END IF;
+
+    IF v_attempt.user_id <> v_user_id THEN
+      RAISE EXCEPTION 'Attempt does not belong to authenticated user'
+        USING ERRCODE = '42501';
+    END IF;
+
+    IF v_attempt.assessment_id <> p_assessment_id THEN
+      RAISE EXCEPTION 'Attempt assessment ID mismatch: expected %, got %', p_assessment_id, v_attempt.assessment_id;
+    END IF;
+
+    IF v_attempt.completed_at IS NOT NULL THEN
+      RAISE EXCEPTION 'Assessment attempt already completed: %', p_attempt_id;
+    END IF;
+
+    v_attempt_id := p_attempt_id;
+    v_started_at := COALESCE(v_attempt.started_at, NOW());
+    v_time_spent_seconds := GREATEST(1, EXTRACT(EPOCH FROM (NOW() - v_started_at))::INTEGER);
+
+    -- Server-side time limit enforcement (with 30-second network latency grace window)
+    IF v_assessment.time_limit_minutes IS NOT NULL AND v_assessment.time_limit_minutes > 0 THEN
+      v_is_overtime := (v_time_spent_seconds > (v_assessment.time_limit_minutes * 60 + 30));
+    ELSE
+      v_is_overtime := FALSE;
+    END IF;
+  ELSE
+    v_attempt_id := gen_random_uuid();
+    v_started_at := NOW();
+    v_time_spent_seconds := 0;
+    v_is_overtime := FALSE;
+  END IF;
+
+  -- 3. Fetch previous level
   SELECT level INTO v_prev_level
   FROM public.user_skill_stats
   WHERE user_id = v_user_id AND skill_id = v_assessment.skill_id;
@@ -287,7 +325,7 @@ BEGIN
     v_prev_level := 0;
   END IF;
 
-  -- Grade each question server-side
+  -- 4. Server-Side Answer Key Grading
   FOR v_q IN
     SELECT id, question_text, options, correct_answer, explanation, order_index
     FROM public.assessment_questions
@@ -302,7 +340,7 @@ BEGIN
       v_correct_count := v_correct_count + 1;
     END IF;
 
-    -- Return answer key and explanation ONLY after attempt has been submitted and graded
+    -- Disclose answer key and explanation ONLY after server evaluation
     v_question_results := v_question_results || jsonb_build_object(
       'question_id', v_q.id,
       'question_text', v_q.question_text,
@@ -320,43 +358,36 @@ BEGIN
     v_score := 0;
   END IF;
 
-  v_passed := (v_score >= v_assessment.passing_score);
+  v_passed := (v_score >= v_assessment.passing_score) AND (NOT v_is_overtime);
 
-  -- Insert attempt with is_verified = TRUE because server graded it!
-  INSERT INTO public.assessment_attempts (
-    id,
-    assessment_id,
-    user_id,
-    started_at,
-    completed_at,
-    score,
-    correct_count,
-    total_questions,
-    time_taken_seconds,
-    was_overtime,
-    is_verified,
-    is_deleted,
-    answers
-  ) VALUES (
-    v_attempt_id,
-    p_assessment_id,
-    v_user_id,
-    NOW() - (COALESCE(p_time_taken_seconds, 60) || ' seconds')::INTERVAL,
-    NOW(),
-    v_score,
-    v_correct_count,
-    v_total_questions,
-    p_time_taken_seconds,
-    p_was_overtime,
-    TRUE, -- VERIFIED by server scoring
-    FALSE,
-    p_answers
-  );
+  -- 5. Authoritatively record or complete attempt with is_verified = TRUE
+  IF p_attempt_id IS NOT NULL THEN
+    UPDATE public.assessment_attempts SET
+      completed_at = NOW(),
+      score = v_score,
+      correct_count = v_correct_count,
+      total_questions = v_total_questions,
+      time_taken_seconds = v_time_spent_seconds,
+      was_overtime = v_is_overtime,
+      is_passed = v_passed,
+      is_verified = TRUE,
+      answers = p_answers
+    WHERE id = v_attempt_id;
+  ELSE
+    INSERT INTO public.assessment_attempts (
+      id, assessment_id, user_id, started_at, completed_at, score,
+      correct_count, total_questions, time_taken_seconds, was_overtime,
+      is_passed, is_verified, is_deleted, answers
+    ) VALUES (
+      v_attempt_id, p_assessment_id, v_user_id, v_started_at, NOW(), v_score,
+      v_correct_count, v_total_questions, v_time_spent_seconds, v_is_overtime,
+      v_passed, TRUE, FALSE, p_answers
+    );
+  END IF;
 
-  -- Recompute skill stat
+  -- 6. Recompute skill statistics
   PERFORM public.recompute_user_skill_stat(v_user_id, v_assessment.skill_id);
 
-  -- Fetch new level
   SELECT level INTO v_new_level
   FROM public.user_skill_stats
   WHERE user_id = v_user_id AND skill_id = v_assessment.skill_id;
@@ -364,16 +395,19 @@ BEGIN
     v_new_level := 0;
   END IF;
 
-  -- Award XP server-side directly from verified completion
+  -- 7. Verified XP Award
   IF v_passed THEN
     BEGIN
-      PERFORM public.record_xp_award(
-        gen_random_uuid(),
+      v_xp_res := public.record_xp_award(
+        v_attempt_id,
         'course_complete',
         100,
         v_attempt_id::TEXT,
-        'Passed skill assessment: ' || v_assessment.title
+        'Passed verified skill assessment: ' || v_assessment.title
       );
+      IF (v_xp_res->>'status') = 'awarded' THEN
+        v_xp_awarded := COALESCE((v_xp_res->>'xp_awarded')::INTEGER, 100);
+      END IF;
     EXCEPTION WHEN OTHERS THEN
       NULL;
     END;
@@ -389,6 +423,9 @@ BEGIN
     'passing_score', v_assessment.passing_score,
     'passed', v_passed,
     'is_verified', TRUE,
+    'time_spent_seconds', v_time_spent_seconds,
+    'is_overtime', v_is_overtime,
+    'xp_awarded', v_xp_awarded,
     'previous_level', v_prev_level,
     'new_level', v_new_level,
     'question_results', v_question_results
@@ -396,23 +433,22 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.submit_and_grade_assessment(UUID, JSONB, INTEGER, BOOLEAN) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.submit_and_grade_assessment(UUID, JSONB, INTEGER, BOOLEAN) TO authenticated;
+REVOKE ALL ON FUNCTION public.submit_and_grade_assessment(UUID, JSONB, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.submit_and_grade_assessment(UUID, JSONB, UUID) TO authenticated;
 
--- 6. PREVENT DIRECT CLIENT FORGERY OF is_verified = TRUE ON assessment_attempts
+-- 7. PREVENT DIRECT CLIENT FORGERY OF is_verified = TRUE ON assessment_attempts
 CREATE OR REPLACE FUNCTION public.check_attempt_verified_write()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, extensions
 AS $$
 BEGIN
-  -- If a direct authenticated client attempts to insert or update is_verified to true,
-  -- downgrade it to false. Only server-side functions (SECURITY DEFINER) can persist is_verified = true.
-  IF (NEW.is_verified = TRUE AND (OLD IS NULL OR OLD.is_verified = FALSE)) THEN
-    IF (SELECT current_setting('role', true)) = 'authenticated' THEN
-      NEW.is_verified := FALSE;
-    END IF;
+  -- Unprivileged client direct writes attempting to set is_verified = TRUE are rejected with 42501.
+  -- Trusted server functions (SECURITY DEFINER running as table owner) bypass this check.
+  IF current_user IN ('authenticated', 'anon') AND NEW.is_verified = TRUE THEN
+    RAISE EXCEPTION 'Cannot self-certify assessment attempt: is_verified must be false for direct client writes'
+      USING ERRCODE = '42501';
   END IF;
   RETURN NEW;
 END;
@@ -423,4 +459,3 @@ CREATE TRIGGER trg_check_attempt_verified_write
   BEFORE INSERT OR UPDATE OF is_verified ON public.assessment_attempts
   FOR EACH ROW
   EXECUTE FUNCTION public.check_attempt_verified_write();
-

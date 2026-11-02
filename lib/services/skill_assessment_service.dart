@@ -274,8 +274,7 @@ class SkillAssessmentService {
         params: {
           'p_assessment_id': assessment.id,
           'p_answers': userAnswers,
-          'p_time_taken_seconds': timeTaken,
-          'p_was_overtime': wasOvertime,
+          'p_attempt_id': attemptId,
         },
       );
 
@@ -286,6 +285,9 @@ class SkillAssessmentService {
       final previousLevel = gradeMap['previous_level'] as int? ?? 0;
       final newLevel = gradeMap['new_level'] as int? ?? 0;
       final isVerified = gradeMap['is_verified'] as bool? ?? true;
+      final serverTimeTaken = gradeMap['time_spent_seconds'] as int? ?? timeTaken;
+      final serverIsOvertime = gradeMap['is_overtime'] as bool? ?? wasOvertime;
+      final returnedAttemptId = gradeMap['attempt_id'] as String? ?? attemptId;
 
       // Parse question results returned by server
       final rawResults = gradeMap['question_results'] as List? ?? [];
@@ -311,12 +313,13 @@ class SkillAssessmentService {
 
       return AssessmentResult(
         attempt: attempt.copyWith(
+          id: returnedAttemptId,
           score: score,
           correctCount: correctCount,
           totalQuestions: questionResults.length,
           completedAt: DateTime.now(),
-          timeTakenSeconds: timeTaken,
-          wasOvertime: wasOvertime,
+          timeTakenSeconds: serverTimeTaken,
+          wasOvertime: serverIsOvertime,
           isVerified: isVerified,
         ),
         assessment: assessment,

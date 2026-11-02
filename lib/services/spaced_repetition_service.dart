@@ -193,14 +193,9 @@ class SpacedRepetitionService {
     try {
       final updatedItem = item.processReview(quality);
 
-      await _supabase
-          .from('review_items')
-          .update(updatedItem.toJson())
-          .eq('id', item.id)
-          .eq('user_id', _userId!);
-
-      // Log append-only learning event via outbox (ARCH-1, FIX-2)
+      // Log append-only learning event via outbox (ARCH-1, FIX-2, FIX-4)
       final event = LearningEvent(
+        userId: _userId,
         eventType: 'review',
         itemType: item.contentType.dbValue,
         itemId: item.contentId,
@@ -229,7 +224,24 @@ class SpacedRepetitionService {
           'quality': quality.name,
         },
       );
-      _outbox?.enqueue(event);
+
+      // 1. Offline-first: await local outbox persistence before network calls
+      if (_outbox != null) {
+        await _outbox.enqueue(event);
+      } else {
+        // Fallback: If no outbox configured, update projection directly
+        try {
+          await _supabase
+              .from('review_items')
+              .update(updatedItem.toJson())
+              .eq('id', item.id)
+              .eq('user_id', _userId!);
+        } catch (e) {
+          if (kDebugMode) {
+            print('Warning: Direct review projection update failed: $e');
+          }
+        }
+      }
 
       // Word-skill evidence does not identify a canonical knowledge concept.
       if (item.contentType != ReviewableContentType.wordSkill) {

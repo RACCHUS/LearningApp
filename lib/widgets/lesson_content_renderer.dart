@@ -5,6 +5,7 @@ import 'package:learning_pwa/utils/math_utils.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/audio/audio_text_widget.dart';
 import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/question_widgets/mcq_question_widget.dart';
 import 'package:learning_pwa/widgets/question_widgets/true_false_question_widget.dart';
 import 'package:learning_pwa/widgets/question_widgets/short_answer_question_widget.dart';
@@ -126,15 +127,26 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   Widget _buildQuestionContent(QuestionContent content) {
     switch (content.type) {
       case 'mcq':
+        final presentationOrder = McqOptions.computePresentationOrder(
+          content.options,
+          presentationSeed: content.id.hashCode,
+          shuffle: true,
+        );
         return McqQuestionWidget(
           content: content,
           selectedIndex: selectedMcq,
           showCorrect: showMcqCorrect,
+          shuffleOptions: true,
+          presentationSeed: content.id.hashCode,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () => setState(() => showMcqCorrect = true),
           onNext: widget.onNext,
           onVoiceInput: (voiceInput) {
-            final result = VoiceInputHandler.handleMcqVoiceInput(voiceInput, content);
+            final result = VoiceInputHandler.handleMcqVoiceInput(
+              voiceInput,
+              content,
+              presentationOrder: presentationOrder,
+            );
             if (result != null) {
               setState(() => selectedMcq = result);
             }

@@ -95,7 +95,7 @@ select lives_ok(
 );
 
 select lives_ok(
-  $$ select count(*) from public.assessment_questions $$,
+  $$ select count(id) from public.assessment_questions $$,
   'Anon can SELECT from public.assessment_questions'
 );
 

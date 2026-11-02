@@ -122,5 +122,123 @@ void main() {
       expect(flushed, 0);
       expect(await outbox.pendingCount, 1);
     });
+
+    test('account isolation: queues are strictly partitioned and not cross-flushed', () async {
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+
+      // Start offline so events buffer in local queue
+      bool isOnline = false;
+      List<dynamic>? lastFlushedPayload;
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (!isOnline) {
+          throw Exception('Simulated offline network error');
+        }
+        if (fn == 'record_events') {
+          lastFlushedPayload = params?['p_events'] as List<dynamic>?;
+          return {
+            'status': 'success',
+            'processed_count': lastFlushedPayload?.length ?? 0,
+            'awarded_xp': 0,
+          };
+        }
+        return null;
+      };
+
+      // 1. Account A enqueues event while offline
+      fakeSupabase.auth.currentUser = const User(
+        id: 'account-a-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      final eventA = LearningEvent(
+        userId: 'account-a-id',
+        eventType: 'review',
+        itemType: 'term',
+        itemId: 'term-a',
+      );
+      await outbox.enqueue(eventA);
+      expect(await outbox.getPendingCount(userId: 'account-a-id'), 1);
+
+      // 2. Account switches to Account B while still offline
+      fakeSupabase.auth.currentUser = const User(
+        id: 'account-b-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      final eventB = LearningEvent(
+        userId: 'account-b-id',
+        eventType: 'review',
+        itemType: 'term',
+        itemId: 'term-b',
+      );
+      await outbox.enqueue(eventB);
+
+      // Both queues are isolated and held locally
+      expect(await outbox.getPendingCount(userId: 'account-b-id'), 1);
+      expect(await outbox.getPendingCount(userId: 'account-a-id'), 1);
+
+      // 3. Network comes back online while Account B is active
+      isOnline = true;
+      final flushedB = await outbox.flush();
+      expect(flushedB, 1);
+      expect(lastFlushedPayload?.first['item_id'], 'term-b');
+      expect(lastFlushedPayload?.first['user_id'], 'account-b-id');
+
+      // Account B queue is drained, Account A queue remains strictly untouched
+      expect(await outbox.getPendingCount(userId: 'account-b-id'), 0);
+      expect(await outbox.getPendingCount(userId: 'account-a-id'), 1);
+
+      // 4. Switch back to Account A and flush
+      fakeSupabase.auth.currentUser = const User(
+        id: 'account-a-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      final flushedA = await outbox.flush();
+      expect(flushedA, 1);
+      expect(lastFlushedPayload?.first['item_id'], 'term-a');
+      expect(lastFlushedPayload?.first['user_id'], 'account-a-id');
+      expect(await outbox.getPendingCount(userId: 'account-a-id'), 0);
+    });
+
+    test('concurrent enqueue operations do not overwrite or lose events', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'concurrent-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+      // Keep offline so they buffer
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        throw Exception('Offline');
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+
+      // Launch 20 concurrent enqueues
+      await Future.wait(List.generate(20, (i) {
+        return outbox.enqueue(
+          LearningEvent(
+            userId: 'concurrent-user-id',
+            eventType: 'review',
+            itemType: 'term',
+            itemId: 'item-$i',
+          ),
+        );
+      }));
+
+      final queued = await outbox.getQueuedEvents();
+      expect(queued.length, 20);
+      final itemIds = queued.map((e) => e.itemId).toSet();
+      expect(itemIds.length, 20);
+    });
   });
 }

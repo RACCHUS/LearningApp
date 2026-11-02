@@ -88,6 +88,8 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
           content: widget.content,
           selectedIndex: selectedMcq,
           showCorrect: showMcqCorrect,
+          shuffleOptions: true,
+          presentationSeed: widget.content.id.hashCode,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () {
             final isCorrect = selectedMcq == widget.content.correctAnswer;

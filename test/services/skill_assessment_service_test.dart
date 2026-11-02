@@ -87,6 +87,7 @@ void main() {
         if (fn == 'submit_and_grade_assessment') {
           expect(params?['p_assessment_id'], equals('assess-1'));
           expect(params?['p_answers'], equals({'q1': 0, 'q2': 1}));
+          expect(params?['p_attempt_id'], equals('attempt-1'));
           return {
             'attempt_id': 'attempt-1',
             'assessment_id': 'assess-1',
