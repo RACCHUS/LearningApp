@@ -271,24 +271,26 @@ select throws_ok(
 );
 
 -- 23. TEST: Server-graded submission with partial answers calculates correct score
-select lives_ok(
-  $$ select submit_and_grade_assessment(
+select is(
+  ((select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
        jsonb_build_object(
          'dd333333-0000-4000-8000-000000000001', 0, -- wrong
          'dd333333-0000-4000-8000-000000000002', 2  -- right
        )
-     ) $$,
-  'Submitting standalone partially correct assessment succeeds'
+     ))->>'score')::int,
+  50,
+  'Submitting standalone partially correct assessment returns 50% score'
 );
 
--- 24. TEST: Partial score correctly graded as 50%
+-- 24. TEST: Standalone attempt recorded in database with is_verified = TRUE and score = 50
 select is(
-  (select score from public.assessment_attempts 
+  (select count(*)::int from public.assessment_attempts 
    where user_id = 'cc111111-0000-4000-8000-000000000001' 
-   order by completed_at desc limit 1),
-  50,
-  'Partial score correctly graded as 50%'
+     and score = 50 
+     and is_verified = true),
+  1,
+  'Partial score attempt correctly recorded in database with is_verified = TRUE'
 );
 
 select * from finish();
