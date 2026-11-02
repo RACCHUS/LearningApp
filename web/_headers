@@ -6,6 +6,9 @@
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob: https:;
 
+# Asset caching: 1 hour with must-revalidate once stale.
+# Note: Flutter 3.47 builds without --web-content-hash, so assets are reused for up to 3600s.
+# For environments requiring zero-stale instant deployments on mutable assets, use 'max-age=0, must-revalidate'.
 /assets/*
   Cache-Control: public, max-age=3600, must-revalidate
 

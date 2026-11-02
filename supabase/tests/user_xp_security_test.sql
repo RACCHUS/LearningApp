@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(25);
+select plan(29);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -195,6 +195,34 @@ select throws_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000016'::uuid, 'lesson_complete', 50, null, 'No source') $$,
   'source_id is required for event type: lesson_complete',
   'Calling record_xp_award with null source_id for lesson_complete throws exception'
+);
+
+-- 21. Calling record_xp_award with NULL source_id for course_complete fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000017'::uuid, 'course_complete', 100, null, 'No source') $$,
+  'source_id is required for event type: course_complete',
+  'Calling record_xp_award with null source_id for course_complete throws exception'
+);
+
+-- 22. Calling record_xp_award with NULL source_id for review_session fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000018'::uuid, 'review_session', 20, null, 'No source') $$,
+  'source_id is required for event type: review_session',
+  'Calling record_xp_award with null source_id for review_session throws exception'
+);
+
+-- 23. Calling record_xp_award with NULL source_id for achievement fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000019'::uuid, 'achievement', 50, null, 'No source') $$,
+  'source_id is required for event type: achievement',
+  'Calling record_xp_award with null source_id for achievement throws exception'
+);
+
+-- 24. Calling record_xp_award with whitespace-only source_id for question_correct fails
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000020'::uuid, 'question_correct', 10, '   ', 'Whitespace source') $$,
+  'source_id is required for event type: question_correct',
+  'Calling record_xp_award with whitespace-only source_id throws exception'
 );
 
 select * from finish();
