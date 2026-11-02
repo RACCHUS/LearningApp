@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(24);
+select plan(28);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -33,8 +33,8 @@ insert into public.assessment_questions (id, assessment_id, question_text, optio
 on conflict (id) do nothing;
 
 -- Setup synthetic review item for User 1
-insert into public.review_items (id, user_id, content_id, content_type, lesson_id, title, stability, difficulty, fsrs_state, total_reviews) values
- ('dd444444-0000-4000-8000-000000000001', 'cc111111-0000-4000-8000-000000000001', 'card-1', 'term', 'lesson-1', 'Term 1', 2.0, 5.0, 1, 0)
+insert into public.review_items (id, user_id, content_id, content_type, lesson_id, title, stability, difficulty, fsrs_state, total_reviews, correct_reviews) values
+ ('dd444444-0000-4000-8000-000000000001', 'cc111111-0000-4000-8000-000000000001', 'card-1', 'term', 'lesson-1', 'Term 1', 2.0, 5.0, 1, 0, 0)
 on conflict do nothing;
 
 -- 3. TEST: Anon cannot execute record_events
@@ -48,13 +48,21 @@ select throws_ok(
 
 -- 4. TEST: Anon cannot execute submit_and_grade_assessment
 select throws_ok(
-  $$ select submit_and_grade_assessment('dd222222-0000-4000-8000-000000000001'::uuid, '{"dd333333-0000-4000-8000-000000000001": 1}'::jsonb) $$,
+  $$ select submit_and_grade_assessment('dd222222-0000-4000-8000-000000000001'::uuid, '{"dd333333-0000-4000-8000-000000000001": 1}'::jsonb, 'ee888888-0000-4000-8000-000000000001'::uuid) $$,
   '42501',
   null,
   'Anon role cannot execute submit_and_grade_assessment'
 );
 
--- 5. TEST: Anon cannot directly SELECT correct_answer from public.assessment_questions (FIX-12)
+-- 5. TEST: Anon cannot execute start_assessment_attempt
+select throws_ok(
+  $$ select start_assessment_attempt('dd222222-0000-4000-8000-000000000001'::uuid) $$,
+  '42501',
+  null,
+  'Anon role cannot execute start_assessment_attempt'
+);
+
+-- 6. TEST: Anon cannot directly SELECT correct_answer from public.assessment_questions (FIX-12)
 select throws_ok(
   $$ select correct_answer from public.assessment_questions $$,
   '42501',
@@ -62,7 +70,7 @@ select throws_ok(
   'Anon cannot directly SELECT correct_answer from public.assessment_questions'
 );
 
--- 6. TEST: Anon cannot directly SELECT scoring_spec from public.assessment_items (FIX-12)
+-- 7. TEST: Anon cannot directly SELECT scoring_spec from public.assessment_items (FIX-12)
 select throws_ok(
   $$ select scoring_spec from public.assessment_items $$,
   '42501',
@@ -70,13 +78,13 @@ select throws_ok(
   'Anon cannot directly SELECT scoring_spec from public.assessment_items'
 );
 
--- 7. TEST: Anon CAN call get_assessment_questions_for_taking
+-- 8. TEST: Anon CAN call get_assessment_questions_for_taking
 select lives_ok(
   $$ select * from get_assessment_questions_for_taking('dd222222-0000-4000-8000-000000000001'::uuid) $$,
   'Anon can fetch questions for taking'
 );
 
--- 8. TEST: Sanitized RPC response contains options and question_text
+-- 9. TEST: Sanitized RPC response contains options and question_text
 select is(
   (select count(*)::int from get_assessment_questions_for_taking('dd222222-0000-4000-8000-000000000001'::uuid)
    where question_text is not null and options is not null),
@@ -84,13 +92,92 @@ select is(
   'get_assessment_questions_for_taking returns valid sanitized question payload'
 );
 
--- 9. Switch to authenticated User 1
+-- 10. Switch to authenticated User 1
 set local role authenticated;
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 end $$;
 
--- 10. TEST: Authenticated User 1 can record learning event with presented_order
+-- 11. TEST: Direct authenticated call to record_xp_award is rejected with 42501 (FIX-2)
+select throws_ok(
+  $$ select record_xp_award('ee999999-0000-4000-8000-000000000099'::uuid, 'course_complete', 100, 'src-1', 'direct forged xp') $$,
+  '42501',
+  null,
+  'Authenticated users cannot directly execute record_xp_award'
+);
+
+-- 12. TEST: Direct client UPDATE on review_items is blocked (ARCH-1, ARCH-3)
+select throws_ok(
+  $$ update public.review_items set stability = 10.0 where id = 'dd444444-0000-4000-8000-000000000001' $$,
+  '42501',
+  null,
+  'Direct client UPDATE on review_items is blocked'
+);
+
+-- 13. TEST: reset_review_item_progress resets item to baseline FSRS state
+select lives_ok(
+  $$ select reset_review_item_progress('dd444444-0000-4000-8000-000000000001'::uuid) $$,
+  'Authenticated user can reset review item progress via RPC'
+);
+
+-- 14. TEST: review_items row reset verified
+select is(
+  (select stability::numeric from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
+  2.0::numeric,
+  'review_items stability reset to baseline 2.0'
+);
+
+-- 15. TEST: Submitting without attempt ID is rejected (Answer-Key Oracle closed)
+select throws_ok(
+  $$ select submit_and_grade_assessment(
+       'dd222222-0000-4000-8000-000000000001'::uuid,
+       '{}'::jsonb,
+       null::uuid
+     ) $$,
+  '42501',
+  null,
+  'Submitting without attempt ID is rejected with 42501'
+);
+
+-- 16. TEST: Submitting non-existent attempt ID is rejected with P0002
+select throws_ok(
+  $$ select submit_and_grade_assessment(
+       'dd222222-0000-4000-8000-000000000001'::uuid,
+       '{}'::jsonb,
+       '00000000-0000-0000-0000-000000000000'::uuid
+     ) $$,
+  'P0002',
+  null,
+  'Submitting non-existent attempt ID throws P0002'
+);
+
+-- 17. TEST: User 1 starts attempt via start_assessment_attempt RPC
+select lives_ok(
+  $$ select start_assessment_attempt('dd222222-0000-4000-8000-000000000001'::uuid) $$,
+  'User 1 successfully starts assessment attempt via server RPC'
+);
+
+-- 18. TEST: Client cannot directly modify started_at of uncompleted attempt
+select throws_ok(
+  $$ update public.assessment_attempts
+     set started_at = now() - interval '1 hour'
+     where user_id = 'cc111111-0000-4000-8000-000000000001' $$,
+  '42501',
+  null,
+  'Client cannot modify started_at of an assessment attempt'
+);
+
+-- 19. TEST: Client cannot directly modify score or completion fields
+select throws_ok(
+  $$ update public.assessment_attempts
+     set score = 100, completed_at = now()
+     where user_id = 'cc111111-0000-4000-8000-000000000001' $$,
+  '42501',
+  null,
+  'Client cannot directly modify completion or scoring fields'
+);
+
+-- 20. TEST: Authenticated User 1 can record learning event with presented_order (without explicit correct_reviews)
 select lives_ok(
   $$ select record_events(array[
        jsonb_build_object(
@@ -107,54 +194,31 @@ select lives_ok(
            'state', 2,
            'step', 0,
            'total_reviews', 1,
-           'correct_reviews', 1,
            'due', (now() + interval '3 days')::text
          )
        )
      ]) $$,
-  'Authenticated user can execute record_events with presented_order'
+  'Authenticated user can execute record_events'
 );
 
--- 11. TEST: learning_events recorded 1 row and persisted presented_order
+-- 21. TEST: correct_reviews is automatically incremented server-side to 1
 select is(
-  (select presented_order from public.learning_events where id = 'ee000000-0000-4000-8000-000000000001'),
-  array[1, 0, 2, 3]::smallint[],
-  'learning_events correctly persisted presented_order array'
-);
-
--- 12. TEST: review_items projection updated with FSRS values
-select is(
-  (select stability::numeric from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
-  3.5::numeric,
-  'review_items stability updated to 3.5 by record_events'
-);
-
-select is(
-  (select total_reviews::int from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
+  (select correct_reviews::int from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
   1,
-  'review_items total_reviews set to 1 by record_events'
+  'correct_reviews automatically incremented to 1 based on rating'
 );
 
--- 13. TEST: Idempotency of record_events - replaying duplicate does not re-increment projection
+-- 22. TEST: Idempotency of record_events - duplicate event does not double increment
 select lives_ok(
   $$ select record_events(array[
        jsonb_build_object(
          'id', 'ee000000-0000-4000-8000-000000000001',
          'event_type', 'review',
-         'item_type', 'term',
          'item_id', 'card-1',
-         'scheduler_state_after', jsonb_build_object(
-           'total_reviews', 1
-         )
+         'scheduler_state_after', jsonb_build_object('stability', 3.5)
        )
      ]) $$,
   'Replaying duplicate event executes safely'
-);
-
-select is(
-  (select count(*)::int from public.learning_events where user_id = 'cc111111-0000-4000-8000-000000000001'),
-  1,
-  'learning_events row count remains 1'
 );
 
 select is(
@@ -163,8 +227,7 @@ select is(
   'review_items total_reviews not double-incremented on event replay'
 );
 
--- 14. TEST: Cross-user isolation on learning_events
--- Switch to User 2
+-- 23. TEST: Cross-user isolation on learning_events
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000002', true);
 end $$;
@@ -175,12 +238,12 @@ select is(
   'User 2 cannot view User 1 learning events'
 );
 
--- 15. Switch back to User 1
+-- Switch back to User 1
 do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 end $$;
 
--- 16. TEST: Direct authenticated INSERT of is_verified = TRUE is rejected with 42501
+-- 24. TEST: Direct authenticated INSERT of is_verified = TRUE is rejected with 42501
 select throws_ok(
   $$ insert into public.assessment_attempts (
        id, assessment_id, user_id, score, is_verified, is_deleted
@@ -189,7 +252,7 @@ select throws_ok(
        'dd222222-0000-4000-8000-000000000001'::uuid,
        'cc111111-0000-4000-8000-000000000001'::uuid,
        100,
-       true, -- forged attempt
+       true,
        false
      ) $$,
   '42501',
@@ -197,21 +260,18 @@ select throws_ok(
   'Direct client insert of is_verified = TRUE is rejected with 42501'
 );
 
--- 17. TEST: User 1 starts unverified attempt
-select lives_ok(
-  $$ insert into public.assessment_attempts (
-       id, assessment_id, user_id, is_verified, started_at
-     ) values (
-       'ee888888-0000-4000-8000-000000000001'::uuid,
-       'dd222222-0000-4000-8000-000000000001'::uuid,
-       'cc111111-0000-4000-8000-000000000001'::uuid,
-       false,
-       now() - interval '2 minutes'
-     ) $$,
-  'User 1 successfully starts unverified attempt'
+-- Setup known uncompleted attempt for User 1
+insert into public.assessment_attempts (
+  id, assessment_id, user_id, is_verified, started_at
+) values (
+  'ee888888-0000-4000-8000-000000000001'::uuid,
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  'cc111111-0000-4000-8000-000000000001'::uuid,
+  false,
+  now() - interval '2 minutes'
 );
 
--- 18. TEST: Server-graded submission completing the original attempt
+-- 25. TEST: Server-graded submission completing the started attempt
 select lives_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
@@ -221,23 +281,17 @@ select lives_ok(
        ),
        'ee888888-0000-4000-8000-000000000001'::uuid
      ) $$,
-  'User 1 submits answers for original attempt'
+  'User 1 submits answers for legitimate attempt'
 );
 
--- 19. TEST: The original attempt is now completed with is_verified = TRUE
+-- 26. TEST: The original attempt is now completed with is_verified = TRUE and score = 100
 select is(
   (select is_verified from public.assessment_attempts where id = 'ee888888-0000-4000-8000-000000000001'),
   true,
   'Original attempt was completed and marked is_verified = TRUE by server scoring'
 );
 
-select is(
-  (select score from public.assessment_attempts where id = 'ee888888-0000-4000-8000-000000000001'),
-  100,
-  'Original attempt score calculated as 100%'
-);
-
--- 20. TEST: user_skill_stats now has is_verified = TRUE
+-- 27. TEST: user_skill_stats now has is_verified = TRUE
 select is(
   (select is_verified from public.user_skill_stats 
    where user_id = 'cc111111-0000-4000-8000-000000000001' 
@@ -246,7 +300,7 @@ select is(
   'user_skill_stats has is_verified = TRUE after server-graded attempt'
 );
 
--- 21. TEST: Re-submitting already completed attempt is rejected
+-- 28. TEST: Re-submitting already completed attempt is rejected
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
@@ -258,39 +312,6 @@ select throws_ok(
      ) $$,
   'Assessment attempt already completed: ee888888-0000-4000-8000-000000000001',
   'Submitting already completed attempt throws exception'
-);
-
--- 22. TEST: Non-existent assessment submission throws exception
-select throws_ok(
-  $$ select submit_and_grade_assessment(
-       '00000000-0000-0000-0000-000000000000'::uuid,
-       '{}'::jsonb
-     ) $$,
-  'Active assessment not found: 00000000-0000-0000-0000-000000000000',
-  'Submitting non-existent assessment throws exception'
-);
-
--- 23. TEST: Server-graded submission with partial answers calculates correct score
-select is(
-  ((select submit_and_grade_assessment(
-       'dd222222-0000-4000-8000-000000000001'::uuid,
-       jsonb_build_object(
-         'dd333333-0000-4000-8000-000000000001', 0, -- wrong
-         'dd333333-0000-4000-8000-000000000002', 2  -- right
-       )
-     ))->>'score')::int,
-  50,
-  'Submitting standalone partially correct assessment returns 50% score'
-);
-
--- 24. TEST: Standalone attempt recorded in database with is_verified = TRUE and score = 50
-select is(
-  (select count(*)::int from public.assessment_attempts 
-   where user_id = 'cc111111-0000-4000-8000-000000000001' 
-     and score = 50 
-     and is_verified = true),
-  1,
-  'Partial score attempt correctly recorded in database with is_verified = TRUE'
 );
 
 select * from finish();

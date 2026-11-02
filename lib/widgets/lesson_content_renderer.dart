@@ -25,6 +25,8 @@ class LessonContentRenderer extends StatefulWidget {
 }
 
 class _LessonContentRendererState extends State<LessonContentRenderer> {
+  late int _presentationSeed;
+
   // MCQ state
   int? selectedMcq;
   bool showMcqCorrect = false;
@@ -37,6 +39,12 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   final shortAnswerController = TextEditingController();
   String? shortAnswerFeedback;
   bool showSaCorrect = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+  }
 
   @override
   void dispose() {
@@ -55,6 +63,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
 
   void _resetState() {
     setState(() {
+      _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
       selectedMcq = null;
       showMcqCorrect = false;
       selectedTf = null;
@@ -129,7 +138,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
       case 'mcq':
         final presentationOrder = McqOptions.computePresentationOrder(
           content.options,
-          presentationSeed: content.id.hashCode,
+          presentationSeed: _presentationSeed,
           shuffle: true,
         );
         return McqQuestionWidget(
@@ -137,7 +146,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
           selectedIndex: selectedMcq,
           showCorrect: showMcqCorrect,
           shuffleOptions: true,
-          presentationSeed: content.id.hashCode,
+          presentationSeed: _presentationSeed,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () => setState(() => showMcqCorrect = true),
           onNext: widget.onNext,

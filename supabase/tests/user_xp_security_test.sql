@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(29);
+select plan(30);
 
 -- 1. Create synthetic test users in auth.users
 insert into auth.users (id, email) values
@@ -41,10 +41,20 @@ select throws_ok(
   'Authenticated role cannot execute increment_user_xp'
 );
 
--- 6. Valid transactional XP award succeeds for own user
+-- 6. Authenticated user CANNOT execute record_xp_award directly (FIX-2)
+select throws_ok(
+  $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
+  '42501',
+  null,
+  'Authenticated role cannot execute record_xp_award'
+);
+
+-- 7. Switch to service_role to verify internal server idempotency, capping, and deduplication
+set local role service_role;
+
 select lives_ok(
   $$ select record_xp_award('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'questionCorrect', 10, 'lesson-1', 'Correct answer') $$,
-  'Authenticated user can award XP via record_xp_award'
+  'Service role can execute record_xp_award'
 );
 
 select is(

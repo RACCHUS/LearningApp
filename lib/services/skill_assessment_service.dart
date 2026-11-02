@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 import '../models/skill.dart';
 import '../models/assessment.dart';
 
 /// Service for managing skills and assessments
 class SkillAssessmentService {
   final SupabaseClient _supabase;
-  final _uuid = const Uuid();
 
   SkillAssessmentService({SupabaseClient? supabase})
       : _supabase = supabase ?? Supabase.instance.client;
@@ -182,7 +180,7 @@ class SkillAssessmentService {
   // ASSESSMENT ATTEMPTS
   // ============================================================================
 
-  /// Start a new assessment attempt
+  /// Start a new assessment attempt authoritatively via server-side RPC
   Future<AssessmentAttempt> startAssessment(String assessmentId) async {
     final userId = _userId;
     if (userId == null) {
@@ -190,25 +188,14 @@ class SkillAssessmentService {
     }
 
     try {
-      // Get the assessment to know question count
-      final assessment = await getAssessmentWithQuestions(assessmentId);
+      final response = await _supabase.rpc(
+        'start_assessment_attempt',
+        params: {'p_assessment_id': assessmentId},
+      );
 
-      final response = await _supabase
-          .from('assessment_attempts')
-          .insert({
-            'id': _uuid.v4(),
-            'assessment_id': assessmentId,
-            'user_id': userId,
-            'started_at': DateTime.now().toIso8601String(),
-            'total_questions': assessment.questions?.length ?? 0,
-            'is_verified': false,
-            'is_deleted': false,
-          })
-          .select()
-          .single();
-
-      debugPrint('✅ Assessment started: ${response['id']}');
-      return AssessmentAttempt.fromJson(response);
+      final attemptMap = Map<String, dynamic>.from(response as Map);
+      debugPrint('✅ Assessment started via server RPC: ${attemptMap['id']}');
+      return AssessmentAttempt.fromJson(attemptMap);
     } catch (e) {
       debugPrint('❌ Error starting assessment: $e');
       rethrow;

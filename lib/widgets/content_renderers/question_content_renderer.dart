@@ -8,6 +8,8 @@ import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/utils/math_utils.dart';
 import 'package:learning_pwa/utils/voice_command_router.dart';
+import 'package:learning_pwa/utils/voice_input_handler.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/question_widgets/mcq_question_widget.dart';
 import 'package:learning_pwa/widgets/question_widgets/true_false_question_widget.dart';
 import 'package:learning_pwa/widgets/question_widgets/short_answer_question_widget.dart';
@@ -31,6 +33,8 @@ class QuestionContentRenderer extends ConsumerStatefulWidget {
 }
 
 class _QuestionContentRendererState extends ConsumerState<QuestionContentRenderer> {
+  late int _presentationSeed;
+
   // MCQ state
   int? selectedMcq;
   bool showMcqCorrect = false;
@@ -43,6 +47,12 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
   final shortAnswerController = TextEditingController();
   String? shortAnswerFeedback;
   bool showSaCorrect = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+  }
 
   @override
   void dispose() {
@@ -61,6 +71,7 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
 
   void _resetState() {
     setState(() {
+      _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
       selectedMcq = null;
       showMcqCorrect = false;
       selectedTf = null;
@@ -84,12 +95,17 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
 
     switch (widget.content.type) {
       case 'mcq':
+        final presentationOrder = McqOptions.computePresentationOrder(
+          widget.content.options,
+          presentationSeed: _presentationSeed,
+          shuffle: true,
+        );
         return McqQuestionWidget(
           content: widget.content,
           selectedIndex: selectedMcq,
           showCorrect: showMcqCorrect,
           shuffleOptions: true,
-          presentationSeed: widget.content.id.hashCode,
+          presentationSeed: _presentationSeed,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () {
             final isCorrect = selectedMcq == widget.content.correctAnswer;
@@ -101,7 +117,18 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
             setState(() => showMcqCorrect = true);
           },
           onNext: widget.onNext,
-          onVoiceInput: _handleVoiceInput,
+          onVoiceInput: (voiceInput) {
+            final result = VoiceInputHandler.handleMcqVoiceInput(
+              voiceInput,
+              widget.content,
+              presentationOrder: presentationOrder,
+            );
+            if (result != null) {
+              setState(() => selectedMcq = result);
+            } else {
+              _handleVoiceInput(voiceInput);
+            }
+          },
           customTextBuilder: _renderText,
         );
 
@@ -185,9 +212,15 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
     switch (widget.content.type) {
       case 'mcq':
         if (command.value is String) {
-          final answerIndex = command.value.codeUnitAt(0) - 65; // A=0, B=1, etc.
-          if (answerIndex >= 0 && answerIndex < widget.content.options.length) {
-            setState(() => selectedMcq = answerIndex);
+          final slotIndex = command.value.codeUnitAt(0) - 65; // A=0, B=1, etc.
+          final presentationOrder = McqOptions.computePresentationOrder(
+            widget.content.options,
+            presentationSeed: _presentationSeed,
+            shuffle: true,
+          );
+          if (slotIndex >= 0 && slotIndex < presentationOrder.length) {
+            final canonicalIndex = presentationOrder[slotIndex];
+            setState(() => selectedMcq = canonicalIndex);
           }
         }
         break;

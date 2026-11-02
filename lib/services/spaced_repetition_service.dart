@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/models/learning_context.dart';
@@ -27,7 +29,45 @@ class SpacedRepetitionService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  /// Get all review items for the current user
+  /// Cache review items in local storage for offline review queues (ARCH-3)
+  Future<void> _cacheItems(List<ReviewableItem> items) async {
+    final uid = _userId;
+    if (uid == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = items.map((i) => i.toJson()).toList();
+      await prefs.setString('review_items_cache_$uid', jsonEncode(jsonList));
+    } catch (_) {}
+  }
+
+  /// Retrieve cached review items from local storage
+  Future<List<ReviewableItem>> _getCachedItems() async {
+    final uid = _userId;
+    if (uid == null) return [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('review_items_cache_$uid');
+      if (raw == null) return [];
+      final decoded = jsonDecode(raw) as List;
+      return decoded.map((j) => ReviewableItem.fromJson(Map<String, dynamic>.from(j as Map))).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Update single item in local cache
+  Future<void> _updateCachedItem(ReviewableItem item) async {
+    final cached = await _getCachedItems();
+    final index = cached.indexWhere((i) => i.id == item.id);
+    if (index >= 0) {
+      cached[index] = item;
+    } else {
+      cached.add(item);
+    }
+    await _cacheItems(cached);
+  }
+
+  /// Get all review items for the current user (with offline fallback)
   Future<List<ReviewableItem>> getAllReviewItems() async {
     if (_userId == null) return [];
 
@@ -40,18 +80,20 @@ class SpacedRepetitionService {
           .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
-      return (response as List)
+      final items = (response as List)
           .map((row) => ReviewableItem.fromJson(row))
           .toList();
+      await _cacheItems(items);
+      return items;
     } catch (e) {
       if (kDebugMode) {
-        print('Error fetching review items: $e');
+        print('Error fetching review items, falling back to local cache: $e');
       }
-      return [];
+      return await _getCachedItems();
     }
   }
 
-  /// Get items due for review today
+  /// Get items due for review today (with offline fallback)
   Future<List<ReviewableItem>> getDueItems() async {
     if (_userId == null) return [];
 
@@ -67,14 +109,24 @@ class SpacedRepetitionService {
           .neq('content_type', 'word_skill')
           .order('next_review_date', ascending: true);
 
-      return (response as List)
+      final items = (response as List)
           .map((row) => ReviewableItem.fromJson(row))
           .toList();
+      return items;
     } catch (e) {
       if (kDebugMode) {
-        print('Error fetching due items: $e');
+        print('Error fetching due items, falling back to local cache: $e');
       }
-      return [];
+      final allCached = await _getCachedItems();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      return allCached
+          .where((item) =>
+              item.contentType != ReviewableContentType.wordSkill &&
+              (item.nextReviewDate.isBefore(today) ||
+                  item.nextReviewDate.isAtSameMomentAs(today)))
+          .toList()
+        ..sort((a, b) => a.nextReviewDate.compareTo(b.nextReviewDate));
     }
   }
 
@@ -218,6 +270,8 @@ class SpacedRepetitionService {
           'step': updatedItem.step,
           'repetition_level': updatedItem.repetitionLevel,
           'ease_factor': updatedItem.easeFactor,
+          'total_reviews': updatedItem.totalReviews,
+          'correct_reviews': updatedItem.correctReviews,
         },
         metadata: {
           'review_item_id': item.id,
@@ -229,19 +283,19 @@ class SpacedRepetitionService {
       if (_outbox != null) {
         await _outbox.enqueue(event);
       } else {
-        // Fallback: If no outbox configured, update projection directly
+        // Fallback: If no outbox configured, submit directly through record_events RPC
         try {
-          await _supabase
-              .from('review_items')
-              .update(updatedItem.toJson())
-              .eq('id', item.id)
-              .eq('user_id', _userId!);
+          await _supabase.rpc('record_events', params: {
+            'p_events': [event.toJson()],
+          });
         } catch (e) {
           if (kDebugMode) {
-            print('Warning: Direct review projection update failed: $e');
+            print('Warning: Direct record_events call failed: $e');
           }
         }
       }
+
+      await _updateCachedItem(updatedItem);
 
       // Word-skill evidence does not identify a canonical knowledge concept.
       if (item.contentType != ReviewableContentType.wordSkill) {
@@ -288,25 +342,19 @@ class SpacedRepetitionService {
     }
   }
 
-  /// Reset an item's progress (start over)
+  /// Reset an item's progress (start over) via authoritative server RPC
   Future<ReviewableItem?> resetItemProgress(ReviewableItem item) async {
     if (_userId == null) return null;
 
     try {
-      final resetItem = item.copyWith(
-        repetitionLevel: 0,
-        easeFactor: 2.5,
-        nextReviewDate: DateTime.now().add(const Duration(days: 1)),
-        totalReviews: 0,
-        correctReviews: 0,
+      final response = await _supabase.rpc(
+        'reset_review_item_progress',
+        params: {'p_item_id': item.id},
       );
 
-      await _supabase
-          .from('review_items')
-          .update(resetItem.toJson())
-          .eq('id', item.id)
-          .eq('user_id', _userId!);
-
+      final resetMap = Map<String, dynamic>.from(response as Map);
+      final resetItem = ReviewableItem.fromJson(resetMap);
+      await _updateCachedItem(resetItem);
       return resetItem;
     } catch (e) {
       if (kDebugMode) {
