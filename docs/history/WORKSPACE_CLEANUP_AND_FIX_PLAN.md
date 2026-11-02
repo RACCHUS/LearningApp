@@ -197,7 +197,7 @@ project does not auto-pause after inactivity.
 - ✅ **P7.3** [lib/providers/connectivity_provider.dart](../../lib/providers/connectivity_provider.dart)
   — `ConnectivityAware` now shows: device-offline banner (orange) OR server-unreachable banner
   (red, with **Retry**) with an accessible `Semantics(liveRegion)` message.
-- ✅ **P7.4** [.github/workflows/supabase-keepalive.yml](.github/workflows/supabase-keepalive.yml)
+- ✅ **P7.4** [.github/workflows/supabase-keepalive.yml](../../.github/workflows/supabase-keepalive.yml)
   — cron every 3 days pings the REST endpoint to keep the free-tier project awake. Requires repo
   secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
 - ✅ Tests: [test/providers/supabase_health_provider_test.dart](../../test/providers/supabase_health_provider_test.dart) (3 passing).
