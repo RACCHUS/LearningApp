@@ -43,7 +43,7 @@ To prevent clients from forging scores, scheduler states, payload digests, user 
 | **`event_schema_version`** | `text not null` | **Server-enforced** | Version of the `public.learning_events` envelope schema (e.g., `'1.0.0'`), tracked independently from curriculum/item metadata schema evolution |
 | **`metadata_schema_version`** | `text not null` | **Server-enforced** | Version of the curriculum/item metadata contract used to populate `task_profile` and `provenance_snapshot` (`'1.0-phase1-derived'` in Phase 1 before full manifest `2.1.0` migration; `'2.1.0'` once catalog items carry explicit `2.1.0` metadata; see §2.3) |
 | **`session_id`** | `uuid not null` | Client-submitted, **Device-specific & Server-validated** | Client-generated UUIDv4/v7 created locally **per device and study session** when a study, review, or assessment session begins (never shared across devices; allows offline sessions to generate a valid `session_id` without a prior server round-trip) |
-| **`client_seq`** | `integer not null` (`>= 1`, `UNIQUE (user_id, session_id, client_seq)`) | Client-submitted, **Strictly increasing per-session sequence with composite uniqueness** | Strictly increasing 1-based sequence number (`1, 2, 3, ...`) assigned within each `(user_id, session_id)` by the local outbox. Enforces **`UNIQUE (user_id, session_id, client_seq)`** so two distinct logical events (with different `idempotency_key`s) cannot share the same sequence slot; a colliding new `idempotency_key` is rejected (`status = 'sequence_conflict'`, §2.4) |
+| **`client_seq`** | `integer not null` (`>= 1`, `CONSTRAINT learning_events_user_session_seq_key UNIQUE (user_id, session_id, client_seq)`) | Client-submitted, **Strictly increasing per-session sequence with named composite uniqueness constraint** | Strictly increasing 1-based sequence number (`1, 2, 3, ...`) assigned within each `(user_id, session_id)` by the local outbox. Enforces **`CONSTRAINT learning_events_user_session_seq_key UNIQUE (user_id, session_id, client_seq)`** so two distinct logical events (with different `idempotency_key`s) cannot share the same sequence slot; a colliding new `idempotency_key` is rejected (`status = 'sequence_conflict'`, §2.4) |
 | **`attempt_id`** | `uuid null` | **Conditional by assessment mode** | **Nullable (`uuid`)**: required (`NOT NULL`) and verified against an active server-issued assignment/attempt record owned by `auth.uid()` when `assessment_conditions.scoring_protection == 'server_protected_scoring'` (e.g., `EXM-03`, diagnostics, timed mocks); `NULL` (or optional local group UUID) for standalone/offline `memory_card_review` and unissued low-stakes practice |
 | **`client_occurred_at`** | `timestamptz not null` | Client-submitted (**Untrusted client clock, bounded validation**) | Client-recorded UTC timestamp when the review/attempt occurred; validated against the **joint feasibility** of the server plausibility window and bidirectional per-session `(session_id, client_seq)` non-decreasing neighbor bounds to derive `effective_occurred_at` (see §2.4) |
 | **`received_at`** | `timestamptz not null` | **Server-owned** | Set to server `now()` (UTC); authoritative for **ledger ingestion audit time** and **timed/high-stakes assessment cutoffs (`server_elapsed_ms`)** |
@@ -120,7 +120,7 @@ To support offline reviews (`ARCH-3`) without corrupting FSRS intervals when off
      - **Step 3 — Matching Digest $\to$ Immediate `duplicate_noop`**: If an existing row is found and its stored `payload_sha256` equals `v_payload_sha256`, immediately record `status = 'duplicate_noop'` (returning the existing row's persisted `id` and `effective_occurred_at`) and **skip Steps 4–5**.
      - **Step 4 — Mismatched Digest $\to$ Immediate `idempotency_payload_mismatch`**: If an existing row is found and its stored `payload_sha256` differs from `v_payload_sha256` (e.g., the same `idempotency_key` was reused with a modified `fsrs_rating`, `learner_response`, or `client_seq`), immediately reject the item with `status = 'idempotency_payload_mismatch'` (so the client outbox quarantines the collision) and **skip Step 5**.
      - **Step 5 — New Key Only $\to$ Sequence-Conflict, Joint Window/Neighbor Timestamp Validation & Atomic `BEGIN ... EXCEPTION ... END` Subtransaction Write**: Only when `(v_user_id, v_idempotency_key)` does **not** exist in `public.learning_events`:
-       1. **Check `UNIQUE (user_id, session_id, client_seq)`**: If `(v_user_id, v_session_id, v_client_seq)` already exists in `public.learning_events` (necessarily under a different `idempotency_key`), reject and quarantine the item with `status = 'sequence_conflict'` without mutating projections.
+       1. **Check `CONSTRAINT learning_events_user_session_seq_key UNIQUE (user_id, session_id, client_seq)`**: If `(v_user_id, v_session_id, v_client_seq)` already exists in `public.learning_events` (necessarily under a different `idempotency_key`), reject and quarantine the item with `status = 'sequence_conflict'` without mutating projections.
        2. **Evaluate Joint Feasibility of the 14-Day Plausibility Window & Bidirectional Neighbor Bounds (`effective_occurred_at`)**:
           - **Explicit Trust Boundary**: `received_at` (`now()` UTC) and `server_elapsed_ms` remain strictly authoritative for **audit arrival time** and **all timed/high-stakes assessments**. By contrast, **`effective_occurred_at`** is a **bounded, best-effort scheduling input** designed to **preserve plausible client-reported offline intervals** for ordinary memory scheduling (`review_items`), and is **never treated as trusted timing evidence**.
           - Define the plausibility window $[W_{\min}, W_{\max}] = [\text{received\_at} - \text{interval '14 days'},\ \text{received\_at} + \text{interval '5 minutes'}]$.
@@ -139,9 +139,9 @@ To support offline reviews (`ARCH-3`) without corrupting FSRS intervals when off
           - In PL/pgSQL, a bare `BEGIN ... END` block is only syntactic statement grouping (and `SAVEPOINT` cannot be called directly in PL/pgSQL); only a **`BEGIN ... EXCEPTION ... END`** block establishes a PostgreSQL subtransaction whose inner writes are atomically rolled back when an exception is caught.
           - Therefore, `record_events` enforces the following four subtransaction rules for every item write:
             1. **Event Insert & All Projection Writes Share One `BEGIN ... EXCEPTION ... END` Block**: The `INSERT INTO public.learning_events` statement and all corresponding `public.review_items` and `public.user_concept_state` projection writes execute inside the **same** PL/pgSQL `BEGIN ... EXCEPTION ... END` block so that the event row and its projection updates either both commit or both roll back together for that item.
-            2. **Defense-in-Depth `ON CONFLICT` & Expected Item-Level Failure Mapping**: `INSERT INTO public.learning_events (...) VALUES (...) ON CONFLICT (user_id, idempotency_key) DO NOTHING RETURNING id, effective_occurred_at` runs first inside the block as defense-in-depth alongside the `(user_id, idempotency_key)` advisory lock. If `RETURNING` yields no row, the block re-reads the stored `payload_sha256` for `(v_user_id, v_idempotency_key)`, classifies the item as `status = 'duplicate_noop'` (when `stored.payload_sha256 = v_payload_sha256`) or `status = 'idempotency_payload_mismatch'` (when `stored.payload_sha256 <> v_payload_sha256`), and skips projection updates without raising. If a recognized item-level invariant fails during write/projection evaluation (signaled via a dedicated application SQLSTATE such as `P0002` or a `unique_violation` on `(user_id, session_id, client_seq)`), catching that specific condition rolls back all writes performed inside the item's `BEGIN ... EXCEPTION ... END` block and maps the failure to its documented item-level status (`sequence_conflict`, `rejected_ordering_conflict`, `rejected_window_neighbor_conflict`, etc.).
-            3. **Unexpected Errors Are Re-Raised (`WHEN OTHERS THEN RAISE;`)**: The `EXCEPTION` clause catches **only** explicitly recognized item-level failure conditions; any unexpected database error, constraint regression, or programming defect hits `WHEN OTHERS THEN RAISE;` and aborts the transaction loudly rather than silently converting defects into rejected events.
-            4. **Batch Continuation Restricted to Recognized Item-Level Failures**: `record_events` continues iterating to subsequent items in the batch **only** after a recognized item-level rejection/conflict status.
+            2. **Defense-in-Depth `ON CONFLICT` & Strictly Scoped Item-Level Failure Mapping (`SQLSTATE 'PZ001'` + `CONSTRAINT_NAME` Check)**: `INSERT INTO public.learning_events (...) VALUES (...) ON CONFLICT (user_id, idempotency_key) DO NOTHING RETURNING id, effective_occurred_at` runs first inside the block as defense-in-depth alongside the `(user_id, idempotency_key)` advisory lock. If `RETURNING` yields no row, the block re-reads the stored `payload_sha256` for `(v_user_id, v_idempotency_key)`, classifies the item as `status = 'duplicate_noop'` (when `stored.payload_sha256 = v_payload_sha256`) or `status = 'idempotency_payload_mismatch'` (when `stored.payload_sha256 <> v_payload_sha256`), and skips projection updates without raising. If a recognized item-level invariant fails after insert during write/projection evaluation, `record_events` raises a dedicated custom application SQLSTATE **`'PZ001'`** (never `P0002`, which is PostgreSQL's built-in `no_data_found` condition raised by `SELECT ... INTO STRICT`) and validates `GET STACKED DIAGNOSTICS v_error_message = MESSAGE_TEXT` against the explicit rejection status whitelist (`'sequence_conflict'`, `'rejected_ordering_conflict'`, `'rejected_window_neighbor_conflict'`), re-raising via `RAISE;` if the message is not in that whitelist. Likewise, `WHEN unique_violation` inspects `GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME` and maps to `status = 'sequence_conflict'` **only** when `v_constraint_name = 'learning_events_user_session_seq_key'`; any `unique_violation` originating from `public.review_items`, `public.user_concept_state`, or any other constraint is immediately re-raised via `RAISE;`.
+            3. **Unexpected Errors Are Re-Raised (`WHEN OTHERS THEN RAISE;`)**: The `EXCEPTION` clause catches **only** explicitly verified item-level failure conditions (`SQLSTATE 'PZ001'` with a whitelisted status code or `unique_violation` on `learning_events_user_session_seq_key`); any `no_data_found` (`P0002`), projection constraint violation, or programming defect hits `RAISE;` and aborts the transaction loudly rather than silently converting defects into rejected events.
+            4. **Batch Continuation Restricted to Recognized Item-Level Failures**: `record_events` continues iterating to subsequent items in the batch **only** after a verified item-level rejection/conflict status.
           - Reference PL/pgSQL subtransaction structure:
             ```sql
             BEGIN
@@ -157,18 +157,36 @@ To support offline reviews (`ARCH-3`) without corrupting FSRS intervals when off
                 -- v_item_status := 'duplicate_noop' or 'idempotency_payload_mismatch'
               ELSE
                 -- Update / deterministically replay public.review_items and public.user_concept_state
-                -- If a recognized item-level invariant fails after insert, RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = <documented_status>;
+                -- If a recognized item-level invariant fails after insert, signal via dedicated custom SQLSTATE 'PZ001'
+                -- (never P0002, which is PostgreSQL's built-in no_data_found SQLSTATE):
+                -- RAISE EXCEPTION USING ERRCODE = 'PZ001', MESSAGE = <documented_status>;
                 v_item_status := 'accepted';
               END IF;
             EXCEPTION
-              WHEN SQLSTATE 'P0002' THEN
-                -- Recognized item-level rejection: all writes in this BEGIN..EXCEPTION..END block are rolled back
-                v_item_status := SQLERRM;
+              WHEN SQLSTATE 'PZ001' THEN
+                -- Dedicated application SQLSTATE for recognized item-level rejection;
+                -- all writes in this BEGIN..EXCEPTION..END block are rolled back.
+                GET STACKED DIAGNOSTICS v_error_message = MESSAGE_TEXT;
+                IF v_error_message IN (
+                  'sequence_conflict',
+                  'rejected_ordering_conflict',
+                  'rejected_window_neighbor_conflict'
+                ) THEN
+                  v_item_status := v_error_message;
+                ELSE
+                  RAISE;
+                END IF;
               WHEN unique_violation THEN
-                -- Defensive fallback if (user_id, session_id, client_seq) races: all writes in this block are rolled back
-                v_item_status := 'sequence_conflict';
+                -- Only classify as sequence_conflict when raised by learning_events_user_session_seq_key;
+                -- re-raise any unique_violation from review_items, user_concept_state, or other constraints.
+                GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME;
+                IF v_constraint_name = 'learning_events_user_session_seq_key' THEN
+                  v_item_status := 'sequence_conflict';
+                ELSE
+                  RAISE;
+                END IF;
               WHEN OTHERS THEN
-                -- Never mask unexpected errors or defects as item rejections
+                -- Never mask no_data_found (P0002), projection constraint errors, or unexpected defects
                 RAISE;
             END;
             ```
