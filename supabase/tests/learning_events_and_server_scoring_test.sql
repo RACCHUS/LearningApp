@@ -124,13 +124,13 @@ select is(
 
 -- 12. TEST: review_items projection updated with FSRS values
 select is(
-  (select stability from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
-  3.5,
+  (select stability::numeric from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
+  3.5::numeric,
   'review_items stability updated to 3.5 by record_events'
 );
 
 select is(
-  (select total_reviews from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
+  (select total_reviews::int from public.review_items where id = 'dd444444-0000-4000-8000-000000000001'),
   1,
   'review_items total_reviews set to 1 by record_events'
 );
