@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(32);
+select plan(35);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -382,42 +382,69 @@ insert into public.assessment_attempts (
   now() - interval '2 minutes'
 );
 
+create temp table failing_attempt_3_result as
+select submit_and_grade_assessment(
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  jsonb_build_object(
+    'dd333333-0000-4000-8000-000000000001', 0,
+    'dd333333-0000-4000-8000-000000000002', 0
+  ),
+  'ee666666-0000-4000-8000-000000000003'::uuid
+) as res;
+
 -- 28. TEST: Repeated failing attempt 3 withholds correct_answer preventing key accumulation across attempts
 select is(
-  (select (submit_and_grade_assessment(
-     'dd222222-0000-4000-8000-000000000001'::uuid,
-     jsonb_build_object(
-       'dd333333-0000-4000-8000-000000000001', 0,
-       'dd333333-0000-4000-8000-000000000002', 0
-     ),
-     'ee666666-0000-4000-8000-000000000003'::uuid
-   )->'question_results'->0->>'correct_answer')),
+  (select (res->'question_results'->0->>'correct_answer') from failing_attempt_3_result),
   null,
   'Repeated failing attempt 3 withholds correct_answer preventing key accumulation across attempts'
 );
 
--- 29. TEST: Legitimate passing attempt discloses correct answers for post-assessment review
+-- 29. TEST: Repeated failing attempt 3 explicitly withholds explanation
 select is(
-  (select (submit_and_grade_assessment(
-     'dd222222-0000-4000-8000-000000000001'::uuid,
-     jsonb_build_object(
-       'dd333333-0000-4000-8000-000000000001', 1,
-       'dd333333-0000-4000-8000-000000000002', 2
-     ),
-     'ee888888-0000-4000-8000-000000000001'::uuid
-   )->'question_results'->0->>'correct_answer')::int),
+  (select (res->'question_results'->0->>'explanation') from failing_attempt_3_result),
+  null,
+  'Repeated failing attempt 3 explicitly withholds explanation'
+);
+
+create temp table passing_attempt_result as
+select submit_and_grade_assessment(
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  jsonb_build_object(
+    'dd333333-0000-4000-8000-000000000001', 1,
+    'dd333333-0000-4000-8000-000000000002', 2
+  ),
+  'ee888888-0000-4000-8000-000000000001'::uuid
+) as res;
+
+-- 30. TEST: Legitimate passing attempt discloses correct_answer for post-assessment review
+select is(
+  (select (res->'question_results'->0->>'correct_answer')::int from passing_attempt_result),
   1,
   'Passing attempt discloses correct_answer for legitimate post-assessment review'
 );
 
--- 30. TEST: The original attempt is now completed with is_verified = TRUE and score = 100
+-- 31. TEST: Legitimate passing attempt discloses is_correct = TRUE
+select is(
+  (select (res->'question_results'->0->>'is_correct')::boolean from passing_attempt_result),
+  true,
+  'Passing attempt discloses is_correct = TRUE for legitimate post-assessment review'
+);
+
+-- 32. TEST: Legitimate passing attempt discloses explanation for educational review
+select is(
+  (select (res->'question_results'->0->>'explanation') from passing_attempt_result),
+  'Two plus two equals four',
+  'Passing attempt discloses explanation for legitimate post-assessment review'
+);
+
+-- 33. TEST: The original attempt is now completed with is_verified = TRUE and score = 100
 select is(
   (select is_verified from public.assessment_attempts where id = 'ee888888-0000-4000-8000-000000000001'),
   true,
   'Original attempt was completed and marked is_verified = TRUE by server scoring'
 );
 
--- 31. TEST: user_skill_stats now has is_verified = TRUE
+-- 34. TEST: user_skill_stats now has is_verified = TRUE
 select is(
   (select is_verified from public.user_skill_stats 
    where user_id = 'cc111111-0000-4000-8000-000000000001' 
@@ -426,7 +453,7 @@ select is(
   'user_skill_stats has is_verified = TRUE after server-graded attempt'
 );
 
--- 32. TEST: Re-submitting already completed attempt is rejected
+-- 35. TEST: Re-submitting already completed attempt is rejected
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
