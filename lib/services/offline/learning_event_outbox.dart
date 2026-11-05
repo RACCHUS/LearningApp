@@ -169,14 +169,27 @@ class LearningEventOutbox {
               params: {'p_events': currentBatchEvents},
             );
 
-            if (kDebugMode) {
-              print('✅ Flushed ${currentBatchRaw.length} learning events for user $currentUserId. Result: $res');
+            // Verify the RPC acknowledged success and processed the batch
+            final resMap = res is Map ? res : {};
+            final status = resMap['status'] as String?;
+            final processedCount = resMap['processed_count'] as int? ?? 0;
+
+            if (status != 'success') {
+              if (kDebugMode) {
+                print('⚠️ record_events RPC reported non-success status: $status');
+              }
+              break;
             }
 
-            // Remove the flushed items
-            rawList = rawList.skip(currentBatchRaw.length).toList();
+            final countToRemove = processedCount > 0 ? processedCount : currentBatchRaw.length;
+            if (kDebugMode) {
+              print('✅ Flushed $countToRemove learning events for user $currentUserId. Result: $res');
+            }
+
+            // Remove only the acknowledged items
+            rawList = rawList.skip(countToRemove).toList();
             await prefs.setStringList(key, rawList);
-            totalFlushed += currentBatchRaw.length;
+            totalFlushed += countToRemove;
           } catch (e) {
             if (kDebugMode) {
               print('⚠️ Failed to flush learning events batch: $e');

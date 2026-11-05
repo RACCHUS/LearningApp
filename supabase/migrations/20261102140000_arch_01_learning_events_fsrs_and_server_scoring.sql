@@ -138,7 +138,13 @@ BEGIN
     v_context_id := v_event->>'context_id';
     v_session_id := v_event->>'session_id';
     v_rating := (v_event->>'rating')::SMALLINT;
+    IF v_rating IS NOT NULL AND (v_rating < 1 OR v_rating > 4) THEN
+      v_rating := NULL;
+    END IF;
     v_score := (v_event->>'score')::REAL;
+    IF v_score IS NOT NULL THEN
+      v_score := LEAST(1.0::REAL, GREATEST(0.0::REAL, v_score));
+    END IF;
     v_response := v_event->'response';
     v_latency_ms := (v_event->>'latency_ms')::INTEGER;
     v_hints_used := COALESCE((v_event->>'hints_used')::SMALLINT, 0);
@@ -183,12 +189,12 @@ BEGIN
           (v_sched_after->>'next_review_date')::TIMESTAMPTZ,
           NOW() + INTERVAL '1 day'
         ),
-        stability = (v_sched_after->>'stability')::DOUBLE PRECISION,
-        difficulty = (v_sched_after->>'difficulty')::DOUBLE PRECISION,
-        fsrs_state = COALESCE((v_sched_after->>'state')::SMALLINT, fsrs_state),
-        step = COALESCE((v_sched_after->>'step')::SMALLINT, step),
-        repetition_level = COALESCE((v_sched_after->>'repetition_level')::INTEGER, repetition_level),
-        ease_factor = COALESCE((v_sched_after->>'ease_factor')::DECIMAL(3,2), ease_factor),
+        stability = LEAST(36500.0, GREATEST(0.1, COALESCE((v_sched_after->>'stability')::DOUBLE PRECISION, stability))),
+        difficulty = LEAST(10.0, GREATEST(1.0, COALESCE((v_sched_after->>'difficulty')::DOUBLE PRECISION, difficulty))),
+        fsrs_state = LEAST(3, GREATEST(0, COALESCE((v_sched_after->>'state')::SMALLINT, fsrs_state))),
+        step = GREATEST(0, COALESCE((v_sched_after->>'step')::SMALLINT, step)),
+        repetition_level = GREATEST(0, COALESCE((v_sched_after->>'repetition_level')::INTEGER, repetition_level)),
+        ease_factor = LEAST(2.50, GREATEST(1.30, COALESCE((v_sched_after->>'ease_factor')::DECIMAL(3,2), ease_factor))),
         total_reviews = review_items.total_reviews + 1,
         correct_reviews = CASE 
           WHEN COALESCE((v_sched_after->>'correct_reviews')::INTEGER, -1) >= 0 
@@ -206,7 +212,7 @@ BEGIN
     IF v_inserted IS TRUE AND v_concept_id_text IS NOT NULL AND v_concept_id_text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
       DECLARE
         v_cid UUID := v_concept_id_text::UUID;
-        v_ev_score NUMERIC := COALESCE(v_score::NUMERIC, CASE WHEN COALESCE(v_rating, 0) >= 3 THEN 1.0 ELSE 0.0 END);
+        v_ev_score NUMERIC := LEAST(1.0, GREATEST(0.0, COALESCE(v_score::NUMERIC, CASE WHEN COALESCE(v_rating, 0) >= 3 THEN 1.0 ELSE 0.0 END)));
       BEGIN
         INSERT INTO public.user_concept_state (
           user_id, concept_id, evidence_count, weighted_correct, weighted_total, last_evidence_at, updated_at
@@ -324,6 +330,7 @@ AS $$
 DECLARE
   v_user_id UUID := (SELECT auth.uid());
   v_attempt_id UUID := gen_random_uuid();
+  v_existing_attempt_id UUID;
   v_total_questions INTEGER := 0;
   v_attempt public.assessment_attempts%ROWTYPE;
 BEGIN
@@ -337,6 +344,22 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Active assessment not found: %', p_assessment_id;
+  END IF;
+
+  -- Anti-harvesting attempt reuse: return existing active uncompleted attempt if started within the last 2 hours
+  SELECT id INTO v_existing_attempt_id
+  FROM public.assessment_attempts
+  WHERE user_id = v_user_id
+    AND assessment_id = p_assessment_id
+    AND completed_at IS NULL
+    AND is_deleted = FALSE
+    AND started_at > NOW() - INTERVAL '2 hours'
+  ORDER BY started_at DESC
+  LIMIT 1;
+
+  IF v_existing_attempt_id IS NOT NULL THEN
+    SELECT * INTO v_attempt FROM public.assessment_attempts WHERE id = v_existing_attempt_id;
+    RETURN to_jsonb(v_attempt);
   END IF;
 
   SELECT count(id)::INTEGER INTO v_total_questions
@@ -379,6 +402,8 @@ DECLARE
   v_time_spent_seconds INTEGER := 0;
   v_is_overtime BOOLEAN := FALSE;
   v_is_verified BOOLEAN := FALSE;
+  v_effective_answers JSONB;
+  v_answered_count INTEGER := 0;
   v_q RECORD;
   v_user_answer INTEGER;
   v_is_correct BOOLEAN;
@@ -435,7 +460,7 @@ BEGIN
   END IF;
 
   v_started_at := COALESCE(v_attempt.started_at, NOW());
-  v_time_spent_seconds := GREATEST(1, EXTRACT(EPOCH FROM (NOW() - v_started_at))::INTEGER);
+  v_time_spent_seconds := GREATEST(0, EXTRACT(EPOCH FROM (NOW() - v_started_at))::INTEGER);
 
   -- Server-side time limit enforcement (with 30-second network latency grace window)
   IF v_assessment.time_limit_minutes IS NOT NULL AND v_assessment.time_limit_minutes > 0 THEN
@@ -444,7 +469,38 @@ BEGIN
     v_is_overtime := FALSE;
   END IF;
 
-  -- 3. Fetch previous level
+  -- 3. Meaningful Assessment Completion & Anti-Harvesting Policy
+  v_effective_answers := COALESCE(v_attempt.answers, '{}'::JSONB) || COALESCE(p_answers, '{}'::JSONB);
+
+  SELECT count(*)::INTEGER INTO v_total_questions
+  FROM public.assessment_questions
+  WHERE assessment_id = p_assessment_id;
+
+  SELECT count(DISTINCT q.id)::INTEGER INTO v_answered_count
+  FROM public.assessment_questions q
+  WHERE q.assessment_id = p_assessment_id
+    AND v_effective_answers ? q.id::TEXT
+    AND v_effective_answers->>q.id::TEXT IS NOT NULL;
+
+  IF v_answered_count = 0 THEN
+    RAISE EXCEPTION 'Cannot grade assessment attempt: no answers provided'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF v_answered_count < v_total_questions THEN
+    RAISE EXCEPTION 'Assessment completion policy requires all questions to be answered (% of % answered)',
+      v_answered_count, v_total_questions
+      USING ERRCODE = '22023';
+  END IF;
+
+  -- Anti-harvesting rapid submission check (requires >= 2 seconds elapsed time)
+  IF v_time_spent_seconds < 2 THEN
+    RAISE EXCEPTION 'Assessment submission rejected: duration (% seconds) too short for valid completion',
+      v_time_spent_seconds
+      USING ERRCODE = '22023';
+  END IF;
+
+  -- 4. Fetch previous level
   SELECT level INTO v_prev_level
   FROM public.user_skill_stats
   WHERE user_id = v_user_id AND skill_id = v_assessment.skill_id;
@@ -452,31 +508,16 @@ BEGIN
     v_prev_level := 0;
   END IF;
 
-  -- 4. Server-Side Answer Key Grading
+  -- 5. First pass: compute score and determine pass/fail
   FOR v_q IN
-    SELECT id, question_text, options, correct_answer, explanation, order_index
+    SELECT id, correct_answer
     FROM public.assessment_questions
     WHERE assessment_id = p_assessment_id
-    ORDER BY order_index ASC, created_at ASC
   LOOP
-    v_total_questions := v_total_questions + 1;
-    v_user_answer := (p_answers->>v_q.id::TEXT)::INTEGER;
-    v_is_correct := (v_user_answer IS NOT NULL AND v_user_answer = v_q.correct_answer);
-
-    IF v_is_correct THEN
+    v_user_answer := (v_effective_answers->>v_q.id::TEXT)::INTEGER;
+    IF v_user_answer IS NOT NULL AND v_user_answer = v_q.correct_answer THEN
       v_correct_count := v_correct_count + 1;
     END IF;
-
-    -- Disclose answer key and explanation ONLY upon legitimate attempt completion
-    v_question_results := v_question_results || jsonb_build_object(
-      'question_id', v_q.id,
-      'question_text', v_q.question_text,
-      'options', v_q.options,
-      'user_answer', v_user_answer,
-      'correct_answer', v_q.correct_answer,
-      'is_correct', v_is_correct,
-      'explanation', v_q.explanation
-    );
   END LOOP;
 
   IF v_total_questions > 0 THEN
@@ -488,7 +529,31 @@ BEGIN
   v_passed := (v_score >= v_assessment.passing_score) AND (NOT v_is_overtime);
   v_is_verified := (NOT v_is_overtime);
 
-  -- 5. Authoritatively complete attempt with conditional atomic update
+  -- 6. Second pass: construct result payload with answer withholding policy
+  -- If passed: disclose full answers and explanations for educational review.
+  -- If failed: disclose correct_answer and explanation ONLY for questions answered correctly,
+  -- withholding keys/explanations for missed questions to prevent answer harvesting.
+  FOR v_q IN
+    SELECT id, question_text, options, correct_answer, explanation, order_index
+    FROM public.assessment_questions
+    WHERE assessment_id = p_assessment_id
+    ORDER BY order_index ASC, created_at ASC
+  LOOP
+    v_user_answer := (v_effective_answers->>v_q.id::TEXT)::INTEGER;
+    v_is_correct := (v_user_answer IS NOT NULL AND v_user_answer = v_q.correct_answer);
+
+    v_question_results := v_question_results || jsonb_build_object(
+      'question_id', v_q.id,
+      'question_text', v_q.question_text,
+      'options', v_q.options,
+      'user_answer', v_user_answer,
+      'correct_answer', CASE WHEN v_passed OR v_is_correct THEN v_q.correct_answer ELSE NULL END,
+      'is_correct', v_is_correct,
+      'explanation', CASE WHEN v_passed OR v_is_correct THEN v_q.explanation ELSE NULL END
+    );
+  END LOOP;
+
+  -- 7. Authoritatively complete attempt with conditional atomic update
   UPDATE public.assessment_attempts SET
     completed_at = NOW(),
     score = v_score,
@@ -497,7 +562,7 @@ BEGIN
     time_taken_seconds = v_time_spent_seconds,
     was_overtime = v_is_overtime,
     is_verified = v_is_verified,
-    answers = p_answers
+    answers = v_effective_answers
   WHERE id = p_attempt_id AND completed_at IS NULL;
 
   IF NOT FOUND THEN
@@ -575,8 +640,10 @@ BEGIN
       END IF;
       NEW.started_at := NOW();
       NEW.was_overtime := FALSE;
+      NEW.correct_count := 0;
+      NEW.time_taken_seconds := NULL;
     ELSIF TG_OP = 'UPDATE' THEN
-      IF NEW.started_at <> OLD.started_at THEN
+      IF NEW.started_at IS DISTINCT FROM OLD.started_at THEN
         RAISE EXCEPTION 'Cannot modify started_at of an assessment attempt'
           USING ERRCODE = '42501';
       END IF;
@@ -586,15 +653,15 @@ BEGIN
       END IF;
       IF NEW.completed_at IS NOT NULL 
          OR NEW.score IS NOT NULL 
-         OR NEW.correct_count <> OLD.correct_count 
-         OR NEW.total_questions <> OLD.total_questions 
+         OR NEW.correct_count IS DISTINCT FROM OLD.correct_count 
+         OR NEW.total_questions IS DISTINCT FROM OLD.total_questions 
          OR NEW.time_taken_seconds IS NOT NULL 
-         OR NEW.was_overtime <> OLD.was_overtime 
+         OR NEW.was_overtime IS DISTINCT FROM OLD.was_overtime 
          OR NEW.is_verified = TRUE THEN
         RAISE EXCEPTION 'Cannot directly modify completion or scoring fields of an assessment attempt'
           USING ERRCODE = '42501';
       END IF;
-      IF NEW.assessment_id <> OLD.assessment_id OR NEW.user_id <> OLD.user_id THEN
+      IF NEW.assessment_id IS DISTINCT FROM OLD.assessment_id OR NEW.user_id IS DISTINCT FROM OLD.user_id THEN
         RAISE EXCEPTION 'Cannot reassign attempt identity'
           USING ERRCODE = '42501';
       END IF;
@@ -697,31 +764,10 @@ BEGIN
       AND aa.completed_at IS NOT NULL
       AND aa.score IS NOT NULL;
   ELSE
-    SELECT COALESCE(AVG(score)::INTEGER, 0) INTO v_new_level
-    FROM (
-      SELECT aa.score
-      FROM public.assessment_attempts aa
-      JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-      WHERE aa.user_id = p_user_id
-        AND sa.skill_id = p_skill_id
-        AND aa.is_deleted = FALSE
-        AND aa.completed_at IS NOT NULL
-        AND aa.score IS NOT NULL
-      ORDER BY aa.score DESC
-      LIMIT 3
-    ) recent_attempts;
-
-    SELECT 
-      MAX(score),
-      AVG(score)::NUMERIC(5,2)
-    INTO v_best_score, v_avg_score
-    FROM public.assessment_attempts aa
-    JOIN public.skill_assessments sa ON sa.id = aa.assessment_id
-    WHERE aa.user_id = p_user_id
-      AND sa.skill_id = p_skill_id
-      AND aa.is_deleted = FALSE
-      AND aa.completed_at IS NOT NULL
-      AND aa.score IS NOT NULL;
+    -- When no verified attempts exist, level is 0 and verified metrics remain 0
+    v_new_level := 0;
+    v_best_score := 0;
+    v_avg_score := 0;
   END IF;
 
   INSERT INTO public.user_skill_stats (

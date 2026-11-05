@@ -123,6 +123,40 @@ void main() {
       expect(await outbox.pendingCount, 1);
     });
 
+    test('events are retained when RPC returns non-success status or partial processing', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      // Return status failure
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (fn == 'record_events') {
+          return {
+            'status': 'error',
+            'processed_count': 0,
+          };
+        }
+        return null;
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+      final event = LearningEvent(
+        eventType: 'review',
+        itemType: 'term',
+        itemId: 'term-1',
+      );
+
+      await outbox.enqueue(event);
+      final flushed = await outbox.flush();
+
+      expect(flushed, 0);
+      expect(await outbox.pendingCount, 1);
+    });
+
     test('account isolation: queues are strictly partitioned and not cross-flushed', () async {
       final outbox = LearningEventOutbox(supabase: fakeSupabase);
 

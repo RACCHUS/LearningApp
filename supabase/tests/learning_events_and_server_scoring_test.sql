@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(26);
+select plan(31);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -260,7 +260,7 @@ select throws_ok(
   'Direct client insert of is_verified = TRUE is rejected with 42501'
 );
 
--- Setup known uncompleted attempt for User 1
+-- Setup known uncompleted attempt for User 1 (started 2 minutes ago)
 insert into public.assessment_attempts (
   id, assessment_id, user_id, is_verified, started_at
 ) values (
@@ -271,27 +271,103 @@ insert into public.assessment_attempts (
   now() - interval '2 minutes'
 );
 
--- 25. TEST: Server-graded submission completing the started attempt
-select lives_ok(
+-- 24. TEST: Empty answers submission is rejected with 22023
+select throws_ok(
+  $$ select submit_and_grade_assessment(
+       'dd222222-0000-4000-8000-000000000001'::uuid,
+       '{}'::jsonb,
+       'ee888888-0000-4000-8000-000000000001'::uuid
+     ) $$,
+  '22023',
+  null,
+  'Submitting empty answers is rejected with 22023'
+);
+
+-- 25. TEST: Incomplete answers submission (1 of 2 questions answered) is rejected with 22023
+select throws_ok(
+  $$ select submit_and_grade_assessment(
+       'dd222222-0000-4000-8000-000000000001'::uuid,
+       '{"dd333333-0000-4000-8000-000000000001": 1}'::jsonb,
+       'ee888888-0000-4000-8000-000000000001'::uuid
+     ) $$,
+  '22023',
+  null,
+  'Submitting incomplete answers is rejected with 22023'
+);
+
+-- Setup rapid attempt started at now()
+insert into public.assessment_attempts (
+  id, assessment_id, user_id, is_verified, started_at
+) values (
+  'ee777777-0000-4000-8000-000000000001'::uuid,
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  'cc111111-0000-4000-8000-000000000001'::uuid,
+  false,
+  now()
+);
+
+-- 26. TEST: Rapid assessment submission (< 2 seconds duration) is rejected with 22023
+select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
        jsonb_build_object(
          'dd333333-0000-4000-8000-000000000001', 1,
          'dd333333-0000-4000-8000-000000000002', 2
        ),
-       'ee888888-0000-4000-8000-000000000001'::uuid
+       'ee777777-0000-4000-8000-000000000001'::uuid
      ) $$,
-  'User 1 submits answers for legitimate attempt'
+  '22023',
+  null,
+  'Rapid submission (< 2s) is rejected with 22023'
 );
 
--- 26. TEST: The original attempt is now completed with is_verified = TRUE and score = 100
+-- Setup failing attempt started 2 minutes ago
+insert into public.assessment_attempts (
+  id, assessment_id, user_id, is_verified, started_at
+) values (
+  'ee666666-0000-4000-8000-000000000001'::uuid,
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  'cc111111-0000-4000-8000-000000000001'::uuid,
+  false,
+  now() - interval '2 minutes'
+);
+
+-- 27. TEST: Failing attempt withholds correct_answer for missed questions
+select is(
+  (select (submit_and_grade_assessment(
+     'dd222222-0000-4000-8000-000000000001'::uuid,
+     jsonb_build_object(
+       'dd333333-0000-4000-8000-000000000001', 0,
+       'dd333333-0000-4000-8000-000000000002', 0
+     ),
+     'ee666666-0000-4000-8000-000000000001'::uuid
+   )->'question_results'->0->>'correct_answer')),
+  null,
+  'Failing attempt withholds correct_answer for missed questions to prevent harvesting'
+);
+
+-- 28. TEST: Legitimate passing attempt discloses correct answers for post-assessment review
+select is(
+  (select (submit_and_grade_assessment(
+     'dd222222-0000-4000-8000-000000000001'::uuid,
+     jsonb_build_object(
+       'dd333333-0000-4000-8000-000000000001', 1,
+       'dd333333-0000-4000-8000-000000000002', 2
+     ),
+     'ee888888-0000-4000-8000-000000000001'::uuid
+   )->'question_results'->0->>'correct_answer')::int),
+  1,
+  'Passing attempt discloses correct_answer for legitimate post-assessment review'
+);
+
+-- 29. TEST: The original attempt is now completed with is_verified = TRUE and score = 100
 select is(
   (select is_verified from public.assessment_attempts where id = 'ee888888-0000-4000-8000-000000000001'),
   true,
   'Original attempt was completed and marked is_verified = TRUE by server scoring'
 );
 
--- 27. TEST: user_skill_stats now has is_verified = TRUE
+-- 30. TEST: user_skill_stats now has is_verified = TRUE
 select is(
   (select is_verified from public.user_skill_stats 
    where user_id = 'cc111111-0000-4000-8000-000000000001' 
@@ -300,7 +376,7 @@ select is(
   'user_skill_stats has is_verified = TRUE after server-graded attempt'
 );
 
--- 28. TEST: Re-submitting already completed attempt is rejected
+-- 31. TEST: Re-submitting already completed attempt is rejected
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
