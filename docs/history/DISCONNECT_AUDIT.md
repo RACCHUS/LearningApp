@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** The earlier decision to keep `enhanced_lesson_creation_screen.dart` for future wiring was revisited during the owner-requested repository cleanup. A fresh source-reference audit found no route/import/test consumer, so the abandoned screen was removed. The decision was valid at the time of this audit but is no longer current.
+
 # Disconnect Audit & Remediation Plan
 
 Comprehensive audit of unused code, broken wiring, and underused features in the LearningApp codebase, with concrete fixes for each.
@@ -28,9 +30,9 @@ These will silently fail or crash at runtime. Fix first.
 **Symptom:** Daily goal ring on home screen always shows 0 minutes studied.
 
 **Root cause:**
-- DB schema: [`database/schema/schema.sql`](database/schema/schema.sql) line 68 defines `study_time_minutes INTEGER` on `user_progress`.
-- App code: [`lib/providers/daily_goal_provider.dart`](lib/providers/daily_goal_provider.dart#L29) queries `.select('study_time_seconds')` — a column that **does not exist** in Supabase.
-- [`lib/providers/study_provider.dart`](lib/providers/study_provider.dart#L245) writes `'study_time_seconds'` to the same nonexistent column.
+- DB schema: `database/schema/schema.sql` (removed in prior cleanup) line 68 defines `study_time_minutes INTEGER` on `user_progress`.
+- App code: [`lib/providers/daily_goal_provider.dart`](../../lib/providers/daily_goal_provider.dart#L29) queries `.select('study_time_seconds')` — a column that **does not exist** in Supabase.
+- [`lib/providers/study_provider.dart`](../../lib/providers/study_provider.dart#L245) writes `'study_time_seconds'` to the same nonexistent column.
 - Local Hive models use `studyTimeSeconds`, so the local app appears to work; remote sync is silently broken.
 
 **Fix:** Add `study_time_seconds INTEGER DEFAULT 0` column to `user_progress` table via a new migration, and update all upserts to write both columns (keeping `_minutes` as derived value for backward compat). The `lesson_progress` / `user_progress` model `toJson()` already writes both — make daily_goal_provider read the correct one.
@@ -45,7 +47,7 @@ These will silently fail or crash at runtime. Fix first.
 
 **Symptom:** Emojis added in Sprint 1 to `Lesson`, `Term`, `Concept` survive in Hive but are stripped on any Supabase round-trip (sync, multi-device).
 
-**Root cause:** [`database/schema/schema.sql`](database/schema/schema.sql) tables for `lessons`, `terms`, `concepts` have no `emoji` column. Models serialize emoji via `toJson()` but Supabase silently drops unknown columns.
+**Root cause:** `database/schema/schema.sql` (removed in prior cleanup) tables for `lessons`, `terms`, `concepts` have no `emoji` column. Models serialize emoji via `toJson()` but Supabase silently drops unknown columns.
 
 **Fix:** Migration to add `emoji TEXT` (nullable) to `lessons`, `terms`, `concepts` tables.
 
@@ -59,16 +61,16 @@ These will silently fail or crash at runtime. Fix first.
 
 **Symptom:** App crashes with route-not-found when user taps certain buttons.
 
-**Root cause:** Two `context.go`/`context.push` calls target routes never defined in [`lib/providers/router_provider.dart`](lib/providers/router_provider.dart):
+**Root cause:** Two `context.go`/`context.push` calls target routes never defined in [`lib/providers/router_provider.dart`](../../lib/providers/router_provider.dart):
 
 | Caller | Target Route | Status |
 |--------|--------------|--------|
-| [`career_paths_screen.dart`](lib/screens/careers/career_paths_screen.dart#L87) FAB | `/careers/create` | ❌ Not defined |
-| [`content_picker_screen.dart`](lib/screens/study_sets/content_picker_screen.dart#L378) | `/study-sets` | ❌ Not defined |
+| [`career_paths_screen.dart`](../../lib/screens/careers/career_paths_screen.dart#L87) FAB | `/careers/create` | ❌ Not defined |
+| [`content_picker_screen.dart`](../../lib/screens/study_sets/content_picker_screen.dart#L378) | `/study-sets` | ❌ Not defined |
 
 **Investigation result:** Both routes are legitimate, useful features with full backend support:
-- `CareerPathService.createCareerPath()` is fully implemented ([`lib/services/career_path_service.dart`](lib/services/career_path_service.dart#L82))
-- `StudySetNotifier` + `HomeStudySetsList` widget already exist ([`lib/screens/home/home_study_sets_list.dart`](lib/screens/home/home_study_sets_list.dart)) — just need a Scaffold wrapper
+- `CareerPathService.createCareerPath()` is fully implemented ([`lib/services/career_path_service.dart`](../../lib/services/career_path_service.dart#L82))
+- `StudySetNotifier` + `HomeStudySetsList` widget already exist ([`lib/screens/home/home_study_sets_list.dart`](../../lib/screens/home/home_study_sets_list.dart)) — just need a Scaffold wrapper
 
 **Fix:** Build the missing screens and register the routes:
 
@@ -96,7 +98,7 @@ Data exists in models and is generated/imported correctly, but never shown to th
 
 **Symptom:** Users only see lesson emojis after opening a lesson (in flashcards). Home/list view is plain text.
 
-**Fix:** Add emoji display to [`lib/widgets/lesson_card.dart`](lib/widgets/lesson_card.dart) — show `lesson.emoji` (24–32px) before the title text. Fall back gracefully when null.
+**Fix:** Add emoji display to [`lib/widgets/lesson_card.dart`](../../lib/widgets/lesson_card.dart) — show `lesson.emoji` (24–32px) before the title text. Fall back gracefully when null.
 
 ---
 
@@ -127,7 +129,7 @@ Data exists in models and is generated/imported correctly, but never shown to th
 
 **Symptom:** Users have no visibility into sync state. Tapping doesn't exist as a discoverable action.
 
-**Fix:** Place [`SyncStatusIndicator`](lib/widgets/progress/sync_status_indicator.dart) in the home screen app bar (or settings screen header). This also resolves Issue #4 by making connectivity visible.
+**Fix:** Place [`SyncStatusIndicator`](../../lib/widgets/progress/sync_status_indicator.dart) in the home screen app bar (or settings screen header). This also resolves Issue #4 by making connectivity visible.
 
 ---
 
@@ -137,18 +139,18 @@ These files have zero usage outside their own definition and (sometimes) their t
 
 | # | File | Verification |
 |---|------|--------------|
-| 1 | [`lib/widgets/content_creation_widget.dart`](lib/widgets/content_creation_widget.dart) | 6 self-refs only |
-| 2 | [`lib/widgets/content_management_panel.dart`](lib/widgets/content_management_panel.dart) | 6 self-refs only |
-| 3 | [`lib/widgets/lesson_json_import_widget.dart`](lib/widgets/lesson_json_import_widget.dart) | Replaced by `EnhancedJsonImportWidget` |
-| 4 | [`lib/services/career_skills_cache.dart`](lib/services/career_skills_cache.dart) | Zero imports |
-| 5 | [`lib/services/lesson_flow_controller.dart`](lib/services/lesson_flow_controller.dart) | Zero imports |
-| 6 | [`lib/services/import_export_service.dart`](lib/services/import_export_service.dart) | Only in tests |
-| 7 | [`lib/services/data_sync_service.dart`](lib/services/data_sync_service.dart) | Only in tests |
-| 8 | [`lib/services/voice_debug_service.dart`](lib/services/voice_debug_service.dart) | Zero imports |
-| 9 | [`lib/services/audio_queue_manager.dart`](lib/services/audio_queue_manager.dart) | Zero imports |
-| 10 | [`lib/services/audio_lesson/audio_queue_manager.dart`](lib/services/audio_lesson/audio_queue_manager.dart) | Zero imports (duplicate) |
+| 1 | `lib/widgets/content_creation_widget.dart` (removed in prior cleanup) | 6 self-refs only |
+| 2 | `lib/widgets/content_management_panel.dart` (removed in prior cleanup) | 6 self-refs only |
+| 3 | `lib/widgets/lesson_json_import_widget.dart` (removed in prior cleanup) | Replaced by `EnhancedJsonImportWidget` |
+| 4 | `lib/services/career_skills_cache.dart` (removed in prior cleanup) | Zero imports |
+| 5 | `lib/services/lesson_flow_controller.dart` (removed in prior cleanup) | Zero imports |
+| 6 | `lib/services/import_export_service.dart` (removed in prior cleanup) | Only in tests |
+| 7 | `lib/services/data_sync_service.dart` (removed in prior cleanup) | Only in tests |
+| 8 | `lib/services/voice_debug_service.dart` (removed in prior cleanup) | Zero imports |
+| 9 | `lib/services/audio_queue_manager.dart` (removed in prior cleanup) | Zero imports |
+| 10 | `lib/services/audio_lesson/audio_queue_manager.dart` (removed in prior cleanup) | Zero imports (duplicate) |
 | 11 | ~~`lib/screens/enhanced_lesson_creation_screen.dart`~~ | **KEEP** — may wire later (user decision) |
-| 12 | [`lib/providers/lesson_creation_provider.dart`](lib/providers/lesson_creation_provider.dart) | Only consumer is dead `ContentManagementPanel` |
+| 12 | `lib/providers/lesson_creation_provider.dart` (removed in prior cleanup) | Only consumer is dead `ContentManagementPanel` |
 
 **Notes:**
 - Also delete corresponding test files for items 6, 7 (`import_export_service_test.dart`, `data_sync_service_test.dart` if they exist).

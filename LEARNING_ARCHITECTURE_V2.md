@@ -2,7 +2,7 @@
 
 **Status:** Implementation Baseline (Finalized with Gemini & User/ChatGPT Review)  
 **Supersedes:** Unamended v2 draft  
-**Companion Documents:** `UI_ARCHITECTURE_LOCKED.md` (interaction baseline and ship gates), `DEPLOYMENT_GUIDE.md`  
+**Companion Documents:** `UI_ARCHITECTURE_LOCKED.md` (interaction baseline and ship gates), `docs/deployment/DEPLOYMENT_GUIDE.md`  
 
 ---
 

@@ -172,7 +172,8 @@ dart run tool/verify_migration_history.dart --restore-pending build/pending_migr
 
 ## 📂 Related Directories
 
-- **`data/samples/`** - Sample lesson JSON files
-- **`scripts/development/`** - Other development scripts
-- **`database/`** - Database schema and migration files
+- **`data/samples/`** - Reviewed sample lesson and curriculum fixtures
+- **`tool/tests/`** - Python tests for ingestion and catalog validators
+- **`supabase/migrations/`** - Canonical append-only database schema and migration history
+- **`supabase/tests/`** - pgTAP database tests
 - **`docs/`** - Project documentation
