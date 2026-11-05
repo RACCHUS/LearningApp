@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 import '../models/skill.dart';
 import '../models/assessment.dart';
 
 /// Service for managing skills and assessments
 class SkillAssessmentService {
   final SupabaseClient _supabase;
-  final _uuid = const Uuid();
 
   SkillAssessmentService({SupabaseClient? supabase})
       : _supabase = supabase ?? Supabase.instance.client;
@@ -131,17 +129,47 @@ class SkillAssessmentService {
     }
   }
 
+  /// Get questions for taking an assessment (sanitized: answers & explanations withheld)
+  Future<List<AssessmentQuestion>> getQuestionsForTaking(String assessmentId) async {
+    try {
+      final response = await _supabase.rpc(
+        'get_assessment_questions_for_taking',
+        params: {'p_assessment_id': assessmentId},
+      );
+      return (response as List)
+          .map((json) => AssessmentQuestion.fromJson(Map<String, dynamic>.from(json as Map)))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching sanitized questions: $e');
+      rethrow;
+    }
+  }
+
   /// Get assessment with questions
   Future<SkillAssessment> getAssessmentWithQuestions(
-      String assessmentId) async {
+    String assessmentId, {
+    bool sanitizeForTaking = true,
+  }) async {
     try {
-      final response = await _supabase.from('skill_assessments').select('''
-        *,
-        skills(*),
-        assessment_questions(*)
-      ''').eq('id', assessmentId).single();
+      if (sanitizeForTaking) {
+        final assessmentResponse = await _supabase
+            .from('skill_assessments')
+            .select('*, skills(*)')
+            .eq('id', assessmentId)
+            .single();
 
-      return SkillAssessment.fromJson(response);
+        final questions = await getQuestionsForTaking(assessmentId);
+        final assessment = SkillAssessment.fromJson(assessmentResponse);
+        return assessment.copyWith(questions: questions);
+      } else {
+        final response = await _supabase.from('skill_assessments').select('''
+          *,
+          skills(*),
+          assessment_questions(*)
+        ''').eq('id', assessmentId).single();
+
+        return SkillAssessment.fromJson(response);
+      }
     } catch (e) {
       debugPrint('❌ Error fetching assessment with questions: $e');
       rethrow;
@@ -152,7 +180,7 @@ class SkillAssessmentService {
   // ASSESSMENT ATTEMPTS
   // ============================================================================
 
-  /// Start a new assessment attempt
+  /// Start a new assessment attempt authoritatively via server-side RPC
   Future<AssessmentAttempt> startAssessment(String assessmentId) async {
     final userId = _userId;
     if (userId == null) {
@@ -160,25 +188,14 @@ class SkillAssessmentService {
     }
 
     try {
-      // Get the assessment to know question count
-      final assessment = await getAssessmentWithQuestions(assessmentId);
+      final response = await _supabase.rpc(
+        'start_assessment_attempt',
+        params: {'p_assessment_id': assessmentId},
+      );
 
-      final response = await _supabase
-          .from('assessment_attempts')
-          .insert({
-            'id': _uuid.v4(),
-            'assessment_id': assessmentId,
-            'user_id': userId,
-            'started_at': DateTime.now().toIso8601String(),
-            'total_questions': assessment.questions?.length ?? 0,
-            'is_verified': false,
-            'is_deleted': false,
-          })
-          .select()
-          .single();
-
-      debugPrint('✅ Assessment started: ${response['id']}');
-      return AssessmentAttempt.fromJson(response);
+      final attemptMap = Map<String, dynamic>.from(response as Map);
+      debugPrint('✅ Assessment started via server RPC: ${attemptMap['id']}');
+      return AssessmentAttempt.fromJson(attemptMap);
     } catch (e) {
       debugPrint('❌ Error starting assessment: $e');
       rethrow;
@@ -214,7 +231,7 @@ class SkillAssessmentService {
     }
   }
 
-  /// Complete an assessment and calculate score
+  /// Complete an assessment and calculate score via trusted server-side grading RPC
   Future<AssessmentResult> completeAssessment(
     String attemptId, {
     bool wasOvertime = false,
@@ -225,73 +242,77 @@ class SkillAssessmentService {
     }
 
     try {
-      // Get the attempt with assessment and questions
+      // 1. Get the attempt to obtain assessment_id, answers, and started_at
       final attemptResponse = await _supabase
           .from('assessment_attempts')
-          .select('*, skill_assessments(*, skills(*), assessment_questions(*))')
+          .select('*, skill_assessments(*, skills(*))')
           .eq('id', attemptId)
           .single();
 
       final attempt = AssessmentAttempt.fromJson(attemptResponse);
       final assessment = attempt.assessment!;
-      final questions = assessment.questions ?? [];
       final userAnswers = attempt.answers ?? {};
-
-      // Calculate score
-      int correctCount = 0;
-      final questionResults = <QuestionResult>[];
-
-      for (final question in questions) {
-        final userAnswer = userAnswers[question.id];
-        final isCorrect = userAnswer == question.correctAnswer;
-        if (isCorrect) correctCount++;
-
-        questionResults.add(QuestionResult(
-          question: question,
-          userAnswer: userAnswer,
-          isCorrect: isCorrect,
-        ));
-      }
-
-      final score = questions.isNotEmpty
-          ? ((correctCount / questions.length) * 100).round()
-          : 0;
-
       final startedAt = attempt.startedAt;
-      final completedAt = DateTime.now();
-      final timeTaken = completedAt.difference(startedAt).inSeconds;
+      final timeTaken = DateTime.now().difference(startedAt).inSeconds;
 
-      // Get previous level
-      final prevStats = await getUserSkillStat(assessment.skillId);
-      final previousLevel = prevStats?.level ?? 0;
+      // 2. Delegate grading to server-side SECURITY DEFINER RPC
+      final gradeResponse = await _supabase.rpc(
+        'submit_and_grade_assessment',
+        params: {
+          'p_assessment_id': assessment.id,
+          'p_answers': userAnswers,
+          'p_attempt_id': attemptId,
+        },
+      );
 
-      // Update the attempt
-      await _supabase.from('assessment_attempts').update({
-        'completed_at': completedAt.toIso8601String(),
-        'score': score,
-        'correct_count': correctCount,
-        'time_taken_seconds': timeTaken,
-        'was_overtime': wasOvertime,
-      }).eq('id', attemptId);
+      final gradeMap = Map<String, dynamic>.from(gradeResponse as Map);
+      final score = gradeMap['score'] as int? ?? 0;
+      final correctCount = gradeMap['correct_count'] as int? ?? 0;
+      final passed = gradeMap['passed'] as bool? ?? false;
+      final previousLevel = gradeMap['previous_level'] as int? ?? 0;
+      final newLevel = gradeMap['new_level'] as int? ?? 0;
+      final isVerified = gradeMap['is_verified'] as bool? ?? true;
+      final serverTimeTaken = gradeMap['time_spent_seconds'] as int? ?? timeTaken;
+      final serverIsOvertime = gradeMap['is_overtime'] as bool? ?? wasOvertime;
+      final returnedAttemptId = gradeMap['attempt_id'] as String? ?? attemptId;
 
-      // Get new level (trigger should have updated it)
-      final newStats = await getUserSkillStat(assessment.skillId);
-      final newLevel = newStats?.level ?? 0;
+      // Parse question results returned by server
+      final rawResults = gradeMap['question_results'] as List? ?? [];
+      final questionResults = rawResults.map((r) {
+        final qMap = Map<String, dynamic>.from(r as Map);
+        final question = AssessmentQuestion(
+          id: qMap['question_id'] as String,
+          assessmentId: assessment.id,
+          questionText: qMap['question_text'] as String? ?? '',
+          options: (qMap['options'] as List? ?? []).cast<String>(),
+          correctAnswer: qMap['correct_answer'] as int?,
+          explanation: qMap['explanation'] as String?,
+          createdAt: DateTime.now(),
+        );
+        return QuestionResult(
+          question: question,
+          userAnswer: qMap['user_answer'] as int?,
+          isCorrect: qMap['is_correct'] as bool? ?? false,
+        );
+      }).toList();
 
-      debugPrint('✅ Assessment completed: $score% ($correctCount/${questions.length})');
+      debugPrint('✅ Assessment completed & server-graded: $score% ($correctCount/${questionResults.length}), verified: $isVerified');
 
       return AssessmentResult(
         attempt: attempt.copyWith(
+          id: returnedAttemptId,
           score: score,
           correctCount: correctCount,
-          completedAt: completedAt,
-          timeTakenSeconds: timeTaken,
-          wasOvertime: wasOvertime,
+          totalQuestions: questionResults.length,
+          completedAt: DateTime.now(),
+          timeTakenSeconds: serverTimeTaken,
+          wasOvertime: serverIsOvertime,
+          isVerified: isVerified,
         ),
         assessment: assessment,
         previousLevel: previousLevel,
         newLevel: newLevel,
-        passed: score >= assessment.passingScore,
+        passed: passed,
         questionResults: questionResults,
       );
     } catch (e) {

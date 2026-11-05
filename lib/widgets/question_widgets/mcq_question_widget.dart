@@ -13,6 +13,8 @@ class McqQuestionWidget extends StatefulWidget {
   final VoidCallback onNext;
   final Function(String) onVoiceInput;
   final Widget Function(String) customTextBuilder;
+  final bool shuffleOptions;
+  final int? presentationSeed;
 
   const McqQuestionWidget({
     super.key,
@@ -24,6 +26,8 @@ class McqQuestionWidget extends StatefulWidget {
     required this.onNext,
     required this.onVoiceInput,
     required this.customTextBuilder,
+    this.shuffleOptions = false,
+    this.presentationSeed,
   });
 
   @override
@@ -49,6 +53,8 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           onChanged: widget.onSelectionChanged,
           showCorrect: widget.showCorrect,
           correctIndex: widget.content.correctAnswer,
+          shuffleOptions: widget.shuffleOptions,
+          presentationSeed: widget.presentationSeed,
         ),
         const SizedBox(height: 16),
         PrimaryButton(
@@ -61,7 +67,7 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-              widget.selectedIndex == widget.content.correctAnswer ? 'Correct!' : 'Incorrect',
+               widget.selectedIndex == widget.content.correctAnswer ? 'Correct!' : 'Incorrect',
               style: TextStyle(
                 color: widget.selectedIndex == widget.content.correctAnswer ? Colors.green : Colors.red,
                 fontWeight: FontWeight.bold,

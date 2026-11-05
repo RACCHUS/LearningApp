@@ -4,7 +4,11 @@ import 'package:learning_pwa/models/voice_command.dart';
 class VoiceInputHandler {
   /// Handles voice input for MCQ questions
   /// Returns the selected answer index (0-3) or null if no valid answer found
-  static int? handleMcqVoiceInput(String voiceInput, QuestionContent content) {
+  static int? handleMcqVoiceInput(
+    String voiceInput,
+    QuestionContent content, {
+    List<int>? presentationOrder,
+  }) {
     // Use the sophisticated VoiceCommand parsing system
     final command = VoiceCommand.parseCommand(voiceInput);
     
@@ -29,6 +33,9 @@ class VoiceInputHandler {
       }
       
       if (answerIndex != null && answerIndex < content.options.length) {
+        if (presentationOrder != null && answerIndex < presentationOrder.length) {
+          return presentationOrder[answerIndex];
+        }
         return answerIndex;
       }
     } else {
@@ -47,6 +54,9 @@ class VoiceInputHandler {
       }
       
       if (answerIndex != null && answerIndex < content.options.length) {
+        if (presentationOrder != null && answerIndex < presentationOrder.length) {
+          return presentationOrder[answerIndex];
+        }
         return answerIndex;
       }
     }
