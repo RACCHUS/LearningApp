@@ -638,7 +638,9 @@ BEGIN
         RAISE EXCEPTION 'Direct insertion of completed assessment attempt is forbidden'
           USING ERRCODE = '42501';
       END IF;
-      NEW.started_at := NOW();
+      IF NEW.started_at IS NULL THEN
+        NEW.started_at := NOW();
+      END IF;
       NEW.was_overtime := FALSE;
       NEW.correct_count := 0;
       NEW.time_taken_seconds := NULL;
