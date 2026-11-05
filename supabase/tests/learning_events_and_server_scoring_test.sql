@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(30);
+select plan(31);
 
 -- 1. Create synthetic test users in auth.users and public.users
 insert into auth.users (id, email) values
@@ -243,7 +243,7 @@ do $$ begin
   perform set_config('request.jwt.claim.sub', 'cc111111-0000-4000-8000-000000000001', true);
 end $$;
 
--- 24. TEST: Direct authenticated INSERT of is_verified = TRUE is rejected with 42501
+-- 22. TEST: Direct authenticated INSERT of is_verified = TRUE is rejected with 42501
 select throws_ok(
   $$ insert into public.assessment_attempts (
        id, assessment_id, user_id, score, is_verified, is_deleted
@@ -271,7 +271,7 @@ insert into public.assessment_attempts (
   now() - interval '2 minutes'
 );
 
--- 24. TEST: Empty answers submission is rejected with 22023
+-- 23. TEST: Empty answers submission is rejected with 22023
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
@@ -283,7 +283,7 @@ select throws_ok(
   'Submitting empty answers is rejected with 22023'
 );
 
--- 25. TEST: Incomplete answers submission (1 of 2 questions answered) is rejected with 22023
+-- 24. TEST: Incomplete answers submission (1 of 2 questions answered) is rejected with 22023
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
@@ -306,7 +306,7 @@ insert into public.assessment_attempts (
   now()
 );
 
--- 26. TEST: Rapid assessment submission (< 2 seconds duration) is rejected with 22023
+-- 25. TEST: Rapid assessment submission (< 2 seconds duration) is rejected with 22023
 select throws_ok(
   $$ select submit_and_grade_assessment(
        'dd222222-0000-4000-8000-000000000001'::uuid,
@@ -321,7 +321,7 @@ select throws_ok(
   'Rapid submission (< 2s) is rejected with 22023'
 );
 
--- Setup failing attempt started 2 minutes ago
+-- Setup failing attempt 1 started 2 minutes ago
 insert into public.assessment_attempts (
   id, assessment_id, user_id, is_verified, started_at
 ) values (
@@ -332,18 +332,43 @@ insert into public.assessment_attempts (
   now() - interval '2 minutes'
 );
 
--- 27. TEST: Failing attempt withholds correct_answer for missed questions
+-- 26. TEST: Failing attempt 1 withholds correct_answer even for question answered correctly
 select is(
   (select (submit_and_grade_assessment(
      'dd222222-0000-4000-8000-000000000001'::uuid,
      jsonb_build_object(
-       'dd333333-0000-4000-8000-000000000001', 0,
+       'dd333333-0000-4000-8000-000000000001', 1,
        'dd333333-0000-4000-8000-000000000002', 0
      ),
      'ee666666-0000-4000-8000-000000000001'::uuid
    )->'question_results'->0->>'correct_answer')),
   null,
-  'Failing attempt withholds correct_answer for missed questions to prevent harvesting'
+  'Failing attempt 1 withholds correct_answer even for question answered correctly'
+);
+
+-- Setup repeated failing attempt 2 started 2 minutes ago
+insert into public.assessment_attempts (
+  id, assessment_id, user_id, is_verified, started_at
+) values (
+  'ee666666-0000-4000-8000-000000000002'::uuid,
+  'dd222222-0000-4000-8000-000000000001'::uuid,
+  'cc111111-0000-4000-8000-000000000001'::uuid,
+  false,
+  now() - interval '2 minutes'
+);
+
+-- 27. TEST: Repeated failing attempt 2 withholds correct_answer preventing accumulation across attempts
+select is(
+  (select (submit_and_grade_assessment(
+     'dd222222-0000-4000-8000-000000000001'::uuid,
+     jsonb_build_object(
+       'dd333333-0000-4000-8000-000000000001', 0,
+       'dd333333-0000-4000-8000-000000000002', 2
+     ),
+     'ee666666-0000-4000-8000-000000000002'::uuid
+   )->'question_results'->1->>'correct_answer')),
+  null,
+  'Repeated failing attempt 2 withholds correct_answer preventing accumulation across attempts'
 );
 
 -- 28. TEST: Legitimate passing attempt discloses correct answers for post-assessment review

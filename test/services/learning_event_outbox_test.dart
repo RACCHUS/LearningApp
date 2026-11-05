@@ -123,7 +123,7 @@ void main() {
       expect(await outbox.pendingCount, 1);
     });
 
-    test('events are retained when RPC returns non-success status or partial processing', () async {
+    test('events are retained when RPC returns non-success status', () async {
       fakeSupabase.auth.currentUser = const User(
         id: 'test-user-id',
         appMetadata: {},
@@ -155,6 +155,125 @@ void main() {
 
       expect(flushed, 0);
       expect(await outbox.pendingCount, 1);
+    });
+
+    test('events are retained when RPC returns success with zero processed_count', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (fn == 'record_events') {
+          return {
+            'status': 'success',
+            'processed_count': 0,
+          };
+        }
+        return null;
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+      final event1 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-1');
+      final event2 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-2');
+
+      await outbox.enqueueAll([event1, event2]);
+      final flushed = await outbox.flush();
+
+      expect(flushed, 0);
+      expect(await outbox.pendingCount, 2);
+    });
+
+    test('events are retained when RPC returns success with missing processed_count', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (fn == 'record_events') {
+          return {
+            'status': 'success',
+          };
+        }
+        return null;
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+      final event1 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-1');
+      final event2 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-2');
+
+      await outbox.enqueueAll([event1, event2]);
+      final flushed = await outbox.flush();
+
+      expect(flushed, 0);
+      expect(await outbox.pendingCount, 2);
+    });
+
+    test('events are retained when RPC returns success with partial processed_count', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (fn == 'record_events') {
+          return {
+            'status': 'success',
+            'processed_count': 1, // Only 1 of 2 processed
+          };
+        }
+        return null;
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+      final event1 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-1');
+      final event2 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-2');
+
+      await outbox.enqueueAll([event1, event2]);
+      final flushed = await outbox.flush();
+
+      expect(flushed, 0);
+      expect(await outbox.pendingCount, 2);
+    });
+
+    test('events are removed on exact full-batch acknowledgment', () async {
+      fakeSupabase.auth.currentUser = const User(
+        id: 'test-user-id',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2026-01-01T00:00:00Z',
+      );
+
+      fakeSupabase.rpcHandler = (fn, {params}) {
+        if (fn == 'record_events') {
+          return {
+            'status': 'success',
+            'processed_count': 2, // Exactly matches batch size of 2
+          };
+        }
+        return null;
+      };
+
+      final outbox = LearningEventOutbox(supabase: fakeSupabase);
+      final event1 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-1');
+      final event2 = LearningEvent(eventType: 'review', itemType: 'term', itemId: 'term-2');
+
+      await outbox.enqueueAll([event1, event2]);
+      final flushed = await outbox.flush();
+
+      expect(flushed, 2);
+      expect(await outbox.pendingCount, 0);
     });
 
     test('account isolation: queues are strictly partitioned and not cross-flushed', () async {

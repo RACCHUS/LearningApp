@@ -172,24 +172,33 @@ class LearningEventOutbox {
             // Verify the RPC acknowledged success and processed the batch
             final resMap = res is Map ? res : {};
             final status = resMap['status'] as String?;
-            final processedCount = resMap['processed_count'] as int? ?? 0;
+            final rawProcessed = resMap['processed_count'];
+            final processedCount = rawProcessed is int ? rawProcessed : null;
 
-            if (status != 'success') {
+            // Strict acknowledgment requirement (Gate B):
+            // The batch is only removed if status is success AND processed_count exactly equals the submitted batch size.
+            // Any missing, zero, negative, or partial processed_count retains the events and breaks out.
+            if (status != 'success' ||
+                processedCount == null ||
+                processedCount <= 0 ||
+                processedCount != currentBatchRaw.length) {
               if (kDebugMode) {
-                print('⚠️ record_events RPC reported non-success status: $status');
+                print(
+                  '⚠️ record_events RPC failed or unacknowledged: status=$status, '
+                  'processed_count=$processedCount, expected=${currentBatchRaw.length}',
+                );
               }
               break;
             }
 
-            final countToRemove = processedCount > 0 ? processedCount : currentBatchRaw.length;
             if (kDebugMode) {
-              print('✅ Flushed $countToRemove learning events for user $currentUserId. Result: $res');
+              print('✅ Flushed $processedCount learning events for user $currentUserId. Result: $res');
             }
 
-            // Remove only the acknowledged items
-            rawList = rawList.skip(countToRemove).toList();
+            // Remove only when the full batch is explicitly acknowledged
+            rawList = rawList.skip(processedCount).toList();
             await prefs.setStringList(key, rawList);
-            totalFlushed += countToRemove;
+            totalFlushed += processedCount;
           } catch (e) {
             if (kDebugMode) {
               print('⚠️ Failed to flush learning events batch: $e');

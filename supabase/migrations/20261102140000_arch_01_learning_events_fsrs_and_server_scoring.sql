@@ -88,6 +88,9 @@ GRANT EXECUTE ON FUNCTION public.record_xp_award(UUID, TEXT, INTEGER, TEXT, TEXT
 -- 5. RECORD_EVENTS TRANSACTIONAL RPC (ARCH-1, ARCH-3, FIX-2, FIX-4)
 -- Atomically logs append-only events, updates review projections idempotently,
 -- and updates user_concept_state evidence projections.
+-- NOTE: 'processed_count' in the returned payload denotes the count of accepted and
+-- acknowledged events in the submitted batch (including idempotent replays), confirming
+-- to the caller that the entire batch has been successfully received and handled.
 CREATE OR REPLACE FUNCTION public.record_events(
   p_events JSONB[]
 )
@@ -338,6 +341,10 @@ BEGIN
     RAISE EXCEPTION 'Authentication required to start assessment' USING ERRCODE = '42501';
   END IF;
 
+  -- Advisory transaction lock serializes start_assessment_attempt per user + assessment,
+  -- preventing concurrent callers from creating redundant duplicate attempts.
+  PERFORM pg_advisory_xact_lock(hashtext(v_user_id::text), hashtext(p_assessment_id::text));
+
   PERFORM 1
   FROM public.skill_assessments
   WHERE id = p_assessment_id AND is_active = TRUE;
@@ -531,8 +538,9 @@ BEGIN
 
   -- 6. Second pass: construct result payload with answer withholding policy
   -- If passed: disclose full answers and explanations for educational review.
-  -- If failed: disclose correct_answer and explanation ONLY for questions answered correctly,
-  -- withholding keys/explanations for missed questions to prevent answer harvesting.
+  -- If failed: withhold all correct answers and explanations across all questions
+  -- (even questions answered correctly) to completely eliminate answer-key harvesting
+  -- across repeated attempts. The user receives their score, user_answer, and is_correct status.
   FOR v_q IN
     SELECT id, question_text, options, correct_answer, explanation, order_index
     FROM public.assessment_questions
@@ -547,9 +555,9 @@ BEGIN
       'question_text', v_q.question_text,
       'options', v_q.options,
       'user_answer', v_user_answer,
-      'correct_answer', CASE WHEN v_passed OR v_is_correct THEN v_q.correct_answer ELSE NULL END,
+      'correct_answer', CASE WHEN v_passed THEN v_q.correct_answer ELSE NULL END,
       'is_correct', v_is_correct,
-      'explanation', CASE WHEN v_passed OR v_is_correct THEN v_q.explanation ELSE NULL END
+      'explanation', CASE WHEN v_passed THEN v_q.explanation ELSE NULL END
     );
   END LOOP;
 
