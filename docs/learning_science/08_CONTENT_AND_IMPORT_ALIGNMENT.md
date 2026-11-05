@@ -1,0 +1,140 @@
+# 08 — Content & Import Alignment Pipeline & Representation Security (`FIX-12`)
+
+This document specifies the six-stage content ingestion pipeline, the **proposed three-representation architecture for `FIX-12` answer-key isolation (and its accurate current implementation status)**, and the **proposed versioned schema extensions** for `content/schema/curriculum_manifest.schema.json`.
+
+---
+
+## 1. Three Content Representations & Accurate `FIX-12` Implementation Status
+
+> **Current Implementation Status (`main` at `a23cebb` following PR `#136` merge; unchanged from historical audit baseline `e538585` for non-EXM scoring)**:
+> The general three-representation architecture below is the **proposed Phase 1 `FIX-12` target** across all assessment routes:
+> - On `main` (`a23cebb`), **`EXM-03` already implements answer-key isolation and authenticated server-side scoring specifically for approved `EXM-02A` assigned exam-part practice** across three migrations:
+>   1. `20261101130000_exm_03_assigned_practice_scoring.sql` (private canonical scorer `public.exm03_record_assigned_practice` writing to `public.exam_part_practice_attempts`),
+>   2. `20261101140000_exm_03_authenticated_assignment_issuer.sql` (authenticated safe projection issuer `public.exm03_issue_assigned_practice` stripping `scoring_spec`), and
+>   3. `20261101150000_exm_03_authenticated_submit_protected_items.sql` (authenticated session- and owner-bound submission wrapper `public.exm03_submit_assigned_practice`, plus restrictive RLS policy `exm03_no_direct_read_of_approved_answers` on `public.assessment_items` blocking direct table reads of approved `EXM-02A` items).
+> - However, **non-EXM assessment items on `main` (`a23cebb`, after PR `#136` merged) remain readable via general `assessment_items` RLS**, and general `FIX-12` is scheduled for **Phase 1** (`AssessmentItemRenderer` still performs client-side scoring using `item.scoringSpec` and `correct_index`).
+> - Extending the three-representation DTO and server scoring RPCs to **all** non-EXM diagnostic, mock exam, and adaptive practice items therefore remains a **Phase 1 deliverable**.
+
+### 1.1 Target Representation 1: Authoring & Ingestion Representation (Repository / Server Storage Only)
+Used during content authoring, import validation, and manifest ingestion (`ingest_curriculum_manifest`). Contains the full instructional and scoring specification:
+```json
+{
+  "item_id": "fl_ins_042",
+  "prompt": "Which policy provision specifies how loss valuation is handled when insured property is partially destroyed?",
+  "options": [
+    {
+      "option_id": "opt_a",
+      "text": "Coinsurance clause",
+      "is_correct": true,
+      "rationale": "The coinsurance clause governs partial loss reimbursement relative to required insurance-to-value percentage.",
+      "misconception_tag": null
+    },
+    {
+      "option_id": "opt_b",
+      "text": "Subrogation clause",
+      "is_correct": false,
+      "rationale": "Subrogation transfers recovery rights against a negligent third party to the insurer.",
+      "misconception_tag": "confuses_recovery_rights_with_valuation"
+    }
+  ]
+}
+```
+
+### 1.2 Target Representation 2: Learner Presentation DTO (Delivered to Client Prior to Submission)
+In Phase 1 (`FIX-12`), diagnostic, mock exam, and readiness-eligible assessments deliver only the prompt, stimulus, and shuffled options (`option_id`, `text`) **without** `is_correct`, `correct_index`, `scoring_spec`, `misconception_tag`, or answer-revealing `rationale` fields (and bind `presented_option_ids` to a server-issued `attempt_id` whenever authoritative order verification is required; see [`06_MEASUREMENT_AND_SCHEDULING.md`](06_MEASUREMENT_AND_SCHEDULING.md)):
+```json
+{
+  "attempt_id": "0192e8b0-7c2a-7000-8000-000000000001",
+  "item_id": "fl_ins_042",
+  "prompt": "Which policy provision specifies how loss valuation is handled when insured property is partially destroyed?",
+  "options": [
+    { "option_id": "opt_b", "text": "Subrogation clause" },
+    { "option_id": "opt_a", "text": "Coinsurance clause" }
+  ],
+  "presented_option_ids": ["opt_b", "opt_a"]
+}
+```
+
+### 1.3 Target Representation 3: Server Scoring & Controlled Feedback Release
+Stored in protected server tables (`scoring_spec`) and evaluated by server scoring RPCs:
+- In **study/acquisition mode (`feedback_policy == immediate_explanatory`)**: Submitting the attempt returns the server-computed score plus the relevant option rationales.
+- In **timed exam mode (`timing_regime == exam_clock_enforced`, `feedback_policy == deferred_until_submission`)**: Rationales and correctness are withheld until the exam part is submitted, and timing is verified using server-computed `server_elapsed_ms`.
+
+---
+
+## 2. The 6-Stage Content & Import Pipeline
+
+1. **Source Acquisition**: Official outlines/manuals, PDFs, YouTube URLs (embedded via `youtube-nocookie`; optional Gemini API YouTube URL analysis via user BYOK within its 8-hour daily free-tier allowance), Anki/CSV exports, and BYOK/MCP AI generation.
+2. **Extraction & 6-Property Provenance**: Records `origin` (`official_source` | `curated_editorial` | `community_contribution` | `user_import` | `ai_generated`, plus optional `origin_client_id` such as `'mcp:<client_id>'`), `visibility` (`private` by default for imports), `rights_status` (`rights_review_required` by default for unverified imports), `review_status` (`unreviewed` on import), `source_authority`, and `version_validity` (`07_READINESS_AND_VALIDATION.md`).
+3. **Knowledge Organization**: Maps content to canonical `fields`, `knowledge_concepts`, `concept_relations` prerequisites, and `confusable_group_id` clusters.
+4. **Learning Design**: Assigns the canonical `LearningTaskProfile`, `ContentComplexityProfile`, `InstructionalPolicy`, and `AssessmentPolicy` (`02_LEARNING_TASK_TAXONOMY.md`).
+5. **Quality Assurance**: Executes deterministic `ContentQualityValidator` checks (schema validity, option length/homogeneity, citation locators, passage reading demand), sets `complexity_assessment_status = 'deterministic_profile'`, and routes candidates for public catalog promotion to the `ECO-02`/`ECO-04` editorial review queue.
+6. **Personalized Delivery**: Delivers the Learner Presentation DTO through the task-aware Study View and versioned scheduler (`review_items`), recording attempts via `record_events` (`public.learning_events`).
+
+---
+
+## 3. Proposed Versioned Schema Extension for `curriculum_manifest.schema.json` & Phase 1 / Phase 2 Transition Contract
+
+> **Implementation & Phase Transition Note (`Phase 1 ARCH-1` vs. `Phase 2 ARCH-5`)**:
+> - On `main` (`a23cebb`, unchanged from `e538585`), [`content/schema/curriculum_manifest.schema.json`](../../content/schema/curriculum_manifest.schema.json) (`2.0.0`) specifies `additionalProperties: false` on manifest objects, represents MCQ `options` as string arrays, and stores answer keys in `scoring_spec.correct_index`.
+> - **Phase 1 (`ARCH-1` Event Ledger)**: Adds nullable/defaulted item-level storage columns (`learning_task_profile`, `provenance_metadata`, `complexity_assessment_status`, `item_psychometric_status`, `readiness_validation_status`) on canonical item tables alongside `public.learning_events` (`event_schema_version = '1.0.0'`). Before existing YAML manifests are migrated to `2.1.0` in Phase 2, `record_events` populates `task_profile` and `provenance_snapshot` using **deterministic server derivation from existing `main` (`a23cebb`) item/pack columns** (`metadata_schema_version = '1.0-phase1-derived'`, `profile_source = 'phase1_server_derived'`, `provenance_source = 'phase1_server_derived'`; see [`06_MEASUREMENT_AND_SCHEDULING.md` §2.3](06_MEASUREMENT_AND_SCHEDULING.md)).
+> - **Phase 2 (`ARCH-5` Content Unification)**: Updates `curriculum_manifest.schema.json` to **`2.1.0`** to accept and enforce the metadata blocks below at manifest ingestion time, backfills existing catalog items (`metadata_schema_version = '2.1.0'`, `profile_source = 'manifest_v2_1'`, `provenance_source = 'manifest_v2_1'`), and preserves historical Phase 1 event snapshots immutably.
+
+### Proposed Schema `2.1.0` Activity Metadata Block (Exact Canonical Alignment with `02` & `07`)
+```json
+{
+  "learning_task_profile": {
+    "knowledge_facet": "conceptual_relational",
+    "cognitive_operation": "distinguish_confusable",
+    "stimulus_channel": "visual_text",
+    "response_channel": "structured_choice",
+    "reference_policy": "closed_book"
+  },
+  "content_complexity_profile": {
+    "reading_demand": {
+      "word_count": 42,
+      "reading_grade_estimate": 9.5,
+      "lexical_rarity_tier": "standard"
+    },
+    "reasoning_step_count": 2,
+    "quantitative_complexity": "none",
+    "prerequisite_depth": 1,
+    "confusable_density": "high_confusable_group",
+    "response_format_demand": "recognition_choice",
+    "reference_foraging_depth": "none",
+    "has_statutory_exception": false
+  },
+  "instructional_policy": {
+    "eligible_strategies": [
+      "active_retrieval_first",
+      "contrastive_interleaving",
+      "elaborative_rationale_feedback"
+    ],
+    "scaffolding_policy": "adaptive_on_error",
+    "feedback_policy": "immediate_explanatory"
+  },
+  "assessment_policy": {
+    "timing_regime": "untimed_mastery",
+    "error_criticality": "standard_compensatory",
+    "scoring_protection": "server_protected_scoring"
+  },
+  "provenance_metadata": {
+    "origin": "official_source",
+    "origin_client_id": null,
+    "visibility": "public_catalog",
+    "rights_status": "verified_permissive_or_public_domain",
+    "review_status": "authoritatively_verified",
+    "source_authority": "primary_regulator_or_statute",
+    "version_validity": {
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "superseded_by_version_id": null,
+      "status": "active"
+    }
+  },
+  "complexity_assessment_status": "deterministic_profile",
+  "item_psychometric_status": "unobserved",
+  "readiness_validation_status": "unvalidated",
+  "blueprint_alignment_state": "blueprint_weighted"
+}
+```
