@@ -537,10 +537,10 @@ BEGIN
   v_is_verified := (NOT v_is_overtime);
 
   -- 6. Second pass: construct result payload with answer withholding policy
-  -- If passed: disclose full answers and explanations for educational review.
-  -- If failed: withhold all correct answers and explanations across all questions
-  -- (even questions answered correctly) to completely eliminate answer-key harvesting
-  -- across repeated attempts. The user receives their score, user_answer, and is_correct status.
+  -- If passed: disclose full answers, explanations, and per-question correctness for educational review.
+  -- If failed: withhold all correct answers, explanations, and per-question correctness (is_correct)
+  -- across all questions to completely eliminate answer-key harvesting and oracle probing
+  -- across repeated attempts. The user receives only their overall score and pass status.
   FOR v_q IN
     SELECT id, question_text, options, correct_answer, explanation, order_index
     FROM public.assessment_questions
@@ -556,7 +556,7 @@ BEGIN
       'options', v_q.options,
       'user_answer', v_user_answer,
       'correct_answer', CASE WHEN v_passed THEN v_q.correct_answer ELSE NULL END,
-      'is_correct', v_is_correct,
+      'is_correct', CASE WHEN v_passed THEN v_is_correct ELSE NULL END,
       'explanation', CASE WHEN v_passed THEN v_q.explanation ELSE NULL END
     );
   END LOOP;

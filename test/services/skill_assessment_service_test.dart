@@ -142,5 +142,82 @@ void main() {
       expect(result.questionResults[0].question.correctAnswer, equals(0));
       expect(result.questionResults[0].question.explanation, contains('Flutter is an open-source UI'));
     });
+
+    test('completeAssessment on failing attempt withholds correct answers, explanations, and per-question correctness', () async {
+      fakeClient.setTableData('assessment_attempts', [
+        {
+          'id': 'attempt-fail',
+          'assessment_id': 'assess-1',
+          'user_id': 'user-test-123',
+          'started_at': DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String(),
+          'answers': {'q1': 1, 'q2': 0},
+          'created_at': DateTime.now().toIso8601String(),
+          'skill_assessments': {
+            'id': 'assess-1',
+            'skill_id': 'skill-1',
+            'title': 'Flutter Fundamentals',
+            'passing_score': 70,
+            'created_at': DateTime.now().toIso8601String(),
+            'skills': {
+              'id': 'skill-1',
+              'name': 'Flutter',
+              'slug': 'flutter',
+              'created_at': DateTime.now().toIso8601String(),
+            },
+          },
+        }
+      ]);
+
+      fakeClient.rpcHandler = (fn, {params}) {
+        if (fn == 'submit_and_grade_assessment') {
+          return {
+            'attempt_id': 'attempt-fail',
+            'assessment_id': 'assess-1',
+            'skill_id': 'skill-1',
+            'score': 50,
+            'correct_count': 1,
+            'total_questions': 2,
+            'passing_score': 70,
+            'passed': false,
+            'is_verified': true,
+            'previous_level': 20,
+            'new_level': 20,
+            'question_results': [
+              {
+                'question_id': 'q1',
+                'question_text': 'What is Flutter?',
+                'options': ['Framework', 'Database', 'Operating System', 'Language'],
+                'user_answer': 1,
+                'correct_answer': null,
+                'is_correct': null,
+                'explanation': null,
+              },
+              {
+                'question_id': 'q2',
+                'question_text': 'What language does Flutter use?',
+                'options': ['Java', 'Dart', 'Kotlin', 'Swift'],
+                'user_answer': 0,
+                'correct_answer': null,
+                'is_correct': null,
+                'explanation': null,
+              },
+            ],
+          };
+        }
+        return null;
+      };
+
+      final result = await service.completeAssessment('attempt-fail');
+
+      expect(result.attempt.score, equals(50));
+      expect(result.passed, isFalse);
+      expect(result.questionResults, hasLength(2));
+      expect(result.questionResults[0].question.correctAnswer, isNull);
+      expect(result.questionResults[0].question.explanation, isNull);
+      expect(result.questionResults[0].isCorrect, isFalse);
+      expect(result.questionResults[1].question.correctAnswer, isNull);
+      expect(result.questionResults[1].question.explanation, isNull);
+      expect(result.questionResults[1].isCorrect, isFalse);
+    });
   });
 }
