@@ -120,8 +120,6 @@ DECLARE
   v_app_version TEXT;
   v_inserted BOOLEAN;
   v_processed_count INTEGER := 0;
-  v_review_item_id UUID;
-  v_elem JSONB;
   v_concept_id_text TEXT;
 BEGIN
   v_auth_uid := (SELECT auth.uid());
@@ -326,7 +324,6 @@ AS $$
 DECLARE
   v_user_id UUID := (SELECT auth.uid());
   v_attempt_id UUID := gen_random_uuid();
-  v_assessment public.skill_assessments%ROWTYPE;
   v_total_questions INTEGER := 0;
   v_attempt public.assessment_attempts%ROWTYPE;
 BEGIN
@@ -334,7 +331,7 @@ BEGIN
     RAISE EXCEPTION 'Authentication required to start assessment' USING ERRCODE = '42501';
   END IF;
 
-  SELECT * INTO v_assessment
+  PERFORM 1
   FROM public.skill_assessments
   WHERE id = p_assessment_id AND is_active = TRUE;
 
