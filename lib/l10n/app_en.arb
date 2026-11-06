@@ -1,0 +1,184 @@
+{
+  "@@locale": "en",
+  "appTitle": "Learning PWA",
+  "@appTitle": {
+    "description": "Application title displayed in browser tabs and system headers"
+  },
+  "navLearn": "Learn",
+  "@navLearn": {
+    "description": "Primary navigation destination for active study sessions and daily learning"
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Primary navigation destination for exploring courses, certifications, and career pathways"
+  },
+  "navProgress": "Progress",
+  "@navProgress": {
+    "description": "Primary navigation destination for viewing learning analytics, mastery, and streaks"
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Navigation destination for user preferences and configuration"
+  },
+  "actionStudy": "Study",
+  "@actionStudy": {
+    "description": "Call to action button to begin a study session"
+  },
+  "actionReview": "Review",
+  "@actionReview": {
+    "description": "Call to action button to review previously learned items"
+  },
+  "actionPractice": "Practice",
+  "@actionPractice": {
+    "description": "Button to practice skills or pronunciation"
+  },
+  "actionHelp": "Help",
+  "@actionHelp": {
+    "description": "Button to access the searchable help dialog and user guide"
+  },
+  "actionSettings": "Settings",
+  "@actionSettings": {
+    "description": "Button or title for settings and configuration"
+  },
+  "actionCancel": "Cancel",
+  "@actionCancel": {
+    "description": "Button to cancel an action or dismiss a dialog"
+  },
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Button to save changes or settings"
+  },
+  "actionSubmit": "Submit",
+  "@actionSubmit": {
+    "description": "Button to submit answers or forms"
+  },
+  "actionRetry": "Retry",
+  "@actionRetry": {
+    "description": "Button to retry a failed operation or quiz attempt"
+  },
+  "actionClose": "Close",
+  "@actionClose": {
+    "description": "Button to close a modal dialog or drawer"
+  },
+  "actionContinue": "Continue",
+  "@actionContinue": {
+    "description": "Button to proceed to the next step or lesson"
+  },
+  "actionSearch": "Search",
+  "@actionSearch": {
+    "description": "Button or action to search the catalog"
+  },
+  "actionFilter": "Filter",
+  "@actionFilter": {
+    "description": "Button to filter content or search results"
+  },
+  "actionStart": "Start",
+  "@actionStart": {
+    "description": "Button to start an assessment or module"
+  },
+  "actionFinish": "Finish",
+  "@actionFinish": {
+    "description": "Button to complete or conclude an activity"
+  },
+  "modeFlashcards": "Flashcards",
+  "@modeFlashcards": {
+    "description": "Spaced repetition flashcard study mode"
+  },
+  "modeQuiz": "Quiz",
+  "@modeQuiz": {
+    "description": "Assessment and practice quiz mode"
+  },
+  "modeReading": "Reading",
+  "@modeReading": {
+    "description": "Reading comprehension study mode"
+  },
+  "modeHandsFree": "Hands-Free Mode",
+  "@modeHandsFree": {
+    "description": "Voice-enabled hands-free interaction mode"
+  },
+  "modeVoice": "Voice Practice",
+  "@modeVoice": {
+    "description": "Speech and phonics pronunciation practice mode"
+  },
+  "statusLoading": "Loading...",
+  "@statusLoading": {
+    "description": "General loading indicator message"
+  },
+  "statusOffline": "Offline Mode",
+  "@statusOffline": {
+    "description": "Badge or message indicating the application is operating offline"
+  },
+  "statusOnline": "Online",
+  "@statusOnline": {
+    "description": "Indicator that network connectivity is active"
+  },
+  "statusError": "Error",
+  "@statusError": {
+    "description": "General error status header"
+  },
+  "statusSuccess": "Success",
+  "@statusSuccess": {
+    "description": "General success status header"
+  },
+  "statusSyncing": "Syncing changes...",
+  "@statusSyncing": {
+    "description": "Status message while offline learning outbox events are syncing"
+  },
+  "statusUpToDate": "All data synchronized",
+  "@statusUpToDate": {
+    "description": "Status message when offline sync is complete"
+  },
+  "metricStreak": "Day Streak",
+  "@metricStreak": {
+    "description": "Label for consecutive active learning days"
+  },
+  "metricStreakCount": "{count, plural, =1{1 Day Streak} other{{count} Days Streak}}",
+  "@metricStreakCount": {
+    "description": "Formatted streak count with plural support",
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
+  "metricScore": "Score",
+  "@metricScore": {
+    "description": "Label for assessment or quiz score"
+  },
+  "metricMastery": "Mastery",
+  "@metricMastery": {
+    "description": "Label for knowledge mastery percentage"
+  },
+  "metricAccuracy": "Accuracy",
+  "@metricAccuracy": {
+    "description": "Label for response accuracy percentage"
+  },
+  "metricXp": "XP",
+  "@metricXp": {
+    "description": "Label for experience points"
+  },
+  "metricLevel": "Level {level}",
+  "@metricLevel": {
+    "description": "Learner level indicator",
+    "placeholders": {
+      "level": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "helpDialogTitle": "How Can We Help?",
+  "@helpDialogTitle": {
+    "description": "Header title of the accessible help dialog"
+  },
+  "searchPlaceholder": "Search lessons, certifications, topics...",
+  "@searchPlaceholder": {
+    "description": "Placeholder text inside the search bar"
+  },
+  "emptyLibraryMessage": "No courses or certifications found.",
+  "@emptyLibraryMessage": {
+    "description": "Message displayed when a catalog search or filter produces no results"
+  }
+}
+
