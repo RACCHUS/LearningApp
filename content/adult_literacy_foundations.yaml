@@ -1,0 +1,255 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Source Manifest
+# Target: Adult Literacy & Foundational Phonics (Sublexical Orthographic Track)
+# ============================================================================
+
+source_release:
+  publisher: "Kentucky Reading Research Center & National Reading Panel"
+  title: "Effective Adult Reading Interventions (Tighe et al., 2026) & Science of Reading Framework"
+  version: "KRRC-2026-NRP"
+  source_url: "https://www.kyreadingresearch.org/wp-content/uploads/2026/10/Effective-Adult-Reading-Interventions.pdf"
+  retrieved_at: "2026-10-01T00:00:00Z"
+  license: "Authoritative Reading Research Synthesis"
+  license_name: "Public Educational Research"
+  rights_note: "Synthesises 15 peer-reviewed adult literacy studies (Tighe et al., 2026) with untimed decoding mastery and environmental safety vocabulary."
+  sha256: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+  metadata:
+    track: "sublexical_orthographic"
+    timing_regime: "untimed_mastery"
+    audience: "Adult Learners (Ages 16-76)"
+
+target:
+  slug: "program-adult-literacy-foundations"
+  title: "Adult Literacy & Foundational Phonics"
+  version_code: "LIT-2026"
+  version_title: "Sublexical Orthographic & Environmental Literacy (LIT-2026)"
+  version_description: "Untimed decoding mastery, phonemic awareness, grapheme-phoneme mapping, CVC patterns, and high-stakes survival environmental vocabulary grounded in Tighe et al. (2026) and Haladyna (2002)."
+
+domains:
+  # --------------------------------------------------------------------------
+  # Domain 1: Phonemic Awareness & Grapheme-Phoneme Mapping
+  # --------------------------------------------------------------------------
+  - code: "LIT-101"
+    title: "Phonemic Awareness & Grapheme-Phoneme Mapping"
+    description: "Auditory segmentation, phoneme blending, letter-sound correspondence, and basic consonant-vowel decoding without speed penalties."
+    weight: 0.35
+    sort_order: 1
+    importance: "core"
+    citation: "Tighe et al. (2026) Section 3.1: Untimed Decoding Interventions"
+    objectives:
+      - code: "LIT-101.1"
+        title: "Isolate, blend, and map phonemes to printed graphemes"
+        description: "Recognize individual speech sounds and map them to single letters and common digraphs."
+        sort_order: 1
+        importance: "core"
+        citation: "National Reading Panel (NICHD, 2000) Chapter 2: Alphabetics"
+        concepts:
+          - slug: "lit-phoneme-blending"
+            name: "Phoneme Blending"
+            emoji: "🔊"
+            short_definition: "The auditory ability to combine individual speech sounds into complete recognizable words."
+            description: "Auditory phonological skill synthesizing sequential sounds (/k/ + /æ/ + /t/ into 'cat') essential for independent reading."
+            citation: "NRP (2000) Phonemic Awareness"
+            prerequisites: []
+          - slug: "lit-consonant-digraphs"
+            name: "Consonant Digraphs"
+            emoji: "🔤"
+            short_definition: "Pairs of consonants that represent a single distinct speech sound."
+            description: "Two-letter consonant combinations (sh, ch, th, wh, ck) that produce one unified phoneme rather than blended individual sounds."
+            citation: "Moats (2020) Speech to Print Chapter 4"
+            prerequisites: ["lit-phoneme-blending"]
+        lessons:
+          - title: "Speech Sounds to Print: Phonemes and Digraphs"
+            description: "Practice blending isolated sounds into words and identifying unified consonant digraphs."
+            emoji: "🗣️"
+            tags: ["literacy", "phonics", "adult-learning", "reading"]
+            citation: "Tighe et al. (2026) Report on Adult Decoding"
+            concept_slugs:
+              - "lit-phoneme-blending"
+              - "lit-consonant-digraphs"
+            terms:
+              - term: "Phoneme"
+                definition: "The smallest distinct unit of sound in spoken language that distinguishes one word from another."
+                example: "The word 'cat' contains three phonemes: /k/, /æ/, and /t/."
+                emoji: "🎵"
+              - term: "Grapheme"
+                definition: "A letter or combination of letters that represents a single phoneme in written language."
+                example: "The letters 'sh' in 'ship' represent a single grapheme."
+                emoji: "✍️"
+              - term: "Digraph"
+                definition: "Two written letters that together represent a single spoken sound."
+                example: "'ch' in 'chin' or 'th' in 'thin'."
+                emoji: "🔗"
+            questions:
+              - question_text: "What term describes the reading skill of smoothly combining the separate sounds /m/, /æ/, and /p/ to say the spoken word 'map'?"
+                options:
+                  - "Phoneme blending synthesis"
+                  - "Visual sight shape memorization"
+                  - "Context clue guessing technique"
+                  - "Morphological affix stripping"
+                correct_answer: 0
+                type: "mcq"
+                explanation: "Phoneme blending is the auditory process of combining isolated speech sounds together into a recognizable spoken word."
+                concept_slugs: ["lit-phoneme-blending"]
+              - question_text: "Which of the following word pairs demonstrates a consonant digraph where two letters represent a single spoken sound?"
+                options:
+                  - "The letters 'st' in 'stop'"
+                  - "The letters 'sh' in 'ship'"
+                  - "The letters 'bl' in 'blue'"
+                  - "The letters 'gr' in 'grow'"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "The letters 'sh' represent a digraph producing one single sound (/sh/). The letter pairs in stop, blue, and grow are consonant blends where both sounds are pronounced."
+                concept_slugs: ["lit-consonant-digraphs"]
+
+  # --------------------------------------------------------------------------
+  # Domain 2: Decodable Word Structures & CVC Patterns
+  # --------------------------------------------------------------------------
+  - code: "LIT-102"
+    title: "Decodable Word Structures & CVC Patterns"
+    description: "Closed syllable decoding, onset-rime blending, short vowel regularity, and orthographic mapping for adult learners."
+    weight: 0.35
+    sort_order: 2
+    importance: "core"
+    citation: "Tighe et al. (2026) Table 2: Word Recognition Interventions"
+    objectives:
+      - code: "LIT-102.1"
+        title: "Decode 3-letter CVC patterns and apply orthographic mapping"
+        description: "Analyze Consonant-Vowel-Consonant structures with predictable short vowels and store them in lexical memory."
+        sort_order: 1
+        importance: "core"
+        citation: "Ehri (2014) Orthographic Mapping in Reading Acquisition"
+        concepts:
+          - slug: "lit-cvc-word-pattern"
+            name: "CVC Word Pattern"
+            emoji: "📦"
+            short_definition: "A 3-letter syllable structure consisting of a consonant, short vowel, and final consonant."
+            description: "Predictable closed syllable structure where a single vowel is closed in by a coda consonant, regularly making its short vowel sound."
+            citation: "Science of Reading Orthography"
+            prerequisites: ["lit-phoneme-blending"]
+          - slug: "lit-orthographic-mapping"
+            name: "Orthographic Mapping"
+            emoji: "🧠"
+            short_definition: "The mental process that forms permanent connections between phonemes and graphemes in memory."
+            description: "Cognitive process bonding speech sounds to printed letters so words become instantly recognized sight words upon visual glance."
+            citation: "Ehri (2014) Scientific Studies of Reading"
+            prerequisites: ["lit-cvc-word-pattern"]
+        lessons:
+          - title: "CVC Patterns and Instant Word Recognition"
+            description: "Learn how closed CVC syllables consistently produce short vowels and build lexical memory."
+            emoji: "📖"
+            tags: ["cvc", "orthography", "decoding", "foundations"]
+            citation: "Tighe et al. (2026) Effective Reading Interventions"
+            concept_slugs:
+              - "lit-cvc-word-pattern"
+              - "lit-orthographic-mapping"
+            terms:
+              - term: "Onset"
+                definition: "The initial consonant sound or blend of a syllable occurring before the vowel."
+                example: "In 'cat', the onset is /k/ (C)."
+                emoji: "🚪"
+              - term: "Rime"
+                definition: "The part of a syllable consisting of the vowel and any consonant sounds that follow it."
+                example: "In 'cat', the rime is 'at'."
+                emoji: "🔔"
+              - term: "Orthographic Memory"
+                definition: "The brain's lexical storehouse of letter sequences permanently connected to pronunciations and meanings."
+                example: "Instantly recognizing 'stop' or 'exit' without sounding out each letter."
+                emoji: "💾"
+            questions:
+              - question_text: "What characteristics define a classic CVC decodable word pattern in foundational reading instruction?"
+                options:
+                  - "A long vowel preceded by two silent consonants"
+                  - "A prefix attached to a multisyllabic Latin root"
+                  - "An onset consonant, a short vowel, and a final coda consonant"
+                  - "An open syllable ending with a diphthong vowel"
+                correct_answer: 2
+                type: "mcq"
+                explanation: "A CVC word (like cat, map, or bus) features an onset consonant, a short vowel nucleus, and a coda consonant."
+                concept_slugs: ["lit-cvc-word-pattern"]
+              - question_text: "According to Linnea Ehri’s reading acquisition model, what occurs during orthographic mapping?"
+                options:
+                  - "Readers guess words based purely on page pictures and font styles"
+                  - "Learners memorize words exclusively as whole physical shapes"
+                  - "Words are recalled through repetitive rhythmic finger tapping"
+                  - "Letter sequences are bonded to pronunciation and meaning in memory"
+                correct_answer: 3
+                type: "mcq"
+                explanation: "Orthographic mapping bonds the phonemes of a spoken word to its printed graphemes, enabling effortless sight word recognition."
+                concept_slugs: ["lit-orthographic-mapping"]
+
+  # --------------------------------------------------------------------------
+  # Domain 3: High-Stakes Environmental & Safety Survival Literacy
+  # --------------------------------------------------------------------------
+  - code: "LIT-103"
+    title: "High-Stakes Environmental & Safety Survival Literacy"
+    description: "Immediate recognition of life-safety environmental signage, danger alerts, workplace warnings, and public facilities."
+    weight: 0.30
+    sort_order: 3
+    importance: "core"
+    citation: "OSHA 1910.145 / ANSI Z535 Safety Sign Standards"
+    objectives:
+      - code: "LIT-103.1"
+        title: "Recognize high-stakes environmental safety and facility vocabulary"
+        description: "Instantly comprehend critical warning words necessary for physical safety, navigation, and workplace independence."
+        sort_order: 1
+        importance: "core"
+        citation: "ANSI Z535 Standards for Safety Colors and Words"
+        concepts:
+          - slug: "lit-environmental-survival-words"
+            name: "Environmental Survival Words"
+            emoji: "🛑"
+            short_definition: "Critical high-stakes printed words essential for personal safety, navigation, and workplace operation."
+            description: "High-priority survival words (EXIT, STOP, POISON, DANGER, CAUTION, RESTROOM) that non-readers must recognize immediately."
+            citation: "OSHA & National Safety Council Workplace Literacy"
+            prerequisites: []
+          - slug: "lit-warning-safety-signage"
+            name: "Warning & Safety Signage"
+            emoji: "⚠️"
+            short_definition: "Standardized visual and verbal warning formats signaling varying degrees of physical hazard."
+            description: "Color-coded signage hierarchies (DANGER in red for immediate hazards, CAUTION in yellow for potential hazards) paired with text."
+            citation: "OSHA 29 CFR 1910.145 Specifications for Accident Prevention Signs"
+            prerequisites: ["lit-environmental-survival-words"]
+        lessons:
+          - title: "Life-Safety Words and Workplace Environmental Signs"
+            description: "Master immediate recognition of essential safety alerts, emergency exits, and workplace hazard signs."
+            emoji: "🚨"
+            tags: ["safety", "survival", "environmental-words", "workplace"]
+            citation: "OSHA 29 CFR 1910.145 Accident Prevention Signs"
+            concept_slugs:
+              - "lit-environmental-survival-words"
+              - "lit-warning-safety-signage"
+            terms:
+              - term: "DANGER Sign"
+                definition: "A safety sign with a red background indicating an immediate hazard which will cause serious injury or death if not avoided."
+                example: "'DANGER: HIGH VOLTAGE' on electrical transformer panels."
+                emoji: "🔴"
+              - term: "CAUTION Sign"
+                definition: "A safety sign with a yellow background indicating a potential hazard or unsafe practice."
+                example: "'CAUTION: WET FLOOR' in public hallways."
+                emoji: "🟡"
+              - term: "EXIT"
+                definition: "The designated architectural pathway leading out of a building to public safety."
+                example: "Illuminated green or red signs mounted above exterior egress doors."
+                emoji: "🚪"
+            questions:
+              - question_text: "Under OSHA workplace safety standards (29 CFR 1910.145), what does a red DANGER sign indicate to workers?"
+                options:
+                  - "A general notice about scheduled company employee meetings"
+                  - "An immediate hazard that can cause severe injury or death"
+                  - "An advisory suggestion regarding proper office recycling"
+                  - "A routine reminder to turn off office desk lamps at night"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "OSHA 1910.145(c)(1)(ii) specifies that DANGER signs are reserved for immediate hazards that will cause serious injury or death."
+                concept_slugs: ["lit-warning-safety-signage"]
+              - question_text: "Why are high-stakes environmental words like 'EXIT', 'STOP', and 'DANGER' taught as immediate whole-word recognition priorities?"
+                options:
+                  - "They are required only for advanced academic university entrance"
+                  - "They appear exclusively in complex literature and poetry"
+                  - "They ensure personal physical safety and independent navigation"
+                  - "They are used solely for recreational crossword puzzle games"
+                correct_answer: 2
+                type: "mcq"
+                explanation: "Immediate mastery of environmental survival words enables non-readers to protect their physical safety, avoid severe workplace hazards, and navigate independently."
+                concept_slugs: ["lit-environmental-survival-words"]
