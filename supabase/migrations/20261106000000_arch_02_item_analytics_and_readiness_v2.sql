@@ -59,183 +59,154 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 DECLARE
-  v_item RECORD;
   v_total_evaluated INTEGER := 0;
   v_flagged_count INTEGER := 0;
   v_reports_created INTEGER := 0;
 
-  v_p_value REAL;
-  v_point_biserial REAL;
-  v_mean_total REAL;
-  v_mean_correct REAL;
-  v_stddev_total REAL;
-  v_median_lat INTEGER;
-  v_q1_lat INTEGER;
-  v_q3_lat INTEGER;
-  v_iqr_lat INTEGER;
-  v_dist_counts JSONB;
-  v_dist_rates JSONB;
   v_flags TEXT[];
   v_is_flagged BOOLEAN;
   v_open_report_id UUID;
   v_new_report_id UUID;
   v_report_desc TEXT;
+  v_item RECORD;
 BEGIN
-  -- Temporary table aggregating combined responses per question/item
-  CREATE TEMP TABLE IF NOT EXISTS tmp_item_responses (
-    q_id UUID,
-    q_type TEXT,
-    u_id UUID,
-    score REAL,
-    selected_opt TEXT,
-    latency_ms INTEGER
-  ) ON COMMIT DROP;
-
-  TRUNCATE tmp_item_responses;
-
-  -- 1. Extract from learning_events
-  INSERT INTO tmp_item_responses (q_id, q_type, u_id, score, selected_opt, latency_ms)
-  SELECT
-    item_id::UUID,
-    COALESCE(item_type, 'question'),
-    user_id,
-    score,
-    CASE
-      WHEN jsonb_typeof(response) = 'object' THEN response->>'selected'
-      WHEN jsonb_typeof(response) = 'string' THEN trim(both '"' from response::text)
-      WHEN response IS NOT NULL THEN response::text
-      ELSE NULL
-    END,
-    latency_ms
-  FROM public.learning_events
-  WHERE score IS NOT NULL
-    AND item_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
-
-  -- 2. Extract from completed assessment_attempts
-  INSERT INTO tmp_item_responses (q_id, q_type, u_id, score, selected_opt, latency_ms)
-  SELECT
-    kv.key::UUID,
-    'question',
-    a.user_id,
-    CASE WHEN (kv.value = q.correct_answer::TEXT) THEN 1.0::REAL ELSE 0.0::REAL END,
-    kv.value,
-    CASE
-      WHEN a.time_taken_seconds IS NOT NULL AND a.time_taken_seconds > 0 THEN
-        GREATEST(500, (a.time_taken_seconds * 1000) / GREATEST(1, (SELECT count(*) FROM jsonb_each_text(a.answers))))
-      ELSE NULL
-    END
-  FROM public.assessment_attempts a
-  CROSS JOIN LATERAL jsonb_each_text(a.answers) kv
-  JOIN public.assessment_questions q ON q.id = kv.key::UUID
-  WHERE a.completed_at IS NOT NULL
-    AND NOT EXISTS (
-      SELECT 1 FROM tmp_item_responses tir
-      WHERE tir.q_id = kv.key::UUID AND tir.u_id = a.user_id
-    );
-
-  -- 3. Calculate learner overall mean score (for point-biserial benchmark)
-  CREATE TEMP TABLE IF NOT EXISTS tmp_user_ability (
-    u_id UUID PRIMARY KEY,
-    mean_score REAL
-  ) ON COMMIT DROP;
-
-  TRUNCATE tmp_user_ability;
-
-  INSERT INTO tmp_user_ability (u_id, mean_score)
-  SELECT u_id, AVG(score)::REAL
-  FROM tmp_item_responses
-  GROUP BY u_id;
-
-  -- 4. Iterate over items with at least p_min_responses
   FOR v_item IN
+    WITH event_responses AS (
+      SELECT
+        item_id::UUID AS q_id,
+        COALESCE(item_type, 'question') AS q_type,
+        user_id AS u_id,
+        score::REAL AS score,
+        CASE
+          WHEN jsonb_typeof(response) = 'object' THEN response->>'selected'
+          WHEN jsonb_typeof(response) = 'string' THEN trim(both '"' from response::text)
+          WHEN response IS NOT NULL THEN response::text
+          ELSE NULL
+        END AS selected_opt,
+        latency_ms
+      FROM public.learning_events
+      WHERE score IS NOT NULL
+        AND item_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    ),
+    attempt_responses AS (
+      SELECT
+        kv.key::UUID AS q_id,
+        'question'::TEXT AS q_type,
+        a.user_id AS u_id,
+        CASE WHEN (kv.value = q.correct_answer::TEXT) THEN 1.0::REAL ELSE 0.0::REAL END AS score,
+        kv.value AS selected_opt,
+        CASE
+          WHEN a.time_taken_seconds IS NOT NULL AND a.time_taken_seconds > 0 THEN
+            GREATEST(500, (a.time_taken_seconds * 1000) / GREATEST(1, (SELECT count(*) FROM jsonb_each_text(a.answers))))
+          ELSE NULL
+        END AS latency_ms
+      FROM public.assessment_attempts a
+      CROSS JOIN LATERAL jsonb_each_text(a.answers) kv
+      JOIN public.assessment_questions q ON q.id = kv.key::UUID
+      WHERE a.completed_at IS NOT NULL
+    ),
+    raw_responses AS (
+      SELECT * FROM event_responses
+      UNION ALL
+      SELECT ar.* FROM attempt_responses ar
+      WHERE NOT EXISTS (
+        SELECT 1 FROM event_responses er
+        WHERE er.q_id = ar.q_id AND er.u_id = ar.u_id
+      )
+    ),
+    user_ability AS (
+      SELECT u_id, AVG(score)::REAL AS mean_score
+      FROM raw_responses
+      GROUP BY u_id
+    ),
+    item_user_pairs AS (
+      SELECT
+        r.q_id,
+        r.q_type,
+        r.u_id,
+        r.score,
+        r.selected_opt,
+        r.latency_ms,
+        ua.mean_score AS user_mean_score
+      FROM raw_responses r
+      JOIN user_ability ua ON ua.u_id = r.u_id
+    ),
+    item_summaries AS (
+      SELECT
+        iup.q_id,
+        iup.q_type,
+        COUNT(*)::INTEGER AS resp_count,
+        COUNT(CASE WHEN iup.score >= 0.5 THEN 1 END)::INTEGER AS corr_count,
+        AVG(iup.score)::REAL AS mean_score,
+        AVG(iup.user_mean_score)::REAL AS mean_total,
+        AVG(CASE WHEN iup.score >= 0.5 THEN iup.user_mean_score END)::REAL AS mean_correct,
+        NULLIF(stddev_samp(iup.user_mean_score), 0)::REAL AS stddev_total,
+        percentile_cont(0.50) WITHIN GROUP (ORDER BY iup.latency_ms)::INTEGER AS median_latency_ms,
+        percentile_cont(0.25) WITHIN GROUP (ORDER BY iup.latency_ms)::INTEGER AS q1_latency_ms,
+        percentile_cont(0.75) WITHIN GROUP (ORDER BY iup.latency_ms)::INTEGER AS q3_latency_ms
+      FROM item_user_pairs iup
+      GROUP BY iup.q_id, iup.q_type
+      HAVING COUNT(*) >= p_min_responses
+    ),
+    item_distractors AS (
+      SELECT
+        r.q_id,
+        jsonb_object_agg(COALESCE(r.selected_opt, 'unanswered'), r.cnt) AS dist_counts,
+        jsonb_object_agg(COALESCE(r.selected_opt, 'unanswered'), ROUND((r.cnt::NUMERIC / s.resp_count::NUMERIC), 4)) AS dist_rates
+      FROM (
+        SELECT q_id, selected_opt, COUNT(*)::INTEGER AS cnt
+        FROM raw_responses
+        GROUP BY q_id, selected_opt
+      ) r
+      JOIN item_summaries s ON s.q_id = r.q_id
+      GROUP BY r.q_id
+    )
     SELECT
-      r.q_id,
-      r.q_type,
-      COUNT(*)::INTEGER AS resp_count,
-      COUNT(CASE WHEN r.score >= 0.5 THEN 1 END)::INTEGER AS corr_count,
-      AVG(r.score)::REAL AS mean_score
-    FROM tmp_item_responses r
-    GROUP BY r.q_id, r.q_type
-    HAVING COUNT(*) >= p_min_responses
+      s.q_id,
+      s.q_type,
+      s.resp_count,
+      s.corr_count,
+      s.mean_score AS p_value,
+      CASE
+        WHEN s.stddev_total IS NOT NULL AND s.mean_score > 0.0 AND s.mean_score < 1.0 AND s.mean_correct IS NOT NULL THEN
+          GREATEST(-1.0, LEAST(1.0, ((s.mean_correct - s.mean_total) / s.stddev_total) * sqrt(s.mean_score / (1.0 - s.mean_score))))
+        ELSE 0.0
+      END::REAL AS point_biserial,
+      s.median_latency_ms,
+      CASE
+        WHEN s.q1_latency_ms IS NOT NULL AND s.q3_latency_ms IS NOT NULL THEN (s.q3_latency_ms - s.q1_latency_ms)
+        ELSE NULL
+      END AS iqr_latency_ms,
+      COALESCE(d.dist_counts, '{}'::jsonb) AS dist_counts,
+      COALESCE(d.dist_rates, '{}'::jsonb) AS dist_rates
+    FROM item_summaries s
+    LEFT JOIN item_distractors d ON d.q_id = s.q_id
   LOOP
     v_total_evaluated := v_total_evaluated + 1;
     v_flags := ARRAY[]::TEXT[];
     v_is_flagged := false;
-    v_p_value := v_item.mean_score;
-
-    -- Point-Biserial Discrimination:
-    -- r_pbis = ((mean_correct - mean_total) / stddev_total) * sqrt(p / (1 - p))
-    SELECT
-      AVG(ua.mean_score)::REAL,
-      AVG(CASE WHEN r.score >= 0.5 THEN ua.mean_score END)::REAL,
-      NULLIF(stddev_samp(ua.mean_score), 0)::REAL
-    INTO v_mean_total, v_mean_correct, v_stddev_total
-    FROM tmp_item_responses r
-    JOIN tmp_user_ability ua ON ua.u_id = r.u_id
-    WHERE r.q_id = v_item.q_id;
-
-    IF v_stddev_total IS NOT NULL AND v_p_value > 0.0 AND v_p_value < 1.0 AND v_mean_correct IS NOT NULL THEN
-      v_point_biserial := ((v_mean_correct - v_mean_total) / v_stddev_total) * sqrt(v_p_value / (1.0 - v_p_value));
-      v_point_biserial := GREATEST(-1.0, LEAST(1.0, v_point_biserial));
-    ELSE
-      v_point_biserial := 0.0;
-    END IF;
-
-    -- Latency statistics (median, Q1, Q3, IQR)
-    SELECT
-      percentile_cont(0.50) WITHIN GROUP (ORDER BY r.latency_ms)::INTEGER,
-      percentile_cont(0.25) WITHIN GROUP (ORDER BY r.latency_ms)::INTEGER,
-      percentile_cont(0.75) WITHIN GROUP (ORDER BY r.latency_ms)::INTEGER
-    INTO v_median_lat, v_q1_lat, v_q3_lat
-    FROM tmp_item_responses r
-    WHERE r.q_id = v_item.q_id AND r.latency_ms IS NOT NULL;
-
-    IF v_q1_lat IS NOT NULL AND v_q3_lat IS NOT NULL THEN
-      v_iqr_lat := v_q3_lat - v_q1_lat;
-    ELSE
-      v_iqr_lat := NULL;
-    END IF;
-
-    -- Distractor counts and rates
-    SELECT
-      jsonb_object_agg(opt, cnt),
-      jsonb_object_agg(opt, ROUND((cnt::NUMERIC / v_item.resp_count::NUMERIC), 4))
-    INTO v_dist_counts, v_dist_rates
-    FROM (
-      SELECT
-        COALESCE(r.selected_opt, 'unanswered') AS opt,
-        COUNT(*)::INTEGER AS cnt
-      FROM tmp_item_responses r
-      WHERE r.q_id = v_item.q_id
-      GROUP BY COALESCE(r.selected_opt, 'unanswered')
-    ) dist;
-
-    IF v_dist_counts IS NULL THEN
-      v_dist_counts := '{}'::jsonb;
-      v_dist_rates := '{}'::jsonb;
-    END IF;
 
     -- Flag Evaluation
     -- 1. Negative discrimination: higher ability learners miss it more often
-    IF v_point_biserial < 0.0 AND v_item.resp_count >= 8 THEN
+    IF v_item.point_biserial < 0.0 AND v_item.resp_count >= 8 THEN
       v_flags := array_append(v_flags, 'negative_discrimination');
       v_is_flagged := true;
     END IF;
 
     -- 2. Extreme difficulty: p < 0.15 (below chance on 4-option MCQ)
-    IF v_p_value < 0.15 AND v_item.resp_count >= 8 THEN
+    IF v_item.p_value < 0.15 AND v_item.resp_count >= 8 THEN
       v_flags := array_append(v_flags, 'extreme_difficulty');
       v_is_flagged := true;
     END IF;
 
     -- 3. Extreme ease: p > 0.95 (ceiling effect, poor discrimination)
-    IF v_p_value > 0.95 AND v_item.resp_count >= 20 THEN
+    IF v_item.p_value > 0.95 AND v_item.resp_count >= 20 THEN
       v_flags := array_append(v_flags, 'extreme_ease');
     END IF;
 
     -- 4. Dead distractor: an option nobody chooses (< 3% rate when N >= 20)
     IF v_item.resp_count >= 20 AND EXISTS (
-      SELECT 1 FROM jsonb_each_text(v_dist_rates)
+      SELECT 1 FROM jsonb_each_text(v_item.dist_rates)
       WHERE value::REAL < 0.03
     ) THEN
       v_flags := array_append(v_flags, 'dead_distractor');
@@ -243,10 +214,10 @@ BEGIN
     END IF;
 
     -- 5. Suspicious speed / latency outlier
-    IF v_median_lat IS NOT NULL AND v_median_lat < 3000 AND v_item.resp_count >= 10 THEN
+    IF v_item.median_latency_ms IS NOT NULL AND v_item.median_latency_ms < 3000 AND v_item.resp_count >= 10 THEN
       v_flags := array_append(v_flags, 'suspicious_low_latency');
     END IF;
-    IF v_median_lat IS NOT NULL AND v_median_lat > 180000 AND v_item.resp_count >= 10 THEN
+    IF v_item.median_latency_ms IS NOT NULL AND v_item.median_latency_ms > 180000 AND v_item.resp_count >= 10 THEN
       v_flags := array_append(v_flags, 'high_latency_outlier');
       v_is_flagged := true;
     END IF;
@@ -265,11 +236,11 @@ BEGIN
 
       IF v_open_report_id IS NULL THEN
         v_report_desc := '[Item Analytics Auto-Flag] Defects: ' || array_to_string(v_flags, ', ') ||
-          '. p-value: ' || ROUND(v_p_value::NUMERIC, 3)::TEXT ||
-          ', r_pbis: ' || ROUND(v_point_biserial::NUMERIC, 3)::TEXT ||
+          '. p-value: ' || ROUND(v_item.p_value::NUMERIC, 3)::TEXT ||
+          ', r_pbis: ' || ROUND(v_item.point_biserial::NUMERIC, 3)::TEXT ||
           ', N=' || v_item.resp_count::TEXT ||
-          ', median latency: ' || COALESCE(v_median_lat::TEXT, 'N/A') || 'ms. ' ||
-          'Distractor rates: ' || v_dist_rates::TEXT ||
+          ', median latency: ' || COALESCE(v_item.median_latency_ms::TEXT, 'N/A') || 'ms. ' ||
+          'Distractor rates: ' || v_item.dist_rates::TEXT ||
           '. Requires psychometric content review for miskeying or ambiguity.';
 
         INSERT INTO public.moderation_reports (
@@ -314,12 +285,12 @@ BEGIN
       v_item.q_type,
       v_item.resp_count,
       v_item.corr_count,
-      v_p_value,
-      v_point_biserial,
-      v_dist_rates,
-      v_dist_counts,
-      v_median_lat,
-      v_iqr_lat,
+      v_item.p_value,
+      v_item.point_biserial,
+      v_item.dist_rates,
+      v_item.dist_counts,
+      v_item.median_latency_ms,
+      v_item.iqr_latency_ms,
       v_flags,
       v_is_flagged,
       v_open_report_id,
