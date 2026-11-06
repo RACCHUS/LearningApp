@@ -11,8 +11,6 @@ import 'package:learning_pwa/config/supabase_config.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/services/push_notification_service.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:learning_pwa/config/firebase_options.dart';
 import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
@@ -61,23 +59,16 @@ Future<void> main() async {
     await hiveService.init();
     print('✅ Hive initialized successfully');
 
-    // Initialize Firebase
-    print('🔄 Initializing Firebase...');
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.web,
-    );
-    print('✅ Firebase initialized successfully');
-
-    // Initialize Push Notification Service (FCM)
+    // Initialize Web Notification Service
     final List<String> degradedServices = [];
     try {
-      print('🔄 Initializing Push Notifications...');
+      print('🔄 Initializing Notifications...');
       await PushNotificationService().init();
-      print('✅ Push Notifications initialized successfully');
+      print('✅ Notifications initialized successfully');
     } catch (e) {
-      degradedServices.add('Push Notifications');
+      degradedServices.add('Notifications');
       if (kDebugMode) {
-        print('⚠️ FCM initialization failed: $e');
+        print('⚠️ Notification initialization failed: $e');
       }
     }
 
