@@ -17,7 +17,7 @@ Before building or deploying the client web bundle:
    ```
 2. **Apply Pending Database Migrations to Hosted Supabase:**
    - Any new migration files in `supabase/migrations/` (such as `20261009000005_learning_target_catalog_provenance.sql`) must be applied to the remote Supabase project **before** deploying the web client that depends on them.
-   - See [Hosted Migration Rollout](docs/HOSTED_MIGRATION_ROLLOUT.md) for execution details.
+   - See [Hosted Migration Rollout](../HOSTED_MIGRATION_ROLLOUT.md) for execution details.
 3. **Verify Environment Variables:**
    - Ensure production `.env` contains valid public keys:
      - `SUPABASE_URL`
@@ -39,7 +39,7 @@ flutter build web --release
 *Output Directory:* `build/web/`  
 *Contents:*
 - `index.html` — HTML5 entrypoint with PWA shell
-- `main.dart.js` / `flutter_bootstrap.js` — Compiled, tree-shaken Dart web bundle with async bootstrap loader (online-first architecture; local offline review outbox scheduled for Phase 1)
+- `main.dart.js` / `flutter_bootstrap.js` — Compiled, tree-shaken Dart web bundle with async bootstrap loader. The app is online-first; offline behavior is feature-specific and does not guarantee offline app-shell launch.
 - `manifest.json` — PWA installation metadata and icons
 - `assets/` — Application images, fonts, and data catalogs
 
@@ -77,7 +77,7 @@ firebase deploy --only hosting
 ```
 
 *Target Project:* `learningapp-2ed8a` (configured in `.firebaserc`)  
-*Hosting Config:* Defined in `firebase.json` with cache-control headers on `flutter_service_worker.js`, `index.html`, and `version.json`.
+*Hosting Config:* Defined in `firebase.json` with no-cache headers on `index.html`, `flutter_bootstrap.js`, and `version.json`. The retired custom `flutter_service_worker.js` is not part of the source tree.
 
 ---
 
@@ -86,7 +86,7 @@ firebase deploy --only hosting
 Once the deployment completes:
 
 1. **Cache Control Verification:**
-   - `flutter_service_worker.js` and `index.html` are configured with `Cache-Control: no-cache, no-store, must-revalidate` to guarantee learners receive new app versions immediately on reload.
+   - `index.html`, `flutter_bootstrap.js`, and `version.json` are configured with `Cache-Control: no-cache, no-store, must-revalidate` so learners receive new app versions promptly. The old custom Flutter service worker was removed because it did not implement app-shell caching; **do not assume offline launch is supported**.
 2. **Connectivity & Synchronization:**
    - The app currently operates online-first with progressive outbox sync; persistent offline queueing is scheduled for Phase 1.
 3. **PWA Installability:**

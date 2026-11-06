@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:learning_pwa/components/category_chip.dart';
+import 'package:learning_pwa/widgets/category_chip.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 class HomeCategoryFilters extends StatefulWidget {

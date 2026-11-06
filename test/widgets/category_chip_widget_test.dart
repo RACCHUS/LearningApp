@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learning_pwa/components/category_chip.dart';
+import 'package:learning_pwa/widgets/category_chip.dart';
 
 void main() {
   group('CategoryChip Widget Tests', () {
