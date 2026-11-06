@@ -89,7 +89,7 @@ class LessonCreationService {
           'question_text': content.questionText,
           'options': content.options,
           'correct_answer': content.correctAnswer,
-          'type': content.type,
+          'type': content.effectiveQuestionType,
           'explanation': content.explanation,
           'user_id': userId,
           'created_at': DateTime.now().toIso8601String(),
