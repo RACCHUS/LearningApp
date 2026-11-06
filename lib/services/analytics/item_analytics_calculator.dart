@@ -151,4 +151,3 @@ class ItemAnalyticsCalculator {
     return flags;
   }
 }
-

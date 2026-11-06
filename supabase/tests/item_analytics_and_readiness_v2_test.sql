@@ -29,7 +29,8 @@ on conflict (id) do nothing;
 
 insert into public.assessment_questions (id, assessment_id, question_text, options, correct_answer, explanation, order_index) values
  ('bb333333-0000-4000-8000-000000000001', 'bb222222-0000-4000-8000-000000000001', 'Normal Item', '["A", "B", "C", "D"]'::jsonb, 0, 'A is correct', 0),
- ('bb333333-0000-4000-8000-000000000002', 'bb222222-0000-4000-8000-000000000001', 'Defective Miskeyed Item', '["A", "B", "C", "D"]'::jsonb, 1, 'B is supposedly correct', 1)
+ ('bb333333-0000-4000-8000-000000000002', 'bb222222-0000-4000-8000-000000000001', 'Defective Miskeyed Item', '["A", "B", "C", "D"]'::jsonb, 1, 'B is supposedly correct', 1),
+ ('bb333333-0000-4000-8000-000000000003', 'bb222222-0000-4000-8000-000000000001', 'General Benchmark Item', '["True", "False"]'::jsonb, 0, 'True is correct', 2)
 on conflict (id) do nothing;
 
 -- 3. TEST: Table public.item_analytics exists
@@ -73,6 +74,30 @@ select throws_ok(
 
 -- 5. Seed synthetic learning_events to test psychometric calculations
 set local role postgres;
+
+-- Establish learner overall proficiency disparity via benchmark question:
+-- High performer gets all 10 correct; Low performer gets all 10 incorrect.
+insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms) values
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3000),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3100),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3200),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3300),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3400),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3500),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3600),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3700),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3800),
+ ('aa111111-0000-4000-8000-000000000001', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 1.0, '{"selected":"0"}'::jsonb, 3900),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4000),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4100),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4200),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4300),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4400),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4500),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4600),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4700),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4800),
+ ('aa111111-0000-4000-8000-000000000002', 'question_response', 'question', 'bb333333-0000-4000-8000-000000000003', 0.0, '{"selected":"1"}'::jsonb, 4900);
 
 -- Normal item responses (8 responses: 6 correct, 2 incorrect; high performer correct, low performer incorrect)
 insert into public.learning_events (user_id, event_type, item_type, item_id, score, response, latency_ms) values
@@ -158,22 +183,22 @@ select is(
 );
 
 -- 11. TEST: get_target_readiness_v2 setup and evaluation
--- Create synthetic target version, nodes, and core concepts
-insert into public.learning_targets (id, title, target_type, status, is_public) values
- ('cc111111-0000-4000-8000-000000000001', 'Test Target', 'exam', 'published', true)
+-- Create synthetic target version, nodes, and core concepts with valid constraints
+insert into public.learning_targets (id, title, slug, target_type, status, is_public) values
+ ('cc111111-0000-4000-8000-000000000001', 'Test Target', 'test-target-p1', 'licensure_exam', 'published', true)
 on conflict (id) do nothing;
 
-insert into public.target_versions (id, target_id, version_tag, status) values
+insert into public.target_versions (id, target_id, version_code, status) values
  ('cc222222-0000-4000-8000-000000000001', 'cc111111-0000-4000-8000-000000000001', 'v1.0.0', 'published')
 on conflict (id) do nothing;
 
-insert into public.curriculum_nodes (id, target_version_id, title, node_type, sequence_order) values
+insert into public.curriculum_nodes (id, target_version_id, title, node_type, sort_order) values
  ('cc333333-0000-4000-8000-000000000001', 'cc222222-0000-4000-8000-000000000001', 'Core Node 1', 'unit', 1)
 on conflict (id) do nothing;
 
-insert into public.knowledge_concepts (id, key, name, description) values
- ('cc444444-0000-4000-8000-000000000001', 'concept_1', 'Core Concept 1', 'First core concept'),
- ('cc444444-0000-4000-8000-000000000002', 'concept_2', 'Core Concept 2', 'Second core concept')
+insert into public.knowledge_concepts (id, name, slug, description) values
+ ('cc444444-0000-4000-8000-000000000001', 'Core Concept 1', 'concept-1-p1', 'First core concept'),
+ ('cc444444-0000-4000-8000-000000000002', 'Core Concept 2', 'concept-2-p1', 'Second core concept')
 on conflict (id) do nothing;
 
 insert into public.curriculum_node_concepts (curriculum_node_id, concept_id, relevance, weight) values
@@ -190,9 +215,9 @@ on conflict (user_id, concept_id) do update set
   weighted_correct = excluded.weighted_correct,
   weighted_total = excluded.weighted_total;
 
-insert into public.review_items (id, user_id, content_id, concept_id, content_type, lesson_id, title, stability, difficulty, fsrs_state, last_reviewed_at) values
- ('ee111111-0000-4000-8000-000000000001', 'aa111111-0000-4000-8000-000000000001', 'c1', 'cc444444-0000-4000-8000-000000000001', 'card', 'l1', 'Card 1', 30.0, 3.0, 2, now() - interval '2 days'),
- ('ee111111-0000-4000-8000-000000000002', 'aa111111-0000-4000-8000-000000000001', 'c2', 'cc444444-0000-4000-8000-000000000002', 'card', 'l1', 'Card 2', 20.0, 4.0, 2, now() - interval '3 days')
+insert into public.review_items (id, user_id, content_id, content_type, lesson_id, title, stability, difficulty, last_reviewed_at) values
+ ('ee111111-0000-4000-8000-000000000001', 'aa111111-0000-4000-8000-000000000001', 'cc444444-0000-4000-8000-000000000001', 'concept', 'l1', 'Card 1', 30.0, 3.0, now() - interval '2 days'),
+ ('ee111111-0000-4000-8000-000000000002', 'aa111111-0000-4000-8000-000000000001', 'cc444444-0000-4000-8000-000000000002', 'concept', 'l1', 'Card 2', 20.0, 4.0, now() - interval '3 days')
 on conflict (id) do nothing;
 
 -- 12. Authenticate as High Performer and evaluate readiness
@@ -229,4 +254,3 @@ select ok(
 );
 
 rollback;
-

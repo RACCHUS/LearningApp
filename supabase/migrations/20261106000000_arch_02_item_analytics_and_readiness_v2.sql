@@ -475,7 +475,7 @@ BEGIN
   )
   WITH node_core_concepts AS (
     SELECT
-      cnc.concept_id::UUID AS cid,
+      cnc.concept_id AS cid,
       MAX(COALESCE(cnc.weight, 1.0))::NUMERIC AS max_w
     FROM public.curriculum_nodes cn
     JOIN public.curriculum_node_concepts cnc ON cnc.curriculum_node_id = cn.id
@@ -485,7 +485,7 @@ BEGIN
   )
   SELECT
     ncc.cid,
-    COALESCE(kc.name, kc.key, 'Concept ' || SUBSTRING(ncc.cid::TEXT FROM 1 FOR 8)),
+    COALESCE(kc.name, kc.slug, 'Concept ' || SUBSTRING(ncc.cid::TEXT FROM 1 FOR 8)),
     ncc.max_w,
     CASE
       WHEN ucs.weighted_total > 0 THEN (ucs.weighted_correct / ucs.weighted_total)::NUMERIC
@@ -513,12 +513,12 @@ BEGIN
     0.0 -- Computed below
   FROM node_core_concepts ncc
   LEFT JOIN public.knowledge_concepts kc ON kc.id = ncc.cid
-  LEFT JOIN public.user_concept_state ucs ON ucs.concept_id = ncc.cid::TEXT AND ucs.user_id = v_user_id
+  LEFT JOIN public.user_concept_state ucs ON ucs.concept_id = ncc.cid AND ucs.user_id = v_user_id
   LEFT JOIN LATERAL (
     SELECT r.stability, r.last_reviewed_at
     FROM public.review_items r
     WHERE r.user_id = v_user_id
-      AND (r.concept_id = ncc.cid::TEXT OR r.content_id = ncc.cid::TEXT)
+      AND r.content_id = ncc.cid::TEXT
       AND r.stability IS NOT NULL
     ORDER BY r.last_reviewed_at DESC NULLS LAST
     LIMIT 1
@@ -631,4 +631,3 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_target_readiness_v2(UUID, TIMESTAMPTZ) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_target_readiness_v2(UUID, TIMESTAMPTZ) TO authenticated, service_role;
-
