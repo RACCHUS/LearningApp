@@ -1,42 +1,40 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/services/notifications/web_notification_stub.dart'
+    if (dart.library.js_interop) 'package:learning_pwa/services/notifications/web_notification_web.dart';
 
+/// Standard Web Notification service that replaces deprecated Firebase FCM dependencies (ARCH-8).
+///
+/// Uses the browser's native Notification API on web and provides in-app
+/// SnackBar alerts as fallbacks across all platforms.
 class PushNotificationService {
-  static final PushNotificationService _instance = PushNotificationService._internal();
+  static final PushNotificationService _instance =
+      PushNotificationService._internal();
   factory PushNotificationService() => _instance;
   PushNotificationService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   bool _initialized = false;
 
-  // Global key for accessing ScaffoldMessenger without context
+  /// Global key for accessing ScaffoldMessenger without a direct BuildContext
   static GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey;
 
   Future<void> init() async {
     if (_initialized) return;
-    await _messaging.setAutoInitEnabled(true);
-
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _handleForegroundNotification(message);
-    });
-
     _initialized = true;
   }
 
+  /// Requests notification permission from the browser.
   Future<bool> requestPermission() async {
-    final settings = await _messaging.requestPermission();
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+    return await requestWebNotificationPermission();
   }
 
-  /// Handle push notifications received while app is in foreground
-  void _handleForegroundNotification(RemoteMessage message) {
-    debugPrint('Push notification received: ${message.notification?.title}');
+  /// Whether notification permission has been granted.
+  bool get hasPermission => hasWebNotificationPermission();
 
-    final notification = message.notification;
-    if (notification == null) return;
+  /// Displays a notification using browser notifications if granted,
+  /// with an in-app SnackBar fallback.
+  void showNotification(String title, {String? body}) {
+    showWebNotification(title, body);
 
-    // Show in-app snackbar notification
     final messenger = scaffoldMessengerKey?.currentState;
     if (messenger != null) {
       messenger.showSnackBar(
@@ -46,14 +44,13 @@ class PushNotificationService {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                notification.title ?? 'Notification',
+                title,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              if (notification.body != null)
-                Text(notification.body!),
+              if (body != null) Text(body),
             ],
           ),
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
             label: 'Dismiss',
@@ -66,15 +63,8 @@ class PushNotificationService {
     }
   }
 
-  Future<String?> getToken() async {
-    return await _messaging.getToken();
-  }
-
-  Future<void> subscribeToTopic(String topic) async {
-    await _messaging.subscribeToTopic(topic);
-  }
-
-  Future<void> unsubscribeFromTopic(String topic) async {
-    await _messaging.unsubscribeFromTopic(topic);
-  }
+  // Deprecated FCM compatibility stubs to maintain interface stability.
+  Future<String?> getToken() async => null;
+  Future<void> subscribeToTopic(String topic) async {}
+  Future<void> unsubscribeFromTopic(String topic) async {}
 }
