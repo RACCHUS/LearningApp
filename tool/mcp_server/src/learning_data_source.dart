@@ -131,23 +131,36 @@ class LearningDataSource {
   }) async {
     final results = <Map<String, dynamic>>[];
 
-    // 1. If database connected, query learning_targets table
+    // 1. If database connected, query unified search_catalog RPC or learning_targets table
     if (hasDatabase) {
-      final queryParams = <String, String>{
-        'select': 'id,slug,title,description,category,issuer,created_at',
-        'limit': '$limit',
-      };
-      if (category != null && category.isNotEmpty) {
-        queryParams['category'] = 'eq.$category';
-      }
-      if (query != null && query.isNotEmpty) {
-        queryParams['title'] = 'ilike.*$query*';
-      }
-      final dbResults = await _getTable('learning_targets', queryParams: queryParams);
-      if (dbResults is List) {
-        for (final item in dbResults) {
+      final rpcRes = await _postRpc('search_catalog', {
+        'p_query': query,
+        'p_category': category,
+        'p_limit': limit,
+      });
+      if (rpcRes is List) {
+        for (final item in rpcRes) {
           if (item is Map) {
             results.add(item.cast<String, dynamic>());
+          }
+        }
+      } else {
+        final queryParams = <String, String>{
+          'select': 'id,slug,title,description,category,issuer,created_at',
+          'limit': '$limit',
+        };
+        if (category != null && category.isNotEmpty) {
+          queryParams['category'] = 'eq.$category';
+        }
+        if (query != null && query.isNotEmpty) {
+          queryParams['title'] = 'ilike.*$query*';
+        }
+        final dbResults = await _getTable('learning_targets', queryParams: queryParams);
+        if (dbResults is List) {
+          for (final item in dbResults) {
+            if (item is Map) {
+              results.add(item.cast<String, dynamic>());
+            }
           }
         }
       }
