@@ -229,6 +229,18 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     }
   }
 
+  Future<void> updateScopeConfig(
+    String contextId,
+    Map<String, dynamic> scopeConfig,
+  ) async {
+    try {
+      await _service?.updateScopeConfig(contextId, scopeConfig);
+      await load();
+    } catch (e) {
+      debugPrint('⚠️ Could not update scope config: $e');
+    }
+  }
+
   Future<void> clearActive() async {
     state = state.copyWith(activeId: '');
     try {

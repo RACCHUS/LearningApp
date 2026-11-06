@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/models/daily_plan.dart';
 import 'package:learning_pwa/models/settings_model.dart';
+import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
@@ -429,6 +431,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: _setDailyGoalLater,
                 icon: const Icon(Icons.schedule),
                 label: const Text('Set later / use default'),
+              ),
+            ),
+
+            const Divider(height: 32),
+
+            ListTile(
+              title: const Text('Review Emphasis'),
+              subtitle: Text(
+                _settings.reviewEmphasis == ReviewEmphasis.balanced
+                    ? 'Balanced: Spaces reviews and new lessons together'
+                    : _settings.reviewEmphasis == ReviewEmphasis.prioritiseReviews
+                        ? 'Prioritise Reviews: Clears due reviews before new lessons'
+                        : 'Prioritise New Material: Focuses on forward lesson progress',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SegmentedButton<ReviewEmphasis>(
+                segments: const [
+                  ButtonSegment(
+                    value: ReviewEmphasis.balanced,
+                    label: Text('Balanced'),
+                    icon: Icon(Icons.balance),
+                  ),
+                  ButtonSegment(
+                    value: ReviewEmphasis.prioritiseReviews,
+                    label: Text('Reviews'),
+                    icon: Icon(Icons.replay),
+                  ),
+                  ButtonSegment(
+                    value: ReviewEmphasis.prioritiseNew,
+                    label: Text('New Lessons'),
+                    icon: Icon(Icons.arrow_forward),
+                  ),
+                ],
+                selected: {_settings.reviewEmphasis},
+                onSelectionChanged: (newSelection) async {
+                  final val = newSelection.first;
+                  setState(() {
+                    _settings.reviewEmphasis = val;
+                  });
+                  await ref.read(reviewEmphasisProvider.notifier).setEmphasis(val);
+                  await _saveSettings();
+                },
               ),
             ),
 

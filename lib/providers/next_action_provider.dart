@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
+import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/services/course_service.dart';
@@ -406,7 +407,14 @@ final nextActionProvider = FutureProvider<NextAction>((ref) async {
   try {
     final snapshot =
         await ref.watch(contextSnapshotResolverProvider).resolve(active);
-    return engine.resolve(contexts: state.contexts, active: snapshot);
+    final emphasis = ref.watch(reviewEmphasisProvider);
+    final dailyPlan = await ref.watch(dailyPlanProvider.future);
+    return engine.resolve(
+      contexts: state.contexts,
+      active: snapshot,
+      reviewEmphasis: emphasis,
+      dailyPlan: dailyPlan,
+    );
   } catch (e, stack) {
     debugPrint('❌ Next action resolution failed: $e\n$stack');
     // Never leave Learn without an action: browsing is always valid.

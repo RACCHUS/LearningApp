@@ -1,4 +1,6 @@
+import 'package:learning_pwa/models/daily_plan.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/services/daily_plan_service.dart';
 
 /// What the learner would actually do next.
 ///
@@ -131,6 +133,26 @@ class ReinforceConcepts extends NextAction {
   String get rationale => 'You missed these last time.';
 }
 
+/// Spaced reviews elevated to primary action based on learner policy ([ReviewEmphasis]),
+/// review backlog debt, or approaching exam consolidation.
+///
+/// Preserves forward continuity by offering [forwardActivity] as the secondary action.
+class PrioritizedReview extends NextAction {
+  final ReviewActivity activity;
+  final LearningActivity? forwardActivity;
+  final String? customRationale;
+
+  const PrioritizedReview({
+    required this.activity,
+    this.forwardActivity,
+    this.customRationale,
+  });
+
+  @override
+  String get rationale =>
+      customRationale ?? 'Reviews prioritized to protect retention.';
+}
+
 class StartActivity extends NextAction {
   final LearningActivity activity;
   const StartActivity({required this.activity});
@@ -228,12 +250,18 @@ const int kReinforcementThreshold = 3;
 
 /// Resolves the single primary action for the Learn screen.
 ///
-/// Precedence is fixed and documented in `UI_ARCHITECTURE_LOCKED.md` §5.2.
+/// Precedence is documented in `UI_ARCHITECTURE_LOCKED.md` §5.2 and ARCH-review Phase 1.
 /// Two invariants are load-bearing:
 ///
-/// 1. Review never outranks forward progress while material remains (A1).
+/// 1. Review precedence respects learner policy ([ReviewEmphasis]):
+///    - `prioritiseReviews`: reviews outrank new material whenever any items are due.
+///    - `balanced` (default): forward progress leads, unless due backlog reaches
+///      [kBalancedBacklogReviewThreshold] or an approaching exam mandates consolidation.
+///    - `prioritiseNew`: forward progress always leads while material remains.
 /// 2. No state is reachable-but-terminal — every result offers a way onward
 ///    that is not a repeat of itself (§1.6).
+const int kBalancedBacklogReviewThreshold = DailyPlanService.defaultBalancedBacklogThreshold;
+
 class NextActionEngine {
   const NextActionEngine();
 
@@ -241,6 +269,8 @@ class NextActionEngine {
     required List<LearningContext> contexts,
     ContextSnapshot? active,
     bool catalogEmpty = false,
+    ReviewEmphasis reviewEmphasis = ReviewEmphasis.balanced,
+    DailyPlan? dailyPlan,
   }) {
     final live = contexts.where((c) => !c.isArchived).toList();
 
@@ -267,14 +297,46 @@ class NextActionEngine {
       );
     }
 
-    // 4 — forward progress. Study sets always land here: practice is
-    // repeatable, so a studySet context never runs out of material.
+    // 4 — review policy and forward progress.
     final next = active.nextActivity;
+    final dueCount = active.dueCount;
+
+    if (next != null && dueCount > 0) {
+      final shouldPrioritizeReview = switch (reviewEmphasis) {
+        ReviewEmphasis.prioritiseReviews => true,
+        ReviewEmphasis.balanced =>
+          dueCount >= kBalancedBacklogReviewThreshold ||
+              (dailyPlan?.isReviewUrgent ?? false),
+        ReviewEmphasis.prioritiseNew => false,
+      };
+
+      if (shouldPrioritizeReview) {
+        final rationale = dailyPlan != null &&
+                dailyPlan.isReviewUrgent &&
+                dailyPlan.daysUntilExam != null &&
+                dailyPlan.daysUntilExam! <= DailyPlanService.examConsolidationWindowDays
+            ? (dailyPlan.daysUntilExam == 0
+                ? 'Exam is today: review key concepts first.'
+                : 'Exam in ${dailyPlan.daysUntilExam} days: consolidation prioritized.')
+            : (reviewEmphasis == ReviewEmphasis.prioritiseReviews
+                ? 'Reviews prioritized before new material.'
+                : 'Review backlog needs attention.');
+
+        return PrioritizedReview(
+          activity: ReviewActivity(conceptIds: active.dueConceptIds),
+          forwardActivity: next,
+          customRationale: rationale,
+        );
+      }
+    }
+
+    // 5 — forward progress. Study sets always land here: practice is
+    // repeatable, so a studySet context never runs out of material.
     if (next != null) {
       return StartActivity(activity: next);
     }
 
-    // 5/6 — context exhausted. The forward offer appears either way; only its
+    // 6 — context exhausted. The forward offer appears either way; only its
     // slot changes. Gating it on dueCount would hide it forever (C1).
     final offer = active.forwardOffer ?? ForwardOffer.browse;
     if (active.dueCount > 0) {
@@ -310,9 +372,11 @@ class NextActionEngine {
 
   /// Whether the secondary review prompt renders beneath the primary action.
   ///
-  /// Suppressed when review is already the primary action (ReviewOnly or ReinforceConcepts).
+  /// Suppressed when review is already the primary action (ReviewOnly, ReinforceConcepts, or PrioritizedReview).
   bool showSecondaryReviewPrompt(NextAction action, int dueCount) {
     if (dueCount <= 0) return false;
-    return action is! ReviewOnly && action is! ReinforceConcepts;
+    return action is! ReviewOnly &&
+        action is! ReinforceConcepts &&
+        action is! PrioritizedReview;
   }
 }
