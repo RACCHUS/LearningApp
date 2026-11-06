@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// The three persistent destinations remain Learn, Library, and Progress.
@@ -15,11 +16,16 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  static const _destinations = <_Destination>[
-    _Destination('Learn', Icons.school_outlined, Icons.school, '/learn'),
-    _Destination('Library', Icons.grid_view_outlined, Icons.grid_view, '/library'),
-    _Destination('Progress', Icons.insights_outlined, Icons.insights, '/progress'),
-  ];
+  static const _routes = ['/learn', '/library', '/progress'];
+
+  List<_Destination> _destinations(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _Destination(l10n?.navLearn ?? 'Learn', Icons.school_outlined, Icons.school, '/learn'),
+      _Destination(l10n?.navLibrary ?? 'Library', Icons.grid_view_outlined, Icons.grid_view, '/library'),
+      _Destination(l10n?.navProgress ?? 'Progress', Icons.insights_outlined, Icons.insights, '/progress'),
+    ];
+  }
 
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
@@ -35,12 +41,12 @@ class _AppShellState extends State<AppShell> {
   int _indexFor(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     final index =
-        _destinations.indexWhere((d) => location.startsWith(d.route));
+        _routes.indexWhere((r) => location.startsWith(r));
     return index < 0 ? 0 : index;
   }
 
   void _onSelect(BuildContext context, int index) {
-    final target = _destinations[index].route;
+    final target = _routes[index];
     if (GoRouterState.of(context).uri.path != target) {
       context.go(target);
     }
@@ -60,7 +66,8 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  Widget _railLeading(bool expanded) {
+  Widget _railLeading(BuildContext context, bool expanded) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: DesignTokens.space3),
       child: Column(
@@ -89,10 +96,10 @@ class _AppShellState extends State<AppShell> {
                   onSubmitted: (_) => _searchLibrary(),
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Search library',
+                    hintText: l10n?.searchPlaceholder ?? 'Search library',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: IconButton(
-                      tooltip: 'Search learning library',
+                      tooltip: l10n?.actionSearch ?? 'Search learning library',
                       icon: const Icon(Icons.arrow_forward, size: 18),
                       onPressed: _searchLibrary,
                     ),
@@ -104,7 +111,7 @@ class _AppShellState extends State<AppShell> {
           else
             IconButton(
               key: const Key('sidebar-open-search'),
-              tooltip: 'Search learning library',
+              tooltip: l10n?.actionSearch ?? 'Search learning library',
               icon: const Icon(Icons.search),
               onPressed: _expandAndFocus,
             ),
@@ -117,6 +124,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final index = _indexFor(context);
+    final destinations = _destinations(context);
 
     if (width >= DesignTokens.breakpointTablet) {
       final expanded =
@@ -131,10 +139,10 @@ class _AppShellState extends State<AppShell> {
               labelType: expanded
                   ? NavigationRailLabelType.none
                   : NavigationRailLabelType.all,
-              leading: _railLeading(expanded),
+              leading: _railLeading(context, expanded),
               onDestinationSelected: (i) => _onSelect(context, i),
               destinations: [
-                for (final d in _destinations)
+                for (final d in destinations)
                   NavigationRailDestination(
                     icon: Icon(d.icon),
                     selectedIcon: Icon(d.selectedIcon),
@@ -155,7 +163,7 @@ class _AppShellState extends State<AppShell> {
         selectedIndex: index,
         onDestinationSelected: (i) => _onSelect(context, i),
         destinations: [
-          for (final d in _destinations)
+          for (final d in destinations)
             NavigationDestination(
               icon: Icon(d.icon),
               selectedIcon: Icon(d.selectedIcon),

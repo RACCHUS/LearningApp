@@ -17,6 +17,7 @@ import 'package:learning_pwa/services/hands_free_settings_service.dart';
 import 'package:learning_pwa/providers/app_initialization_provider.dart';
 import 'package:learning_pwa/core/errors/global_error_handler.dart';
 import 'package:learning_pwa/core/logging/error_reporting_service.dart';
+import 'package:learning_pwa/l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -145,6 +146,8 @@ Future<void> main() async {
     // Show error app instead of crashing
     runApp(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: Column(
@@ -245,6 +248,8 @@ class _LearningAppState extends ConsumerState<LearningApp> {
       darkTheme: AppTheme.darkTheme(),
       themeMode: themeMode,
       routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }

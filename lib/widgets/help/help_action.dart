@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/widgets/help/help_center_sheet.dart';
 
 class HelpAction extends StatelessWidget {
@@ -6,12 +7,13 @@ class HelpAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final helpLabel = AppLocalizations.of(context)?.actionHelp ?? 'Help';
     return Semantics(
       button: true,
-      label: 'Help',
+      label: helpLabel,
       child: IconButton(
         key: const Key('help-action'),
-        tooltip: 'Help',
+        tooltip: helpLabel,
         onPressed: () => showHelpCenter(context),
         icon: const Icon(Icons.help_outline),
       ),

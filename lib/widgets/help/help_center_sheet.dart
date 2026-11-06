@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/data/help_topics.dart';
+import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/models/help_topic.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/help_search_service.dart';
@@ -181,6 +182,7 @@ class _HelpHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         DesignTokens.space4,
@@ -192,7 +194,7 @@ class _HelpHeader extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
-              'Help',
+              l10n?.actionHelp ?? 'Help',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -209,7 +211,7 @@ class _HelpHeader extends ConsumerWidget {
           ),
           IconButton(
             key: const Key('help-close'),
-            tooltip: 'Close help',
+            tooltip: l10n != null ? l10n.actionClose : 'Close help',
             onPressed: onClose,
             icon: const Icon(Icons.close),
           ),
