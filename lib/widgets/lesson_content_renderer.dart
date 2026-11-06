@@ -68,7 +68,8 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
     // Reset state when content or presentationSeed changes
     if (oldWidget.content != widget.content ||
         oldWidget.presentationSeed != widget.presentationSeed) {
-      final previousOrder = (oldWidget.content.id == widget.content.id &&
+      final previousOrder =
+          (oldWidget.content.id == widget.content.id &&
               _presentationOrder.isNotEmpty)
           ? List<int>.from(_presentationOrder)
           : null;
@@ -119,6 +120,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
         options,
         presentationSeed: _presentationSeed,
         shuffle: true,
+        avoidOrder: previousOrder,
       );
     } else {
       _presentationOrder = const [];
@@ -140,8 +142,9 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
 
   /// Retries the current question with a fresh per-attempt nonce and option permutation.
   void retryQuestion() {
-    final previousOrder =
-        _presentationOrder.isNotEmpty ? List<int>.from(_presentationOrder) : null;
+    final previousOrder = _presentationOrder.isNotEmpty
+        ? List<int>.from(_presentationOrder)
+        : null;
     setState(() {
       final content = widget.content;
       final options = content is QuestionContent ? content.options : null;
@@ -158,6 +161,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
           options,
           presentationSeed: _presentationSeed,
           shuffle: true,
+          avoidOrder: previousOrder,
         );
       }
       selectedMcq = null;
@@ -177,8 +181,9 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
       return content.type;
     }
     if (content.options.length == 2) {
-      final normalized =
-          content.options.map((o) => o.toLowerCase().trim()).toSet();
+      final normalized = content.options
+          .map((o) => o.toLowerCase().trim())
+          .toSet();
       if (normalized.contains('true') && normalized.contains('false')) {
         return 'true_false';
       }
@@ -211,7 +216,9 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
         }
         break;
       case 'short_answer':
-        final result = VoiceInputHandler.handleShortAnswerVoiceInput(voiceInput);
+        final result = VoiceInputHandler.handleShortAnswerVoiceInput(
+          voiceInput,
+        );
         setState(() {
           shortAnswerController.text = result;
         });

@@ -85,12 +85,7 @@ void main() {
     });
 
     test('should recognize option variants', () {
-      final testCases = [
-        'option a',
-        'option b',
-        'option c',
-        'option d',
-      ];
+      final testCases = ['option a', 'option b', 'option c', 'option d'];
 
       for (final testCase in testCases) {
         final command = VoiceCommandRouter.parseContextAwareCommand(
@@ -142,12 +137,7 @@ void main() {
     });
 
     test('should recognize choice indicators', () {
-      final testCases = [
-        'choice a',
-        'choice b',
-        'choice c',
-        'choice d',
-      ];
+      final testCases = ['choice a', 'choice b', 'choice c', 'choice d'];
 
       for (final testCase in testCases) {
         final command = VoiceCommandRouter.parseContextAwareCommand(
@@ -217,20 +207,22 @@ void main() {
           context: 'mcq',
         );
 
-        expect(command, isNotNull,
-            reason: 'Should parse homophone: ${entry.key}');
+        expect(
+          command,
+          isNotNull,
+          reason: 'Should parse homophone: ${entry.key}',
+        );
         expect(command!.type, VoiceCommandType.answer);
-        expect(command.value, entry.value,
-            reason: '${entry.key} should map to ${entry.value}');
+        expect(
+          command.value,
+          entry.value,
+          reason: '${entry.key} should map to ${entry.value}',
+        );
       }
     });
 
     test('should recognize standalone unambiguous homophones', () {
-      final testCases = {
-        'bee': 'B',
-        'sea': 'C',
-        'dee': 'D',
-      };
+      final testCases = {'bee': 'B', 'sea': 'C', 'dee': 'D'};
 
       for (final entry in testCases.entries) {
         final command = VoiceCommandRouter.parseContextAwareCommand(
@@ -238,8 +230,11 @@ void main() {
           context: 'mcq',
         );
 
-        expect(command, isNotNull,
-            reason: 'Should parse standalone: ${entry.key}');
+        expect(
+          command,
+          isNotNull,
+          reason: 'Should parse standalone: ${entry.key}',
+        );
         expect(command!.type, VoiceCommandType.answer);
         expect(command.value, entry.value);
       }
@@ -265,12 +260,7 @@ void main() {
     });
 
     test('should recognize answer patterns', () {
-      final testCases = [
-        'answer a',
-        'answer b',
-        'answer c',
-        'answer d',
-      ];
+      final testCases = ['answer a', 'answer b', 'answer c', 'answer d'];
 
       for (final testCase in testCases) {
         final command = VoiceCommandRouter.parseContextAwareCommand(
@@ -445,7 +435,7 @@ void main() {
         'previous',
         'pause',
         'stop',
-        'repeat'
+        'repeat',
       ];
 
       for (final navCommand in navigationCommands) {
@@ -698,14 +688,34 @@ void main() {
     });
 
     test('should handle numbers in MCQ context', () {
-      final command = VoiceCommandRouter.parseContextAwareCommand(
-        '1',
+      final validNumericCases = {
+        '1': 'A',
+        '2': 'B',
+        '3': 'C',
+        '4': 'D',
+        'number one': 'A',
+        'number two': 'B',
+        'number three': 'C',
+        'number four': 'D',
+      };
+
+      for (final entry in validNumericCases.entries) {
+        final command = VoiceCommandRouter.parseContextAwareCommand(
+          entry.key,
+          context: 'mcq',
+        );
+        expect(command, isNotNull, reason: 'Should parse: ${entry.key}');
+        expect(command!.type, VoiceCommandType.answer);
+        expect(command.value, equals(entry.value));
+      }
+
+      // Out-of-range numbers should not be recognized as MCQ answers (only 1-4 / A-D)
+      final outOfRange = VoiceCommandRouter.parseContextAwareCommand(
+        '5',
         context: 'mcq',
       );
-
-      // Numbers should not be recognized as MCQ answers (only A-D)
-      if (command != null && command.type == VoiceCommandType.answer) {
-        expect(command.value, isNot(anyOf('A', 'B', 'C', 'D')));
+      if (outOfRange != null && outOfRange.type == VoiceCommandType.answer) {
+        expect(outOfRange.value, isNot(anyOf('A', 'B', 'C', 'D')));
       }
     });
   });

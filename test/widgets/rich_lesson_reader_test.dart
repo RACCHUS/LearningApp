@@ -20,7 +20,8 @@ void main() {
     final testLesson = Lesson(
       id: 'lesson-crypto-1',
       title: 'Public Key Cryptography & PKI',
-      description: 'Asymmetric cryptography architectures and certificate lifecycles.',
+      description:
+          'Asymmetric cryptography architectures and certificate lifecycles.',
       tags: ['security', 'cryptography'],
       createdAt: now,
       updatedAt: now,
@@ -36,7 +37,8 @@ void main() {
       fieldId: 'field-cs',
       slug: 'rsa-cryptography',
       name: 'RSA Algorithm',
-      shortDefinition: 'Asymmetric public key algorithm based on prime factorization',
+      shortDefinition:
+          'Asymmetric public key algorithm based on prime factorization',
       status: KnowledgeConceptStatus.active,
       aliases: ['RSA'],
       createdAt: now,
@@ -49,7 +51,10 @@ void main() {
         lessonId: 'lesson-crypto-1',
         sortOrder: 1,
         blockType: LessonBlockType.markdown,
-        content: {'body': '### Introduction\nPublic-key cryptography uses mathematically linked keypairs.'},
+        content: {
+          'body':
+              '### Introduction\nPublic-key cryptography uses mathematically linked keypairs.',
+        },
         createdAt: now,
         updatedAt: now,
       ),
@@ -102,7 +107,8 @@ void main() {
         content: {
           'name': 'RSA Encryption Congruence',
           'latex': 'c \\equiv m^e \\pmod{n}',
-          'explanation': 'Ciphertext c is calculated by raising plaintext m to public exponent e modulo n.',
+          'explanation':
+              'Ciphertext c is calculated by raising plaintext m to public exponent e modulo n.',
         },
         createdAt: now,
         updatedAt: now,
@@ -113,10 +119,16 @@ void main() {
         sortOrder: 6,
         blockType: LessonBlockType.practicePrompt,
         content: {
-          'prompt': 'Which key is used to decrypt a message encrypted with Alice\'s public key?',
-          'options': ['Bob\'s private key', 'Alice\'s private key', 'The CA master key'],
+          'prompt':
+              'Which key is used to decrypt a message encrypted with Alice\'s public key?',
+          'options': [
+            'Bob\'s private key',
+            'Alice\'s private key',
+            'The CA master key',
+          ],
           'answer': 'Alice\'s private key',
-          'explanation': 'Only Alice\'s private key can invert operations performed with her public key.',
+          'explanation':
+              'Only Alice\'s private key can invert operations performed with her public key.',
         },
         createdAt: now,
         updatedAt: now,
@@ -150,59 +162,70 @@ void main() {
       provenance: [mapping],
     );
 
-    testWidgets('RichLessonReader renders header, concept badges, and all block types', (tester) async {
-      tester.view.physicalSize = const Size(1200, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'RichLessonReader renders header, concept badges, and all block types',
+      (tester) async {
+        tester.view.physicalSize = const Size(1200, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: RichLessonReader(unifiedLesson: unifiedLesson),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MaterialApp(home: RichLessonReader(unifiedLesson: unifiedLesson)),
+        );
+        await tester.pumpAndSettle();
 
-      // Verify title & concept badge
-      expect(find.text('Public Key Cryptography & PKI'), findsWidgets);
-      expect(find.text('RSA Algorithm'), findsOneWidget);
+        // Verify title & concept badge
+        expect(find.text('Public Key Cryptography & PKI'), findsWidgets);
+        expect(find.text('RSA Algorithm'), findsOneWidget);
 
-      // Verify Blueprint chip in action bar
-      expect(find.text('Blueprint'), findsOneWidget);
+        // Verify Blueprint chip in action bar
+        expect(find.text('Blueprint'), findsOneWidget);
 
-      // Verify Callout block
-      expect(find.byType(CalloutBlockWidget), findsOneWidget);
-      expect(find.text('CompTIA Exam Tip'), findsOneWidget);
+        // Verify Callout block
+        expect(find.byType(CalloutBlockWidget), findsOneWidget);
+        expect(find.text('CompTIA Exam Tip'), findsOneWidget);
 
-      // Verify Code block
-      expect(find.byType(CodeBlockWidget), findsOneWidget);
-      expect(find.text('BASH'), findsOneWidget);
+        // Verify Code block
+        expect(find.byType(CodeBlockWidget), findsOneWidget);
+        expect(find.text('BASH'), findsOneWidget);
 
-      // Verify Table block
-      expect(find.byType(TableBlockWidget), findsOneWidget);
-      expect(find.text('Symmetric vs Asymmetric Comparison'), findsOneWidget);
+        // Verify Table block
+        expect(find.byType(TableBlockWidget), findsOneWidget);
+        expect(find.text('Symmetric vs Asymmetric Comparison'), findsOneWidget);
 
-      // Verify Formula block
-      expect(find.byType(FormulaBlockWidget), findsOneWidget);
-      expect(find.text('RSA Encryption Congruence'), findsOneWidget);
+        // Verify Formula block
+        expect(find.byType(FormulaBlockWidget), findsOneWidget);
+        expect(find.text('RSA Encryption Congruence'), findsOneWidget);
 
-      // Verify Practice Prompt block
-      expect(find.byType(PracticePromptBlockWidget), findsOneWidget);
-      expect(find.text('Which key is used to decrypt a message encrypted with Alice\'s public key?'), findsOneWidget);
-    });
-
-    testWidgets('PracticePromptBlockWidget reveals explanation upon button tap', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PracticePromptBlockWidget(block: blocks[5]),
+        // Verify Practice Prompt block
+        expect(find.byType(PracticePromptBlockWidget), findsOneWidget);
+        expect(
+          find.text(
+            'Which key is used to decrypt a message encrypted with Alice\'s public key?',
           ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('PracticePromptBlockWidget reveals explanation upon button tap', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: PracticePromptBlockWidget(block: blocks[5])),
         ),
       );
       await tester.pumpAndSettle();
 
       // Before tap: Explanation should not be visible
-      expect(find.text('Only Alice\'s private key can invert operations performed with her public key.'), findsNothing);
+      expect(
+        find.text(
+          'Only Alice\'s private key can invert operations performed with her public key.',
+        ),
+        findsNothing,
+      );
       expect(find.text('Check Recall & Answer'), findsOneWidget);
 
       // Tap reveal button
@@ -210,83 +233,92 @@ void main() {
       await tester.pumpAndSettle();
 
       // After tap: Explanation and answer revealed
-      expect(find.text('Only Alice\'s private key can invert operations performed with her public key.'), findsOneWidget);
+      expect(
+        find.text(
+          'Only Alice\'s private key can invert operations performed with her public key.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Hide Explanation'), findsOneWidget);
     });
 
-    testWidgets('RichLessonReader generates a fresh per-attempt nonce and option permutation when retrying or re-presenting an assessment item', (tester) async {
-      tester.view.physicalSize = const Size(1200, 3500);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'RichLessonReader generates a fresh per-attempt nonce and option permutation when retrying or re-presenting an assessment item',
+      (tester) async {
+        tester.view.physicalSize = const Size(1200, 3500);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final assessmentItem = AssessmentItem(
-        id: 'lesson-item-rsa-1',
-        interactionType: AssessmentInteractionType.singleChoice,
-        prompt: 'Which algorithm relies on elliptic curve discrete logarithms?',
-        responseSpec: {
-          'options': ['RSA', 'ECDSA', 'AES-GCM', 'ChaCha20'],
-        },
-        scoringSpec: {
-          'correct_index': 1,
-        },
-        explanation: 'ECDSA is based on the elliptic curve discrete logarithm problem.',
-        createdAt: now,
-        updatedAt: now,
-      );
+        final assessmentItem = AssessmentItem(
+          id: 'lesson-item-rsa-1',
+          interactionType: AssessmentInteractionType.singleChoice,
+          prompt:
+              'Which algorithm relies on elliptic curve discrete logarithms?',
+          responseSpec: {
+            'options': ['RSA', 'ECDSA', 'AES-GCM', 'ChaCha20'],
+          },
+          scoringSpec: {'correct_index': 1},
+          explanation:
+              'ECDSA is based on the elliptic curve discrete logarithm problem.',
+          createdAt: now,
+          updatedAt: now,
+        );
 
-      final lessonWithItems = UnifiedLesson(
-        lesson: testLesson,
-        blocks: [blocks.first],
-        assessmentItems: [assessmentItem],
-        concepts: [concept],
-        provenance: [mapping],
-      );
+        final lessonWithItems = UnifiedLesson(
+          lesson: testLesson,
+          blocks: [blocks.first],
+          assessmentItems: [assessmentItem],
+          concepts: [concept],
+          provenance: [mapping],
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: RichLessonReader(unifiedLesson: lessonWithItems),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MaterialApp(home: RichLessonReader(unifiedLesson: lessonWithItems)),
+        );
+        await tester.pumpAndSettle();
 
-      // Open practice evaluation section
-      await tester.tap(find.textContaining('Begin Practice Evaluation'));
-      await tester.pumpAndSettle();
+        // Open practice evaluation section
+        await tester.tap(find.textContaining('Begin Practice Evaluation'));
+        await tester.pumpAndSettle();
 
-      final readerState =
-          tester.state(find.byType(RichLessonReader)) as dynamic;
-      final itemState =
-          tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final readerState =
+            tester.state(find.byType(RichLessonReader)) as dynamic;
+        final itemState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
 
-      final nonce1 = readerState.attemptNonceForItem(assessmentItem.id) as int;
-      final order1 = List<int>.from(itemState.presentationOrder as List<int>);
-      expect(order1.toSet(), equals({0, 1, 2, 3}));
+        final nonce1 =
+            readerState.attemptNonceForItem(assessmentItem.id) as int;
+        final order1 = List<int>.from(itemState.presentationOrder as List<int>);
+        expect(order1.toSet(), equals({0, 1, 2, 3}));
 
-      // Select an option and submit to reveal 'Try Again'
-      await tester.tap(find.text('ECDSA'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Check Answer'));
-      await tester.pumpAndSettle();
+        // Select an option and submit to reveal 'Try Again'
+        await tester.tap(find.text('ECDSA'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Check Answer'));
+        await tester.pumpAndSettle();
 
-      // Retry the item via the 'Try Again' button
-      await tester.tap(find.text('Try Again'));
-      await tester.pumpAndSettle();
+        // Retry the item via the 'Try Again' button
+        await tester.tap(find.text('Try Again'));
+        await tester.pumpAndSettle();
 
-      final nonce2 = readerState.attemptNonceForItem(assessmentItem.id) as int;
-      final order2 = List<int>.from(itemState.presentationOrder as List<int>);
-      expect(nonce2, isNot(equals(nonce1)));
-      expect(order2.toSet(), equals({0, 1, 2, 3}));
-      expect(order2, isNot(equals(order1)));
+        final nonce2 =
+            readerState.attemptNonceForItem(assessmentItem.id) as int;
+        final order2 = List<int>.from(itemState.presentationOrder as List<int>);
+        expect(nonce2, isNot(equals(nonce1)));
+        expect(order2.toSet(), equals({0, 1, 2, 3}));
+        expect(order2, isNot(equals(order1)));
 
-      // Re-present all evaluation items via 'Retry All' and verify another fresh permutation
-      await tester.tap(find.text('Retry All'));
-      await tester.pumpAndSettle();
+        // Re-present all evaluation items via 'Retry All' and verify another fresh permutation
+        await tester.tap(find.text('Retry All'));
+        await tester.pumpAndSettle();
 
-      final nonce3 = readerState.attemptNonceForItem(assessmentItem.id) as int;
-      final order3 = List<int>.from(itemState.presentationOrder as List<int>);
-      expect(nonce3, isNot(equals(nonce2)));
-      expect(order3, isNot(equals(order2)));
-    });
+        final nonce3 =
+            readerState.attemptNonceForItem(assessmentItem.id) as int;
+        final order3 = List<int>.from(itemState.presentationOrder as List<int>);
+        expect(nonce3, isNot(equals(nonce2)));
+        expect(order3, isNot(equals(order2)));
+      },
+    );
   });
 }

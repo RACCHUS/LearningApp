@@ -78,7 +78,8 @@ class _QuestionContentRendererState
     // Reset state when content or presentationSeed changes
     if (oldWidget.content != widget.content ||
         oldWidget.presentationSeed != widget.presentationSeed) {
-      final previousOrder = (oldWidget.content.id == widget.content.id &&
+      final previousOrder =
+          (oldWidget.content.id == widget.content.id &&
               _presentationOrder.isNotEmpty)
           ? List<int>.from(_presentationOrder)
           : null;
@@ -126,6 +127,7 @@ class _QuestionContentRendererState
       options,
       presentationSeed: _presentationSeed,
       shuffle: true,
+      avoidOrder: previousOrder,
     );
   }
 
@@ -144,8 +146,9 @@ class _QuestionContentRendererState
 
   /// Retries the current question with a fresh per-attempt nonce and option permutation.
   void retryQuestion() {
-    final previousOrder =
-        _presentationOrder.isNotEmpty ? List<int>.from(_presentationOrder) : null;
+    final previousOrder = _presentationOrder.isNotEmpty
+        ? List<int>.from(_presentationOrder)
+        : null;
     setState(() {
       _globalAttemptNonce = McqOptions.nextPresentationNonce(
         currentNonce: _attemptNonce,
@@ -159,6 +162,7 @@ class _QuestionContentRendererState
         widget.content.options,
         presentationSeed: _presentationSeed,
         shuffle: true,
+        avoidOrder: previousOrder,
       );
       selectedMcq = null;
       showMcqCorrect = false;
@@ -177,8 +181,9 @@ class _QuestionContentRendererState
       return content.type;
     }
     if (content.options.length == 2) {
-      final normalized =
-          content.options.map((o) => o.toLowerCase().trim()).toSet();
+      final normalized = content.options
+          .map((o) => o.toLowerCase().trim())
+          .toSet();
       if (normalized.contains('true') && normalized.contains('false')) {
         return 'true_false';
       }
@@ -328,7 +333,7 @@ class _QuestionContentRendererState
         if (command.value is String) {
           final slotIndex =
               (command.value as String).toUpperCase().codeUnitAt(0) -
-                  65; // A=0, B=1, etc.
+              65; // A=0, B=1, etc.
           if (slotIndex >= 0 && slotIndex < _presentationOrder.length) {
             final canonicalIndex = _presentationOrder[slotIndex];
             setState(() => selectedMcq = canonicalIndex);

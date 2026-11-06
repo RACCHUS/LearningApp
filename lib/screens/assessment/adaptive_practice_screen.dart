@@ -22,10 +22,12 @@ class AdaptivePracticeScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AdaptivePracticeScreen> createState() => _AdaptivePracticeScreenState();
+  ConsumerState<AdaptivePracticeScreen> createState() =>
+      _AdaptivePracticeScreenState();
 }
 
-class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen> {
+class _AdaptivePracticeScreenState
+    extends ConsumerState<AdaptivePracticeScreen> {
   AssessmentItem? _currentItem;
   late int _attemptNonce;
   int _attemptCount = 0;
@@ -44,7 +46,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(adaptivePracticeProvider.notifier).startSession(
+      ref
+          .read(adaptivePracticeProvider.notifier)
+          .startSession(
             userId: widget.userId,
             targetVersionId: widget.targetVersionId,
           );
@@ -111,7 +115,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
   void _onAnswerSubmitted(bool isCorrect, double score) {
     if (_currentItem == null) return;
 
-    ref.read(adaptivePracticeProvider.notifier).submitResponse(
+    ref
+        .read(adaptivePracticeProvider.notifier)
+        .submitResponse(
           item: _currentItem!,
           userResponse: isCorrect ? 'correct' : 'incorrect',
           isCorrect: isCorrect,
@@ -132,7 +138,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Adaptive Practice Complete',
             style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
@@ -149,7 +157,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -164,12 +174,20 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                     ),
                     Text(
                       'Practice Readiness Baseline',
-                      style: GoogleFonts.inter(fontSize: 12, color: isDark ? Colors.grey[400] : const Color(0xFF64748B)),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.grey[400]
+                            : const Color(0xFF64748B),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Accuracy: ${(state.accuracy * 100).toStringAsFixed(0)}% across ${state.itemCount} items',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -185,7 +203,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Return to Study'),
             ),
@@ -208,7 +228,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
     final readinessPct = state.estimatedReadinessPercentage;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF090D16) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF090D16)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
@@ -217,7 +239,10 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
           children: [
             Text(
               'Adaptive Practice Mode',
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               widget.targetTitle,
@@ -236,12 +261,18 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
             decoration: BoxDecoration(
               color: const Color(0xFF6366F1).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.auto_graph_rounded, size: 16, color: Color(0xFF6366F1)),
+                const Icon(
+                  Icons.auto_graph_rounded,
+                  size: 16,
+                  color: Color(0xFF6366F1),
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '${readinessPct.toStringAsFixed(0)}% Est.',
@@ -262,8 +293,12 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
             // Question Progress Bar
             LinearProgressIndicator(
               value: (state.itemCount / state.maxItems).clamp(0.0, 1.0),
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+              backgroundColor: isDark
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFFE2E8F0),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF6366F1),
+              ),
               minHeight: 3.5,
             ),
             Expanded(
@@ -278,20 +313,28 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                             children: [
                               // Question Count & Dynamic Difficulty Banner
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Adaptive Question ${state.itemCount + 1}',
                                     style: GoogleFonts.outfit(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.grey[200] : const Color(0xFF1E293B),
+                                      color: isDark
+                                          ? Colors.grey[200]
+                                          : const Color(0xFF1E293B),
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                                      color: const Color(
+                                        0xFFF59E0B,
+                                      ).withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -320,7 +363,9 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                             ],
                           )
                         : const Center(
-                            child: Text('No further adaptive items available in pool.'),
+                            child: Text(
+                              'No further adaptive items available in pool.',
+                            ),
                           ),
                   ),
                 ),

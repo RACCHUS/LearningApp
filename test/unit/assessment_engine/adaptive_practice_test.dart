@@ -33,23 +33,27 @@ void main() {
     final advancedItem = AssessmentItem(
       id: 'item-hard',
       interactionType: AssessmentInteractionType.singleChoice,
-      prompt: 'Analyze side-channel timing attack vulnerabilities in RSA implementations.',
+      prompt:
+          'Analyze side-channel timing attack vulnerabilities in RSA implementations.',
       difficulty: 'advanced',
       createdAt: now,
       updatedAt: now,
     );
 
-    test('Initializes session at neutral ability baseline and uncalibrated SE', () {
-      final state = service.initSession(
-        userId: 'usr-123',
-        targetVersionId: 'tv-sy0-701',
-      );
+    test(
+      'Initializes session at neutral ability baseline and uncalibrated SE',
+      () {
+        final state = service.initSession(
+          userId: 'usr-123',
+          targetVersionId: 'tv-sy0-701',
+        );
 
-      expect(state.theta, equals(0.0));
-      expect(state.standardError, equals(1.0));
-      expect(state.itemCount, equals(0));
-      expect(state.isSessionComplete, isFalse);
-    });
+        expect(state.theta, equals(0.0));
+        expect(state.standardError, equals(1.0));
+        expect(state.itemCount, equals(0));
+        expect(state.isSessionComplete, isFalse);
+      },
+    );
 
     test('Correct response increases theta and reduces standard error', () {
       var state = service.initSession(
@@ -124,8 +128,10 @@ void main() {
             interactionType: AssessmentInteractionType.singleChoice,
             prompt: 'Which protocol provides encrypted remote terminal access?',
             difficulty: 'intermediate',
-            options: const ['SSH', 'Telnet', 'FTP', 'HTTP'],
-            correctAnswer: {'index': 0},
+            responseSpec: const {
+              'options': ['SSH', 'Telnet', 'FTP', 'HTTP'],
+            },
+            scoringSpec: const {'correct_index': 0},
             createdAt: now,
             updatedAt: now,
           ),
@@ -134,8 +140,10 @@ void main() {
             interactionType: AssessmentInteractionType.singleChoice,
             prompt: 'Which layer of the OSI model handles routing?',
             difficulty: 'advanced',
-            options: const ['Network', 'Data Link', 'Transport', 'Session'],
-            correctAnswer: {'index': 0},
+            responseSpec: const {
+              'options': ['Network', 'Data Link', 'Transport', 'Session'],
+            },
+            scoringSpec: const {'correct_index': 0},
             createdAt: now,
             updatedAt: now,
           ),
@@ -144,8 +152,10 @@ void main() {
             interactionType: AssessmentInteractionType.singleChoice,
             prompt: 'Which algorithm is an asymmetric cipher?',
             difficulty: 'beginner',
-            options: const ['RSA', 'AES', 'ChaCha20', '3DES'],
-            correctAnswer: {'index': 0},
+            responseSpec: const {
+              'options': ['RSA', 'AES', 'ChaCha20', '3DES'],
+            },
+            scoringSpec: const {'correct_index': 0},
             createdAt: now,
             updatedAt: now,
           ),
@@ -155,25 +165,26 @@ void main() {
           ProviderScope(
             child: MaterialApp(
               home: AdaptivePracticeScreen(
+                userId: 'usr-123',
                 targetVersionId: 'tv-sy0-701',
                 targetTitle: 'Security+ Practice',
-                itemPool: itemPool,
+                candidatePool: itemPool,
               ),
             ),
           ),
         );
         await tester.pumpAndSettle();
 
-        final screenState = tester.state<AdaptivePracticeScreenState>(
-          find.byType(AdaptivePracticeScreen),
-        );
-        var rendererState = tester.state<AssessmentItemRendererState>(
-          find.byType(AssessmentItemRenderer),
-        );
+        final screenState =
+            tester.state(find.byType(AdaptivePracticeScreen)) as dynamic;
+        var rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
 
-        final firstItemId = screenState.currentItem!.id;
-        final firstNonce = screenState.attemptNonce;
-        final firstOrder = List<int>.from(rendererState.presentationOrder);
+        final firstItemId = (screenState.currentItem as AssessmentItem).id;
+        final firstNonce = screenState.attemptNonce as int;
+        final firstOrder = List<int>.from(
+          rendererState.presentationOrder as List<int>,
+        );
         expect(firstOrder.length, 4);
 
         // Retrying or re-presenting the current item must generate a fresh nonce
@@ -181,11 +192,12 @@ void main() {
         screenState.retryCurrentQuestion();
         await tester.pumpAndSettle();
 
-        rendererState = tester.state<AssessmentItemRendererState>(
-          find.byType(AssessmentItemRenderer),
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final retryNonce = screenState.attemptNonce as int;
+        final retryOrder = List<int>.from(
+          rendererState.presentationOrder as List<int>,
         );
-        final retryNonce = screenState.attemptNonce;
-        final retryOrder = List<int>.from(rendererState.presentationOrder);
 
         expect(retryNonce, isNot(equals(firstNonce)));
         expect(
@@ -197,14 +209,15 @@ void main() {
 
         // Re-presenting the same item via presentItem() also advances the nonce
         // and produces a fresh permutation.
-        screenState.presentItem(screenState.currentItem!);
+        screenState.presentItem(screenState.currentItem as AssessmentItem);
         await tester.pumpAndSettle();
 
-        rendererState = tester.state<AssessmentItemRendererState>(
-          find.byType(AssessmentItemRenderer),
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final rePresentedNonce = screenState.attemptNonce as int;
+        final rePresentedOrder = List<int>.from(
+          rendererState.presentationOrder as List<int>,
         );
-        final rePresentedNonce = screenState.attemptNonce;
-        final rePresentedOrder = List<int>.from(rendererState.presentationOrder);
 
         expect(rePresentedNonce, isNot(equals(retryNonce)));
         expect(
@@ -218,21 +231,24 @@ void main() {
         // and never suffer from XOR cancellation across consecutive items.
         rendererState.selectOptionByVoice('Option A');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Submit Answer'));
+        await tester.ensureVisible(find.text('Check Answer'));
+        await tester.tap(find.text('Check Answer'));
         await tester.pumpAndSettle();
 
         expect(find.text('Try Again'), findsOneWidget);
         expect(find.text('Next Question'), findsOneWidget);
 
+        await tester.ensureVisible(find.text('Next Question'));
         await tester.tap(find.text('Next Question'));
         await tester.pumpAndSettle();
 
-        rendererState = tester.state<AssessmentItemRendererState>(
-          find.byType(AssessmentItemRenderer),
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final secondItemId = (screenState.currentItem as AssessmentItem).id;
+        final secondNonce = screenState.attemptNonce as int;
+        final secondOrder = List<int>.from(
+          rendererState.presentationOrder as List<int>,
         );
-        final secondItemId = screenState.currentItem!.id;
-        final secondNonce = screenState.attemptNonce;
-        final secondOrder = List<int>.from(rendererState.presentationOrder);
 
         expect(secondItemId, isNot(equals(firstItemId)));
         expect(secondNonce, isNot(equals(rePresentedNonce)));
@@ -242,25 +258,32 @@ void main() {
         // and permutations are not collapsed by XOR cancellation.
         rendererState.selectOptionByVoice('Option A');
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Submit Answer'));
+        await tester.ensureVisible(find.text('Check Answer'));
+        await tester.tap(find.text('Check Answer'));
         await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Next Question'));
         await tester.tap(find.text('Next Question'));
         await tester.pumpAndSettle();
 
-        rendererState = tester.state<AssessmentItemRendererState>(
-          find.byType(AssessmentItemRenderer),
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final thirdItemId = (screenState.currentItem as AssessmentItem).id;
+        final thirdNonce = screenState.attemptNonce as int;
+        final thirdOrder = List<int>.from(
+          rendererState.presentationOrder as List<int>,
         );
-        final thirdItemId = screenState.currentItem!.id;
-        final thirdNonce = screenState.attemptNonce;
-        final thirdOrder = List<int>.from(rendererState.presentationOrder);
 
         expect(thirdItemId, isNot(equals(secondItemId)));
         expect(thirdNonce, isNot(equals(secondNonce)));
 
-        final allSameBetweenFirstAndSecond =
-            McqOptions.listsEqual(rePresentedOrder, secondOrder);
-        final allSameBetweenSecondAndThird =
-            McqOptions.listsEqual(secondOrder, thirdOrder);
+        final allSameBetweenFirstAndSecond = McqOptions.listsEqual(
+          rePresentedOrder,
+          secondOrder,
+        );
+        final allSameBetweenSecondAndThird = McqOptions.listsEqual(
+          secondOrder,
+          thirdOrder,
+        );
         expect(
           allSameBetweenFirstAndSecond && allSameBetweenSecondAndThird,
           isFalse,
@@ -271,4 +294,3 @@ void main() {
     );
   });
 }
-

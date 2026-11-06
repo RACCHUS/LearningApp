@@ -2,9 +2,14 @@ import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/models/content_types.dart';
 
 class VoiceCommandRouter {
-  static VoiceCommand? parseContextAwareCommand(String text,
-      {String? context}) {
-    final normalizedText = text.toLowerCase().trim();
+  static VoiceCommand? parseContextAwareCommand(
+    String text, {
+    String? context,
+  }) {
+    final normalizedText = text.toLowerCase().trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
 
     // First try standard command parsing for navigation/control commands
     // But exclude ambiguous ordinals that could be MCQ answers when in MCQ context
@@ -15,10 +20,9 @@ class VoiceCommandRouter {
       // let context-aware parsing handle it instead
       final isAmbiguousOrdinal =
           standardCommand.value == NavigationCommand.first ||
-              standardCommand.value == NavigationCommand.last;
-      final isAnswerContext = context == 'mcq' ||
-          context == 'true_false' ||
-          context == 'question';
+          standardCommand.value == NavigationCommand.last;
+      final isAnswerContext =
+          context == 'mcq' || context == 'true_false' || context == 'question';
 
       if (!isAmbiguousOrdinal || !isAnswerContext) {
         return standardCommand;
@@ -27,10 +31,21 @@ class VoiceCommandRouter {
 
     // Then try context-aware parsing for answers
     if (context != null) {
-      final contextCommand =
-          _parseWithContext(normalizedText, text.trim(), context);
+      final contextCommand = _parseWithContext(
+        normalizedText,
+        text.trim(),
+        context,
+      );
       if (contextCommand != null) {
         return contextCommand;
+      }
+      final isAnswerContext =
+          context == 'mcq' ||
+          context == 'true_false' ||
+          context == 'question' ||
+          context == 'short_answer';
+      if (isAnswerContext && standardCommand?.type == VoiceCommandType.answer) {
+        return null;
       }
     }
 
@@ -39,7 +54,10 @@ class VoiceCommandRouter {
   }
 
   static VoiceCommand? _parseWithContext(
-      String normalizedText, String originalText, String context) {
+    String normalizedText,
+    String originalText,
+    String context,
+  ) {
     switch (context) {
       case 'mcq':
         return _parseMcqContext(normalizedText);
@@ -58,6 +76,8 @@ class VoiceCommandRouter {
   }
 
   static VoiceCommand? _parseMcqContext(String text) {
+    if (text.isEmpty) return null;
+
     // Enhanced MCQ parsing with more natural speech patterns
     // Order matters - check longer/more specific patterns first
 
@@ -68,7 +88,7 @@ class VoiceCommandRouter {
       return homophoneAnswer;
     }
 
-    const mcqPatterns = [
+    const mcqPhrasePatterns = [
       // Natural speech patterns (longest first)
       MapEntry('the first one', 'A'),
       MapEntry('the second one', 'B'),
@@ -80,6 +100,66 @@ class VoiceCommandRouter {
       MapEntry('second option', 'B'),
       MapEntry('third option', 'C'),
       MapEntry('fourth option', 'D'),
+
+      // Numeric with "number" prefix
+      MapEntry('number one', 'A'),
+      MapEntry('number two', 'B'),
+      MapEntry('number three', 'C'),
+      MapEntry('number four', 'D'),
+      MapEntry('number 1', 'A'),
+      MapEntry('number 2', 'B'),
+      MapEntry('number 3', 'C'),
+      MapEntry('number 4', 'D'),
+
+      // Numeric with "option" / "choice" / "choose" / "select" / "answer" / "pick"
+      MapEntry('option one', 'A'),
+      MapEntry('option two', 'B'),
+      MapEntry('option three', 'C'),
+      MapEntry('option four', 'D'),
+      MapEntry('option 1', 'A'),
+      MapEntry('option 2', 'B'),
+      MapEntry('option 3', 'C'),
+      MapEntry('option 4', 'D'),
+      MapEntry('choice one', 'A'),
+      MapEntry('choice two', 'B'),
+      MapEntry('choice three', 'C'),
+      MapEntry('choice four', 'D'),
+      MapEntry('choice 1', 'A'),
+      MapEntry('choice 2', 'B'),
+      MapEntry('choice 3', 'C'),
+      MapEntry('choice 4', 'D'),
+      MapEntry('choose one', 'A'),
+      MapEntry('choose two', 'B'),
+      MapEntry('choose three', 'C'),
+      MapEntry('choose four', 'D'),
+      MapEntry('choose 1', 'A'),
+      MapEntry('choose 2', 'B'),
+      MapEntry('choose 3', 'C'),
+      MapEntry('choose 4', 'D'),
+      MapEntry('select one', 'A'),
+      MapEntry('select two', 'B'),
+      MapEntry('select three', 'C'),
+      MapEntry('select four', 'D'),
+      MapEntry('select 1', 'A'),
+      MapEntry('select 2', 'B'),
+      MapEntry('select 3', 'C'),
+      MapEntry('select 4', 'D'),
+      MapEntry('answer one', 'A'),
+      MapEntry('answer two', 'B'),
+      MapEntry('answer three', 'C'),
+      MapEntry('answer four', 'D'),
+      MapEntry('answer 1', 'A'),
+      MapEntry('answer 2', 'B'),
+      MapEntry('answer 3', 'C'),
+      MapEntry('answer 4', 'D'),
+      MapEntry('pick one', 'A'),
+      MapEntry('pick two', 'B'),
+      MapEntry('pick three', 'C'),
+      MapEntry('pick four', 'D'),
+      MapEntry('pick 1', 'A'),
+      MapEntry('pick 2', 'B'),
+      MapEntry('pick 3', 'C'),
+      MapEntry('pick 4', 'D'),
 
       // Letter with option
       MapEntry('option a', 'A'),
@@ -119,19 +199,17 @@ class VoiceCommandRouter {
 
       // Ordinal numbers
       MapEntry('first', 'A'),
+      MapEntry('1st', 'A'),
       MapEntry('second', 'B'),
+      MapEntry('2nd', 'B'),
       MapEntry('third', 'C'),
+      MapEntry('3rd', 'C'),
       MapEntry('fourth', 'D'),
-
-      // Direct letter answers (shortest, last)
-      MapEntry('a', 'A'),
-      MapEntry('b', 'B'),
-      MapEntry('c', 'C'),
-      MapEntry('d', 'D'),
+      MapEntry('4th', 'D'),
     ];
 
-    for (final entry in mcqPatterns) {
-      // Use exact match or word boundary match to avoid substring false positives
+    for (final entry in mcqPhrasePatterns) {
+      // Use exact match or prefix/suffix phrase match to avoid substring false positives
       if (text == entry.key ||
           text.startsWith('${entry.key} ') ||
           text.endsWith(' ${entry.key}')) {
@@ -141,6 +219,32 @@ class VoiceCommandRouter {
           value: entry.value,
         );
       }
+    }
+
+    // Standalone single-token answers (must match the entire utterance so words
+    // like "a" or "one" inside a sentence do not falsely select an option).
+    const standaloneMcqTokens = {
+      'a': 'A',
+      'b': 'B',
+      'c': 'C',
+      'd': 'D',
+      '1': 'A',
+      '2': 'B',
+      '3': 'C',
+      '4': 'D',
+      'one': 'A',
+      'two': 'B',
+      'three': 'C',
+      'four': 'D',
+    };
+
+    final standaloneValue = standaloneMcqTokens[text];
+    if (standaloneValue != null) {
+      return VoiceCommand(
+        type: VoiceCommandType.answer,
+        phrase: text,
+        value: standaloneValue,
+      );
     }
 
     return null;
@@ -157,7 +261,7 @@ class VoiceCommandRouter {
       'select',
       'pick',
       'option',
-      'answer'
+      'answer',
     ];
 
     // First check if text starts with a choice indicator
@@ -193,7 +297,6 @@ class VoiceCommandRouter {
       // "B" homophones
       'bee': 'B',
       'be': 'B', // Only match exact "be" not "be careful"
-
       // "C" homophones
       'sea': 'C',
       // Note: "see" is ambiguous (could be "see the question")
@@ -280,7 +383,9 @@ class VoiceCommandRouter {
   }
 
   static VoiceCommand? _parseShortAnswerContext(
-      String normalizedText, String originalText) {
+    String normalizedText,
+    String originalText,
+  ) {
     // For short answers, we typically want to capture the entire text
     // but filter out command words
     final commandWords = ['next', 'previous', 'repeat', 'pause', 'stop'];
@@ -366,7 +471,7 @@ class VoiceCommandRouter {
           'first',
           'second',
           'third',
-          'fourth'
+          'fourth',
         ];
       case 'true_false':
         return ['true', 'false', 'yes', 'no', 'correct', 'incorrect'];

@@ -39,15 +39,17 @@ class McqQuestionWidget extends StatefulWidget {
 class _McqQuestionWidgetState extends State<McqQuestionWidget> {
   static int _globalAttemptSeed = 0x13579BDF;
   late int _fallbackPresentationSeed;
+  List<int>? _avoidOrder;
 
   int get effectivePresentationSeed =>
       widget.presentationSeed ?? _fallbackPresentationSeed;
 
   List<int> get presentationOrder => McqOptions.computePresentationOrder(
-        widget.content.options,
-        presentationSeed: effectivePresentationSeed,
-        shuffle: widget.shuffleOptions,
-      );
+    widget.content.options,
+    presentationSeed: effectivePresentationSeed,
+    shuffle: widget.shuffleOptions,
+    avoidOrder: _avoidOrder,
+  );
 
   @override
   void initState() {
@@ -57,8 +59,7 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
       options: widget.content.options,
       itemHash: widget.content.id.hashCode,
     );
-    _fallbackPresentationSeed =
-        _globalAttemptSeed ^ widget.content.id.hashCode;
+    _fallbackPresentationSeed = _globalAttemptSeed ^ widget.content.id.hashCode;
   }
 
   @override
@@ -71,12 +72,16 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
         presentationSeed:
             oldWidget.presentationSeed ?? _fallbackPresentationSeed,
         shuffle: oldWidget.shuffleOptions,
+        avoidOrder: _avoidOrder,
       );
+      _avoidOrder = oldWidget.content.id == widget.content.id
+          ? prevOrder
+          : null;
       _globalAttemptSeed = McqOptions.nextPresentationNonce(
         currentNonce: _globalAttemptSeed,
         options: widget.content.options,
         itemHash: widget.content.id.hashCode,
-        previousOrder: prevOrder,
+        previousOrder: _avoidOrder,
       );
       _fallbackPresentationSeed =
           _globalAttemptSeed ^ widget.content.id.hashCode;
@@ -90,6 +95,7 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
     }
     final prevOrder = presentationOrder;
     setState(() {
+      _avoidOrder = prevOrder;
       _globalAttemptSeed = McqOptions.nextPresentationNonce(
         currentNonce: _globalAttemptSeed,
         options: widget.content.options,
@@ -121,27 +127,23 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           correctIndex: widget.content.correctAnswer,
           shuffleOptions: widget.shuffleOptions,
           presentationSeed: effectivePresentationSeed,
+          avoidOrder: _avoidOrder,
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.showCorrect && widget.onRetry != null) ...[
-              OutlinedButton.icon(
-                onPressed: widget.onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Try Again'),
-              ),
-              const SizedBox(width: 12),
-            ],
-            PrimaryButton(
-              label: widget.showCorrect ? 'Next' : 'Submit',
-              onPressed: widget.showCorrect ? widget.onNext : widget.onSubmit,
-              loading: false,
-              icon: null,
-            ),
-          ],
+        PrimaryButton(
+          label: widget.showCorrect ? 'Next' : 'Submit',
+          onPressed: widget.showCorrect ? widget.onNext : widget.onSubmit,
+          loading: false,
+          icon: null,
         ),
+        if (widget.showCorrect && widget.onRetry != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: widget.onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Try Again'),
+          ),
+        ],
         if (widget.showCorrect && widget.selectedIndex != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
