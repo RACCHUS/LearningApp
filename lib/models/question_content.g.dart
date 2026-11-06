@@ -26,6 +26,10 @@ class QuestionContentAdapter extends TypeAdapter<QuestionContent> {
       options: (fields[7] as List).cast<String>(),
       correctAnswer: fields[8] as int,
       explanation: fields[9] as String?,
+      questionType: fields[10] as String?,
+      acceptedAnswers: (fields[11] as List?)?.cast<String>(),
+      gradingMethod: fields[12] as String?,
+      numericTolerance: fields[13] as double?,
       createdAt: fields[4] as DateTime,
       updatedAt: fields[5] as DateTime,
     );
@@ -34,7 +38,7 @@ class QuestionContentAdapter extends TypeAdapter<QuestionContent> {
   @override
   void write(BinaryWriter writer, QuestionContent obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(14)
       ..writeByte(6)
       ..write(obj.questionText)
       ..writeByte(7)
@@ -43,6 +47,14 @@ class QuestionContentAdapter extends TypeAdapter<QuestionContent> {
       ..write(obj.correctAnswer)
       ..writeByte(9)
       ..write(obj.explanation)
+      ..writeByte(10)
+      ..write(obj.questionType)
+      ..writeByte(11)
+      ..write(obj.acceptedAnswers)
+      ..writeByte(12)
+      ..write(obj.gradingMethod)
+      ..writeByte(13)
+      ..write(obj.numericTolerance)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -82,6 +94,12 @@ QuestionContent _$QuestionContentFromJson(Map<String, dynamic> json) =>
           (json['options'] as List<dynamic>).map((e) => e as String).toList(),
       correctAnswer: (json['correctAnswer'] as num).toInt(),
       explanation: json['explanation'] as String?,
+      questionType: json['questionType'] as String?,
+      acceptedAnswers: (json['acceptedAnswers'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      gradingMethod: json['gradingMethod'] as String?,
+      numericTolerance: (json['numericTolerance'] as num?)?.toDouble(),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -97,4 +115,8 @@ Map<String, dynamic> _$QuestionContentToJson(QuestionContent instance) =>
       'options': instance.options,
       'correctAnswer': instance.correctAnswer,
       'explanation': instance.explanation,
+      'questionType': instance.questionType,
+      'acceptedAnswers': instance.acceptedAnswers,
+      'gradingMethod': instance.gradingMethod,
+      'numericTolerance': instance.numericTolerance,
     };

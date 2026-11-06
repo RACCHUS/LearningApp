@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/theme/semantic_colors.dart';
 
 class ShortAnswerField extends StatelessWidget {
   final TextEditingController controller;
@@ -37,7 +38,10 @@ class ShortAnswerField extends StatelessWidget {
             child: Text(
               feedback!,
               style: TextStyle(
-                color: feedback == 'Correct!' ? Colors.green : Colors.red,
+                color: feedback!.startsWith('Correct')
+                    ? Theme.of(context).extension<SemanticColors>()?.success ??
+                        Colors.green.shade800
+                    : Theme.of(context).colorScheme.error,
                 fontWeight: FontWeight.bold,
               ),
             ),

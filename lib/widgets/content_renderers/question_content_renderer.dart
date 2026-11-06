@@ -6,7 +6,7 @@ import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
-import 'package:learning_pwa/utils/math_utils.dart';
+import 'package:learning_pwa/services/assessment/short_answer_grader.dart';
 import 'package:learning_pwa/utils/voice_command_router.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
@@ -93,7 +93,7 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
       });
     }
 
-    switch (widget.content.type) {
+    switch (widget.content.effectiveQuestionType) {
       case 'mcq':
         final presentationOrder = McqOptions.computePresentationOrder(
           widget.content.options,
@@ -163,10 +163,11 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
             // Handle answer changed if needed
           },
           onSubmit: () {
-            final isCorrect = MathUtils.isAnswerCorrect(
+            final grade = ShortAnswerGrader.grade(
+              widget.content,
               shortAnswerController.text,
-              widget.content.options[widget.content.correctAnswer],
             );
+            final isCorrect = grade.isCorrect;
             if (isCorrect) {
               HapticUtils.success();
             } else {
@@ -174,7 +175,7 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
             }
             setState(() {
               showSaCorrect = true;
-              shortAnswerFeedback = isCorrect ? 'Correct!' : 'Incorrect';
+              shortAnswerFeedback = grade.feedback;
             });
           },
           onNext: widget.onNext,
@@ -209,7 +210,7 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
   }
 
   void _processAnswerCommand(VoiceCommand command) {
-    switch (widget.content.type) {
+    switch (widget.content.effectiveQuestionType) {
       case 'mcq':
         if (command.value is String) {
           final slotIndex = command.value.codeUnitAt(0) - 65; // A=0, B=1, etc.
