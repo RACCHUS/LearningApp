@@ -11,11 +11,15 @@ export 'src/models/learning_event.dart';
 export 'src/models/brand_config_core.dart';
 export 'src/models/video_interactive_module.dart';
 export 'src/models/procedural_rubric.dart';
+export 'src/models/content_proposal.dart';
 
 export 'src/algorithms/fsrs_scheduler_core.dart';
 export 'src/algorithms/item_evaluator_core.dart';
 export 'src/algorithms/learning_gain_calculator.dart';
 export 'src/algorithms/procedural_evaluator_core.dart';
+export 'src/algorithms/evidence_scorer_core.dart';
+export 'src/algorithms/proposal_generator_core.dart';
+export 'src/algorithms/coach_recommendation_engine.dart';
 export 'src/validation/manifest_validator_core.dart';
 
 export 'src/video/video_embed_resolver.dart';
