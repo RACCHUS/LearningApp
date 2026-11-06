@@ -418,24 +418,7 @@ AS $$
 DECLARE
   v_user_id UUID;
   v_target_date TIMESTAMPTZ;
-  v_total_core INTEGER := 0;
-  v_assessed_count INTEGER := 0;
-  v_total_weight NUMERIC := 0.0;
-  v_weighted_score_sum NUMERIC := 0.0;
-  v_avg_retrievability NUMERIC := 0.0;
-  v_retrievability_sum NUMERIC := 0.0;
-  v_retrievability_count INTEGER := 0;
-  v_final_score NUMERIC := 0.0;
-  v_band TEXT;
-
-  v_dist_established INTEGER := 0;
-  v_dist_retained INTEGER := 0;
-  v_dist_developing INTEGER := 0;
-  v_dist_reinforce INTEGER := 0;
-  v_dist_unassessed INTEGER := 0;
-
-  v_weakest JSONB := '[]'::jsonb;
-  v_row RECORD;
+  v_result JSONB;
 BEGIN
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
@@ -444,35 +427,6 @@ BEGIN
 
   v_target_date := COALESCE(p_exam_date, NOW());
 
-  -- Temporary table of core concepts mapped to this target version
-  CREATE TEMP TABLE IF NOT EXISTS tmp_target_core_concepts (
-    concept_id UUID PRIMARY KEY,
-    concept_title TEXT,
-    weight NUMERIC,
-    accuracy NUMERIC,
-    evidence_count INTEGER,
-    retrieval_band TEXT,
-    stability DOUBLE PRECISION,
-    last_reviewed_at TIMESTAMPTZ,
-    projected_retrievability NUMERIC,
-    concept_score NUMERIC
-  ) ON COMMIT DROP;
-
-  TRUNCATE tmp_target_core_concepts;
-
-  -- 1. Gather all core concepts mapped to curriculum nodes in this target version
-  INSERT INTO tmp_target_core_concepts (
-    concept_id,
-    concept_title,
-    weight,
-    accuracy,
-    evidence_count,
-    retrieval_band,
-    stability,
-    last_reviewed_at,
-    projected_retrievability,
-    concept_score
-  )
   WITH node_core_concepts AS (
     SELECT
       cnc.concept_id AS cid,
@@ -482,150 +436,141 @@ BEGIN
     WHERE cn.target_version_id = p_target_version_id
       AND cnc.relevance = 'core'
     GROUP BY cnc.concept_id
+  ),
+  concept_details AS (
+    SELECT
+      ncc.cid AS concept_id,
+      COALESCE(kc.name, kc.slug, 'Concept ' || SUBSTRING(ncc.cid::TEXT FROM 1 FOR 8)) AS concept_title,
+      ncc.max_w AS weight,
+      CASE
+        WHEN ucs.weighted_total > 0 THEN (ucs.weighted_correct / ucs.weighted_total)::NUMERIC
+        ELSE 0.0
+      END AS accuracy,
+      COALESCE(ucs.evidence_count, 0) AS evidence_count,
+      COALESCE(ucs.retrieval_band, 'unassessed') AS retrieval_band,
+      ri.stability,
+      ri.last_reviewed_at,
+      CASE
+        WHEN ri.stability IS NOT NULL AND ri.stability > 0 THEN
+          GREATEST(0.0, LEAST(1.0,
+            POWER(
+              1.0 + 19.0 * (
+                GREATEST(0.0, EXTRACT(EPOCH FROM (v_target_date - COALESCE(ri.last_reviewed_at, NOW()))) / 86400.0)
+                / (9.0 * ri.stability)
+              ),
+              -0.5
+            )::NUMERIC
+          ))
+        ELSE NULL
+      END AS projected_retrievability
+    FROM node_core_concepts ncc
+    LEFT JOIN public.knowledge_concepts kc ON kc.id = ncc.cid
+    LEFT JOIN public.user_concept_state ucs ON ucs.concept_id = ncc.cid AND ucs.user_id = v_user_id
+    LEFT JOIN LATERAL (
+      SELECT r.stability, r.last_reviewed_at
+      FROM public.review_items r
+      WHERE r.user_id = v_user_id
+        AND r.content_id = ncc.cid::TEXT
+        AND r.stability IS NOT NULL
+      ORDER BY r.last_reviewed_at DESC NULLS LAST
+      LIMIT 1
+    ) ri ON true
+  ),
+  scored_concepts AS (
+    SELECT
+      cd.*,
+      CASE
+        WHEN cd.evidence_count > 0 OR cd.projected_retrievability IS NOT NULL THEN
+          CASE
+            WHEN cd.projected_retrievability IS NOT NULL THEN
+              (0.60 * cd.projected_retrievability) + (0.40 * cd.accuracy)
+            ELSE
+              cd.accuracy * LEAST(1.0, cd.evidence_count / 5.0)
+          END
+        ELSE 0.0
+      END AS concept_score,
+      CASE
+        WHEN cd.evidence_count > 0 OR cd.projected_retrievability IS NOT NULL THEN 1
+        ELSE 0
+      END AS is_assessed
+    FROM concept_details cd
+  ),
+  aggregates AS (
+    SELECT
+      COUNT(*)::INTEGER AS total_core,
+      COALESCE(SUM(is_assessed), 0)::INTEGER AS assessed_count,
+      COALESCE(SUM(weight), 0.0)::NUMERIC AS total_weight,
+      CASE
+        WHEN COALESCE(SUM(weight), 0.0) > 0 THEN
+          COALESCE(SUM(concept_score * weight), 0.0) / SUM(weight)
+        ELSE 0.0
+      END::NUMERIC AS final_score,
+      COALESCE(
+        AVG(projected_retrievability) FILTER (WHERE projected_retrievability IS NOT NULL),
+        0.0
+      )::NUMERIC AS avg_retrievability,
+      COUNT(*) FILTER (WHERE retrieval_band = 'well_established')::INTEGER AS dist_established,
+      COUNT(*) FILTER (WHERE retrieval_band = 'well_retained')::INTEGER AS dist_retained,
+      COUNT(*) FILTER (WHERE retrieval_band = 'developing')::INTEGER AS dist_developing,
+      COUNT(*) FILTER (WHERE retrieval_band = 'needs_reinforcement')::INTEGER AS dist_reinforce,
+      COUNT(*) FILTER (WHERE retrieval_band NOT IN ('well_established', 'well_retained', 'developing', 'needs_reinforcement'))::INTEGER AS dist_unassessed
+    FROM scored_concepts
+  ),
+  weakest AS (
+    SELECT COALESCE(
+      jsonb_agg(
+        jsonb_build_object(
+          'concept_id', sc.concept_id,
+          'title', sc.concept_title,
+          'score', ROUND(sc.concept_score, 3),
+          'projected_retrievability', CASE WHEN sc.projected_retrievability IS NOT NULL THEN ROUND(sc.projected_retrievability, 3) ELSE NULL END,
+          'evidence_count', sc.evidence_count
+        )
+      ),
+      '[]'::jsonb
+    ) AS weakest_concepts
+    FROM (
+      SELECT *
+      FROM scored_concepts
+      WHERE is_assessed = 1
+      ORDER BY concept_score ASC, weight DESC
+      LIMIT 5
+    ) sc
   )
   SELECT
-    ncc.cid,
-    COALESCE(kc.name, kc.slug, 'Concept ' || SUBSTRING(ncc.cid::TEXT FROM 1 FOR 8)),
-    ncc.max_w,
-    CASE
-      WHEN ucs.weighted_total > 0 THEN (ucs.weighted_correct / ucs.weighted_total)::NUMERIC
-      ELSE 0.0
-    END,
-    COALESCE(ucs.evidence_count, 0),
-    COALESCE(ucs.retrieval_band, 'unassessed'),
-    ri.stability,
-    ri.last_reviewed_at,
-    -- Projected FSRS Retrievability at target exam date:
-    -- R(Δt, S) = (1 + 19 * (Δt / (9 * S))) ^ (-0.5)
-    CASE
-      WHEN ri.stability IS NOT NULL AND ri.stability > 0 THEN
-        GREATEST(0.0, LEAST(1.0,
-          POWER(
-            1.0 + 19.0 * (
-              GREATEST(0.0, EXTRACT(EPOCH FROM (v_target_date - COALESCE(ri.last_reviewed_at, NOW()))) / 86400.0)
-              / (9.0 * ri.stability)
-            ),
-            -0.5
-          )::NUMERIC
-        ))
-      ELSE NULL
-    END,
-    0.0 -- Computed below
-  FROM node_core_concepts ncc
-  LEFT JOIN public.knowledge_concepts kc ON kc.id = ncc.cid
-  LEFT JOIN public.user_concept_state ucs ON ucs.concept_id = ncc.cid AND ucs.user_id = v_user_id
-  LEFT JOIN LATERAL (
-    SELECT r.stability, r.last_reviewed_at
-    FROM public.review_items r
-    WHERE r.user_id = v_user_id
-      AND r.content_id = ncc.cid::TEXT
-      AND r.stability IS NOT NULL
-    ORDER BY r.last_reviewed_at DESC NULLS LAST
-    LIMIT 1
-  ) ri ON true;
-
-  -- 2. Compute individual concept readiness scores
-  FOR v_row IN SELECT * FROM tmp_target_core_concepts LOOP
-    v_total_core := v_total_core + 1;
-    v_total_weight := v_total_weight + v_row.weight;
-
-    -- Update band distributions
-    CASE v_row.retrieval_band
-      WHEN 'well_established' THEN v_dist_established := v_dist_established + 1;
-      WHEN 'well_retained' THEN v_dist_retained := v_dist_retained + 1;
-      WHEN 'developing' THEN v_dist_developing := v_dist_developing + 1;
-      WHEN 'needs_reinforcement' THEN v_dist_reinforce := v_dist_reinforce + 1;
-      ELSE v_dist_unassessed := v_dist_unassessed + 1;
-    END CASE;
-
-    -- Evidence existence check
-    IF v_row.evidence_count > 0 OR v_row.projected_retrievability IS NOT NULL THEN
-      v_assessed_count := v_assessed_count + 1;
-
-      -- FSRS-calibrated synthesis:
-      -- If card retrievability at exam date is available, blend retrievability (60%) with assessment accuracy (40%).
-      -- If only assessment evidence is available, apply evidence confidence discount.
-      IF v_row.projected_retrievability IS NOT NULL THEN
-        v_retrievability_sum := v_retrievability_sum + v_row.projected_retrievability;
-        v_retrievability_count := v_retrievability_count + 1;
-
-        UPDATE tmp_target_core_concepts
-        SET concept_score = (0.60 * v_row.projected_retrievability) + (0.40 * v_row.accuracy)
-        WHERE concept_id = v_row.concept_id;
-      ELSE
-        UPDATE tmp_target_core_concepts
-        SET concept_score = v_row.accuracy * LEAST(1.0, v_row.evidence_count / 5.0)
-        WHERE concept_id = v_row.concept_id;
-      END IF;
-    END IF;
-  END LOOP;
-
-  -- 3. Calculate weighted aggregate readiness score
-  IF v_total_weight > 0 THEN
-    SELECT COALESCE(SUM(concept_score * weight), 0.0) / v_total_weight
-    INTO v_final_score
-    FROM tmp_target_core_concepts;
-  ELSE
-    v_final_score := 0.0;
-  END IF;
-
-  IF v_retrievability_count > 0 THEN
-    v_avg_retrievability := v_retrievability_sum / v_retrievability_count;
-  ELSE
-    v_avg_retrievability := 0.0;
-  END IF;
-
-  -- 4. Calibrated Qualitative Band Assignment
-  -- High confidence: requires both high score and substantial core concept coverage
-  IF v_total_core = 0 OR v_assessed_count = 0 OR (v_assessed_count::NUMERIC / GREATEST(1, v_total_core)) < 0.20 THEN
-    v_band := 'notYetAssessed';
-  ELSIF v_final_score >= 0.85 AND (v_assessed_count::NUMERIC / v_total_core) >= 0.80 THEN
-    v_band := 'strongCoverage';
-  ELSIF v_final_score >= 0.60 AND (v_assessed_count::NUMERIC / v_total_core) >= 0.40 THEN
-    v_band := 'developing';
-  ELSE
-    v_band := 'needsReinforcement';
-  END IF;
-
-  -- 5. Collect up to 5 weakest concepts for focused learner guidance
-  SELECT jsonb_agg(
     jsonb_build_object(
-      'concept_id', concept_id,
-      'title', concept_title,
-      'score', ROUND(concept_score, 3),
-      'projected_retrievability', CASE WHEN projected_retrievability IS NOT NULL THEN ROUND(projected_retrievability, 3) ELSE NULL END,
-      'evidence_count', evidence_count
+      'target_version_id', p_target_version_id,
+      'exam_date', v_target_date,
+      'readiness_score', ROUND(agg.final_score, 4),
+      'readiness_band', (
+        CASE
+          WHEN agg.total_core = 0 OR agg.assessed_count = 0 OR (agg.assessed_count::NUMERIC / GREATEST(1, agg.total_core)) < 0.20 THEN
+            'notYetAssessed'
+          WHEN agg.final_score >= 0.85 AND (agg.assessed_count::NUMERIC / agg.total_core) >= 0.80 THEN
+            'strongCoverage'
+          WHEN agg.final_score >= 0.60 AND (agg.assessed_count::NUMERIC / agg.total_core) >= 0.40 THEN
+            'developing'
+          ELSE
+            'needsReinforcement'
+        END
+      ),
+      'total_core_concepts', agg.total_core,
+      'assessed_concepts_count', agg.assessed_count,
+      'average_retrievability', ROUND(agg.avg_retrievability, 4),
+      'retrieval_bands', jsonb_build_object(
+        'well_established', agg.dist_established,
+        'well_retained', agg.dist_retained,
+        'developing', agg.dist_developing,
+        'needs_reinforcement', agg.dist_reinforce,
+        'unassessed', agg.dist_unassessed
+      ),
+      'weakest_concepts', w.weakest_concepts
     )
-  ) INTO v_weakest
-  FROM (
-    SELECT concept_id, concept_title, concept_score, projected_retrievability, evidence_count
-    FROM tmp_target_core_concepts
-    WHERE evidence_count > 0 OR projected_retrievability IS NOT NULL
-    ORDER BY concept_score ASC, weight DESC
-    LIMIT 5
-  ) w;
+  INTO v_result
+  FROM aggregates agg
+  CROSS JOIN weakest w;
 
-  IF v_weakest IS NULL THEN
-    v_weakest := '[]'::jsonb;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'target_version_id', p_target_version_id,
-    'exam_date', v_target_date,
-    'readiness_score', ROUND(v_final_score, 4),
-    'readiness_band', v_band,
-    'total_core_concepts', v_total_core,
-    'assessed_concepts_count', v_assessed_count,
-    'average_retrievability', ROUND(v_avg_retrievability, 4),
-    'retrieval_bands', jsonb_build_object(
-      'well_established', v_dist_established,
-      'well_retained', v_dist_retained,
-      'developing', v_dist_developing,
-      'needs_reinforcement', v_dist_reinforce,
-      'unassessed', v_dist_unassessed
-    ),
-    'weakest_concepts', v_weakest
-  );
+  RETURN v_result;
 END;
 $$;
 
