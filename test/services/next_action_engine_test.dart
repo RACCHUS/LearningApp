@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/daily_plan.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 
@@ -215,8 +216,8 @@ void main() {
     });
   });
 
-  group('A1 — reviews never supersede forward progress', () {
-    test('SHIP GATE: review is not primary while a lesson remains', () {
+  group('A1 — reviews never supersede forward progress (when prioritiseNew is selected)', () {
+    test('SHIP GATE: review is not primary while a lesson remains under prioritiseNew', () {
       for (final dueCount in [1, 20, 300]) {
         final action = engine.resolve(
           contexts: [ctx()],
@@ -225,11 +226,31 @@ void main() {
             nextActivity: lesson,
             dueConceptIds: List.generate(dueCount, (i) => 'c$i'),
           ),
+          reviewEmphasis: ReviewEmphasis.prioritiseNew,
         );
         expect(
           action,
           isA<StartActivity>(),
-          reason: 'dueCount=$dueCount must not promote review',
+          reason: 'dueCount=$dueCount must not promote review under prioritiseNew',
+        );
+      }
+    });
+
+    test('under balanced policy, light backlog (< 5) does not supersede forward progress', () {
+      for (final dueCount in [1, 2, 4]) {
+        final action = engine.resolve(
+          contexts: [ctx()],
+          active: ContextSnapshot(
+            context: ctx(),
+            nextActivity: lesson,
+            dueConceptIds: List.generate(dueCount, (i) => 'c$i'),
+          ),
+          reviewEmphasis: ReviewEmphasis.balanced,
+        );
+        expect(
+          action,
+          isA<StartActivity>(),
+          reason: 'dueCount=$dueCount must not supersede forward progress under balanced',
         );
       }
     });
@@ -250,11 +271,12 @@ void main() {
           resumeItemCount: 5,
           dueConceptIds: List.generate(500, (i) => 'c$i'),
         ),
+        reviewEmphasis: ReviewEmphasis.prioritiseReviews,
       );
       expect(action, isA<ResumeActivity>());
     });
 
-    test('no backlog size changes the outcome', () {
+    test('under prioritiseNew no backlog size changes the outcome', () {
       NextAction at(int due) => engine.resolve(
         contexts: [ctx()],
         active: ContextSnapshot(
@@ -262,6 +284,7 @@ void main() {
           nextActivity: lesson,
           dueConceptIds: List.generate(due, (i) => 'c$i'),
         ),
+        reviewEmphasis: ReviewEmphasis.prioritiseNew,
       );
       expect(at(0).runtimeType, at(1000).runtimeType);
     });
@@ -457,6 +480,112 @@ void main() {
       final resume = action as ResumeActivity;
       expect((resume.activity as LessonActivity).lessonId, 'personal-1');
       expect(resume.itemIndex, 2);
+    });
+  });
+
+  group('review emphasis and daily plan policy', () {
+    test('prioritiseReviews elevates due reviews over forward progress', () {
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: const ['c1', 'c2'],
+        ),
+        reviewEmphasis: ReviewEmphasis.prioritiseReviews,
+      );
+
+      expect(action, isA<PrioritizedReview>());
+      final prioritized = action as PrioritizedReview;
+      expect(prioritized.activity.count, 2);
+      expect(prioritized.forwardActivity, equals(lesson));
+      expect(prioritized.rationale, contains('Reviews prioritized'));
+    });
+
+    test('prioritiseNew keeps forward progress as primary even when reviews are due', () {
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: const ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'],
+        ),
+        reviewEmphasis: ReviewEmphasis.prioritiseNew,
+      );
+
+      expect(action, isA<StartActivity>());
+      expect((action as StartActivity).activity, equals(lesson));
+    });
+
+    test('balanced keeps forward progress for light due backlogs below threshold', () {
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: const ['c1', 'c2', 'c3'], // 3 concepts < 5 threshold
+        ),
+        reviewEmphasis: ReviewEmphasis.balanced,
+      );
+
+      expect(action, isA<StartActivity>());
+    });
+
+    test('balanced elevates reviews when backlog reaches threshold', () {
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: const ['c1', 'c2', 'c3', 'c4', 'c5'], // 5 concepts == threshold
+        ),
+        reviewEmphasis: ReviewEmphasis.balanced,
+      );
+
+      expect(action, isA<PrioritizedReview>());
+      final prioritized = action as PrioritizedReview;
+      expect(prioritized.activity.count, 5);
+      expect(prioritized.forwardActivity, equals(lesson));
+      expect(prioritized.rationale, contains('backlog'));
+    });
+
+    test('balanced elevates reviews when daily plan marks review as urgent', () {
+      const plan = DailyPlan(
+        targetDailyMinutes: 20,
+        reviewMinutesBudget: 15,
+        newMinutesBudget: 5,
+        dueItemsCount: 3,
+        recommendedReviewCount: 3,
+        recommendedNewCount: 0,
+        newItemsCap: 0,
+        reviewEmphasis: ReviewEmphasis.balanced,
+        rationale: 'Exam consolidation',
+        isReviewUrgent: true,
+        daysUntilExam: 4,
+      );
+
+      final action = engine.resolve(
+        contexts: [ctx()],
+        active: ContextSnapshot(
+          context: ctx(),
+          nextActivity: lesson,
+          dueConceptIds: const ['c1', 'c2'],
+        ),
+        reviewEmphasis: ReviewEmphasis.balanced,
+        dailyPlan: plan,
+      );
+
+      expect(action, isA<PrioritizedReview>());
+      final prioritized = action as PrioritizedReview;
+      expect(prioritized.rationale, contains('Exam in 4 days'));
+    });
+
+    test('showSecondaryReviewPrompt is suppressed when PrioritizedReview is active', () {
+      final action = PrioritizedReview(
+        activity: const ReviewActivity(conceptIds: ['c1', 'c2']),
+        forwardActivity: lesson,
+      );
+      expect(engine.showSecondaryReviewPrompt(action, 2), isFalse);
     });
   });
 }

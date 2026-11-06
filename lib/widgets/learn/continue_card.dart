@@ -164,6 +164,30 @@ class _ContinueView {
           secondaryRoute: '/library',
         );
 
+      case PrioritizedReview(:final activity, :final forwardActivity):
+        final queryParams = <String>[];
+        if (context != null) queryParams.add('contextId=${context.id}');
+        if (activity.conceptIds.isNotEmpty) {
+          queryParams.add('concepts=${activity.conceptIds.join(',')}');
+        }
+        final route = queryParams.isEmpty ? '/review' : '/review?${queryParams.join('&')}';
+        final secLabel = forwardActivity != null
+            ? (forwardActivity is StudySetActivity ? 'Practice' : 'Next lesson')
+            : 'Choose lesson';
+        final secRoute = forwardActivity != null
+            ? _route(forwardActivity)
+            : '/library';
+        return _ContinueView(
+          sectionLabel: 'Review',
+          title: activity.title,
+          orientation: '~${activity.estimate.inMinutes} min',
+          rationale: action.rationale,
+          primaryLabel: 'Review',
+          primaryRoute: route,
+          secondaryLabel: secLabel,
+          secondaryRoute: secRoute,
+        );
+
       // Reviews are primary only because the context is exhausted — the way
       // onward is still present, as the secondary action (spec C1).
       case ReviewOnly(:final activity, :final offer):

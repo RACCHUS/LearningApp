@@ -103,6 +103,18 @@ class LearningContextService {
     );
   }
 
+  Future<void> updateScopeConfig(
+    String contextId,
+    Map<String, dynamic> scopeConfig,
+  ) async {
+    final existing = _contexts.get(contextId);
+    if (existing == null) return;
+    await _contexts.put(
+      contextId,
+      existing.copyWith(scopeConfig: scopeConfig),
+    );
+  }
+
   Future<void> touch(String contextId) async {
     final existing = _contexts.get(contextId);
     if (existing == null) return;

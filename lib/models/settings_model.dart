@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:learning_pwa/models/daily_plan.dart';
 
 class SettingsModel {
   List<String> notificationTimes; // e.g. ["10:00", "18:00"]
@@ -6,6 +7,7 @@ class SettingsModel {
   bool darkMode;
   int studyBatchSize; // Max cards per study session (0 = unlimited)
   bool recallBeforeReveal; // Require thinking/recall before revealing flashcard answers
+  ReviewEmphasis reviewEmphasis; // Pacing policy: balanced, prioritiseReviews, or prioritiseNew
 
   SettingsModel({
     required this.notificationTimes,
@@ -13,6 +15,7 @@ class SettingsModel {
     required this.darkMode,
     this.studyBatchSize = 15,
     this.recallBeforeReveal = true,
+    this.reviewEmphasis = ReviewEmphasis.balanced,
   });
 
   factory SettingsModel.defaultSettings() => SettingsModel(
@@ -21,6 +24,7 @@ class SettingsModel {
         darkMode: true,
         studyBatchSize: 15,
         recallBeforeReveal: true,
+        reviewEmphasis: ReviewEmphasis.balanced,
       );
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) => SettingsModel(
@@ -29,6 +33,10 @@ class SettingsModel {
         darkMode: json['darkMode'] ?? true,
         studyBatchSize: json['studyBatchSize'] ?? 15,
         recallBeforeReveal: json['recallBeforeReveal'] ?? true,
+        reviewEmphasis: ReviewEmphasis.values.firstWhere(
+          (e) => e.name == json['reviewEmphasis'],
+          orElse: () => ReviewEmphasis.balanced,
+        ),
       );
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +45,7 @@ class SettingsModel {
         'darkMode': darkMode,
         'studyBatchSize': studyBatchSize,
         'recallBeforeReveal': recallBeforeReveal,
+        'reviewEmphasis': reviewEmphasis.name,
       };
 
   String toRawJson() => json.encode(toJson());

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/daily_plan.dart';
 import 'package:learning_pwa/models/settings_model.dart';
 
 void main() {
@@ -7,6 +8,7 @@ void main() {
       final settings = SettingsModel.defaultSettings();
       expect(settings.studyBatchSize, 15);
       expect(settings.recallBeforeReveal, isTrue);
+      expect(settings.reviewEmphasis, equals(ReviewEmphasis.balanced));
       expect(settings.notificationsEnabled, isFalse);
       expect(settings.darkMode, isTrue);
       expect(settings.notificationTimes, containsAll(['10:00', '18:00']));
@@ -19,25 +21,29 @@ void main() {
         darkMode: false,
         studyBatchSize: 25,
         recallBeforeReveal: false,
+        reviewEmphasis: ReviewEmphasis.prioritiseReviews,
       );
 
       final json = original.toJson();
       expect(json['studyBatchSize'], 25);
       expect(json['recallBeforeReveal'], isFalse);
+      expect(json['reviewEmphasis'], equals('prioritiseReviews'));
 
       final reconstructed = SettingsModel.fromJson(json);
       expect(reconstructed.studyBatchSize, 25);
       expect(reconstructed.recallBeforeReveal, isFalse);
+      expect(reconstructed.reviewEmphasis, equals(ReviewEmphasis.prioritiseReviews));
       expect(reconstructed.notificationsEnabled, isFalse);
       expect(reconstructed.darkMode, isFalse);
       expect(reconstructed.notificationTimes, equals(['08:30']));
     });
 
-    test('fromRawJson handles legacy JSON without recallBeforeReveal gracefully', () {
+    test('fromRawJson handles legacy JSON without reviewEmphasis gracefully', () {
       const legacyJson = '{"notificationTimes":["09:00"],"notificationsEnabled":true,"darkMode":true,"studyBatchSize":10}';
       final settings = SettingsModel.fromRawJson(legacyJson);
       expect(settings.studyBatchSize, 10);
       expect(settings.recallBeforeReveal, isTrue); // Defaults to true
+      expect(settings.reviewEmphasis, equals(ReviewEmphasis.balanced)); // Defaults to balanced
     });
 
     test('settings without a notification preference keep notifications disabled', () {
