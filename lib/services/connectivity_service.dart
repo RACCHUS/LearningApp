@@ -169,17 +169,21 @@ class ConnectivityService {
     }
   }
 
-  bool _isConnected(ConnectivityResult result) {
-    switch (result) {
-      case ConnectivityResult.wifi:
-      case ConnectivityResult.ethernet:
-      case ConnectivityResult.mobile:
-      case ConnectivityResult.vpn:
-        return true;
-      case ConnectivityResult.none:
-      default:
-        return false;
+  bool _isConnected(List<ConnectivityResult> results) {
+    for (final result in results) {
+      switch (result) {
+        case ConnectivityResult.wifi:
+        case ConnectivityResult.ethernet:
+        case ConnectivityResult.mobile:
+        case ConnectivityResult.vpn:
+        case ConnectivityResult.other:
+          return true;
+        case ConnectivityResult.none:
+        default:
+          break;
+      }
     }
+    return false;
   }
 
   void dispose() {
