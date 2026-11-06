@@ -353,8 +353,8 @@ BEGIN
       lt.slug,
       lt.title,
       lt.description,
-      lt.category,
-      lt.issuer,
+      lt.target_type AS category,
+      COALESCE(lt.provider_name, lt.institution_name) AS issuer,
       tv.id AS active_version_id,
       tv.version_code,
       tv.version_title,
@@ -368,14 +368,14 @@ BEGIN
       LIMIT 1
     ) tv ON TRUE
     WHERE (
-      p_category IS NULL OR lt.category = p_category
+      p_category IS NULL OR lt.target_type = p_category
     )
     AND (
       p_query IS NULL OR p_query = '' OR (
         lt.title ILIKE '%' || p_query || '%' OR
         lt.description ILIKE '%' || p_query || '%' OR
         lt.slug ILIKE '%' || p_query || '%' OR
-        COALESCE(lt.issuer, '') ILIKE '%' || p_query || '%'
+        COALESCE(lt.provider_name, lt.institution_name, '') ILIKE '%' || p_query || '%'
       )
     )
     ORDER BY (

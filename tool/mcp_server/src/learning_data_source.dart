@@ -146,11 +146,11 @@ class LearningDataSource {
         }
       } else {
         final queryParams = <String, String>{
-          'select': 'id,slug,title,description,category,issuer,created_at',
+          'select': 'id,slug,title,description,target_type,provider_name,created_at',
           'limit': '$limit',
         };
         if (category != null && category.isNotEmpty) {
-          queryParams['category'] = 'eq.$category';
+          queryParams['target_type'] = 'eq.$category';
         }
         if (query != null && query.isNotEmpty) {
           queryParams['title'] = 'ilike.*$query*';
@@ -159,7 +159,16 @@ class LearningDataSource {
         if (dbResults is List) {
           for (final item in dbResults) {
             if (item is Map) {
-              results.add(item.cast<String, dynamic>());
+              final map = item.cast<String, dynamic>();
+              results.add({
+                'id': map['id'],
+                'slug': map['slug'],
+                'title': map['title'],
+                'description': map['description'],
+                'category': map['target_type'] ?? map['category'],
+                'issuer': map['provider_name'] ?? map['issuer'],
+                'created_at': map['created_at'],
+              });
             }
           }
         }

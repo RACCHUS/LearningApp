@@ -16,7 +16,7 @@ insert into public.users (id, email, display_name) values
  ('cc111111-0000-4000-8000-000000000001', 'api_test_user@example.invalid', 'API Test User')
 on conflict (id) do nothing;
 
-insert into public.learning_targets (id, slug, title, description, category, issuer) values
+insert into public.learning_targets (id, slug, title, description, target_type, provider_name) values
  ('cc222222-0000-4000-8000-000000000001', 'test-cert-api', 'Test API Certification Target', 'Target for testing api schema and scope resolver', 'certification', 'LearningApp Certs')
 on conflict (id) do nothing;
 
@@ -78,7 +78,7 @@ select is(
 
 select is(
   (select count(*)::integer from jsonb_array_elements(api.search_catalog(null, 'certification', 10))),
-  (select count(*)::integer from public.learning_targets where category = 'certification'),
+  (select count(*)::integer from public.learning_targets where target_type = 'certification'),
   'api.search_catalog filters correctly by category'
 );
 
