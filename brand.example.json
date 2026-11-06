@@ -1,0 +1,24 @@
+{
+  "app_name": "OpenLearning",
+  "tagline": "Evidence-Based Open Mastery Learning Platform",
+  "organization_name": "Global Open Learning Initiative",
+  "organization_url": "https://learningapp.org",
+  "support_email": "support@learningapp.org",
+  "primary_color_hex": "#0288D1",
+  "secondary_color_hex": "#00897B",
+  "dark_primary_color_hex": "#4FC3F7",
+  "dark_secondary_color_hex": "#80CBC4",
+  "terms_of_service_url": "/terms",
+  "privacy_policy_url": "/privacy",
+  "features": {
+    "enable_byok_ai": true,
+    "enable_hands_free": true,
+    "enable_offline_sync": true,
+    "enable_adult_literacy": true,
+    "enable_performance_assessments": true,
+    "enable_taxonomy_explorer": true,
+    "enable_qti_export": true,
+    "enable_community_qa": true
+  }
+}
+

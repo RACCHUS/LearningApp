@@ -8,6 +8,7 @@ export 'src/models/content_complexity_profile.dart';
 export 'src/models/item_psychometric_status.dart';
 export 'src/models/assessment_item.dart';
 export 'src/models/learning_event.dart';
+export 'src/models/brand_config_core.dart';
 
 export 'src/algorithms/fsrs_scheduler_core.dart';
 export 'src/algorithms/item_evaluator_core.dart';
