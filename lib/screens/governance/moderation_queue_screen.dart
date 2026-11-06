@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/governance/moderation_report.dart';
+import 'package:learning_pwa/services/analytics/item_analytics_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/widgets/error_retry_view.dart';
 
@@ -76,6 +77,37 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
         _error = e;
         _isLoadingReports = false;
       });
+    }
+  }
+
+  Future<void> _runItemAnalytics() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Evaluating item psychometrics & checking moderation triggers...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      final result = await ItemAnalyticsService().computeAnalytics(minResponses: 5);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Item analytics evaluated: ${result['total_evaluated'] ?? 0} items analyzed, '
+            '${result['flagged_items'] ?? 0} flagged, ${result['moderation_reports_created'] ?? 0} reports created.',
+          ),
+          backgroundColor: Colors.green.shade800,
+        ),
+      );
+      await _loadReports();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Item analytics evaluation failed: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -467,12 +499,54 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
             if (report.description != null &&
                 report.description!.trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(
-                'Reporter notes: "${report.description}"',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
+              if (report.description!.startsWith('[Item Analytics Auto-Flag]'))
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: Colors.amber.shade700.withValues(alpha: 0.5),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.psychology_outlined,
+                            size: 18,
+                            color: Colors.amber.shade900,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Psychometric Auto-Flag Diagnostic',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        report.description!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  'Reporter notes: "${report.description}"',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
-              ),
             ],
             const SizedBox(height: 14),
             Row(
@@ -530,12 +604,18 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
       appBar: AppBar(
         title: const Text('Trust & Safety Console'),
         actions: [
-          if (_isModerator)
+          if (_isModerator) ...[
+            IconButton(
+              icon: const Icon(Icons.analytics_outlined),
+              tooltip: 'Evaluate Item Analytics',
+              onPressed: _runItemAnalytics,
+            ),
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh Queue',
               onPressed: _loadReports,
             ),
+          ],
         ],
       ),
       body: _buildBody(theme, colorScheme),
