@@ -80,20 +80,20 @@ void main() {
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
     });
 
-    test('SelfHostBootstrap.scanAndValidate verifies 86 migrations sequentially', () {
+    test('SelfHostBootstrap.scanAndValidate verifies 87 migrations sequentially', () {
       final scanResult = SelfHostBootstrap.scanAndValidate('supabase/migrations');
 
       expect(scanResult.isValid, isTrue, reason: 'Errors: ${scanResult.errors}');
       expect(scanResult.errors, isEmpty);
-      expect(scanResult.migrations.length, equals(86));
+      expect(scanResult.migrations.length, equals(87));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261106010000'));
+      expect(scanResult.migrations.last.version, equals('20261106020000'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
       expect(bundle, contains('COMMIT;'));
       expect(bundle, contains('20241228000000_legacy_base_tables.sql'));
-      expect(bundle, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
+      expect(bundle, contains('20261106020000_harden_field_relations_view_privileges.sql'));
     });
   });
 }
