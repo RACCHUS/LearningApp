@@ -166,6 +166,11 @@ primary study flows:
   `Colors.green` and `Colors.red` text, which is 2.64:1 and 3.50:1 in light mode.
 - `AudioMCQWidget` marks the selected and correct options **only** with a
   green or red background tint. This needs an icon or text label.
+  `McqOptions` and `TrueFalseSelector` have the same problem.
+
+PR #163 adds check/cross icons (with screen-reader labels) to all four widgets
+and switches their feedback colors to `SemanticColors`. Verifying this in the
+running app under simulation is tracked in #167.
 
 ## Hard-coded color inventory
 
@@ -185,10 +190,14 @@ Files with the most `Colors.green` / `Colors.red` use: `in_context_qa_sheet.dart
 ## Open items
 
 1. **Migrate study-feedback colors to `SemanticColors`, and add a non-color
-   marker to `AudioMCQWidget`.** This is deferred because open PRs #163 and #165
-   edit the same widgets. `ShortAnswerField` is already migrated in #165.
+   marker to `AudioMCQWidget`.** Done in #163 (`AudioMCQWidget`, `McqOptions`,
+   `TrueFalseSelector`, MCQ/true-false feedback text) and #165
+   (`ShortAnswerField`), not in this PR.
 2. Then migrate `assessment_result_screen.dart` and the files listed above in
    small PRs, following `COLOR_SYSTEM_GUIDELINES.md`.
+Items 3 and 4 are tracked in #167. They are not done and must not be treated
+as passed.
+
 3. **Not yet done: browser zoom (200%/400%) and manual checks of the running app
    with a color-vision simulator** (Chrome DevTools > Rendering > Emulate
    vision deficiencies).
