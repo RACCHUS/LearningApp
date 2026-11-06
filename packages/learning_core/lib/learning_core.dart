@@ -16,4 +16,6 @@ export 'src/validation/manifest_validator_core.dart';
 
 export 'src/interop/qti_item_converter.dart';
 export 'src/interop/xapi_statement_emitter.dart';
+export 'src/interop/open_badge_converter.dart';
+export 'src/interop/lti_launcher.dart';
 
