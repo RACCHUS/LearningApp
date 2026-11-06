@@ -25,7 +25,7 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
   static const SemanticColors light = SemanticColors(
     success: Color(0xFF2E7D32),
     onSuccess: Colors.white,
-    warning: Color(0xFFED6C02),
+    warning: Color(0xFFB45309),
     onWarning: Colors.white,
     danger: Color(0xFFB3261E),
     onDanger: Colors.white,

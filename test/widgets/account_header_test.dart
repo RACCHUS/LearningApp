@@ -144,20 +144,27 @@ void main() {
         find.widgetWithText(SwitchListTile, 'Enable Notifications');
     expect(tester.widget<SwitchListTile>(notifications).value, isFalse);
 
-    final darkMode =
-        find.widgetWithText(SwitchListTile, 'Dark Mode');
-    await tester.ensureVisible(darkMode);
-    expect(tester.widget<SwitchListTile>(darkMode).value, isTrue);
+    final themeMode = find.byKey(const Key('settings-theme-mode'));
+    Set<ThemeMode> selected() =>
+        tester.widget<SegmentedButton<ThemeMode>>(themeMode).selected;
+    await tester.ensureVisible(themeMode);
+    expect(selected(), {ThemeMode.dark});
 
-    await tester.tap(darkMode);
+    await tester.tap(
+        find.descendant(of: themeMode, matching: find.text('Light')));
     await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(darkMode);
-    expect(tester.widget<SwitchListTile>(darkMode).value, isFalse);
+    await tester.ensureVisible(themeMode);
+    expect(selected(), {ThemeMode.light});
+
+    await tester.tap(
+        find.descendant(of: themeMode, matching: find.text('System')));
+    await tester.pumpAndSettle();
+    expect(selected(), {ThemeMode.system});
   });
 
   testWidgets('signed-in avatar opens Profile and Settings', (tester) async {

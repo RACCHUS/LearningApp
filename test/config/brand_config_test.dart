@@ -20,7 +20,9 @@ void main() {
       expect(BrandConfig.secondaryColor, equals(const Color(0xFF00897B)));
 
       final light = AppTheme.lightTheme();
-      expect(light.colorScheme.primary, equals(const Color(0xFF0288D1)));
+      // Brand primary is darkened just enough for 4.5:1 text contrast.
+      expect(light.colorScheme.primary,
+          equals(AppTheme.accessibleLightPrimary(const Color(0xFF0288D1))));
 
       final dark = AppTheme.darkTheme();
       expect(dark.colorScheme.primary, equals(const Color(0xFF4FC3F7)));
@@ -42,7 +44,8 @@ void main() {
       expect(BrandConfig.secondaryColor, equals(const Color(0xFF9C27B0)));
 
       final customLight = AppTheme.lightTheme();
-      expect(customLight.colorScheme.primary, equals(const Color(0xFFE91E63)));
+      expect(customLight.colorScheme.primary,
+          equals(AppTheme.accessibleLightPrimary(const Color(0xFFE91E63))));
       expect(customLight.colorScheme.secondary, equals(const Color(0xFF9C27B0)));
 
       final customDark = AppTheme.darkTheme();
