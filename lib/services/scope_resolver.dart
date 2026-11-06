@@ -126,6 +126,29 @@ class ScopeResolver {
       );
     }
 
+    // 1. Try server-side consolidated RPC first (ARCH-2, PERF-8)
+    try {
+      final rpcRes = await client.rpc('resolve_scope', params: {
+        'p_context': {
+          'id': context.id,
+          'context_id': context.id,
+          'root_type': context.rootType.name,
+          'root_id': context.rootId,
+          'target_version_id': context.targetVersionId,
+          'scope_mode': context.scopeMode.name,
+          'active_focus_id': context.activeFocusId,
+          'config_hash': configHash ?? computeConfigHash(context),
+        },
+      });
+      if (rpcRes is Map) {
+        return ResolvedScope.fromJson(rpcRes.cast<String, dynamic>());
+      }
+    } catch (e) {
+      debugPrint(
+        '⚠️ Fast resolve_scope RPC unavailable or failed ($e), falling back to client cascade',
+      );
+    }
+
     final ResolvedScope raw;
     switch (context.rootType) {
       case ContextRootType.target:
