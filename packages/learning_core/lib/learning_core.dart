@@ -14,3 +14,6 @@ export 'src/algorithms/fsrs_scheduler_core.dart';
 export 'src/algorithms/item_evaluator_core.dart';
 export 'src/validation/manifest_validator_core.dart';
 
+export 'src/interop/qti_item_converter.dart';
+export 'src/interop/xapi_statement_emitter.dart';
+
