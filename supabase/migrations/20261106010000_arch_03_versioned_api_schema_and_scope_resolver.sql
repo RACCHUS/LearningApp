@@ -116,7 +116,7 @@ BEGIN
           COALESCE(cn.sort_order, 0) AS activity_order,
           'core'::TEXT AS role,
           COALESCE(cn.title, 'Node ' || cn.code) AS title,
-          COALESCE(cn.estimated_minutes, 10) AS estimated_minutes,
+          COALESCE((cn.metadata->>'estimated_minutes')::INTEGER, 10) AS estimated_minutes,
           NULL::TEXT AS course_id,
           NULL::TEXT AS course_title,
           NULL::TEXT AS module_id,
@@ -139,8 +139,8 @@ BEGIN
         BEGIN
           SELECT ARRAY_AGG(DISTINCT q.id::TEXT) INTO v_extra_qids
           FROM public.assessment_questions q
-          JOIN public.lessons l ON l.id = q.assessment_id
-          WHERE l.curriculum_node_id = ANY(v_node_ids);
+          JOIN public.curriculum_node_lessons cnl ON cnl.lesson_id = q.assessment_id
+          WHERE cnl.curriculum_node_id = ANY(v_node_ids);
 
           IF v_extra_qids IS NOT NULL THEN
             v_question_ids := ARRAY(
@@ -173,17 +173,18 @@ BEGIN
           'lesson'::TEXT AS kind,
           'official'::TEXT AS source,
           TRUE AS is_required,
-          l.curriculum_node_id::TEXT AS curriculum_node_id,
+          cnl.curriculum_node_id::TEXT AS curriculum_node_id,
           0 AS curriculum_order,
           0 AS activity_order,
           'core'::TEXT AS role,
           COALESCE(l.title, 'Lesson') AS title,
-          COALESCE(l.estimated_time_minutes, 15) AS estimated_minutes,
+          15 AS estimated_minutes,
           NULL::TEXT AS course_id,
           NULL::TEXT AS course_title,
           NULL::TEXT AS module_id,
           NULL::TEXT AS module_title
         FROM public.lessons l
+        LEFT JOIN public.curriculum_node_lessons cnl ON cnl.lesson_id = l.id
         WHERE l.id = v_lid
       ) act;
     END;
