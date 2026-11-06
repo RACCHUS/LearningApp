@@ -1,11 +1,13 @@
 # LearningApp — Technical & Architectural Review
 
-**Initial Audit Date:** 2026-10-31 (initial Phase 0 repository audit at `e538585` on `main`; companion learning-science & platform plans authored 2026-11-01) · **Post-PR `#136` Merge Revision Date:** 2026-11-02 (reconciled with `main` at `a23cebb` following PR `#136` merge; documentation & specification scope only) · **Requested by:** project owner
+**Initial Audit Date:** 2026-10-31 (initial Phase 0 repository audit at `e538585` on `main`; companion learning-science & platform plans authored 2026-11-01) · **Post-PR `#136` Merge Revision Date:** 2026-11-02 (reconciled with `main` at `a23cebb` following PR `#136` merge; documentation & specification scope only) · **Post-PR `#138` Phase 1 Status Update:** 2026-11-05 (main at `8731960`) · **Requested by:** project owner
 **Method:** read the architecture/product docs; traced the core learning loop in code; scanned schema, RLS and RPCs; ran the analyzer (with and without the standard lint set); served the existing release build locally and audited it in Chrome (network, console, accessibility tree, Lighthouse); attempted a WebAssembly build; checked free-tier and library facts against current sources. Items that could not be verified against production are marked **(verify)**.
 
 > **Repository-cleanup follow-up (2026-11-02):** PR #139 relocates the deployment, EXM, and literacy/accessibility documents; removes confirmed unused app modules/assets; and retires the old custom service-worker source. The executive summary and selected fix rows below include follow-up status changes; other detailed findings and the scorecard remain anchored to the original audit baseline and are not a live issue tracker.
 
-> **Bottom line.** The repo is unusually disciplined about *governance*: provenance, RLS, append-only migrations, pgTAP, and honest learner-facing copy. The weakest parts are the ones the mission depends on most: the **learning engine** (scheduler, knowledge model, analytics), **reliability and offline support**, **web delivery cost and speed**, and **openness** (no versioned API; license and content portability still need careful scope). Most of the highest-value fixes are cheap.
+> **Post-PR #138 implementation status (2026-11-05):** Phase 1 is now merged at `8731960`: append-only `learning_events` and server projections, FSRS review scheduling, server-scored assessments/answer withholding, and the local-first event outbox are implemented. This addresses the baseline event-log, scheduler, and several scoring/security gaps. Analytics/calibration, readiness planning, and a guaranteed offline app shell remain follow-up work. The findings and scorecard below are the pre-Phase1 audit snapshot unless explicitly marked.
+
+> **Bottom line (updated after PR #138).** The repo is unusually disciplined about *governance*: provenance, RLS, append-only migrations, pgTAP, and honest learner-facing copy. Phase 1 now provides the learning-event foundation, FSRS scheduling, server-side assessment grading, and a local-first outbox. Remaining learning-engine gaps include calibrated knowledge state/analytics and adaptive planning; full offline app-shell support, web delivery cost/speed, and openness (versioned API and content portability) also remain.
 
 ---
 
@@ -15,8 +17,8 @@
 
 | # | Finding | Type | Effort |
 |---|---|---|---|
-| 1 | **No learning event log.** Without per-attempt data there can be no real analytics, item calibration, FSRS optimization, A/B tests, or evidence that the app works. The locked UI spec already defers `review_log` (§13), which makes the deferral circular (see ARCH-1). | Architecture | M |
-| 2 | **The scheduler isn't SM-2 or FSRS.** It uses a fixed `[1,3,7,14,30,60,120]` ladder × an ease factor clamped to ≤2.5 (so ease can only fall). It ignores actual elapsed time and has no in-session relearning. "Mastery" is a lifetime average with no forgetting. | Learning science | M |
+| 1 | **Baseline (pre-Phase1): no learning event log.** Without per-attempt data there can be no real analytics, item calibration, FSRS optimization, A/B tests, or evidence that the app works. The locked UI spec already defers `review_log` (§13), which makes the deferral circular (see ARCH-1). | Architecture | M |
+| 2 | **Baseline (pre-Phase1): the scheduler was a fixed ladder, not FSRS.** It uses a fixed `[1,3,7,14,30,60,120]` ladder × an ease factor clamped to ≤2.5 (so ease can only fall). It ignores actual elapsed time and has no in-session relearning. "Mastery" is a lifetime average with no forgetting. | Learning science | M |
 | 3 | **Authored answer positions are biased** in the USCIS (26/26), DMV (10/10) and GED (8/8) simulators, and bundled AI lessons show the opposite LLM bias: 31/31 answers at B or C. Phase 0 now shuffles presentation order; source-bank distribution still merits review. | **Obvious bug** | S |
 | 4 | **Schema drift:** 12 tables and 2 RPCs the client calls are missing from `supabase/migrations`. Recommendations, the Reset Center, skills/leaderboards and course time all silently fail on any schema built from the canonical chain: CI, local, or a fork. | **Obvious bug** | S–M |
 | 5 | **Baseline XP RPC weakness (fixed in Phase 0):** `increment_user_xp` previously accepted arbitrary `p_user_id`; the merged migration now constrains the award path. | **Security bug** | S |
@@ -77,7 +79,7 @@
 
 ## 2. Architectural weaknesses (deep dives)
 
-### ARCH-1 — The learning engine isn't evidence-based yet (core mission gap)
+### ARCH-1 — Learning-engine gap (pre-Phase1 audit baseline; core mission gap)
 
 **What exists**
 - **Scheduler:** a fixed ladder ([spaced_repetition.dart](lib/models/spaced_repetition.dart#L4)) × ease clamped to `[1.3, 2.5]` ([L240](lib/models/spaced_repetition.dart#L240)). Because ease starts at the cap, it can only fall. A lapse resets the item to level 0 and schedules it 1–2 *days* out (no relearning step). Overdue time is ignored.

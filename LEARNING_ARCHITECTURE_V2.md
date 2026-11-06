@@ -2,7 +2,9 @@
 
 **Status:** Implementation Baseline (Finalized with Gemini & User/ChatGPT Review)  
 **Supersedes:** Unamended v2 draft  
-**Companion Documents:** `UI_ARCHITECTURE_LOCKED.md` (interaction baseline and ship gates), `docs/deployment/DEPLOYMENT_GUIDE.md`  
+**Companion Documents:** `UI_ARCHITECTURE_LOCKED.md` (interaction baseline and ship gates), `docs/deployment/DEPLOYMENT_GUIDE.md`
+
+**Implementation note (2026-11-05):** Phase 1 added FSRS-backed review scheduling and learning-event logging; legacy SM-2 fields remain for migration/compatibility.  
 
 ---
 
@@ -26,7 +28,7 @@ Existing anchors in the repository that remain intact:
 - `lib/models/learning_context.dart`: `LearningContext` and `ResumePointer`.
 - `supabase/migrations/20260909000000_learning_contexts.sql`: `learning_contexts` and `resume_pointers` tables.
 - Existing content tables: `lessons`, `terms`, `questions`, `concepts`, `courses`, `course_lessons`, `study_sets`.
-- Existing SRS & progress: `review_items` (SM-2 scheduler) and course/study-set progress.
+- Existing SRS & progress: `review_items` (FSRS-backed scheduler; legacy SM-2 fields remain for compatibility) and course/study-set progress.
 - Existing career/skills schema: `career_paths`, `skills`, junction tables, assessments, and user stats.
 
 **Key constraint:** The legacy `concepts` table is lesson-bound (`lesson_id` foreign key required). v2 introduces an autonomous, canonical knowledge layer (`knowledge_concepts`) rather than mutating legacy concepts in place.
@@ -1111,14 +1113,14 @@ When a context is resolved online:
 ## 8. Global Knowledge State & Evidence Attribution
 
 ### 8.1 Responsibility Separation
-- **`review_items` (SM-2):** Sole scheduler of review interactions. Determines when and what concrete items are due.
+- **`review_items` (FSRS; legacy SM-2 fields retained):** Sole scheduler of review interactions. Determines when and what concrete items are due.
 - **`user_concept_state`:** Purely an analytical projection over historical evidence. Does **not** schedule due dates.
 
 ### 8.2 Evidence Propagation Contract
 Every completed learning activity produces a normalized `evidenceValue` $\in [0.0, 1.0]$:
 - Standard MCQ correct: `1.0`
 - Standard MCQ incorrect: `0.0`
-- SM-2 Recall Grade: normalized rating ($\text{grade} \ge 3 \implies 1.0$, else $0.0$)
+- RecallQuality (legacy 0–5 rating): normalized evidence value ($\text{grade} \ge 3 \implies 1.0$, else $0.0$)
 - Partial credit / rubric: fractional value ($0.0 \dots 1.0$)
 
 For each concept mapped to the item:
