@@ -20,13 +20,13 @@ insert into public.learning_targets (id, slug, title, description, target_type, 
  ('cc222222-0000-4000-8000-000000000001', 'test-cert-api', 'Test API Certification Target', 'Target for testing api schema and scope resolver', 'certification', 'LearningApp Certs')
 on conflict (id) do nothing;
 
-insert into public.target_versions (id, target_id, version_code, version_title, status) values
+insert into public.target_versions (id, target_id, version_code, title, status) values
  ('cc333333-0000-4000-8000-000000000001', 'cc222222-0000-4000-8000-000000000001', 'v1.0-api', 'Edition 1.0', 'published')
 on conflict (id) do nothing;
 
-insert into public.curriculum_nodes (id, target_version_id, code, title, sort_order) values
- ('cc444444-0000-4000-8000-000000000001', 'cc333333-0000-4000-8000-000000000001', 'MOD-1', 'Module 1: Foundations', 1),
- ('cc444444-0000-4000-8000-000000000002', 'cc333333-0000-4000-8000-000000000001', 'MOD-2', 'Module 2: Advanced', 2)
+insert into public.curriculum_nodes (id, target_version_id, node_type, code, title, sort_order) values
+ ('cc444444-0000-4000-8000-000000000001', 'cc333333-0000-4000-8000-000000000001', 'module', 'MOD-1', 'Module 1: Foundations', 1),
+ ('cc444444-0000-4000-8000-000000000002', 'cc333333-0000-4000-8000-000000000001', 'module', 'MOD-2', 'Module 2: Advanced', 2)
 on conflict (id) do nothing;
 
 insert into public.knowledge_concepts (id, name, slug) values
@@ -40,12 +40,14 @@ insert into public.curriculum_node_concepts (curriculum_node_id, concept_id, rel
 on conflict do nothing;
 
 insert into public.review_items (
-  id, user_id, content_id, content_type, stability, difficulty, fsrs_state, total_reviews, correct_reviews, next_review_date
+  id, user_id, content_id, content_type, lesson_id, title, stability, difficulty, fsrs_state, total_reviews, correct_reviews, next_review_date
 ) values (
   'cc666666-0000-4000-8000-000000000001',
   'cc111111-0000-4000-8000-000000000001',
   'item-due-now',
   'question',
+  'test-lesson-id',
+  'Test Review Item Title',
   3.5,
   4.2,
   2,

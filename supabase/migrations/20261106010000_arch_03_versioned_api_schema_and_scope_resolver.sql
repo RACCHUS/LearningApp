@@ -357,11 +357,11 @@ BEGIN
       COALESCE(lt.provider_name, lt.institution_name) AS issuer,
       tv.id AS active_version_id,
       tv.version_code,
-      tv.version_title,
+      tv.title AS version_title,
       lt.created_at
     FROM public.learning_targets lt
     LEFT JOIN LATERAL (
-      SELECT id, version_code, version_title
+      SELECT id, version_code, title
       FROM public.target_versions
       WHERE target_id = lt.id AND status = 'published'
       ORDER BY created_at DESC
