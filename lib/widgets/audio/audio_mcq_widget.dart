@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
-import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 
 /// A reusable widget for MCQ options with audio
@@ -53,7 +52,6 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final canSpeak = ref.watch(canSpeakProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -106,14 +104,12 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
                       child: widget.customTextBuilder?.call('$optionLetter. $option') ??
                              Text('$optionLetter. $option'),
                     ),
-                    if (canSpeak) ...[
-                      const SizedBox(width: 8),
+                    const SizedBox(width: 8),
                       AudioControlWidget(
                         text: '$optionLetter. $option',
                         contentType: 'answer',
                         tooltip: 'Listen to option $optionLetter',
                       ),
-                    ],
                   ],
                 ),
                 value: index,
@@ -155,14 +151,12 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
                     ],
                   ),
                 ),
-                if (canSpeak) ...[
-                  const SizedBox(width: 8),
+                const SizedBox(width: 8),
                   AudioControlWidget(
                     text: widget.explanation!,
                     contentType: 'content',
                     tooltip: 'Listen to explanation',
                   ),
-                ],
               ],
             ),
           ),

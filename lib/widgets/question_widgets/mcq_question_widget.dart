@@ -3,6 +3,7 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
+import 'package:learning_pwa/widgets/audio/audio_text_widget.dart';
 
 class McqQuestionWidget extends StatefulWidget {
   final QuestionContent content;
@@ -77,7 +78,9 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
         if (widget.showCorrect && widget.content.explanation != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Explanation: ${widget.content.explanation!}'),
+            child: AudioTextWidget(
+              text: 'Explanation: ${widget.content.explanation!}',
+            ),
           ),
       ],
     );

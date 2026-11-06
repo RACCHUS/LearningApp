@@ -3,6 +3,7 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/true_false_selector.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
+import 'package:learning_pwa/widgets/audio/audio_text_widget.dart';
 
 class TrueFalseQuestionWidget extends StatefulWidget {
   final QuestionContent content;
@@ -70,7 +71,9 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget> {
         if (widget.showCorrect && widget.content.explanation != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Explanation: ${widget.content.explanation!}'),
+            child: AudioTextWidget(
+              text: 'Explanation: ${widget.content.explanation!}',
+            ),
           ),
       ],
     );

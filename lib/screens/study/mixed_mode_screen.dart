@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/concept_content.dart';
 import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
 import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
 import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 /// Represents a single study item in mixed mode.
@@ -185,6 +186,7 @@ class _MixedModeScreenState extends State<MixedModeScreen> {
       appBar: AppBar(
         title: Text('Mixed Study (${_currentIndex + 1}/${_items.length})'),
         centerTitle: true,
+        actions: const [AudioPreferencesAction()],
       ),
       body: Stack(
         children: [

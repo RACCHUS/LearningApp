@@ -249,6 +249,13 @@ final canSpeakProvider = Provider<bool>((ref) {
   return settings.isEnabled && state.isAvailable;
 });
 
+/// Read-aloud works in this browser but the learner switched it off.
+final readAloudOffProvider = Provider<bool>((ref) {
+  final settings = ref.watch(audioSettingsProvider);
+  final state = ref.watch(audioStateProvider);
+  return state.isAvailable && !settings.isEnabled;
+});
+
 final canListenProvider = Provider<bool>((ref) {
   final state = ref.watch(audioStateProvider); // Watch the state, not just read notifier
   return state.isAvailable && state.hasPermissions;

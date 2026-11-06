@@ -5,6 +5,7 @@ import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
 import 'package:learning_pwa/widgets/study/study_mode_selector.dart';
 import 'package:learning_pwa/widgets/study/study_content_router.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/study/study_navigation_controls.dart';
 
 /// Refactored study screen with extracted components
@@ -45,6 +46,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
           const AudioPlaybackIndicator(),
           const SizedBox(width: 8),
           const AudioSpeedControl(),
+          const AudioPreferencesAction(),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {

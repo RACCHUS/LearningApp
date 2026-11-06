@@ -61,6 +61,7 @@ void main() {
     return ProviderScope(
       overrides: [
         canSpeakProvider.overrideWithValue(false),
+        readAloudOffProvider.overrideWithValue(false),
         canListenProvider.overrideWithValue(false),
         studyProvider.overrideWith((ref) => FakeStudyNotifier()),
       ],

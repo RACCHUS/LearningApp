@@ -24,7 +24,6 @@ class AudioQuestionHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canSpeak = ref.watch(canSpeakProvider);
     final canListen = ref.watch(canListenProvider);
 
     return Column(
@@ -38,15 +37,13 @@ class AudioQuestionHeader extends ConsumerWidget {
               child: customTextBuilder?.call(questionText) ?? 
                      Text(questionText, style: textStyle),
             ),
-            if (canSpeak) ...[
-              const SizedBox(width: 8),
-              AudioControlWidget(
-                text: questionText,
-                contentType: 'question',
-                autoPlay: true,
-                tooltip: 'Listen to question',
-              ),
-            ],
+            const SizedBox(width: 8),
+            AudioControlWidget(
+              text: questionText,
+              contentType: 'question',
+              autoPlay: true,
+              tooltip: 'Read question aloud',
+            ),
           ],
         ),
         
@@ -56,13 +53,13 @@ class AudioQuestionHeader extends ConsumerWidget {
           Row(
             children: [
               VoiceInputButton(
-                tooltip: voiceInputHint ?? 'Voice answer',
+                tooltip: 'Answer with microphone',
                 onResult: onVoiceInput,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  voiceInputHint ?? 'Speak your answer',
+                  'Answer by voice: ${voiceInputHint ?? 'speak your answer'}',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,

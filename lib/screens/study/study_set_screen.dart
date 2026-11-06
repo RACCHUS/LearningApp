@@ -14,6 +14,7 @@ import 'package:learning_pwa/widgets/error_retry_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 
 class StudySetScreen extends StatefulWidget {
@@ -156,6 +157,7 @@ class _StudySetScreenState extends State<StudySetScreen> {
       appBar: AppBar(
         title: const Text('Study Set'),
         actions: [
+          const AudioPreferencesAction(),
           Consumer(
             builder: (context, ref, _) {
               final timerEnabled = ref.watch(

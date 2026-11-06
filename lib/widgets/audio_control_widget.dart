@@ -23,27 +23,32 @@ class AudioControlWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canSpeak = ref.watch(canSpeakProvider);
-    final audioState = ref.watch(audioStateProvider);
-    final audioNotifier = ref.read(audioStateProvider.notifier);
-    final settings = ref.watch(audioSettingsProvider);
-
-    // Debug: Always show audio control for testing
-    // Remove this after debugging
     if (text == null || text!.trim().isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Show debug info if audio is not available
+    final canSpeak = ref.watch(canSpeakProvider);
+
+    // Keep the speaker visible when reading is off so learners can find it;
+    // explain why it is unavailable instead of hiding it.
     if (!canSpeak) {
-      return Tooltip(
-        message: 'Audio not available: enabled=${settings.isEnabled}, available=${audioState.isAvailable}',
-        child: IconButton(
-          onPressed: null,
-          icon: const Icon(Icons.volume_off, color: Colors.grey),
-        ),
+      final turnedOff = ref.watch(readAloudOffProvider);
+      return IconButton(
+        key: const Key('audio-reader-control'),
+        onPressed: turnedOff
+            ? () => ref.read(audioSettingsProvider.notifier).toggleEnabled()
+            : null,
+        icon: const Icon(Icons.volume_off),
+        tooltip: turnedOff
+            ? 'Read aloud is off. Tap to turn it on.'
+            : "Read aloud isn't available in this browser",
+        iconSize: 24,
       );
     }
+
+    final audioState = ref.watch(audioStateProvider);
+    final audioNotifier = ref.read(audioStateProvider.notifier);
+    final settings = ref.watch(audioSettingsProvider);
 
     // Auto-play functionality based on settings and content type
     // Only autoplay if explicitly requested AND enabled in settings
@@ -72,6 +77,7 @@ class AudioControlWidget extends ConsumerWidget {
     }
 
     return IconButton(
+      key: const Key('audio-reader-control'),
       onPressed: _getOnPressed(audioState, audioNotifier),
       icon: Icon(_getIcon(audioState)),
       tooltip: tooltip ?? _getTooltip(audioState),
