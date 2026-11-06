@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "learningapp": {
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/mcp_server/bin/learningapp_mcp.dart"
+      ]
+    }
+  }
+}
