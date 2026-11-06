@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:learning_pwa/config/brand_config.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
 
@@ -9,20 +10,20 @@ class AppTheme {
   static const Color _darkSurfaceContainer = Color(0xFF1A1C24);   // Card backgrounds
   static const Color _darkSurfaceContainerHigh = Color(0xFF232530); // Elevated elements
   static const Color _darkPrimary = Color(0xFF4FC3F7);            // Brighter cyan
-  static const Color _darkSecondary = Color(0xFF80CBC4);          // Softer teal
   static const Color _darkTertiary = Color(0xFFFFB74D);           // Warm accent
   static const Color _darkCardBorder = Color(0xFF2A2D38);         // Visible card borders
   
   // ============== LIGHT THEME COLORS ==============
   static const Color _lightPrimary = Color(0xFF0288D1);
-  static const Color _lightSecondary = Color(0xFF00897B);
   
-  static ThemeData lightTheme() {
+  static ThemeData lightTheme([Color? primary, Color? secondary]) {
+    final effectivePrimary = primary ?? BrandConfig.primaryColor;
+    final effectiveSecondary = secondary ?? BrandConfig.secondaryColor;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _lightPrimary,
+      seedColor: effectivePrimary,
       brightness: Brightness.light,
-      primary: _lightPrimary,
-      secondary: _lightSecondary,
+      primary: effectivePrimary,
+      secondary: effectiveSecondary,
     );
     
     return ThemeData(
@@ -94,9 +95,11 @@ class AppTheme {
     );
   }
 
-  static ThemeData darkTheme() {
+  static ThemeData darkTheme([Color? primary, Color? secondary]) {
+    final effectivePrimary = primary ?? BrandConfig.darkPrimaryColor;
+    final effectiveSecondary = secondary ?? BrandConfig.darkSecondaryColor;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _darkPrimary,
+      seedColor: effectivePrimary,
       brightness: Brightness.dark,
       surface: _darkSurface,
       surfaceContainerLowest: _darkSurface,
@@ -104,8 +107,8 @@ class AppTheme {
       surfaceContainer: _darkSurfaceContainer,
       surfaceContainerHigh: _darkSurfaceContainerHigh,
       surfaceContainerHighest: _darkSurfaceContainerHigh,
-      primary: _darkPrimary,
-      secondary: _darkSecondary,
+      primary: effectivePrimary,
+      secondary: effectiveSecondary,
       tertiary: _darkTertiary,
       onPrimary: Colors.black,
       onSecondary: Colors.black,

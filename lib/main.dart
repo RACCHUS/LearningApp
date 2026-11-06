@@ -1,3 +1,4 @@
+import 'package:learning_pwa/config/brand_config.dart';
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -243,7 +244,7 @@ class _LearningAppState extends ConsumerState<LearningApp> {
 
     return MaterialApp.router(
       scaffoldMessengerKey: PushNotificationService.scaffoldMessengerKey,
-      title: 'Learning PWA',
+      title: BrandConfig.appName,
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
       themeMode: themeMode,

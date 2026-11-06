@@ -101,7 +101,7 @@ jobs:
       - name: Parse Windows PowerShell scripts (no database connection)
         shell: pwsh
         run: |
-          foreach ($script in @('tool/backup_hosted_learningapp.ps1', 'tool/guarded_supabase_deploy.ps1')) {
+          foreach ($script in @('tool/backup_hosted_learningapp.ps1', 'tool/guarded_supabase_deploy.ps1', 'deploy/self-host/bootstrap.ps1')) {
             $tokens = $null
             $parseErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($script, [ref]$tokens, [ref]$parseErrors) | Out-Null
