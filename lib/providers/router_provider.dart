@@ -1,19 +1,19 @@
 import 'package:learning_pwa/screens/settings_screen.dart';
-import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart';
-import 'package:learning_pwa/screens/governance/cost_observability_screen.dart';
+import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart' deferred as moderation_queue;
+import 'package:learning_pwa/screens/governance/cost_observability_screen.dart' deferred as cost_observability;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/screens/lessons/create_lesson_screen.dart';
-import 'package:learning_pwa/screens/lesson_editor_screen.dart';
-import 'package:learning_pwa/screens/course_builder_screen.dart';
+import 'package:learning_pwa/screens/lesson_editor_screen.dart' deferred as lesson_editor;
+import 'package:learning_pwa/screens/course_builder_screen.dart' deferred as course_builder;
 import 'package:learning_pwa/screens/study/lesson_screen.dart';
 import 'package:learning_pwa/screens/study/study_set_screen.dart';
 import 'package:learning_pwa/screens/lessons/lesson_selection_screen.dart';
 import 'package:learning_pwa/screens/auth/login_screen.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
-import 'package:learning_pwa/screens/test/hands_free_test_screen.dart';
+import 'package:learning_pwa/screens/test/hands_free_test_screen.dart' deferred as hands_free_test;
 import 'package:learning_pwa/screens/course_management_screen.dart';
 import 'package:learning_pwa/screens/courses/course_detail_screen.dart';
 import 'package:learning_pwa/screens/study_sets/content_picker_screen.dart';
@@ -25,9 +25,9 @@ import 'package:learning_pwa/screens/skills/skills_profile_screen.dart';
 import 'package:learning_pwa/screens/skills/skill_detail_screen.dart';
 import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
-import 'package:learning_pwa/screens/settings/reset_center_screen.dart';
+import 'package:learning_pwa/screens/settings/reset_center_screen.dart' deferred as reset_center;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
-import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart';
+import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart' deferred as guided_generation;
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
 import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
@@ -36,13 +36,14 @@ import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
-import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart';
-import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart';
+import 'package:learning_pwa/screens/taxonomy/taxonomy_explorer_screen.dart' deferred as taxonomy_explorer;
+import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart' deferred as occupation_detail;
 import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
 import 'package:learning_pwa/screens/literacy/life_milestones_screen.dart';
 import 'package:learning_pwa/screens/literacy/life_domains_screen.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
+import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -372,17 +373,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/moderation',
         name: 'moderation-queue',
-        builder: (context, state) => const ModerationQueueScreen(),
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: moderation_queue.loadLibrary,
+          builder: () => moderation_queue.ModerationQueueScreen(),
+        ),
       ),
       GoRoute(
         path: '/observability',
         name: 'cost-observability',
-        builder: (context, state) => const CostObservabilityScreen(),
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: cost_observability.loadLibrary,
+          builder: () => cost_observability.CostObservabilityScreen(),
+        ),
       ),
       GoRoute(
         path: '/test/hands-free',
         name: 'hands-free-test',
-        builder: (context, state) => const HandsFreeTestScreen(),
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: hands_free_test.loadLibrary,
+          builder: () => hands_free_test.HandsFreeTestScreen(),
+        ),
       ),
 
       // Lesson editor routes
@@ -398,7 +408,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialTab = 2;
           }
 
-          return LessonEditorScreen(initialTabIndex: initialTab);
+          return DeferredLoaderWidget(
+            loader: lesson_editor.loadLibrary,
+            builder: () => lesson_editor.LessonEditorScreen(initialTabIndex: initialTab),
+          );
         },
       ),
       GoRoute(
@@ -414,9 +427,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialTab = 2;
           }
 
-          return LessonEditorScreen(
-            lessonId: lessonId,
-            initialTabIndex: initialTab,
+          return DeferredLoaderWidget(
+            loader: lesson_editor.loadLibrary,
+            builder: () => lesson_editor.LessonEditorScreen(
+              lessonId: lessonId,
+              initialTabIndex: initialTab,
+            ),
           );
         },
       ),
@@ -425,14 +441,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/course-builder',
         name: 'course-builder-new',
-        builder: (context, state) => const CourseBuilderScreen(),
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: course_builder.loadLibrary,
+          builder: () => course_builder.CourseBuilderScreen(),
+        ),
       ),
       GoRoute(
         path: '/course-builder/:courseId',
         name: 'course-builder',
         builder: (context, state) {
           final courseId = state.pathParameters['courseId'];
-          return CourseBuilderScreen(courseId: courseId);
+          return DeferredLoaderWidget(
+            loader: course_builder.loadLibrary,
+            builder: () => course_builder.CourseBuilderScreen(courseId: courseId),
+          );
         },
       ),
 
@@ -477,9 +499,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           } else if (tabParam == 'clusters' || tabParam == 'disciplines') {
             initialTab = 2;
           }
-          return TaxonomyExplorerScreen(
-            initialTab: initialTab,
-            initialQuery: queryParam,
+          return DeferredLoaderWidget(
+            loader: taxonomy_explorer.loadLibrary,
+            builder: () => taxonomy_explorer.TaxonomyExplorerScreen(
+              initialTab: initialTab,
+              initialQuery: queryParam,
+            ),
           );
         },
       ),
@@ -492,7 +517,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'occupation-detail',
         builder: (context, state) {
           final code = state.pathParameters['code']!;
-          return OccupationDetailScreen(occupationCode: code);
+          return DeferredLoaderWidget(
+            loader: occupation_detail.loadLibrary,
+            builder: () => occupation_detail.OccupationDetailScreen(occupationCode: code),
+          );
         },
       ),
 
@@ -527,15 +555,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'guided-generation',
         builder: (context, state) {
           final q = state.uri.queryParameters;
-          return GuidedGenerationScreen(
-            initialSubject: q['subject'],
-            initialAudience: q['audience'],
-            initialDuration: int.tryParse(q['duration'] ?? ''),
-            initialDifficulty: q['difficulty'],
-            initialFocus: q['focus'],
-            nodeId: q['nodeId'],
-            targetVersionId: q['targetVersionId'],
-            attachmentIntent: q['attachmentIntent'],
+          return DeferredLoaderWidget(
+            loader: guided_generation.loadLibrary,
+            builder: () => guided_generation.GuidedGenerationScreen(
+              initialSubject: q['subject'],
+              initialAudience: q['audience'],
+              initialDuration: int.tryParse(q['duration'] ?? ''),
+              initialDifficulty: q['difficulty'],
+              initialFocus: q['focus'],
+              nodeId: q['nodeId'],
+              targetVersionId: q['targetVersionId'],
+              attachmentIntent: q['attachmentIntent'],
+            ),
           );
         },
       ),
@@ -544,7 +575,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/reset',
         name: 'reset-center',
-        builder: (context, state) => const ResetCenterScreen(),
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: reset_center.loadLibrary,
+          builder: () => reset_center.ResetCenterScreen(),
+        ),
       ),
     ],
 
