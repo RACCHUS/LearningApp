@@ -9,6 +9,7 @@
 **v1.4 changelog:** one user-evidence amendment — replace opaque three-dot overflow with state-aware account actions (avatar when signed in; Log in + Settings when signed out/guest), with locked local-only device preferences. See §1.7.
 **v1.5 changelog:** first-run simplification under direct user evidence — remove the separate onboarding wizard, make Learn's zero state the onboarding experience, and add persistent searchable Help as quiet utility chrome. See §1.8 and §5.8.
 **v1.6 changelog:** collapsible searchable desktop rail, required Help placement beside account actions, goal-creation suggestions with custom input preserved, and trusted-catalog provenance filters. See §1.9, §3, §5.4, and §5.8.
+**v1.7 changelog:** Library subtraction under user evidence — one Create chooser, Create from the empty-search state, a single Source control instead of four chips, and banners folded into existing chips/lists. See §1.10 and §5.4.
 
 ---
 
@@ -174,6 +175,16 @@ Raised by the product owner against the shipped Learn home, Create Goal flow, an
 | **G1** | **Desktop/tablet home needs a collapsible, searchable sidebar.** The learning rail at ≥900dp was not specified as collapsible, and search lived only inside Library. | **Collapsible `NavigationRail`** on desktop/tablet (§3, §7.2). A rail search field routes to Library with the entered query. Phone layouts keep the bottom `NavigationBar` and do not gain a rail. |
 | **G2** | **Help disappeared from the top-right account row.** Learners expect `?` immediately before Settings and Log in on Learn, Library, and Progress. | **Required `HelpAction` then `AccountActions`** in those app bars (§5.1, §5.8). Help is not optional chrome and must remain when the context switcher is present. |
 | **G3** | **Create your own goal needed database suggestions without blocking custom input, plus a way to hide nonsense user content while still promoting useful community goals later.** | **Four-section Create Goal form** with catalog (and SOC/CIP) suggestions, always-editable fields, trusted-catalog default in Library, source labels, and database-enforced provenance (§5.4). Owners may request review; they cannot self-approve or forge official flags. |
+
+### 1.10 Amendment in v1.7 (Direct User Evidence)
+
+Raised from learner feedback and verified in code (`LearningApp_Learner_Experience_Improvement_Plan_v2.md` §3.1, A1, A2, A8). Accepted under the **User evidence** ground (§14). Destination-level IA is unchanged.
+
+| # | Finding | Resolution |
+|---|---|---|
+| **H1** | **Create appeared four or more times in Library under three names** (Create Goal ×2+, Create Lesson, a bottom Create row), and the main row sat below nearly everything else. | **One Create button** near the top of Library opens a single "What would you like to make?" chooser (goal, study set, lesson, import). All other Library Create buttons are removed (A1). |
+| **H2** | **An empty search was a dead end.** | The empty-search state offers **Create "query"**, which opens the same chooser and carries the query into the goal title (A2). |
+| **H3** | **Three filter rows and two banners came before content.** | The four source chips collapse into one **Source** control (default Trusted catalog). The taxonomy banner moves to the More list; the Life Milestones banner appears only under its own chip. The hard-coded domain count is replaced by the real count (A8). |
 
 ---
 
@@ -519,19 +530,22 @@ Library                                    [?] [Account]
     ▸ Study sets     12      ▸ Pinned         5
     ▸ Recent
 
+  [ Words ]                                  [ + Create ]
+
   Discover
-    [ Trusted catalog ] [ Official ] [ Reviewed community ] [ My goals ]
     [ Categories ]
+    Source: Trusted catalog ▾   (Official · Reviewed community · My goals)
     ...results with source labels...
 
-  Create
-    + Goal    + Study set    + Lesson    ↑ Import
+  Empty search → "Nothing found for "query"."  [ + Create "query" ]
+
+  + Create opens one chooser: Goal · Study set · Lesson · Import
 ```
 
 - Search and all filter chips live here and **only** here, except the desktop/tablet rail search, which is a shortcut that lands on this same Library search (G1).
 - Default Discover source is **Trusted catalog**. Unreviewed personal goals are hidden until the learner chooses **My goals**.
 - Source labels distinguish Official, Catalog, reviewed community, pending/rejected community, and personal drafts. They are backed by `review_status` / `is_official` in the database, not by UI-only badges.
-- Create lives here and **only** here (plus the Learn zero-state **Create your own** path into the same dialog). It is a normal-weight button, not the loudest element on the screen.
+- Create lives here and **only** here (plus the Learn zero-state **Create your own** path into the same dialog). Library has **one** Create button, which opens a single chooser, plus a Create action in the empty-search state that carries the query into that chooser (v1.7, H1–H2). It is a normal-weight button, not the loudest element on the screen.
 - **Create Goal** fields: Goal type, Title, Organization, Description/purpose. All remain editable. Title, organization, and purpose suggest trusted catalog values for the selected type. Career and academic titles also suggest bounded SOC and CIP matches; selecting a classification still creates a private draft, never an official catalog row. Selecting an existing catalog target may open that target instead of duplicating it.
 - Owners of unreviewed or rejected personal goals may request community review from the target detail screen. Approval and public publication are service-role only.
 - Absorbs today's `Lessons | Courses | Study Sets` tabs plus `/careers`, `/my-careers`, `/course-management`, `/lesson-selection`, `/content-picker`.
