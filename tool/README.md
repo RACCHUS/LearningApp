@@ -162,6 +162,22 @@ dart run tool/verify_migration_history.dart --isolate-pending build/pending_migr
 dart run tool/verify_migration_history.dart --restore-pending build/pending_migrations
 ```
 
+### `mcp_server/`
+**Purpose**: High-performance, zero-overhead Model Context Protocol (MCP) server written in pure Dart. Exposes LearningApp's curriculum blueprints, FSRS learner models, item psychometrics, and pedagogical validation gates to any AI assistant (Claude Desktop, Cursor, Antigravity, VS Code, ChatGPT).
+
+**Usage**:
+```bash
+# Run stdio MCP server (offline mode using local manifests in content/ and data/)
+dart run tool/mcp_server/bin/learningapp_mcp.dart
+
+# Run with connected Supabase instance
+dart run tool/mcp_server/bin/learningapp_mcp.dart --supabase-url <url> --supabase-key <key>
+
+# Verbose protocol logging to stderr
+dart run tool/mcp_server/bin/learningapp_mcp.dart -v
+```
+See `tool/mcp_server/README.md` for full tool schemas, resources, prompts, and client configuration guides.
+
 ### Troubleshooting:
 - **Environment Error**: Check `.env` file exists and contains required variables
 - **File Not Found**: Ensure you're running from project root directory
