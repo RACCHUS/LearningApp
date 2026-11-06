@@ -22,6 +22,7 @@ export 'src/algorithms/procedural_evaluator_core.dart';
 export 'src/algorithms/evidence_scorer_core.dart';
 export 'src/algorithms/proposal_generator_core.dart';
 export 'src/algorithms/coach_recommendation_engine.dart';
+export 'src/algorithms/irt_calibrator_core.dart';
 export 'src/validation/manifest_validator_core.dart';
 
 export 'src/video/video_embed_resolver.dart';
@@ -31,4 +32,5 @@ export 'src/interop/xapi_statement_emitter.dart';
 export 'src/interop/open_badge_converter.dart';
 export 'src/interop/lti_launcher.dart';
 export 'src/interop/case_standards_converter.dart';
+export 'src/interop/cmi5_converter.dart';
 
