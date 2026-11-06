@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/answer_feedback.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/true_false_selector.dart';
@@ -60,12 +61,9 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget> {
         if (widget.showCorrect && widget.selectedValue != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              (widget.selectedValue == (widget.content.correctAnswer == 1)) ? 'Correct!' : 'Incorrect',
-              style: TextStyle(
-                color: (widget.selectedValue == (widget.content.correctAnswer == 1)) ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+            child: AnswerFeedbackText(
+              correct:
+                  widget.selectedValue == (widget.content.correctAnswer == 1),
             ),
           ),
         if (widget.showCorrect && widget.content.explanation != null)

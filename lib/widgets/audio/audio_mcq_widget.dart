@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/answer_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
@@ -75,14 +76,18 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
           final isSelected = _selectedAnswer == index;
           final isCorrect = widget.correctAnswer == index;
           
-          Color? backgroundColor;
+          bool? mark;
           if (widget.showResults && _selectedAnswer != null) {
-            if (isSelected) {
-              backgroundColor = isCorrect ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2);
-            } else if (isCorrect) {
-              backgroundColor = Colors.green.withValues(alpha: 0.1);
+            if (isCorrect) {
+              mark = true;
+            } else if (isSelected) {
+              mark = false;
             }
           }
+          final Color? backgroundColor = mark == null
+              ? null
+              : answerColor(context, correct: mark)
+                  .withValues(alpha: isSelected ? 0.2 : 0.1);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
@@ -104,6 +109,10 @@ class _AudioMCQWidgetState extends ConsumerState<AudioMCQWidget> {
                       child: widget.customTextBuilder?.call('$optionLetter. $option') ??
                              Text('$optionLetter. $option'),
                     ),
+                    if (mark != null) ...[
+                      const SizedBox(width: 8),
+                      AnswerMarkIcon(correct: mark),
+                    ],
                     const SizedBox(width: 8),
                       AudioControlWidget(
                         text: '$optionLetter. $option',
