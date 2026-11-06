@@ -209,8 +209,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
 
     final bool isSearching = _query.trim().isNotEmpty;
-    final int totalSearchResults =
-        targets.length + courses.length + lessons.length + concepts.length;
+    final bool showWordsResult = isSearching && _matchesWordPractice(_query);
+    final int totalSearchResults = targets.length +
+        courses.length +
+        lessons.length +
+        concepts.length +
+        (showWordsResult ? 1 : 0);
 
     return Scaffold(
       appBar: AppBar(
@@ -222,12 +226,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         children: [
           Row(
             children: [
-              if (_query.isEmpty)
-                OutlinedButton.icon(
+              Tooltip(
+                message: 'Your spelling word lists',
+                child: OutlinedButton.icon(
+                  key: const Key('library-words'),
                   onPressed: () => context.go('/words'),
                   icon: const Icon(Icons.spellcheck),
-                  label: const Text('My spelling words'),
+                  label: const Text('Words'),
                 ),
+              ),
               const Spacer(),
               OutlinedButton.icon(
                 key: const Key('library-create'),
@@ -460,6 +467,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 ],
               ),
             ] else ...[
+              if (showWordsResult)
+                ListTile(
+                  key: const Key('library-search-words'),
+                  leading: const Icon(Icons.spellcheck),
+                  title: const Text('Words'),
+                  subtitle: const Text('Spelling practice with your own word lists'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.go('/words'),
+                ),
               // Targets
               ...targets.map(
                 (t) => ListTile(
@@ -1041,6 +1057,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       },
     );
   }
+}
+
+const _wordPracticeTerms = ['word', 'spell', 'vocab'];
+
+bool _matchesWordPractice(String query) {
+  final q = query.trim().toLowerCase();
+  if (q.length < 3) return false;
+  return _wordPracticeTerms.any((term) => q.contains(term) || term.startsWith(q));
 }
 
 class _SectionHeader extends StatelessWidget {

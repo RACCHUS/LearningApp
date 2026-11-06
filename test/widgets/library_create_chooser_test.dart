@@ -103,6 +103,31 @@ void main() {
         .where((e) => e.controller.text == 'beekeeping');
     expect(titleField, isNotEmpty);
   });
+
+  testWidgets('Words is visible in browse state',
+      (tester) async {
+    await tester.pumpWidget(app());
+    await settle(tester);
+    expect(find.byKey(const Key('library-words')), findsOneWidget);
+    expect(find.text('My spelling words'), findsNothing);
+  });
+
+  testWidgets('Words stays visible during an unrelated search',
+      (tester) async {
+    await tester.pumpWidget(app(initialQuery: 'photosynthesis'));
+    await settle(tester);
+    expect(find.byKey(const Key('library-words')), findsOneWidget);
+    expect(find.byKey(const Key('library-search-words')), findsNothing);
+  });
+
+  testWidgets('searching for word practice surfaces Words as a result',
+      (tester) async {
+    await tester.pumpWidget(app(initialQuery: 'spelling'));
+    await settle(tester);
+
+    expect(find.byKey(const Key('library-search-words')), findsOneWidget);
+    expect(find.byKey(const Key('library-empty-search-create')), findsNothing);
+  });
 }
 
 class _FakeAuthNotifier extends StateNotifier<AuthState>
