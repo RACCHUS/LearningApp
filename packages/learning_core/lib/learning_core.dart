@@ -12,6 +12,8 @@ export 'src/models/brand_config_core.dart';
 export 'src/models/video_interactive_module.dart';
 export 'src/models/procedural_rubric.dart';
 export 'src/models/content_proposal.dart';
+export 'src/models/entitlement_core.dart';
+export 'src/models/tutoring_session.dart';
 
 export 'src/algorithms/fsrs_scheduler_core.dart';
 export 'src/algorithms/item_evaluator_core.dart';
@@ -20,6 +22,7 @@ export 'src/algorithms/procedural_evaluator_core.dart';
 export 'src/algorithms/evidence_scorer_core.dart';
 export 'src/algorithms/proposal_generator_core.dart';
 export 'src/algorithms/coach_recommendation_engine.dart';
+export 'src/algorithms/irt_calibrator_core.dart';
 export 'src/validation/manifest_validator_core.dart';
 
 export 'src/video/video_embed_resolver.dart';
@@ -28,4 +31,6 @@ export 'src/interop/qti_item_converter.dart';
 export 'src/interop/xapi_statement_emitter.dart';
 export 'src/interop/open_badge_converter.dart';
 export 'src/interop/lti_launcher.dart';
+export 'src/interop/case_standards_converter.dart';
+export 'src/interop/cmi5_converter.dart';
 
