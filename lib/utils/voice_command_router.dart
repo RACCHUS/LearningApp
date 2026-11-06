@@ -16,7 +16,9 @@ class VoiceCommandRouter {
       final isAmbiguousOrdinal =
           standardCommand.value == NavigationCommand.first ||
               standardCommand.value == NavigationCommand.last;
-      final isAnswerContext = context == 'mcq' || context == 'true_false';
+      final isAnswerContext = context == 'mcq' ||
+          context == 'true_false' ||
+          context == 'question';
 
       if (!isAmbiguousOrdinal || !isAnswerContext) {
         return standardCommand;
@@ -43,6 +45,9 @@ class VoiceCommandRouter {
         return _parseMcqContext(normalizedText);
       case 'true_false':
         return _parseTrueFalseContext(normalizedText);
+      case 'question':
+        return _parseMcqContext(normalizedText) ??
+            _parseTrueFalseContext(normalizedText);
       case 'short_answer':
         return _parseShortAnswerContext(normalizedText, originalText);
       case 'lesson_navigation':

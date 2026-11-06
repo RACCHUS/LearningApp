@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/models/knowledge_concept.dart';
 import 'package:learning_pwa/models/content_provenance.dart';
 import 'package:learning_pwa/models/unified_lesson.dart';
+import 'package:learning_pwa/widgets/assessment/assessment_item_renderer.dart';
 import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/callout_block_widget.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/code_block_widget.dart';
@@ -210,6 +212,81 @@ void main() {
       // After tap: Explanation and answer revealed
       expect(find.text('Only Alice\'s private key can invert operations performed with her public key.'), findsOneWidget);
       expect(find.text('Hide Explanation'), findsOneWidget);
+    });
+
+    testWidgets('RichLessonReader generates a fresh per-attempt nonce and option permutation when retrying or re-presenting an assessment item', (tester) async {
+      tester.view.physicalSize = const Size(1200, 3500);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final assessmentItem = AssessmentItem(
+        id: 'lesson-item-rsa-1',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Which algorithm relies on elliptic curve discrete logarithms?',
+        responseSpec: {
+          'options': ['RSA', 'ECDSA', 'AES-GCM', 'ChaCha20'],
+        },
+        scoringSpec: {
+          'correct_index': 1,
+        },
+        explanation: 'ECDSA is based on the elliptic curve discrete logarithm problem.',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final lessonWithItems = UnifiedLesson(
+        lesson: testLesson,
+        blocks: [blocks.first],
+        assessmentItems: [assessmentItem],
+        concepts: [concept],
+        provenance: [mapping],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RichLessonReader(unifiedLesson: lessonWithItems),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open practice evaluation section
+      await tester.tap(find.textContaining('Begin Practice Evaluation'));
+      await tester.pumpAndSettle();
+
+      final readerState =
+          tester.state(find.byType(RichLessonReader)) as dynamic;
+      final itemState =
+          tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+
+      final nonce1 = readerState.attemptNonceForItem(assessmentItem.id) as int;
+      final order1 = List<int>.from(itemState.presentationOrder as List<int>);
+      expect(order1.toSet(), equals({0, 1, 2, 3}));
+
+      // Select an option and submit to reveal 'Try Again'
+      await tester.tap(find.text('ECDSA'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+
+      // Retry the item via the 'Try Again' button
+      await tester.tap(find.text('Try Again'));
+      await tester.pumpAndSettle();
+
+      final nonce2 = readerState.attemptNonceForItem(assessmentItem.id) as int;
+      final order2 = List<int>.from(itemState.presentationOrder as List<int>);
+      expect(nonce2, isNot(equals(nonce1)));
+      expect(order2.toSet(), equals({0, 1, 2, 3}));
+      expect(order2, isNot(equals(order1)));
+
+      // Re-present all evaluation items via 'Retry All' and verify another fresh permutation
+      await tester.tap(find.text('Retry All'));
+      await tester.pumpAndSettle();
+
+      final nonce3 = readerState.attemptNonceForItem(assessmentItem.id) as int;
+      final order3 = List<int>.from(itemState.presentationOrder as List<int>);
+      expect(nonce3, isNot(equals(nonce2)));
+      expect(order3, isNot(equals(order2)));
     });
   });
 }

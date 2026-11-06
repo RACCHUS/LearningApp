@@ -5,6 +5,7 @@ import '../../models/assessment_engine/adaptive_practice_state.dart';
 import '../../models/assessment_item.dart';
 import '../../providers/assessment_engine_provider.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
+import '../../widgets/mcq_options.dart';
 
 class AdaptivePracticeScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -26,19 +27,50 @@ class AdaptivePracticeScreen extends ConsumerStatefulWidget {
 
 class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen> {
   AssessmentItem? _currentItem;
-  late final int _sessionNonce;
+  late int _attemptNonce;
+  int _attemptCount = 0;
+  List<int>? _lastPresentationOrder;
+
+  int get attemptNonce => _attemptNonce;
+  int get attemptCount => _attemptCount;
+  AssessmentItem? get currentItem => _currentItem;
 
   @override
   void initState() {
     super.initState();
-    _sessionNonce = DateTime.now().millisecondsSinceEpoch;
+    _attemptNonce = DateTime.now().microsecondsSinceEpoch & 0x7FFFFFFF;
+    if (_attemptNonce == 0) {
+      _attemptNonce = 0x5bf03635;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(adaptivePracticeProvider.notifier).startSession(
             userId: widget.userId,
             targetVersionId: widget.targetVersionId,
           );
       _pickNextQuestion();
     });
+  }
+
+  void _advanceAttemptNonceFor(AssessmentItem? item) {
+    final optionsRaw = item?.responseSpec['options'] as List?;
+    final options = optionsRaw?.map((e) => e.toString()).toList();
+    _attemptNonce = McqOptions.nextPresentationNonce(
+      currentNonce: _attemptNonce,
+      options: options,
+      itemHash: item?.id.hashCode,
+      previousOrder: _lastPresentationOrder,
+    );
+    _attemptCount++;
+    if (item != null && options != null && options.length > 1) {
+      _lastPresentationOrder = McqOptions.computePresentationOrder(
+        options,
+        presentationSeed: _attemptNonce ^ item.id.hashCode,
+        shuffle: true,
+      );
+    } else {
+      _lastPresentationOrder = null;
+    }
   }
 
   void _pickNextQuestion() {
@@ -54,7 +86,26 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
       pool: widget.candidatePool,
     );
 
-    setState(() => _currentItem = next);
+    setState(() {
+      _currentItem = next;
+      _advanceAttemptNonceFor(next);
+    });
+  }
+
+  /// Retries the currently displayed item with a fresh per-attempt nonce.
+  void retryCurrentQuestion() {
+    if (_currentItem == null) return;
+    setState(() {
+      _advanceAttemptNonceFor(_currentItem);
+    });
+  }
+
+  /// Presents or re-presents [item] within the current session with a fresh per-attempt nonce.
+  void presentItem(AssessmentItem item) {
+    setState(() {
+      _currentItem = item;
+      _advanceAttemptNonceFor(item);
+    });
   }
 
   void _onAnswerSubmitted(bool isCorrect, double score) {
@@ -262,7 +313,8 @@ class _AdaptivePracticeScreenState extends ConsumerState<AdaptivePracticeScreen>
                                   item: _currentItem!,
                                   onAnswerSubmitted: _onAnswerSubmitted,
                                   onCompleted: _pickNextQuestion,
-                                  presentationSeed: _sessionNonce,
+                                  onRetry: retryCurrentQuestion,
+                                  presentationSeed: _attemptNonce,
                                 ),
                               ),
                             ],

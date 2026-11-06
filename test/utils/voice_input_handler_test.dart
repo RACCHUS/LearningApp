@@ -1,6 +1,11 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/content_types.dart';
+import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
+import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
+import 'package:learning_pwa/widgets/lesson_content_renderer.dart';
 
 void main() {
   group('VoiceInputHandler', () {
@@ -26,7 +31,7 @@ void main() {
       expect(result, equals(1));
     });
 
-    test('translates spoken A with presentationOrder [2, 0, 1, 3] to original index 2', () {
+    test('translates spoken A-D with presentationOrder [2, 0, 1, 3] to original indices', () {
       // Presented slots:
       // A (slot 0) -> original option 2 ('Gamma')
       // B (slot 1) -> original option 0 ('Alpha')
@@ -63,15 +68,144 @@ void main() {
       expect(resultD, equals(3));
     });
 
-    test('handles fallback natural phrases with presentationOrder', () {
+    test('handles fallback natural phrases and choice prefixes with presentationOrder', () {
       final presentationOrder = [3, 2, 1, 0];
-      final result = VoiceInputHandler.handleMcqVoiceInput(
-        'the first one',
-        mcq,
-        presentationOrder: presentationOrder,
+      expect(
+        VoiceInputHandler.handleMcqVoiceInput(
+          'the first one',
+          mcq,
+          presentationOrder: presentationOrder,
+        ),
+        equals(3),
       );
-      expect(result, equals(3));
+      expect(
+        VoiceInputHandler.handleMcqVoiceInput(
+          'choose b',
+          mcq,
+          presentationOrder: presentationOrder,
+        ),
+        equals(2),
+      );
+      expect(
+        VoiceInputHandler.handleMcqVoiceInput(
+          'answer c',
+          mcq,
+          presentationOrder: presentationOrder,
+        ),
+        equals(1),
+      );
+      expect(
+        VoiceInputHandler.handleMcqVoiceInput(
+          'fourth option',
+          mcq,
+          presentationOrder: presentationOrder,
+        ),
+        equals(0),
+      );
+    });
+
+    testWidgets('LessonContentRenderer maps spoken Option A-D through shuffled order and re-randomizes on retry', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            canSpeakProvider.overrideWithValue(false),
+            canListenProvider.overrideWithValue(false),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: LessonContentRenderer(
+                content: mcq,
+                onNext: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state =
+          tester.state(find.byType(LessonContentRenderer)) as dynamic;
+      final order1 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order1.toSet(), equals({0, 1, 2, 3}));
+
+      // Verify spoken "Option A", "Option B", "Option C", "Option D" map to order1[0..3]
+      const spokenInputs = ['Option A', 'Option B', 'Option C', 'Option D'];
+      for (int slot = 0; slot < 4; slot++) {
+        state.handleVoiceInput(spokenInputs[slot]);
+        await tester.pumpAndSettle();
+        expect(state.selectedMcq, equals(order1[slot]));
+      }
+
+      // Select the slot where correctAnswer (index 1, 'Beta') is currently displayed
+      final correctSlot1 = order1.indexOf(mcq.correctAnswer);
+      state.handleVoiceInput(spokenInputs[correctSlot1]);
+      await tester.pumpAndSettle();
+      expect(state.selectedMcq, equals(mcq.correctAnswer));
+
+      await tester.tap(find.text('Submit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Correct!'), findsOneWidget);
+
+      // Tap 'Try Again' to retry the same item and verify a fresh permutation + updated voice mapping
+      await tester.tap(find.text('Try Again'));
+      await tester.pumpAndSettle();
+
+      final order2 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order2.toSet(), equals({0, 1, 2, 3}));
+      expect(order2, isNot(equals(order1)));
+      expect(state.selectedMcq, isNull);
+
+      // Spoken "Option A" on retry now selects order2[0]
+      state.handleVoiceInput('Option A');
+      await tester.pumpAndSettle();
+      expect(state.selectedMcq, equals(order2[0]));
+    });
+
+    testWidgets('QuestionContentRenderer maps spoken Option A-D through shuffled order and re-randomizes on retry', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            canSpeakProvider.overrideWithValue(false),
+            canListenProvider.overrideWithValue(false),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: QuestionContentRenderer(
+                content: mcq,
+                onNext: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state =
+          tester.state(find.byType(QuestionContentRenderer)) as dynamic;
+      final order1 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order1.toSet(), equals({0, 1, 2, 3}));
+
+      const spokenInputs = ['Option A', 'Option B', 'Option C', 'Option D'];
+      for (int slot = 0; slot < 4; slot++) {
+        state.handleVoiceInput(spokenInputs[slot]);
+        await tester.pumpAndSettle();
+        expect(state.selectedMcq, equals(order1[slot]));
+      }
+
+      // Retry via retryQuestion() and verify fresh permutation and updated voice mapping
+      state.retryQuestion();
+      await tester.pumpAndSettle();
+
+      final order2 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order2.toSet(), equals({0, 1, 2, 3}));
+      expect(order2, isNot(equals(order1)));
+      expect(state.selectedMcq, isNull);
+
+      for (int slot = 0; slot < 4; slot++) {
+        state.handleVoiceInput(spokenInputs[slot]);
+        await tester.pumpAndSettle();
+        expect(state.selectedMcq, equals(order2[slot]));
+      }
     });
   });
 }
-

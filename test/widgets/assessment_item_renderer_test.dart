@@ -477,5 +477,64 @@ void main() {
       expect(find.text('Practice evidence: Correct retrieval'), findsOneWidget);
       expect(find.text('HTTPS uses TLS encryption.'), findsOneWidget);
     });
+
+    testWidgets('Try Again button resets submission state and produces a fresh option permutation with updated voice mapping', (tester) async {
+      final item = AssessmentItem(
+        id: 'item-retry-voice',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Which port is assigned to DNS by default?',
+        responseSpec: {
+          'options': ['Port 25', 'Port 53', 'Port 80', 'Port 443'],
+        },
+        scoringSpec: {
+          'correct_index': 1,
+        },
+        explanation: 'DNS uses port 53 over UDP and TCP.',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AssessmentItemRenderer(
+              item: item,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final state =
+          tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+      final order1 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order1.toSet(), equals({0, 1, 2, 3}));
+
+      // Select displayed Option A via voice
+      final selected1 = state.selectOptionByVoice('Option A') as int?;
+      await tester.pumpAndSettle();
+      expect(selected1, equals(order1[0]));
+      expect(state.selectedSingleChoice, equals(order1[0]));
+
+      // Submit answer
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+      expect(find.text('Try Again'), findsOneWidget);
+
+      // Tap Try Again to retry
+      await tester.tap(find.text('Try Again'));
+      await tester.pumpAndSettle();
+
+      final order2 = List<int>.from(state.presentationOrder as List<int>);
+      expect(order2.toSet(), equals({0, 1, 2, 3}));
+      expect(order2, isNot(equals(order1)));
+      expect(state.selectedSingleChoice, isNull);
+
+      // Spoken Option A now maps to order2[0]
+      final selected2 = state.selectOptionByVoice('Option A') as int?;
+      await tester.pumpAndSettle();
+      expect(selected2, equals(order2[0]));
+    });
   });
 }
+

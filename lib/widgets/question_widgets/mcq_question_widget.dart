@@ -15,6 +15,7 @@ class McqQuestionWidget extends StatefulWidget {
   final Widget Function(String) customTextBuilder;
   final bool shuffleOptions;
   final int? presentationSeed;
+  final VoidCallback? onRetry;
 
   const McqQuestionWidget({
     super.key,
@@ -26,8 +27,9 @@ class McqQuestionWidget extends StatefulWidget {
     required this.onNext,
     required this.onVoiceInput,
     required this.customTextBuilder,
-    this.shuffleOptions = false,
+    this.shuffleOptions = true,
     this.presentationSeed,
+    this.onRetry,
   });
 
   @override
@@ -35,6 +37,70 @@ class McqQuestionWidget extends StatefulWidget {
 }
 
 class _McqQuestionWidgetState extends State<McqQuestionWidget> {
+  static int _globalAttemptSeed = 0x13579BDF;
+  late int _fallbackPresentationSeed;
+
+  int get effectivePresentationSeed =>
+      widget.presentationSeed ?? _fallbackPresentationSeed;
+
+  List<int> get presentationOrder => McqOptions.computePresentationOrder(
+        widget.content.options,
+        presentationSeed: effectivePresentationSeed,
+        shuffle: widget.shuffleOptions,
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    _globalAttemptSeed = McqOptions.nextPresentationNonce(
+      currentNonce: _globalAttemptSeed ^ DateTime.now().microsecondsSinceEpoch,
+      options: widget.content.options,
+      itemHash: widget.content.id.hashCode,
+    );
+    _fallbackPresentationSeed =
+        _globalAttemptSeed ^ widget.content.id.hashCode;
+  }
+
+  @override
+  void didUpdateWidget(covariant McqQuestionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content != widget.content ||
+        oldWidget.presentationSeed != widget.presentationSeed) {
+      final prevOrder = McqOptions.computePresentationOrder(
+        oldWidget.content.options,
+        presentationSeed:
+            oldWidget.presentationSeed ?? _fallbackPresentationSeed,
+        shuffle: oldWidget.shuffleOptions,
+      );
+      _globalAttemptSeed = McqOptions.nextPresentationNonce(
+        currentNonce: _globalAttemptSeed,
+        options: widget.content.options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: prevOrder,
+      );
+      _fallbackPresentationSeed =
+          _globalAttemptSeed ^ widget.content.id.hashCode;
+    }
+  }
+
+  void retry() {
+    if (widget.onRetry != null) {
+      widget.onRetry!();
+      return;
+    }
+    final prevOrder = presentationOrder;
+    setState(() {
+      _globalAttemptSeed = McqOptions.nextPresentationNonce(
+        currentNonce: _globalAttemptSeed,
+        options: widget.content.options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: prevOrder,
+      );
+      _fallbackPresentationSeed =
+          _globalAttemptSeed ^ widget.content.id.hashCode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -54,22 +120,39 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           showCorrect: widget.showCorrect,
           correctIndex: widget.content.correctAnswer,
           shuffleOptions: widget.shuffleOptions,
-          presentationSeed: widget.presentationSeed,
+          presentationSeed: effectivePresentationSeed,
         ),
         const SizedBox(height: 16),
-        PrimaryButton(
-          label: widget.showCorrect ? 'Next' : 'Submit',
-          onPressed: widget.showCorrect ? widget.onNext : widget.onSubmit,
-          loading: false,
-          icon: null,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (widget.showCorrect && widget.onRetry != null) ...[
+              OutlinedButton.icon(
+                onPressed: widget.onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Try Again'),
+              ),
+              const SizedBox(width: 12),
+            ],
+            PrimaryButton(
+              label: widget.showCorrect ? 'Next' : 'Submit',
+              onPressed: widget.showCorrect ? widget.onNext : widget.onSubmit,
+              loading: false,
+              icon: null,
+            ),
+          ],
         ),
         if (widget.showCorrect && widget.selectedIndex != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-               widget.selectedIndex == widget.content.correctAnswer ? 'Correct!' : 'Incorrect',
+              widget.selectedIndex == widget.content.correctAnswer
+                  ? 'Correct!'
+                  : 'Incorrect',
               style: TextStyle(
-                color: widget.selectedIndex == widget.content.correctAnswer ? Colors.green : Colors.red,
+                color: widget.selectedIndex == widget.content.correctAnswer
+                    ? Colors.green
+                    : Colors.red,
                 fontWeight: FontWeight.bold,
               ),
             ),

@@ -2,11 +2,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 
 class AssessmentItemRenderer extends StatefulWidget {
   final AssessmentItem item;
   final VoidCallback? onCompleted;
+  final VoidCallback? onRetry;
   final Function(bool isCorrect, double score)? onAnswerSubmitted;
   final bool isExamMode;
   final dynamic initialResponse;
@@ -18,6 +21,7 @@ class AssessmentItemRenderer extends StatefulWidget {
     super.key,
     required this.item,
     this.onCompleted,
+    this.onRetry,
     this.onAnswerSubmitted,
     this.isExamMode = false,
     this.initialResponse,
@@ -31,12 +35,18 @@ class AssessmentItemRenderer extends StatefulWidget {
 }
 
 class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
+  static int _globalAttemptNonce = 0x5bf03635;
+
   // Option presentation mapping: index in presentation -> original option index
   List<int> _presentationOrder = [];
   List<int> get presentationOrder => List.unmodifiable(_presentationOrder);
 
+  late int _localAttemptNonce;
+  int get attemptNonce => widget.presentationSeed ?? _localAttemptNonce;
+
   // State for single choice
   int? _selectedSingleChoice;
+  int? get selectedSingleChoice => _selectedSingleChoice;
 
   // State for multi-select (SATA)
   final Set<int> _selectedMultiIndices = {};
@@ -57,7 +67,21 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   @override
   void initState() {
     super.initState();
+    _localAttemptNonce = _nextLocalNonce();
     _initInteractionState();
+  }
+
+  int _nextLocalNonce({List<int>? previousOrder}) {
+    final optionsRaw = widget.item.responseSpec['options'] as List?;
+    final options = optionsRaw?.map((e) => e.toString()).toList();
+    _globalAttemptNonce = McqOptions.nextPresentationNonce(
+      currentNonce:
+          _globalAttemptNonce ^ DateTime.now().microsecondsSinceEpoch,
+      options: options,
+      itemHash: widget.item.id.hashCode,
+      previousOrder: previousOrder,
+    );
+    return _globalAttemptNonce;
   }
 
   @override
@@ -66,9 +90,54 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     if (oldWidget.item.id != widget.item.id ||
         oldWidget.initialResponse != widget.initialResponse ||
         oldWidget.presentationSeed != widget.presentationSeed) {
+      final previousOrder = (oldWidget.item.id == widget.item.id &&
+              oldWidget.presentationSeed != widget.presentationSeed &&
+              _presentationOrder.isNotEmpty)
+          ? List<int>.from(_presentationOrder)
+          : null;
+      if (widget.presentationSeed == null) {
+        _localAttemptNonce = _nextLocalNonce(previousOrder: previousOrder);
+      }
       _resetState();
-      _initInteractionState();
+      _initInteractionState(previousOrder: previousOrder);
     }
+  }
+
+  /// Retries the current item with a fresh per-attempt nonce and option permutation.
+  void retry() {
+    if (widget.onRetry != null) {
+      widget.onRetry!();
+      return;
+    }
+    final previousOrder =
+        _presentationOrder.isNotEmpty ? List<int>.from(_presentationOrder) : null;
+    setState(() {
+      _localAttemptNonce = _nextLocalNonce(previousOrder: previousOrder);
+      _resetState();
+      _initInteractionState(previousOrder: previousOrder);
+    });
+  }
+
+  /// Selects a single-choice option via spoken input (e.g. "Option A", "B", "first")
+  /// mapped through the current [presentationOrder].
+  int? selectOptionByVoice(String voiceInput) {
+    if (_submitted ||
+        widget.item.interactionType != AssessmentInteractionType.singleChoice) {
+      return null;
+    }
+    final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
+    final mapped = VoiceInputHandler.mapSpokenChoiceToIndex(
+      voiceInput,
+      optionCount: optionsRaw.length,
+      presentationOrder: _presentationOrder,
+    );
+    if (mapped != null) {
+      setState(() => _selectedSingleChoice = mapped);
+      if (widget.isExamMode) {
+        widget.onResponseChanged?.call(mapped);
+      }
+    }
+    return mapped;
   }
 
   void _resetState() {
@@ -83,7 +152,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     _feedbackMessage = '';
   }
 
-  void _initInteractionState() {
+  void _initInteractionState({List<int>? previousOrder}) {
     final spec = widget.item.responseSpec;
     if (widget.item.interactionType == AssessmentInteractionType.singleChoice ||
         widget.item.interactionType == AssessmentInteractionType.multiSelect) {
@@ -96,25 +165,27 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         final nonAnchorIndices = <int>[];
 
         for (int i = 0; i < count; i++) {
-          final text = optionsRaw[i].toString().toLowerCase();
-          final isAnchor = text.contains('all of the above') ||
-              text.contains('none of the above') ||
-              text.contains('both a and') ||
-              text.contains('both b and') ||
-              text.contains('neither a nor') ||
-              text.contains('neither of the above');
-          if (isAnchor) {
+          final text = optionsRaw[i].toString();
+          if (McqOptions.isAnchorOption(text)) {
             anchorIndices.add(i);
           } else {
             nonAnchorIndices.add(i);
           }
         }
 
-        final seed = widget.presentationSeed != null
-            ? (widget.presentationSeed! ^ widget.item.id.hashCode)
-            : (widget.item.id.hashCode ^ 0x5bf03635);
+        // Single-XOR Combination Contract: combine raw presentation nonce with item.id.hashCode once
+        final rawNonce = widget.presentationSeed ?? _localAttemptNonce;
+        final seed = rawNonce ^ widget.item.id.hashCode;
         final rand = math.Random(seed);
         nonAnchorIndices.shuffle(rand);
+
+        if (previousOrder != null && nonAnchorIndices.length > 1) {
+          final candidate = [...nonAnchorIndices, ...anchorIndices];
+          if (McqOptions.listsEqual(candidate, previousOrder)) {
+            final first = nonAnchorIndices.removeAt(0);
+            nonAnchorIndices.add(first);
+          }
+        }
 
         _presentationOrder = [...nonAnchorIndices, ...anchorIndices];
       }
@@ -415,6 +486,58 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       ),
                     ),
                   ],
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: retry,
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: Text(
+                          'Try Again',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      if (widget.onCompleted != null) ...[
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: widget.onCompleted,
+                          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                          label: Text(
+                            'Next Question',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ],
             ),

@@ -13,11 +13,13 @@ import 'package:learning_pwa/widgets/question_widgets/short_answer_question_widg
 class LessonContentRenderer extends StatefulWidget {
   final LessonContent content;
   final VoidCallback onNext;
+  final int? presentationSeed;
 
   const LessonContentRenderer({
     super.key,
     required this.content,
     required this.onNext,
+    this.presentationSeed,
   });
 
   @override
@@ -25,7 +27,15 @@ class LessonContentRenderer extends StatefulWidget {
 }
 
 class _LessonContentRendererState extends State<LessonContentRenderer> {
+  static int _globalAttemptNonce = 0x2468ACE1;
+
+  late int _attemptNonce;
   late int _presentationSeed;
+  List<int> _presentationOrder = const [];
+
+  int get attemptNonce => _attemptNonce;
+  int get presentationSeed => _presentationSeed;
+  List<int> get presentationOrder => List.unmodifiable(_presentationOrder);
 
   // MCQ state
   int? selectedMcq;
@@ -43,7 +53,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   @override
   void initState() {
     super.initState();
-    _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+    _initPresentationState();
   }
 
   @override
@@ -55,15 +65,69 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   @override
   void didUpdateWidget(LessonContentRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reset state when content changes
-    if (oldWidget.content != widget.content) {
-      _resetState();
+    // Reset state when content or presentationSeed changes
+    if (oldWidget.content != widget.content ||
+        oldWidget.presentationSeed != widget.presentationSeed) {
+      final previousOrder = (oldWidget.content.id == widget.content.id &&
+              _presentationOrder.isNotEmpty)
+          ? List<int>.from(_presentationOrder)
+          : null;
+      _resetState(previousOrder: previousOrder);
     }
   }
 
-  void _resetState() {
+  void _initPresentationState({List<int>? previousOrder}) {
+    final content = widget.content;
+    final options = content is QuestionContent ? content.options : null;
+
+    if (widget.presentationSeed != null) {
+      _attemptNonce = widget.presentationSeed!;
+      int candidateSeed = _attemptNonce ^ content.id.hashCode;
+      if (options != null &&
+          previousOrder != null &&
+          McqOptions.countNonAnchorOptions(options) > 1) {
+        final candidateOrder = McqOptions.computePresentationOrder(
+          options,
+          presentationSeed: candidateSeed,
+          shuffle: true,
+        );
+        if (McqOptions.listsEqual(candidateOrder, previousOrder)) {
+          _attemptNonce = McqOptions.nextPresentationNonce(
+            currentNonce: _attemptNonce,
+            options: options,
+            itemHash: content.id.hashCode,
+            previousOrder: previousOrder,
+          );
+          candidateSeed = _attemptNonce ^ content.id.hashCode;
+        }
+      }
+      _presentationSeed = candidateSeed;
+    } else {
+      _globalAttemptNonce = McqOptions.nextPresentationNonce(
+        currentNonce:
+            _globalAttemptNonce ^ DateTime.now().microsecondsSinceEpoch,
+        options: options,
+        itemHash: content.id.hashCode,
+        previousOrder: previousOrder,
+      );
+      _attemptNonce = _globalAttemptNonce;
+      _presentationSeed = _attemptNonce ^ content.id.hashCode;
+    }
+
+    if (options != null) {
+      _presentationOrder = McqOptions.computePresentationOrder(
+        options,
+        presentationSeed: _presentationSeed,
+        shuffle: true,
+      );
+    } else {
+      _presentationOrder = const [];
+    }
+  }
+
+  void _resetState({List<int>? previousOrder}) {
     setState(() {
-      _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+      _initPresentationState(previousOrder: previousOrder);
       selectedMcq = null;
       showMcqCorrect = false;
       selectedTf = null;
@@ -74,8 +138,92 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
     });
   }
 
+  /// Retries the current question with a fresh per-attempt nonce and option permutation.
+  void retryQuestion() {
+    final previousOrder =
+        _presentationOrder.isNotEmpty ? List<int>.from(_presentationOrder) : null;
+    setState(() {
+      final content = widget.content;
+      final options = content is QuestionContent ? content.options : null;
+      _globalAttemptNonce = McqOptions.nextPresentationNonce(
+        currentNonce: _attemptNonce,
+        options: options,
+        itemHash: content.id.hashCode,
+        previousOrder: previousOrder,
+      );
+      _attemptNonce = _globalAttemptNonce;
+      _presentationSeed = _attemptNonce ^ content.id.hashCode;
+      if (options != null) {
+        _presentationOrder = McqOptions.computePresentationOrder(
+          options,
+          presentationSeed: _presentationSeed,
+          shuffle: true,
+        );
+      }
+      selectedMcq = null;
+      showMcqCorrect = false;
+      selectedTf = null;
+      showTfCorrect = false;
+      shortAnswerController.clear();
+      shortAnswerFeedback = null;
+      showSaCorrect = false;
+    });
+  }
+
+  String _effectiveQuestionType(QuestionContent content) {
+    if (content.type == 'mcq' ||
+        content.type == 'true_false' ||
+        content.type == 'short_answer') {
+      return content.type;
+    }
+    if (content.options.length == 2) {
+      final normalized =
+          content.options.map((o) => o.toLowerCase().trim()).toSet();
+      if (normalized.contains('true') && normalized.contains('false')) {
+        return 'true_false';
+      }
+    }
+    if (content.options.length <= 1) {
+      return 'short_answer';
+    }
+    return 'mcq';
+  }
+
+  void handleVoiceInput(String voiceInput) {
+    final content = widget.content;
+    if (content is! QuestionContent) return;
+
+    switch (_effectiveQuestionType(content)) {
+      case 'mcq':
+        final result = VoiceInputHandler.handleMcqVoiceInput(
+          voiceInput,
+          content,
+          presentationOrder: _presentationOrder,
+        );
+        if (result != null) {
+          setState(() => selectedMcq = result);
+        }
+        break;
+      case 'true_false':
+        final result = VoiceInputHandler.handleTrueFalseVoiceInput(voiceInput);
+        if (result != null) {
+          setState(() => selectedTf = result);
+        }
+        break;
+      case 'short_answer':
+        final result = VoiceInputHandler.handleShortAnswerVoiceInput(voiceInput);
+        setState(() {
+          shortAnswerController.text = result;
+        });
+        break;
+    }
+  }
+
   Widget _renderText(String text) {
-    if (text.contains(r'\(') || text.contains(r'\[') || text.contains(r'\frac') || text.contains(r'\sqrt')) {
+    if (text.contains(r'\(') ||
+        text.contains(r'\[') ||
+        text.contains(r'\frac') ||
+        text.contains(r'\sqrt')) {
       return Math.tex(text, textStyle: Theme.of(context).textTheme.titleLarge);
     }
     return Text(text, style: Theme.of(context).textTheme.titleLarge);
@@ -134,13 +282,8 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   }
 
   Widget _buildQuestionContent(QuestionContent content) {
-    switch (content.type) {
+    switch (_effectiveQuestionType(content)) {
       case 'mcq':
-        final presentationOrder = McqOptions.computePresentationOrder(
-          content.options,
-          presentationSeed: _presentationSeed,
-          shuffle: true,
-        );
         return McqQuestionWidget(
           content: content,
           selectedIndex: selectedMcq,
@@ -150,16 +293,8 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () => setState(() => showMcqCorrect = true),
           onNext: widget.onNext,
-          onVoiceInput: (voiceInput) {
-            final result = VoiceInputHandler.handleMcqVoiceInput(
-              voiceInput,
-              content,
-              presentationOrder: presentationOrder,
-            );
-            if (result != null) {
-              setState(() => selectedMcq = result);
-            }
-          },
+          onRetry: retryQuestion,
+          onVoiceInput: handleVoiceInput,
           customTextBuilder: _renderText,
         );
 
@@ -171,12 +306,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
           onSelectionChanged: (value) => setState(() => selectedTf = value),
           onSubmit: () => setState(() => showTfCorrect = true),
           onNext: widget.onNext,
-          onVoiceInput: (voiceInput) {
-            final result = VoiceInputHandler.handleTrueFalseVoiceInput(voiceInput);
-            if (result != null) {
-              setState(() => selectedTf = result);
-            }
-          },
+          onVoiceInput: handleVoiceInput,
           customTextBuilder: _renderText,
         );
 
@@ -200,10 +330,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
             });
           },
           onNext: widget.onNext,
-          onVoiceInput: (voiceInput) {
-            final result = VoiceInputHandler.handleShortAnswerVoiceInput(voiceInput);
-            shortAnswerController.text = result;
-          },
+          onVoiceInput: handleVoiceInput,
           customTextBuilder: _renderText,
         );
 
@@ -228,7 +355,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
     } else if (content.toString().isNotEmpty) {
       textContent = content.toString();
     }
-    
+
     if (textContent.isNotEmpty) {
       return AudioTextWidget(
         text: textContent,

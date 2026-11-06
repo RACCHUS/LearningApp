@@ -1,13 +1,15 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/unified_lesson.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/lesson_block_renderer.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/provenance/provenance_inspector_sheet.dart';
 import 'package:learning_pwa/widgets/assessment/assessment_item_renderer.dart';
 
 /// Flagship Rich Lesson Block Reader for Phase D
-/// 
+///
 /// Presents ordered polymorphic instructional blocks (Markdown, Callout, Code,
 /// Table, Formula, Example, Practice Prompt, Image) with verified blueprint
 /// citations, concept tags, adjustable typography, and integrated assessment.
@@ -27,15 +29,45 @@ class RichLessonReader extends StatefulWidget {
 
 class _RichLessonReaderState extends State<RichLessonReader> {
   final ScrollController _scrollController = ScrollController();
-  late final int _sessionNonce = math.Random().nextInt(0x7FFFFFFF);
+  late int _attemptNonce =
+      (DateTime.now().microsecondsSinceEpoch ^ math.Random().nextInt(0x7FFFFFFF)) &
+          0x7FFFFFFF;
+  final Map<String, int> _itemAttemptNonces = {};
+  final Map<String, List<int>> _itemLastOrders = {};
   double _scrollProgress = 0.0;
   double _fontSizeFactor = 1.0;
   bool _showAssessmentSection = false;
 
+  int get attemptNonce => _attemptNonce;
+
+  int attemptNonceForItem(String itemId) {
+    final existing = _itemAttemptNonces[itemId];
+    if (existing != null) return existing;
+    final matching = widget.unifiedLesson.assessmentItems
+        .where((i) => i.id == itemId)
+        .toList();
+    if (matching.isNotEmpty) {
+      return _assignNextNonceForItem(matching.first);
+    }
+    return _attemptNonce;
+  }
+
   @override
   void initState() {
     super.initState();
+    if (_attemptNonce == 0) {
+      _attemptNonce = 0x5bf03635;
+    }
+    _refreshAllItemNonces();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant RichLessonReader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.unifiedLesson != widget.unifiedLesson) {
+      _refreshAllItemNonces();
+    }
   }
 
   @override
@@ -43,6 +75,52 @@ class _RichLessonReaderState extends State<RichLessonReader> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  int _assignNextNonceForItem(AssessmentItem item) {
+    final optionsRaw = item.responseSpec['options'] as List?;
+    final options = optionsRaw?.map((e) => e.toString()).toList();
+    final previousOrder = _itemLastOrders[item.id];
+    _attemptNonce = McqOptions.nextPresentationNonce(
+      currentNonce: _attemptNonce,
+      options: options,
+      itemHash: item.id.hashCode,
+      previousOrder: previousOrder,
+    );
+    _itemAttemptNonces[item.id] = _attemptNonce;
+    if (options != null && options.length > 1) {
+      _itemLastOrders[item.id] = McqOptions.computePresentationOrder(
+        options,
+        presentationSeed: _attemptNonce ^ item.id.hashCode,
+        shuffle: true,
+      );
+    }
+    return _attemptNonce;
+  }
+
+  void _refreshAllItemNonces() {
+    for (final item in widget.unifiedLesson.assessmentItems) {
+      _assignNextNonceForItem(item);
+    }
+  }
+
+  /// Retries a specific assessment item with a fresh per-attempt nonce.
+  void retryAssessmentItem(String itemId) {
+    final matching = widget.unifiedLesson.assessmentItems
+        .where((i) => i.id == itemId)
+        .toList();
+    if (matching.isEmpty) return;
+    setState(() {
+      _assignNextNonceForItem(matching.first);
+    });
+  }
+
+  /// Re-presents all assessment items in the evaluation section with fresh per-attempt nonces.
+  void resetAssessmentEvaluation() {
+    setState(() {
+      _showAssessmentSection = true;
+      _refreshAllItemNonces();
+    });
   }
 
   void _onScroll() {
@@ -275,12 +353,18 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                               ],
                             ),
                           ),
+                          if (_showAssessmentSection)
+                            TextButton.icon(
+                              onPressed: resetAssessmentEvaluation,
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: const Text('Retry All'),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       if (!_showAssessmentSection)
                         ElevatedButton.icon(
-                          onPressed: () => setState(() => _showAssessmentSection = true),
+                          onPressed: resetAssessmentEvaluation,
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: Text(
                             'Begin Practice Evaluation (${items.length} items)',
@@ -295,14 +379,18 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                         ),
                       if (_showAssessmentSection) ...[
                         const Divider(height: 24),
-                        ...items.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: AssessmentItemRenderer(
-                                key: ValueKey(item.id),
-                                item: item,
-                                presentationSeed: _sessionNonce,
-                              ),
-                            )),
+                        ...items.map((item) {
+                          final itemNonce = attemptNonceForItem(item.id);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: AssessmentItemRenderer(
+                              key: ValueKey(item.id),
+                              item: item,
+                              presentationSeed: itemNonce,
+                              onRetry: () => retryAssessmentItem(item.id),
+                            ),
+                          );
+                        }),
                       ],
                     ],
                   ),
