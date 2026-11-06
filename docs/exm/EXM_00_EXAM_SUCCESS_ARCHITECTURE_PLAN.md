@@ -4,7 +4,7 @@
 **Status:** **APPROVED ARCHITECTURE v6 — owner-authorized EXM-P0 merge to main; production deployment separately unauthorized**  
 **Prepared:** October 18, 2026  
 **Revised:** October 31, 2026 (v6.1: EXM-P0 practice-only safety, fail-closed concept resolution, target practice allocation normalization, owner merge authorization; staged reviewer recruitment, capped separate selection probes, 2027-effective learner gate, mandatory current-outline verification; no development date schedule)  
-**Repository path:** `EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
+**Repository path:** `docs/exm/EXM_00_EXAM_SUCCESS_ARCHITECTURE_PLAN.md`  
 **Repository:** `RACCHUS/LearningApp`  
 **Code baseline reviewed:** `main` at `8ef15b99092a4dcb31f1a934facfdbfc97ac96a1` (latest returned by the GitHub connector during this review). Recheck HEAD before implementation.  
 **Inputs:** Original EXM-00 proposal, two subsequent architecture reviews, direct GitHub code inspection, and primary examination authority documents listed in §15.  
@@ -642,7 +642,7 @@ Introduce contributions only when rights, provenance, expert review, moderation 
 
 ### Repository files inspected (selected traceable audit pointers)
 
-- [`LEARNING_ARCHITECTURE_V2.md`](https://github.com/RACCHUS/LearningApp/blob/main/LEARNING_ARCHITECTURE_V2.md)
+- [LEARNING_ARCHITECTURE_V2.md](../../LEARNING_ARCHITECTURE_V2.md)
 - [`README.md`](https://github.com/RACCHUS/LearningApp/blob/main/README.md)
 - [`AGENTS.md`](https://github.com/RACCHUS/LearningApp/blob/main/AGENTS.md)
 - [`lib/models/assessment_engine/mock_exam_blueprint.dart`](https://github.com/RACCHUS/LearningApp/blob/main/lib/models/assessment_engine/mock_exam_blueprint.dart)
@@ -678,7 +678,7 @@ These official pages establish the **types of conditions** the model must handle
 1. **EXM-P0 is a separate, small code PR**, started only after explicit owner authorization. Scope: mock safety fixes, regression tests and documentation of any deferred timer work; no migrations or reference-profile construction bundled in.
 2. **EXM-00 is an audit/design-only task**, separately authorized. It can proceed concurrently with EXM-P0 after approval, but cannot silently implement EXM-01 or create production tables.
 3. Each further phase requires its own focused branch, PR, tests and owner go/no-go. **No production Supabase writes, migration repairs, reference publication, or destructive operations without explicit authorization.** Only the guarded workflow may be used when later authorized. **Follow all repository backup, recovery, migration and deployment requirements in force for the operation; this plan does not waive or make those safeguards optional.**
-4. Review `AGENTS.md`, `UI_ARCHITECTURE_LOCKED.md`, `LEARNING_ARCHITECTURE_V2.md`, `LITERACY_ACCESSIBILITY_PLAN.md`, `docs/catalog/P2H_LEARNER_FACING_PATHWAY_PREPARATION.md` and current code; keep three-destination navigation and direct learner choice intact.
+4. Review `AGENTS.md`, `../../UI_ARCHITECTURE_LOCKED.md`, `../../LEARNING_ARCHITECTURE_V2.md`, `../product/LITERACY_ACCESSIBILITY_PLAN.md`, `docs/catalog/P2H_LEARNER_FACING_PATHWAY_PREPARATION.md` and current code; keep three-destination navigation and direct learner choice intact.
 
 ### 16.2 Copy/paste-ready EXM-00 task
 

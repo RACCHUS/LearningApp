@@ -52,6 +52,15 @@ When tasked with debugging UI issues, testing new web features, or verifying res
 
 ---
 
+## 📁 Repository Layout & Cleanup Conventions
+
+- Put reusable Flutter UI in `lib/widgets/`; group feature-specific widgets in subfolders. Do not recreate the retired `lib/components/` directory.
+- Keep route-level screens in `lib/screens/`, state in `lib/providers/`, domain/backend logic in `lib/services/`, and models in `lib/models/`.
+- Keep curriculum manifests in `content/`, reviewed source/catalog manifests in `data/`, bundled lesson content in `assets/lessons/`, and developer utilities in `tool/`.
+- Flutter tests belong in `test/`; Python validator tests belong in `tool/tests/`; database tests belong in `supabase/tests/`.
+- Current documentation lives in `README.md`, the architecture documents, and organized `docs/` sections. `docs/history/` and `docs/history/LEGACY_SDD.md` are archival—not current behavior or policy.
+- Do not commit generated Flutter build output, local Supabase CLI metadata (`supabase/.temp/`), or unused assets. Confirm references and CI coverage before removing source files.
+
 ## 📋 Core Architectural Rules for Agents
 
 - **Navigation Baseline**: Three primary destinations: **Learn**, **Library**, and **Progress**. See [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.md).

@@ -1,3 +1,5 @@
+> **Historical follow-up (2026-11-02):** This plan records an earlier design pass. Some widget modules named here (including the old review-content renderer) were later removed after a current source/import audit found no live consumer. Verify against `lib/widgets/` before relying on this document as a component inventory.
+
 # Color System Refresh Plan
 
 Created: 2026-08-01

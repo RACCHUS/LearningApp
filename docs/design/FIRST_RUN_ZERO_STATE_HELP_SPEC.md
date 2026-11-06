@@ -391,7 +391,7 @@ Implementation must:
 6. Remove the onboarding screen once no code references it.
 7. Stop writing `hasCompletedOnboarding`.
 8. Stop writing `dailyGoalMinutes` as a startup side effect.
-9. Stop importing `assets/sample_lesson.json` as a startup side effect.
+9. Do not import a sample lesson during startup. The unused legacy `assets/sample_lesson.json` was removed during repository cleanup; bundled lessons under `assets/lessons/` continue to load independently.
 
 Bundled lessons already load independently from `assets/lessons/` through the normal lesson/catalog provider. Removing onboarding must not remove those catalog assets.
 
