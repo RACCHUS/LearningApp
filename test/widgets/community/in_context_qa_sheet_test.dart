@@ -316,6 +316,7 @@ void main() {
     CommunityQaService? service,
     ModerationService? moderationService,
     GlobalKey<InContextQaSheetState>? sheetKey,
+    bool isAdultConfirmed = true,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -331,6 +332,7 @@ void main() {
               fakeDrafts: List.from(testDrafts),
             ),
             moderationService: moderationService ?? FakeModerationService(isMod: false),
+            isAdultConfirmed: isAdultConfirmed,
           ),
         ),
       ),

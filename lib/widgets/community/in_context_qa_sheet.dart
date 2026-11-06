@@ -8,6 +8,10 @@ import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/models/governance/moderation_report.dart';
+import 'package:learning_pwa/services/community/spam_rate_limiter.dart';
+import 'package:learning_pwa/widgets/community/report_content_dialog.dart';
+import 'package:learning_pwa/widgets/community/adult_age_confirmation_dialog.dart';
 
 /// Opens the in-context Concept Q&A sheet for learning screens (ECO-01 & ECO-02).
 Future<void> showInContextQaSheet(
@@ -18,6 +22,7 @@ Future<void> showInContextQaSheet(
   String? topicTitle,
   CommunityQaService? service,
   ModerationService? moderationService,
+  bool isAdultConfirmed = false,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   final effectiveService = service ?? CommunityQaService();
@@ -39,6 +44,7 @@ Future<void> showInContextQaSheet(
           topicTitle: topicTitle,
           service: effectiveService,
           moderationService: effectiveModService,
+          isAdultConfirmed: isAdultConfirmed,
         ),
       ),
     );
@@ -62,6 +68,7 @@ Future<void> showInContextQaSheet(
             topicTitle: topicTitle,
             service: effectiveService,
             moderationService: effectiveModService,
+            isAdultConfirmed: isAdultConfirmed,
           ),
         ),
       ),
@@ -76,6 +83,7 @@ class InContextQaSheet extends StatefulWidget {
   final String? topicTitle;
   final CommunityQaService service;
   final ModerationService? moderationService;
+  final bool isAdultConfirmed;
 
   const InContextQaSheet({
     super.key,
@@ -85,6 +93,7 @@ class InContextQaSheet extends StatefulWidget {
     this.topicTitle,
     required this.service,
     this.moderationService,
+    this.isAdultConfirmed = false,
   });
 
   @override
@@ -117,6 +126,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   bool _isLoading = true;
   bool _isSubmitting = false;
   bool _isModerator = false;
+  late bool _isAdultConfirmed;
   int _reviewSubTab = 0; // 0: Questions, 1: Answers, 2: Audit History
   String? _statusMessage;
   List<CommunityQuestion> _seedFaqs = [];
@@ -131,6 +141,31 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
   final Set<String> _userUpvoted = {};
+  final SpamRateLimiter _spamLimiter = SpamRateLimiter();
+
+  Future<void> _handleReportQuestion(CommunityQuestion q) async {
+    if (widget.moderationService == null) return;
+    await ReportContentDialog.show(
+      context,
+      targetType: ModerationTargetType.communityQuestion,
+      targetId: q.id,
+      contentSnippet: q.title,
+      moderationService: widget.moderationService!,
+    );
+  }
+
+  Future<void> _handleReportAnswer(CommunityAnswer ans) async {
+    if (widget.moderationService == null) return;
+    await ReportContentDialog.show(
+      context,
+      targetType: ModerationTargetType.communityAnswer,
+      targetId: ans.id,
+      contentSnippet: ans.bodyMarkdown.length > 80
+          ? '${ans.bodyMarkdown.substring(0, 80)}...'
+          : ans.bodyMarkdown,
+      moderationService: widget.moderationService!,
+    );
+  }
 
   bool _isSessionValid(int sessionGen, String? sessionUserId) {
     return mounted && sessionGen == _authSessionGeneration && widget.service.currentUserId == sessionUserId;
@@ -173,6 +208,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   @override
   void initState() {
     super.initState();
+    _isAdultConfirmed = widget.isAdultConfirmed;
     _activeUserId = widget.service.currentUserId;
     _subscribeToAuthChanges();
     _loadData();
@@ -190,6 +226,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   void _onUserChanged(String? newUserId) {
     if (!mounted) return;
     _authSessionGeneration++;
+    _isAdultConfirmed = widget.isAdultConfirmed;
     _dismissActiveDialogs();
     _titleController.clear();
     _bodyController.clear();
@@ -553,15 +590,37 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
     final int sessionGen = _authSessionGeneration;
     final String? sessionUserId = widget.service.currentUserId;
 
+    // Invariant 3: Adult age assurance gate
+    if (!_isAdultConfirmed) {
+      final isAdult = await AdultAgeConfirmationDialog.show(context);
+      if (!isAdult) return;
+      _isAdultConfirmed = true;
+    }
+
+    // Invariant 4: Spam rate limit check
+    final rateLimitCheck = _spamLimiter.validateQuestionSubmission(
+      userId: sessionUserId ?? 'anon',
+      title: _titleController.text,
+      body: _bodyController.text,
+    );
+    if (!rateLimitCheck.isAllowed) {
+      setState(() {
+        _statusMessage = rateLimitCheck.rejectionReason;
+      });
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _statusMessage = null;
     });
 
     try {
+      final title = _titleController.text;
+      final body = _bodyController.text;
       final newQuestion = await widget.service.createDraftQuestion(
-        title: _titleController.text,
-        bodyMarkdown: _bodyController.text,
+        title: title,
+        bodyMarkdown: body,
         conceptId: widget.conceptId,
         targetId: widget.targetId,
         lessonId: widget.lessonId,
@@ -573,6 +632,11 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
       }
 
       if (newQuestion != null) {
+        _spamLimiter.recordQuestionSubmission(
+          userId: sessionUserId ?? 'anon',
+          title: title,
+          body: body,
+        );
         _titleController.clear();
         _bodyController.clear();
         setState(() {
@@ -848,6 +912,13 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                       onPressed: isOfflineDemo ? null : () => _handleVote(q),
                       tooltip: isOfflineDemo ? 'Voting disabled for offline preview' : 'Upvote',
                     ),
+                    if (widget.moderationService != null && !isOfflineDemo)
+                      IconButton(
+                        key: Key('report_question_${q.id}'),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                        onPressed: () => _handleReportQuestion(q),
+                        tooltip: 'Report question',
+                      ),
                     IconButton(
                       icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
                       onPressed: () {
@@ -992,12 +1063,26 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                     ),
                 ],
               ),
-              if (!ans.isAccepted && _isModerator && !isOfflineDemo)
-                TextButton.icon(
-                  icon: const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
-                  label: const Text('Accept', style: TextStyle(fontSize: 11, color: Colors.green)),
-                  onPressed: () => _handleAcceptAnswer(ans.id, q.id),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!ans.isAccepted && _isModerator && !isOfflineDemo)
+                    TextButton.icon(
+                      icon: const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                      label: const Text('Accept', style: TextStyle(fontSize: 11, color: Colors.green)),
+                      onPressed: () => _handleAcceptAnswer(ans.id, q.id),
+                    ),
+                  if (widget.moderationService != null && !isOfflineDemo)
+                    IconButton(
+                      key: Key('report_answer_${ans.id}'),
+                      icon: const Icon(Icons.flag_outlined, size: 16),
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _handleReportAnswer(ans),
+                      tooltip: 'Report answer',
+                    ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1986,6 +2071,14 @@ class _AnswerRevisionDialogState extends State<_AnswerRevisionDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final text = _answerController.text.trim();
+    if (text.length < 20 || text.length > 1000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Answer must be between 20 and 1,000 characters.')),
+      );
+      return;
+    }
 
     if (!widget.isSessionValid(widget.sessionGen, widget.dialogAuthorId)) {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();

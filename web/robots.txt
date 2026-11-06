@@ -1,0 +1,17 @@
+# LearningApp Public Discovery & Crawler Boundary (ECO-01, Priority 5)
+User-agent: *
+
+# Allow public catalog and curated reference content
+Allow: /
+Allow: /catalog/
+Allow: /faqs/
+Allow: /sitemap.xml
+
+# Strictly disallow private user drafts, governance queues, and operational dashboards
+Disallow: /#/moderation
+Disallow: /#/observability
+Disallow: /drafts/
+Disallow: /review/
+Disallow: /api/
+
+Sitemap: https://app.learningapp.io/sitemap.xml

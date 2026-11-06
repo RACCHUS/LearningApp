@@ -267,10 +267,10 @@ Map the proposed logical entities to existing tables first; use new tables only 
 **Tasks**
 - [x] **Concept- & Lesson-Scoped Q&A Baseline**: Schema (`community_questions`, `community_answers`, `community_votes`), atomic upvoting RPC, least-privilege RLS policies, and private in-context learning UI drawer delivered in ECO-01 (Migrations 54 & 55).
 - [x] **Moderation Queue Integration**: Extended `moderation_reports` target types and updated `submit_moderation_report` RPC to support `community_question` and `community_answer`.
-- [ ] **Cold-Start Seeding**: Author and verify 20–50 high-quality seed FAQs and answers for initial pilot topics.
-- [ ] **Q&A Interaction**: Authenticated adult ask/answer/edit/report flows, answer history, spam rate limits, and report integration into the Phase 0 moderation queue.
-- [ ] **AI Explanation with Prompt-Injection Defense**: Labeled AI explanations with uncertainty disclosures and strict input sanitization.
-- [ ] **Web Discovery Boundary**: Deliver within Flutter app; establish architecture for external crawlable SEO pages if public indexing is pursued.
+- [x] **Cold-Start Seeding**: Author and verify 20–50 high-quality seed FAQs and answers for initial pilot topics. (Delivered 36 curated, verified seed FAQs across ABE Literacy, Workplace Safety, and Florida Licensure in `data/seed_faqs/seed_faqs_manifest.json` and `lib/data/seed_faqs_catalog.dart`).
+- [x] **Q&A Interaction**: Authenticated adult ask/answer/edit/report flows, answer history, spam rate limits, and report integration into the Phase 0 moderation queue. (Delivered `AdultAgeConfirmationDialog`, `ReportContentDialog`, `CommunityAnswerRevision`, `SpamRateLimiter`, and draft edit workflows in `CommunityQaService`).
+- [x] **AI Explanation with Prompt-Injection Defense**: Labeled AI explanations with uncertainty disclosures and strict input sanitization. (Delivered `CommunityAiExplanationService` conforming to Invariant 4 with adversarial prompt injection defenses and structured JSON outputs).
+- [x] **Web Discovery Boundary**: Deliver within Flutter app; establish architecture for external crawlable SEO pages if public indexing is pursued. (Delivered `web/robots.txt`, `web/sitemap.xml`, and `SeoMetadataService` generating Schema.org `QAPage` metadata with strict draft isolation).
 - [x] **Automated Testing**: Unit, database RLS policy, and widget tests for ECO-01 community models, services, and in-context sheet (`community_qa_test.sql`, `community_qa_service_test.dart`, `in_context_qa_sheet_test.dart`).
 
 **Exit:** Learner can find existing answers on pilot topics, ask questions in context, receive timely human or AI assistance, and report issues; zero unmoderated spam.

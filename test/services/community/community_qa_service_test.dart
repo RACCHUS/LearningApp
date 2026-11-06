@@ -69,11 +69,11 @@ void main() {
   });
 
   group('ECO-02: Pilot FAQ Seeding & Offline Fallback', () {
-    test('returns 18 curated demonstration FAQs across Literacy, Workplace Safety, and Florida Licensure when client is offline', () async {
+    test('returns 36 curated demonstration FAQs across Literacy, Workplace Safety, and Florida Licensure when client is offline', () async {
       final service = CommunityQaService();
       final seeds = await service.fetchSeedFaqs();
 
-      expect(seeds.length, 18);
+      expect(seeds.length, 36);
       expect(seeds.every((s) => s.isSeeded), isTrue);
 
       // Verify representations of all 3 priority domains
