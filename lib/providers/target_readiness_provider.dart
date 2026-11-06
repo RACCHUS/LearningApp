@@ -22,9 +22,21 @@ final targetReadinessProvider =
     FutureProvider.family<TargetReadiness, String>((ref, targetVersionId) async {
   final userId = ref.watch(learnerIdProvider);
   final service = ref.watch(targetReadinessServiceProvider);
+  final activeContext = ref.watch(activeLearningContextProvider);
+
+  DateTime? examDate;
+  if (activeContext != null) {
+    final rawDate = activeContext.scopeConfig['examDate'] ??
+        activeContext.scopeConfig['targetDate'];
+    if (rawDate is String && rawDate.isNotEmpty) {
+      examDate = DateTime.tryParse(rawDate);
+    }
+  }
+
   return service.evaluateTargetReadiness(
     userId: userId,
     targetVersionId: targetVersionId,
+    examDate: examDate,
   );
 });
 

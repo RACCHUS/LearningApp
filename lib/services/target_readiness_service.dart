@@ -1,21 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_concept_state.dart';
+import '../models/assessment_engine/calibrated_readiness.dart';
 import 'concept_evidence_service.dart';
 import 'assessment/exam_part_curriculum_scope.dart';
 
-/// Evaluates learner readiness for a Learning Target Version per spec §9.
+/// Evaluates learner readiness for a Learning Target Version per spec §9 and Architecture Phase 1.
 ///
 /// Formula:
 /// Readiness = (Σ_{c ∈ coreConcepts} ConceptReadiness(c) * Weight(c)) / (Σ_{c ∈ coreConcepts} Weight(c))
 ///
-/// Exclusively produces qualitative readiness bands:
-/// - Strong coverage
-/// - Developing
-/// - Needs reinforcement
-/// - Not yet assessed
-///
-/// Knowledge readiness is kept strictly distinct from structural completion.
+/// Evaluates readiness server-side via `get_target_readiness_v2` (FSRS-calibrated at target exam date)
+/// to eliminate client-side 1,000-row cap and URL query truncation (FIX-9), falling back gracefully
+/// to local calculation for part-scoped or offline execution.
 class TargetReadinessService {
   final SupabaseClient _supabase;
   final ConceptEvidenceService _evidenceService;
@@ -26,11 +23,33 @@ class TargetReadinessService {
   })  : _supabase = supabase ?? Supabase.instance.client,
         _evidenceService = evidenceService ?? ConceptEvidenceService(supabase: supabase);
 
+  /// Evaluates FSRS-calibrated readiness at an optional target exam date via server RPC.
+  Future<CalibratedReadiness?> evaluateCalibratedReadiness({
+    required String targetVersionId,
+    DateTime? examDate,
+  }) async {
+    try {
+      final res = await _supabase.rpc(
+        'get_target_readiness_v2',
+        params: {
+          'p_target_version_id': targetVersionId,
+          if (examDate != null) 'p_exam_date': examDate.toUtc().toIso8601String(),
+        },
+      );
+      if (res == null) return null;
+      return CalibratedReadiness.fromJson(Map<String, dynamic>.from(res as Map));
+    } catch (e) {
+      debugPrint('⚠️ Error calling get_target_readiness_v2: $e');
+      return null;
+    }
+  }
+
   /// Computes target readiness for the given target version and user.
   Future<TargetReadiness> evaluateTargetReadiness({
     required String userId,
     required String targetVersionId,
     String? examPartKey,
+    DateTime? examDate,
   }) async {
     if (targetVersionId.isEmpty && examPartKey != null) {
       throw StateError('Part readiness needs a target version.');
@@ -44,6 +63,18 @@ class TargetReadinessService {
         assessedConceptsCount: 0,
         bandDistribution: {for (final b in RetrievalBand.values) b: 0},
       );
+    }
+
+    // When evaluating whole-target readiness for an authenticated user, prefer server-side
+    // FSRS-calibrated RPC to prevent 1,000-row truncation (FIX-9).
+    if (userId.isNotEmpty && examPartKey == null) {
+      final calibrated = await evaluateCalibratedReadiness(
+        targetVersionId: targetVersionId,
+        examDate: examDate,
+      );
+      if (calibrated != null) {
+        return calibrated.toTargetReadiness();
+      }
     }
 
     try {
