@@ -12,6 +12,8 @@ export 'src/models/brand_config_core.dart';
 export 'src/models/video_interactive_module.dart';
 export 'src/models/procedural_rubric.dart';
 export 'src/models/content_proposal.dart';
+export 'src/models/entitlement_core.dart';
+export 'src/models/tutoring_session.dart';
 
 export 'src/algorithms/fsrs_scheduler_core.dart';
 export 'src/algorithms/item_evaluator_core.dart';
@@ -28,4 +30,5 @@ export 'src/interop/qti_item_converter.dart';
 export 'src/interop/xapi_statement_emitter.dart';
 export 'src/interop/open_badge_converter.dart';
 export 'src/interop/lti_launcher.dart';
+export 'src/interop/case_standards_converter.dart';
 
