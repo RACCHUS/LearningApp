@@ -42,7 +42,9 @@ jobs:
         run: cp .env.example .env
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
 
       - name: Analyze
         run: flutter analyze
@@ -169,7 +171,9 @@ jobs:
           key: taxonomy-source-bundle-v1-${{ runner.os }}-${{ hashFiles('lib/services/taxonomy/official_taxonomy_sources.dart') }}
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
