@@ -122,6 +122,12 @@ jobs:
       - name: Verify migration governance & deployment test suite
         run: flutter test test/services/governance/
 
+      - name: Test packages/learning_core
+        run: |
+          cd packages/learning_core
+          dart pub get
+          dart test
+
       - name: Run tests
         run: flutter test --reporter expanded
 
