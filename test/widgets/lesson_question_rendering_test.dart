@@ -21,6 +21,7 @@ Widget host(QuestionContent content) => ProviderScope(
   overrides: [
     canSpeakProvider.overrideWithValue(false),
     canListenProvider.overrideWithValue(false),
+    readAloudOffProvider.overrideWithValue(false),
   ],
   child: MaterialApp(
     home: Scaffold(
