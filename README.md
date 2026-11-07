@@ -49,7 +49,7 @@ Choosing an existing **catalog** goal can open that record instead of creating a
 
 ### Catalog trust and provenance
 
-Library default browsing is the **trusted catalog** (published official records and approved community records). Unreviewed personal goals stay out of that default list. Learners can still switch filters:
+Library default browsing is the **trusted catalog** (published official records and approved community records). Unreviewed personal goals stay out of that default list. Learners can switch the single **Source** control to:
 
 - Trusted catalog
 - Official
