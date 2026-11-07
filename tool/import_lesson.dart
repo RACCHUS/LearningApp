@@ -178,7 +178,7 @@ Map<String, dynamic> _normalizeToDbFormat(
           'question': q['question'] ?? q['question_text'] ?? '',
           'options':
               q['options'] is List ? List<String>.from(q['options']) : <String>[],
-          'correctIndex': q['correct_answer'] ?? q['correctIndex'] ?? 0,
+          'correctIndex': (q['type'] == 'short_answer' || q['accepted_answers'] != null) ? 0 : (q['correct_answer'] ?? q['correctIndex'] ?? 0),
           if (q['accepted_answers'] != null) 'accepted_answers': q['accepted_answers'],
           if (q['grading_method'] != null) 'grading_method': q['grading_method'],
           if (q['numeric_tolerance'] != null) 'numeric_tolerance': q['numeric_tolerance'],
