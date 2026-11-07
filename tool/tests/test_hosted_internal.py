@@ -157,7 +157,7 @@ class HostedInternalTests(unittest.TestCase):
 
     def test_invalid_ingress_setup_fails_before_serving(self):
         for kw in (
-            {"internal_key": ""},
+            {"internal_key": "", "allowed_host": HOST},
             {"internal_key": KEY, "allowed_host": "https://evil.test"},
             {"internal_key": KEY, "allowed_host": ""},
         ):
