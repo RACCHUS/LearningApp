@@ -148,7 +148,6 @@ DECLARE
   v_w_max TIMESTAMPTZ := v_received_at + INTERVAL '5 minutes';
 
   v_raw_item JSONB;
-  v_idx INTEGER;
   v_key TEXT;
   v_sid TEXT;
   v_cseq INTEGER;
@@ -166,10 +165,6 @@ DECLARE
   v_assistance JSONB;
   v_confidence SMALLINT;
   v_latency INTEGER;
-  v_sched_before JSONB;
-  v_sched_after JSONB;
-  v_meta JSONB;
-  v_app_ver TEXT;
   v_concept_text TEXT;
 
   v_client_ts TIMESTAMPTZ;
@@ -177,9 +172,14 @@ DECLARE
   v_canonical_json JSONB;
   v_digest TEXT;
 
+  v_batch JSONB := '[]'::JSONB;
+  v_canonical_indices INTEGER[] := '{}';
+  v_item_results JSONB[] := '{}';
+
   v_grp RECORD;
   v_stored RECORD;
   v_canonical RECORD;
+  v_item_rec RECORD;
 
   v_t_prev TIMESTAMPTZ;
   v_t_next TIMESTAMPTZ;
@@ -254,52 +254,17 @@ BEGIN
     PERFORM pg_advisory_xact_lock(hashtextextended(v_auth_uid::TEXT || ':concept:' || v_concept_text, 0));
   END LOOP;
 
-  -- Step 2: Ingestion & Canonical Digest Preflight in Temp Table
-  CREATE TEMP TABLE IF NOT EXISTS temp_batch_items (
-    input_idx INTEGER PRIMARY KEY,
-    raw_json JSONB,
-    idempotency_key TEXT,
-    envelope_id TEXT,
-    session_id TEXT,
-    client_seq INTEGER,
-    attempt_id UUID,
-    event_type TEXT,
-    item_type TEXT,
-    item_id TEXT,
-    item_version TEXT,
-    context_id TEXT,
-    presented_option_ids TEXT[],
-    learner_response JSONB,
-    fsrs_rating SMALLINT,
-    score REAL,
-    client_latency_ms INTEGER,
-    hints_used SMALLINT,
-    confidence SMALLINT,
-    scheduler_state_before JSONB,
-    scheduler_state_after JSONB,
-    metadata JSONB,
-    app_version TEXT,
-    concept_id_text TEXT,
-    client_occurred_at TIMESTAMPTZ,
-    canonical_payload JSONB,
-    payload_sha256 TEXT,
-    is_valid BOOLEAN DEFAULT TRUE,
-    is_canonical BOOLEAN DEFAULT FALSE,
-    status TEXT,
-    event_id UUID,
-    effective_occurred_at TIMESTAMPTZ
-  ) ON COMMIT DROP;
-  TRUNCATE temp_batch_items;
-
+  -- Step 2: Canonical Digest Preflight in Memory
   FOR v_idx IN 1..array_length(p_events, 1) LOOP
     v_raw_item := p_events[v_idx];
     v_key := COALESCE(v_raw_item->>'idempotency_key', v_raw_item->>'id');
 
     IF v_key IS NULL OR length(trim(v_key)) = 0 THEN
-      INSERT INTO temp_batch_items (
-        input_idx, raw_json, is_valid, status
-      ) VALUES (
-        v_idx, v_raw_item, FALSE, 'rejected_missing_idempotency_key'
+      v_item_results[v_idx] := jsonb_build_object(
+        'idempotency_key', NULL,
+        'status', 'rejected_missing_idempotency_key',
+        'event_id', NULL,
+        'effective_occurred_at', NULL
       );
       CONTINUE;
     END IF;
@@ -382,41 +347,46 @@ BEGIN
     );
     v_digest := encode(digest(convert_to(v_canonical_json::TEXT, 'UTF8'), 'sha256'), 'hex');
 
-    INSERT INTO temp_batch_items (
-      input_idx, raw_json, idempotency_key, envelope_id, session_id,
-      client_seq, attempt_id, event_type, item_type, item_id, item_version,
-      context_id, presented_option_ids, learner_response, fsrs_rating, score,
-      client_latency_ms, hints_used, confidence, scheduler_state_before,
-      scheduler_state_after, metadata, app_version, concept_id_text,
-      client_occurred_at, canonical_payload, payload_sha256, is_valid
-    ) VALUES (
-      v_idx, v_raw_item, v_key, v_raw_item->>'id', v_sid,
-      v_cseq, v_att, v_ev_type, v_item_type, v_item_id, v_item_version,
-      v_context_id, v_presented_opts_arr, v_learner_resp, v_fsrs_rat,
-      (v_raw_item->>'score')::REAL,
-      v_latency,
-      COALESCE((v_raw_item->>'hints_used')::SMALLINT, 0),
-      v_confidence,
-      v_raw_item->'scheduler_state_before',
-      v_raw_item->'scheduler_state_after',
-      COALESCE(v_raw_item->'metadata', '{}'::JSONB),
-      v_raw_item->>'app_version',
-      COALESCE(v_raw_item->>'concept_id', v_raw_item->'metadata'->>'concept_id'),
-      v_client_ts, v_canonical_json, v_digest, TRUE
-    );
+    v_batch := v_batch || jsonb_build_array(jsonb_build_object(
+      'input_idx', v_idx,
+      'idempotency_key', v_key,
+      'envelope_id', v_raw_item->>'id',
+      'session_id', v_sid,
+      'client_seq', v_cseq,
+      'attempt_id', v_att,
+      'event_type', v_ev_type,
+      'item_type', v_item_type,
+      'item_id', v_item_id,
+      'item_version', v_item_version,
+      'context_id', v_context_id,
+      'presented_option_ids', v_presented_opts,
+      'learner_response', v_learner_resp,
+      'fsrs_rating', v_fsrs_rat,
+      'score', (v_raw_item->>'score')::REAL,
+      'client_latency_ms', v_latency,
+      'hints_used', COALESCE((v_raw_item->>'hints_used')::SMALLINT, 0),
+      'confidence', v_confidence,
+      'scheduler_state_before', v_raw_item->'scheduler_state_before',
+      'scheduler_state_after', v_raw_item->'scheduler_state_after',
+      'metadata', COALESCE(v_raw_item->'metadata', '{}'::JSONB),
+      'app_version', v_raw_item->>'app_version',
+      'concept_id_text', COALESCE(v_raw_item->>'concept_id', v_raw_item->'metadata'->>'concept_id'),
+      'client_occurred_at', v_client_ts,
+      'payload_sha256', v_digest,
+      'is_valid', TRUE
+    ));
   END LOOP;
 
   -- Step 3: Intra-Batch Deduplication & Conflict Preflight
   FOR v_grp IN
     SELECT
-      idempotency_key,
-      COUNT(DISTINCT payload_sha256) AS distinct_digests,
-      COUNT(DISTINCT envelope_id) AS distinct_ids,
+      elem->>'idempotency_key' AS idempotency_key,
+      COUNT(DISTINCT elem->>'payload_sha256') AS distinct_digests,
+      COUNT(DISTINCT elem->>'envelope_id') AS distinct_ids,
       COUNT(*) AS total_count,
-      MIN(input_idx) AS canonical_input_idx
-    FROM temp_batch_items
-    WHERE is_valid = TRUE
-    GROUP BY idempotency_key
+      MIN((elem->>'input_idx')::INTEGER) AS canonical_input_idx
+    FROM jsonb_array_elements(v_batch) AS elem
+    GROUP BY elem->>'idempotency_key'
   LOOP
     IF v_grp.distinct_digests > 1 OR v_grp.distinct_ids > 1 THEN
       SELECT id, payload_sha256, effective_occurred_at
@@ -425,38 +395,77 @@ BEGIN
       WHERE user_id = v_auth_uid AND idempotency_key = v_grp.idempotency_key;
 
       IF FOUND THEN
-        UPDATE temp_batch_items
-        SET status = CASE
-              WHEN payload_sha256 = v_stored.payload_sha256 THEN 'duplicate_noop'
-              ELSE 'idempotency_payload_mismatch'
-            END,
-            event_id = CASE
-              WHEN payload_sha256 = v_stored.payload_sha256 THEN v_stored.id
-              ELSE NULL
-            END,
-            effective_occurred_at = CASE
-              WHEN payload_sha256 = v_stored.payload_sha256 THEN v_stored.effective_occurred_at
-              ELSE NULL
-            END
-        WHERE idempotency_key = v_grp.idempotency_key;
+        FOR v_item_rec IN
+          SELECT (elem->>'input_idx')::INTEGER AS input_idx, elem->>'payload_sha256' AS payload_sha256
+          FROM jsonb_array_elements(v_batch) AS elem
+          WHERE elem->>'idempotency_key' = v_grp.idempotency_key
+        LOOP
+          IF v_item_rec.payload_sha256 = v_stored.payload_sha256 THEN
+            v_item_results[v_item_rec.input_idx] := jsonb_build_object(
+              'idempotency_key', v_grp.idempotency_key,
+              'status', 'duplicate_noop',
+              'event_id', v_stored.id,
+              'effective_occurred_at', v_stored.effective_occurred_at
+            );
+          ELSE
+            v_item_results[v_item_rec.input_idx] := jsonb_build_object(
+              'idempotency_key', v_grp.idempotency_key,
+              'status', 'idempotency_payload_mismatch',
+              'event_id', NULL,
+              'effective_occurred_at', NULL
+            );
+          END IF;
+        END LOOP;
       ELSE
-        UPDATE temp_batch_items
-        SET status = 'idempotency_payload_mismatch'
-        WHERE idempotency_key = v_grp.idempotency_key;
+        FOR v_item_rec IN
+          SELECT (elem->>'input_idx')::INTEGER AS input_idx
+          FROM jsonb_array_elements(v_batch) AS elem
+          WHERE elem->>'idempotency_key' = v_grp.idempotency_key
+        LOOP
+          v_item_results[v_item_rec.input_idx] := jsonb_build_object(
+            'idempotency_key', v_grp.idempotency_key,
+            'status', 'idempotency_payload_mismatch',
+            'event_id', NULL,
+            'effective_occurred_at', NULL
+          );
+        END LOOP;
       END IF;
     ELSE
-      UPDATE temp_batch_items
-      SET is_canonical = TRUE
-      WHERE input_idx = v_grp.canonical_input_idx;
+      v_canonical_indices := array_append(v_canonical_indices, v_grp.canonical_input_idx);
     END IF;
   END LOOP;
 
   -- Step 4: Deterministic Server-Side Sorting & Atomic Subtransaction Execution
   FOR v_canonical IN
-    SELECT *
-    FROM temp_batch_items
-    WHERE is_canonical = TRUE
-    ORDER BY session_id ASC, client_seq ASC, idempotency_key ASC
+    SELECT
+      (elem->>'input_idx')::INTEGER AS input_idx,
+      elem->>'idempotency_key' AS idempotency_key,
+      elem->>'envelope_id' AS envelope_id,
+      elem->>'session_id' AS session_id,
+      (elem->>'client_seq')::INTEGER AS client_seq,
+      (elem->>'attempt_id')::UUID AS attempt_id,
+      elem->>'event_type' AS event_type,
+      elem->>'item_type' AS item_type,
+      elem->>'item_id' AS item_id,
+      elem->>'item_version' AS item_version,
+      elem->>'context_id' AS context_id,
+      ARRAY(SELECT jsonb_array_elements_text(elem->'presented_option_ids')) AS presented_option_ids,
+      elem->'learner_response' AS learner_response,
+      (elem->>'fsrs_rating')::SMALLINT AS fsrs_rating,
+      (elem->>'score')::REAL AS score,
+      (elem->>'client_latency_ms')::INTEGER AS client_latency_ms,
+      (elem->>'hints_used')::SMALLINT AS hints_used,
+      (elem->>'confidence')::SMALLINT AS confidence,
+      elem->'scheduler_state_before' AS scheduler_state_before,
+      elem->'scheduler_state_after' AS scheduler_state_after,
+      elem->'metadata' AS metadata,
+      elem->>'app_version' AS app_version,
+      elem->>'concept_id_text' AS concept_id_text,
+      (elem->>'client_occurred_at')::TIMESTAMPTZ AS client_occurred_at,
+      elem->>'payload_sha256' AS payload_sha256
+    FROM jsonb_array_elements(v_batch) AS elem
+    WHERE (elem->>'input_idx')::INTEGER = ANY(v_canonical_indices)
+    ORDER BY elem->>'session_id' ASC, (elem->>'client_seq')::INTEGER ASC, elem->>'idempotency_key' ASC
   LOOP
     v_item_status := NULL;
     v_res_event_id := NULL;
@@ -648,44 +657,53 @@ BEGIN
       END;
     END IF;
 
-    UPDATE temp_batch_items
-    SET status = v_item_status,
-        event_id = v_res_event_id,
-        effective_occurred_at = v_res_effective_ts
-    WHERE input_idx = v_canonical.input_idx;
+    -- Update results for the canonical item
+    v_item_results[v_canonical.input_idx] := jsonb_build_object(
+      'idempotency_key', v_canonical.idempotency_key,
+      'status', v_item_status,
+      'event_id', v_res_event_id,
+      'effective_occurred_at', v_res_effective_ts
+    );
 
-    IF v_item_status IN ('accepted', 'duplicate_noop') THEN
-      UPDATE temp_batch_items
-      SET status = 'duplicate_noop',
-          event_id = v_res_event_id,
-          effective_occurred_at = v_res_effective_ts
-      WHERE idempotency_key = v_canonical.idempotency_key
-        AND input_idx <> v_canonical.input_idx;
-    ELSE
-      UPDATE temp_batch_items
-      SET status = v_item_status
-      WHERE idempotency_key = v_canonical.idempotency_key
-        AND input_idx <> v_canonical.input_idx;
-    END IF;
+    -- Apply status to any sibling duplicates in this batch with identical key & digest
+    FOR v_item_rec IN
+      SELECT (elem->>'input_idx')::INTEGER AS input_idx
+      FROM jsonb_array_elements(v_batch) AS elem
+      WHERE elem->>'idempotency_key' = v_canonical.idempotency_key
+        AND (elem->>'input_idx')::INTEGER <> v_canonical.input_idx
+    LOOP
+      IF v_item_status IN ('accepted', 'duplicate_noop') THEN
+        v_item_results[v_item_rec.input_idx] := jsonb_build_object(
+          'idempotency_key', v_canonical.idempotency_key,
+          'status', 'duplicate_noop',
+          'event_id', v_res_event_id,
+          'effective_occurred_at', v_res_effective_ts
+        );
+      ELSE
+        v_item_results[v_item_rec.input_idx] := jsonb_build_object(
+          'idempotency_key', v_canonical.idempotency_key,
+          'status', v_item_status,
+          'event_id', NULL,
+          'effective_occurred_at', NULL
+        );
+      END IF;
+    END LOOP;
   END LOOP;
 
   -- Step 5: Preserve 1:1 Input Order in Final Results
-  SELECT jsonb_agg(
-    jsonb_build_object(
-      'idempotency_key', idempotency_key,
-      'status', status,
-      'event_id', event_id,
-      'effective_occurred_at', effective_occurred_at
-    ) ORDER BY input_idx ASC
-  ) INTO v_results
-  FROM temp_batch_items;
+  v_results := '[]'::JSONB;
+  v_processed_count := 0;
+  FOR v_idx IN 1..array_length(p_events, 1) LOOP
+    IF v_item_results[v_idx] IS NOT NULL THEN
+      v_results := v_results || jsonb_build_array(v_item_results[v_idx]);
+      IF (v_item_results[v_idx]->>'status') IN ('accepted', 'duplicate_noop') THEN
+        v_processed_count := v_processed_count + 1;
+      END IF;
+    END IF;
+  END LOOP;
 
-  v_processed_count := (
-    SELECT COUNT(*)::INTEGER FROM temp_batch_items
-    WHERE status IN ('accepted', 'duplicate_noop')
-  );
   IF v_processed_count = 0 AND array_length(p_events, 1) > 0 THEN
-    v_processed_count := (SELECT COUNT(*)::INTEGER FROM temp_batch_items WHERE status IS NOT NULL);
+    v_processed_count := (SELECT COUNT(*)::INTEGER FROM jsonb_array_elements(v_results) WHERE (value->>'status') IS NOT NULL);
   END IF;
 
   RETURN jsonb_build_object(
