@@ -138,6 +138,50 @@ class DbRetentionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             repo.list_expired(max_results=10000)
 
+    def test_stuck_processing_is_eligible_only_after_both_grace_guards(self):
+        conn = Connection((OWNER, ATTEMPT), (ATTEMPT,), (ATTEMPT,))
+        repo = DbApiRetentionRepository(conn)
+        self.assertEqual(repo.find_owned(OWNER, ATTEMPT).attempt_id, ATTEMPT)
+        self.assertTrue(repo.freeze_upload(OWNER, ATTEMPT))
+        self.assertTrue(repo.delete_attempt(OWNER, ATTEMPT))
+        for sql, args in conn.statements:
+            self.assertIn("status='processing'", sql)
+            self.assertIn("expires_at < now() - interval '30 minutes'", sql)
+            self.assertIn("processing_claimed_at < now() - interval '30 minutes'", sql)
+            self.assertEqual(args, (OWNER, ATTEMPT))
+
+    def test_expiry_scan_uses_same_processing_lease_grace(self):
+        conn = Connection([(OWNER, ATTEMPT)])
+        repo = DbApiRetentionRepository(conn)
+        self.assertEqual(len(repo.list_expired()), 1)
+        sql, _ = conn.statements[0]
+        self.assertIn("status='processing'", sql)
+        self.assertIn("expires_at < now() - interval '30 minutes'", sql)
+        self.assertIn("processing_claimed_at < now() - interval '30 minutes'", sql)
+
+    def test_private_issue_log_only_prunes_older_than_48_hours(self):
+        conn = Connection((5,))
+        repo = DbApiRetentionRepository(conn)
+        self.assertEqual(repo.prune_issuance_log(max_results=20), 5)
+        self.assertEqual(conn.commits, 1)
+        sql, args = conn.statements[0]
+        self.assertIn("software_learning_private.excel_issuance_log", sql)
+        self.assertIn("issued_at < now() - interval '48 hours'", sql)
+        self.assertIn("FOR UPDATE SKIP LOCKED", sql)
+        self.assertIn("LIMIT %s", sql)
+        self.assertEqual(args, (20,))
+        for invalid in (0, -1, 101, True):
+            with self.assertRaises(ValueError):
+                repo.prune_issuance_log(max_results=invalid)
+
+    def test_issue_log_prune_error_rolls_back(self):
+        conn = Connection(fail_at=1)
+        repo = DbApiRetentionRepository(conn)
+        with self.assertRaises(RuntimeError):
+            repo.prune_issuance_log(max_results=2)
+        self.assertEqual(conn.rollbacks, 1)
+        self.assertEqual(conn.commits, 0)
+
     def test_scan_rejects_malformed_database_rows(self):
         conn = Connection([("not-a-uuid", ATTEMPT)])
         with self.assertRaises(ValueError):
