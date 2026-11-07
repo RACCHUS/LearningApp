@@ -1,5 +1,6 @@
 """P2f review manifest and safe SQL renderer tests for Florida DFS insurance."""
 import json
+from datetime import datetime
 import sys
 import unittest
 from copy import deepcopy
@@ -21,7 +22,11 @@ class FloridaInsurancePathwayTests(unittest.TestCase):
                          {'general-lines-2-20', 'life-health-2-15'})
         self.assertGreaterEqual(sum(p2f.validate_tree(r['pathway_tree']) for r in rows), 15)
         for row in rows:
-            self.assertTrue(row['source_retrieved_at'].endswith('T12:00:00Z'))
+            retrieved_at = datetime.fromisoformat(row['source_retrieved_at'].replace('Z', '+00:00'))
+            self.assertIsNotNone(retrieved_at.tzinfo)
+            self.assertEqual(row['source_retrieved_at'], '2026-11-07T03:18:00Z')
+            self.assertEqual(row['source_checked_on'], '2026-11-06')
+            self.assertEqual(row['reviewed_on'], '2026-11-06')
             self.assertGreaterEqual(len(row['review_note']), 80)
             self.assertEqual(row['uncertainty_status'], 'conditional')
             self.assertEqual(row['pathway_kind'], 'initial_licensure')
@@ -67,6 +72,8 @@ class FloridaInsurancePathwayTests(unittest.TestCase):
         self.assertIn('review_note', sql)
         self.assertIn('uncertainty_status', sql)
         self.assertIn('pathway_kind', sql)
+        self.assertIn('source_checked_at', sql)
+        self.assertIn('2026-11-07T03:18:00Z', sql)
         self.assertIn('on conflict (source_namespace,source_key,revision) do nothing', sql)
         self.assertIn("publication_status='published'", sql)
         for forbidden in ('insert into public.learning_targets', 'insert into public.lessons',

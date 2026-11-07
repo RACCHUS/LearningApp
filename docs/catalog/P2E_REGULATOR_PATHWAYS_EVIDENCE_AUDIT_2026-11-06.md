@@ -34,7 +34,7 @@ The official resident 2-15 PDF documents:
 - Equivalent out-of-state resident license routes with different timing and exam consequences.
 - CLU designation; exam-exempt.
 
-The existing P2f tree collapses these combinations and does not fully encode their AND/OR structure. Rebuild from the current PDF before issuing a new public revision.
+The existing P2f tree collapses these combinations and does not fully encode their AND/OR structure. The 2-15 PDF also confirms that the license requires an appointment to be valid and expires if unappointed for 48 months (Section 626.431(3)). Rebuild from the current PDF before issuing a new public revision.
 
 Source: https://www.myfloridacfo.com/docs-sf/insurance-agents-and-agency-services-libraries/agents-docs/licensure/agents-adjusters/2-15-resident-health-life-agent-license.pdf
 

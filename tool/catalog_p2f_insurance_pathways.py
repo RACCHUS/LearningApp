@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +64,10 @@ def validate_payload(payload: dict) -> list[dict]:
         assert 80 <= len(r["overview"].strip()) <= 1200
         assert 8 <= len(r["title"].strip()) <= 180
         assert len(r["review_note"].strip()) >= 80
-        assert r["source_retrieved_at"] == r["source_checked_on"] + "T12:00:00Z"
+        assert r["source_retrieved_at"].endswith("Z")
+        retrieved_at = datetime.fromisoformat(r["source_retrieved_at"].replace("Z", "+00:00"))
+        assert retrieved_at.tzinfo is not None and retrieved_at.utcoffset() is not None
+        assert retrieved_at <= datetime.now(timezone.utc)
         assert r["uncertainty_status"] in {"verified", "conditional", "incomplete", "disputed", "unknown"}
         assert r["pathway_kind"] in {"initial_licensure", "exam_only", "prelicense_training", "continuing_education", "appointment", "authorization", "renewal", "endorsement", "reciprocity", "other"}
         assert validate_tree(r["pathway_tree"]) >= 5
@@ -94,7 +97,7 @@ def sql() -> str:
     for r in rows:
         ns, key = q(r["source_namespace"]), q(r["source_key"])
         tree = q(json.dumps(r["pathway_tree"], ensure_ascii=False, separators=(",", ":")))
-        checked_at = q(r["source_checked_on"] + "T12:00:00Z")
+        checked_at = q(r["source_retrieved_at"])
         title, overview = q(r["title"]), q(r["overview"])
         source = q(r["source_url"])
         reviewer = q("Learning App source review")
