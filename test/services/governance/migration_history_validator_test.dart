@@ -238,6 +238,56 @@ void main() {
       expect(issues.first.isError, isTrue);
       expect(issues.first.message, contains('which is <= latest baseline migration'));
     });
+
+    test('downgrades only registry-approved backdated migrations to warnings', () {
+      final baseline = {
+        '20261009000003_control_auth.sql': 'create table t1 (id int);',
+      };
+      final current = {
+        ...baseline,
+        '20261005000000_reconcile.sql': 'select 1;',
+        '20261006000000_unapproved.sql': 'select 2;',
+      };
+
+      final issues = validator.compareWithBaseline(
+        baselineFiles: baseline,
+        currentFiles: current,
+        approvedBackdatedVersions: {'20261005000000'},
+      );
+
+      final approved = issues.singleWhere((i) => i.filename == '20261005000000_reconcile.sql');
+      expect(approved.rule, 'approved_backdated_migration');
+      expect(approved.isError, isFalse);
+      final rejected = issues.singleWhere((i) => i.filename == '20261006000000_unapproved.sql');
+      expect(rejected.rule, 'backdated_new_migration');
+      expect(rejected.isError, isTrue);
+    });
+
+    test('registry approval does not excuse modifying a baseline migration', () {
+      final issues = validator.compareWithBaseline(
+        baselineFiles: {'20261005000000_a.sql': 'select 1;'},
+        currentFiles: {'20261005000000_a.sql': 'select 2;'},
+        approvedBackdatedVersions: {'20261005000000'},
+      );
+      expect(issues.single.rule, 'modified_baseline_migration');
+    });
+
+    test('registry requires a version and a reason on every entry', () {
+      expect(
+        MigrationHistoryValidator.parseApprovedBackdatedRegistry(
+          '# header\n\n20261101195000 reconcile hosted drift\r\n',
+        ),
+        {'20261101195000': 'reconcile hosted drift'},
+      );
+      expect(
+        () => MigrationHistoryValidator.parseApprovedBackdatedRegistry('20261101195000'),
+        throwsFormatException,
+      );
+      expect(
+        () => MigrationHistoryValidator.parseApprovedBackdatedRegistry('2026110119 reason'),
+        throwsFormatException,
+      );
+    });
   });
 
   group('MigrationHistoryValidator - Hosted Version Parsing & Pre/Postflight Gates', () {

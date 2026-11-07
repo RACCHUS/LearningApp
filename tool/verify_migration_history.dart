@@ -170,9 +170,24 @@ void main(List<String> args) async {
   List<String> pendingMigrations = [];
   if (baselineFilesMap != null) {
     // 3. Compare current files against baseline
+    final registryFile = File(
+      '${migrationsDir.parent.path}/governance/approved_backdated_migrations.txt',
+    );
+    var approvedBackdated = <String, String>{};
+    if (registryFile.existsSync()) {
+      try {
+        approvedBackdated = MigrationHistoryValidator.parseApprovedBackdatedRegistry(
+          registryFile.readAsStringSync(),
+        );
+      } on FormatException catch (e) {
+        stderr.writeln('❌ Error: ${e.message}');
+        exit(1);
+      }
+    }
     final baselineIssues = validator.compareWithBaseline(
       baselineFiles: baselineFilesMap,
       currentFiles: currentFilesMap,
+      approvedBackdatedVersions: approvedBackdated.keys.toSet(),
     );
     allIssues.addAll(baselineIssues);
 

@@ -79,7 +79,7 @@ void main() {
       expect(ddl01, contains('20241228000000_legacy_base_tables.sql'));
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
       expect(ddl01, contains('20261107120000_software_learning_excel_attempt_issuance.sql'));
-      expect(ddl01, contains('96 immutable migrations'));
+      expect(ddl01, contains('99 immutable migrations'));
       expect(ddl01, contains('20261107130000_software_learning_excel_private_upload_gate.sql'));
       expect(ddl01, contains('20261107140000_software_learning_excel_processing_lease.sql'));
     });
