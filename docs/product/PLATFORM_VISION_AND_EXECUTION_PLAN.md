@@ -2,7 +2,7 @@
 
 **Initial Audit Date:** 2026-10-31 (`ARCHITECTURE_REVIEW.md` at `e538585`) · **Initial Plan Authoring Date:** 2026-11-01 (PR `#135`) · **Post-PR `#136` Merge Revision Date:** 2026-11-02 · **Authoritative Baseline:** `main` at `a23cebb` (following merge of PR `#136` from `feature/arch-review-phase-0`)
 **Scope:** Documentation and architecture specifications only. This PR (`#137`) does not implement Phase 1 migrations, the `public.learning_events` ledger, `record_events`, FSRS scheduling, or associated application runtime changes.
-**Related Plan:** [`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md) · **Status:** Reconciled Platform Strategy (v2.5 — Post-PR `#136` Merge Revision)
+**Related Plan:** [`../learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md) · **Status:** Reconciled Platform Strategy (v2.5 — Post-PR `#136` Merge Revision)
 
 ---
 
@@ -51,7 +51,7 @@ Following the merge of PR `#136` (`feature/arch-review-phase-0`) into `main` at 
 
 ### 3.1 `ARCHITECTURE_REVIEW.md` Alignment & Normative Specifications
 - `ARCHITECTURE_REVIEW.md` incorporates the PR `#137` review refinements (including Firebase's official Hosting quota listings: **10 GB/month** on the Firebase Hosting *Usage and quotas* page vs. **360 MB/day** on the *Firebase Pricing* page; qualified `srs-benchmark` Log Loss/RMSE/AUC metrics and Anki 23.10 optional FSRS claims without an unverified 20–30% review-reduction figure; canonical `origin` + `origin_client_id = 'mcp:<client_id>'`; and reconciled offline FSRS sequence/idempotency/timestamp/concurrency/replay rules).
-- **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` serve as the full normative specifications** for `public.learning_events`, `record_events`, `v2_fsrs6`, and the 6-property provenance model.
+- **[`../learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md) and `/docs/learning_science/01..08` serve as the full normative specifications** for `public.learning_events`, `record_events`, `v2_fsrs6`, and the 6-property provenance model.
 
 ### 3.2 Accurate `EXM-03` Surface & Phase 1 `FIX-12` Target Contract
 - On `main` (`a23cebb`), `EXM-03` (`20261101130000_exm_03_assigned_practice_scoring.sql`, `20261101140000_exm_03_authenticated_assignment_issuer.sql`, and `20261101150000_exm_03_authenticated_submit_protected_items.sql`) already provides answer-key-stripped assignment issuance (`exm03_issue_assigned_practice`), authenticated session-bound submission (`exm03_submit_assigned_practice`), and restrictive RLS (`exm03_no_direct_read_of_approved_answers`) for approved `EXM-02A` items (recording attempts in `exam_part_practice_attempts` without updating `user_concept_state`).

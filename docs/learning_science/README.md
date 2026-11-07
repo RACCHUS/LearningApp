@@ -1,6 +1,6 @@
 # LearningApp — Learning Science Research Governance & Standards (`/docs/learning_science/`)
 
-**Master Root Plan:** [`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](../../EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)
+**Master Specification Plan:** [`EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)
 **Authoritative Baseline:** `main` at `a23cebb` (following PR `#136` merge; historical Phase 0 audit baseline `e538585`)
 **Scope:** Documentation and architecture specifications only. This specification suite and PR `#137` do not implement Phase 1 migrations, the `public.learning_events` ledger, `record_events`, FSRS scheduling, or associated application runtime changes.
 
@@ -29,7 +29,7 @@ To prevent informal folk-pedagogy or secondary summaries (such as Wikipedia refe
 ## 2. Supersession of Provisional `ARCHITECTURE_REVIEW.md` Details & Legacy UI Research
 
 ### 2.1 Alignment & Supersession of Summary Sketches in `/ARCHITECTURE_REVIEW.md`
-`/ARCHITECTURE_REVIEW.md` serves as the point-in-time Phase 0 architectural audit, while **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` provide the full normative specifications**:
+`/ARCHITECTURE_REVIEW.md` serves as the point-in-time Phase 0 architectural audit, while **[`EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md) and `/docs/learning_science/01..08` provide the full normative specifications**:
 - **`presented_option_ids: text[]`** supersedes `presented_order` (`List<int>`), and is treated as authoritative display order only when bound to a server-issued presentation/attempt record (`06_MEASUREMENT_AND_SCHEDULING.md`).
 - **`fsrs_rating`** (`1..4`, restricted strictly to `memory_card_review` events) is kept separate from **`learner_confidence`** (`1..3` metacognitive self-report) and `user_concept_state.confidence` (observation-count sufficiency band).
 - **FSRS-6 (`scheduler_version = 'v2_fsrs6'`)** estimates individual card retrievability $R(t)$ only—it is never equated with concept mastery or exam readiness, never initialized by fabricating parameters from SM-2 counters or `ContentComplexityProfile` priors, and kept separate from exam-date workload planning.
