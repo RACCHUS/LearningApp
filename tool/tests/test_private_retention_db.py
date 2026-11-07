@@ -159,6 +159,30 @@ class DbRetentionTests(unittest.TestCase):
         self.assertIn("expires_at < now() - interval '30 minutes'", sql)
         self.assertIn("processing_claimed_at < now() - interval '30 minutes'", sql)
 
+    def test_account_inventory_includes_processing_rows_by_owner(self):
+        conn = Connection([(OWNER, ATTEMPT)])
+        repo = DbApiRetentionRepository(conn)
+        found = repo.list_owner_attempts(owner_id=OWNER,max_results=20)
+        self.assertEqual([(x.owner_id,x.attempt_id) for x in found],[(OWNER,ATTEMPT)])
+        sql, args = conn.statements[0]
+        self.assertIn("WHERE owner_id=%s::uuid", sql)
+        self.assertNotIn("status IN", sql)
+        self.assertIn("LIMIT %s", sql)
+        self.assertEqual(args, (OWNER,20))
+
+    def test_account_inventory_rejects_foreign_or_malformed_rows(self):
+        conn = Connection([(OTHER, ATTEMPT)])
+        with self.assertRaises(ValueError):
+            DbApiRetentionRepository(conn).list_owner_attempts(owner_id=OWNER)
+
+    def test_account_inventory_invalid_requests_never_query(self):
+        conn = Connection([])
+        repo = DbApiRetentionRepository(conn)
+        for owner, count in (("bad",20),(OWNER,0),(OWNER,101),(OWNER,True)):
+            with self.subTest(owner=owner,count=count),self.assertRaises(ValueError):
+                repo.list_owner_attempts(owner_id=owner,max_results=count)
+        self.assertEqual(conn.statements, [])
+
     def test_private_issue_log_only_prunes_older_than_48_hours(self):
         conn = Connection((5,))
         repo = DbApiRetentionRepository(conn)
