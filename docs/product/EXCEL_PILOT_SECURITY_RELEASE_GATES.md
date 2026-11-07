@@ -63,3 +63,25 @@ Before awarding competency, reconcile the shared event model with the existing l
 - [ ] Owner confirms protected rollout and deployment plan.
 
 **Until release gates pass:** leave upload eligibility off, PR #188 draft, and all file/simulation competency claims unverified.
+
+## Server-brokered upload continuation (source only; not deployed)
+
+The review branch now includes a sealed server-brokered workbook upload prototype. The broker verifies a permanent user session, holds an exclusive owner/session-bound PostgreSQL row lock while uploading one canonical workbook, uses a create-only fixed-MIME Storage REST request, reads the bytes back, and commits the SHA-256 and object revision in the same database transaction. On failure it rejects without awarding any competency and attempts to remove an ambiguous write before rollback.
+
+The append-only migration 20261107150000_software_learning_excel_brokered_upload_seal.sql disallows direct learner Storage INSERT even if upload_enabled is later set, stores a server-attested SHA-256 / revision / commit timestamp, and requires the exact digest for any processing lease and provisional completion. The associated self-host SQL bundle includes 100 migrations.
+
+The private upload host and binary ASGI ingress are **separate from the Docker parser host**. The ingress requires a fixed private HTTPS host, a server-held internal key, one canonical attempt ID, exact XLSX MIME, declared Content-Length no greater than 10 MiB, bounded concurrent in-memory requests, and no cookies or browser Origin. It is **disabled by default** and is not an exposed or running service.
+
+Account erasure now has a service-only, revoked-session-gated, bounded, dry-run-first owner cleanup. It cannot claim global erasure: an authoritative Storage-prefix enumeration is still required to detect orphaned objects.
+
+### Required real-host staging tests, not yet passed
+
+1. Race two uploads to the same attempt and upload against an assessment claim; verify only one committed SHA and no overwrites or late writes.
+2. Revoke the original Auth session during an upload and before a claim; reject replay, other-account IDs, and expired attempts.
+3. Inject Storage POST timeout-after-commit, delete errors, stale metadata, signed-token attempts and retries; detect any orphan object and prevent false erasure success.
+4. Confirm the deployed Storage provider actually honors create-only object semantics, blocks client insert/upsert under restrictive RLS, and cannot resurrect objects after cleanup.
+5. Validate separate private gateways, zero public reachability, no Docker socket in the upload host, secret isolation, resource limits, and redacted logs.
+6. Complete a Storage-prefix inventory for account erasure, activate an audited private retention schedule, and approve the raw-file deletion policy.
+7. Review signed-upload token handling, worker ownership, idempotent shared evidence, user privacy notice, mobile UX and skill progression with no self-verified awards.
+
+These unit-tested components do not satisfy the hosting, provider-concurrency, privacy approval or deployment gates. Leave the upload entrypoint disabled and PR #188 draft until independent security review.
