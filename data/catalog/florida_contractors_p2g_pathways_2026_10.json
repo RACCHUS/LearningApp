@@ -16,9 +16,12 @@
       "overview": "Selected regulator-sourced qualification and licensing steps for Florida Certified General Contractors (CGC). Florida Statutes § 489.111 establishes alternative experience-and-education matrices, three examination divisions, financial responsibility, and board review. Individual criminal background exceptions, business entity qualifications, and local permitting requirements are not fully covered. Always consult the DBPR directly. Learning App cannot issue a contractor license or determine legal eligibility.",
       "coverage": "selected_steps_only",
       "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0605",
-      "source_checked_on": "2026-10-13",
-      "reviewed_on": "2026-10-13",
-      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-A checklist on October 13, 2026. The board models experience/education combinations, 3-part examinations, credit verification, and board approval as distinct stages.",
+      "source_checked_on": "2026-11-06",
+      "reviewed_on": "2026-11-06",
+      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-A checklist on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). The board models experience/education combinations, 3-part examinations, credit verification, and board approval as distinct stages.",
+      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
@@ -116,9 +119,12 @@
       "overview": "Selected regulator-sourced qualification and licensing steps for Florida Certified Building Contractors (CBC). Scope covers commercial and residential construction up to three stories. Statutory qualification alternatives include trade experience, college degrees, examinations, credit verification, and CILB board approval. Always consult the DBPR directly. Learning App cannot issue a contractor license or determine legal eligibility.",
       "coverage": "selected_steps_only",
       "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0602",
-      "source_checked_on": "2026-10-13",
-      "reviewed_on": "2026-10-13",
-      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-B checklist on October 13, 2026. Models experience/education alternatives, 3-part examinations, financial responsibility, and board approval as distinct stages.",
+      "source_checked_on": "2026-11-06",
+      "reviewed_on": "2026-11-06",
+      "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-B checklist on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). Models experience/education alternatives, 3-part examinations, financial responsibility, and board approval as distinct stages.",
+      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [

@@ -15,6 +15,7 @@ class McqQuestionWidget extends StatefulWidget {
   final Widget Function(String) customTextBuilder;
   final bool shuffleOptions;
   final int? presentationSeed;
+  final VoidCallback? onRetry;
 
   const McqQuestionWidget({
     super.key,
@@ -26,8 +27,9 @@ class McqQuestionWidget extends StatefulWidget {
     required this.onNext,
     required this.onVoiceInput,
     required this.customTextBuilder,
-    this.shuffleOptions = false,
+    this.shuffleOptions = true,
     this.presentationSeed,
+    this.onRetry,
   });
 
   @override
@@ -35,6 +37,76 @@ class McqQuestionWidget extends StatefulWidget {
 }
 
 class _McqQuestionWidgetState extends State<McqQuestionWidget> {
+  static int _globalAttemptSeed = 0x13579BDF;
+  late int _fallbackPresentationSeed;
+  List<int>? _avoidOrder;
+
+  int get effectivePresentationSeed =>
+      widget.presentationSeed ?? _fallbackPresentationSeed;
+
+  List<int> get presentationOrder => McqOptions.computePresentationOrder(
+    widget.content.options,
+    presentationSeed: effectivePresentationSeed,
+    shuffle: widget.shuffleOptions,
+    avoidOrder: _avoidOrder,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _globalAttemptSeed = McqOptions.nextPresentationNonce(
+      currentNonce: _globalAttemptSeed ^ DateTime.now().microsecondsSinceEpoch,
+      options: widget.content.options,
+      itemHash: widget.content.id.hashCode,
+    );
+    _fallbackPresentationSeed = _globalAttemptSeed ^ widget.content.id.hashCode;
+  }
+
+  @override
+  void didUpdateWidget(covariant McqQuestionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content != widget.content ||
+        oldWidget.presentationSeed != widget.presentationSeed) {
+      final prevOrder = McqOptions.computePresentationOrder(
+        oldWidget.content.options,
+        presentationSeed:
+            oldWidget.presentationSeed ?? _fallbackPresentationSeed,
+        shuffle: oldWidget.shuffleOptions,
+        avoidOrder: _avoidOrder,
+      );
+      _avoidOrder = oldWidget.content.id == widget.content.id
+          ? prevOrder
+          : null;
+      _globalAttemptSeed = McqOptions.nextPresentationNonce(
+        currentNonce: _globalAttemptSeed,
+        options: widget.content.options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: _avoidOrder,
+      );
+      _fallbackPresentationSeed =
+          _globalAttemptSeed ^ widget.content.id.hashCode;
+    }
+  }
+
+  void retry() {
+    if (widget.onRetry != null) {
+      widget.onRetry!();
+      return;
+    }
+    final prevOrder = presentationOrder;
+    setState(() {
+      _avoidOrder = prevOrder;
+      _globalAttemptSeed = McqOptions.nextPresentationNonce(
+        currentNonce: _globalAttemptSeed,
+        options: widget.content.options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: prevOrder,
+      );
+      _fallbackPresentationSeed =
+          _globalAttemptSeed ^ widget.content.id.hashCode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -54,7 +126,8 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           showCorrect: widget.showCorrect,
           correctIndex: widget.content.correctAnswer,
           shuffleOptions: widget.shuffleOptions,
-          presentationSeed: widget.presentationSeed,
+          presentationSeed: effectivePresentationSeed,
+          avoidOrder: _avoidOrder,
         ),
         const SizedBox(height: 16),
         PrimaryButton(
@@ -63,13 +136,25 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           loading: false,
           icon: null,
         ),
+        if (widget.showCorrect && widget.onRetry != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: widget.onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Try Again'),
+          ),
+        ],
         if (widget.showCorrect && widget.selectedIndex != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-               widget.selectedIndex == widget.content.correctAnswer ? 'Correct!' : 'Incorrect',
+              widget.selectedIndex == widget.content.correctAnswer
+                  ? 'Correct!'
+                  : 'Incorrect',
               style: TextStyle(
-                color: widget.selectedIndex == widget.content.correctAnswer ? Colors.green : Colors.red,
+                color: widget.selectedIndex == widget.content.correctAnswer
+                    ? Colors.green
+                    : Colors.red,
                 fontWeight: FontWeight.bold,
               ),
             ),
