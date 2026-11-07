@@ -5,6 +5,8 @@ be implemented separately in an isolated worker before this can ship.
 """
 from __future__ import annotations
 
+import csv
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -19,6 +21,28 @@ CELLS = {**EXPECTED, "C10": "=SUM(C2:C9)"}
 
 
 class ExcelBudgetTotalCheckerTests(unittest.TestCase):
+    def test_declarative_spec_matches_the_bounded_checker(self):
+        spec_path = ROOT / "data/software_learning/excel_budget_total_v1.json"
+        spec = json.loads(spec_path.read_text(encoding="utf-8"))
+        self.assertEqual(spec["checker_id"], "excel-budget-total-v1")
+        self.assertEqual(spec["criterion"]["id"], "excel-budget-total-v1")
+        self.assertEqual(spec["criterion"]["source_range"], "C2:C9")
+        self.assertEqual(spec["criterion"]["target_cell"], "C10")
+        self.assertEqual(spec["artifact"]["allowed_extensions"], [".xlsx"])
+        self.assertTrue(spec["artifact"]["reject_macro_enabled"])
+        self.assertTrue(spec["artifact"]["reject_external_links"])
+        self.assertFalse(spec["evidence_policy"]["verified_skill_awards_enabled"])
+        self.assertTrue(spec["evidence_policy"]["requires_isolated_parser"])
+        self.assertNotIn("expected_total", json.dumps(spec))
+
+    def test_synthetic_starter_data_matches_checker_fixture(self):
+        path = ROOT / "assets/lessons/excel_budget_transactions.csv"
+        with path.open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(len(rows), 8)
+        self.assertEqual([int(row["Amount"]) for row in rows],
+                         [EXPECTED[f"C{i}"] for i in range(2, 10)])
+
     def test_supported_sum_range_passes(self):
         result = check_budget_total(CELLS, EXPECTED)
         self.assertEqual(result["status"], "pass")
