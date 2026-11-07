@@ -64,6 +64,9 @@ def validate_payload(payload: dict) -> list[dict]:
         assert 80 <= len(r["overview"].strip()) <= 1200
         assert 8 <= len(r["title"].strip()) <= 180
         assert len(r["review_note"].strip()) >= 80
+        assert r["source_retrieved_at"] == r["source_checked_on"] + "T12:00:00Z"
+        assert r["uncertainty_status"] in {"verified", "conditional", "incomplete", "disputed", "unknown"}
+        assert r["pathway_kind"] in {"initial_licensure", "exam_only", "prelicense_training", "continuing_education", "appointment", "authorization", "renewal", "endorsement", "reciprocity", "other"}
         assert validate_tree(r["pathway_tree"]) >= 5
         labels = []
         def walk(node):
@@ -102,9 +105,11 @@ def sql() -> str:
             f"then raise exception 'P2f source issuer not approved: {r['source_key']}'; end if; end $review$;",
             "insert into public.catalog_license_pathway_versions "
             "(source_namespace,source_key,revision,jurisdiction,route_kind,title,overview,coverage,"
-            "source_url,source_checked_at,reviewed_at,reviewer,review_status,publication_status,pathway_tree) "
+            "source_url,source_checked_at,reviewed_at,reviewer,review_status,publication_status,pathway_tree,"
+            "source_retrieved_at,review_note,uncertainty_status,pathway_kind) "
             f"values ({ns},{key},1,'US-FL','examination',{title},{overview},'selected_steps_only',"
-            f"{source},{checked_at}::timestamptz,{checked_at}::timestamptz,{reviewer},'approved','published',{tree}::jsonb) "
+            f"{source},{checked_at}::timestamptz,{checked_at}::timestamptz,{reviewer},'approved','published',{tree}::jsonb,"
+            f"{q(r['source_retrieved_at'])}::timestamptz,{q(r['review_note'])},{q(r['uncertainty_status'])},{q(r['pathway_kind'])}) "
             "on conflict (source_namespace,source_key,revision) do nothing;",
             "do $verify$ begin if not exists (select 1 from public.catalog_license_pathway_versions "
             f"where source_namespace={ns} and source_key={key} and revision=1 "
@@ -112,7 +117,10 @@ def sql() -> str:
             "and route_kind='examination' and coverage='selected_steps_only' "
             f"and pathway_tree={tree}::jsonb and source_checked_at={checked_at}::timestamptz "
             "and review_status='approved' and publication_status='published' "
-            "and reviewer='Learning App source review') "
+            "and reviewer='Learning App source review' "
+            f"and source_retrieved_at={q(r['source_retrieved_at'])}::timestamptz "
+            f"and review_note={q(r['review_note'])} and uncertainty_status={q(r['uncertainty_status'])} "
+            f"and pathway_kind={q(r['pathway_kind'])}) "
             f"then raise exception 'P2f reviewed pathway mismatch: {r['source_key']}'; "
             "end if; end $verify$;",
         ]
