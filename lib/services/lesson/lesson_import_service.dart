@@ -166,6 +166,8 @@ class LessonImportService {
           await _importTermFromContent(lessonId, item, userId);
           break;
         case 'mcq':
+        case 'true_false':
+        case 'short_answer':
         case 'question':
           await _importQuestionFromContent(lessonId, item, userId);
           break;
