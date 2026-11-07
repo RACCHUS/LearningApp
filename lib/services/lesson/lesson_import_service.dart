@@ -103,7 +103,8 @@ class LessonImportService {
                   correctAnswer: q['correct_answer'] is int
                       ? q['correct_answer']
                       : int.tryParse(q['correct_answer']?.toString() ?? '') ?? 0,
-                  type: q['type']?.toString() ?? 'mcq',
+                  type: q['type']?.toString() ??
+                      ((q['accepted_answers'] is List) ? 'short_answer' : 'mcq'),
                   explanation: q['explanation']?.toString(),
                   acceptedAnswers: (q['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
                   gradingMethod: q['grading_method']?.toString(),
