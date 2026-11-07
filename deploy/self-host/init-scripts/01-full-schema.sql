@@ -35019,7 +35019,13 @@ BEGIN
      OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
      OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
      OR coalesce(auth.jwt()->>'session_id','') !~
-        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107130000', 'software_learning_excel_private_upload_gate') ON CONFLICT (version) DO NOTHING;
+
+COMMIT;
+
+
   THEN
     RETURN false;
   END IF;
@@ -35049,11 +35055,18 @@ GRANT EXECUTE ON FUNCTION public.sl_excel_storage_upload_authorized(text)
 -- A restrictive gate is essential: a pre-existing permissive bucket INSERT
 -- policy must not authorize uploads to the reserved Excel bucket.
 CREATE POLICY sl_excel_insert_enforce ON storage.objects
-AS RESTRICTIVE FOR INSERT TO anon,authenticated
+AS RESTRICTIVE FOR INSERT TO authenticated
 WITH CHECK (
   bucket_id <> 'learningapp-excel-private'
   OR public.sl_excel_storage_upload_authorized(name)
 );
+
+-- Anonymous DB role is deliberately separate: it cannot execute the gated
+-- authenticated-only helper. This prevents a policy permission error from
+-- affecting unrelated buckets with existing public upload rules.
+CREATE POLICY sl_excel_insert_anon_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO anon
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
 
 -- Explicit client-side direct upload permission only if a trusted operator
 -- later sets the attempt's server-only gate. No signed URL or upsert flows.
