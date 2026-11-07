@@ -58,7 +58,7 @@ Return ONLY valid JSON matching this schema:
       { "title": "Concept name", "purpose": "What this concept teaches", "depends_on_terms": ["Term name"], "order": 1 }
     ],
     "mcqs": [
-      { "tests_concept": "Concept name", "cognitive_level": "recall|understand|apply|analyze", "order": 1 }
+      { "tests_concept": "Concept name", "question_type": "mcq|short_answer", "cognitive_level": "recall|understand|apply|analyze", "order": 1 }
     ]
   },
   "progression_notes": "How content builds from simple to complex",
