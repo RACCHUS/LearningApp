@@ -141,6 +141,7 @@ def assess_private_workbook(
     if lease is None:
         return _rejected()
 
+    completed = False
     try:
         if not _eligible(lease, identity, attempt_id, now):
             return _rejected()
@@ -169,6 +170,7 @@ def assess_private_workbook(
         if repository.complete(lease.lease_id, digest, result["status"],
                                result["feedback"]) is not True:
             return _rejected()
+        completed = True
         return {
             "status": result["status"],
             "feedback": result["feedback"],
@@ -178,12 +180,11 @@ def assess_private_workbook(
     except Exception:
         return _rejected()
     finally:
-        # After any failure, best-effort mark the claim failed/expired.
-        # A secure backend must make this conditional on the lease state and
-        # never reopen upload access.
-        # WARNING: completion may have succeeded; an adapter must make fail()
-        # a no-op once complete. Retry idempotency is repository-controlled.
-        try:
-            repository.fail(lease.lease_id)
-        except Exception:
-            pass
+        # Only failed claims are marked failed, never successful results.
+        # The repository must atomically guard against a claim lease race and
+        # never reopen the original upload window.
+        if not completed:
+            try:
+                repository.fail(lease.lease_id)
+            except Exception:
+                pass
