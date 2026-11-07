@@ -121,3 +121,19 @@ The feature branch has been synchronized with main including the merged simulati
 **No upload bucket, signing operation, learner file processing endpoint, persistent score, verification claim, learner UI, evidence projection, or production migration deployment is enabled.** The connected hosted project's recorded migrations are behind the repo and must be reconciled only through the guarded deployment governance; do not auto-apply this branch.
 
 Next secure milestones: design the private bucket and immutable owner/attempt upload grant; implement isolated worker orchestration, strict TTL erasure (raw files and quota metadata), per-attempt attachment integrity, owner-facing delete/export, and only then map server-verified results into the shared `record_events` evidence contract.
+
+## 2026-11-07 — Private Storage gate and cleanup prototype
+
+**Repository-only implementation (never deployed):**
+
+- Migration `20261107130000_software_learning_excel_private_upload_gate.sql` adds a dedicated **private** Storage bucket with a 10 MiB and XLSX MIME admission limit, while `software_learning_attempts.upload_enabled` defaults **false**. Existing attempts remain upload-disabled.
+- The authenticated Storage `INSERT` RLS check accepts only `<owner_uuid>/<attempt_uuid>/workbook.xlsx` for a server-enabled attempt whose JWT user and **live original Auth session** match. A restrictive policy prevents broad existing INSERT rules from overriding this boundary.
+- Restrictive RLS denies anonymous and authenticated user `SELECT`, `UPDATE`, and `DELETE` in this bucket; future trusted service processing uses the Storage API with narrowly scoped credentials.
+- A database trigger refuses deletion of attempt metadata while its workbook is still present in Storage, preventing silent SQL-only deletion of bytes' references.
+- `supabase/tests/software_learning_storage_gate_test.sql` checks default-deny behavior, private-bucket limits, policy/trigger presence, exact object paths, owner/session isolation, anonymous sessions and expiry.
+- `tool/software_learning/storage_retention.py` and `tool/tests/test_storage_retention.py` implement and test a **host adapter contract**, not a running cleanup service. Its order is freeze upload -> remove bytes **using Storage API** -> verify absence -> delete metadata. Failures preserve a retryable record. All responses are bounded status strings without file data.
+- The generated self-host SQL bundle now includes **95 migrations** and its contents are checked by the self-host tests.
+
+**Unresolved before enabling upload:** a deployed service with verified privileged adapters and rate/concurrency limits; protection against in-flight uploads and reusable signed upload tokens; server-held workbook ingest/assessment handoff to the network-disabled container worker; private Storage deletion and retries on account erasure/expiry; scheduled retention of raw files and private issuance log; threat review, cost controls, and a learner-facing privacy notice. Do not set `upload_enabled=true` in production until those checks pass.
+
+**Evidence remains unverified:** there is no skill award, persisted result, or new `record_events` contract in this increment. The existing simulation and software activities must eventually share that ledger before competency verification.
