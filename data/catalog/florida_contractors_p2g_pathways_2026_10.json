@@ -19,6 +19,9 @@
       "source_checked_on": "2026-10-13",
       "reviewed_on": "2026-10-13",
       "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-A checklist on October 13, 2026. The board models experience/education combinations, 3-part examinations, credit verification, and board approval as distinct stages.",
+      "source_retrieved_at": "2026-10-13T12:00:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
@@ -119,6 +122,9 @@
       "source_checked_on": "2026-10-13",
       "reviewed_on": "2026-10-13",
       "review_note": "Reviewed against the Florida DBPR Construction Industry Licensing Board (CILB) application center and CILB 5-B checklist on October 13, 2026. Models experience/education alternatives, 3-part examinations, financial responsibility, and board approval as distinct stages.",
+      "source_retrieved_at": "2026-10-13T12:00:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
