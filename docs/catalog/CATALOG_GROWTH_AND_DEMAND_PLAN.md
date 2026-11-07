@@ -90,7 +90,7 @@ The remaining 21 intake entries stay unpublished. Hard database gates require ve
 
 ### P2 status reconciliation (2026-10-16, hosted verification; updated 2026-11-07)
 
-The pilot has grown beyond the original ten records. Anonymous readers on hosted currently see 16 published destinations. In repository, **19 reviewed destination pages** (7 certifications, 2 licensure exams, and 10 Florida professional licenses) and **10 versioned regulator pathways** are validated under strict RLS schemas and Python/pgTAP suites:
+The pilot has grown beyond the original ten records. Anonymous readers on hosted currently see 16 published destinations. In repository, **20 reviewed destination pages** (7 certifications, 2 licensure exams, and 11 Florida professional licenses) and **11 versioned regulator pathways** are validated under strict RLS schemas and Python/pgTAP suites:
 - Florida RN and LPN (`fl_bon`, P2e)
 - Florida General Lines 2-20 and Life/Health 2-15 (`fl_dfs`, P2f)
 - Florida Certified General and Building Contractors (`dbpr_fl`, P2g)
@@ -98,10 +98,11 @@ The pilot has grown beyond the original ten records. Anonymous readers on hosted
 - Florida Real Estate Broker (`dbpr_fl` / FREC, [P2i runbook](P2I_FLORIDA_BROKER_PATHWAYS.md))
 - Florida Certified Residential Contractor (`dbpr_fl` / CILB, [P2j runbook](P2J_FLORIDA_RESIDENTIAL_CONTRACTOR_PATHWAYS.md))
 - Florida Community Association Manager (`dbpr_fl` / RCCAM, [P2k runbook](P2K_FLORIDA_CAM_PATHWAYS.md))
+- Florida Cosmetologist (`dbpr_fl` / Board of Cosmetology, [P2l runbook](P2L_FLORIDA_COSMETOLOGIST_PATHWAYS.md))
 
-Progress against the P2 targets: 19 of 250 reviewed destination pages, 10 of 50 validated pathways.
+Progress against the P2 targets: 20 of 250 reviewed destination pages, 11 of 50 validated pathways.
 
-All ten pathways enforce a fail-closed 180-day source-freshness window under public SELECT RLS (`source_checked_at >= now() - interval '180 days'`). The scheduled Q1 2027 recertification review window (March 1–15, 2027) and safe re-versioning runbook are documented in [Regulator Pathway Freshness & Renewal Protocol](REGULATOR_PATHWAY_FRESHNESS_AND_RENEWAL.md).
+All eleven pathways enforce a fail-closed 180-day source-freshness window under public SELECT RLS (`source_checked_at >= now() - interval '180 days'`). The scheduled Q1 2027 recertification review window (March 1–15, 2027) and safe re-versioning runbook are documented in [Regulator Pathway Freshness & Renewal Protocol](REGULATOR_PATHWAY_FRESHNESS_AND_RENEWAL.md).
 
 ## 6. P3 — Experience, community and content
 
