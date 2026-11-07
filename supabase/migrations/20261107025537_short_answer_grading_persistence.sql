@@ -26,6 +26,7 @@ declare
   v_version_status text;
 
   -- Counters
+  v_concepts_count int := 0;
   v_stimuli_count int := 0;
   v_domains_count int := 0;
   v_objectives_count int := 0;
@@ -36,47 +37,73 @@ declare
   v_questions_count int := 0;
   v_mappings_count int := 0;
 
-  -- Iterators
-  v_source_rel jsonb;
-  v_source_artifact jsonb;
-  v_rel_id uuid;
+  -- Lookup Maps
+  v_stimuli_map jsonb := '{}'::jsonb;         -- stimulus_key -> uuid
+  v_concepts_map jsonb := '{}'::jsonb;        -- slug -> uuid
+  v_source_releases_map jsonb := '{}'::jsonb; -- source_id or index -> uuid
+  v_default_rel_id uuid := null;
+
+  -- Concept processing variables
+  v_concept jsonb;
+  v_concept_id uuid;
+  v_concept_slug text;
+  v_concept_name text;
+  v_explicit_canon text;
+  v_matched_id uuid;
+  v_matched_is_ambig boolean;
+  v_concept_rel_id uuid;
+
+  -- Content processing variables
   v_stim jsonb;
-  v_stim_id uuid;
   v_stim_key text;
+  v_stim_id uuid;
   v_domain jsonb;
   v_domain_id uuid;
   v_obj jsonb;
   v_obj_id uuid;
-  v_concept_id uuid;
   v_lesson jsonb;
   v_lesson_id uuid;
   v_block jsonb;
-  v_term jsonb;
-  v_question jsonb;
+  v_block_id uuid;
   v_item jsonb;
   v_item_id uuid;
   v_fc jsonb;
   v_fc_id uuid;
+  v_term jsonb;
+  v_question jsonb;
   v_mapping jsonb;
+  v_source_rel jsonb;
+  v_source_rel_idx int := 0;
+  v_rel_id uuid;
+  v_source_artifact jsonb;
+  v_mapping_id uuid;
+  v_source_mapping jsonb;
   v_from_concept_id uuid;
   v_to_concept_id uuid;
-  v_source_mapping jsonb;
-  v_mapping_id uuid;
-  v_source_releases_map jsonb := '{}'::jsonb;
-  v_default_rel_id uuid := null;
-  v_source_rel_idx int := 0;
-  v_entity_rel_id uuid;
 
-  -- Key Maps
-  v_stimuli_map jsonb := '{}'::jsonb;
+  v_entity_rel_id uuid;
+  v_lesson_rel_id uuid;
+  v_obj_rel_id uuid;
+  v_raw_concept_ref text;
+  v_resolved_cid uuid;
+
+  -- Concept mapping resolution variables
+  v_from_version_code text;
+  v_from_concept_slug text;
+  v_to_concept_slug text;
+  v_mapping_type text;
+  v_from_tv_id uuid;
+  v_transfer_weight numeric;
+  v_concept_mappings_count int := 0;
 begin
-  -- 1. Security Check: Service role only
+
+  -- 1. Security Check: Service-role only
   if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
      and auth.role() <> 'service_role' then
     raise exception 'Unauthorized: ingest_curriculum_manifest requires service_role privilege';
   end if;
 
-  -- 2. Extract Field
+  -- 2. Extract / Upsert Field
   v_field_slug := payload->'field'->>'slug';
   if v_field_slug is not null and v_field_slug <> '' then
     select id into v_field_id from public.fields where slug = v_field_slug;
@@ -92,7 +119,7 @@ begin
     end if;
   end if;
 
-  -- 3. Extract LearningTarget
+  -- 3. Extract / Upsert LearningTarget
   v_target_slug := payload->'target'->>'slug';
   if v_target_slug is null or v_target_slug = '' then
     raise exception 'Missing target.slug in manifest payload';
@@ -114,7 +141,7 @@ begin
     returning id into v_target_id;
   end if;
 
-  -- 4. Extract TargetVersion
+  -- 4. Extract / Upsert TargetVersion
   v_version_code := payload->'target_version'->>'version_code';
   if v_version_code is null or v_version_code = '' then
     raise exception 'Missing target_version.version_code in manifest payload';
@@ -130,27 +157,37 @@ begin
     ) values (
       v_target_id,
       v_version_code,
-      payload->'target_version'->>'title',
-      payload->'target_version'->>'description',
-      case when payload->'target_version'->>'valid_from' is not null
-           then (payload->'target_version'->>'valid_from')::date
+      coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', v_version_code),
+      coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description'),
+      case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+           then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
            else null end,
       'draft',
       coalesce(payload->'target_version'->'metadata', '{}'::jsonb)
     )
     returning id, status into v_version_id, v_version_status;
-  end if;
+  else
+    if v_version_status <> 'draft' then
+      raise exception 'Cannot ingest into TargetVersion "%" with status "%". Only draft versions may be replaced.', v_version_code, v_version_status;
+    end if;
 
-  if v_version_status <> 'draft' then
-    raise exception 'Cannot ingest into TargetVersion "%" with status "%". Only draft versions may be replaced.', v_version_code, v_version_status;
+    update public.target_versions
+    set title = coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', title),
+        description = coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description', description),
+        valid_from = case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+                          then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
+                          else valid_from end,
+        metadata = coalesce(payload->'target_version'->'metadata', metadata),
+        updated_at = now()
+    where id = v_version_id;
   end if;
 
   -- 5. Atomically Clean Previous Draft Content for this TargetVersion
   perform public.clean_draft_target_version(v_version_id);
 
-  -- 6. Ingest Source Releases & Artifacts
-  if jsonb_typeof(payload->'source_releases') = 'array' then
-    for v_source_rel in select * from jsonb_array_elements(payload->'source_releases')
+  -- 6. Ingest Source Releases
+  if jsonb_typeof(coalesce(payload->'source_releases', payload->'sources')) = 'array' then
+    for v_source_rel in select * from jsonb_array_elements(coalesce(payload->'source_releases', payload->'sources'))
     loop
       insert into public.content_source_releases (
         publisher, title, version, source_url, license, retrieved_at, sha256, metadata
@@ -185,6 +222,9 @@ begin
       if v_source_rel ? 'id' then
         v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'id', v_rel_id::text);
       end if;
+      if v_source_rel ? 'source_id' then
+        v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'source_id', v_rel_id::text);
+      end if;
       v_source_releases_map := v_source_releases_map || jsonb_build_object(
         coalesce(v_source_rel->>'publisher', '') || '/' || coalesce(v_source_rel->>'version', ''), v_rel_id::text
       );
@@ -215,7 +255,7 @@ begin
       values (v_version_id, 'content_source_mapping', v_mapping_id)
       on conflict do nothing;
 
-      -- Artifacts
+      -- Source Artifacts
       if jsonb_typeof(v_source_rel->'artifacts') = 'array' then
         for v_source_artifact in select * from jsonb_array_elements(v_source_rel->'artifacts')
         loop
@@ -245,7 +285,110 @@ begin
     end loop;
   end if;
 
-  -- 7. Ingest Shared Stimuli (root-level & objective-level)
+  -- 7. Fully Transactional Canonical Concepts Resolution & Ingestion (Option A)
+  if jsonb_typeof(payload->'concepts') = 'array' then
+    for v_concept in select * from jsonb_array_elements(payload->'concepts')
+    loop
+      v_concept_slug := v_concept->>'slug';
+      v_concept_name := coalesce(v_concept->>'name', v_concept_slug);
+      v_explicit_canon := v_concept->>'canonical_concept';
+      v_concept_id := null;
+
+      if v_explicit_canon is not null and trim(v_explicit_canon) <> '' then
+        select id into v_concept_id
+        from public.knowledge_concepts
+        where slug = trim(v_explicit_canon);
+
+        if v_concept_id is null then
+          raise exception 'Explicit canonical_concept "%" declared for concept "%" (%) does not exist in knowledge_concepts. Overrides must fail closed.', v_explicit_canon, v_concept_name, v_concept_slug;
+        end if;
+
+        if v_field_id is not null then
+          insert into public.concept_fields (concept_id, field_id, relationship)
+          values (v_concept_id, v_field_id, 'core_concept')
+          on conflict (concept_id, field_id) do nothing;
+        end if;
+      else
+        -- Ambiguity-safe resolution RPC
+        select r.id, r.is_ambiguous into v_matched_id, v_matched_is_ambig
+        from public.resolve_canonical_concept(v_concept_slug, v_concept_name, v_field_id) r
+        limit 1;
+
+        if v_matched_is_ambig then
+          raise exception 'Ambiguous canonical concept match for "%" (%). Multiple concepts share this name across fields and target field does not disambiguate. Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.', v_concept_name, v_concept_slug;
+        end if;
+
+        if v_matched_id is not null then
+          v_concept_id := v_matched_id;
+          if v_field_id is not null then
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
+            on conflict (concept_id, field_id) do nothing;
+          end if;
+        else
+          -- Insert new canonical knowledge concept
+          insert into public.knowledge_concepts (
+            field_id, slug, name, short_definition, description, emoji, aliases, status
+          ) values (
+            v_field_id,
+            v_concept_slug,
+            v_concept_name,
+            v_concept->>'short_definition',
+            v_concept->>'description',
+            coalesce(v_concept->>'emoji', '💡'),
+            case when jsonb_typeof(v_concept->'aliases') = 'array'
+                 then array(select jsonb_array_elements_text(v_concept->'aliases'))
+                 else array[]::text[] end,
+            'active'
+          )
+          returning id into v_concept_id;
+
+          if v_field_id is not null then
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
+            on conflict (concept_id, field_id) do nothing;
+          end if;
+        end if;
+      end if;
+
+      v_concepts_count := v_concepts_count + 1;
+      v_concepts_map := v_concepts_map || jsonb_build_object(v_concept_slug, v_concept_id::text);
+
+      -- Canonical Concept Provenance Mapping
+      if v_default_rel_id is not null then
+        v_concept_rel_id := null;
+        if v_concept ? 'source_release_id' and v_source_releases_map ? (v_concept->>'source_release_id') then
+          v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_release_id'))::uuid;
+        elsif v_concept ? 'source_id' and v_source_releases_map ? (v_concept->>'source_id') then
+          v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_id'))::uuid;
+        else
+          v_concept_rel_id := v_default_rel_id;
+        end if;
+
+        if v_concept_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_concept_rel_id,
+            'knowledge_concept',
+            v_concept_id,
+            coalesce(v_concept->>'relationship', 'official_blueprint'),
+            coalesce(v_concept->>'citation', coalesce(v_concept->>'citation_location', 'Concept ' || v_concept_slug)),
+            coalesce(v_concept->>'notes', coalesce(v_concept->>'citation_notes', 'Authoritative concept definition from blueprint')),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata;
+
+          v_mappings_count := v_mappings_count + 1;
+        end if;
+      end if;
+    end loop;
+  end if;
+
+  -- 8. Ingest Shared Stimuli (root-level & objective-level)
   if jsonb_typeof(payload->'stimuli') = 'array' then
     for v_stim in select * from jsonb_array_elements(payload->'stimuli')
     loop
@@ -276,6 +419,8 @@ begin
         v_entity_rel_id := null;
         if v_stim ? 'source_release_id' and v_source_releases_map ? (v_stim->>'source_release_id') then
           v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_release_id'))::uuid;
+        elsif v_stim ? 'source_id' and v_source_releases_map ? (v_stim->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_id'))::uuid;
         else
           v_entity_rel_id := v_default_rel_id;
         end if;
@@ -288,8 +433,8 @@ begin
             'assessment_stimulus',
             v_stim_id,
             'official_blueprint',
-            coalesce(v_stim->>'citation', 'Official Blueprint Stimulus'),
-            'Assessment stimulus mapping',
+            coalesce(v_stim->>'citation', coalesce(v_stim->>'citation_location', 'Official Blueprint Stimulus')),
+            coalesce(v_stim->>'notes', 'Assessment stimulus mapping'),
             '{}'::jsonb
           )
           on conflict (source_release_id, entity_type, entity_id, relationship) do update
@@ -307,7 +452,7 @@ begin
     end loop;
   end if;
 
-  -- 8. Ingest Standalone Target-level Flashcards
+  -- 9. Ingest Standalone Target-level Flashcards
   if jsonb_typeof(payload->'flashcards') = 'array' then
     for v_fc in select * from jsonb_array_elements(payload->'flashcards')
     loop
@@ -325,7 +470,7 @@ begin
       insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
       values (v_version_id, 'flashcard', v_fc_id);
 
-      -- Link concepts
+      -- Link concepts by UUID or slug lookup
       if jsonb_typeof(v_fc->'concept_ids') = 'array' then
         for v_concept_id in select (jsonb_array_elements_text(v_fc->'concept_ids'))::uuid
         loop
@@ -334,10 +479,58 @@ begin
           on conflict do nothing;
         end loop;
       end if;
+
+      if jsonb_typeof(v_fc->'concept_slugs') = 'array' then
+        for v_raw_concept_ref in select jsonb_array_elements_text(v_fc->'concept_slugs')
+        loop
+          if v_concepts_map ? v_raw_concept_ref then
+            v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+            insert into public.flashcard_concepts (flashcard_id, concept_id)
+            values (v_fc_id, v_resolved_cid)
+            on conflict do nothing;
+          end if;
+        end loop;
+      end if;
+
+      -- Flashcard Provenance Mapping
+      if v_default_rel_id is not null then
+        v_entity_rel_id := null;
+        if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+        elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
+        else
+          v_entity_rel_id := v_default_rel_id;
+        end if;
+
+        if v_entity_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_entity_rel_id,
+            'flashcard',
+            v_fc_id,
+            'derived_from',
+            coalesce(v_fc->>'citation', coalesce(v_fc->>'citation_location', coalesce(v_fc->>'front', 'Flashcard'))),
+            coalesce(v_fc->>'notes', 'Flashcard derived from authoritative blueprint'),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata
+          returning id into v_mapping_id;
+
+          v_mappings_count := v_mappings_count + 1;
+          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+          values (v_version_id, 'content_source_mapping', v_mapping_id)
+          on conflict do nothing;
+        end if;
+      end if;
     end loop;
   end if;
 
-  -- 9. Ingest Domains, Objectives, Lessons, Blocks, Assessment Items
+  -- 10. Ingest Domains, Objectives, Lessons, Blocks, Assessment Items
   if jsonb_typeof(payload->'domains') = 'array' then
     for v_domain in select * from jsonb_array_elements(payload->'domains')
     loop
@@ -368,6 +561,8 @@ begin
         v_entity_rel_id := null;
         if v_domain ? 'source_release_id' and v_source_releases_map ? (v_domain->>'source_release_id') then
           v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid;
+        elsif v_domain ? 'source_id' and v_source_releases_map ? (v_domain->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_id'))::uuid;
         else
           v_entity_rel_id := v_default_rel_id;
         end if;
@@ -380,8 +575,8 @@ begin
             'curriculum_node',
             v_domain_id,
             'official_blueprint',
-            coalesce(v_domain->>'citation', 'Domain ' || coalesce(v_domain->>'code', '')),
-            'Curriculum domain node citation',
+            coalesce(v_domain->>'citation', coalesce(v_domain->>'citation_location', 'Domain ' || coalesce(v_domain->>'code', ''))),
+            coalesce(v_domain->>'notes', 'Curriculum domain node citation'),
             '{}'::jsonb
           )
           on conflict (source_release_id, entity_type, entity_id, relationship) do update
@@ -424,9 +619,17 @@ begin
             v_entity_rel_id := null;
             if v_obj ? 'source_release_id' and v_source_releases_map ? (v_obj->>'source_release_id') then
               v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid;
+            elsif v_obj ? 'source_id' and v_source_releases_map ? (v_obj->>'source_id') then
+              v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_id'))::uuid;
             else
-              v_entity_rel_id := coalesce((v_source_releases_map->>(v_domain->>'source_release_id'))::uuid, v_default_rel_id);
+              v_entity_rel_id := coalesce(
+                (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                v_default_rel_id
+              );
             end if;
+
+            v_obj_rel_id := v_entity_rel_id;
 
             if v_entity_rel_id is not null then
               insert into public.content_source_mappings (
@@ -436,8 +639,8 @@ begin
                 'curriculum_node',
                 v_obj_id,
                 'official_blueprint',
-                coalesce(v_obj->>'citation', 'Objective ' || coalesce(v_obj->>'code', '')),
-                'Curriculum objective node citation',
+                coalesce(v_obj->>'citation', coalesce(v_obj->>'citation_location', 'Objective ' || coalesce(v_obj->>'code', ''))),
+                coalesce(v_obj->>'notes', 'Curriculum objective node citation'),
                 '{}'::jsonb
               )
               on conflict (source_release_id, entity_type, entity_id, relationship) do update
@@ -453,13 +656,25 @@ begin
             end if;
           end if;
 
-          -- Link objective concepts
+          -- Link objective concepts by UUID or slug
           if jsonb_typeof(v_obj->'concept_ids') = 'array' then
             for v_concept_id in select (jsonb_array_elements_text(v_obj->'concept_ids'))::uuid
             loop
               insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
               values (v_obj_id, v_concept_id)
               on conflict do nothing;
+            end loop;
+          end if;
+
+          if jsonb_typeof(v_obj->'concept_slugs') = 'array' then
+            for v_raw_concept_ref in select jsonb_array_elements_text(v_obj->'concept_slugs')
+            loop
+              if v_concepts_map ? v_raw_concept_ref then
+                v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+                values (v_obj_id, v_resolved_cid)
+                on conflict do nothing;
+              end if;
             end loop;
           end if;
 
@@ -488,6 +703,54 @@ begin
                   values (v_fc_id, v_concept_id)
                   on conflict do nothing;
                 end loop;
+              end if;
+
+              if jsonb_typeof(v_fc->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_fc->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.flashcard_concepts (flashcard_id, concept_id)
+                    values (v_fc_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
+                end loop;
+              end if;
+
+              -- Objective Flashcard Provenance Mapping
+              if v_default_rel_id is not null then
+                v_entity_rel_id := null;
+                if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+                elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
+                else
+                  v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
+                end if;
+
+                if v_entity_rel_id is not null then
+                  insert into public.content_source_mappings (
+                    source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                  ) values (
+                    v_entity_rel_id,
+                    'flashcard',
+                    v_fc_id,
+                    'derived_from',
+                    coalesce(v_fc->>'citation', coalesce(v_fc->>'citation_location', coalesce(v_fc->>'front', 'Objective Flashcard'))),
+                    coalesce(v_fc->>'notes', 'Flashcard derived from authoritative objective blueprint'),
+                    '{}'::jsonb
+                  )
+                  on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                  set citation_location = excluded.citation_location,
+                      notes = excluded.notes,
+                      metadata = excluded.metadata
+                  returning id into v_mapping_id;
+
+                  v_mappings_count := v_mappings_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'content_source_mapping', v_mapping_id)
+                  on conflict do nothing;
+                end if;
               end if;
             end loop;
           end if;
@@ -527,6 +790,54 @@ begin
                   on conflict do nothing;
                 end loop;
               end if;
+
+              if jsonb_typeof(v_item->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_item->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                    values (v_item_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
+                end loop;
+              end if;
+
+              -- Objective Assessment Item Provenance Mapping
+              if v_default_rel_id is not null then
+                v_entity_rel_id := null;
+                if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
+                else
+                  v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
+                end if;
+
+                if v_entity_rel_id is not null then
+                  insert into public.content_source_mappings (
+                    source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                  ) values (
+                    v_entity_rel_id,
+                    'assessment_item',
+                    v_item_id,
+                    'derived_from',
+                    coalesce(v_item->>'citation', coalesce(v_item->>'citation_location', substring(coalesce(v_item->>'prompt', 'Assessment Item') from 1 for 100))),
+                    coalesce(v_item->>'notes', 'Assessment item derived from authoritative blueprint'),
+                    '{}'::jsonb
+                  )
+                  on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                  set citation_location = excluded.citation_location,
+                      notes = excluded.notes,
+                      metadata = excluded.metadata
+                  returning id into v_mapping_id;
+
+                  v_mappings_count := v_mappings_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'content_source_mapping', v_mapping_id)
+                  on conflict do nothing;
+                end if;
+              end if;
             end loop;
           end if;
 
@@ -553,12 +864,21 @@ begin
                 v_entity_rel_id := null;
                 if v_lesson ? 'source_release_id' and v_source_releases_map ? (v_lesson->>'source_release_id') then
                   v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_release_id'))::uuid;
+                elsif v_lesson ? 'source_id' and v_source_releases_map ? (v_lesson->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_id'))::uuid;
                 else
                   v_entity_rel_id := coalesce(
                     (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid,
-                    coalesce((v_source_releases_map->>(v_domain->>'source_release_id'))::uuid, v_default_rel_id)
+                    (v_source_releases_map->>(v_obj->>'source_id'))::uuid,
+                    coalesce(
+                      (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                      (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                      v_default_rel_id
+                    )
                   );
                 end if;
+
+                v_lesson_rel_id := v_entity_rel_id;
 
                 if v_entity_rel_id is not null then
                   insert into public.content_source_mappings (
@@ -568,8 +888,8 @@ begin
                     'lesson',
                     v_lesson_id,
                     'derived_from',
-                    coalesce(v_lesson->>'citation', coalesce(v_lesson->>'title', 'Lesson')),
-                    'Lesson derived from authoritative source',
+                    coalesce(v_lesson->>'citation', coalesce(v_lesson->>'citation_location', coalesce(v_lesson->>'title', 'Lesson'))),
+                    coalesce(v_lesson->>'notes', 'Lesson derived from authoritative source'),
                     '{}'::jsonb
                   )
                   on conflict (source_release_id, entity_type, entity_id, relationship) do update
@@ -590,13 +910,25 @@ begin
               values (v_obj_id, v_lesson_id, coalesce((v_lesson->>'order_index')::int, 0))
               on conflict do nothing;
 
-              -- Scoped lesson concept linking (NO global leakage!)
+              -- Scoped lesson concept linking
               if jsonb_typeof(v_lesson->'concept_ids') = 'array' then
                 for v_concept_id in select (jsonb_array_elements_text(v_lesson->'concept_ids'))::uuid
                 loop
                   insert into public.lesson_concepts (lesson_id, concept_id)
                   values (v_lesson_id, v_concept_id)
                   on conflict do nothing;
+                end loop;
+              end if;
+
+              if jsonb_typeof(v_lesson->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_lesson->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.lesson_concepts (lesson_id, concept_id)
+                    values (v_lesson_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
                 end loop;
               end if;
 
@@ -611,8 +943,48 @@ begin
                     coalesce(v_block->>'block_type', 'markdown'),
                     coalesce(v_block->'content', '{}'::jsonb),
                     coalesce((v_block->>'sort_order')::int, 0)
-                  );
+                  )
+                  returning id into v_block_id;
+
                   v_blocks_count := v_blocks_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'lesson_block', v_block_id);
+
+                  -- Lesson Block Provenance Mapping
+                  if v_default_rel_id is not null then
+                    v_entity_rel_id := null;
+                    if v_block ? 'source_release_id' and v_source_releases_map ? (v_block->>'source_release_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_release_id'))::uuid;
+                    elsif v_block ? 'source_id' and v_source_releases_map ? (v_block->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_id'))::uuid;
+                    else
+                      v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
+                    end if;
+
+                    if v_entity_rel_id is not null then
+                      insert into public.content_source_mappings (
+                        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                      ) values (
+                        v_entity_rel_id,
+                        'lesson_block',
+                        v_block_id,
+                        'derived_from',
+                        coalesce(v_block->>'citation', coalesce(v_block->>'citation_location', coalesce(v_lesson->>'title', 'Lesson Block'))),
+                        coalesce(v_block->>'notes', 'Lesson content block citation'),
+                        '{}'::jsonb
+                      )
+                      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                      set citation_location = excluded.citation_location,
+                          notes = excluded.notes,
+                          metadata = excluded.metadata
+                      returning id into v_mapping_id;
+
+                      v_mappings_count := v_mappings_count + 1;
+                      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                      values (v_version_id, 'content_source_mapping', v_mapping_id)
+                      on conflict do nothing;
+                    end if;
+                  end if;
                 end loop;
               end if;
 
@@ -639,9 +1011,11 @@ begin
                     coalesce((coalesce(v_question->>'correct_answer', v_question->>'correct_index'))::int, 0),
                     coalesce(v_question->>'type', 'mcq'),
                     v_question->>'explanation',
-                    coalesce(array(select jsonb_array_elements_text(v_question->'accepted_answers')), '{}'::text[]),
+                    array(select jsonb_array_elements_text(coalesce(v_question->'accepted_answers', '[]'::jsonb))),
                     coalesce(v_question->>'grading_method', 'normalized_text'),
-                    nullif(v_question->>'numeric_tolerance', '')::numeric
+                    case when v_question->>'numeric_tolerance' is not null
+                      then (v_question->>'numeric_tolerance')::numeric
+                      else null end
                   );
                   v_questions_count := v_questions_count + 1;
                 end loop;
@@ -683,6 +1057,54 @@ begin
                       on conflict do nothing;
                     end loop;
                   end if;
+
+                  if jsonb_typeof(v_item->'concept_slugs') = 'array' then
+                    for v_raw_concept_ref in select jsonb_array_elements_text(v_item->'concept_slugs')
+                    loop
+                      if v_concepts_map ? v_raw_concept_ref then
+                        v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                        insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                        values (v_item_id, v_resolved_cid)
+                        on conflict do nothing;
+                      end if;
+                    end loop;
+                  end if;
+
+                  -- Lesson Assessment Item Provenance Mapping
+                  if v_default_rel_id is not null then
+                    v_entity_rel_id := null;
+                    if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                    elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
+                    else
+                      v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
+                    end if;
+
+                    if v_entity_rel_id is not null then
+                      insert into public.content_source_mappings (
+                        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                      ) values (
+                        v_entity_rel_id,
+                        'assessment_item',
+                        v_item_id,
+                        'derived_from',
+                        coalesce(v_item->>'citation', coalesce(v_item->>'citation_location', substring(coalesce(v_item->>'prompt', 'Lesson Assessment Item') from 1 for 100))),
+                        coalesce(v_item->>'notes', 'Lesson assessment item derived from authoritative blueprint'),
+                        '{}'::jsonb
+                      )
+                      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                      set citation_location = excluded.citation_location,
+                          notes = excluded.notes,
+                          metadata = excluded.metadata
+                      returning id into v_mapping_id;
+
+                      v_mappings_count := v_mappings_count + 1;
+                      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                      values (v_version_id, 'content_source_mapping', v_mapping_id)
+                      on conflict do nothing;
+                    end if;
+                  end if;
                 end loop;
               end if;
 
@@ -695,7 +1117,7 @@ begin
     end loop;
   end if; -- domains
 
-  -- 10. Ingest Source Mappings
+  -- 11. Ingest Explicit Custom Source Mappings
   if jsonb_typeof(payload->'source_mappings') = 'array' then
     for v_source_mapping in select * from jsonb_array_elements(payload->'source_mappings')
     loop
@@ -723,48 +1145,170 @@ begin
     end loop;
   end if;
 
-  -- 11. Ingest Concept Version Mappings
-  if jsonb_typeof(payload->'target_version_concept_mappings') = 'array' then
-    for v_mapping in select * from jsonb_array_elements(payload->'target_version_concept_mappings')
+  -- 12. Ingest Concept Version Mappings
+  if jsonb_typeof(coalesce(payload->'concept_mappings', payload->'target_version_concept_mappings')) = 'array' then
+    for v_mapping in select * from jsonb_array_elements(coalesce(payload->'concept_mappings', payload->'target_version_concept_mappings'))
     loop
-      v_from_concept_id := (v_mapping->>'from_concept_id')::uuid;
-      v_to_concept_id := case when v_mapping->>'to_concept_id' is not null
-                              then (v_mapping->>'to_concept_id')::uuid
-                              else null end;
+      -- Check if standard manifest format (from_version_code, from_concept_slug, etc.)
+      if v_mapping ? 'from_version_code' or v_mapping ? 'from_concept_slug' then
+        v_from_version_code := v_mapping->>'from_version_code';
+        v_from_concept_slug := v_mapping->>'from_concept_slug';
+        v_to_concept_slug := v_mapping->>'to_concept_slug';
+        v_mapping_type := coalesce(v_mapping->>'mapping_type', 'unchanged');
 
-      insert into public.target_version_concept_mappings (
-        from_target_version_id, from_concept_id, to_target_version_id, to_concept_id,
-        mapping_type, confidence, rationale
-      ) values (
-        v_version_id,
-        v_from_concept_id,
-        case when v_mapping->>'to_target_version_id' is not null
-             then (v_mapping->>'to_target_version_id')::uuid
-             else null end,
-        v_to_concept_id,
-        coalesce(v_mapping->>'mapping_type', 'exact_match'),
-        coalesce((v_mapping->>'confidence')::numeric, 1.0),
-        v_mapping->>'rationale'
-      )
-      on conflict do nothing;
+        if v_mapping_type = 'equivalent' then
+          v_mapping_type := 'unchanged';
+        end if;
+
+        if v_mapping_type not in ('unchanged', 'renamed', 'expanded', 'narrowed', 'replaced', 'removed') then
+          raise exception 'Invalid mapping_type "%" for concept mapping. Must be one of unchanged, renamed, expanded, narrowed, replaced, removed.', v_mapping_type;
+        end if;
+
+        -- Resolve source version ID
+        select id into v_from_tv_id
+        from public.target_versions
+        where target_id = v_target_id and version_code = v_from_version_code
+        limit 1;
+
+        if v_from_tv_id is null then
+          raise exception 'Target version with version_code "%" not found for target "%".', v_from_version_code, v_target_id;
+        end if;
+
+        -- Resolve source concept ID
+        v_from_concept_id := null;
+        if v_concepts_map ? v_from_concept_slug then
+          v_from_concept_id := (v_concepts_map->>v_from_concept_slug)::uuid;
+        else
+          select id into v_from_concept_id
+          from public.knowledge_concepts
+          where slug = v_from_concept_slug
+          limit 1;
+        end if;
+
+        if v_from_concept_id is null then
+          raise exception 'Source concept with slug "%" not found for concept mapping.', v_from_concept_slug;
+        end if;
+
+        -- Resolve destination concept ID (nullable for 'removed')
+        v_to_concept_id := null;
+        if v_to_concept_slug is not null and trim(v_to_concept_slug) <> '' then
+          if v_concepts_map ? v_to_concept_slug then
+            v_to_concept_id := (v_concepts_map->>v_to_concept_slug)::uuid;
+          else
+            select id into v_to_concept_id
+            from public.knowledge_concepts
+            where slug = v_to_concept_slug
+            limit 1;
+          end if;
+
+          if v_to_concept_id is null and v_mapping_type <> 'removed' then
+            raise exception 'Destination concept with slug "%" not found for concept mapping.', v_to_concept_slug;
+          end if;
+        elsif v_mapping_type <> 'removed' then
+          raise exception 'Destination concept slug must be specified for mapping_type "%".', v_mapping_type;
+        end if;
+
+        if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+          v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+        elsif v_mapping_type = 'removed' then
+          v_transfer_weight := 0.0;
+        else
+          v_transfer_weight := 1.0;
+        end if;
+
+        if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
+          raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+        end if;
+
+        insert into public.target_version_concept_mappings (
+          from_target_version_id, from_concept_id, to_target_version_id, to_concept_id,
+          mapping_type, transfer_weight, metadata
+        ) values (
+          v_from_tv_id,
+          v_from_concept_id,
+          v_version_id,
+          v_to_concept_id,
+          v_mapping_type,
+          v_transfer_weight,
+          coalesce(v_mapping->'metadata', '{}'::jsonb)
+        )
+        on conflict (
+          from_target_version_id,
+          from_concept_id,
+          to_target_version_id,
+          coalesce(to_concept_id, '00000000-0000-0000-0000-000000000000'::uuid)
+        ) do update
+        set mapping_type = excluded.mapping_type,
+            transfer_weight = excluded.transfer_weight,
+            metadata = excluded.metadata;
+
+        v_concept_mappings_count := v_concept_mappings_count + 1;
+
+      else
+        -- Backwards compatibility with raw UUID payload
+        v_from_concept_id := (v_mapping->>'from_concept_id')::uuid;
+        v_to_concept_id := case when v_mapping->>'to_concept_id' is not null
+                                then (v_mapping->>'to_concept_id')::uuid
+                                else null end;
+        v_mapping_type := coalesce(v_mapping->>'mapping_type', 'unchanged');
+        if v_mapping_type = 'equivalent' then
+          v_mapping_type := 'unchanged';
+        end if;
+
+        if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+          v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+        elsif v_mapping_type = 'removed' then
+          v_transfer_weight := 0.0;
+        else
+          v_transfer_weight := 1.0;
+        end if;
+
+        insert into public.target_version_concept_mappings (
+          from_target_version_id, from_concept_id, to_target_version_id, to_concept_id,
+          mapping_type, transfer_weight, metadata,
+          confidence, rationale
+        ) values (
+          coalesce((v_mapping->>'from_target_version_id')::uuid, v_version_id),
+          v_from_concept_id,
+          coalesce((v_mapping->>'to_target_version_id')::uuid, v_version_id),
+          v_to_concept_id,
+          v_mapping_type,
+          v_transfer_weight,
+          coalesce(v_mapping->'metadata', '{}'::jsonb),
+          case when v_mapping->>'confidence' is not null then (v_mapping->>'confidence')::numeric else null end,
+          v_mapping->>'rationale'
+        )
+        on conflict (
+          from_target_version_id,
+          from_concept_id,
+          to_target_version_id,
+          coalesce(to_concept_id, '00000000-0000-0000-0000-000000000000'::uuid)
+        ) do update
+        set mapping_type = excluded.mapping_type,
+            transfer_weight = excluded.transfer_weight,
+            metadata = excluded.metadata,
+            confidence = excluded.confidence,
+            rationale = excluded.rationale;
+
+        v_concept_mappings_count := v_concept_mappings_count + 1;
+      end if;
     end loop;
   end if;
 
+  -- 13. Return Ingestion Summary
   return jsonb_build_object(
-    'success', true,
-    'target_id', v_target_id,
-    'target_slug', v_target_slug,
     'target_version_id', v_version_id,
-    'version_code', v_version_code,
-    'stimuli_count', v_stimuli_count,
+    'concepts_count', v_concepts_count,
     'domains_count', v_domains_count,
     'objectives_count', v_objectives_count,
     'lessons_count', v_lessons_count,
     'blocks_count', v_blocks_count,
     'assessment_items_count', v_items_count,
     'flashcards_count', v_flashcards_count,
+    'stimuli_count', v_stimuli_count,
     'questions_count', v_questions_count,
-    'mappings_count', v_mappings_count
+    'mappings_count', v_mappings_count,
+    'concept_mappings_count', v_concept_mappings_count
   );
 end;
 $$;
