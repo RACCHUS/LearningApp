@@ -188,16 +188,34 @@ The College Board publishes examination specifications as **percentage ranges** 
 | **13.0** | Statistics, Tests, and Measurement | 3–4% | 0.030 | **3** | 3.2% |
 | **Total** | *Full Introductory Psychology Examination* | **100%** | **1.000** | **95** | **100.0%** |
 
-### 6.2 Exam Simulation Engine Rules & Psychometric Equating
+### 6.2 Exam Simulation Engine Rules & Practice Reporting
 
 1. **Time Limit**: Exactly **90 minutes** countdown for 95 questions (~57 seconds per question).
-2. **Scoring Model & Statistical Equating**:
-   - **Official College Board Equating Invariant**: Official CLEP scaled scores (20–80) are **never a linear conversion** of raw accuracy. The College Board derives official scores through complex psychometric statistical equating (Item Response Theory across multiple pre-equated test forms), adjusting for variations in form difficulty so that a scaled score of 50 represents an identical standard of mastery regardless of which form a candidate completes.
-   - **Platform Readiness Estimation**: LearningApp simulates this standard using pre-equated difficulty parameters calibrated to historical ACE passing thresholds. A scaled score of 50 indicates readiness to achieve the ACE credit recommendation benchmark (typically corresponding to answering 50%–60% of questions correctly depending on form difficulty).
-   - **Diagnostic Weakness Reporting**: At the conclusion of the simulation, learners receive a domain-by-domain diagnostic dashboard highlighting specific competencies below the 70% mastery threshold, with direct one-click remediation routes into the curriculum lessons.
+2. **Official College Board Equating vs. Practice Reporting**:
+   - **Official Statistical Equating**: The College Board converts raw exam scores to scaled scores (20–80) using proprietary statistical equating models (Item Response Theory across multiple pre-equated test forms) to adjust for slight variations in difficulty across test forms.
+   - **No Official Equating Conversion or Pass Predictor**: LearningApp **does not** possess proprietary College Board equating tables or empirical item parameters ($a_i, b_i$), and therefore **makes no claim of statistical calibration or official passing-score prediction**.
+   - **Practice Diagnostic Feedback**: At the conclusion of a practice simulation, LearningApp reports raw score, domain accuracy percentages, and competency mastery levels. Scaled-score representations are uncalibrated diagnostic approximations, not equated predictions. Any empirical predictive score modeling remains strictly deferred until large-sample empirical learner response data are collected and psychometrically validated.
+   - **Diagnostic Weakness Reporting**: Learners receive a domain-by-domain diagnostic breakdown highlighting specific competencies below the 70% accuracy threshold, with direct one-click remediation routes into corresponding curriculum lessons.
 
 > [!WARNING]
-> **Diagnostic Simulation Score Disclaimer**: Scaled scores generated on LearningApp practice examinations are **diagnostic estimates** of learner readiness and **must not be presented as official College Board scores or direct equivalents**. Official CLEP scores are proprietary, equate multiple historical test forms using psychometric IRT models, and are administered solely by College Board test centers and official remote proctoring.
+> **Diagnostic Simulation Score Disclaimer**: Practice examination scores generated on LearningApp are **uncalibrated diagnostic estimates** intended solely for learner self-assessment, study prioritization, and identifying domain weaknesses. They **must not be presented as official College Board scores, direct equivalents, or predictors of passing**. Official CLEP scores are proprietary, equate multiple historical test forms using psychometric IRT models, and are administered solely by College Board authorized test centers and official remote proctoring.
+
+### 6.3 Question-Bank Architecture: Formative Practice vs. Protected Simulation Pool
+
+To protect against item pre-exposure and practice effects (which degrade the validity of a practice examination as a diagnostic readiness check):
+1. **Formative Retrieval Practice**:
+   - Each lesson provides active formative retrieval checks (via concept check blocks, formative prompt questions, and flashcards) tied to immediate learning objectives.
+   - Formative items are intended for low-stakes, immediate feedback during study.
+2. **Protected 95-Question Simulation Pool**:
+   - All 95 examination items are strictly tagged as belonging to the protected simulation bank:
+     ```yaml
+     metadata:
+       bank: simulation_exam
+       role: summative_simulation
+       is_protected: true
+       exposure: timed_exam_only
+     ```
+   - These items are reserved for the timed 90-minute examination simulation engine, ensuring that learners encounter an unpracticed, realistic test experience when evaluating exam readiness.
 
 ---
 

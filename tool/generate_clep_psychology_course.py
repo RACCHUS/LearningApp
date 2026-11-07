@@ -85,7 +85,7 @@ def build_manifest() -> dict:
                     "total_domains": 13,
                     "exam_code": "CLEP-PSYC",
                     "passing_score": 50,
-                    "scale": "20-80 (Statistical Equating)",
+                    "scale": "20-80 (Diagnostic Reporting; Official Equating Proprietary to College Board)",
                     "time_limit_minutes": 90,
                     "question_count_approx": 95,
                     "practice_time_limit_minutes": 90,
@@ -160,6 +160,19 @@ def build_manifest() -> dict:
         ],
         "domains": ALL_DOMAINS,
     }
+
+    # Tag all 95 simulation assessment items with explicit bank and protection metadata
+    for d in manifest["domains"]:
+        for o in d.get("objectives", []):
+            for l in o.get("lessons", []):
+                for item in l.get("assessment_items", []):
+                    item["metadata"] = {
+                        "bank": "simulation_exam",
+                        "item_role": "summative_simulation",
+                        "is_protected": True,
+                        "exposure": "timed_exam_only",
+                    }
+
     return manifest
 
 

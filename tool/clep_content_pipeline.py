@@ -15,6 +15,7 @@ import argparse
 import json
 import math
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -323,7 +324,13 @@ def verify_simulation_items(manifest: dict, domain_map: dict, require_simulation
             continue
         for o in d.get("objectives", []):
             for l in o.get("lessons", []):
-                item_counts[code] += len(l.get("assessment_items", []))
+                for itm in l.get("assessment_items", []):
+                    meta = itm.get("metadata", {})
+                    if meta.get("bank") == "simulation_exam" or not meta.get("bank"):
+                        item_counts[code] += 1
+                        if require_simulation:
+                            if meta.get("bank") != "simulation_exam" or not meta.get("is_protected"):
+                                issues.append(f"Simulation item '{itm.get('prompt', '')[:40]}' missing protected simulation metadata.")
 
     total_authored = sum(item_counts.values())
 
@@ -343,13 +350,15 @@ def verify_simulation_items(manifest: dict, domain_map: dict, require_simulation
 def run_stage_f_database_ingestion(manifest_path: Path, target_slug: str = "clep-introductory-psychology", version: str = "2026") -> list[str]:
     """Stage F: Live dry-run curriculum ingestion and manifest quality linting."""
     issues = []
+    dart_bin = shutil.which("dart") or "dart"
+    manifest_arg = str(manifest_path.relative_to(ROOT) if manifest_path.is_relative_to(ROOT) else manifest_path)
 
     # 1. Real dry-run execution via tool/ingest_curriculum.dart
     cmd_ingest = [
-        "dart", "run", "tool/ingest_curriculum.dart",
+        dart_bin, "run", "tool/ingest_curriculum.dart",
         "--target", target_slug,
         "--version", version,
-        "--manifest", str(manifest_path.relative_to(ROOT) if manifest_path.is_relative_to(ROOT) else manifest_path),
+        "--manifest", manifest_arg,
         "--dry-run"
     ]
     try:
@@ -358,7 +367,7 @@ def run_stage_f_database_ingestion(manifest_path: Path, target_slug: str = "clep
             cwd=ROOT,
             capture_output=True,
             text=True,
-            shell=True,
+            shell=False,
             timeout=90
         )
         if proc.returncode != 0:
@@ -368,8 +377,8 @@ def run_stage_f_database_ingestion(manifest_path: Path, target_slug: str = "clep
 
     # 2. Real manifest linting via tool/lint_manifest.dart
     cmd_lint = [
-        "dart", "run", "tool/lint_manifest.dart",
-        str(manifest_path.relative_to(ROOT) if manifest_path.is_relative_to(ROOT) else manifest_path)
+        dart_bin, "run", "tool/lint_manifest.dart",
+        manifest_arg
     ]
     try:
         proc_lint = subprocess.run(
@@ -377,7 +386,7 @@ def run_stage_f_database_ingestion(manifest_path: Path, target_slug: str = "clep
             cwd=ROOT,
             capture_output=True,
             text=True,
-            shell=True,
+            shell=False,
             timeout=90
         )
         if proc_lint.returncode != 0:

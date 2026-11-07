@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from tool.clep_content_pipeline import (
     EXPECTED_PSYCH_DOMAINS,
@@ -12,9 +13,11 @@ from tool.clep_content_pipeline import (
     compute_simulation_quotas,
     load_yaml,
     run_pipeline,
+    run_stage_f_database_ingestion,
     verify_blueprint_coverage,
     verify_lesson_architecture,
     verify_psychometric_items,
+    verify_simulation_items,
     verify_source_provenance,
 )
 
@@ -105,6 +108,62 @@ class TestClepContentPipeline(unittest.TestCase):
         self.assertEqual(quotas["2.0"], 9)
         # Statistics & Measurement (3.2%) should get 3 questions
         self.assertEqual(quotas["13.0"], 3)
+
+    def test_stage_e_require_simulation_enforcement(self):
+        """Simulation quota enforcement must strictly require all 95 questions matching domain quotas."""
+        domain_map, _ = verify_blueprint_coverage(self.manifest)
+        counts, issues = verify_simulation_items(self.manifest, domain_map, require_simulation=True)
+        self.assertEqual(issues, [], f"Stage E with require_simulation failed: {issues}")
+        self.assertEqual(sum(counts.values()), 95)
+
+        # Mutate to 94 questions
+        bad_manifest = copy.deepcopy(self.manifest)
+        bad_manifest["domains"][0]["objectives"][0]["lessons"][0]["assessment_items"].pop()
+        _, bad_issues = verify_simulation_items(bad_manifest, domain_map, require_simulation=True)
+        self.assertTrue(any("requires exactly 95 authored questions" in i for i in bad_issues))
+
+    @patch("subprocess.run")
+    def test_stage_f_subprocess_execution_regression(self, mock_run):
+        """Stage F must execute subprocess.run with shell=False and full argument list."""
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout = "Ingestion dry run passed"
+        mock_proc.stderr = ""
+        mock_run.return_value = mock_proc
+
+        issues = run_stage_f_database_ingestion(MANIFEST_PATH)
+        self.assertEqual(issues, [])
+        self.assertEqual(mock_run.call_count, 2)
+
+        # Check call 1: ingest_curriculum.dart
+        args1, kwargs1 = mock_run.call_args_list[0]
+        cmd1 = args1[0]
+        self.assertFalse(kwargs1.get("shell", True), "Stage F ingest command MUST use shell=False")
+        self.assertIn("run", cmd1)
+        self.assertIn("tool/ingest_curriculum.dart", cmd1)
+        self.assertIn("--dry-run", cmd1)
+        self.assertIn("--target", cmd1)
+        self.assertIn("clep-introductory-psychology", cmd1)
+
+        # Check call 2: lint_manifest.dart
+        args2, kwargs2 = mock_run.call_args_list[1]
+        cmd2 = args2[0]
+        self.assertFalse(kwargs2.get("shell", True), "Stage F lint command MUST use shell=False")
+        self.assertIn("run", cmd2)
+        self.assertIn("tool/lint_manifest.dart", cmd2)
+
+    @patch("subprocess.run")
+    def test_stage_f_captures_failure_exit_codes(self, mock_run):
+        """Stage F must capture non-zero exit codes from failed subprocess runs."""
+        mock_proc = MagicMock()
+        mock_proc.returncode = 1
+        mock_proc.stdout = "Schema violation detected"
+        mock_proc.stderr = "Error: Invalid manifest"
+        mock_run.return_value = mock_proc
+
+        issues = run_stage_f_database_ingestion(MANIFEST_PATH)
+        self.assertGreaterEqual(len(issues), 1)
+        self.assertTrue(any("failed with exit code 1" in i for i in issues))
 
 
 if __name__ == "__main__":
