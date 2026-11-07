@@ -173,31 +173,31 @@ The College Board publishes examination specifications as **percentage ranges** 
 
 | Domain | Official College Board Title | Official Blueprint % | Model Weight | 95-Question Quota | Quota % |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| **1.0** | History, Approaches, and Methods | 11–12% | 0.105 | **10** | 10.5% |
-| **2.0** | Biological Bases of Behavior | 8–9% | 0.095 | **9** | 9.5% |
-| **3.0** | Sensation and Perception | 7–8% | 0.084 | **8** | 8.4% |
-| **4.0** | States of Consciousness | 5–6% | 0.053 | **5** | 5.3% |
-| **5.0** | Learning | 8–9% | 0.084 | **8** | 8.4% |
-| **6.0** | Cognition | 8–9% | 0.084 | **8** | 8.4% |
-| **7.0** | Motivation and Emotion | 7–8% | 0.063 | **6** | 6.3% |
-| **8.0** | Developmental Psychology Across the Lifespan | 8–9% | 0.084 | **8** | 8.4% |
-| **9.0** | Personality | 7–8% | 0.074 | **7** | 7.4% |
-| **10.0** | Psychological Disorders and Health | 8–9% | 0.084 | **8** | 8.4% |
-| **11.0** | Treatment of Psychological Disorders | 7–8% | 0.063 | **6** | 6.3% |
-| **12.0** | Social Psychology | 7–8% | 0.095 | **9** | 9.5% |
-| **13.0** | Statistics, Tests, and Measurement | 3–4% | 0.032 | **3** | 3.2% |
+| **1.0** | History, Approaches, and Methods | 11–12% | 0.115 | **11** | 11.6% |
+| **2.0** | Biological Bases of Behavior | 8–9% | 0.090 | **9** | 9.5% |
+| **3.0** | Sensation and Perception | 7–8% | 0.075 | **7** | 7.4% |
+| **4.0** | States of Consciousness | 5–6% | 0.055 | **5** | 5.3% |
+| **5.0** | Learning | 8–9% | 0.085 | **8** | 8.4% |
+| **6.0** | Cognition | 8–9% | 0.090 | **9** | 9.5% |
+| **7.0** | Motivation and Emotion | 5–6% | 0.055 | **5** | 5.3% |
+| **8.0** | Developmental Psychology Across the Lifespan | 8–9% | 0.085 | **8** | 8.4% |
+| **9.0** | Personality | 7–8% | 0.075 | **7** | 7.4% |
+| **10.0** | Psychological Disorders and Health | 8–9% | 0.085 | **8** | 8.4% |
+| **11.0** | Treatment of Psychological Disorders | 6–7% | 0.065 | **6** | 6.3% |
+| **12.0** | Social Psychology | 9–10% | 0.095 | **9** | 9.5% |
+| **13.0** | Statistics, Tests, and Measurement | 3–4% | 0.030 | **3** | 3.2% |
 | **Total** | *Full Introductory Psychology Examination* | **100%** | **1.000** | **95** | **100.0%** |
 
-### 6.2 Exam Simulation Engine Rules
+### 6.2 Exam Simulation Engine Rules & Psychometric Equating
+
 1. **Time Limit**: Exactly **90 minutes** countdown for 95 questions (~57 seconds per question).
-2. **Scoring Model**:
-   - Scaled score calculation on the official CLEP 20–80 reporting scale:
-     $$\text{Raw Score} = \sum_{i=1}^{95} \text{correct}_i$$
-     $$\text{Scaled Score} = 20 + \left(\frac{\text{Raw Score}}{95} \times 60\right)$$
-   - Minimum passing benchmark: **50** (approx. 50–55% raw accuracy depending on form difficulty).
-3. **Diagnostic Weakness Reporting**:
-   - At the conclusion of the simulation, learners receive a domain-by-domain diagnostic dashboard highlighting specific competencies below the 70% mastery threshold.
-   - One-click remediation routes directly to the corresponding curriculum lessons.
+2. **Scoring Model & Statistical Equating**:
+   - **Official College Board Equating Invariant**: Official CLEP scaled scores (20–80) are **never a linear conversion** of raw accuracy. The College Board derives official scores through complex psychometric statistical equating (Item Response Theory across multiple pre-equated test forms), adjusting for variations in form difficulty so that a scaled score of 50 represents an identical standard of mastery regardless of which form a candidate completes.
+   - **Platform Readiness Estimation**: LearningApp simulates this standard using pre-equated difficulty parameters calibrated to historical ACE passing thresholds. A scaled score of 50 indicates readiness to achieve the ACE credit recommendation benchmark (typically corresponding to answering 50%–60% of questions correctly depending on form difficulty).
+   - **Diagnostic Weakness Reporting**: At the conclusion of the simulation, learners receive a domain-by-domain diagnostic dashboard highlighting specific competencies below the 70% mastery threshold, with direct one-click remediation routes into the curriculum lessons.
+
+> [!WARNING]
+> **Diagnostic Simulation Score Disclaimer**: Scaled scores generated on LearningApp practice examinations are **diagnostic estimates** of learner readiness and **must not be presented as official College Board scores or direct equivalents**. Official CLEP scores are proprietary, equate multiple historical test forms using psychometric IRT models, and are administered solely by College Board test centers and official remote proctoring.
 
 ---
 
@@ -206,17 +206,20 @@ The College Board publishes examination specifications as **percentage ranges** 
 All CLEP manifests must pass the automated verification engine (`tool/clep_content_pipeline.py`) prior to promotion:
 
 ```bash
-# Run pipeline on manifest
+# Run pipeline on manifest (verifying source provenance, domain coverage, 10-element lessons, and Haladyna items)
 python tool/clep_content_pipeline.py --manifest content/clep_introductory_psychology.yaml
+
+# Run full simulation verification (enforcing complete 95-question quota allocation)
+python tool/clep_content_pipeline.py --manifest content/clep_introductory_psychology.yaml --require-simulation
 
 # Run unit tests
 python -m unittest tool/tests/test_clep_content_pipeline.py
 ```
 
 ### Pipeline Verification Stages:
-- **Stage A (Provenance)**: Validates licenses, HTTPS URLs, and authority roles.
-- **Stage B (Coverage)**: Verifies all 13 domains exist with weights summing to $1.00 \pm 0.015$.
-- **Stage C (Architecture)**: Confirms 10-element block structure and canonical concept bindings.
-- **Stage D (Haladyna Item Standards)**: Enforces 4 options, no all/none giveaways, length ratios $\le 3.0$, and position bias $<45\%$.
-- **Stage E (Simulation Quota)**: Verifies exact 95-question largest-remainder allocation.
-- **Stage F (Database Staging)**: Verifies clean JSON schema conformance and zero SQL migration drift.
+- **Stage A (Provenance)**: Validates licenses, HTTPS URLs, publisher identities, and authority roles (`blueprint_authority`, `instructional_reference`).
+- **Stage B (Coverage)**: Verifies all 13 domains exist with official percentage ranges and model weights summing to $1.000 \pm 0.015$.
+- **Stage C (10-Element Lesson Architecture)**: Enforces that every lesson implements all 10 structural elements (Title & Overview, Bloom Level, Vocabulary Terms, Core Exposition, Real-World Case, Visual/Diagram Schema, Misconceptions Callout, Formative Check, Elaborative Rationales, and Source Citation).
+- **Stage D (Haladyna Psychometric Standards)**: Enforces 4 plausible options, no "all/none of the above" giveaways, length ratios $\le 3.0$, and balanced answer key positions.
+- **Stage E (Simulation Quota Enforcement)**: Verifies that the manifest contains the complete 95-question simulation pool matching the exact largest-remainder domain quotas (or reports precise progress when in incremental authoring mode).
+- **Stage F (Database Staging & Ingestion Gate)**: Directly executes `dart run tool/ingest_curriculum.dart --target ... --dry-run` and `dart run tool/lint_manifest.dart` to verify zero schema violations, clean concept mappings, and complete ingestion readiness.
