@@ -5,3 +5,5 @@ export 'author_review_feedback.dart';
 export 'educator_profile.dart';
 export 'educator_subject.dart';
 export 'educator_verification.dart';
+export 'educator_reputation.dart';
+export 'community_bookmark.dart';
