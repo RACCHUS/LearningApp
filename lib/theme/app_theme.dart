@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/config/brand_config.dart';
+import 'package:learning_pwa/theme/contrast.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
 
@@ -11,16 +12,28 @@ class AppTheme {
   static const Color _darkSurfaceContainerHigh = Color(0xFF232530); // Elevated elements
   static const Color _darkPrimary = Color(0xFF4FC3F7);            // Brighter cyan
   static const Color _darkTertiary = Color(0xFFFFB74D);           // Warm accent
-  static const Color _darkCardBorder = Color(0xFF2A2D38);         // Visible card borders
+  static const Color _darkCardBorder = Color(0xFF2A2D38);         // Decorative card borders
+  // Control boundaries (inputs, outlined buttons) need 3:1 on every dark
+  // surface (WCAG 1.4.11); see docs/design/CONTRAST_AUDIT.md.
+  static const Color _darkOutline = Color(0xFF7A7E8C);
   
-  // ============== LIGHT THEME COLORS ==============
-  static const Color _lightPrimary = Color(0xFF0288D1);
-  
+  /// Primary is used for button labels, links and white-on-primary fills.
+  /// Brand colors below 4.5:1 against light cards (and so against white and
+  /// the page background) are darkened just enough to pass.
+  static Color accessibleLightPrimary(Color brand) {
+    final seeded = ColorScheme.fromSeed(
+      seedColor: brand,
+      brightness: Brightness.light,
+    );
+    return ensureContrast(brand, seeded.surfaceContainerLow, 4.5);
+  }
+
   static ThemeData lightTheme([Color? primary, Color? secondary]) {
-    final effectivePrimary = primary ?? BrandConfig.primaryColor;
+    final effectivePrimary =
+        accessibleLightPrimary(primary ?? BrandConfig.primaryColor);
     final effectiveSecondary = secondary ?? BrandConfig.secondaryColor;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: effectivePrimary,
+      seedColor: primary ?? BrandConfig.primaryColor,
       brightness: Brightness.light,
       primary: effectivePrimary,
       secondary: effectiveSecondary,
@@ -65,11 +78,11 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-          borderSide: BorderSide(color: _lightPrimary, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: DesignTokens.space4,
@@ -115,7 +128,7 @@ class AppTheme {
       onTertiary: Colors.black,
       onSurface: Colors.white,
       onSurfaceVariant: Colors.white70,
-      outline: _darkCardBorder,
+      outline: _darkOutline,
       outlineVariant: const Color(0xFF3A3D48),
     );
     
@@ -191,7 +204,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-          borderSide: const BorderSide(color: _darkCardBorder),
+          borderSide: const BorderSide(color: _darkOutline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusMd),

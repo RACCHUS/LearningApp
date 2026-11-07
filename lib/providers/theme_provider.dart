@@ -13,13 +13,18 @@ class ThemeModeNotifier extends BaseSettingsNotifier<ThemeMode> {
 
   @override
   String serialize(ThemeMode settings) {
-    return settings == ThemeMode.light ? 'light' : 'dark';
+    return switch (settings) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
   }
 
   @override
   ThemeMode? deserialize(String data) {
     if (data == 'light') return ThemeMode.light;
     if (data == 'dark') return ThemeMode.dark;
+    if (data == 'system') return ThemeMode.system;
     return null;
   }
 

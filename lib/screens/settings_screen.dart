@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
 import 'package:learning_pwa/screens/settings/audio_settings_screen.dart';
 import 'package:learning_pwa/widgets/error_retry_view.dart';
+import 'package:learning_pwa/widgets/settings/theme_mode_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/utils/constants.dart';
@@ -192,12 +193,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  void _toggleTheme(bool value) {
+  void _setThemeMode(ThemeMode mode) {
     setState(() {
-      _settings.darkMode = value;
+      _settings.darkMode = mode == ThemeMode.dark;
     });
-    // Update app-wide theme
-    ref.read(themeModeProvider.notifier).setTheme(value ? ThemeMode.dark : ThemeMode.light);
+    ref.read(themeModeProvider.notifier).setTheme(mode);
     _saveSettings();
   }
 
@@ -515,10 +515,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             const Divider(height: 32),
 
-            SwitchListTile(
-              title: const Text('Dark Mode'),
-              value: _settings.darkMode,
-              onChanged: _toggleTheme,
+            ThemeModeSelector(
+              value: ref.watch(themeModeProvider),
+              onChanged: _setThemeMode,
             ),
 
             const Divider(height: 32),

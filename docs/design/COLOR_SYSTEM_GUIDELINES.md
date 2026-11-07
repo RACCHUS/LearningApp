@@ -13,6 +13,9 @@ Keep UI color usage consistent, accessible, and easy to maintain.
 - Reuse `DesignTokens` helpers for category/tag color handling.
 - If a component needs custom brand colors (badges, achievements), centralize mapping in one place.
 
+- Pairs must meet WCAG 2.2 AA (4.5:1 text, 3:1 control boundaries). `test/theme/contrast_audit_test.dart` enforces this for theme tokens; see `CONTRAST_AUDIT.md`.
+- Never signal state (correct/incorrect, success/error) by color alone: `success` and `danger` are nearly indistinguishable in grayscale and for red–green color vision deficiency. Add an icon or text.
+
 ## Allowed Exceptions
 - One-off decorative illustrations or celebratory effects where semantic meaning is not implied.
 - Existing legacy UI not touched by the current PR (migrate incrementally).
