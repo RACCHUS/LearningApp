@@ -6,13 +6,23 @@ and secret isolation. No HTTP endpoint, cron trigger or live service is created.
 
 Two-phase cleanup is intentional: commit upload freeze *before* touching
 Storage, then delete the metadata only after the Storage API confirms absence.
-Expired processing claims are NOT deleted by this adapter without a separate
-reviewed lease recovery design.
+Processing claims are only reclaimed after both expiry and the processing
+lease timestamp exceed a 30-minute grace; no active lease is deleted.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from uuid import UUID
+
+
+# Fail-closed when processing_claimed_at is null. Completion RPC
+# already requires an unexpired attempt, and the grace protects slow workers.
+_ELIGIBLE = (
+    "(status IN ('issued','processed','failed') "
+    "OR (status='processing' "
+    "AND expires_at < now() - interval '30 minutes' "
+    "AND processing_claimed_at < now() - interval '30 minutes'))"
+)
 
 
 @dataclass(frozen=True)
@@ -62,7 +72,7 @@ class DbApiRetentionRepository:
                 "SELECT owner_id::text, id::text "
                 "FROM public.software_learning_attempts "
                 "WHERE owner_id=%s::uuid AND id=%s::uuid "
-                "AND status IN ('issued','processed','failed')",
+                "AND " + _ELIGIBLE,
                 (owner_id, attempt_id),
             )
         except Exception:
@@ -78,7 +88,7 @@ class DbApiRetentionRepository:
                 "UPDATE public.software_learning_attempts "
                 "SET upload_enabled=false "
                 "WHERE owner_id=%s::uuid AND id=%s::uuid "
-                "AND status IN ('issued','processed','failed') "
+                "AND " + _ELIGIBLE + " "
                 "RETURNING id::text",
                 (owner_id, attempt_id),
             )
@@ -97,7 +107,7 @@ class DbApiRetentionRepository:
                 "DELETE FROM public.software_learning_attempts "
                 "WHERE owner_id=%s::uuid AND id=%s::uuid "
                 "AND upload_enabled=false "
-                "AND status IN ('issued','processed','failed') "
+                "AND " + _ELIGIBLE + " "
                 "RETURNING id::text",
                 (owner_id, attempt_id),
             )
@@ -123,7 +133,7 @@ class DbApiRetentionRepository:
                 "SELECT owner_id::text, id::text "
                 "FROM public.software_learning_attempts "
                 "WHERE expires_at < now() "
-                "AND status IN ('issued','processed','failed') "
+                "AND " + _ELIGIBLE + " "
                 "ORDER BY expires_at,id LIMIT %s",
                 (max_results,),
             )
@@ -136,3 +146,34 @@ class DbApiRetentionRepository:
         if not isinstance(rows, list) or len(rows) > max_results:
             raise ValueError("Invalid retention result batch")
         return [_record(row) for row in rows]
+
+    def prune_issuance_log(self, *, max_results: int = 50) -> int:
+        """Delete only issuance timestamps older than 48h in bounded batches.
+
+        The rolling issuance quota checks 24h, so 48h retains that window.
+        Does not delete workbooks, attempts, or learning events.
+        """
+        if type(max_results) is not int or not 1 <= max_results <= 100:
+            raise ValueError("Issuance log batch must be 1..100")
+        try:
+            result = self._query_one(
+                "WITH old AS ("
+                " SELECT id FROM software_learning_private.excel_issuance_log"
+                " WHERE issued_at < now() - interval '48 hours'"
+                " ORDER BY issued_at,id LIMIT %s FOR UPDATE SKIP LOCKED"
+                "), removed AS ("
+                " DELETE FROM software_learning_private.excel_issuance_log l"
+                " USING old WHERE l.id=old.id RETURNING l.id"
+                ") SELECT count(*)::integer FROM removed",
+                (max_results,),
+            )
+            if (not isinstance(result, (tuple, list)) or
+                len(result) != 1 or type(result[0]) is not int or
+                not 0 <= result[0] <= max_results):
+                raise ValueError("Unexpected issuance log prune result")
+            self._connection.commit()
+            return result[0]
+        except Exception:
+            self._connection.rollback()
+            raise
+
