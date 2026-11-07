@@ -23,6 +23,8 @@ def lease_json():
         "checker_version": 1,
         "expires_at": "2026-11-07T20:05:00+00:00",
         "expected_inputs": {f"C{i}": i*10 for i in range(2, 10)},
+        "expected_sha256": "a"*64,
+        "object_version": "v1",
         "evidence_trust": "unverified_checker_only",
         "can_award_skill": False,
     }
@@ -83,6 +85,8 @@ class DbAdapterTests(unittest.TestCase):
             {**lease_json(), "expires_at": "tomorrow"},
             {**lease_json(), "expected_inputs": {"C2": 5}},
             {**lease_json(), "expected_inputs": {f"C{i}": True for i in range(2,10)}},
+            {**lease_json(), "expected_sha256": "not-a-digest"},
+            {**lease_json(), "object_version": "../bad"},
             {**lease_json(), "extra_answer": "secret"},
         ):
             with self.subTest(bad=bad):
