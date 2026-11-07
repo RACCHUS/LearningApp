@@ -19,6 +19,11 @@ class RegulatorPathwayTests(unittest.TestCase):
         self.assertEqual({r['source_key'] for r in rows},
             {'registered-nurse','licensed-practical-nurse'})
         self.assertGreaterEqual(sum(p2e.validate_tree(r['pathway_tree']) for r in rows),15)
+        for row in rows:
+            self.assertTrue(row['source_retrieved_at'].endswith('T12:00:00Z'))
+            self.assertGreaterEqual(len(row['review_note']), 80)
+            self.assertEqual(row['uncertainty_status'], 'conditional')
+            self.assertEqual(row['pathway_kind'], 'initial_licensure')
 
     def test_wrong_license_type_jurisdiction_and_domain_rejected(self):
         for field,value in [('source_key','nclex-rn'),('jurisdiction','US-GA'),
@@ -54,6 +59,10 @@ class RegulatorPathwayTests(unittest.TestCase):
         self.assertTrue(sql.startswith('begin;'))
         self.assertTrue(sql.endswith('commit;\n'))
         self.assertEqual(sql.count('insert into public.catalog_license_pathway_versions'),2)
+        self.assertIn('source_retrieved_at', sql)
+        self.assertIn('review_note', sql)
+        self.assertIn('uncertainty_status', sql)
+        self.assertIn('pathway_kind', sql)
         self.assertIn('on conflict (source_namespace,source_key,revision) do nothing',sql)
         self.assertIn('publication_status=\'published\'',sql)
         for forbidden in ('insert into public.learning_targets','insert into public.lessons',
