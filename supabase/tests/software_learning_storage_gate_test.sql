@@ -29,8 +29,15 @@ SELECT ok(EXISTS (SELECT 1 FROM storage.buckets b
  'Dedicated private Storage bucket has 10MiB and XLSX MIME cap');
 SELECT is((SELECT count(*)::integer FROM pg_policies
  WHERE schemaname='storage' AND tablename='objects'
-   AND policyname IN ('sl_excel_insert_enforce','sl_excel_insert_owner')),
-  2, 'Storage upload has both restrictive and permissive path rules');
+   AND policyname IN ('sl_excel_insert_enforce','sl_excel_insert_anon_denied',
+                  'sl_excel_insert_owner')),
+  3, 'Storage upload has role-scoped restrictive and permissive rules');
+SELECT ok(EXISTS (SELECT 1 FROM pg_policies
+ WHERE schemaname='storage' AND tablename='objects'
+   AND policyname='sl_excel_insert_anon_denied'
+   AND permissive='RESTRICTIVE' AND cmd='INSERT'
+   AND with_check NOT LIKE '%sl_excel_storage_upload_authorized%'),
+ 'Anon restrictive policy does not evaluate the authenticated-only gate function');
 SELECT is((SELECT count(*)::integer FROM pg_policies
  WHERE schemaname='storage' AND tablename='objects'
    AND policyname IN ('sl_excel_deny_read','sl_excel_deny_update','sl_excel_deny_delete')
