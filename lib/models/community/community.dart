@@ -7,3 +7,5 @@ export 'educator_subject.dart';
 export 'educator_verification.dart';
 export 'educator_reputation.dart';
 export 'community_bookmark.dart';
+export 'community_resource.dart';
+export 'family_abe_pilot.dart';

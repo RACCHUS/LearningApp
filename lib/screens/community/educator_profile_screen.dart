@@ -3,28 +3,35 @@ import 'package:learning_pwa/models/community/educator_profile.dart';
 import 'package:learning_pwa/models/community/educator_subject.dart';
 import 'package:learning_pwa/models/community/educator_verification.dart';
 import 'package:learning_pwa/models/community/educator_reputation.dart';
+import 'package:learning_pwa/models/community/community_resource.dart';
 import 'package:learning_pwa/services/community/educator_service.dart';
 import 'package:learning_pwa/services/community/educator_reputation_service.dart';
+import 'package:learning_pwa/services/community/community_resource_service.dart';
 import 'package:learning_pwa/widgets/community/educator_profile_card.dart';
 import 'package:learning_pwa/widgets/community/educator_credential_badge.dart';
 import 'package:learning_pwa/widgets/community/educator_profile_edit_dialog.dart';
+import 'package:learning_pwa/widgets/community/resource_card.dart';
+import 'package:learning_pwa/screens/community/resource_authoring_screen.dart';
 
 /// Full screen view for an educator's profile and credentials (ECO-04).
 ///
-/// Implements Phase 2 Requirements:
+/// Implements Phase 2 & 3 Requirements:
 /// - Distinguishes verified state licensure from platform-vetted and self-declared claims.
 /// - Invariant: "Teacher does not own the subject or course."
 /// - Surfaces evidence-weighted reputation metrics.
+/// - Surfaces educator's standalone authored resources and creator studio (ECO-06).
 class EducatorProfileScreen extends StatefulWidget {
   final String educatorId;
   final EducatorService? service;
   final EducatorReputationService? reputationService;
+  final CommunityResourceService? resourceService;
 
   const EducatorProfileScreen({
     super.key,
     required this.educatorId,
     this.service,
     this.reputationService,
+    this.resourceService,
   });
 
   @override
@@ -34,11 +41,13 @@ class EducatorProfileScreen extends StatefulWidget {
 class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
   late final EducatorService _service;
   late final EducatorReputationService _reputationService;
+  late final CommunityResourceService _resourceService;
 
   EducatorProfile? _profile;
   List<EducatorSubject> _subjects = [];
   List<EducatorVerification> _verifications = [];
   EducatorReputation? _reputation;
+  List<CommunityResource> _authoredResources = [];
   bool _isFollowing = false;
   bool _isLoading = true;
   String? _error;
@@ -50,6 +59,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
     super.initState();
     _service = widget.service ?? EducatorService();
     _reputationService = widget.reputationService ?? EducatorReputationService(educatorService: _service);
+    _resourceService = widget.resourceService ?? CommunityResourceService();
     _loadProfileData();
   }
 
@@ -67,6 +77,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
           : await _service.fetchPublicVerifications(widget.educatorId);
       final reputation = await _reputationService.fetchReputation(widget.educatorId);
       final isFollowing = await _service.isFollowing(widget.educatorId);
+      final resources = await _resourceService.fetchAuthorResources(widget.educatorId);
 
       if (mounted) {
         setState(() {
@@ -74,6 +85,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
           _subjects = subjects;
           _verifications = verifications;
           _reputation = reputation;
+          _authoredResources = resources;
           _isFollowing = isFollowing;
           _isLoading = false;
         });
@@ -281,6 +293,55 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                     ),
                   ),
                 ],
+
+                const SizedBox(height: 20),
+
+                // Authored Resources & Guides Section (ECO-06, Phase 3)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Authored Resources & Guides',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    if (_isOwner)
+                      TextButton.icon(
+                        key: const Key('author_new_resource_button'),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Author Resource'),
+                        onPressed: () async {
+                          final created = await Navigator.of(context).push<CommunityResource>(
+                            MaterialPageRoute(
+                              builder: (ctx) => ResourceAuthoringScreen(
+                                resourceService: _resourceService,
+                                authorId: widget.educatorId,
+                                authorName: _profile?.displayName ?? 'Educator',
+                                authorHeadline: _profile?.headline,
+                              ),
+                            ),
+                          );
+                          if (created != null) {
+                            _loadProfileData();
+                          }
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_authoredResources.isEmpty)
+                  Card(
+                    elevation: 0,
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'No standalone resources published yet.',
+                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                    ),
+                  )
+                else
+                  ..._authoredResources.map((res) => ResourceCard(resource: res)),
               ],
             ),
           ),
