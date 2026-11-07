@@ -127,6 +127,9 @@ jobs:
       - name: Test provisional XLSX worker envelope (no external services)
         run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_worker.py' -v
 
+      - name: Test Excel workbook-to-provisional-grade pipeline
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_pilot_pipeline.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
