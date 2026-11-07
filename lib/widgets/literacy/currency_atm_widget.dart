@@ -15,7 +15,9 @@ enum CurrencyActivitySection {
 ///
 /// Fully compliant with 18 U.S.C. § 504 and 31 CFR Part 411 digital currency rules.
 class CurrencyAtmWidget extends ConsumerStatefulWidget {
-  const CurrencyAtmWidget({super.key});
+  final VoidCallback? onAtmCompleted;
+
+  const CurrencyAtmWidget({super.key, this.onAtmCompleted});
 
   @override
   ConsumerState<CurrencyAtmWidget> createState() => _CurrencyAtmWidgetState();
@@ -106,6 +108,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
           content: Text('ATM cash withdrawal simulated successfully!'),
         ),
       );
+      widget.onAtmCompleted?.call();
     }
   }
 
