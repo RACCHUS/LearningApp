@@ -29,9 +29,14 @@ SELECT ok(EXISTS (SELECT 1 FROM storage.buckets b
  'Dedicated private Storage bucket has 10MiB and XLSX MIME cap');
 SELECT is((SELECT count(*)::integer FROM pg_policies
  WHERE schemaname='storage' AND tablename='objects'
-   AND policyname IN ('sl_excel_insert_enforce','sl_excel_insert_anon_denied',
-                  'sl_excel_insert_owner')),
-  3, 'Storage upload has role-scoped restrictive and permissive rules');
+   AND policyname IN ('sl_excel_insert_client_denied','sl_excel_insert_anon_denied')),
+  2, 'Storage INSERT uses only restrictive denials for learners');
+SELECT ok(EXISTS (SELECT 1 FROM pg_policies
+ WHERE schemaname='storage' AND tablename='objects'
+   AND policyname='sl_excel_insert_client_denied'
+   AND permissive='RESTRICTIVE' AND cmd='INSERT'
+   AND with_check NOT LIKE '%sl_excel_storage_upload_authorized%'),
+ 'Even explicit server-gate enablement cannot reopen direct browser INSERT');
 SELECT ok(EXISTS (SELECT 1 FROM pg_policies
  WHERE schemaname='storage' AND tablename='objects'
    AND policyname='sl_excel_insert_anon_denied'
@@ -83,12 +88,14 @@ SELECT is(public.sl_excel_storage_upload_authorized(
  'Path traversal and variant filename are rejected');
 
 RESET ROLE;
-UPDATE public.software_learning_attempts a SET upload_enabled=TRUE
+UPDATE public.software_learning_attempts a SET upload_enabled=TRUE,
+ upload_sha256=repeat('a',64), upload_object_version='v1',
+ upload_committed_at=now()
  WHERE a.id=(SELECT attempt_id FROM sl_upload_path);
 SET LOCAL ROLE authenticated;
 SELECT is(public.sl_excel_storage_upload_authorized(
  (SELECT object_path FROM sl_upload_path)), TRUE,
- 'Explicit privileged enablement authorizes only the owner/session/exact attempt path');
+ 'Legacy helper may see a valid sealed path, but restrictive Storage policy still denies client INSERT');
 
 DO $jwt$ BEGIN
  PERFORM set_config('request.jwt.claims',
