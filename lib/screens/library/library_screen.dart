@@ -16,11 +16,10 @@ import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
-import 'package:learning_pwa/widgets/taxonomy/taxonomy_banner_card.dart';
 import 'package:learning_pwa/widgets/literacy/life_milestones_banner_card.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
-import 'package:learning_pwa/widgets/targets/create_target_dialog.dart';
+import 'package:learning_pwa/widgets/library/create_chooser_sheet.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
 /// came to browse and manage.
@@ -37,7 +36,15 @@ class LibraryScreen extends ConsumerStatefulWidget {
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-enum _CatalogSource { trusted, official, reviewed, mine }
+enum _CatalogSource {
+  trusted('Trusted catalog'),
+  official('Official'),
+  reviewed('Reviewed community'),
+  mine('My goals');
+
+  final String label;
+  const _CatalogSource(this.label);
+}
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   late final TextEditingController _search =
@@ -213,17 +220,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(DesignTokens.space4),
         children: [
-          if (_query.isEmpty) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () => context.go('/words'),
-                icon: const Icon(Icons.spellcheck),
-                label: const Text('My spelling words'),
+          Row(
+            children: [
+              if (_query.isEmpty)
+                OutlinedButton.icon(
+                  onPressed: () => context.go('/words'),
+                  icon: const Icon(Icons.spellcheck),
+                  label: const Text('My spelling words'),
+                ),
+              const Spacer(),
+              OutlinedButton.icon(
+                key: const Key('library-create'),
+                onPressed: () => CreateChooserSheet.show(
+                  context,
+                  query: _query,
+                  initialType: targetTypeFilter,
+                ),
+                icon: const Icon(Icons.add),
+                label: const Text('Create'),
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
+            ],
+          ),
+          const SizedBox(height: 12),
           TextField(
             key: const Key('library-search'),
             controller: _search,
@@ -368,24 +386,35 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
           const SizedBox(height: DesignTokens.space2),
-          Wrap(
-            spacing: DesignTokens.space2,
-            runSpacing: DesignTokens.space1,
-            children: [
-              for (final entry in const <(_CatalogSource, String)>[
-                (_CatalogSource.trusted, 'Trusted catalog'),
-                (_CatalogSource.official, 'Official'),
-                (_CatalogSource.reviewed, 'Reviewed community'),
-                (_CatalogSource.mine, 'My goals'),
-              ])
-                ChoiceChip(
-                  key: Key('library-source-${entry.$1.name}'),
-                  label: Text(entry.$2),
-                  selected: _source == entry.$1,
-                  onSelected: (_) =>
-                      setState(() => _source = entry.$1),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PopupMenuButton<_CatalogSource>(
+              key: const Key('library-source-picker'),
+              tooltip: 'Choose where goals come from',
+              initialValue: _source,
+              onSelected: (value) => setState(() => _source = value),
+              itemBuilder: (context) => [
+                for (final value in _CatalogSource.values)
+                  PopupMenuItem(
+                    key: Key('library-source-${value.name}'),
+                    value: value,
+                    child: Text(value.label),
+                  ),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: DesignTokens.space1),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified_outlined,
+                        size: 18, color: theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(width: DesignTokens.space2),
+                    Text('Source: ${_source.label}', style: theme.textTheme.labelLarge),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
           const SizedBox(height: DesignTokens.space4),
 
@@ -394,9 +423,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             const SizedBox(height: DesignTokens.space4),
           ],
 
-          if (!isSearching) ...[
-            const TaxonomyBannerCard(),
-            const SizedBox(height: DesignTokens.space3),
+          if (!isSearching && _selectedCategory == 'milestones') ...[
             const LifeMilestonesBannerCard(),
             const SizedBox(height: DesignTokens.space4),
           ],
@@ -407,18 +434,31 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             if (totalSearchResults == 0) ...[
               _EmptyHint(
                 effectiveScoped
-                    ? 'No results found within "${activeContext.label}".'
-                    : 'No results match "$_query". Try a different search.',
+                    ? 'Nothing found for "${_query.trim()}" within "${activeContext.label}".'
+                    : 'Nothing found for "${_query.trim()}".',
               ),
-              if (effectiveScoped)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.public),
-                    label: const Text('Search entire library'),
-                    onPressed: () => setState(() => _isScoped = false),
+              Wrap(
+                spacing: DesignTokens.space2,
+                runSpacing: DesignTokens.space2,
+                children: [
+                  FilledButton.tonalIcon(
+                    key: const Key('library-empty-search-create'),
+                    icon: const Icon(Icons.add),
+                    label: Text('Create "${_query.trim()}"'),
+                    onPressed: () => CreateChooserSheet.show(
+                      context,
+                      query: _query,
+                      initialType: targetTypeFilter,
+                    ),
                   ),
-                ),
+                  if (effectiveScoped)
+                    TextButton.icon(
+                      icon: const Icon(Icons.public),
+                      label: const Text('Search entire library'),
+                      onPressed: () => setState(() => _isScoped = false),
+                    ),
+                ],
+              ),
             ] else ...[
               // Targets
               ...targets.map(
@@ -499,14 +539,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ],
           ] else ...[
             // NORMAL BROWSING MODE
-            _SectionHeader(
-              'Your learning',
-              action: TextButton.icon(
-                onPressed: () => CreateTargetDialog.show(context),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Create Goal'),
-              ),
-            ),
+            _SectionHeader('Your learning'),
             if (contexts.error != null)
               _InlineError(
                 message: contexts.error!,
@@ -543,15 +576,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              'Set up a learning destination or pick a lesson below.',
+                              'Pick a goal or lesson below, or use Create to make your own.',
                               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                           ],
                         ),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: () => CreateTargetDialog.show(context),
-                        child: const Text('Create Goal'),
                       ),
                     ],
                   ),
@@ -578,12 +607,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
             if (_selectedCategory != 'course') ...[
               // Knowledge Clusters Section (CIP / Canonical Field Domains)
-              _SectionHeader('Explore Domains & Fields', trailing: '12 Domains'),
-              const SizedBox(height: DesignTokens.space2),
               Consumer(
                 builder: (context, ref, _) {
                   final clustersAsync = ref.watch(catalogClustersProvider);
-                  return clustersAsync.when(
+                  final clusterCount = clustersAsync.valueOrNull?.length ?? 0;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                  _SectionHeader(
+                    'Explore Domains & Fields',
+                    trailing: clusterCount == 0
+                        ? null
+                        : '$clusterCount ${clusterCount == 1 ? 'Domain' : 'Domains'}',
+                  ),
+                  const SizedBox(height: DesignTokens.space2),
+                  clustersAsync.when(
                     data: (clusters) => SizedBox(
                       height: 110,
                       child: ListView.separated(
@@ -628,6 +666,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ),
                     loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
                     error: (_, __) => const SizedBox.shrink(),
+                  ),
+                    ],
                   );
                 },
               ),
@@ -638,11 +678,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             _SectionHeader(
               'Learning Goals & Targets',
               trailing: targets.isNotEmpty ? '${targets.length}' : null,
-              action: TextButton.icon(
-                onPressed: () => CreateTargetDialog.show(context, initialType: targetTypeFilter),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Create Goal'),
-              ),
             ),
             if (targets.isEmpty)
               Card(
@@ -676,15 +711,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              'Set up a career, cert, or exam target to track your mastery.',
+                              _source == _CatalogSource.trusted
+                                  ? 'Try another source or category, or use Create to set up your own.'
+                                  : 'Try the Trusted catalog source, or use Create to set up your own.',
                               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                           ],
                         ),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: () => CreateTargetDialog.show(context, initialType: targetTypeFilter),
-                        child: const Text('Create Goal'),
                       ),
                     ],
                   ),
@@ -707,11 +740,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               _SectionHeader(
                 'Discover Lessons',
                 trailing: '${lessons.length}',
-                action: TextButton.icon(
-                  onPressed: () => context.push('/create-lesson'),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Create Lesson'),
-                ),
               ),
               if (catalogAsync.isLoading)
                 const Padding(
@@ -763,15 +791,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 Text(
-                                  'Create a lesson or generate curriculum with AI.',
+                                  'Use Create to write your own lesson or import one.',
                                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
-                          ),
-                          FilledButton.tonal(
-                            onPressed: () => context.push('/create-lesson'),
-                            child: const Text('Create Lesson'),
                           ),
                         ],
                       ),
@@ -809,30 +833,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ],
               const SizedBox(height: DesignTokens.space5),
             ],
-            _SectionHeader('Create'),
-            Wrap(
-              spacing: DesignTokens.space3,
-              runSpacing: DesignTokens.space2,
-              children: [
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.style_outlined),
-                  label: const Text('Study set'),
-                  onPressed: () => context.push('/content-picker'),
-                ),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.note_add_outlined),
-                  label: const Text('Lesson'),
-                  onPressed: () => context.push('/create-lesson'),
-                ),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Import'),
-                  onPressed: () => context.push('/create-lesson?tab=json'),
-                ),
-              ],
-            ),
-            const SizedBox(height: DesignTokens.space5),
             _SectionHeader('More'),
+            ListTile(
+              title: const Text('Career pathways & official classifications'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/taxonomy'),
+            ),
+            if (_selectedCategory != 'milestones')
+              ListTile(
+                title: const Text('Life milestones & literacy'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/milestones'),
+              ),
             ListTile(
               title: const Text('Learning Targets (Certifications & Careers)'),
               trailing: const Icon(Icons.chevron_right),
@@ -1034,8 +1046,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? trailing;
-  final Widget? action;
-  const _SectionHeader(this.title, {this.trailing, this.action});
+  const _SectionHeader(this.title, {this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -1053,8 +1064,6 @@ class _SectionHeader extends StatelessWidget {
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
-          const Spacer(),
-          if (action != null) action!,
         ],
       ),
     );

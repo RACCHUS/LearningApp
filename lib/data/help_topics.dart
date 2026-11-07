@@ -131,7 +131,7 @@ const helpTopics = <HelpTopic>[
     title: 'Create your own learning goal',
     summary: 'Create a custom target when the catalog does not contain what you need.',
     body:
-        'Use Library to create your own learning goal or content. This is useful for a custom course, syllabus, certification plan, or personal topic.',
+        'In Library, tap Create to make a learning goal, study set, or lesson, or to import one. If a search finds nothing, Create starts from what you searched for. This is useful for a custom course, syllabus, certification plan, or personal topic.',
     keywords: ['create', 'my own', 'custom', 'goal', 'target', 'content'],
     actionLabel: 'Open Library',
     actionRoute: '/library',
