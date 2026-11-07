@@ -178,6 +178,9 @@ jobs:
       - name: Test guarded Excel account workbook erasure
         run: python3 -m unittest discover -s tool/tests -p 'test_account_erasure.py' -v
 
+      - name: Verify brokered Excel migration is identical in self-host bundle
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_bundle_integrity.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
