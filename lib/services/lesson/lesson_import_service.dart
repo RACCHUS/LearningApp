@@ -218,7 +218,7 @@ class LessonImportService {
       numericTolerance: (data['numeric_tolerance'] as num?)?.toDouble(),
       createdBy: data['created_by']?.toString() ?? userId,
     );
-    if (question.questionText.isEmpty || question.options.isEmpty) {
+    if (question.questionText.isEmpty || (question.options.isEmpty && (question.type != 'short_answer' || !(question.acceptedAnswers?.isNotEmpty ?? false)))) {
       debugPrint('⚠️ Skipping question with empty text/options');
       return;
     }
