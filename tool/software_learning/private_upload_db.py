@@ -1,17 +1,19 @@
-"""Privileged DB-API transaction for one sealed Excel upload.
+"""Single-upload PostgreSQL transaction via role-scoped private broker RPCs.
 
-The connection must be exclusively owned, have autocommit disabled, and must
-NOT be shared with any request. SELECT FOR UPDATE NOWAIT holds the attempt
-lock while a separate Storage API writes and verifies bytes. Seal commits
-that same transaction; abort rolls back. The host MUST close the connection.
+service_role does not ordinarily have direct SELECT on auth.sessions.
+The private SECURITY DEFINER lock function checks the live session and takes
+a row lock, which remains held by this exclusive non-autocommit connection
+through Storage creation, readback, seal and commit (or rollback on failure).
 
-This is not a public RPC, upload URL signer, or deployed service. It requires
-a separately authenticated ingress and reviewed privileged DB access.
+Never share this connection across requests or expose the private RPCs to
+learner roles. The privileged connection is closed by the upload host.
 """
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import re
+from typing import Mapping
 from uuid import UUID
 
 from .brokered_upload import UploadPermit
@@ -20,21 +22,47 @@ _HASH = re.compile(r"\A[a-f0-9]{64}\Z")
 _VERSION = re.compile(r"\A[a-zA-Z0-9._:-]{1,256}\Z")
 
 
-def _canonical_uuid(v: object) -> bool:
-    if not isinstance(v, str):
+def _uuid(value: object) -> bool:
+    if not isinstance(value, str):
         return False
     try:
-        return str(UUID(v)) == v
-    except (TypeError, ValueError, AttributeError):
+        return str(UUID(value)) == value
+    except (ValueError, TypeError, AttributeError):
         return False
+
+
+def _strict_permit(raw: object, owner: str, session: str,
+                   attempt: str, now: datetime) -> UploadPermit | None:
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            raise ValueError("Invalid private upload permit") from None
+    if not isinstance(raw, Mapping) or set(raw) != {
+        "owner_id", "session_id", "attempt_id", "expires_at"
+    }:
+        raise ValueError("Untrusted upload permit")
+    if (raw["owner_id"] != owner or raw["session_id"] != session or
+        raw["attempt_id"] != attempt):
+        raise ValueError("Upload permit identity mismatch")
+    try:
+        expires_at = datetime.fromisoformat(raw["expires_at"])
+    except (TypeError, ValueError):
+        raise ValueError("Invalid permit expiry") from None
+    if expires_at.tzinfo is None or expires_at <= now:
+        raise ValueError("Expired upload permit")
+    return UploadPermit(owner, session, attempt, expires_at)
 
 
 class DbApiUploadRepository:
-    """Rows remain locked until the one allowed commit/rollback."""
+    """Commit only after backend-confirmed create-only Storage readback."""
 
     def __init__(self, connection):
-        if connection is None or getattr(connection, "autocommit", True) is not False:
-            raise ValueError("Upload transactions require an exclusive non-autocommit DB connection")
+        if (connection is None or
+            getattr(connection, "autocommit", True) is not False):
+            raise ValueError("Exclusive non-autocommit DB connection required")
         self._conn = connection
         self._held: UploadPermit | None = None
 
@@ -42,7 +70,8 @@ class DbApiUploadRepository:
         cursor = self._conn.cursor()
         try:
             cursor.execute(sql, args)
-            return cursor.fetchone()
+            row = cursor.fetchone()
+            return row[0] if isinstance(row, (tuple, list)) and len(row) == 1 else None
         finally:
             cursor.close()
 
@@ -50,37 +79,18 @@ class DbApiUploadRepository:
               attempt_id: str, at: datetime) -> UploadPermit | None:
         if self._held is not None:
             return None
-        if (
-            not all(_canonical_uuid(v) for v in (owner_id, session_id, attempt_id)) or
-            not isinstance(at, datetime) or at.tzinfo is None
-        ):
+        if (not all(_uuid(v) for v in (owner_id, session_id, attempt_id))
+            or not isinstance(at, datetime) or at.tzinfo is None):
             return None
         try:
             raw = self._one(
-                "SELECT a.owner_id::text, a.issued_session_id::text, "
-                "a.id::text, a.expires_at "
-                "FROM public.software_learning_attempts a "
-                "WHERE a.id=%s::uuid AND a.owner_id=%s::uuid "
-                "AND a.issued_session_id=%s::uuid "
-                "AND a.status='issued' AND a.expires_at>now() + interval '2 minutes' "
-                "AND a.upload_enabled=false "
-                "AND a.upload_committed_at IS NULL "
-                "AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL "
-                "AND EXISTS (SELECT 1 FROM auth.sessions s "
-                "WHERE s.id=a.issued_session_id AND s.user_id=a.owner_id "
-                "AND (s.not_after IS NULL OR s.not_after>now())) "
-                "FOR UPDATE OF a NOWAIT",
+                "SELECT software_learning_private.sl_lock_excel_upload(%s,%s,%s)",
                 (attempt_id, owner_id, session_id),
             )
-            if (
-                not isinstance(raw, (list, tuple)) or len(raw) != 4 or
-                raw[:3] != (owner_id, session_id, attempt_id) or
-                not isinstance(raw[3], datetime) or
-                raw[3].tzinfo is None or raw[3] <= at
-            ):
+            permit = _strict_permit(raw, owner_id, session_id, attempt_id, at)
+            if permit is None:
                 self._conn.rollback()
                 return None
-            permit = UploadPermit(owner_id, session_id, attempt_id, raw[3])
             self._held = permit
             return permit
         except Exception:
@@ -89,27 +99,16 @@ class DbApiUploadRepository:
             raise
 
     def seal(self, permit: UploadPermit, digest: str, version: str) -> bool:
-        if (
-            not isinstance(permit, UploadPermit) or
-            self._held != permit or
+        if (not isinstance(permit, UploadPermit) or self._held != permit or
             not isinstance(digest, str) or _HASH.fullmatch(digest) is None or
-            not isinstance(version, str) or _VERSION.fullmatch(version) is None
-        ):
+            not isinstance(version, str) or _VERSION.fullmatch(version) is None):
             return False
         try:
-            row = self._one(
-                "UPDATE public.software_learning_attempts "
-                "SET upload_sha256=%s, upload_object_version=%s, "
-                "upload_committed_at=now(), upload_enabled=true "
-                "WHERE owner_id=%s::uuid AND issued_session_id=%s::uuid "
-                "AND id=%s::uuid AND status='issued' "
-                "AND upload_enabled=false AND upload_committed_at IS NULL "
-                "AND expires_at>now() "
-                "RETURNING id::text",
-                (digest, version, permit.owner_id,
-                 permit.session_id, permit.attempt_id),
+            success = self._one(
+                "SELECT software_learning_private.sl_seal_excel_upload(%s,%s,%s,%s,%s)",
+                (permit.attempt_id, permit.owner_id, permit.session_id, digest, version),
             )
-            if row != (permit.attempt_id,):
+            if success is not True:
                 self._conn.rollback()
                 self._held = None
                 return False
