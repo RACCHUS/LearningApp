@@ -10,7 +10,9 @@ enum ModerationTargetType {
   curriculum('curriculum', 'Curriculum Node'),
   resource('resource', 'User Resource'),
   question('question', 'Question'),
-  profile('profile', 'User Profile');
+  profile('profile', 'User Profile'),
+  communityQuestion('community_question', 'Community Question'),
+  communityAnswer('community_answer', 'Community Answer');
 
   const ModerationTargetType(this.dbValue, this.displayName);
   final String dbValue;

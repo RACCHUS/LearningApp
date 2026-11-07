@@ -14,6 +14,11 @@ import 'package:learning_pwa/widgets/literacy/karaoke_story_reader_widget.dart';
 import 'package:learning_pwa/widgets/literacy/oral_diagnostic_widget.dart';
 import 'package:learning_pwa/widgets/literacy/caseworker_setup_dialog.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
+import 'package:learning_pwa/services/community/field_pilot_service.dart';
+import 'package:learning_pwa/services/community/outcome_assessment_service.dart';
+import 'package:learning_pwa/widgets/community/pilot_progress_card.dart';
+import 'package:learning_pwa/widgets/community/before_after_assessment_widget.dart';
+import 'package:learning_pwa/widgets/community/pilot_outcome_dashboard.dart';
 
 enum LiteracyHubSection {
   letters,
@@ -23,12 +28,20 @@ enum LiteracyHubSection {
   stories,
   diagnostic,
   topics,
+  pilot,
 }
 
 class FoundationalLiteracyScreen extends ConsumerStatefulWidget {
   final LiteracyHubSection? initialSection;
+  final FieldPilotService? pilotService;
+  final OutcomeAssessmentService? outcomeService;
 
-  const FoundationalLiteracyScreen({super.key, this.initialSection});
+  const FoundationalLiteracyScreen({
+    super.key,
+    this.initialSection,
+    this.pilotService,
+    this.outcomeService,
+  });
 
   @override
   ConsumerState<FoundationalLiteracyScreen> createState() =>
@@ -37,6 +50,8 @@ class FoundationalLiteracyScreen extends ConsumerStatefulWidget {
 
 class _FoundationalLiteracyScreenState
     extends ConsumerState<FoundationalLiteracyScreen> {
+  late final FieldPilotService _pilotService;
+  late final OutcomeAssessmentService _outcomeService;
   LiteracyHubSection _activeSection = LiteracyHubSection.letters;
   int _activeItemIndex = 0;
   int _activeLetterSubTab = 0; // 0: Sound & Picture, 1: Finger Tracing
@@ -44,6 +59,8 @@ class _FoundationalLiteracyScreenState
   @override
   void initState() {
     super.initState();
+    _pilotService = widget.pilotService ?? FieldPilotService();
+    _outcomeService = widget.outcomeService ?? OutcomeAssessmentService();
     if (widget.initialSection != null) {
       _activeSection = widget.initialSection!;
     }
@@ -95,6 +112,11 @@ class _FoundationalLiteracyScreenState
       case LiteracyHubSection.topics:
         notifier.speak(
           'Life Topics. Tap any picture card to explore citizenship, driver rules, safety, and money skills.',
+        );
+        break;
+      case LiteracyHubSection.pilot:
+        notifier.speak(
+          'Field Pilot and Learning Gain. Practice vocational skills and evaluate your measured improvement.',
         );
         break;
     }
@@ -215,6 +237,12 @@ class _FoundationalLiteracyScreenState
                       section: LiteracyHubSection.topics,
                       colorScheme: colorScheme,
                     ),
+                    const SizedBox(width: DesignTokens.space2),
+                    _buildHubNavChip(
+                      label: '🚀 Field Pilot & Gain',
+                      section: LiteracyHubSection.pilot,
+                      colorScheme: colorScheme,
+                    ),
                   ],
                 ),
               ),
@@ -322,6 +350,35 @@ class _FoundationalLiteracyScreenState
                 const OralDiagnosticWidget(),
               ] else if (_activeSection == LiteracyHubSection.topics) ...[
                 const PreReaderPictureGridWidget(),
+              ] else if (_activeSection == LiteracyHubSection.pilot) ...[
+                PilotProgressCard(
+                  cohort: _pilotService.getAvailableCohorts().first,
+                  onContinueSession: () async {
+                    await _pilotService.startSession(
+                      participantId: 'learner_pilot_active',
+                      cohortId: _pilotService.getAvailableCohorts().first.id,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pilot session started! Audio guidance enabled.')),
+                      );
+                    }
+                  },
+                  onTakeAssessment: () {
+                    // Triggers inline assessment view
+                  },
+                ),
+                const SizedBox(height: DesignTokens.space3),
+                BeforeAfterAssessmentWidget(
+                  assessmentService: _outcomeService,
+                  participantId: 'learner_pilot_active',
+                  cohortId: _pilotService.getAvailableCohorts().first.id,
+                  topic: 'Florida Road Signs & Right-of-Way Rules',
+                ),
+                const SizedBox(height: DesignTokens.space3),
+                PilotOutcomeDashboard(
+                  assessmentService: _outcomeService,
+                ),
               ],
             ],
           ),

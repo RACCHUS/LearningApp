@@ -1,13 +1,15 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/unified_lesson.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/lesson_block_renderer.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/provenance/provenance_inspector_sheet.dart';
 import 'package:learning_pwa/widgets/assessment/assessment_item_renderer.dart';
 
 /// Flagship Rich Lesson Block Reader for Phase D
-/// 
+///
 /// Presents ordered polymorphic instructional blocks (Markdown, Callout, Code,
 /// Table, Formula, Example, Practice Prompt, Image) with verified blueprint
 /// citations, concept tags, adjustable typography, and integrated assessment.
@@ -27,15 +29,47 @@ class RichLessonReader extends StatefulWidget {
 
 class _RichLessonReaderState extends State<RichLessonReader> {
   final ScrollController _scrollController = ScrollController();
-  late final int _sessionNonce = math.Random().nextInt(0x7FFFFFFF);
+  late int _attemptNonce =
+      (DateTime.now().microsecondsSinceEpoch ^
+          math.Random().nextInt(0x7FFFFFFF)) &
+      0x7FFFFFFF;
+  final Map<String, int> _itemAttemptNonces = {};
+  final Map<String, List<int>> _itemLastOrders = {};
+  final Map<String, List<int>> _itemPreviousOrders = {};
   double _scrollProgress = 0.0;
   double _fontSizeFactor = 1.0;
   bool _showAssessmentSection = false;
 
+  int get attemptNonce => _attemptNonce;
+
+  int attemptNonceForItem(String itemId) {
+    final existing = _itemAttemptNonces[itemId];
+    if (existing != null) return existing;
+    final matching = widget.unifiedLesson.assessmentItems
+        .where((i) => i.id == itemId)
+        .toList();
+    if (matching.isNotEmpty) {
+      return _assignNextNonceForItem(matching.first);
+    }
+    return _attemptNonce;
+  }
+
   @override
   void initState() {
     super.initState();
+    if (_attemptNonce == 0) {
+      _attemptNonce = 0x5bf03635;
+    }
+    _refreshAllItemNonces();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant RichLessonReader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.unifiedLesson != widget.unifiedLesson) {
+      _refreshAllItemNonces();
+    }
   }
 
   @override
@@ -43,6 +77,58 @@ class _RichLessonReaderState extends State<RichLessonReader> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  int _assignNextNonceForItem(AssessmentItem item) {
+    final optionsRaw = item.responseSpec['options'] as List?;
+    final options = optionsRaw?.map((e) => e.toString()).toList();
+    final previousOrder = _itemLastOrders[item.id] != null
+        ? List<int>.from(_itemLastOrders[item.id]!)
+        : null;
+    if (previousOrder != null) {
+      _itemPreviousOrders[item.id] = previousOrder;
+    }
+    _attemptNonce = McqOptions.nextPresentationNonce(
+      currentNonce: _attemptNonce,
+      options: options,
+      itemHash: item.id.hashCode,
+      previousOrder: previousOrder,
+    );
+    _itemAttemptNonces[item.id] = _attemptNonce;
+    if (options != null && options.length > 1) {
+      _itemLastOrders[item.id] = McqOptions.computePresentationOrder(
+        options,
+        presentationSeed: _attemptNonce ^ item.id.hashCode,
+        shuffle: true,
+        avoidOrder: previousOrder,
+      );
+    }
+    return _attemptNonce;
+  }
+
+  void _refreshAllItemNonces() {
+    for (final item in widget.unifiedLesson.assessmentItems) {
+      _assignNextNonceForItem(item);
+    }
+  }
+
+  /// Retries a specific assessment item with a fresh per-attempt nonce.
+  void retryAssessmentItem(String itemId) {
+    final matching = widget.unifiedLesson.assessmentItems
+        .where((i) => i.id == itemId)
+        .toList();
+    if (matching.isEmpty) return;
+    setState(() {
+      _assignNextNonceForItem(matching.first);
+    });
+  }
+
+  /// Re-presents all assessment items in the evaluation section with fresh per-attempt nonces.
+  void resetAssessmentEvaluation() {
+    setState(() {
+      _showAssessmentSection = true;
+      _refreshAllItemNonces();
+    });
   }
 
   void _onScroll() {
@@ -81,25 +167,28 @@ class _RichLessonReaderState extends State<RichLessonReader> {
     final provenance = unified.provenance;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF090D16) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF090D16)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
         elevation: 0,
         titleSpacing: 0,
         title: Text(
           lesson.title,
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
           overflow: TextOverflow.ellipsis,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(3.0),
           child: LinearProgressIndicator(
             value: _scrollProgress,
-            backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            backgroundColor: isDark
+                ? const Color(0xFF1E293B)
+                : const Color(0xFFE2E8F0),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme.colorScheme.primary,
+            ),
             minHeight: 3.0,
           ),
         ),
@@ -109,7 +198,11 @@ class _RichLessonReaderState extends State<RichLessonReader> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
               child: ActionChip(
-                avatar: const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF10B981)),
+                avatar: const Icon(
+                  Icons.verified_rounded,
+                  size: 16,
+                  color: Color(0xFF10B981),
+                ),
                 label: Text(
                   'Blueprint',
                   style: GoogleFonts.inter(
@@ -118,7 +211,9 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                     color: const Color(0xFF10B981),
                   ),
                 ),
-                backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.12),
+                backgroundColor: const Color(
+                  0xFF10B981,
+                ).withValues(alpha: 0.12),
                 side: BorderSide.none,
                 onPressed: () => ProvenanceInspectorSheet.show(
                   context,
@@ -149,7 +244,9 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                   color: isDark ? const Color(0xFF131D31) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Column(
@@ -164,14 +261,17 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                         height: 1.25,
                       ),
                     ),
-                    if (lesson.description != null && lesson.description!.isNotEmpty) ...[
+                    if (lesson.description != null &&
+                        lesson.description!.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Text(
                         lesson.description!,
                         style: GoogleFonts.inter(
                           fontSize: 15 * _fontSizeFactor,
                           height: 1.5,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF475569),
                         ),
                       ),
                     ],
@@ -183,27 +283,38 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                         runSpacing: 6,
                         children: concepts.map((c) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: isDark
                                   ? const Color(0xFF1E293B)
                                   : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                color: isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFCBD5E1),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.hub_outlined, size: 13, color: Color(0xFF6366F1)),
+                                const Icon(
+                                  Icons.hub_outlined,
+                                  size: 13,
+                                  color: Color(0xFF6366F1),
+                                ),
                                 const SizedBox(width: 5),
                                 Text(
                                   c.name,
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? Colors.grey[200] : const Color(0xFF334155),
+                                    color: isDark
+                                        ? Colors.grey[200]
+                                        : const Color(0xFF334155),
                                   ),
                                 ),
                               ],
@@ -217,10 +328,12 @@ class _RichLessonReaderState extends State<RichLessonReader> {
               ),
               const SizedBox(height: 16),
               // Ordered Lesson Blocks
-              ...blocks.map((b) => LessonBlockRenderer(
-                    block: b,
-                    fontSizeFactor: _fontSizeFactor,
-                  )),
+              ...blocks.map(
+                (b) => LessonBlockRenderer(
+                  block: b,
+                  fontSizeFactor: _fontSizeFactor,
+                ),
+              ),
               const SizedBox(height: 32),
               // Assessment & Retrieval Section
               if (items.isNotEmpty) ...[
@@ -236,7 +349,9 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE),
+                      color: isDark
+                          ? const Color(0xFF4338CA)
+                          : const Color(0xFFC7D2FE),
                     ),
                   ),
                   child: Column(
@@ -247,10 +362,16 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                              color: const Color(
+                                0xFF6366F1,
+                              ).withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.quiz_rounded, color: Color(0xFF6366F1), size: 22),
+                            child: const Icon(
+                              Icons.quiz_rounded,
+                              color: Color(0xFF6366F1),
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -262,47 +383,72 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                                   style: GoogleFonts.outfit(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF1E1B4B),
                                   ),
                                 ),
                                 Text(
                                   '${items.length} interactive practice questions evaluate your readiness.',
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
-                                    color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4338CA),
+                                    color: isDark
+                                        ? const Color(0xFFC7D2FE)
+                                        : const Color(0xFF4338CA),
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                          if (_showAssessmentSection)
+                            TextButton.icon(
+                              onPressed: resetAssessmentEvaluation,
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: const Text('Retry All'),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       if (!_showAssessmentSection)
                         ElevatedButton.icon(
-                          onPressed: () => setState(() => _showAssessmentSection = true),
+                          onPressed: resetAssessmentEvaluation,
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: Text(
                             'Begin Practice Evaluation (${items.length} items)',
-                            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: GoogleFonts.outfit(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6366F1),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       if (_showAssessmentSection) ...[
                         const Divider(height: 24),
-                        ...items.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: AssessmentItemRenderer(
-                                key: ValueKey(item.id),
-                                item: item,
-                                presentationSeed: _sessionNonce,
-                              ),
-                            )),
+                        ...items.map((item) {
+                          final itemNonce = attemptNonceForItem(item.id);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: AssessmentItemRenderer(
+                              key: ValueKey(item.id),
+                              item: item,
+                              presentationSeed: itemNonce,
+                              avoidOrder: _itemPreviousOrders[item.id],
+                              onPresentationOrderChanged: (order) {
+                                _itemLastOrders[item.id] = List<int>.from(
+                                  order,
+                                );
+                              },
+                              onRetry: () => retryAssessmentItem(item.id),
+                            ),
+                          );
+                        }),
                       ],
                     ],
                   ),
@@ -316,12 +462,18 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 24),
+                    const Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: Color(0xFF10B981),
+                      size: 24,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -332,14 +484,18 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                             style: GoogleFonts.outfit(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                             ),
                           ),
                           Text(
                             'Your progress and retrieval evidence have been synced.',
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -353,7 +509,9 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: const Text('Done'),
                     ),
