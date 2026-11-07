@@ -71,6 +71,7 @@ class _AdaptivePracticeScreenState
         options,
         presentationSeed: _attemptNonce ^ item.id.hashCode,
         shuffle: true,
+        avoidOrder: _lastPresentationOrder,
       );
     } else {
       _lastPresentationOrder = null;

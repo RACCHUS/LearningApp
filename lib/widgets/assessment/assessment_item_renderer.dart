@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
@@ -162,33 +161,16 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       _presentationOrder = List.generate(count, (i) => i);
 
       if (widget.shuffleOptions && count > 1) {
-        final anchorIndices = <int>[];
-        final nonAnchorIndices = <int>[];
-
-        for (int i = 0; i < count; i++) {
-          final text = optionsRaw[i].toString();
-          if (McqOptions.isAnchorOption(text)) {
-            anchorIndices.add(i);
-          } else {
-            nonAnchorIndices.add(i);
-          }
-        }
-
         // Single-XOR Combination Contract: combine raw presentation nonce with item.id.hashCode once
         final rawNonce = widget.presentationSeed ?? _localAttemptNonce;
         final seed = rawNonce ^ widget.item.id.hashCode;
-        final rand = math.Random(seed);
-        nonAnchorIndices.shuffle(rand);
-
-        if (previousOrder != null && nonAnchorIndices.length > 1) {
-          final candidate = [...nonAnchorIndices, ...anchorIndices];
-          if (McqOptions.listsEqual(candidate, previousOrder)) {
-            final first = nonAnchorIndices.removeAt(0);
-            nonAnchorIndices.add(first);
-          }
-        }
-
-        _presentationOrder = [...nonAnchorIndices, ...anchorIndices];
+        final optionStrings = optionsRaw.map((e) => e.toString()).toList();
+        _presentationOrder = McqOptions.computePresentationOrder(
+          optionStrings,
+          presentationSeed: seed,
+          shuffle: true,
+          avoidOrder: previousOrder,
+        );
       }
     }
 

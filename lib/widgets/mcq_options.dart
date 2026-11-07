@@ -128,9 +128,10 @@ class McqOptions extends StatelessWidget {
   ///
   /// The returned nonce is never pre-XORed with [itemHash]. When [options] has
   /// at least 2 non-anchor choices and [previousOrder] is provided, candidate
-  /// nonces are stepped until the resulting permutation (computed with
-  /// `candidate ^ itemHash` when [itemHash] is supplied, or `candidate`
-  /// directly otherwise) is verified to differ from [previousOrder].
+  /// nonces are stepped across a bounded window as a best-effort statistical
+  /// diversifier. The strict guarantee that consecutive presentations differ is
+  /// enforced deterministically by [ensureDistinctOrder] (and by
+  /// [computePresentationOrder] when `avoidOrder` is supplied).
   static int nextPresentationNonce({
     required int currentNonce,
     List<String>? options,
@@ -149,8 +150,9 @@ class McqOptions extends StatelessWidget {
       return candidate;
     }
 
-    // Phase 1: Golden-ratio stepping across 32 well-dispersed candidates.
-    for (int attempt = 0; attempt < 32; attempt++) {
+    // Bounded search across 64 candidate nonces to reduce RNG collisions before
+    // deterministic transposition in ensureDistinctOrder.
+    for (int attempt = 0; attempt < 64; attempt++) {
       final effectiveSeed = itemHash != null
           ? (candidate ^ itemHash)
           : candidate;
@@ -165,27 +167,6 @@ class McqOptions extends StatelessWidget {
       candidate = (candidate + 0x9E3779B9 + attempt + 1) & 0x7FFFFFFF;
       if (candidate == 0 || candidate == currentNonce) {
         candidate = (0x5bf03635 + attempt + 1) & 0x7FFFFFFF;
-      }
-    }
-
-    // Phase 2: Deterministic sequential fallback until a verified non-colliding
-    // seed is found. With >= 2 non-anchor indices, math.Random(seed) over
-    // consecutive seeds is guaranteed to produce a distinct transposition.
-    for (int step = 1; step <= 0x7FFFFFFF; step++) {
-      final fallbackCandidate = (currentNonce + step) & 0x7FFFFFFF;
-      if (fallbackCandidate == 0 || fallbackCandidate == currentNonce) {
-        continue;
-      }
-      final effectiveSeed = itemHash != null
-          ? (fallbackCandidate ^ itemHash)
-          : fallbackCandidate;
-      final order = computePresentationOrder(
-        options,
-        presentationSeed: effectiveSeed,
-        shuffle: true,
-      );
-      if (!listsEqual(order, previousOrder)) {
-        return fallbackCandidate;
       }
     }
 
