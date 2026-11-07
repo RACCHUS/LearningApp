@@ -35397,11 +35397,23 @@ ALTER TABLE public.software_learning_attempts
   ADD COLUMN upload_object_version text,
   ADD COLUMN upload_committed_at timestamptz,
   ADD CONSTRAINT sl_excel_upload_sha_check
-    CHECK (upload_sha256 IS NULL OR upload_sha256 ~ '^[a-f0-9]{64}$'),
+    CHECK (upload_sha256 IS NULL OR upload_sha256 ~ '^[a-f0-9]{64}
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107150000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
+
+COMMIT;
+
+),
   ADD CONSTRAINT sl_excel_upload_revision_check
     CHECK (upload_object_version IS NULL OR
            (char_length(upload_object_version) BETWEEN 1 AND 256 AND
-            upload_object_version ~ '^[a-zA-Z0-9._:-]+$')),
+            upload_object_version ~ '^[a-zA-Z0-9._:-]+
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107150000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
+
+COMMIT;
+
+)),
   ADD CONSTRAINT sl_excel_upload_attestation_complete_check
     CHECK (
       (upload_sha256 IS NULL AND upload_object_version IS NULL
@@ -35571,6 +35583,125 @@ COMMIT;
   RETURN v_completed IS NOT NULL;
 END
 $complete$;
+
+-- Supabase service_role normally cannot SELECT auth.sessions. Keep the live
+-- session check inside a narrowly privileged private SECURITY DEFINER RPC,
+-- not a broad auth-table SELECT grant. Its FOR UPDATE lock persists until
+-- the caller's transaction commits/rolls back after Storage API readback.
+CREATE FUNCTION software_learning_private.sl_lock_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerlock$
+DECLARE
+  v_now timestamptz := now();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+  SELECT a.* INTO v_attempt
+  FROM public.software_learning_attempts a
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_sha256 IS NULL
+    AND a.upload_object_version IS NULL
+    AND a.upload_committed_at IS NULL
+    AND a.expires_at>v_now+interval '2 minutes'
+  FOR UPDATE OF a NOWAIT;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  RETURN jsonb_build_object(
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'attempt_id',v_attempt.id,
+    'expires_at',v_attempt.expires_at
+  );
+END
+$brokerlock$;
+
+-- Seal can only be invoked by the backend after the Storage readback.
+-- A revoked live session, changed state, timeout, replay or new digest is
+-- rejected in the same transaction before any row-lock release.
+CREATE FUNCTION software_learning_private.sl_seal_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid,
+  p_digest text, p_version text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerseal$
+DECLARE
+  v_updated uuid;
+BEGIN
+  IF (p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL
+    OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}
+ 'SHA-256 of authenticated broker readback, not evidence of learner mastery';
+COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
+ 'Private Storage version pinned by broker, checked again before grading';
+COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
+ 'Broker commit timestamp; direct client Storage INSERT remains prohibited';
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
+ 'Atomic private claim only for server-brokered, SHA-sealed workbook uploads; still provisional';
+COMMIT;
+
+    OR p_version IS NULL OR p_version !~ '^[a-zA-Z0-9._:-]{1,256}
+ 'SHA-256 of authenticated broker readback, not evidence of learner mastery';
+COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
+ 'Private Storage version pinned by broker, checked again before grading';
+COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
+ 'Broker commit timestamp; direct client Storage INSERT remains prohibited';
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
+ 'Atomic private claim only for server-brokered, SHA-sealed workbook uploads; still provisional';
+COMMIT;
+)
+  THEN
+    RETURN false;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET upload_sha256=p_digest, upload_object_version=p_version,
+      upload_committed_at=now(), upload_enabled=true
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_committed_at IS NULL
+    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_updated;
+  RETURN v_updated IS NOT NULL;
+END
+$brokerseal$;
+
+REVOKE ALL ON FUNCTION
+ software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+ FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION
+ software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+ software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+ TO service_role;
+GRANT EXECUTE ON FUNCTION
+ software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+ TO service_role;
 
 COMMENT ON COLUMN public.software_learning_attempts.upload_sha256 IS
  'SHA-256 of authenticated broker readback, not evidence of learner mastery';
