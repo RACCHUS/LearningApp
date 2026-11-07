@@ -78,6 +78,8 @@ void main() {
       expect(ddl01, contains('COMMIT;'));
       expect(ddl01, contains('20241228000000_legacy_base_tables.sql'));
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
+      expect(ddl01, contains('20261107120000_software_learning_excel_attempt_issuance.sql'));
+      expect(ddl01, contains('94 immutable migrations'));
     });
 
     test('SelfHostBootstrap.scanAndValidate verifies every migration sequentially', () {
