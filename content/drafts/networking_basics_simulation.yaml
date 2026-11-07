@@ -1,0 +1,132 @@
+# ============================================================================
+# DRAFT — not ingested by `--dir content/` (non-recursive). Owner review needed
+# before moving into a published curriculum manifest.
+#
+# Purpose: the first lesson with a `simulation` block, used to verify the
+# simulation enablement gate "equivalent learning alternative". The
+# simulation and its `body` fallback share one objective; the lesson questions
+# let every learner demonstrate it whether or not the simulation is available.
+#
+# Objective (LAB-NET-101.1): Trace a home network path to locate a broken link,
+# choose the correct first repair, and justify it.
+#   Simulation step 1  <->  question 1 (locate the broken link)
+#   Simulation step 2  <->  question 2 (choose the first repair)
+#   Simulation step 3  <->  question 3 (justify the repair)
+# ============================================================================
+
+source_release:
+  publisher: "LearningApp Content Team"
+  title: "Native Simulation Pilot: Home Network Troubleshooting (Draft)"
+  version: "SIM-NET-DRAFT-1"
+  source_url: "https://github.com/RACCHUS/LearningApp/blob/main/docs/design/SIMULATION_PHASE_0_DESIGN.md"
+  retrieved_at: "2026-11-07T00:00:00Z"
+  license: "Original LearningApp content"
+  license_name: "Original LearningApp content"
+  rights_note: "Authored for the simulation equivalence review; no third-party text."
+  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  metadata:
+    status: "draft"
+    simulation_id: "networking-basics"
+    simulation_version: "1.0.0"
+
+target:
+  slug: "draft-simulation-networking-basics"
+  title: "Home Network Troubleshooting (Simulation Pilot)"
+  version_code: "SIM-NET-DRAFT-1"
+  version_title: "Simulation Pilot Draft"
+  version_description: "Draft lesson pairing the networking-basics simulation with an equivalent non-simulation alternative."
+
+domains:
+  - code: "LAB-NET-101"
+    title: "Home Network Troubleshooting"
+    description: "Follow a home network path from the internet to a device and fix a broken link."
+    weight: 1.0
+    sort_order: 1
+    importance: "core"
+    citation: "LearningApp simulation pilot draft"
+    objectives:
+      - code: "LAB-NET-101.1"
+        title: "Locate a broken home network link and choose and justify the first repair"
+        description: "Trace internet, modem, router, and device connections; identify the disconnected link; pick the repair that restores it; and explain why."
+        sort_order: 1
+        importance: "core"
+        citation: "LearningApp simulation pilot draft"
+        concepts:
+          - slug: "net-home-network-path"
+            name: "Home Network Path"
+            emoji: "🛜"
+            short_definition: "Traffic flows internet → modem → router → each device over its own link."
+            description: "A home network is a chain: the modem connects to the internet, the router connects to the modem, and each device has its own separate link to the router."
+            citation: "LearningApp simulation pilot draft"
+            prerequisites: []
+          - slug: "net-physical-link-repair"
+            name: "Physical Link Repair"
+            emoji: "🔌"
+            short_definition: "A disconnected cable is fixed by reconnecting it, not by changing settings."
+            description: "When one device loses its connection while others still work, check that device's own link first; software settings cannot repair a loose cable."
+            citation: "LearningApp simulation pilot draft"
+            prerequisites: ["net-home-network-path"]
+        lessons:
+          - title: "Find and Fix a Broken Home Network Link"
+            description: "Trace a home network, find the broken connection, and choose the right first repair."
+            emoji: "🔌"
+            tags: ["networking", "troubleshooting", "digital-literacy", "simulation-pilot"]
+            citation: "LearningApp simulation pilot draft"
+            concept_slugs:
+              - "net-home-network-path"
+              - "net-physical-link-repair"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  body: "A home network is a chain. The **modem** connects to the internet, the **router** connects to the modem, and **each device has its own link** to the router. When only one device cannot connect, start with that device's own link."
+              - sort_order: 2
+                block_type: "simulation"
+                content:
+                  simulation_id: "networking-basics"
+                  simulation_version: "1.0.0"
+                  title: "Practice: diagnose a broken connection"
+                  body: "**Scenario.** Internet → modem → router are all connected and the router is online. The router has two separate links: one to a **laptop** and one to a **printer**. The printer works. The laptop cannot connect, and its Ethernet cable to the router is loose.\n\nWork through these three steps, then answer the practice questions at the end of the lesson:\n\n1. Which connection is broken?\n2. What should you check first?\n3. Why is that the right first step?"
+              - sort_order: 3
+                block_type: "callout"
+                content:
+                  variant: "info"
+                  title: "Rule of thumb"
+                  text: "Fix the physical link before changing settings. A password change or a new screen cannot reconnect a loose cable."
+            terms:
+              - term: "Router"
+                definition: "The device that connects each home device to the modem and passes traffic between them."
+                example: "A laptop and a printer each have their own link to the router."
+                emoji: "📶"
+              - term: "Ethernet cable"
+                definition: "A physical cable that carries network traffic between two devices."
+                example: "The cable between the router and the laptop."
+                emoji: "🔌"
+            questions:
+              - question_text: "The router is online and the printer works, but the laptop cannot connect. Which connection is broken?"
+                options:
+                  - "Between the modem and the router"
+                  - "Between the router and the laptop"
+                  - "Between the router and the printer"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "Only the laptop fails while the router and printer work, so the problem is the laptop's own link to the router."
+                concept_slugs: ["net-home-network-path"]
+              - question_text: "The laptop's Ethernet cable to the router is loose. What should you check first?"
+                options:
+                  - "Reconnect the router-to-laptop Ethernet cable"
+                  - "Change the Wi-Fi password on the router"
+                  - "Replace the laptop screen with a new one"
+                correct_answer: 0
+                type: "mcq"
+                explanation: "Reseat the loose cable first, then check whether the laptop reconnects."
+                concept_slugs: ["net-physical-link-repair"]
+              - question_text: "Why is reconnecting the router-to-laptop cable the right first step?"
+                options:
+                  - "The cable carries network traffic from the router to the laptop."
+                  - "The laptop screen routes traffic between devices."
+                  - "Changing a password reconnects a physically loose cable."
+                correct_answer: 0
+                type: "mcq"
+                explanation: "The cable is the physical path for the laptop's traffic. Settings or a screen cannot restore a disconnected physical link."
+                concept_slugs: ["net-physical-link-repair"]
