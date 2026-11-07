@@ -352,82 +352,75 @@ select is(
   'User 2 cannot see User 1 user_concept_state'
 );
 
--- 23-29. LEGACY BACKFILL VERIFICATION SUITE
--- Reset role to postgres for schema simulation
+-- 23-29. LEGACY BACKFILL VERIFICATION SUITE DIRECTLY ON public.learning_events
+-- Reset role to postgres for direct schema and data verification
 set local role postgres;
 set local search_path = public, extensions;
 
--- Setup synthetic legacy learning events table matching pre-Phase-4 schema
-create temp table test_legacy_backfill_events (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  session_id text,
-  occurred_at timestamptz not null,
-  event_type text not null,
-  item_type text not null,
-  item_id text not null,
-  rating smallint,
-  score real,
-  response jsonb,
-  confidence smallint,
-  client_latency_ms integer
-);
+-- Clear transient events from preceding tests
+delete from public.learning_events;
 
--- Insert 3 legacy events for session 1 in distinct chronological order
-insert into test_legacy_backfill_events (
-  id, user_id, session_id, occurred_at, event_type, item_type, item_id, rating, score, response, confidence, client_latency_ms
+-- Revert public.learning_events columns to pre-Phase-4 ARCH-01 baseline schema
+alter table public.learning_events
+  drop constraint if exists learning_events_user_session_seq_key,
+  drop constraint if exists learning_events_client_seq_check,
+  drop constraint if exists learning_events_user_idempotency_key;
+
+alter table public.learning_events
+  drop column if exists idempotency_key,
+  drop column if exists payload_sha256,
+  drop column if exists client_seq,
+  drop column if exists attempt_id,
+  drop column if exists client_occurred_at,
+  drop column if exists effective_occurred_at,
+  drop column if exists client_latency_ms,
+  drop column if exists presented_option_ids;
+
+-- Seed real legacy rows directly into public.learning_events
+insert into public.learning_events (
+  id, user_id, session_id, occurred_at, event_type, item_type, item_id, rating, score, response, confidence
 ) values
-  ('ba111111-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '3 hours', 'review', 'term', 'c1', 3, 1.0, '"ans1"'::jsonb, 4, 1200),
-  ('ba111111-0000-4000-8000-000000000002', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '2 hours', 'review', 'term', 'c2', 4, 1.0, '"ans2"'::jsonb, 5, 800),
-  ('ba111111-0000-4000-8000-000000000003', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '1 hour', 'review', 'term', 'c3', 2, 0.5, '"ans3"'::jsonb, 3, 2100);
+  ('ba111111-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '3 hours', 'review', 'term', 'c1', 3, 1.0, '"ans1"'::jsonb, 4),
+  ('ba111111-0000-4000-8000-000000000002', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '2 hours', 'review', 'term', 'c2', 4, 1.0, '"ans2"'::jsonb, 5),
+  ('ba111111-0000-4000-8000-000000000003', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', now() - interval '1 hour', 'review', 'term', 'c3', 2, 0.5, '"ans3"'::jsonb, 3),
+  ('ba222222-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-2', now() - interval '30 minutes', 'review', 'term', 'c4', 3, 1.0, '"ans4"'::jsonb, 4),
+  ('ba222222-0000-4000-8000-000000000002', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-2', now() - interval '15 minutes', 'review', 'term', 'c5', 1, 0.0, '"ans5"'::jsonb, 2),
+  ('ba333333-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', null, now() - interval '5 minutes', 'review', 'term', 'c6', 3, 1.0, '"ans6"'::jsonb, 3);
 
--- Insert 2 legacy events for session 2
-insert into test_legacy_backfill_events (
-  id, user_id, session_id, occurred_at, event_type, item_type, item_id, rating, score, response, confidence, client_latency_ms
-) values
-  ('ba222222-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-2', now() - interval '30 minutes', 'review', 'term', 'c4', 3, 1.0, '"ans4"'::jsonb, 4, 1500),
-  ('ba222222-0000-4000-8000-000000000002', 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-2', now() - interval '15 minutes', 'review', 'term', 'c5', 1, 0.0, '"ans5"'::jsonb, 2, 3000);
+-- Execute Step 1 Additive schema directly on public.learning_events (without defaults on existing rows)
+alter table public.learning_events
+  add column if not exists idempotency_key text,
+  add column if not exists payload_sha256 text,
+  add column if not exists client_seq integer,
+  add column if not exists attempt_id uuid,
+  add column if not exists client_occurred_at timestamptz,
+  add column if not exists effective_occurred_at timestamptz,
+  add column if not exists client_latency_ms integer,
+  add column if not exists event_schema_version text not null default '1.0.0',
+  add column if not exists received_at timestamptz,
+  add column if not exists presented_option_ids text[];
 
--- Insert 1 legacy event with NULL session_id
-insert into test_legacy_backfill_events (
-  id, user_id, session_id, occurred_at, event_type, item_type, item_id, rating, score, response, confidence, client_latency_ms
-) values
-  ('ba333333-0000-4000-8000-000000000001', 'ee111111-0000-4000-8000-000000000001', null, now() - interval '5 minutes', 'review', 'term', 'c6', 3, 1.0, '"ans6"'::jsonb, 3, 1100);
-
--- Execute Step 1 Additive schema (without defaults on existing rows)
-alter table test_legacy_backfill_events
-  add column idempotency_key text,
-  add column payload_sha256 text,
-  add column client_seq integer,
-  add column attempt_id uuid,
-  add column client_occurred_at timestamptz,
-  add column effective_occurred_at timestamptz,
-  add column client_latency_ms_new integer,
-  add column event_schema_version text not null default '1.0.0',
-  add column received_at timestamptz,
-  add column presented_option_ids text[];
-
--- TEST 23: Verify additive columns are initially NULL for existing rows
+-- TEST 23: Verify additive columns are initially NULL for existing rows on public.learning_events
 select is(
-  (select count(*)::int from test_legacy_backfill_events where client_seq is null and idempotency_key is null and payload_sha256 is null),
+  (select count(*)::int from public.learning_events where client_seq is null and idempotency_key is null and payload_sha256 is null),
   6,
-  'Preexisting legacy rows have NULL client_seq, idempotency_key, and payload_sha256 prior to backfill'
+  'Preexisting legacy rows on public.learning_events have NULL client_seq, idempotency_key, and payload_sha256 prior to backfill'
 );
 
--- Execute Step 2 Backfill logic exactly as in migration
-update test_legacy_backfill_events
+-- Execute Step 2 Backfill logic directly on public.learning_events
+update public.learning_events
 set client_occurred_at = coalesce(occurred_at, now())
 where client_occurred_at is null;
 
-update test_legacy_backfill_events
+update public.learning_events
 set effective_occurred_at = client_occurred_at
 where effective_occurred_at is null;
 
-update test_legacy_backfill_events
+update public.learning_events
 set received_at = client_occurred_at
 where received_at is null;
 
-update test_legacy_backfill_events
+update public.learning_events
 set session_id = '00000000-0000-0000-0000-000000000000'
 where session_id is null;
 
@@ -436,19 +429,19 @@ with numbered as (
     partition by user_id, session_id
     order by effective_occurred_at asc, id asc
   )::integer as seq
-  from test_legacy_backfill_events
+  from public.learning_events
   where client_seq is null
 )
-update test_legacy_backfill_events le
+update public.learning_events le
 set client_seq = numbered.seq
 from numbered
 where le.id = numbered.id;
 
-update test_legacy_backfill_events
+update public.learning_events
 set idempotency_key = 'legacy_' || id::text
 where idempotency_key is null or idempotency_key like 'raw_%';
 
-update test_legacy_backfill_events
+update public.learning_events
 set payload_sha256 = encode(digest(convert_to(
   jsonb_build_object(
     'session_id', session_id,
@@ -468,51 +461,87 @@ set payload_sha256 = encode(digest(convert_to(
 ), 'sha256'), 'hex')
 where payload_sha256 is null or payload_sha256 = 'raw_uncomputed_digest';
 
--- TEST 24: Verify client_seq is strictly 1, 2, 3 in temporal order for sess-legacy-1
+-- Execute Step 3 constraints directly on public.learning_events
+alter table public.learning_events
+  alter column client_seq set default 1,
+  alter column client_seq set not null,
+  alter column idempotency_key set default ('raw_' || gen_random_uuid()::text),
+  alter column idempotency_key set not null,
+  alter column client_occurred_at set default now(),
+  alter column client_occurred_at set not null,
+  alter column effective_occurred_at set default now(),
+  alter column effective_occurred_at set not null,
+  alter column received_at set default now(),
+  alter column received_at set not null,
+  alter column payload_sha256 set default 'raw_uncomputed_digest',
+  alter column payload_sha256 set not null;
+
+do $$ begin
+  alter table public.learning_events
+    add constraint learning_events_client_seq_check check (client_seq >= 1);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.learning_events
+    add constraint learning_events_user_session_seq_key unique (user_id, session_id, client_seq);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public.learning_events
+    add constraint learning_events_user_idempotency_key unique (user_id, idempotency_key);
+exception when duplicate_object then null;
+end $$;
+
+-- TEST 24: Verify client_seq on public.learning_events is strictly 1, 2, 3 in temporal order for sess-legacy-1
 select is(
-  (select array_agg(client_seq order by effective_occurred_at asc) from test_legacy_backfill_events where session_id = 'sess-legacy-1'),
+  (select array_agg(client_seq order by effective_occurred_at asc) from public.learning_events where session_id = 'sess-legacy-1'),
   array[1, 2, 3],
-  'Legacy backfill assigns deterministic sequential 1, 2, 3 client_seq per session in temporal order'
+  'Legacy backfill on public.learning_events assigns deterministic sequential 1, 2, 3 client_seq per session in temporal order'
 );
 
--- TEST 25: Verify client_seq is strictly 1, 2 in temporal order for sess-legacy-2
+-- TEST 25: Verify client_seq on public.learning_events is strictly 1, 2 in temporal order for sess-legacy-2
 select is(
-  (select array_agg(client_seq order by effective_occurred_at asc) from test_legacy_backfill_events where session_id = 'sess-legacy-2'),
+  (select array_agg(client_seq order by effective_occurred_at asc) from public.learning_events where session_id = 'sess-legacy-2'),
   array[1, 2],
-  'Legacy backfill assigns deterministic sequential 1, 2 client_seq for second session'
+  'Legacy backfill on public.learning_events assigns deterministic sequential 1, 2 client_seq for second session'
 );
 
--- TEST 26: Verify NULL session_id was normalized and sequenced as 1
+-- TEST 26: Verify NULL session_id was normalized and sequenced as 1 on public.learning_events
 select is(
-  (select client_seq from test_legacy_backfill_events where session_id = '00000000-0000-0000-0000-000000000000'),
+  (select client_seq from public.learning_events where session_id = '00000000-0000-0000-0000-000000000000'),
   1,
-  'Legacy event with NULL session_id normalized to zero UUID and assigned client_seq = 1'
+  'Legacy event on public.learning_events with NULL session_id normalized to zero UUID and assigned client_seq = 1'
 );
 
--- TEST 27: Verify all rows have idempotency_key = legacy_<id>
+-- TEST 27: Verify all rows on public.learning_events have idempotency_key = legacy_<id>
 select is(
-  (select count(*)::int from test_legacy_backfill_events where idempotency_key = 'legacy_' || id::text),
+  (select count(*)::int from public.learning_events where idempotency_key = 'legacy_' || id::text),
   6,
-  'All legacy rows have deterministic idempotency_key matching legacy_<id>'
+  'All legacy rows on public.learning_events have deterministic idempotency_key matching legacy_<id>'
 );
 
--- TEST 28: Verify all rows have 64-char hex SHA-256 digests and none retain placeholder
+-- TEST 28: Verify all rows on public.learning_events have 64-char hex SHA-256 digests and none retain placeholder
 select is(
-  (select count(*)::int from test_legacy_backfill_events where length(payload_sha256) = 64 and payload_sha256 ~ '^[0-9a-f]{64}$' and payload_sha256 <> 'raw_uncomputed_digest'),
+  (select count(*)::int from public.learning_events where length(payload_sha256) = 64 and payload_sha256 ~ '^[0-9a-f]{64}$' and payload_sha256 <> 'raw_uncomputed_digest'),
   6,
-  'All legacy rows have valid 64-character SHA-256 payload digests computed from canonical fields'
+  'All legacy rows on public.learning_events have valid 64-character SHA-256 payload digests computed from canonical fields'
 );
 
--- TEST 29: Verify Step 3 NOT NULL constraints and unique index apply cleanly to backfilled table
-select lives_ok(
-  $$ alter table test_legacy_backfill_events
-       alter column client_seq set not null,
-       alter column idempotency_key set not null,
-       alter column payload_sha256 set not null;
-     alter table test_legacy_backfill_events
-       add constraint test_legacy_user_session_seq_key unique (user_id, session_id, client_seq);
-  $$,
-  'Step 3 NOT NULL and composite UNIQUE constraints apply cleanly without violation on backfilled data'
+-- TEST 29: Verify composite UNIQUE constraint is active and enforced on public.learning_events
+select throws_ok(
+  $$ insert into public.learning_events (
+       id, user_id, session_id, client_seq, idempotency_key, payload_sha256,
+       client_occurred_at, effective_occurred_at, event_type, item_type, item_id
+     ) values (
+       gen_random_uuid(), 'ee111111-0000-4000-8000-000000000001', 'sess-legacy-1', 1,
+       'test-violator-key', '1111111111111111111111111111111111111111111111111111111111111111',
+       now(), now(), 'review', 'term', 'c1'
+     ) $$,
+  '23505',
+  null,
+  'public.learning_events strictly enforces learning_events_user_session_seq_key unique constraint on backfilled table'
 );
 
 select * from finish();
