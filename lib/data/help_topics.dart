@@ -64,6 +64,17 @@ const helpTopics = <HelpTopic>[
     actionRoute: '/settings',
   ),
   HelpTopic(
+    id: 'words',
+    category: HelpCategory.practiceAndExams,
+    title: 'Words (spelling lists)',
+    summary: 'Practice spelling with your own word lists.',
+    body:
+        'Open Library and choose Words to make spelling lists and practice them. Words stays next to the search box while you search, and searching for "words" or "spelling" also shows it.',
+    keywords: ['words', 'spelling', 'spell', 'word list', 'vocabulary'],
+    actionLabel: 'Open Words',
+    actionRoute: '/words',
+  ),
+  HelpTopic(
     id: 'flashcards',
     category: HelpCategory.practiceAndExams,
     title: 'Flashcards',
