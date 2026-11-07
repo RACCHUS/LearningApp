@@ -49,7 +49,8 @@ class Connection:
         self.rollbacks += 1
 
 
-ROW = (OWNER, SESSION, ATTEMPT, EXPIRES)
+PERMIT = {"owner_id":OWNER, "session_id":SESSION, "attempt_id":ATTEMPT, "expires_at":EXPIRES.isoformat()}
+ROW = (PERMIT,)
 
 
 class UploadDbTests(unittest.TestCase):
@@ -60,26 +61,23 @@ class UploadDbTests(unittest.TestCase):
         self.assertEqual(permit, UploadPermit(OWNER, SESSION, ATTEMPT, EXPIRES))
         self.assertEqual(conn.commits, 0)
         sql, args = conn.queries[0]
-        self.assertIn("FOR UPDATE OF a NOWAIT", sql)
-        self.assertIn("auth.sessions", sql)
-        self.assertIn("a.upload_committed_at IS NULL", sql)
-        self.assertIn("a.upload_enabled=false", sql)
+        self.assertIn("software_learning_private.sl_lock_excel_upload", sql)
+        self.assertNotIn("auth.sessions", sql)
         self.assertEqual(args, (ATTEMPT, OWNER, SESSION))
         self.assertNotIn(OWNER, sql)
         self.assertTrue(repo.seal(permit, "b"*64, "version-1"))
         self.assertEqual(conn.commits, 1)
         self.assertEqual(conn.rollbacks, 0)
         sql2, args2 = conn.queries[1]
-        self.assertIn("upload_sha256", sql2)
-        self.assertIn("upload_committed_at", sql2)
-        self.assertIn("upload_enabled=true", sql2)
-        self.assertEqual(args2, ("b"*64, "version-1", OWNER, SESSION, ATTEMPT))
+        self.assertIn("software_learning_private.sl_seal_excel_upload", sql2)
+        self.assertEqual(args2, (ATTEMPT, OWNER, SESSION, "b"*64, "version-1"))
         self.assertEqual(conn.closed_cursors, 2)
 
     def test_missing_attempt_and_invalid_record_fail_closed(self):
-        for result in (None, ("wrong", SESSION, ATTEMPT, EXPIRES),
-                       (OWNER, SESSION, ATTEMPT, "not-datetime"),
-                       (OWNER, SESSION, ATTEMPT, AT-timedelta(seconds=1))):
+        for result in ((None,),
+                       ({**PERMIT, "owner_id": "wrong"},),
+                       ({**PERMIT, "expires_at": "not-datetime"},),
+                       ({**PERMIT, "expires_at": (AT-timedelta(seconds=1)).isoformat()},)):
             with self.subTest(result=result):
                 conn = Connection(result)
                 repo = DbApiUploadRepository(conn)
