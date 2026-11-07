@@ -55,7 +55,7 @@ ROW = (PERMIT,)
 
 class UploadDbTests(unittest.TestCase):
     def test_begin_holds_row_lock_until_sealed_commit(self):
-        conn = Connection(ROW, (ATTEMPT,))
+        conn = Connection(ROW, (True,))
         repo = DbApiUploadRepository(conn)
         permit = repo.begin(OWNER, SESSION, ATTEMPT, AT)
         self.assertEqual(permit, UploadPermit(OWNER, SESSION, ATTEMPT, EXPIRES))
