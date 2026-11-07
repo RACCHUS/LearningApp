@@ -1,29 +1,36 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
+import 'package:learning_pwa/widgets/mcq_options.dart';
 
 class AssessmentItemRenderer extends StatefulWidget {
   final AssessmentItem item;
   final VoidCallback? onCompleted;
+  final VoidCallback? onRetry;
   final Function(bool isCorrect, double score)? onAnswerSubmitted;
   final bool isExamMode;
   final dynamic initialResponse;
   final ValueChanged<dynamic>? onResponseChanged;
   final bool shuffleOptions;
   final int? presentationSeed;
+  final List<int>? avoidOrder;
+  final ValueChanged<List<int>>? onPresentationOrderChanged;
 
   const AssessmentItemRenderer({
     super.key,
     required this.item,
     this.onCompleted,
+    this.onRetry,
     this.onAnswerSubmitted,
     this.isExamMode = false,
     this.initialResponse,
     this.onResponseChanged,
     this.shuffleOptions = true,
     this.presentationSeed,
+    this.avoidOrder,
+    this.onPresentationOrderChanged,
   });
 
   @override
@@ -31,12 +38,18 @@ class AssessmentItemRenderer extends StatefulWidget {
 }
 
 class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
+  static int _globalAttemptNonce = 0x5bf03635;
+
   // Option presentation mapping: index in presentation -> original option index
   List<int> _presentationOrder = [];
   List<int> get presentationOrder => List.unmodifiable(_presentationOrder);
 
+  late int _localAttemptNonce;
+  int get attemptNonce => widget.presentationSeed ?? _localAttemptNonce;
+
   // State for single choice
   int? _selectedSingleChoice;
+  int? get selectedSingleChoice => _selectedSingleChoice;
 
   // State for multi-select (SATA)
   final Set<int> _selectedMultiIndices = {};
@@ -57,7 +70,26 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   @override
   void initState() {
     super.initState();
-    _initInteractionState();
+    _localAttemptNonce = _nextLocalNonce(previousOrder: widget.avoidOrder);
+    _initInteractionState(previousOrder: widget.avoidOrder);
+  }
+
+  int _nextLocalNonce({List<int>? previousOrder}) {
+    final optionsRaw = widget.item.responseSpec['options'] as List?;
+    final options = optionsRaw?.map((e) => e.toString()).toList();
+    _globalAttemptNonce = McqOptions.nextPresentationNonce(
+      currentNonce: _globalAttemptNonce ^ DateTime.now().microsecondsSinceEpoch,
+      options: options,
+      itemHash: widget.item.id.hashCode,
+      previousOrder: previousOrder,
+    );
+    return _globalAttemptNonce;
+  }
+
+  static bool _nullableOrdersEqual(List<int>? a, List<int>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    return McqOptions.listsEqual(a, b);
   }
 
   @override
@@ -65,10 +97,61 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.id != widget.item.id ||
         oldWidget.initialResponse != widget.initialResponse ||
-        oldWidget.presentationSeed != widget.presentationSeed) {
+        oldWidget.presentationSeed != widget.presentationSeed ||
+        !_nullableOrdersEqual(oldWidget.avoidOrder, widget.avoidOrder)) {
+      final inStatePreviousOrder =
+          (oldWidget.item.id == widget.item.id &&
+              oldWidget.presentationSeed != widget.presentationSeed &&
+              _presentationOrder.isNotEmpty)
+          ? List<int>.from(_presentationOrder)
+          : null;
+      final effectivePreviousOrder = widget.avoidOrder ?? inStatePreviousOrder;
+      if (widget.presentationSeed == null) {
+        _localAttemptNonce = _nextLocalNonce(
+          previousOrder: effectivePreviousOrder,
+        );
+      }
       _resetState();
-      _initInteractionState();
+      _initInteractionState(previousOrder: effectivePreviousOrder);
     }
+  }
+
+  /// Retries the current item with a fresh per-attempt nonce and option permutation.
+  void retry() {
+    if (widget.onRetry != null) {
+      widget.onRetry!();
+      return;
+    }
+    final previousOrder = _presentationOrder.isNotEmpty
+        ? List<int>.from(_presentationOrder)
+        : null;
+    setState(() {
+      _localAttemptNonce = _nextLocalNonce(previousOrder: previousOrder);
+      _resetState();
+      _initInteractionState(previousOrder: previousOrder);
+    });
+  }
+
+  /// Selects a single-choice option via spoken input (e.g. "Option A", "B", "first")
+  /// mapped through the current [presentationOrder].
+  int? selectOptionByVoice(String voiceInput) {
+    if (_submitted ||
+        widget.item.interactionType != AssessmentInteractionType.singleChoice) {
+      return null;
+    }
+    final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
+    final mapped = VoiceInputHandler.mapSpokenChoiceToIndex(
+      voiceInput,
+      optionCount: optionsRaw.length,
+      presentationOrder: _presentationOrder,
+    );
+    if (mapped != null) {
+      setState(() => _selectedSingleChoice = mapped);
+      if (widget.isExamMode) {
+        widget.onResponseChanged?.call(mapped);
+      }
+    }
+    return mapped;
   }
 
   void _resetState() {
@@ -83,7 +166,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     _feedbackMessage = '';
   }
 
-  void _initInteractionState() {
+  void _initInteractionState({List<int>? previousOrder}) {
     final spec = widget.item.responseSpec;
     if (widget.item.interactionType == AssessmentInteractionType.singleChoice ||
         widget.item.interactionType == AssessmentInteractionType.multiSelect) {
@@ -92,52 +175,52 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       _presentationOrder = List.generate(count, (i) => i);
 
       if (widget.shuffleOptions && count > 1) {
-        final anchorIndices = <int>[];
-        final nonAnchorIndices = <int>[];
-
-        for (int i = 0; i < count; i++) {
-          final text = optionsRaw[i].toString().toLowerCase();
-          final isAnchor = text.contains('all of the above') ||
-              text.contains('none of the above') ||
-              text.contains('both a and') ||
-              text.contains('both b and') ||
-              text.contains('neither a nor') ||
-              text.contains('neither of the above');
-          if (isAnchor) {
-            anchorIndices.add(i);
-          } else {
-            nonAnchorIndices.add(i);
-          }
-        }
-
-        final seed = widget.presentationSeed != null
-            ? (widget.presentationSeed! ^ widget.item.id.hashCode)
-            : (widget.item.id.hashCode ^ 0x5bf03635);
-        final rand = math.Random(seed);
-        nonAnchorIndices.shuffle(rand);
-
-        _presentationOrder = [...nonAnchorIndices, ...anchorIndices];
+        // Single-XOR Combination Contract: combine raw presentation nonce with item.id.hashCode once
+        final rawNonce = widget.presentationSeed ?? _localAttemptNonce;
+        final seed = rawNonce ^ widget.item.id.hashCode;
+        final optionStrings = optionsRaw.map((e) => e.toString()).toList();
+        _presentationOrder = McqOptions.computePresentationOrder(
+          optionStrings,
+          presentationSeed: seed,
+          shuffle: true,
+          avoidOrder: previousOrder ?? widget.avoidOrder,
+        );
       }
+      widget.onPresentationOrderChanged?.call(
+        List.unmodifiable(_presentationOrder),
+      );
     }
 
-    if (widget.item.interactionType == AssessmentInteractionType.orderedResponse) {
+    if (widget.item.interactionType ==
+        AssessmentInteractionType.orderedResponse) {
       if (widget.initialResponse is List) {
-        _orderedItems = (widget.initialResponse as List).map((e) => e.toString()).toList();
+        _orderedItems = (widget.initialResponse as List)
+            .map((e) => e.toString())
+            .toList();
       } else {
         final itemsRaw = spec['items'] as List? ?? [];
         _orderedItems = itemsRaw.map((e) => e.toString()).toList();
       }
-    } else if (widget.item.interactionType == AssessmentInteractionType.singleChoice) {
+    } else if (widget.item.interactionType ==
+        AssessmentInteractionType.singleChoice) {
       if (widget.initialResponse is int) {
         _selectedSingleChoice = widget.initialResponse as int;
       }
-    } else if (widget.item.interactionType == AssessmentInteractionType.multiSelect) {
+    } else if (widget.item.interactionType ==
+        AssessmentInteractionType.multiSelect) {
       if (widget.initialResponse is Iterable) {
-        _selectedMultiIndices.addAll((widget.initialResponse as Iterable).map((e) => (e as num).toInt()));
+        _selectedMultiIndices.addAll(
+          (widget.initialResponse as Iterable).map((e) => (e as num).toInt()),
+        );
       }
-    } else if (widget.item.interactionType == AssessmentInteractionType.matching) {
+    } else if (widget.item.interactionType ==
+        AssessmentInteractionType.matching) {
       if (widget.initialResponse is Map) {
-        _userMatches.addAll((widget.initialResponse as Map).map((k, v) => MapEntry(k.toString(), v.toString())));
+        _userMatches.addAll(
+          (widget.initialResponse as Map).map(
+            (k, v) => MapEntry(k.toString(), v.toString()),
+          ),
+        );
       }
     }
   }
@@ -154,7 +237,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
     switch (item.interactionType) {
       case AssessmentInteractionType.singleChoice:
-        final correctIdx = scoring['correct_index'] as int? ??
+        final correctIdx =
+            scoring['correct_index'] as int? ??
             scoring['correct_answer'] as int? ??
             0;
         correct = _selectedSingleChoice == correctIdx;
@@ -165,26 +249,39 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         break;
 
       case AssessmentInteractionType.multiSelect:
-        final List<dynamic> correctIndicesRaw = scoring['correct_indices'] as List? ?? [];
-        final correctSet = correctIndicesRaw.map((e) => (e as num).toInt()).toSet();
+        final List<dynamic> correctIndicesRaw =
+            scoring['correct_indices'] as List? ?? [];
+        final correctSet = correctIndicesRaw
+            .map((e) => (e as num).toInt())
+            .toSet();
         final method = scoring['scoring_method'] as String? ?? 'all_or_nothing';
 
         if (method == 'all_or_nothing') {
-          correct = _selectedMultiIndices.length == correctSet.length &&
+          correct =
+              _selectedMultiIndices.length == correctSet.length &&
               _selectedMultiIndices.containsAll(correctSet);
           score = correct ? 1.0 : 0.0;
         } else {
           // Partial credit: (correct selections - false selections) / total correct
-          int correctSelected = _selectedMultiIndices.intersection(correctSet).length;
-          int incorrectSelected = _selectedMultiIndices.difference(correctSet).length;
+          int correctSelected = _selectedMultiIndices
+              .intersection(correctSet)
+              .length;
+          int incorrectSelected = _selectedMultiIndices
+              .difference(correctSet)
+              .length;
           int totalCorrect = correctSet.isNotEmpty ? correctSet.length : 1;
-          score = ((correctSelected - incorrectSelected) / totalCorrect).clamp(0.0, 1.0);
+          score = ((correctSelected - incorrectSelected) / totalCorrect).clamp(
+            0.0,
+            1.0,
+          );
           correct = score >= 0.99;
         }
 
         feedback = correct
             ? 'Practice evidence: All criteria identified'
-            : (score > 0 ? 'Partial alignment: review all options' : 'Needs reinforcement');
+            : (score > 0
+                  ? 'Partial alignment: review all options'
+                  : 'Needs reinforcement');
         break;
 
       case AssessmentInteractionType.orderedResponse:
@@ -195,13 +292,16 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             .whereType<num>()
             .map((e) => e.toInt())
             .toList();
-        final hasValidOrder = items.isNotEmpty &&
+        final hasValidOrder =
+            items.isNotEmpty &&
             correctOrder.length == items.length &&
             correctOrder.every((index) => index >= 0 && index < items.length);
-        final expectedOrder =
-            hasValidOrder ? correctOrder.map((index) => items[index]).toList() : <String>[];
+        final expectedOrder = hasValidOrder
+            ? correctOrder.map((index) => items[index]).toList()
+            : <String>[];
 
-        correct = hasValidOrder &&
+        correct =
+            hasValidOrder &&
             _orderedItems.length == expectedOrder.length &&
             List.generate(
               expectedOrder.length,
@@ -214,7 +314,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         break;
 
       case AssessmentInteractionType.matching:
-        final Map<String, dynamic> correctPairs = (scoring['correct_pairs'] as Map?)?.cast<String, dynamic>() ?? {};
+        final Map<String, dynamic> correctPairs =
+            (scoring['correct_pairs'] as Map?)?.cast<String, dynamic>() ?? {};
         int matchedCount = 0;
         correctPairs.forEach((k, v) {
           if (_userMatches[k] == v.toString()) {
@@ -267,7 +368,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
               boxShadow: [
                 BoxShadow(
@@ -284,9 +387,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.12,
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -302,9 +410,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     const SizedBox(width: 8),
                     if (item.cognitiveLevel != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -312,15 +425,22 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                           style: GoogleFonts.inter(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.grey[300] : const Color(0xFF64748B),
+                            color: isDark
+                                ? Colors.grey[300]
+                                : const Color(0xFF64748B),
                           ),
                         ),
                       ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: _difficultyColor(item.difficulty).withValues(alpha: 0.12),
+                        color: _difficultyColor(
+                          item.difficulty,
+                        ).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -373,15 +493,20 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 // Submitted Feedback & Explanations
                 if (!widget.isExamMode && _submitted) ...[
                   _buildFeedbackBanner(context, isDark),
-                  if (item.explanation != null && item.explanation!.isNotEmpty) ...[
+                  if (item.explanation != null &&
+                      item.explanation!.isNotEmpty) ...[
                     const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                        color: isDark
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
                         ),
                       ),
                       child: Column(
@@ -389,7 +514,11 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.school_rounded, size: 16, color: Color(0xFF3B82F6)),
+                              const Icon(
+                                Icons.school_rounded,
+                                size: 16,
+                                color: Color(0xFF3B82F6),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'CLINICAL / ARCHITECTURAL RATIONALE',
@@ -408,13 +537,70 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               height: 1.5,
-                              color: isDark ? Colors.grey[200] : const Color(0xFF334155),
+                              color: isDark
+                                  ? Colors.grey[200]
+                                  : const Color(0xFF334155),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ],
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: retry,
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: Text(
+                          'Try Again',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      if (widget.onCompleted != null) ...[
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: widget.onCompleted,
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                          ),
+                          label: Text(
+                            'Next Question',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -433,7 +619,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       case AssessmentInteractionType.orderedResponse:
         return true;
       case AssessmentInteractionType.matching:
-        final leftItems = widget.item.responseSpec['left_items'] as List? ??
+        final leftItems =
+            widget.item.responseSpec['left_items'] as List? ??
             widget.item.responseSpec['keys'] as List? ??
             const [];
         return leftItems.isNotEmpty && _userMatches.length >= leftItems.length;
@@ -456,7 +643,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.35),
+            color: Theme.of(
+              context,
+            ).colorScheme.errorContainer.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Text(
@@ -470,11 +659,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   Widget _buildSingleChoice(BuildContext context, bool isDark) {
     final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
     final options = optionsRaw.map((o) => o.toString()).toList();
-    final correctIdx = widget.item.scoringSpec['correct_index'] as int? ??
+    final correctIdx =
+        widget.item.scoringSpec['correct_index'] as int? ??
         widget.item.scoringSpec['correct_answer'] as int? ??
         0;
 
-    final presentation = _presentationOrder.isNotEmpty && _presentationOrder.length == options.length
+    final presentation =
+        _presentationOrder.isNotEmpty &&
+            _presentationOrder.length == options.length
         ? _presentationOrder
         : List.generate(options.length, (i) => i);
 
@@ -491,14 +683,20 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         if (_submitted) {
           if (origIdx == correctIdx) {
             borderColor = const Color(0xFF10B981);
-            bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.08);
+            bgColor = const Color(
+              0xFF10B981,
+            ).withValues(alpha: isDark ? 0.2 : 0.08);
           } else if (isSelected) {
             borderColor = const Color(0xFFEF4444);
-            bgColor = const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08);
+            bgColor = const Color(
+              0xFFEF4444,
+            ).withValues(alpha: isDark ? 0.2 : 0.08);
           }
         } else if (isSelected) {
           borderColor = Theme.of(context).colorScheme.primary;
-          bgColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.08);
+          bgColor = Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: 0.08);
         }
 
         return Padding(
@@ -516,11 +714,21 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: bgColor ?? (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                color:
+                    bgColor ??
+                    (isDark
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: borderColor ?? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                  width: isSelected || (_submitted && origIdx == correctIdx) ? 1.5 : 1.0,
+                  color:
+                      borderColor ??
+                      (isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0)),
+                  width: isSelected || (_submitted && origIdx == correctIdx)
+                      ? 1.5
+                      : 1.0,
                 ),
               ),
               child: Row(
@@ -545,7 +753,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? Colors.grey[300] : Colors.grey[700]),
                       ),
                     ),
                   ),
@@ -555,14 +765,24 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       text,
                       style: GoogleFonts.inter(
                         fontSize: 14.5,
-                        color: isDark ? Colors.grey[100] : const Color(0xFF1E293B),
+                        color: isDark
+                            ? Colors.grey[100]
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                   ),
                   if (_submitted && origIdx == correctIdx)
-                    const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF10B981),
+                      size: 20,
+                    ),
                   if (_submitted && isSelected && origIdx != correctIdx)
-                    const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 20),
+                    const Icon(
+                      Icons.cancel_rounded,
+                      color: Color(0xFFEF4444),
+                      size: 20,
+                    ),
                 ],
               ),
             ),
@@ -576,10 +796,13 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   Widget _buildMultiSelect(BuildContext context, bool isDark) {
     final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
     final options = optionsRaw.map((o) => o.toString()).toList();
-    final List<dynamic> correctIndicesRaw = widget.item.scoringSpec['correct_indices'] as List? ?? [];
+    final List<dynamic> correctIndicesRaw =
+        widget.item.scoringSpec['correct_indices'] as List? ?? [];
     final correctSet = correctIndicesRaw.map((e) => (e as num).toInt()).toSet();
 
-    final presentation = _presentationOrder.isNotEmpty && _presentationOrder.length == options.length
+    final presentation =
+        _presentationOrder.isNotEmpty &&
+            _presentationOrder.length == options.length
         ? _presentationOrder
         : List.generate(options.length, (i) => i);
 
@@ -592,12 +815,18 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
           decoration: BoxDecoration(
             color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+            border: Border.all(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_box_outlined, size: 14, color: Color(0xFF8B5CF6)),
+              const Icon(
+                Icons.check_box_outlined,
+                size: 14,
+                color: Color(0xFF8B5CF6),
+              ),
               const SizedBox(width: 6),
               Text(
                 'Select all that apply (${_selectedMultiIndices.length} selected)',
@@ -622,14 +851,20 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
           if (_submitted) {
             if (isCorrectChoice) {
               borderColor = const Color(0xFF10B981);
-              bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.08);
+              bgColor = const Color(
+                0xFF10B981,
+              ).withValues(alpha: isDark ? 0.2 : 0.08);
             } else if (isSelected) {
               borderColor = const Color(0xFFEF4444);
-              bgColor = const Color(0xFFEF4444).withValues(alpha: isDark ? 0.2 : 0.08);
+              bgColor = const Color(
+                0xFFEF4444,
+              ).withValues(alpha: isDark ? 0.2 : 0.08);
             }
           } else if (isSelected) {
             borderColor = Theme.of(context).colorScheme.primary;
-            bgColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.08);
+            bgColor = Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.08);
           }
 
           return Padding(
@@ -646,24 +881,41 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                         }
                       });
                       if (widget.isExamMode) {
-                        widget.onResponseChanged?.call(_selectedMultiIndices.toList());
+                        widget.onResponseChanged?.call(
+                          _selectedMultiIndices.toList(),
+                        );
                       }
                     },
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: bgColor ?? (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                  color:
+                      bgColor ??
+                      (isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF8FAFC)),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: borderColor ?? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                    width: isSelected || (_submitted && isCorrectChoice) ? 1.5 : 1.0,
+                    color:
+                        borderColor ??
+                        (isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0)),
+                    width: isSelected || (_submitted && isCorrectChoice)
+                        ? 1.5
+                        : 1.0,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                      isSelected
+                          ? Icons.check_box_rounded
+                          : Icons.check_box_outline_blank_rounded,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : (isDark ? Colors.grey[500] : Colors.grey[400]),
@@ -675,14 +927,24 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                         text,
                         style: GoogleFonts.inter(
                           fontSize: 14.5,
-                          color: isDark ? Colors.grey[100] : const Color(0xFF1E293B),
+                          color: isDark
+                              ? Colors.grey[100]
+                              : const Color(0xFF1E293B),
                         ),
                       ),
                     ),
                     if (_submitted && isCorrectChoice)
-                      const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      ),
                     if (_submitted && isSelected && !isCorrectChoice)
-                      const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 20),
+                      const Icon(
+                        Icons.cancel_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 20,
+                      ),
                   ],
                 ),
               ),
@@ -719,7 +981,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     _orderedItems.insert(newIndex, item);
                   });
                   if (widget.isExamMode) {
-                    widget.onResponseChanged?.call(List<String>.from(_orderedItems));
+                    widget.onResponseChanged?.call(
+                      List<String>.from(_orderedItems),
+                    );
                   }
                 },
           itemBuilder: (ctx, index) {
@@ -729,10 +993,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Row(
@@ -742,7 +1010,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     height: 24,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
@@ -762,7 +1032,11 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                     ),
                   ),
                   if (!_submitted)
-                    const Icon(Icons.drag_indicator_rounded, color: Colors.grey, size: 20),
+                    const Icon(
+                      Icons.drag_indicator_rounded,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
                 ],
               ),
             );
@@ -774,10 +1048,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   // 4. Matching Renderer
   Widget _buildMatching(BuildContext context, bool isDark) {
-    final keysRaw = widget.item.responseSpec['left_items'] as List? ??
+    final keysRaw =
+        widget.item.responseSpec['left_items'] as List? ??
         widget.item.responseSpec['keys'] as List? ??
         const [];
-    final valuesRaw = widget.item.responseSpec['right_items'] as List? ??
+    final valuesRaw =
+        widget.item.responseSpec['right_items'] as List? ??
         widget.item.responseSpec['values'] as List? ??
         const [];
     final keys = keysRaw.map((e) => e.toString()).toList();
@@ -788,7 +1064,10 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       children: [
         Text(
           'Tap a prompt on the left, then tap its matching response on the right:',
-          style: GoogleFonts.inter(fontSize: 13, color: isDark ? Colors.grey[400] : const Color(0xFF64748B)),
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 14),
         Row(
@@ -804,28 +1083,43 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: InkWell(
-                      onTap: _submitted ? null : () => setState(() => _selectedMatchKey = key),
+                      onTap: _submitted
+                          ? null
+                          : () => setState(() => _selectedMatchKey = key),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.12)
                               : (hasMatch
-                                  ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.3) : const Color(0xFFEFF6FF))
-                                  : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC))),
+                                    ? (isDark
+                                          ? const Color(
+                                              0xFF1E3A8A,
+                                            ).withValues(alpha: 0.3)
+                                          : const Color(0xFFEFF6FF))
+                                    : (isDark
+                                          ? const Color(0xFF0F172A)
+                                          : const Color(0xFFF8FAFC))),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
                                 : (hasMatch
-                                    ? const Color(0xFF3B82F6)
-                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                                      ? const Color(0xFF3B82F6)
+                                      : (isDark
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0))),
                           ),
                         ),
                         child: Text(
                           key,
-                          style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -851,7 +1145,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                                 _selectedMatchKey = null;
                               });
                               if (widget.isExamMode) {
-                                widget.onResponseChanged?.call(Map<String, String>.from(_userMatches));
+                                widget.onResponseChanged?.call(
+                                  Map<String, String>.from(_userMatches),
+                                );
                               }
                             },
                       borderRadius: BorderRadius.circular(8),
@@ -859,13 +1155,22 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: isMatched
-                              ? (isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.3) : const Color(0xFFEFF6FF))
-                              : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                              ? (isDark
+                                    ? const Color(
+                                        0xFF1E3A8A,
+                                      ).withValues(alpha: 0.3)
+                                    : const Color(0xFFEFF6FF))
+                              : (isDark
+                                    ? const Color(0xFF0F172A)
+                                    : const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isMatched
                                 ? const Color(0xFF3B82F6)
-                                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                                : (isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFE2E8F0)),
+                          ),
                         ),
                         child: Text(
                           val,
@@ -884,8 +1189,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   }
 
   Widget _buildFeedbackBanner(BuildContext context, bool isDark) {
-    final color = _isCorrect ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
-    final icon = _isCorrect ? Icons.check_circle_rounded : Icons.info_outline_rounded;
+    final color = _isCorrect
+        ? const Color(0xFF10B981)
+        : const Color(0xFFF59E0B);
+    final icon = _isCorrect
+        ? Icons.check_circle_rounded
+        : Icons.info_outline_rounded;
 
     return Container(
       margin: const EdgeInsets.only(top: 14),
