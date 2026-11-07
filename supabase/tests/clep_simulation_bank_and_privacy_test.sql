@@ -142,6 +142,12 @@ select lives_ok(
   'ingest_curriculum_manifest executes cleanly and stages target version'
 );
 
+-- Store fixture version ID in temp table (accessible across role changes in session)
+create temp table _fixture_ids on commit drop as
+select v.id as version_id
+from public.target_versions v
+where v.version_code = '2026-PRIV';
+
 -- ----------------------------------------------------------------------------
 -- 2. Verify Database Persistence of Item Metadata
 -- ----------------------------------------------------------------------------
@@ -178,7 +184,36 @@ select is(
 );
 
 -- ----------------------------------------------------------------------------
--- 3. Verify Privacy Under Anon Role (Unauthenticated Learner) & Negative Guards
+-- 3. Target Version Lifecycle & Negative Guard on Draft/Unpublished Versions
+-- ----------------------------------------------------------------------------
+-- Test: Authenticated user cannot issue simulation exam on draft version
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
+
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam((select version_id from _fixture_ids)) $$,
+  '42501',
+  null,
+  'Authenticated learner cannot issue simulation exam on draft/unpublished target version'
+);
+
+-- Now transition TargetVersion: draft -> review_ready -> published so curriculum is active
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+update public.target_versions
+set status = 'review_ready'
+where version_code = '2026-PRIV';
+
+update public.target_versions
+set status = 'published'
+where version_code = '2026-PRIV';
+
+-- ----------------------------------------------------------------------------
+-- 4. Verify Privacy Under Anon Role (Unauthenticated Learner) & Negative Guards
 -- ----------------------------------------------------------------------------
 reset role;
 set local role anon;
@@ -243,35 +278,6 @@ select throws_ok(
   null,
   'Anon learner cannot call clep_submit_simulation_exam (blocked by permissions)'
 );
-
--- ----------------------------------------------------------------------------
--- 4. Target Version Lifecycle & Negative Guard on Unpublished Versions
--- ----------------------------------------------------------------------------
--- Test: Authenticated user cannot issue simulation exam on draft version
-reset role;
-set local role authenticated;
-set local "request.jwt.claim.role" to 'authenticated';
-set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
-
-select throws_ok(
-  $$ select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) $$,
-  '42501',
-  null,
-  'Authenticated learner cannot issue simulation exam on draft/unpublished target version'
-);
-
--- Now transition TargetVersion: draft -> review_ready -> published
-reset role;
-set local role service_role;
-set local "request.jwt.claim.role" to 'service_role';
-
-update public.target_versions
-set status = 'review_ready'
-where version_code = '2026-PRIV';
-
-update public.target_versions
-set status = 'published'
-where version_code = '2026-PRIV';
 
 -- ----------------------------------------------------------------------------
 -- 5. Verify Direct Table RLS Under Authenticated Role
@@ -442,13 +448,19 @@ select throws_ok(
 );
 
 -- NEGATIVE GUARD 5: Cannot submit expired attempt
-do $$
-begin
-  update public.clep_simulation_attempts
-  set expires_at = clock_timestamp() - interval '10 seconds'
-  where id = (select attempt_id from _test_ctx);
-end;
-$$;
+-- Note: Must update attempt under service_role privilege because client roles have SELECT-only
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+update public.clep_simulation_attempts
+set expires_at = clock_timestamp() - interval '10 seconds'
+where id = (select attempt_id from _test_ctx);
+
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
 
 select throws_ok(
   $$ select public.clep_submit_simulation_exam(
