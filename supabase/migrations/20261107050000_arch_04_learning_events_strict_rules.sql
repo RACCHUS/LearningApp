@@ -21,12 +21,12 @@
 
 -- 1. ADDITIVE SCHEMA ON public.learning_events
 ALTER TABLE public.learning_events
-  ADD COLUMN IF NOT EXISTS idempotency_key TEXT,
-  ADD COLUMN IF NOT EXISTS payload_sha256 TEXT,
-  ADD COLUMN IF NOT EXISTS client_seq INTEGER,
+  ADD COLUMN IF NOT EXISTS idempotency_key TEXT DEFAULT ('raw_' || gen_random_uuid()::TEXT),
+  ADD COLUMN IF NOT EXISTS payload_sha256 TEXT DEFAULT 'raw_uncomputed_digest',
+  ADD COLUMN IF NOT EXISTS client_seq INTEGER DEFAULT 1,
   ADD COLUMN IF NOT EXISTS attempt_id UUID,
-  ADD COLUMN IF NOT EXISTS client_occurred_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS effective_occurred_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS client_occurred_at TIMESTAMPTZ DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS effective_occurred_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS client_latency_ms INTEGER,
   ADD COLUMN IF NOT EXISTS event_schema_version TEXT NOT NULL DEFAULT '1.0.0',
   ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -88,10 +88,15 @@ WHERE payload_sha256 IS NULL;
 
 -- 3. STRICT CONSTRAINTS & INDEXES
 ALTER TABLE public.learning_events
+  ALTER COLUMN client_seq SET DEFAULT 1,
   ALTER COLUMN client_seq SET NOT NULL,
+  ALTER COLUMN idempotency_key SET DEFAULT ('raw_' || gen_random_uuid()::TEXT),
   ALTER COLUMN idempotency_key SET NOT NULL,
+  ALTER COLUMN client_occurred_at SET DEFAULT NOW(),
   ALTER COLUMN client_occurred_at SET NOT NULL,
+  ALTER COLUMN effective_occurred_at SET DEFAULT NOW(),
   ALTER COLUMN effective_occurred_at SET NOT NULL,
+  ALTER COLUMN payload_sha256 SET DEFAULT 'raw_uncomputed_digest',
   ALTER COLUMN payload_sha256 SET NOT NULL;
 
 DO $$ BEGIN
@@ -245,7 +250,7 @@ BEGIN
   END LOOP;
 
   -- Step 2: Ingestion & Canonical Digest Preflight in Temp Table
-  CREATE TEMP TABLE temp_batch_items (
+  CREATE TEMP TABLE IF NOT EXISTS temp_batch_items (
     input_idx INTEGER PRIMARY KEY,
     raw_json JSONB,
     idempotency_key TEXT,
@@ -279,6 +284,7 @@ BEGIN
     event_id UUID,
     effective_occurred_at TIMESTAMPTZ
   ) ON COMMIT DROP;
+  TRUNCATE temp_batch_items;
 
   FOR v_idx IN 1..array_length(p_events, 1) LOOP
     v_raw_item := p_events[v_idx];
