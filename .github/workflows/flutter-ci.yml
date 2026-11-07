@@ -130,6 +130,9 @@ jobs:
       - name: Test Excel workbook-to-provisional-grade pipeline
         run: python3 -m unittest discover -s tool/tests -p 'test_excel_pilot_pipeline.py' -v
 
+      - name: Test Excel Storage API retention coordinator (default-off)
+        run: python3 -m unittest discover -s tool/tests -p 'test_storage_retention.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
