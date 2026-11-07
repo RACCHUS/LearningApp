@@ -82,7 +82,7 @@ SELECT is((SELECT response->>'checker_version' FROM sl_issue_a),
  '1','Checker version is server-controlled and pinned');
 SELECT is((SELECT response->>'status' FROM sl_issue_a),
  'issued','Issuer does not claim graded or verified success');
-SELECT is((SELECT (SELECT count(*)::integer FROM jsonb_object_keys((SELECT response->'inputs' FROM sl_issue_a))) FROM sl_issue_a),
+SELECT is((SELECT count(*)::integer FROM sl_issue_a, jsonb_object_keys(response->'inputs')),
  8,'Server returns exactly eight synthetic transaction amounts');
 
 SELECT is((SELECT count(*)::integer FROM public.software_learning_attempts),
@@ -133,8 +133,10 @@ SELECT is(public.sl_delete_excel_budget_attempt(
  FALSE,'Replayed deletion is an idempotent no-op');
 SELECT is((SELECT count(*)::integer FROM public.software_learning_attempts),
  1,'Deleting one attempt preserves another owner attempt');
+RESET ROLE;
 SELECT is((SELECT count(*)::integer FROM software_learning_private.excel_attempt_inputs),
  1,'Erasure cascades to private expected values');
+SET LOCAL ROLE authenticated;
 
 DO $jwt$ BEGIN
  PERFORM set_config('request.jwt.claims',
