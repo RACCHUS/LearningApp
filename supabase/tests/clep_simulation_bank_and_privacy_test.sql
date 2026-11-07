@@ -165,54 +165,50 @@ set local role anon;
 set local "request.jwt.claim.role" to 'anon';
 
 -- Formative lesson questions in public.questions ARE accessible to learners
-select cmp_ok(
+select is(
   (
-    select count(*) from public.questions q
+    select count(*)::integer from public.questions q
     join public.lessons l on l.id = q.lesson_id
     join public.target_versions v on v.id = l.origin_target_version_id
     where v.version_code = '2026-PRIV'
   ),
-  '=',
   1,
   'Anon learner can read formative check-for-understanding questions'
 );
 
 -- Formative assessment item (unprotected) IS accessible
-select cmp_ok(
+select is(
   (
-    select count(*) from public.assessment_items i
+    select count(*)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Formative Item:%'
   ),
-  '=',
   1,
   'Anon learner can read unprotected formative assessment items'
 );
 
 -- Restrictive RLS policy BLOCKS direct select of protected simulation items
-select cmp_ok(
+select is(
   (
-    select count(*) from public.assessment_items i
+    select count(*)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Protected Sim Item:%'
   ),
-  '=',
   0,
   'Restrictive RLS blocks anon learner from directly selecting protected simulation items'
 );
 
 -- Restrictive RLS BLOCKS direct read of scoring_spec for simulation items
-select cmp_ok(
+select is(
   (
-    select count(*) from public.assessment_items i
+    select count(*)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.scoring_spec->>'correct_index' is not null
       and i.prompt like 'Protected Sim Item:%'
   ),
-  '=',
   0,
   'Zero scoring keys for protected simulation items leak to anon learners'
 );
@@ -233,14 +229,13 @@ set local "request.jwt.claim.role" to 'authenticated';
 set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
 
 -- Authenticated learner also CANNOT read protected simulation items via direct select
-select cmp_ok(
+select is(
   (
-    select count(*) from public.assessment_items i
+    select count(*)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Protected Sim Item:%'
   ),
-  '=',
   0,
   'Restrictive RLS blocks authenticated learner from directly selecting protected simulation items'
 );
