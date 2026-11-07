@@ -1430,11 +1430,10 @@ security definer
 set search_path = public, pg_catalog, pg_temp
 as $$
 declare
-  v_version public.target_versions%rowtype;
   v_questions jsonb;
   v_count integer;
 begin
-  select * into v_version
+  perform 1
   from public.target_versions
   where id = p_target_version_id;
 
