@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/providers/display_name_provider.dart';
 
 /// Account access without hiding signed-out settings behind a login screen.
 class AccountActions extends ConsumerWidget {
@@ -16,14 +17,15 @@ class AccountActions extends ConsumerWidget {
 
     if (user != null) {
       final email = user.email?.trim();
-      final initial = email != null && email.isNotEmpty
-          ? email[0].toUpperCase()
-          : null;
+      final displayName = ref.watch(displayNameProvider).valueOrNull;
+      final initial = accountInitial(displayName, email);
+      final label = displayName ??
+          (email?.isNotEmpty == true ? email! : 'signed in');
       final colors = Theme.of(context).colorScheme;
 
       return PopupMenuButton<String>(
         key: const Key('account-menu'),
-        tooltip: 'Account: ${email?.isNotEmpty == true ? email : 'signed in'}',
+        tooltip: 'Account: $label',
         icon: CircleAvatar(
           radius: 16,
           backgroundColor: colors.primaryContainer,
