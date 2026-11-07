@@ -51,6 +51,9 @@ class LessonContentService {
         'correct_answer': question.correctAnswer,
         'type': question.type,
         'explanation': question.explanation,
+        'accepted_answers': question.acceptedAnswers,
+        'grading_method': question.gradingMethod,
+        'numeric_tolerance': question.numericTolerance,
         'created_by': question.createdBy,
         'created_at': DateTime.now().toIso8601String(),
       }).toList();
