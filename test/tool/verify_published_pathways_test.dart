@@ -136,6 +136,33 @@ void main() {
       expect(result.errors.any((e) => e.contains('has revision 1 (expected 2')), isTrue);
     });
 
+    test('wrong superseded revision fails closed', () {
+      final rows = makeValidSet();
+      rows[0]['supersedes_revision'] = 0;
+      final result = verifyPathwayRecords(rows, now: baseTime);
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errors.any((e) => e.contains('has supersedes_revision 0')), isTrue);
+    });
+
+    test('wrong pathway kind fails closed', () {
+      final rows = makeValidSet();
+      rows[0]['pathway_kind'] = 'continuing_education';
+      final result = verifyPathwayRecords(rows, now: baseTime);
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errors.any((e) => e.contains('expected "initial_licensure"')), isTrue);
+    });
+
+    test('nursing route kind is distinct from examination route kinds', () {
+      final rows = makeValidSet();
+      rows[0]['route_kind'] = 'examination';
+      final result = verifyPathwayRecords(rows, now: baseTime);
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errors.any((e) => e.contains('fl_bon:registered-nurse has route_kind "examination" (expected "other")')), isTrue);
+    });
+
     test('non-HTTPS source_url fails closed with error', () {
       final rows = makeValidSet();
       rows[4]['source_url'] = 'http://insecure-source.com';
