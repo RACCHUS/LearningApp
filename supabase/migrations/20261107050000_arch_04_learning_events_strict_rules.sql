@@ -5,7 +5,15 @@
 -- Normative Specification: docs/learning_science/06_MEASUREMENT_AND_SCHEDULING.md (§2.4)
 --
 -- Architectural Scope & Trust Boundary Notice:
--- 1. Establishes strict server-side validation for public.learning_events:
+-- 1. Two-Stage Additive Schema & Safe Legacy Backfill:
+--    - Columns (idempotency_key, payload_sha256, client_seq, etc.) are added initially nullable
+--      without defaults to ensure PostgreSQL 11+ metadata fast-defaults do not mask legacy rows.
+--    - Deterministic legacy backfill sequences client_seq (1, 2, ...), computes canonical
+--      13-field SHA-256 payload digests, and generates 'legacy_' || id idempotency keys.
+--    - NOT NULL constraints and defaults are applied strictly after backfill completes.
+-- 2. Strict Ingestion Validation in record_events:
+--    - idempotency_key is mandatory on all client payloads. Missing or blank keys are rejected
+--      strictly with 'rejected_missing_idempotency_key' (no silent fallback to envelope id).
 --    - 13-field canonical payload digest (SHA-256) for payload tampering & retry detection.
 --    - Transaction-scoped advisory locks on (user_id, idempotency_key), session, item, and concept.
 --    - Intra-batch duplicate preflight with conflict quarantine.
@@ -13,26 +21,29 @@
 --    - Joint feasibility of 14-day plausibility window and bidirectional session neighbor bounds.
 --    - Atomic subtransaction execution (BEGIN ... EXCEPTION ... END with SQLSTATE 'PZ001' and WHEN OTHERS THEN RAISE;).
 --    - Preserved 1:1 input ordering in the returned results array.
--- 2. Projection Boundary: user_concept_state direct client write RLS revoked; managed solely server-side.
--- 3. FSRS-6 Projection Notice: review_items projection updates are bounded server-side within the subtransaction.
+-- 3. Projection Boundary: user_concept_state direct client write RLS revoked; managed solely server-side.
+-- 4. FSRS-6 Projection Notice: review_items projection updates are bounded server-side within the subtransaction.
 --    Full multi-device historical replay of FSRS-6 state across all historical reviews remains scoped as an ongoing
 --    architectural roadmap deliverable and is NOT claimed as canonical server-side replay in this Phase 1 migration.
 -- ============================================================================
 
 -- 1. ADDITIVE SCHEMA ON public.learning_events
+-- Crucial: Add additive columns initially nullable without defaults so existing rows remain unpopulated (NULL)
+-- allowing safe, deterministic legacy backfill before applying column defaults and NOT NULL constraints.
 ALTER TABLE public.learning_events
-  ADD COLUMN IF NOT EXISTS idempotency_key TEXT DEFAULT ('raw_' || gen_random_uuid()::TEXT),
-  ADD COLUMN IF NOT EXISTS payload_sha256 TEXT DEFAULT 'raw_uncomputed_digest',
-  ADD COLUMN IF NOT EXISTS client_seq INTEGER DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS idempotency_key TEXT,
+  ADD COLUMN IF NOT EXISTS payload_sha256 TEXT,
+  ADD COLUMN IF NOT EXISTS client_seq INTEGER,
   ADD COLUMN IF NOT EXISTS attempt_id UUID,
-  ADD COLUMN IF NOT EXISTS client_occurred_at TIMESTAMPTZ DEFAULT NOW(),
-  ADD COLUMN IF NOT EXISTS effective_occurred_at TIMESTAMPTZ DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS client_occurred_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS effective_occurred_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS client_latency_ms INTEGER,
   ADD COLUMN IF NOT EXISTS event_schema_version TEXT NOT NULL DEFAULT '1.0.0',
-  ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS presented_option_ids TEXT[];
 
 -- 2. SAFE DETERMINISTIC LEGACY BACKFILL
+-- Deterministically populate legacy rows before enforcing NOT NULL constraints and defaults.
 UPDATE public.learning_events
 SET client_occurred_at = COALESCE(occurred_at, NOW())
 WHERE client_occurred_at IS NULL;
@@ -49,6 +60,7 @@ UPDATE public.learning_events
 SET session_id = '00000000-0000-0000-0000-000000000000'
 WHERE session_id IS NULL;
 
+-- Compute deterministic 1-based sequential client_seq per (user_id, session_id)
 WITH numbered AS (
   SELECT id, ROW_NUMBER() OVER (
     PARTITION BY user_id, session_id
@@ -62,10 +74,32 @@ SET client_seq = numbered.seq
 FROM numbered
 WHERE le.id = numbered.id;
 
+-- Ensure any existing rows that might violate the upcoming unique constraint are cleanly sequenced
+WITH dupes AS (
+  SELECT user_id, session_id
+  FROM public.learning_events
+  GROUP BY user_id, session_id, client_seq
+  HAVING COUNT(*) > 1
+),
+renumbered AS (
+  SELECT le.id, ROW_NUMBER() OVER (
+    PARTITION BY le.user_id, le.session_id
+    ORDER BY le.effective_occurred_at ASC, le.id ASC
+  )::INTEGER AS seq
+  FROM public.learning_events le
+  JOIN dupes d ON le.user_id = d.user_id AND le.session_id = d.session_id
+)
+UPDATE public.learning_events le
+SET client_seq = renumbered.seq
+FROM renumbered
+WHERE le.id = renumbered.id;
+
+-- Assign deterministic legacy idempotency key legacy_<id>
 UPDATE public.learning_events
 SET idempotency_key = 'legacy_' || id::text
-WHERE idempotency_key IS NULL;
+WHERE idempotency_key IS NULL OR idempotency_key LIKE 'raw_%';
 
+-- Compute canonical 13-field SHA-256 payload digest for legacy records
 UPDATE public.learning_events
 SET payload_sha256 = encode(digest(convert_to(
   jsonb_build_object(
@@ -84,9 +118,10 @@ SET payload_sha256 = encode(digest(convert_to(
     'client_occurred_at_utc_iso', to_char(client_occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
   )::text, 'UTF8'
 ), 'sha256'), 'hex')
-WHERE payload_sha256 IS NULL;
+WHERE payload_sha256 IS NULL OR payload_sha256 = 'raw_uncomputed_digest';
 
 -- 3. STRICT CONSTRAINTS & INDEXES
+-- Apply column defaults and enforce NOT NULL constraints only after backfill has succeeded
 ALTER TABLE public.learning_events
   ALTER COLUMN client_seq SET DEFAULT 1,
   ALTER COLUMN client_seq SET NOT NULL,
@@ -96,6 +131,8 @@ ALTER TABLE public.learning_events
   ALTER COLUMN client_occurred_at SET NOT NULL,
   ALTER COLUMN effective_occurred_at SET DEFAULT NOW(),
   ALTER COLUMN effective_occurred_at SET NOT NULL,
+  ALTER COLUMN received_at SET DEFAULT NOW(),
+  ALTER COLUMN received_at SET NOT NULL,
   ALTER COLUMN payload_sha256 SET DEFAULT 'raw_uncomputed_digest',
   ALTER COLUMN payload_sha256 SET NOT NULL;
 
@@ -219,9 +256,9 @@ BEGIN
 
   -- Step 1: Upfront Sorted Transaction Advisory Locks
   FOR v_key IN
-    SELECT DISTINCT COALESCE(e->>'idempotency_key', e->>'id')
+    SELECT DISTINCT (e->>'idempotency_key')
     FROM unnest(p_events) AS e
-    WHERE COALESCE(e->>'idempotency_key', e->>'id') IS NOT NULL
+    WHERE (e->>'idempotency_key') IS NOT NULL AND length(trim(e->>'idempotency_key')) > 0
     ORDER BY 1
   LOOP
     PERFORM pg_advisory_xact_lock(hashtextextended(v_auth_uid::TEXT || ':idempotency:' || v_key, 0));
@@ -256,7 +293,7 @@ BEGIN
   -- Step 2: Canonical Digest Preflight in Memory
   FOR v_idx IN 1..array_length(p_events, 1) LOOP
     v_raw_item := p_events[v_idx];
-    v_key := COALESCE(v_raw_item->>'idempotency_key', v_raw_item->>'id');
+    v_key := v_raw_item->>'idempotency_key';
 
     IF v_key IS NULL OR length(trim(v_key)) = 0 THEN
       v_item_results[v_idx] := jsonb_build_object(
