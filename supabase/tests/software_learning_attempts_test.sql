@@ -145,6 +145,37 @@ END $jwt$;
 SELECT throws_ok($q$ SELECT public.sl_issue_excel_budget_attempt() $q$,
  '42501',NULL,'Temporary anonymous sign-in cannot use the privileged issuer');
 
+-- Quota counts must survive erasing the synthetic attempt. Otherwise a
+-- learner can issue unlimited work by deleting each attempt immediately.
+RESET ROLE;
+INSERT INTO auth.users(id,email) VALUES
+ ('ba310000-0000-4000-8000-000000000003','sl-quota-c@example.invalid')
+ON CONFLICT(id) DO NOTHING;
+INSERT INTO auth.sessions(id,user_id) VALUES
+ ('ba320000-0000-4000-8000-000000000003','ba310000-0000-4000-8000-000000000003')
+ON CONFLICT(id) DO NOTHING;
+SET LOCAL ROLE authenticated;
+DO $jwt$ BEGIN
+ PERFORM set_config('request.jwt.claim.sub',
+   'ba310000-0000-4000-8000-000000000003',true);
+ PERFORM set_config('request.jwt.claims',
+   '{"sub":"ba310000-0000-4000-8000-000000000003","role":"authenticated","is_anonymous":false,"session_id":"ba320000-0000-4000-8000-000000000003"}',true);
+END $jwt$;
+DO $quota$ DECLARE
+  v_attempt jsonb;
+  v_i integer;
+BEGIN
+  FOR v_i IN 1..12 LOOP
+    v_attempt := public.sl_issue_excel_budget_attempt();
+    IF NOT public.sl_delete_excel_budget_attempt(
+      (v_attempt->>'attempt_id')::uuid) THEN
+      RAISE EXCEPTION 'Owner erase failed while testing issue quota';
+    END IF;
+  END LOOP;
+END $quota$;
+SELECT throws_ok($q$ SELECT public.sl_issue_excel_budget_attempt() $q$,
+ '42501',NULL,'Erasing attempts cannot reset the rolling issuance quota');
+
 RESET ROLE;
 SELECT * FROM finish();
 ROLLBACK;
