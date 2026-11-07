@@ -127,6 +127,11 @@ DROP POLICY IF EXISTS "user_concept_state_owner_select" ON public.user_concept_s
 CREATE POLICY "user_concept_state_owner_select" ON public.user_concept_state
   FOR SELECT USING (auth.uid() = user_id);
 
+-- Revoke direct client write privileges; projections are maintained strictly server-side
+REVOKE INSERT, UPDATE, DELETE ON public.user_concept_state FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.user_concept_state TO authenticated;
+GRANT ALL ON public.user_concept_state TO service_role;
+
 -- 5. STRICT RECORD_EVENTS RPC
 CREATE OR REPLACE FUNCTION public.record_events(
   p_events JSONB[]
