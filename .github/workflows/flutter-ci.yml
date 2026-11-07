@@ -217,8 +217,8 @@ jobs:
           supabase db reset
           # 3. Restore newly introduced migrations
           dart run tool/verify_migration_history.dart --base-ref origin/main --restore-pending build/pending_migrations
-          # 4. Apply new migrations incrementally
-          supabase migration up --local
+          # 4. Apply new migrations incrementally (--include-all admits registry-approved backdated reconciliations)
+          supabase migration up --local --include-all
           # 5. Run pgTAP test suite against incrementally upgraded database
           supabase test db
 

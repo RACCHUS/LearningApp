@@ -1,0 +1,5 @@
+# Reviewed exceptions to the append-only "strictly newer timestamp" rule.
+# Format: <14-digit version> <reason>. Only for reconciliations that must run
+# before a never-applied historical migration during a guarded backfill; every
+# other immutability rule still applies. Adding an entry requires owner review.
+20261101195000 Production user_progress predates the baseline and lacks study_time_seconds, which 20261101200000 (pending historical backfill) requires; must sort before it.
