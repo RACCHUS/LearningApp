@@ -93,7 +93,7 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261107041341'));
+      expect(scanResult.migrations.last.version, equals('20261107050000'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
@@ -103,6 +103,7 @@ void main() {
       expect(bundle, contains('20261106030000_catalog_pathway_evidence_provenance.sql'));
       expect(bundle, contains('20261107025537_short_answer_grading_persistence.sql'));
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
+      expect(bundle, contains('20261107050000_arch_04_learning_events_strict_rules.sql'));
     });
   });
 }
