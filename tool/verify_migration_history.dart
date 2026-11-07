@@ -36,10 +36,19 @@ void main(List<String> args) async {
   String? remoteListFilePath;
   String? reportOutPath;
   bool quiet = false;
+  final approvedBackfill = <String>{};
 
   for (var i = 0; i < args.length; i++) {
     final arg = args[i];
-    if (arg == '--migrations-dir' && i + 1 < args.length) {
+    if (arg == '--approve-historical-backfill' && i + 1 < args.length) {
+      for (final v in args[++i].split(',').map((s) => s.trim()).where((s) => s.isNotEmpty)) {
+        if (!RegExp(r'^20\d{12}$').hasMatch(v)) {
+          stderr.writeln('❌ Error: --approve-historical-backfill expects exact 14-digit versions; got "$v".');
+          exit(1);
+        }
+        approvedBackfill.add(v);
+      }
+    } else if (arg == '--migrations-dir' && i + 1 < args.length) {
       migrationsDirPath = args[++i];
     } else if (arg == '--base-ref' && i + 1 < args.length) {
       baseRef = args[++i];
@@ -194,6 +203,12 @@ void main(List<String> args) async {
 
   // Handle hosted preflight or postflight gate if requested
   if (preflightHosted || postflightHosted) {
+    if (approvedBackfill.isNotEmpty && (!preflightHosted || postflightHosted || !requireBase)) {
+      stderr.writeln(
+        '❌ Error: --approve-historical-backfill is only valid with --preflight-hosted and --require-base.',
+      );
+      exit(1);
+    }
     _handleHostedGate(
       isPreflight: preflightHosted,
       isPostflight: postflightHosted,
@@ -203,6 +218,7 @@ void main(List<String> args) async {
       allIssues: allIssues,
       validator: validator,
       quiet: quiet,
+      approvedBackfill: approvedBackfill,
     );
     // _handleHostedGate will report and exit appropriately
     return;
@@ -444,6 +460,7 @@ void _handleHostedGate({
   required List<MigrationValidationIssue> allIssues,
   required MigrationHistoryValidator validator,
   required bool quiet,
+  Set<String> approvedBackfill = const {},
 }) {
   final mode = isPostflight ? 'postflight' : 'preflight';
 
@@ -532,6 +549,7 @@ void _handleHostedGate({
     result = validator.compareWithHosted(
       localRecords: currentRecords,
       remoteVersions: remoteVersions,
+      approvedHistoricalBackfill: approvedBackfill,
     );
   }
 
@@ -555,7 +573,8 @@ void _handleHostedGate({
     stdout.writeln('Pending to Deploy: ${result.pendingVersions.length} migration(s)');
     if (result.pendingVersions.isNotEmpty) {
       for (final p in result.pendingVersions) {
-        stdout.writeln('   • $p');
+        final tag = result.backfillVersions.contains(p) ? ' (APPROVED HISTORICAL BACKFILL)' : '';
+        stdout.writeln('   • $p$tag');
       }
     }
     if (result.remoteOnlyVersions.isNotEmpty) {
@@ -583,6 +602,7 @@ void _handleHostedGate({
       pendingVersions: result.pendingVersions,
       remoteOnlyVersions: result.remoteOnlyVersions,
       missingRemoteVersions: result.missingRemoteVersions,
+      backfillVersions: result.backfillVersions,
       issues: totalIssues,
       status: hasErrors ? 'FAILED' : 'PASSED',
     );
@@ -647,6 +667,7 @@ void _writeSanitizedReport({
   required List<String> pendingVersions,
   required List<String> remoteOnlyVersions,
   required List<String> missingRemoteVersions,
+  List<String> backfillVersions = const [],
   required List<MigrationValidationIssue> issues,
   required String status,
 }) {
@@ -675,6 +696,7 @@ void _writeSanitizedReport({
     'pending_versions': pendingVersions,
     'remote_only_versions': remoteOnlyVersions,
     'missing_remote_versions': missingRemoteVersions,
+    'historical_backfill_versions': backfillVersions,
     'issues': issues.map((i) => {
       'severity': i.severity.name,
       'rule': i.rule,
@@ -759,6 +781,10 @@ Options:
   --preflight-hosted          Run pre-deployment version comparison against linked Supabase ledger.
   --postflight-hosted         Run post-deployment exact 1:1 parity check against linked Supabase ledger.
   --remote-list-file <path>   Use local file containing `supabase migration list` output instead of live CLI.
+  --approve-historical-backfill <v1,v2,...>
+                              Preflight only (requires --require-base): treat these exact never-applied
+                              historical versions as pending for out-of-order application. Must equal
+                              the full missing historical set; never marks a version applied.
   --report-out <path>         Write sanitized JSON deployment/status report.
   --quiet                     Suppress informational output.
   -h, --help                  Show this help message.
