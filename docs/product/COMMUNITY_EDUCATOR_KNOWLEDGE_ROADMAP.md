@@ -280,10 +280,10 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 2 — Teacher Identities & Lightweight Contribution (P1)
 
 **Tasks**
-- [ ] **Educator Profiles**: Opt-in educator profiles with bio, subjects, languages, and clear distinction between self-declared vs. verified credentials.
-- [ ] **"Teach This Topic" Pathway**: Enable educators to answer questions, post explanations, or contribute standalone resources without building full courses.
-- [ ] **Follows & Bookmarks**: Learners can follow educators and bookmark explanations.
-- [ ] **Evidence-Weighted Reputation**: Helpful votes and outcome feedback weighted over raw post volume.
+- [x] **Educator Profiles**: Opt-in educator profiles with bio, subjects, languages, and clear distinction between self-declared vs. verified credentials. (Delivered `EducatorCredentialBadge`, `EducatorProfileCard`, `EducatorProfileEditDialog`, and `EducatorProfileScreen`).
+- [x] **"Teach This Topic" Pathway**: Enable educators to answer questions, post explanations, or contribute standalone resources without building full courses. (Delivered "Teach This Topic" banner and answer contribution workflow in `InContextQaSheet`).
+- [x] **Follows & Bookmarks**: Learners can follow educators and bookmark explanations. (Delivered `CommunityBookmark`, `CommunityBookmarkService`, and `BookmarkedExplanationsSheet`).
+- [x] **Evidence-Weighted Reputation**: Helpful votes and outcome feedback weighted over raw post volume. (Delivered `EducatorReputation`, `EducatorReputationService`, and reputation tier badges).
 
 **Exit:** Knowledgeable adults can establish educator presence for existing subjects and build a body of helpful contributions without authoring full courses; credentials accurately labeled.
 
@@ -292,9 +292,9 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 3 — Creator Channels & Family/Accessibility Pilot (P1)
 
 **Tasks**
-- [ ] **Resource Authoring**: Original resource publishing (lessons, flashcard sets, guides) with creator ownership, source citations, and AI-assisted drafts.
-- [ ] **Family & ABE Field Pilot**: Conduct structured pilot combining [LITERACY_ACCESSIBILITY_PLAN.md](LITERACY_ACCESSIBILITY_PLAN.md) Adult Basic Education tools with credential exam prep.
-- [ ] **Before/After Assessment**: Compare baseline diagnostic scores to post-study outcomes, collecting feedback on clarity, pacing, and retention.
+- [x] **Resource Authoring**: Original resource publishing (lessons, flashcard sets, guides) with creator ownership, source citations, and AI-assisted drafts. (Delivered `CommunityResource`, `ResourceCitation`, `CommunityResourceService`, `ResourceAuthoringScreen`, and `ResourceCard`).
+- [x] **Family & ABE Field Pilot**: Conduct structured pilot combining [LITERACY_ACCESSIBILITY_PLAN.md](LITERACY_ACCESSIBILITY_PLAN.md) Adult Basic Education tools with credential exam prep. (Delivered `PilotCohort`, `PilotParticipantSession`, `FieldPilotService`, and `PilotProgressCard`).
+- [x] **Before/After Assessment**: Compare baseline diagnostic scores to post-study outcomes, collecting feedback on clarity, pacing, and retention. (Delivered `DiagnosticQuestion`, `AssessmentOutcomeRecord`, `OutcomeAssessmentService`, `BeforeAfterAssessmentWidget`, and `PilotOutcomeDashboard`).
 
 **Exit:** Contributor can publish reviewed standalone resources; at least one verified end-to-end pilot demonstrates measurable skill improvement.
 
@@ -303,9 +303,9 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 4 — Evidence-Based Discovery & Feedback Loops (P2)
 
 **Tasks**
-- [ ] **Educational Quality Framework**: Evidence scoring based on diagnostic-to-post gains and concept retention (strictly separated from engagement metrics).
-- [ ] **Autonomous Proposals**: System identifies content gaps, repeated misconceptions, and outdated regulatory citations, generating reviewable update proposals.
-- [ ] **Coach Principle Recommendations**: Personalized recommendations matching learner needs to resources and educators—**always suggesting, never compelling**.
+- [x] **Educational Quality Framework**: Evidence scoring based on diagnostic-to-post gains and concept retention (strictly separated from engagement metrics). (Delivered `EvidenceScorerCore`, `ContentQualityScore`, and Educational Quality Index EQI tiers in PR #157).
+- [x] **Autonomous Proposals**: System identifies content gaps, repeated misconceptions, and outdated regulatory citations, generating reviewable update proposals. (Delivered `ProposalGeneratorCore`, `ContentProposalCore`, and `ContentProposalReviewCard` in PR #157).
+- [x] **Coach Principle Recommendations**: Personalized recommendations matching learner needs to resources and educators—**always suggesting, never compelling**. (Delivered `CoachRecommendationEngine`, `CoachRecommendationsCard`, and `DiscoveryAndFeedbackService` in PR #157).
 
 **Exit:** Learners receive transparent, opt-in recommendations; content improvements are systematically proposed, reviewed, published, and measured.
 
@@ -314,10 +314,10 @@ Map the proposed logical entities to existing tables first; use new tables only 
 ### Phase 5 — Marketplace, Tutoring & Extensibility (P3)
 
 **Tasks**
-- [ ] **Monetization Modeling**: Define creator revenue share and pricing based on demonstrated pilot demand; test with simulated transactions first.
-- [ ] **Compliant Transactions**: Integrate secure payments, payout ledgers, entitlements, sales tax compliance, refunds, and fraud detection.
-- [ ] **Tutoring & Sessions**: Booking, office hours, and group instruction.
-- [ ] **Integration Boundary**: Provider-agnostic API adapters for external tools and institutions.
+- [x] **Monetization Modeling**: Define creator revenue share and pricing based on demonstrated pilot demand; test with simulated transactions first. (Delivered 85% creator / 15% platform split in `TransactionLedgerEntry` and `ResourceOfferCard` in PR #159).
+- [x] **Compliant Transactions**: Integrate secure payments, payout ledgers, entitlements, sales tax compliance, refunds, and fraud detection. (Delivered `ResourceEntitlement`, idempotent ledger logging, and `MarketplaceService` in PR #159).
+- [x] **Tutoring & Sessions**: Booking, office hours, and group instruction. (Delivered `TutoringSessionCore` and `TutoringBookingCard` in PR #159).
+- [x] **Integration Boundary**: Provider-agnostic API adapters for external tools and institutions. (Delivered 1EdTech CASE 1.0 competencies exchange converter in `CaseStandardsConverter` in PR #159).
 
 **Exit:** Compliant, economically viable transaction workflow with clear accounting reconciliation and creator payouts.
 
