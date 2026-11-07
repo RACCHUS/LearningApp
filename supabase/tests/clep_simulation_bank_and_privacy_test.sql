@@ -10,6 +10,11 @@ set local search_path = public, extensions, pg_temp;
 
 select plan(18);
 
+-- Setup synthetic test user in auth.users (under initial postgres session role)
+insert into auth.users (id, email)
+values ('11223344-5566-4777-8888-999900001111', 'learner_privacy@example.invalid')
+on conflict (id) do nothing;
+
 -- ----------------------------------------------------------------------------
 -- 1. Setup Test Fixtures & Ingest Target Version with Mixed Assessment Items
 -- ----------------------------------------------------------------------------
@@ -223,13 +228,6 @@ select throws_ok(
 -- ----------------------------------------------------------------------------
 -- 4. Verify Privacy Under Authenticated Learner Role
 -- ----------------------------------------------------------------------------
--- Setup synthetic authenticated user
-reset role;
-set local role service_role;
-insert into auth.users (id, email)
-values ('11223344-5566-4777-8888-999900001111', 'learner_privacy@example.invalid')
-on conflict (id) do nothing;
-
 reset role;
 set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';
