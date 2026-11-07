@@ -297,3 +297,37 @@ cannot establish causal effectiveness.
   release browser must refuse both block and direct-route launches even with
   `ENABLE_SIMULATION_PREVIEW=true`, and WCAG 2.2 AA review plus the equivalent
   learning alternative must be verified.
+
+### Feature-enablement gate results (post-merge of PR #187)
+
+- **Release browser: passed.** A `--release` web build with
+  `ENABLE_SIMULATION_PREVIEW=true` was served locally and opened in Chrome via
+  Playwright. Direct links to `/#/simulation/networking-basics/1.0.0` and
+  `/#/simulation/atm-withdrawal/1.0.0` showed only the "unavailable" fallback
+  with Help, "Return to lesson" reached `/#/learn`, and the console had no
+  errors. The in-lesson launch button could not be exercised because no
+  authored lesson contains a simulation block yet.
+- **Accessibility (automated and keyboard review, using a `--profile` build
+  with preview enabled):**
+  - Network practice: the Tab order is logical, the whole activity can be
+    completed with the keyboard (answer all three questions, review, finish
+    to `/learn`), and Escape exits. At 320 px wide it reflows with no
+    horizontal scrolling. All targets are at least 24×24. The broken link is
+    shown by icon shape and text, not by colour alone. Text and status colours
+    meet contrast in both themes (lowest is 4.56:1 for primary on card, light
+    theme).
+  - ATM: it reflows at 320 px, targets meet the minimum size, and Escape exits.
+  - Fixed, WCAG 1.3.1: question titles were not tied to their radios, so
+    assistive tech merged all three into one label. Each question is now a
+    labelled group containing a `RadioGroup`, which also gives standard
+    arrow-key navigation and a single Tab stop per question.
+  - Fixed, routing: going from one simulation URL to another on an open
+    screen kept showing the previous activity. The route now keys
+    `SimulationScreen` by activity ID and version.
+  - Still outstanding: a manual screen-reader pass (NVDA/JAWS on Windows,
+    VoiceOver on macOS/iOS, TalkBack on Android). Simulations must not be
+    described as WCAG 2.2 AA approved until that pass is done.
+- **Equivalent learning alternative: pending content.** No lesson in
+  `assets/`, `content/`, or `data/` contains a simulation block yet. Each
+  lesson that adds one must show that its `body` fallback teaches the same
+  objective before that simulation is enabled.

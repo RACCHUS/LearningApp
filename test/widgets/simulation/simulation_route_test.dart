@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -321,6 +322,82 @@ void main() {
 
       expect(find.text('Lesson page'), findsOneWidget);
       expect(find.text('Interactive practice unavailable'), findsNothing);
+    });
+  });
+
+  group('Simulation route identity', () {
+    testWidgets('switching simulations on the route rebuilds the screen', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/simulation/networking-basics/1.0.0',
+        routes: [
+          GoRoute(
+            path: '/simulation/:simulationId/:version',
+            builder: (context, state) => buildSimulationRoute(
+              simulationId: state.pathParameters['simulationId']!,
+              version: state.pathParameters['version']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Network troubleshooting practice'), findsOneWidget);
+
+      router.go('/simulation/atm-withdrawal/1.0.0');
+      await tester.pumpAndSettle();
+
+      expect(find.text('ATM withdrawal practice'), findsOneWidget);
+      expect(find.text('Network troubleshooting practice'), findsNothing);
+    });
+  });
+
+  group('Network practice semantics', () {
+    testWidgets('each choice is grouped under its labelled question', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.binding.setSurfaceSize(const Size(1000, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: SimulationScreen(
+              simulationId: 'networking-basics',
+              version: '1.0.0',
+              previewEnabled: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      String? questionFor(String choice) {
+        SemanticsNode? node = tester.getSemantics(find.text(choice));
+        while (node != null) {
+          if (node.label.startsWith(RegExp(r'\d\. '))) return node.label;
+          node = node.parent;
+        }
+        return null;
+      }
+
+      expect(
+        questionFor('Between the router and the laptop'),
+        '1. Which connection is broken?',
+      );
+      expect(
+        questionFor('Change the Wi-Fi password'),
+        '2. What should you check first?',
+      );
+      expect(
+        questionFor('The laptop screen routes traffic between devices.'),
+        '3. Why is that the right first step?',
+      );
+      handle.dispose();
     });
   });
 
