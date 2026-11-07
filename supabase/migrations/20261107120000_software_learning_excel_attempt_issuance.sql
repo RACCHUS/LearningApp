@@ -42,6 +42,19 @@ CREATE TABLE software_learning_private.excel_attempt_inputs (
   expected_inputs jsonb NOT NULL CHECK (jsonb_typeof(expected_inputs)='object')
 );
 ALTER TABLE software_learning_private.excel_attempt_inputs ENABLE ROW LEVEL SECURITY;
+
+-- Issuance accounting intentionally survives deleting an individual attempt,
+-- otherwise a learner could evade the 12-in-24h quota by erasing each attempt.
+-- Contains account ID and timestamp only, no workbook data or responses.
+-- Account erasure cascades; periodic age-based pruning is a release gate.
+CREATE TABLE software_learning_private.excel_issuance_log (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  issued_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX sl_excel_issue_log_owner_window_idx
+  ON software_learning_private.excel_issuance_log(owner_id,issued_at DESC);
+ALTER TABLE software_learning_private.excel_issuance_log ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA software_learning_private
   FROM PUBLIC, anon, authenticated;
 
@@ -85,8 +98,8 @@ BEGIN
   -- Serialize issuance by account so parallel requests cannot bypass quotas.
   PERFORM pg_advisory_xact_lock(hashtextextended(v_actor::text, 61732));
   SELECT count(*)::integer INTO v_quota
-  FROM public.software_learning_attempts a
-  WHERE a.owner_id=v_actor AND a.issued_at>v_now-interval '24 hours';
+  FROM software_learning_private.excel_issuance_log l
+  WHERE l.owner_id=v_actor AND l.issued_at>v_now-interval '24 hours';
   IF v_quota >= 12 THEN
     RAISE EXCEPTION 'Excel practice issuance quota reached'
       USING ERRCODE='42501';
@@ -115,6 +128,9 @@ BEGIN
   INSERT INTO software_learning_private.excel_attempt_inputs
     (attempt_id,expected_inputs)
   VALUES (v_id,v_inputs);
+  INSERT INTO software_learning_private.excel_issuance_log
+    (owner_id,issued_at)
+  VALUES (v_actor,v_now);
 
   RETURN jsonb_build_object(
     'attempt_id',v_id,
