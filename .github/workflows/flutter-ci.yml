@@ -148,6 +148,9 @@ jobs:
       - name: Test pinned Docker XLSX worker command isolation
         run: python3 -m unittest discover -s tool/tests -p 'test_container_worker_runner.py' -v
 
+      - name: Test DB-backed Excel retention adapter (service-only)
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_db.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
