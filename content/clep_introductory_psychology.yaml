@@ -1,0 +1,1051 @@
+# ============================================================================
+# Learning Architecture V2 — Curriculum Source Manifest
+# Target: CLEP Introductory Psychology (College Board)
+# ============================================================================
+
+source_release:
+  publisher: "College Board"
+  title: "CLEP Introductory Psychology Examination Guide"
+  version: "2026-11"
+  source_url: "https://clep.collegeboard.org/clep-exams/introductory-psychology"
+  retrieved_at: "2026-11-07T00:00:00Z"
+  license: "College Board Proprietary (Educational Reference Blueprint)"
+  license_name: "Proprietary Examination Blueprint"
+  rights_note: "Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board."
+  sha256: "b45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f01"
+  metadata:
+    total_domains: 13
+    exam_code: "CLEP-PSYC"
+    passing_score: 50
+    scale: "20-80"
+    time_limit_minutes: 90
+    question_count_approx: 95
+    practice_time_limit_minutes: 90
+    default_question_count: 95
+    recommending_body: "ACE"
+    recommended_credits: 3
+
+target:
+  slug: "clep-introductory-psychology"
+  title: "CLEP Introductory Psychology"
+  version_code: "2026"
+  version_title: "CLEP Introductory Psychology (2026 Official Blueprint Edition)"
+  version_description: "Authoritative, psychometrically grounded curriculum covering all 13 official College Board domains for the CLEP Introductory Psychology examination."
+
+stimuli:
+  - id: "stim-experimental-design-sleep"
+    stimulus_type: "scenario"
+    title: "Sleep Deprivation and Memory Consolidation Study"
+    body: "A cognitive psychologist recruits 80 undergraduate participants to study the effect of sleep on declarative memory consolidation. Participants are randomly assigned to either an 8-hour sleep condition or an 8-hour awake condition following a paired-associate word learning task. Memory retention is assessed via cued recall the next morning."
+    structured_data:
+      sample_size: 80
+      independent_variable: "Sleep condition (8-hour sleep vs. 8-hour wakefulness)"
+      dependent_variable: "Percentage of paired-associate word pairs correctly recalled"
+      design_type: "Between-subjects randomized experiment"
+    citation: "College Board CLEP Introductory Psychology Objective 1.3 Methodology Blueprint"
+
+  - id: "stim-split-brain-experiment"
+    stimulus_type: "scenario"
+    title: "Split-Brain Visual Chimeric Presentation"
+    body: "A patient who underwent a complete surgical corpus callosotomy to treat intractable epilepsy participates in a tachistoscopic laboratory test. A picture of a ring is flashed to the left visual field (LVF) and a picture of a key is simultaneously flashed to the right visual field (RVF) for 150 milliseconds while the patient fixates on a central dot."
+    structured_data:
+      visual_field_left: "Ring (processed by right cerebral hemisphere)"
+      visual_field_right: "Key (processed by left cerebral hemisphere)"
+      fixation_duration_ms: 150
+      surgical_condition: "Corpus callosotomy"
+    citation: "College Board CLEP Introductory Psychology Objective 2.3 Neuroanatomy Blueprint (Sperry & Gazzaniga)"
+
+  - id: "stim-classical-conditioning-phobia"
+    stimulus_type: "scenario"
+    title: "Conditioned Taste Aversion Observation"
+    body: "A learner consumes a novel berry-flavored beverage. Four hours later, the learner contracts a severe gastrointestinal illness from an unrelated viral infection. Despite knowing the virus caused the illness, the learner subsequently experiences intense nausea whenever smelling or tasting that specific berry flavoring."
+    structured_data:
+      unconditioned_stimulus: "Gastrointestinal illness / viral toxins"
+      unconditioned_response: "Nausea and malaise"
+      conditioned_stimulus: "Novel berry flavor"
+      conditioned_response: "Nausea upon subsequent exposure"
+      temporal_delay_hours: 4
+    citation: "College Board CLEP Introductory Psychology Objective 5.1 Learning Principles (Garcia Effect)"
+
+domains:
+  # ==========================================================================
+  # Domain 1.0: History, Approaches, and Methods (11%) [Official range: 11-12%]
+  # ==========================================================================
+  - code: "1.0"
+    title: "History, Approaches, and Methods"
+    description: "Philosophical foundations, structuralism, functionalism, contemporary perspectives, scientific research designs, descriptive and experimental methods, and APA ethical standards."
+    weight: 0.11
+    sort_order: 1
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 1.0"
+    objectives:
+      - code: "1.1"
+        title: "Differentiate historical and contemporary psychological perspectives"
+        description: "Contrast structuralism, functionalism, psychoanalytic, behavioral, humanistic, cognitive, biological, and evolutionary perspectives."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 1.1"
+        concepts:
+          - slug: "psyc-structuralism"
+            name: "Structuralism"
+            short_definition: "Early school of thought promoted by Wundt and Titchener using systematic introspection to isolate the basic elements of conscious experience."
+            description: "Structuralism sought to map the adult human mind by breaking conscious experience down into basic sensation and perception elements through rigorous introspection."
+            citation: "College Board Objective 1.1"
+          - slug: "psyc-functionalism"
+            name: "Functionalism"
+            short_definition: "Early school of thought influenced by William James and Charles Darwin examining how mental and behavioral processes function to enable adaptation."
+            description: "Functionalism focused on the practical adaptive utility of consciousness, habits, and mental operations in organisms navigating their environments."
+            citation: "College Board Objective 1.1"
+            prerequisites: ["psyc-structuralism"]
+          - slug: "psyc-contemporary-perspectives"
+            name: "Contemporary Psychological Perspectives"
+            short_definition: "Modern frameworks including biological, cognitive, behavioral, psychodynamic, humanistic, social-cultural, and evolutionary approaches to understanding behavior."
+            description: "Contemporary psychology utilizes multiple complementary levels of analysis (the biopsychosocial model) rather than a single unifying school of thought."
+            citation: "College Board Objective 1.1"
+            prerequisites: ["psyc-functionalism"]
+        lessons:
+          - title: "Historical Foundations and Modern Perspectives in Psychology"
+            description: "From Wundt's Leipzig laboratory and James's functionalism to the modern biopsychosocial model."
+            emoji: "🧠"
+            tags: ["history", "perspectives", "foundations"]
+            concept_slugs: ["psyc-structuralism", "psyc-functionalism", "psyc-contemporary-perspectives"]
+            citation: "College Board CLEP Introductory Psychology Domain 1.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### The Birth of Scientific Psychology
+
+                    Psychology transitioned from philosophical inquiry into an empirical science in **1879**, when **Wilhelm Wundt** established the world's first experimental psychology laboratory at the University of Leipzig in Germany.
+
+                    Wundt and his student **Edward Titchener** advanced **structuralism**, which aimed to identify the fundamental building blocks of conscious experience through **introspection**—trained self-observation of sensory and perceptual responses under controlled conditions.
+
+                    In contrast, American philosopher and psychologist **William James** established **functionalism**, influenced by Charles Darwin's theory of natural selection. Rather than asking what the structures of consciousness *are*, functionalists investigated what mental processes *do*—how thoughts, emotions, and habits help organisms adapt and survive in their environments.
+              - sort_order: 2
+                block_type: "callout"
+                content:
+                  type: "key_concept"
+                  title: "Key Historical Distinction"
+                  body: "**Structuralism** asks *'What are the constituent pieces of the mind?'* using introspection. **Functionalism** asks *'How does the mind function to enable behavioral adaptation and survival?'*"
+              - sort_order: 3
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Contemporary Perspectives in Psychology
+
+                    Modern psychology is characterized by multiple complementary approaches:
+                    - **Biological/Neuroscience:** Explains behavior and mental processes through brain structures, neural networks, genetics, and biochemical neurotransmission.
+                    - **Behavioral:** Focuses strictly on observable behavior and the environmental stimuli, rewards, and punishments that condition responses (Watson, Skinner).
+                    - **Cognitive:** Investigates internal mental processes including memory encoding, problem solving, decision making, and language comprehension.
+                    - **Humanistic:** Emphasizes innate human potential, self-actualization, subjective growth, and free will (Maslow, Rogers).
+                    - **Psychodynamic:** Explores unconscious drives, early childhood conflicts, and defense mechanisms (Freud).
+                    - **Social-Cultural:** Examines how cultural norms, social pressure, and group dynamics shape thought and conduct.
+            terms:
+              - term: "Introspection"
+                definition: "The examination or observation of one's own mental and emotional processes under systematic laboratory conditions."
+                example: "Titchener asking observers to report the distinct sensory components of hearing a metronome beat."
+              - term: "Biopsychosocial Approach"
+                definition: "An integrated model incorporating biological, psychological, and social-cultural factors to explain behavior."
+                example: "Explaining major depressive disorder through serotonin receptor polymorphisms, cognitive rumination habits, and family socioeconomic stress."
+            assessment_items:
+              - prompt: "Which early psychological school of thought focused primarily on the adaptive value of conscious mental processes rather than their constituent sensory structures?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Functionalism"
+                    - "Structuralism"
+                    - "Psychoanalysis"
+                    - "Gestalt psychology"
+                scoring_spec:
+                  correct_index: 0
+                explanation: "Functionalism, established by William James and influenced by evolutionary theory, studied how conscious mental activities enable organisms to adapt and flourish in their environments. Structuralism, by contrast, sought to break conscious experience into basic sensory elements."
+                difficulty: "beginner"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 1.1"
+                concept_slugs: ["psyc-structuralism", "psyc-functionalism", "psyc-contemporary-perspectives"]
+        flashcards:
+          - front: "What was the primary method used by structuralists like Wilhelm Wundt and Edward Titchener?"
+            back: "Introspection (systematic self-reporting of immediate sensations and feelings)."
+            concept_slugs: ["psyc-structuralism"]
+          - front: "Which psychological perspective was heavily influenced by Darwinian evolutionary theory and focused on the purpose of mental processes?"
+            back: "Functionalism (championed by William James)."
+            concept_slugs: ["psyc-functionalism"]
+
+      - code: "1.2"
+        title: "Evaluate scientific research designs and empirical methodologies"
+        description: "Apply experimental controls, identify independent/dependent variables, interpret correlation coefficients, and evaluate APA ethical standards."
+        sort_order: 2
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 1.2"
+        concepts:
+          - slug: "psyc-experimental-methodology"
+            name: "Experimental Methodology and Control"
+            short_definition: "Scientific research design establishing cause-and-effect relationships by manipulating independent variables while controlling confounding variables."
+            description: "Experiments require random assignment to experimental and control conditions to establish causal inferences, minimizing selection and confounding biases."
+            citation: "College Board Objective 1.2"
+          - slug: "psyc-correlational-research"
+            name: "Correlational Research and Directionality"
+            short_definition: "Statistical assessment measuring the strength and direction of the relationship between two variables, ranging from -1.0 to +1.0."
+            description: "Correlations demonstrate co-variation but never prove direct causality due to directionality problems and potential third-variable confounders."
+            citation: "College Board Objective 1.2"
+            prerequisites: ["psyc-experimental-methodology"]
+        lessons:
+          - title: "Scientific Methods: Experiments, Correlations, and Ethical Standards"
+            description: "Variables, random assignment, placebo controls, correlation coefficients, and institutional review board mandates."
+            emoji: "🔬"
+            tags: ["research", "experiment", "ethics"]
+            concept_slugs: ["psyc-experimental-methodology", "psyc-correlational-research"]
+            citation: "College Board CLEP Introductory Psychology Domain 1.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### The Gold Standard: Controlled Experiments
+
+                    To establish **cause-and-effect relationships**, researchers must use the **experimental method**:
+                    - **Independent Variable (IV):** The factor directly manipulated by the experimenter.
+                    - **Dependent Variable (DV):** The outcome measured to see if the manipulation had an effect.
+                    - **Random Assignment:** Assigning participants to experimental or control conditions by chance, minimizing preexisting differences between groups.
+                    - **Confounding Variables:** Extraneous factors that systematically alter the DV, threatening internal validity.
+              - sort_order: 2
+                block_type: "callout"
+                content:
+                  type: "warning"
+                  title: "Correlation Does Not Prove Causation"
+                  body: "A correlation coefficient ($r$) measures the strength and direction of a relationship between two variables, ranging from $-1.00$ to $+1.00$. Even a near-perfect correlation ($r = +0.94$) cannot prove that variable $A$ caused changes in variable $B$ because an unmeasured **third variable** may account for both."
+            terms:
+              - term: "Double-Blind Procedure"
+                definition: "An experimental protocol in which neither the research participants nor the data-collecting staff know which participants have received the treatment or the placebo."
+                example: "A clinical trial evaluating a novel antidepressant where both patients and administering nurses are blind to medication vs. sugar pill allocation."
+            assessment_items:
+              - prompt: "In a psychological experiment investigating the effect of background noise on reading comprehension, what represents the independent variable?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "The participant's baseline reading ability"
+                    - "The score achieved on the reading comprehension test"
+                    - "The ambient lighting conditions in the testing room"
+                    - "The level and type of background noise presented"
+                scoring_spec:
+                  correct_index: 3
+                explanation: "The independent variable is the factor directly manipulated by the experimenter—in this scenario, the presence or acoustic level of background noise. The comprehension score is the dependent variable."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 1.2"
+                concept_slugs: ["psyc-experimental-methodology", "psyc-correlational-research"]
+
+  # ==========================================================================
+  # Domain 2.0: Biological Bases of Behavior (9%) [Official range: 8-9%]
+  # ==========================================================================
+  - code: "2.0"
+    title: "Biological Bases of Behavior"
+    description: "Neural transmission, neurotransmitters, nervous system organization, brain anatomy and hemispheric specialization, endocrine regulation, and behavioral genetics."
+    weight: 0.09
+    sort_order: 2
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 2.0"
+    objectives:
+      - code: "2.1"
+        title: "Analyze neural anatomy and electrochemical transmission"
+        description: "Dendrites, soma, axon, myelin sheath, resting potential, action potential, synapse, and primary neurotransmitter pathways."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 2.1"
+        concepts:
+          - slug: "psyc-action-potential"
+            name: "Neural Impulse and Action Potential"
+            short_definition: "A brief electrochemical signal that travels down an axon when depolarization crosses the excitation threshold."
+            description: "The action potential follows the all-or-none law, propagating via sodium-potassium voltage-gated ion channels."
+            citation: "College Board Objective 2.1"
+          - slug: "psyc-neurotransmitters"
+            name: "Neurotransmitter Systems"
+            short_definition: "Chemical messengers including acetylcholine, dopamine, serotonin, norepinephrine, GABA, and glutamate regulating neural communication."
+            description: "Neurotransmitters bind to specific postsynaptic receptors, exerting excitatory or inhibitory effects before reuptake or enzymatic degradation."
+            citation: "College Board Objective 2.1"
+            prerequisites: ["psyc-action-potential"]
+        lessons:
+          - title: "The Neuron and Electrochemical Communication"
+            description: "How neurons fire, the all-or-none law, and how neurotransmitters transmit signals across the synaptic cleft."
+            emoji: "⚡"
+            tags: ["neuroscience", "neuron", "neurotransmitters"]
+            concept_slugs: ["psyc-action-potential", "psyc-neurotransmitters"]
+            citation: "College Board CLEP Introductory Psychology Domain 2.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Anatomy of the Neuron
+                    A neuron consists of three primary morphological structures:
+                    1. **Dendrites:** Branching extensions that receive electrochemical signals from neighboring neurons and conduct them toward the soma.
+                    2. **Soma (Cell Body):** Contains the nucleus and metabolic machinery that maintains cellular life.
+                    3. **Axon:** A long fiber extending from the axon hillock that transmits the electrical action potential toward terminal buttons.
+                    4. **Myelin Sheath:** A fatty insulation layer produced by glial cells (Schwann cells and oligodendrocytes) that increases signal conduction velocity via saltatory conduction across the **Nodes of Ranvier**.
+            terms:
+              - term: "All-or-None Response"
+                definition: "The principle that a neuron either fires with its full electrical magnitude or does not fire at all; increasing stimulus intensity increases the frequency of firing, not the amplitude."
+                example: "Like pulling the trigger on a firearm: pulling it harder does not make the bullet travel faster."
+            assessment_items:
+              - prompt: "Which neurotransmitter is primarily implicated in voluntary motor control, cognitive reward pathways, and the neuropathology of Parkinson's disease and schizophrenia?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Acetylcholine"
+                    - "Gamma-aminobutyric acid (GABA)"
+                    - "Dopamine"
+                    - "Norepinephrine"
+                scoring_spec:
+                  correct_index: 2
+                explanation: "Dopamine governs voluntary movement, pleasure, and reward reinforcement. A deficiency of dopamine in the substantia nigra causes Parkinson's disease, whereas excessive dopamine receptor activity is implicated in schizophrenia."
+                difficulty: "intermediate"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 2.1"
+                concept_slugs: ["psyc-action-potential", "psyc-neurotransmitters"]
+
+      - code: "2.2"
+        title: "Identify brain structures, cortical lobes, and hemispheric lateralization"
+        description: "Brainstem, cerebellum, limbic system (amygdala, hippocampus, hypothalamus), cerebral cortex lobes, Broca's/Wernicke's areas, and split-brain phenomena."
+        sort_order: 2
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 2.2"
+        concepts:
+          - slug: "psyc-cortical-lobes"
+            name: "Cerebral Cortex Functional Lobes"
+            short_definition: "Frontal, parietal, occipital, and temporal lobes and their specialized sensorimotor and executive functions."
+            description: "The cerebral cortex handles higher-order processing; frontal governs motor and executive control, parietal processes somatosensory information, occipital processes vision, and temporal processes auditory information."
+            citation: "College Board Objective 2.2"
+          - slug: "psyc-hemispheric-lateralization"
+            name: "Hemispheric Specialization and Split-Brain"
+            short_definition: "Functional asymmetry between left (language, analytic) and right (visuospatial, facial) hemispheres linked by the corpus callosum."
+            description: "Split-brain studies by Sperry and Gazzaniga revealed that the left hemisphere produces verbal speech, while the right hemisphere processes nonverbal visual-spatial stimuli."
+            citation: "College Board Objective 2.2"
+            prerequisites: ["psyc-cortical-lobes"]
+        lessons:
+          - title: "Brain Architecture and Hemispheric Specialization"
+            description: "From the primitive brainstem and emotional limbic system to cortical localization and split-brain findings."
+            emoji: "🧩"
+            tags: ["brain", "cortex", "lateralization"]
+            concept_slugs: ["psyc-cortical-lobes", "psyc-hemispheric-lateralization"]
+            citation: "College Board CLEP Introductory Psychology Domain 2.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Cortical Lobes and Their Primary Functions
+                    - **Frontal Lobe:** Motor cortex, Broca's area (speech production), executive function, emotional regulation, and working memory.
+                    - **Parietal Lobe:** Somatosensory cortex processing touch, temperature, nociception (pain), and spatial manipulation.
+                    - **Occipital Lobe:** Primary visual cortex processing visual inputs received contralaterally via the optic chiasm.
+                    - **Temporal Lobe:** Auditory cortex and Wernicke's area (language comprehension), alongside deep structures for episodic memory (hippocampus).
+            terms:
+              - term: "Corpus Callosum"
+                definition: "The large band of neural fibers connecting the two brain hemispheres and carrying messages between them."
+                example: "Severed in surgical corpus callosotomy procedures to restrict severe epileptic seizures from crossing between hemispheres."
+            assessment_items:
+              - prompt: "A patient suffers an ischemic stroke and subsequently displays fluent, grammatically correct speech that is largely devoid of meaning, accompanied by severe difficulty understanding spoken words. Which neuroanatomical region was most likely damaged?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Wernicke's area in the left temporal lobe"
+                    - "Broca's area in the left frontal lobe"
+                    - "The primary motor cortex in the precentral gyrus"
+                    - "The angular gyrus in the right parietal lobe"
+                scoring_spec:
+                  correct_index: 0
+                explanation: "Damage to Wernicke's area in the posterior left temporal lobe results in receptive (fluent) aphasia: the individual can speak fluently, but their words lack coherent meaning, and comprehension is severely impaired. Broca's damage produces non-fluent, halting speech."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 2.2"
+                concept_slugs: ["psyc-cortical-lobes", "psyc-hemispheric-lateralization"]
+
+  # ==========================================================================
+  # Domain 3.0: Sensation and Perception (8%) [Official range: 7-8%]
+  # ==========================================================================
+  - code: "3.0"
+    title: "Sensation and Perception"
+    description: "Sensory thresholds, signal detection, sensory transduction, visual and auditory pathways, chemical senses, vestibular/kinesthetic systems, and Gestalt organizational principles."
+    weight: 0.08
+    sort_order: 3
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 3.0"
+    objectives:
+      - code: "3.1"
+        title: "Differentiate sensory transduction and psychophysical thresholds"
+        description: "Absolute thresholds, difference thresholds (Weber's law), sensory adaptation, and signal detection theory."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 3.1"
+        concepts:
+          - slug: "psyc-sensory-thresholds"
+            name: "Psychophysical Thresholds and Weber's Law"
+            short_definition: "Absolute thresholds (detectable 50% of the time) and just noticeable differences governed by proportional ratios."
+            description: "Weber's law states that for an average person to perceive a difference, two stimuli must differ by a constant minimum percentage rather than a constant amount."
+            citation: "College Board Objective 3.1"
+        lessons:
+          - title: "Sensory Reception, Transduction, and Thresholds"
+            description: "How sensory receptors convert physical energy into neural impulses, and the mathematical laws governing detection thresholds."
+            emoji: "👁️"
+            tags: ["sensation", "thresholds", "weber"]
+            concept_slugs: ["psyc-sensory-thresholds"]
+            citation: "College Board CLEP Introductory Psychology Domain 3.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Psychophysical Concepts
+                    - **Transduction:** Conversion of one form of physical energy (light photons, sound waves) into electrochemical neural signals.
+                    - **Absolute Threshold:** The minimum stimulus energy needed to detect a particular stimulus 50 percent of the time.
+                    - **Difference Threshold (JND):** The minimum difference a person can detect between any two stimuli 50 percent of the time.
+                    - **Weber's Law:** The principle that to be perceived as different, two stimuli must differ by a constant minimum percentage (e.g., light intensity by 8%, weight by 2%).
+            assessment_items:
+              - prompt: "According to Weber's law, if a person can just barely notice the difference between a 100-gram weight and a 102-gram weight, how many grams would have to be added to a 500-gram weight for the difference to be perceived?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "2 grams"
+                    - "5 grams"
+                    - "10 grams"
+                    - "20 grams"
+                scoring_spec:
+                  correct_index: 2
+                explanation: "Weber's law requires a constant percentage difference. Here, the just noticeable difference is 2 grams per 100 grams, or 2%. Applying a 2% threshold to a 500-gram baseline requires adding 10 grams (500 * 0.02 = 10)."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 3.1"
+                concept_slugs: ["psyc-sensory-thresholds"]
+
+  # ==========================================================================
+  # Domain 4.0: States of Consciousness (5%) [Official range: 5-6%]
+  # ==========================================================================
+  - code: "4.0"
+    title: "States of Consciousness"
+    description: "Circadian rhythms, sleep architecture and NREM/REM stages, sleep disorders, dreaming theories, hypnosis, meditation, and psychoactive drug classifications."
+    weight: 0.05
+    sort_order: 4
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 4.0"
+    objectives:
+      - code: "4.1"
+        title: "Analyze sleep stages, biological clocks, and sleep disorders"
+        description: "Suprachiasmatic nucleus, melatonin, NREM 1-3 sleep cycles, REM sleep phenomena, insomnia, narcolepsy, and sleep apnea."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 4.1"
+        concepts:
+          - slug: "psyc-sleep-architecture"
+            name: "Sleep Cycles and REM Physiology"
+            short_definition: "Electrophysiological progression through NREM stages (1, 2, delta 3) and paradoxical REM sleep repeating in 90-minute ultradian cycles."
+            description: "REM sleep features rapid eye movements, dreaming, autonomic arousal, and motor paralysis (paradoxical sleep) with high beta-like EEG activity."
+            citation: "College Board Objective 4.1"
+        lessons:
+          - title: "Sleep Architecture and Biological Rhythms"
+            description: "Circadian pacing, electroencephalography wave patterns across sleep stages, and common sleep pathologies."
+            emoji: "🌙"
+            tags: ["sleep", "circadian", "consciousness"]
+            concept_slugs: ["psyc-sleep-architecture"]
+            citation: "College Board CLEP Introductory Psychology Domain 4.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Sleep Stages and EEG Signatures
+                    Human sleep cycles through distinct phases approximately every 90 minutes:
+                    - **NREM-1:** Light sleep transitioning from wakefulness, displaying theta waves; may include hypnagogic sensations.
+                    - **NREM-2:** Characterized by **sleep spindles** (rapid bursts of rhythmic brainwave activity) and **K-complexes**.
+                    - **NREM-3:** Deep slow-wave sleep dominated by large, slow **delta waves**; night terrors and sleepwalking occur here.
+                    - **REM Sleep:** Marked by rapid eye movements, vivid dreaming, genital arousal, and muscle atonia (paralysis). Often called **paradoxical sleep** because brain waves resemble awake alert states while muscles are relaxed.
+            assessment_items:
+              - prompt: "During which stage of sleep are sleep spindles and K-complexes most characteristically observed on an electroencephalogram (EEG)?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "NREM-1 sleep"
+                    - "NREM-3 slow-wave sleep"
+                    - "REM sleep"
+                    - "NREM-2 sleep"
+                scoring_spec:
+                  correct_index: 3
+                explanation: "Sleep spindles (short bursts of 12-14 Hz activity) and K-complexes are the distinctive diagnostic electrophysiological hallmarks of NREM-2 sleep."
+                difficulty: "intermediate"
+                cognitive_level: "recall"
+                citation: "College Board CLEP Introductory Psychology Objective 4.1"
+                concept_slugs: ["psyc-sleep-architecture"]
+
+  # ==========================================================================
+  # Domain 5.0: Learning (9%) [Official range: 8-9%]
+  # ==========================================================================
+  - code: "5.0"
+    title: "Learning"
+    description: "Classical conditioning paradigms, operant conditioning principles and schedules of reinforcement, social-cognitive observational learning, and biological constraints on conditioning."
+    weight: 0.09
+    sort_order: 5
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 5.0"
+    objectives:
+      - code: "5.1"
+        title: "Master Pavlovian classical conditioning principles and phenomena"
+        description: "UCS, UCR, CS, CR, acquisition, extinction, spontaneous recovery, stimulus generalization, discrimination, and higher-order conditioning."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 5.1"
+        concepts:
+          - slug: "psyc-classical-conditioning"
+            name: "Classical Conditioning Paradigms"
+            short_definition: "A type of learning in which one learns to link two or more stimuli and anticipate events (Pavlov)."
+            description: "An unconditioned stimulus (UCS) naturally produces an unconditioned response (UCR). Repeated pairing with a neutral stimulus (NS) transforms it into a conditioned stimulus (CS) that elicits a conditioned response (CR)."
+            citation: "College Board Objective 5.1"
+        lessons:
+          - title: "Classical Conditioning: Principles and Extinction"
+            description: "Ivan Pavlov's canine experiments, Little Albert, acquisition curves, stimulus discrimination, and taste aversion."
+            emoji: "🔔"
+            tags: ["learning", "conditioning", "pavlov"]
+            concept_slugs: ["psyc-classical-conditioning"]
+            citation: "College Board CLEP Introductory Psychology Domain 5.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Classical Conditioning Architecture
+                    - **Unconditioned Stimulus (UCS):** A stimulus that unconditionally, naturally, and automatically triggers an unlearned response (e.g., meat powder).
+                    - **Unconditioned Response (UCR):** An unlearned, naturally occurring response to an unconditioned stimulus (e.g., salivation).
+                    - **Conditioned Stimulus (CS):** An originally neutral stimulus that, after association with an unconditioned stimulus, triggers a conditioned response (e.g., bell/tone).
+                    - **Conditioned Response (CR):** A learned response to a previously neutral conditioned stimulus (e.g., salivating to tone).
+            assessment_items:
+              - prompt: "In John B. Watson and Rosalie Rayner's infamous 'Little Albert' experiment, what served as the unconditioned stimulus (UCS)?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "A loud metallic clanging sound"
+                    - "The white laboratory rat"
+                    - "Albert's fearful crying response"
+                    - "A Santa Claus mask"
+                scoring_spec:
+                  correct_index: 0
+                explanation: "The unconditioned stimulus was the loud, startling sound produced by striking a steel bar with a hammer, which naturally provoked an unconditioned fear response. The white rat was originally the neutral stimulus that became the conditioned stimulus."
+                difficulty: "intermediate"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 5.1"
+                concept_slugs: ["psyc-classical-conditioning"]
+
+      - code: "5.2"
+        title: "Differentiate operant conditioning and reinforcement schedules"
+        description: "Positive/negative reinforcement, positive/negative punishment, fixed-ratio, variable-ratio, fixed-interval, variable-interval schedules, and shaping."
+        sort_order: 2
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 5.2"
+        concepts:
+          - slug: "psyc-operant-conditioning"
+            name: "Operant Conditioning and Reinforcement Schedules"
+            short_definition: "Learning where behavior is strengthened if followed by a reinforcer or diminished if followed by a punisher (Thorndike, Skinner)."
+            description: "Reinforcement always increases behavioral frequency (positive adds appetitive stimuli, negative removes aversive stimuli); punishment always decreases frequency."
+            citation: "College Board Objective 5.2"
+            prerequisites: ["psyc-classical-conditioning"]
+        lessons:
+          - title: "Operant Conditioning: Reinforcement and Schedules"
+            description: "Thorndike's law of effect, B.F. Skinner's operant chamber, reinforcement versus punishment matrix, and intermittent schedules."
+            emoji: "📦"
+            tags: ["skinner", "reinforcement", "schedules"]
+            concept_slugs: ["psyc-operant-conditioning"]
+            citation: "College Board CLEP Introductory Psychology Domain 5.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### The Four Operant Outcomes
+                    - **Positive Reinforcement:** Adding a desirable stimulus to *increase* the likelihood of a behavior (e.g., giving a child praise for cleaning their room).
+                    - **Negative Reinforcement:** Removing an aversive stimulus to *increase* the likelihood of a behavior (e.g., fastening a seatbelt to stop an obnoxious beeping chime).
+                    - **Positive Punishment:** Administering an unpleasant stimulus to *decrease* a behavior (e.g., assigning push-ups for being late).
+                    - **Negative Punishment:** Withdrawing a desirable stimulus to *decrease* a behavior (e.g., revoking driving privileges for breaking curfew).
+            assessment_items:
+              - prompt: "A slot machine player inserts coins repeatedly because payouts occur unpredictably after an average of 25 pulls. Which schedule of reinforcement maintains this behavior?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Fixed-ratio schedule"
+                    - "Variable-ratio schedule"
+                    - "Fixed-interval schedule"
+                    - "Variable-interval schedule"
+                scoring_spec:
+                  correct_index: 1
+                explanation: "A variable-ratio schedule provides reinforcement after an unpredictable number of responses. This schedule produces the highest rates of responding and the greatest resistance to extinction (the gambler's fallacy effect)."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 5.2"
+                concept_slugs: ["psyc-operant-conditioning"]
+
+  # ==========================================================================
+  # Domain 6.0: Cognition (9%) [Official range: 8-9%]
+  # ==========================================================================
+  - code: "6.0"
+    title: "Cognition"
+    description: "Memory models (encoding, storage, retrieval), forgetting mechanisms, thinking and heuristics, problem-solving barriers, language acquisition, and intelligence theories."
+    weight: 0.09
+    sort_order: 6
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 6.0"
+    objectives:
+      - code: "6.1"
+        title: "Analyze memory architectures, encoding, and retrieval"
+        description: "Atkinson-Shiffrin model, sensory/working/long-term memory, semantic vs. episodic vs. procedural systems, explicit vs. implicit retrieval."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 6.1"
+        concepts:
+          - slug: "psyc-memory-models"
+            name: "Three-Stage Memory Processing Model"
+            short_definition: "Atkinson-Shiffrin memory model progressing from sensory memory through short-term/working memory into long-term storage."
+            description: "Information enters sensory memory, moves to working memory through attention, and is consolidated into long-term storage through elaborative rehearsal."
+            citation: "College Board Objective 6.1"
+        lessons:
+          - title: "Memory Systems: Encoding, Storage, and Retrieval"
+            description: "Sensory registers (iconic, echoic), working memory capacity (Miller's 7±2, Baddeley's model), and long-term memory taxonomy."
+            emoji: "💾"
+            tags: ["memory", "encoding", "retrieval"]
+            concept_slugs: ["psyc-memory-models"]
+            citation: "College Board CLEP Introductory Psychology Domain 6.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Types of Long-Term Memory
+                    Long-term memory divides into two major branches:
+                    1. **Explicit (Declarative) Memory:** Conscious, intentional recollection of factual information and experiences (processed largely by the hippocampus and frontal lobes).
+                       - **Episodic Memory:** Personally experienced events and autobiographical episodes.
+                       - **Semantic Memory:** General factual knowledge, concepts, and vocabulary detached from personal experience.
+                    2. **Implicit (Nondeclarative) Memory:** Retention independent of conscious recollection (processed by cerebellum and basal ganglia).
+                       - **Procedural Memory:** Motor skills and classical conditioning habits (e.g., riding a bicycle).
+            assessment_items:
+              - prompt: "Patient H.M. had his bilateral medial temporal lobes, including both hippocampi, surgically excised. Afterward, he was unable to form new declarative memories but could still learn new mirror-tracing motor skills. This demonstrated a dissociation between which two memory systems?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Sensory memory and working memory"
+                    - "Iconic memory and echoic memory"
+                    - "Proactive interference and retroactive interference"
+                    - "Explicit memory and implicit memory"
+                scoring_spec:
+                  correct_index: 3
+                explanation: "H.M.'s anterograde amnesia impaired explicit (declarative) memory consolidation, while his intact motor learning demonstrated that implicit (procedural) memory relies on distinct subcortical neural structures like the basal ganglia and cerebellum."
+                difficulty: "intermediate"
+                cognitive_level: "analysis"
+                citation: "College Board CLEP Introductory Psychology Objective 6.1"
+                concept_slugs: ["psyc-memory-models"]
+
+  # ==========================================================================
+  # Domain 7.0: Motivation and Emotion (6%) [Official range: 5-6%]
+  # ==========================================================================
+  - code: "7.0"
+    title: "Motivation and Emotion"
+    description: "Biological and social motives, drive-reduction, optimal arousal (Yerkes-Dodson), Maslow's hierarchy, theories of emotion (James-Lange, Cannon-Bard, Schachter-Singer), and stress coping."
+    weight: 0.06
+    sort_order: 7
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 7.0"
+    objectives:
+      - code: "7.1"
+        title: "Differentiate classical theories of physiological and cognitive emotion"
+        description: "Compare James-Lange, Cannon-Bard, Schachter-Singer two-factor, and Lazarus cognitive-mediational theories."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 7.1"
+        concepts:
+          - slug: "psyc-theories-of-emotion"
+            name: "Physiological and Cognitive Theories of Emotion"
+            short_definition: "Theoretical models explaining the sequence and interaction of physiological arousal, cognitive appraisal, and subjective emotional feeling."
+            description: "James-Lange posits arousal precedes emotion; Cannon-Bard posits simultaneous arousal and emotion; Schachter-Singer posits arousal requires cognitive labeling."
+            citation: "College Board Objective 7.1"
+        lessons:
+          - title: "Theories of Emotion and Motivational Drives"
+            description: "Physiological arousal vs. cognitive appraisal in generating fear, anger, and joy."
+            emoji: "❤️"
+            tags: ["emotion", "james-lange", "cannon-bard"]
+            concept_slugs: ["psyc-theories-of-emotion"]
+            citation: "College Board CLEP Introductory Psychology Domain 7.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Three Major Emotion Theories Compared
+                    1. **James-Lange Theory:** Physiological arousal occurs *first*, and the subjective feeling of emotion is the conscious awareness of that physiological state. (*"I am trembling, therefore I am afraid."*)
+                    2. **Cannon-Bard Theory:** The physiological arousal and the subjective emotional feeling occur *simultaneously* and independently via thalamic relay. (*"The bear makes me tremble and feel afraid at the same instant."*)
+                    3. **Schachter-Singer Two-Factor Theory:** Emotion requires two sequential components: generalized physiological arousal, followed by a *cognitive appraisal/label* derived from the surrounding environmental context.
+            assessment_items:
+              - prompt: "A hiker encounters a bear in the woods. Her heart races, and she immediately looks around, appraises the situation as life-threatening, labels her racing pulse as terror, and experiences intense fear. Which theory of emotion best accounts for this sequence?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "James-Lange theory"
+                    - "Cannon-Bard theory"
+                    - "Schachter-Singer two-factor theory"
+                    - "Opponent-process theory"
+                scoring_spec:
+                  correct_index: 2
+                explanation: "The Schachter-Singer two-factor theory posits that emotional experience requires both undifferentiated physiological arousal AND a cognitive appraisal or label derived from situational context to identify the specific emotion."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 7.1"
+                concept_slugs: ["psyc-theories-of-emotion"]
+
+  # ==========================================================================
+  # Domain 8.0: Developmental Psychology Across the Lifespan (8%) [Official range: 8-9%]
+  # ==========================================================================
+  - code: "8.0"
+    title: "Developmental Psychology Across the Lifespan"
+    description: "Prenatal development, teratogens, infant reflexes, cognitive development (Piaget, Vygotsky), attachment theory (Ainsworth, Bowlby), parenting styles (Baumrind), moral development (Kohlberg), and psychosocial crises (Erikson)."
+    weight: 0.08
+    sort_order: 8
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 8.0"
+    objectives:
+      - code: "8.1"
+        title: "Contrast major lifespan developmental stages and theories"
+        description: "Piaget's cognitive stages, Erikson's eight psychosocial crises, Kohlberg's moral levels, and Ainsworth's strange situation attachment styles."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 8.1"
+        concepts:
+          - slug: "psyc-cognitive-development-piaget"
+            name: "Piagetian Cognitive Development"
+            short_definition: "Four-stage developmental model: sensorimotor (object permanence), preoperational (egocentrism), concrete operational (conservation), and formal operational (abstract logic)."
+            description: "Children construct schema through assimilation and accommodation, progressing through discrete qualitative cognitive stages."
+            citation: "College Board Objective 8.1"
+        lessons:
+          - title: "Cognitive, Social, and Moral Development Across the Lifespan"
+            description: "Piaget's conservation experiments, Erikson's psychosocial dilemmas, and Kohlberg's Heinz dilemma."
+            emoji: "🌱"
+            tags: ["development", "piaget", "erikson"]
+            concept_slugs: ["psyc-cognitive-development-piaget"]
+            citation: "College Board CLEP Introductory Psychology Domain 8.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Jean Piaget's Four Stages of Cognitive Development
+                    1. **Sensorimotor (0–2 years):** Explores through senses and motor action; develops **object permanence** (realizing objects exist when unseen) and stranger anxiety.
+                    2. **Preoperational (2–7 years):** Symbolic thinking and pretend play; limited by **egocentrism** (inability to see another's perspective) and lack of **conservation**.
+                    3. **Concrete Operational (7–11 years):** Understands conservation (matter remains constant despite shape changes), mathematical transformations, and logical operations with concrete objects.
+                    4. **Formal Operational (12+ years):** Capable of abstract reasoning, hypothetical thinking, and systematic deductive logic.
+            assessment_items:
+              - prompt: "A child watches an experimenter pour liquid from a short, wide glass into a tall, narrow glass and insists that the tall glass now contains more juice. According to Piaget, which stage of cognitive development is this child exhibiting?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Preoperational stage"
+                    - "Sensorimotor stage"
+                    - "Concrete operational stage"
+                    - "Formal operational stage"
+                scoring_spec:
+                  correct_index: 0
+                explanation: "The child is in the preoperational stage (ages 2-7), characterized by centration and an inability to understand conservation—the concept that volume remains identical despite changes in container dimensions."
+                difficulty: "beginner"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 8.1"
+                concept_slugs: ["psyc-cognitive-development-piaget"]
+
+  # ==========================================================================
+  # Domain 9.0: Personality (7%) [Official range: 7-8%]
+  # ==========================================================================
+  - code: "9.0"
+    title: "Personality"
+    description: "Psychoanalytic and psychodynamic models (id/ego/superego, defense mechanisms), humanistic theories (self-concept, unconditional positive regard), trait models (Big Five OCEAN), and social-cognitive theory (locus of control, reciprocal determinism)."
+    weight: 0.07
+    sort_order: 9
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 9.0"
+    objectives:
+      - code: "9.1"
+        title: "Evaluate personality theories and psychometric assessments"
+        description: "Freudian structural model and defense mechanisms, Rogers' person-centered theory, the Big Five factor model, MMPI, and projective testing."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 9.1"
+        concepts:
+          - slug: "psyc-big-five-traits"
+            name: "The Big Five Factor Trait Model (OCEAN)"
+            short_definition: "Dimensional trait model describing personality along five robust factors: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism."
+            description: "The Big Five model is supported cross-culturally and provides a stable quantitative profile across the adult lifespan."
+            citation: "College Board Objective 9.1"
+        lessons:
+          - title: "Trait, Humanistic, and Psychodynamic Perspectives on Personality"
+            description: "From Freud's unconscious defense mechanisms to the empirical Big Five factor model."
+            emoji: "🎭"
+            tags: ["personality", "big-five", "traits"]
+            concept_slugs: ["psyc-big-five-traits"]
+            citation: "College Board CLEP Introductory Psychology Domain 9.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### The Big Five Trait Dimensions (OCEAN)
+                    - **Openness to Experience:** Imaginative, creative, curious vs. practical, conventional, and preference for routine.
+                    - **Conscientiousness:** Organized, disciplined, dependable, achievement-oriented vs. disorganized, careless, and impulsive.
+                    - **Extraversion:** Sociable, energetic, talkative, assertive vs. reserved, quiet, and introspective.
+                    - **Agreeableness:** Cooperative, trusting, empathetic, warm vs. suspicious, antagonistic, and uncooperative.
+                    - **Neuroticism (Emotional Instability):** Prone to anxiety, mood swings, irritability, and vulnerability vs. calm, secure, and emotionally resilient.
+            assessment_items:
+              - prompt: "Which of the Big Five personality dimensions is most consistently predictive of superior academic and occupational achievement across longitudinal studies?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Openness to experience"
+                    - "Conscientiousness"
+                    - "Extraversion"
+                    - "Agreeableness"
+                scoring_spec:
+                  correct_index: 1
+                explanation: "Conscientiousness, characterized by self-discipline, organization, goal-directed behavior, and persistence, is the strongest and most consistent Big Five predictor of academic performance and workplace productivity."
+                difficulty: "intermediate"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 9.1"
+                concept_slugs: ["psyc-big-five-traits"]
+
+  # ==========================================================================
+  # Domain 10.0: Psychological Disorders and Health (9%) [Official range: 8-9%]
+  # ==========================================================================
+  - code: "10.0"
+    title: "Psychological Disorders and Health"
+    description: "DSM-5 classification, biopsychosocial etiology, anxiety disorders, OCD, PTSD, depressive and bipolar disorders, schizophrenia spectrum, dissociative and personality disorders, and health psychology/stress."
+    weight: 0.09
+    sort_order: 10
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 10.0"
+    objectives:
+      - code: "10.1"
+        title: "Diagnose psychological disorders according to DSM-5 criteria"
+        description: "Distinguish positive/negative symptoms of schizophrenia, mood episode criteria in bipolar disorder, obsessive vs. compulsive symptoms, and anxiety etiologies."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 10.1"
+        concepts:
+          - slug: "psyc-dsm5-disorders"
+            name: "DSM-5 Diagnostic Criteria and Classification"
+            short_definition: "Standardized clinical criteria for diagnosing psychological disorders characterized by distress, deviance, dysfunction, and danger."
+            description: "Psychological disorders represent clinically significant disturbances in cognition, emotional regulation, or behavior."
+            citation: "College Board Objective 10.1"
+        lessons:
+          - title: "Psychological Disorders: Classification, Symptoms, and Etiology"
+            description: "DSM-5 criteria for anxiety, mood disorders, schizophrenia, personality disorders, and the diathesis-stress model."
+            emoji: "🏥"
+            tags: ["psychopathology", "dsm-5", "disorders"]
+            concept_slugs: ["psyc-dsm5-disorders"]
+            citation: "College Board CLEP Introductory Psychology Domain 10.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Schizophrenia Spectrum Symptoms
+                    Schizophrenia is characterized by a breakdown in thought processes, perception, and emotional responsiveness:
+                    - **Positive Symptoms (Additions to normal experience):**
+                      - **Delusions:** Firmly held false beliefs contrary to reality (e.g., delusions of persecution, grandiosity).
+                      - **Hallucinations:** Sensory perceptions without external physical stimuli (most commonly auditory voices).
+                      - Disorganized thinking, speech ("word salad"), and grossly disorganized or catatonic motor behavior.
+                    - **Negative Symptoms (Deficits or subtractions from normal function):**
+                      - **Flat Affect:** Diminished emotional expression.
+                      - **Avolition:** Lack of motivation and initiative.
+                      - **Alogia:** Poverty of speech.
+            assessment_items:
+              - prompt: "A patient diagnosed with schizophrenia exhibits flat vocal prosody, social withdrawal, severe avolition, and prolonged immobility. These manifestations represent which clinical category?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Positive symptoms"
+                    - "Dissociative symptoms"
+                    - "Psychosomatic symptoms"
+                    - "Negative symptoms"
+                scoring_spec:
+                  correct_index: 3
+                explanation: "Negative symptoms involve behavioral deficits or the absence of normal behaviors, including flat affect (blunted expression), avolition (inability to initiate goal-directed action), and alogia. Positive symptoms, by contrast, involve excess or distortion (hallucinations, delusions)."
+                difficulty: "intermediate"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 10.1"
+                concept_slugs: ["psyc-dsm5-disorders"]
+
+  # ==========================================================================
+  # Domain 11.0: Treatment of Psychological Disorders (6%) [Official range: 6-7%]
+  # ==========================================================================
+  - code: "11.0"
+    title: "Treatment of Psychological Disorders"
+    description: "Psychotherapy modalities (psychodynamic, humanistic, behavioral, cognitive-behavioral, family/group), biomedical therapies (psychopharmacology, ECT, TMS), and preventive community mental health."
+    weight: 0.06
+    sort_order: 11
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 11.0"
+    objectives:
+      - code: "11.1"
+        title: "Compare psychotherapeutic and biomedical treatment modalities"
+        description: "Systematic desensitization, cognitive restructuring (Beck, Ellis), psychopharmacology (SSRIs, antipsychotics, lithium), and ECT."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 11.1"
+        concepts:
+          - slug: "psyc-treatment-modalities"
+            name: "Psychotherapeutic and Biomedical Interventions"
+            short_definition: "Evidence-based clinical treatments including cognitive-behavioral therapy (CBT), systematic desensitization, and psychotropic medications."
+            description: "CBT combines cognitive restructuring with behavioral modification; psychopharmacology alters neurotransmitter synaptic availability."
+            citation: "College Board Objective 11.1"
+        lessons:
+          - title: "Psychological Therapies and Biomedical Treatments"
+            description: "Counterconditioning, cognitive distortion challenging, selective serotonin reuptake inhibitors, and mood stabilizers."
+            emoji: "🛋️"
+            tags: ["therapy", "cbt", "psychopharmacology"]
+            concept_slugs: ["psyc-treatment-modalities"]
+            citation: "College Board CLEP Introductory Psychology Domain 11.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Behavioral and Cognitive-Behavioral Approaches
+                    - **Systematic Desensitization (Wolpe):** A form of exposure therapy based on classical counterconditioning; clients learn progressive muscle relaxation and gradually confront an anxiety hierarchy.
+                    - **Cognitive-Behavioral Therapy (CBT):** Combines cognitive restructuring (identifying and modifying irrational thoughts and cognitive distortions) with behavioral interventions to replace maladaptive actions.
+                    - **Psychopharmacology:**
+                      - *Antidepressants (SSRIs):* Block the presynaptic reuptake of serotonin (e.g., fluoxetine).
+                      - *Antipsychotics (Neuroleptics):* Block dopamine D2 receptors to reduce positive symptoms of schizophrenia.
+                      - *Mood Stabilizers:* Lithium carbonate used to treat bipolar manic episodes.
+            assessment_items:
+              - prompt: "A therapist helps a client overcome arachnophobia by first teaching progressive deep muscle relaxation and then pairing that relaxed state with increasingly frightening encounters on a ten-step fear hierarchy. Which therapeutic technique is being applied?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Systematic desensitization"
+                    - "Aversive conditioning"
+                    - "Rational-emotive behavior therapy (REBT)"
+                    - "Free association"
+                scoring_spec:
+                  correct_index: 0
+                explanation: "Systematic desensitization, developed by Joseph Wolpe, is a classical counterconditioning behavioral therapy that pairs progressive relaxation with gradual exposure to an anxiety-provoking hierarchy of stimuli."
+                difficulty: "intermediate"
+                cognitive_level: "application"
+                citation: "College Board CLEP Introductory Psychology Objective 11.1"
+                concept_slugs: ["psyc-treatment-modalities"]
+
+  # ==========================================================================
+  # Domain 12.0: Social Psychology (10%) [Official range: 9-10%]
+  # ==========================================================================
+  - code: "12.0"
+    title: "Social Psychology"
+    description: "Attribution theory, cognitive dissonance, conformity and compliance (Asch, Milgram), group dynamics (social facilitation, loafing, groupthink, deindividuation), prejudice, and prosocial/bystander behavior."
+    weight: 0.10
+    sort_order: 12
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 12.0"
+    objectives:
+      - code: "12.1"
+        title: "Analyze social cognition, attribution, and interpersonal influence"
+        description: "Fundamental attribution error, self-serving bias, cognitive dissonance (Festinger), conformity (Asch), obedience (Milgram), and bystander intervention (Darley & Latané)."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 12.1"
+        concepts:
+          - slug: "psyc-attribution-biases"
+            name: "Attribution Theory and Social Biases"
+            short_definition: "How individuals explain causes of behavior, including fundamental attribution error, actor-observer bias, and self-serving bias."
+            description: "People tend to overestimate dispositional factors and underestimate situational pressures when explaining others' negative behavior."
+            citation: "College Board Objective 12.1"
+          - slug: "psyc-conformity-obedience"
+            name: "Conformity, Obedience, and Group Processes"
+            short_definition: "Social pressure shaping behavior through normative/informational influence (Asch), legitimate authority obedience (Milgram), and groupthink."
+            description: "Milgram demonstrated that ordinary individuals will comply with destructive authority commands; Asch demonstrated conformity to erroneous group consensus."
+            citation: "College Board Objective 12.1"
+            prerequisites: ["psyc-attribution-biases"]
+        lessons:
+          - title: "Social Influence: Attribution, Conformity, and Obedience"
+            description: "The fundamental attribution error, cognitive dissonance reduction, Asch's line studies, Milgram's obedience experiments, and bystander apathy."
+            emoji: "👥"
+            tags: ["social", "conformity", "milgram"]
+            concept_slugs: ["psyc-attribution-biases", "psyc-conformity-obedience"]
+            citation: "College Board CLEP Introductory Psychology Domain 12.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### Landmark Social Psychology Experiments
+                    - **Solomon Asch (Conformity):** Demonstrated that over one-third of participants conformed to an obviously erroneous visual line-judgment consensus delivered by confederates, driven by **normative social influence** (desire for approval) and **informational social influence** (desire to be correct).
+                    - **Stanley Milgram (Obedience):** Showed that roughly 65% of adult male participants administered maximum 450-volt electric shocks to an innocent confederate when instructed by a perceived scientific authority figure in a white lab coat.
+                    - **Leon Festinger (Cognitive Dissonance):** The psychological tension experienced when attitudes and actions clash, motivating individuals to alter their attitudes to align with their behavior.
+            assessment_items:
+              - prompt: "When a driver cuts abruptly across traffic, an observer remarks, 'That driver is a reckless, selfish idiot,' completely ignoring that the driver was rushing an injured child to an emergency room. Which attributional phenomenon does this illustrate?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "Self-serving bias"
+                    - "Fundamental attribution error"
+                    - "Confirmation bias"
+                    - "Just-world hypothesis"
+                scoring_spec:
+                  correct_index: 1
+                explanation: "The fundamental attribution error is the pervasive tendency for observers to underestimate situational constraints and overestimate internal, dispositional traits when judging the conduct of others."
+                difficulty: "beginner"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 12.1"
+                concept_slugs: ["psyc-attribution-biases", "psyc-conformity-obedience"]
+
+  # ==========================================================================
+  # Domain 13.0: Statistics, Tests, and Measurement (3%) [Official range: 3-4%]
+  # ==========================================================================
+  - code: "13.0"
+    title: "Statistics, Tests, and Measurement"
+    description: "Descriptive statistics (central tendency, variability, normal curve properties), inferential logic (p-values, statistical significance), and test psychometrics (reliability, validity, standardization)."
+    weight: 0.03
+    sort_order: 13
+    importance: "core"
+    citation: "College Board CLEP Introductory Psychology Domain 13.0"
+    objectives:
+      - code: "13.1"
+        title: "Apply descriptive statistics, the normal curve, and psychometric principles"
+        description: "Mean, median, mode, standard deviation, normal distribution percentiles (68-95-99.7 rule), test-retest reliability, and construct validity."
+        sort_order: 1
+        importance: "core"
+        citation: "College Board CLEP Introductory Psychology Objective 13.1"
+        concepts:
+          - slug: "psyc-psychometric-reliability-validity"
+            name: "Psychometric Standardization, Reliability, and Validity"
+            short_definition: "Standards for psychological testing: reliability (consistency of measurement) and validity (measuring what is intended)."
+            description: "A test can be highly reliable without being valid, but a test cannot be valid without first demonstrating reliability."
+            citation: "College Board Objective 13.1"
+        lessons:
+          - title: "Statistical Measures and Psychometric Quality"
+            description: "Measures of central tendency, skew, the empirical 68-95-99.7 distribution rule, and test standardization."
+            emoji: "📊"
+            tags: ["statistics", "reliability", "validity"]
+            concept_slugs: ["psyc-psychometric-reliability-validity"]
+            citation: "College Board CLEP Introductory Psychology Domain 13.0"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: |
+                    ### The Normal Distribution (Bell Curve)
+                    In a standard normal distribution:
+                    - **68%** of all scores fall within $\pm 1$ standard deviation of the mean.
+                    - **95%** of all scores fall within $\pm 2$ standard deviations of the mean.
+                    - **99.7%** of all scores fall within $\pm 3$ standard deviations of the mean.
+                    - In a positively skewed distribution, the **mean** is pulled toward the high-scoring tail, while the **mode** remains at the peak and the **median** sits in the middle.
+            assessment_items:
+              - prompt: "On a standardized intelligence test with a mean score of 100 and a standard deviation of 15, approximately what percentage of the general population will score between 85 and 115?"
+                interaction_type: "single_choice"
+                response_spec:
+                  options:
+                    - "34%"
+                    - "50%"
+                    - "68%"
+                    - "95%"
+                scoring_spec:
+                  correct_index: 2
+                explanation: "Scores between 85 and 115 represent ±1 standard deviation (100 ± 15). In a normal distribution, approximately 68% of cases fall within one standard deviation of the arithmetic mean."
+                difficulty: "beginner"
+                cognitive_level: "comprehension"
+                citation: "College Board CLEP Introductory Psychology Objective 13.1"
+                concept_slugs: ["psyc-psychometric-reliability-validity"]
