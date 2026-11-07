@@ -68,10 +68,12 @@ def erase_owned_attempt(
         if not repository.freeze_upload(owner_id, attempt_id):
             return "retry"
         path = f"{owner_id}/{attempt_id}/workbook.xlsx"
+        # Do not trust a potentially stale negative object listing.
+        # The privileged Storage adapter must treat missing objects as
+        # idempotent deletion and confirm absence with an authoritative read.
+        storage.remove(PRIVATE_BUCKET, path)
         if storage.exists(PRIVATE_BUCKET, path):
-            storage.remove(PRIVATE_BUCKET, path)
-            if storage.exists(PRIVATE_BUCKET, path):
-                return "retry"
+            return "retry"
         if not repository.delete_attempt(owner_id, attempt_id):
             return "retry"
     except Exception:
