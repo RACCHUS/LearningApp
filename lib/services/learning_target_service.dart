@@ -24,7 +24,11 @@ class LearningTargetService {
       final userId = _supabase.auth.currentUser?.id;
       // Request only fields consumed by LearningTarget.fromJson; avoid transferring
       // unused columns for every Library search result.
-      var query = _supabase.from('learning_targets').select('id,target_type,field_id,title,slug,description,provider_name,institution_name,jurisdiction,image_url,emoji,is_public,is_official,review_status,status,created_by,created_at,updated_at');
+      var query = _supabase.from('learning_targets').select(
+        'id,target_type,field_id,title,slug,description,provider_name,'
+        'institution_name,jurisdiction,image_url,emoji,is_public,is_official,'
+        'review_status,status,created_by,created_at,updated_at',
+      );
       if (userId != null) {
         query = query.or('status.eq.published,created_by.eq.$userId');
       } else {
