@@ -54,7 +54,8 @@ CREATE TEMP TABLE sl_second_attempt AS
 -- private service-only claim function and not via these temporary tables.
 GRANT SELECT ON sl_processing_attempt, sl_second_attempt TO service_role;
 RESET ROLE;
-UPDATE public.software_learning_attempts SET upload_enabled=true
+UPDATE public.software_learning_attempts SET upload_enabled=true,
+ upload_sha256=repeat('a',64), upload_object_version='v1', upload_committed_at=now()
  WHERE id=(SELECT id FROM sl_processing_attempt);
 
 SET LOCAL ROLE service_role;
@@ -83,6 +84,10 @@ SELECT is((SELECT response->>'exercise_id' FROM sl_processing_claim),
  'excel-budget-total-v1','Exercise is pinned by backend');
 SELECT is((SELECT response->>'checker_version' FROM sl_processing_claim),
  '1','Checker version is pinned by backend');
+SELECT is((SELECT response->>'expected_sha256' FROM sl_processing_claim),
+ repeat('a',64),'Claim pins the uploaded workbook SHA-256');
+SELECT is((SELECT response->>'object_version' FROM sl_processing_claim),
+ 'v1','Claim pins the immutable Storage object version');
 SELECT is((SELECT count(*)::integer FROM sl_processing_claim,
            jsonb_object_keys(response->'expected_inputs')),
  8,'Private expected inputs are returned only to service processor');
@@ -107,6 +112,10 @@ SELECT is(software_learning_private.sl_complete_excel_processing(
    (SELECT (response->>'lease_id')::uuid FROM sl_processing_claim),
    'bad-digest','pass','Correctly computed'),
  false,'Malformed workbook hash cannot be stored');
+SELECT is(software_learning_private.sl_complete_excel_processing(
+   (SELECT (response->>'lease_id')::uuid FROM sl_processing_claim),
+   repeat('b',64),'pass','Incorrect workbook'),
+ false,'Completion cannot claim a digest different from broker seal');
 SELECT is(software_learning_private.sl_complete_excel_processing(
    (SELECT (response->>'lease_id')::uuid FROM sl_processing_claim),
    repeat('a',64),'verified','Incorrect trust'),
@@ -134,7 +143,8 @@ SELECT is(software_learning_private.sl_fail_excel_processing(
  false,'Late fail callback cannot overwrite a completed grade');
 
 RESET ROLE;
-UPDATE public.software_learning_attempts SET upload_enabled=true
+UPDATE public.software_learning_attempts SET upload_enabled=true,
+ upload_sha256=repeat('a',64), upload_object_version='v1', upload_committed_at=now()
  WHERE id=(SELECT id FROM sl_second_attempt);
 SET LOCAL ROLE service_role;
 CREATE TEMP TABLE sl_processing_second_claim AS
