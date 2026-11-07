@@ -154,6 +154,12 @@ jobs:
       - name: Test bounded Excel expiration sweep (dry run by default)
         run: python3 -m unittest discover -s tool/tests -p 'test_retention_batch.py' -v
 
+      - name: Test disabled-by-default internal Excel assessment gateway
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_internal.py' -v
+
+      - name: Test trusted-host Excel assessment composition
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_runtime.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
