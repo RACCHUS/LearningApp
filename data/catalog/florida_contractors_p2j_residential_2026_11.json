@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "reviewed_jurisdiction": "US-FL",
+  "regulator_name": "Florida Construction Industry Licensing Board (DBPR CILB)",
+  "regulator_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0601",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "destination": {
+    "source_namespace": "dbpr_fl",
+    "source_key": "certified-residential-contractor",
+    "destination_type": "professional_license",
+    "title": "Florida Certified Residential Contractor License",
+    "issuer_name": "Florida Department of Business and Professional Regulation",
+    "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+    "official_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0601",
+    "jurisdiction": "US-FL",
+    "verification_note": "Florida DBPR official contractor application center names Certified Residential Contractor and lists CILB 5-C initial licensing application.",
+    "reviewed_on": "2026-11-07",
+    "editorial_order": 27,
+    "resource": {
+      "resource_key": "cilb-5c-checklist",
+      "title": "DBPR CILB 5-C Residential Contractor Individual Checklist",
+      "resource_kind": "regulator_license_checklist",
+      "resource_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=2996&clientCode=0601&xactCode=1030",
+      "source_publisher": "Florida Department of Business and Professional Regulation",
+      "review_note": "Official regulator application checklist detailing CILB 5-C residential contractor qualification, examination, financial stability, and insurance requirements.",
+      "rights_scope": "external_link_only",
+      "status": "published",
+      "sort_order": 27
+    }
+  },
+  "records": [
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "certified-residential-contractor",
+      "revision": 1,
+      "supersedes_revision": null,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Certified Residential Contractor (CRC): CILB 5-C qualification and licensing routes",
+      "overview": "Selected official DBPR and Construction Industry Licensing Board (CILB) licensing steps for Florida Certified Residential Contractors (CRC) under Florida Statutes Chapter 489 and CILB 5-C candidate requirements. Represents practical experience pathways, degree alternatives, military service options, residential trade experience areas (one/two-family and townhome structures up to three stories), electronic fingerprint screening, Pearson VUE state construction examination, financial responsibility requirements, and active-status insurance coverage. This is not a formal legal determination of eligibility; individual applications are evaluated directly by the Department.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0601",
+      "source_checked_on": "2026-11-07",
+      "reviewed_on": "2026-11-07",
+      "review_note": "Revision 1 establishes the verified CILB residential contractor licensing pathway based on F.S. § 489.111, F.A.C. Rule 61G4, and the official CILB 5-C application guide. Correctly restricts scope to residential construction not exceeding three stories, models the multi-tier education and foreman experience matrix, captures military veteran alternatives, specifies the 14-hour financial responsibility course alternative for below-660 FICO scores, and details the mandatory liability insurance condition for active practice.",
+      "source_retrieved_at": "2026-11-07T14:25:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Qualify with an accredited four-year engineering, architecture or building-construction degree plus one year of proven residential experience",
+                "stage": "education",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf"
+              },
+              {
+                "op": "step",
+                "label": "Qualify with one year as a foreman plus at least three years of accredited college-level credits",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf"
+              },
+              {
+                "op": "step",
+                "label": "Qualify with one year as a skilled worker, one year as a foreman and at least two years of accredited college-level credits",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf"
+              },
+              {
+                "op": "step",
+                "label": "Qualify with two years as a skilled worker, one year as a foreman and at least one year of accredited college-level credits",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf"
+              },
+              {
+                "op": "step",
+                "label": "Qualify with four years as a skilled worker or foreman, including at least one year as a foreman in residential construction",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf"
+              },
+              {
+                "op": "step",
+                "label": "Veteran route: document three years of military service and one year of applicable foreman experience",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+                "condition": "Military-veteran qualification alternative"
+              },
+              {
+                "op": "step",
+                "label": "Veteran route: document two years of military service, one year of foreman experience and one year of applicable worker or foreman experience",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+                "condition": "Military-veteran qualification alternative"
+              },
+              {
+                "op": "step",
+                "label": "Veteran route: document one year of military service, one year of foreman experience and two years of applicable worker or foreman experience",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+                "condition": "Military-veteran qualification alternative"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Document experience in at least four of the residential construction experience areas listed on CILB 5-C",
+            "stage": "experience",
+            "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+            "condition": "Experience must be on one-family, two-family, or townhome residences not exceeding three stories in height"
+          },
+          {
+            "op": "step",
+            "label": "Submit electronic fingerprints through an FDLE-approved Livescan service vendor for background screening",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=2996&clientCode=0601&xactCode=1030",
+            "condition": "Use DBPR Construction Industry Licensing Board Originating Agency Identifier (ORI) FL920250Z"
+          },
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Demonstrate financial responsibility with a personal FICO credit score of 660 or higher from a Board-approved credit reporting agency",
+                "stage": "authorization",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+                "condition": "Credit reports required for applicant and business entity"
+              },
+              {
+                "op": "step",
+                "label": "If FICO is below 660, complete a Board-approved 14-hour financial responsibility course",
+                "stage": "education",
+                "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+                "condition": "Proof of course completion required with CILB 5-C application"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Pass the Florida State Residential Contractor Examination administered by Pearson VUE (Business & Finance and Residential Trade Knowledge)",
+            "stage": "examination",
+            "source_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB5C_Certified_Contractor_Individual_Residential.pdf",
+            "condition": "Examination scores valid for four years from examination date"
+          },
+          {
+            "op": "step",
+            "label": "Submit completed Form DBPR CILB 5-C Application for Certified Residential Contractor License with state fees",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=06&chBoard=true&professionid=0601",
+            "condition": "Submit with credit report, experience verification, and exam passing slips"
+          },
+          {
+            "op": "step",
+            "label": "Provide proof of public liability and property damage insurance ($100,000/$25,000) and workers' compensation coverage",
+            "stage": "authorization",
+            "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/489.111",
+            "condition": "Required to obtain and maintain active license status"
+          }
+        ]
+      }
+    }
+  ]
+}
+
