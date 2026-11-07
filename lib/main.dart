@@ -14,8 +14,6 @@ import 'package:learning_pwa/config/supabase_config.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/services/push_notification_service.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
-import 'package:learning_pwa/services/audio_service.dart';
-import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/providers/app_initialization_provider.dart';
 import 'package:learning_pwa/core/errors/global_error_handler.dart';
 import 'package:learning_pwa/core/logging/error_reporting_service.dart';
@@ -138,22 +136,14 @@ Future<void> main() async {
   }
 }
 
-/// Initialize integrations that are not required to render or navigate the app.
-/// Each integration is isolated so an unavailable browser API cannot block others.
+/// Initialize browser notifications after the first frame. Audio and voice
+/// services are initialized by their feature providers only when first needed.
 Future<void> _initializeOptionalServices() async {
-  final initializers = <({String name, Future<void> Function() initialize})>[
-    (name: 'Notifications', initialize: () => PushNotificationService().init()),
-    (name: 'Audio', initialize: () => AudioService().initialize()),
-    (name: 'Voice input', initialize: () => VoiceInputService().initialize()),
-  ];
-
-  for (final initializer in initializers) {
-    try {
-      await initializer.initialize();
-    } catch (error, stackTrace) {
-      debugPrint('Optional ${initializer.name} initialization failed: $error');
-      if (kDebugMode) debugPrintStack(stackTrace: stackTrace);
-    }
+  try {
+    await PushNotificationService().init();
+  } catch (error, stackTrace) {
+    debugPrint('Optional notification initialization failed: $error');
+    if (kDebugMode) debugPrintStack(stackTrace: stackTrace);
   }
 }
 
