@@ -72,7 +72,6 @@ DECLARE
   v_now timestamptz := now();
   v_id uuid;
   v_inputs jsonb := '{}'::jsonb;
-  v_i integer;
   v_quota integer;
 BEGIN
   v_actor := (SELECT auth.uid());
