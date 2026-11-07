@@ -81,11 +81,18 @@ GRANT EXECUTE ON FUNCTION public.sl_excel_storage_upload_authorized(text)
 -- A restrictive gate is essential: a pre-existing permissive bucket INSERT
 -- policy must not authorize uploads to the reserved Excel bucket.
 CREATE POLICY sl_excel_insert_enforce ON storage.objects
-AS RESTRICTIVE FOR INSERT TO anon,authenticated
+AS RESTRICTIVE FOR INSERT TO authenticated
 WITH CHECK (
   bucket_id <> 'learningapp-excel-private'
   OR public.sl_excel_storage_upload_authorized(name)
 );
+
+-- Anonymous DB role is deliberately separate: it cannot execute the gated
+-- authenticated-only helper. This prevents a policy permission error from
+-- affecting unrelated buckets with existing public upload rules.
+CREATE POLICY sl_excel_insert_anon_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO anon
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
 
 -- Explicit client-side direct upload permission only if a trusted operator
 -- later sets the attempt's server-only gate. No signed URL or upsert flows.
