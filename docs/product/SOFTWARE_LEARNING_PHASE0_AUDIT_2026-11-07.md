@@ -147,3 +147,12 @@ The supporting Python code and tests define a full *trust contract* between a se
 **Verified in local/prototype tests only:** The database test executes trusted SQL functions against a disposable CI database, and the Python tests use injected session/storage collaborators. These tests demonstrate the contracts and checks, **not** deployed Auth/Storage adapters, end-to-end race freedom, or finished learner functionality.
 
 **Unresolved production work:** Host service deployment; server-side validation of Supabase bearer identity and active session; controlled private Storage API download and object-version pinning; crash/retry and idempotency; concurrent/in-flight uploads and signed URLs; object retention, account erasure and issuance-log pruning; metrics, privacy copy, user UI and unified simulation/software evidence. Production `upload_enabled` must remain **false**. No `record_events` writes, competency awards or AI-file transfer are permitted until trust review and implementation.
+
+## 2026-11-07 continuation — reviewed API adapter boundaries (not deployed)
+
+Two additional host-only, network-capable source adapters are checked in:
+
+- `supabase_auth_gateway.py`: contacts the official Auth server for a fresh user record before using the bearer JWT's subject/session claims. Rejects anonymous accounts, mismatched identity, malformed JWTs, invalid project origins, redirects and oversize responses. The database claim still independently verifies a live session.
+- `supabase_private_storage.py`: fixed `learningapp-excel-private` bucket and canonical UUID/UUID/`workbook.xlsx` key, bounded authenticated object-info and XLSX download, metadata/version checks, no redirects, and idempotent Storage API removal. Server-side secret is never passed to the parser. Its tests use mock HTTPS responses, not a live project.
+
+**Still blocked:** a hosted handler/queue that validates caller tokens and invokes these adapters with dedicated secret management, a real pinned Docker image deployment and container runtime enforcement, durable lease/retry/retention scheduling, Storage object revision race validation, client upload UI and user-visible privacy/deletion controls, and eventual unified trusted skill evidence. Current static capabilities must not be represented as a complete service. No production deployment, data mutation or learner file intake occurred.
