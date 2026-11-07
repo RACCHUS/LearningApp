@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/services/simulation/simulation_session.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/literacy/currency_atm_widget.dart';
 import 'package:learning_pwa/widgets/simulation/network_troubleshooting_simulation.dart';
+import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
 
 class SimulationScreen extends StatefulWidget {
   final String simulationId;
@@ -58,9 +58,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
 
   void _exit() {
     _terminateForLearnerExit();
-    if (Navigator.of(context).canPop()) {
-      context.pop();
-    }
+    leaveSimulation(context);
   }
 
   void _terminateForLearnerExit() {

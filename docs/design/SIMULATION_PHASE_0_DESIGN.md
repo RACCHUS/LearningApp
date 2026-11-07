@@ -259,6 +259,12 @@ cannot establish causal effectiveness.
   exercises the real `buildSimulationRoute` error view, Help, and the
   "Return to lesson" pop back to the launching page. A temporary copy of the
   placeholder `.env.example` was needed because the asset bundle requires `.env`.
+  All three exit paths (screen exit/Escape/disabled return, deferred-load
+  failure return, and network-practice finish) use `leaveSimulation`: they pop
+  to the originating lesson when one exists and otherwise go to `/learn`, so a
+  direct link opened in a new tab cannot strand the learner. Four direct-link
+  tests start on the simulation route and verify each path reaches `/learn`;
+  the simulation suite is now 26 tests.
   Widget tests run in debug mode, so release behavior is verified by the gate
   unit test plus the compile-time `kReleaseMode` constant, not by launching a
   release build end to end.

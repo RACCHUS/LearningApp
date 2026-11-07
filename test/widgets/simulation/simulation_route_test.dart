@@ -323,4 +323,127 @@ void main() {
       expect(find.text('Interactive practice unavailable'), findsNothing);
     });
   });
+
+  group('Direct-link simulation exits', () {
+    GoRouter directLinkRouter({
+      required Widget Function(GoRouterState state) simulation,
+    }) {
+      return GoRouter(
+        initialLocation: '/simulation/networking-basics/1.0.0',
+        routes: [
+          GoRoute(
+            path: '/learn',
+            builder: (context, state) =>
+                const Scaffold(body: Text('Learn destination')),
+          ),
+          GoRoute(
+            path: '/simulation/:simulationId/:version',
+            builder: (context, state) => simulation(state),
+          ),
+        ],
+      );
+    }
+
+    Future<void> pumpRouter(WidgetTester tester, GoRouter router) async {
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('disabled preview return reaches Learn without a lesson', (
+      tester,
+    ) async {
+      final router = directLinkRouter(
+        simulation: (state) => buildSimulationRoute(
+          simulationId: state.pathParameters['simulationId']!,
+          version: state.pathParameters['version']!,
+        ),
+      );
+      await pumpRouter(tester, router);
+
+      expect(
+        find.textContaining('This simulation is unavailable.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Return to lesson'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Learn destination'), findsOneWidget);
+      expect(router.state.uri.path, '/learn');
+    });
+
+    testWidgets('deferred-load failure return reaches Learn without a lesson', (
+      tester,
+    ) async {
+      final router = directLinkRouter(
+        simulation: (state) => buildSimulationRoute(
+          simulationId: state.pathParameters['simulationId']!,
+          version: state.pathParameters['version']!,
+          loader: () async => throw StateError('chunk load failure'),
+        ),
+      );
+      await pumpRouter(tester, router);
+
+      expect(find.text('Interactive practice unavailable'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('simulation-load-failure-return')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Learn destination'), findsOneWidget);
+      expect(router.state.uri.path, '/learn');
+    });
+
+    testWidgets('explicit exit reaches Learn without a lesson', (tester) async {
+      final router = directLinkRouter(
+        simulation: (state) => SimulationScreen(
+          simulationId: state.pathParameters['simulationId']!,
+          version: state.pathParameters['version']!,
+          previewEnabled: true,
+        ),
+      );
+      await pumpRouter(tester, router);
+
+      await tester.tap(find.byKey(const Key('exit-simulation')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Learn destination'), findsOneWidget);
+      expect(router.state.uri.path, '/learn');
+    });
+
+    testWidgets('finishing network practice reaches Learn without a lesson', (
+      tester,
+    ) async {
+      final router = directLinkRouter(
+        simulation: (state) => SimulationScreen(
+          simulationId: state.pathParameters['simulationId']!,
+          version: state.pathParameters['version']!,
+          previewEnabled: true,
+        ),
+      );
+      await pumpRouter(tester, router);
+
+      for (final choice in [
+        'Between the router and the laptop',
+        'Reconnect the Ethernet cable between router and laptop',
+        'The cable carries network traffic from the router to the laptop.',
+      ]) {
+        await tester.ensureVisible(find.text(choice));
+        await tester.tap(find.text(choice));
+        await tester.pumpAndSettle();
+      }
+      await tester.ensureVisible(find.text('Review the scenario'));
+      await tester.tap(find.text('Review the scenario'));
+      await tester.pumpAndSettle();
+
+      final finish = find.byKey(const Key('finish-network-simulation'));
+      await tester.ensureVisible(finish);
+      await tester.pumpAndSettle();
+      await tester.tap(finish);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Learn destination'), findsOneWidget);
+      expect(router.state.uri.path, '/learn');
+    });
+  });
 }

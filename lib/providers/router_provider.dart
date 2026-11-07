@@ -56,6 +56,7 @@ import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
+import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
 
 /// Builds the deferred simulation route. [loader] is injectable so the
 /// load-failure return path can be tested end to end.
@@ -87,7 +88,7 @@ Widget buildSimulationRoute({
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('simulation-load-failure-return'),
-              onPressed: () => context.pop(),
+              onPressed: () => leaveSimulation(context),
               child: const Text('Return to lesson'),
             ),
           ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/simulation/simulation_session.dart';
+import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
 
 class NetworkTroubleshootingSimulation extends ConsumerStatefulWidget {
   final SimulationSession session;
@@ -142,7 +143,7 @@ class _NetworkTroubleshootingSimulationState
           onPressed: _showExplanation
               ? () {
                   if (widget.session.complete()) {
-                    Navigator.of(context).maybePop();
+                    leaveSimulation(context);
                   }
                 }
               : null,
