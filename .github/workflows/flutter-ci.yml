@@ -160,6 +160,9 @@ jobs:
       - name: Test trusted-host Excel assessment composition
         run: python3 -m unittest discover -s tool/tests -p 'test_hosted_runtime.py' -v
 
+      - name: Test unified provisional software/simulation evidence envelope
+        run: python3 -m unittest discover -s tool/tests -p 'test_shared_evidence.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
