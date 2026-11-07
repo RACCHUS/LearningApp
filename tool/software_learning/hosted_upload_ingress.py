@@ -85,7 +85,11 @@ class ExcelUploadASGI:
             await self._send(send, 403, _GENERIC)
             return
         headers = {}
-        for key, val in raw:
+        for item in raw:
+            if not isinstance(item, (tuple, list)) or len(item) != 2:
+                await self._send(send, 403, _GENERIC)
+                return
+            key, val = item
             if (not isinstance(key, bytes) or not isinstance(val, bytes) or
                 len(key) > 128 or len(val) > 8192):
                 await self._send(send, 403, _GENERIC)
@@ -135,7 +139,7 @@ class ExcelUploadASGI:
             except Exception:
                 await self._send(send, 400, _GENERIC)
                 return
-            if part.get("type") != "http.request":
+            if not isinstance(part, dict) or part.get("type") != "http.request":
                 await self._send(send, 400, _GENERIC)
                 return
             data = part.get("body", b"")
