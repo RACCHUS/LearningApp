@@ -9,10 +9,7 @@ class SimulationSession {
 
   SimulationSession({
     required this.activity,
-    bool enabled = const bool.fromEnvironment(
-      'ENABLE_SIMULATION_PREVIEW',
-      defaultValue: false,
-    ),
+    bool enabled = simulationPreviewEnabled,
   }) : _enabled = enabled;
 
   SimulationLifecycleState get state => _state;

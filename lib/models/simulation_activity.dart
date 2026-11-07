@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum SimulationLifecycleState {
   notStarted,
   running,
@@ -13,6 +15,10 @@ enum SimulationEventType { launched, completed, terminated, failed }
 enum SimulationTerminationReason { learnerExit, hostExit, runtimeEnded }
 
 enum SimulationFailureCategory { initialization, runtime, resourceUnavailable }
+
+const simulationPreviewEnabled =
+    !kReleaseMode &&
+    bool.fromEnvironment('ENABLE_SIMULATION_PREVIEW', defaultValue: false);
 
 class SimulationCapabilities {
   final bool supportsPauseAndResume;
@@ -65,4 +71,28 @@ class SimulationEvent {
     : type = SimulationEventType.failed,
       terminationReason = null,
       failureCategory = category;
+}
+
+class SimulationActivityRegistry {
+  static final networking = SimulationActivityConfig(
+    id: 'networking-basics',
+    version: '1.0.0',
+  );
+  static final atmWithdrawal = SimulationActivityConfig(
+    id: 'atm-withdrawal',
+    version: '1.0.0',
+  );
+
+  static final activities = <String, SimulationActivityConfig>{
+    'networking-basics': networking,
+    'atm-withdrawal': atmWithdrawal,
+  };
+
+  static SimulationActivityConfig? resolve(String id, String version) {
+    final activity = activities[id];
+    return activity?.version == version ? activity : null;
+  }
+
+  static bool supports(String id, String version) =>
+      resolve(id, version) != null;
 }

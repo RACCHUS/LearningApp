@@ -1,17 +1,17 @@
 # Simulation framework: Phase 0 design note
 
-- **Status:** Draft for owner review; not approved for merge or release.
-- **Repository baseline:** `d6279e4` on `main`, November 7, 2026. Discovery
-  began at `7472eec`; the subsequent update added catalog content and did not
+- **Status:** Owner authorized implementation on a review branch; review is
+  still required before merge, feature enablement, or deployment.
+- **Repository baseline:** `34b97d8` on `main`, November 7, 2026. Discovery
+  began at `7472eec`; subsequent updates added catalog content and did not
   change the simulation or evidence paths reviewed here.
 - **Proposal:** [Simulation and virtual learning framework, v0.11](SIMULATION_VIRTUAL_LEARNING_FRAMEWORK.md).
 
-This note records the initial discovery and a small, disabled-by-default,
-local-only implementation started on the feature branch. That implementation
-does not constitute Phase 0 approval. The proposal's review gate still
-applies before the framework, schema, security headers, or a learner-facing
-simulation are merged. The remaining verification and decisions are listed
-below; this is not yet a completed Phase 0 sign-off.
+The owner asked for the proposal to be implemented on the feature branch
+before review. Work therefore proceeds against its documented conservative
+defaults; this does not approve a merge, production enablement, or deployment.
+The note records findings and open verification limits rather than implying
+that a live database or production host was inspected.
 
 ## Conclusions for the seven stop-condition areas
 
@@ -20,10 +20,10 @@ below; this is not yet a completed Phase 0 sign-off.
 | Existing simulator | Start with the existing [currency and ATM widget](../../lib/widgets/literacy/currency_atm_widget.dart). It already has a discrete withdrawal-completion action and is mounted in [life domains](../../lib/screens/literacy/life_domains_screen.dart). A completion callback can be added without changing its existing callers. It does not need a new engine or navigation destination. |
 | Completion telemetry | Use **memory only**, for every learner, in the first prototype. Do not send simulation events through `record_events`, the outbox, analytics, or a new RPC. Authenticated server persistence remains a separate, reviewed change. |
 | Activity contract | Start with immutable activity identity and capabilities, a small lifecycle, and typed completion-only events. No score, learner identity, credentials, raw input, or arbitrary event metadata is part of this prototype. |
-| Lesson integration | Do not add a lesson-block type or route yet. A future full-screen route needs Help, exit/back/Escape, a failure fallback, and a reviewed amendment to [the locked UI baseline](../../UI_ARCHITECTURE_LOCKED.md). Older-client fallback needs special handling, described below. |
+| Lesson integration | The opt-in native slice now adds a `simulation` lesson block and a deferred full-screen route, with Help, explicit exit, Escape, load-failure return, and lesson-content fallback. Launch remains disabled by default and requires a registered ID/version. The route and block still need owner review and a reviewed amendment to [the locked UI baseline](../../UI_ARCHITECTURE_LOCKED.md) before enablement. |
 | Evidence architecture | The current client writers and the `arch_04` server projection are not equivalent. A real authenticated database check and a user-facing regression investigation remain open; simulation evidence must not depend on either path. |
 | Attempt handling | The prototype has an ephemeral local session, **not** a server attempt. Any future persisted attempt must be server-issued, version-pinned, owner-bound, and idempotent. |
-| Native networking PoC | A schematic with semantic Flutter controls and an equivalent action-list alternative is feasible without a new engine dependency. This is a design conclusion, not an implemented or accessibility-validated networking simulation. |
+| Native networking PoC | A native networking practice now presents the router topology, structured diagnosis/repair/reason choices, hints, narration, and explanatory review without a score. Focused widget tests cover the interaction; screen-reader, keyboard-only, reduced-motion, contrast, and WCAG 2.2 AA validation remain outstanding. |
 
 ## Evidence boundary investigation
 
@@ -86,10 +86,11 @@ that work; do not create a second simulation-specific mastery system.
 
 ## Local prototype contract
 
-The initial code is unregistered in app navigation and is disabled by default
-unless `ENABLE_SIMULATION_PREVIEW` is explicitly enabled. Tests can enable a
-session directly. The compile-time flag is not an approval to expose a route:
-the owner, accessibility, fallback, and privacy gates below still apply.
+Simulation launch requires a registered ID/version and an explicitly enabled
+`ENABLE_SIMULATION_PREVIEW` flag. That flag is off by default and forcibly off
+in release builds; tests can enable a session directly. The flag is not an
+approval to expose the preview route: the owner, accessibility, fallback, and
+privacy gates below still apply.
 
 An activity configuration contains a host-provided simulation ID and immutable
 version plus declared capabilities. It is not a content manifest or a learner
@@ -135,15 +136,16 @@ anonymous practice. In particular:
   Sessions are ephemeral by default and discarded on disposal.
 - Existing error reporting currently contains example integrations and local
   logging rather than an active Sentry/Crashlytics integration, but an
-  end-to-end audit is still required when a real host and route are added.
+  end-to-end audit is still required before the simulation route is enabled.
 - The [outbox](../../lib/services/offline/learning_event_outbox.dart) supports
   both anonymous and account-scoped queues and can flush account queues. It is
   therefore not an acceptable anonymous-simulation boundary merely because it
   is local first.
 
-The current tests exercise the local session and its ATM callback, not a
-complete authentication, account-switching, browser-storage, analytics, or
-network audit. Those checks remain required before a learner-facing release.
+The current tests exercise the local session, ATM callback, and native
+networking/route flow, not a complete authentication, account-switching,
+browser-storage, analytics, or network audit. Those checks remain required
+before a learner-facing release.
 
 ## Future authenticated attempt and completion path
 
@@ -185,25 +187,28 @@ for a bounded period and must not use the anonymous outbox.
 unknown type into `markdown`; the
 [markdown renderer](../../lib/widgets/lesson/blocks/markdown_block_widget.dart)
 then reads `body`, `text`, or `markdown`, or renders nothing if all are absent.
-Consequently, a future `simulation` block cannot rely on an unknown-type error
-to trigger its fallback. Design and test a compatible fallback payload or
-separate supported block with both older and newer clients before publishing
-such content. A non-simulation alternative must let the learner demonstrate
-the same objective, not merely describe the activity.
+Accordingly, each `simulation` block must include non-empty `body` content;
+the migration enforces this so older clients always render the fallback. The
+new renderer uses that same `body` before any optional fallback aliases. The
+focused tests cover the fallback path, but an older-client build has not been
+run against a simulation lesson. A non-simulation alternative must let the
+learner demonstrate the same objective, not merely describe the activity.
 
-The current database block-type CHECK also requires an append-only migration.
-Self-host bundles are generated from migrations with
+The database block-type CHECK is extended by the append-only
+[`simulation lesson-block migration`](../../supabase/migrations/20261107100000_simulation_lesson_blocks.sql).
+The consolidated self-host bundle was regenerated from migrations with
 `dart run tool/self_host_bootstrap.dart --generate-bundle deploy/self-host/init-scripts/01-full-schema.sql`
-([self-host documentation](../SELF_HOSTING.md)); no migration or bundle change
-is proposed in this slice. Production deployment remains subject to the
-repository's guarded migration workflow.
+([self-host documentation](../SELF_HOSTING.md)). Neither the migration nor any
+production database has been applied or changed; production deployment remains
+subject to the repository's guarded migration workflow.
 
-Before any route is enabled, specify and test visible Help, an explicit exit,
-system back and keyboard Escape, unsupported pause behavior, state-preserving
-return, and an equivalent fallback on load or runtime failure. Check keyboard,
-touch, screen-reader semantics, narration, reduced motion, contrast, and
-adjustable pace against the WCAG 2.2 AA target. The current ATM widget and the
-new callback have **not** been certified against that target.
+The implemented route has visible Help, an explicit exit, Escape and system
+back handling, and a tested fallback on disabled or unknown activity and
+deferred-load failure. State-preserving return and unsupported pause behavior
+still need validation before enablement. Check keyboard, touch, screen-reader
+semantics, narration, reduced motion, contrast, and adjustable pace against the
+WCAG 2.2 AA target. Neither the networking practice nor the ATM widget has been
+certified against that target.
 
 ## Networking proof and measurement
 
@@ -237,16 +242,17 @@ cannot establish causal effectiveness.
 - [ ] Before T1/T2 work, confirm the production host and separately review
       isolation, CSP, framing, network egress, caching, and performance.
 
-## Checks performed during discovery
+## Implementation and verification status
 
-- `flutter test --no-pub --reporter expanded test\services\assessment\diagnostic_assessment_service_test.dart test\services\simulation\simulation_session_test.dart test\widgets\simulation\atm_simulation_integration_test.dart test\widgets\phase_4_life_domains_test.dart`
-  passed: 29 tests. A temporary copy of the placeholder `.env.example` was
+- `flutter test test/widgets/simulation/simulation_route_test.dart test/services/simulation/simulation_session_test.dart test/widgets/simulation/atm_simulation_integration_test.dart`
+  passed: 19 tests. A temporary copy of the placeholder `.env.example` was
   needed because the asset bundle requires `.env`.
-- `flutter test --no-pub --dart-define=ENABLE_SIMULATION_PREVIEW=true --reporter expanded test\services\simulation\simulation_session_test.dart`
-  passed: 10 tests, including the opt-in flag path.
-- `flutter analyze --no-pub lib\models\simulation_activity.dart lib\services\simulation\simulation_session.dart lib\widgets\literacy\currency_atm_widget.dart test\services\simulation\simulation_session_test.dart test\widgets\simulation\atm_simulation_integration_test.dart`
-  passed with no issues.
-- Flutter hot reload was attempted, but no running app was connected to this
+- `flutter analyze` passed with no issues using the same temporary `.env`.
+- `dart run tool/self_host_bootstrap.dart --generate-bundle deploy/self-host/init-scripts/01-full-schema.sql`
+  regenerated the bundle with 92 migrations through
+  `20261107100000_simulation_lesson_blocks`; it was not deployed. The
+  migration also requires the backward-compatible `body` fallback.
+- Hot restart was attempted, but no running Flutter app was connected to this
   workspace.
 - `supabase` pgTAP and real authenticated database checks were **not run**:
   the Docker engine was unavailable. No database or production deployment was
