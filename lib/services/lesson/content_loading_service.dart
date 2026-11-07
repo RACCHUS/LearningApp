@@ -155,7 +155,7 @@ class ContentLoadingService {
           .eq('lesson_id', lessonId);
       final concepts = <KnowledgeConcept>[];
       for (final row in rows) {
-        if (row is Map && row['knowledge_concepts'] is Map) {
+        if (row['knowledge_concepts'] is Map) {
           concepts.add(KnowledgeConcept.fromJson(
             (row['knowledge_concepts'] as Map).cast<String, dynamic>(),
           ));
