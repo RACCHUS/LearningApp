@@ -213,6 +213,9 @@ class LessonImportService {
           : int.tryParse(data['correct_answer']?.toString() ?? '') ?? 0,
       type: data['type']?.toString() ?? 'mcq',
       explanation: data['explanation']?.toString(),
+      acceptedAnswers: (data['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
+      gradingMethod: data['grading_method']?.toString(),
+      numericTolerance: (data['numeric_tolerance'] as num?)?.toDouble(),
       createdBy: data['created_by']?.toString() ?? userId,
     );
     if (question.questionText.isEmpty || question.options.isEmpty) {
