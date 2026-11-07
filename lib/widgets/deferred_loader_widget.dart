@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 typedef LibraryLoader = Future<void> Function();
 typedef DeferredWidgetBuilder = Widget Function();
+typedef DeferredErrorBuilder = Widget Function(
+  BuildContext context,
+  Object error,
+);
 
 /// A widget that asynchronously loads a deferred Dart library before rendering.
 ///
@@ -12,12 +16,14 @@ class DeferredLoaderWidget extends StatefulWidget {
   final LibraryLoader loader;
   final DeferredWidgetBuilder builder;
   final Widget? fallback;
+  final DeferredErrorBuilder? errorBuilder;
 
   const DeferredLoaderWidget({
     super.key,
     required this.loader,
     required this.builder,
     this.fallback,
+    this.errorBuilder,
   });
 
   @override
@@ -43,6 +49,10 @@ class _DeferredLoaderWidgetState extends State<DeferredLoaderWidget> {
           return widget.builder();
         }
         if (snapshot.hasError) {
+          final errorBuilder = widget.errorBuilder;
+          if (errorBuilder != null) {
+            return errorBuilder(context, snapshot.error!);
+          }
           return Scaffold(
             appBar: AppBar(title: const Text('Error Loading Component')),
             body: Center(
@@ -66,6 +76,7 @@ class _DeferredLoaderWidgetState extends State<DeferredLoaderWidget> {
                       },
                       child: const Text('Retry'),
                     ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -82,4 +93,3 @@ class _DeferredLoaderWidgetState extends State<DeferredLoaderWidget> {
     );
   }
 }
-
