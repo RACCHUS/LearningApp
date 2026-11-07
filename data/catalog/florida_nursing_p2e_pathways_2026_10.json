@@ -17,6 +17,9 @@
       "source_checked_on": "2026-10-12",
       "reviewed_on": "2026-10-12",
       "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_retrieved_at": "2026-10-12T12:00:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
@@ -104,6 +107,9 @@
       "source_checked_on": "2026-10-12",
       "reviewed_on": "2026-10-12",
       "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_retrieved_at": "2026-10-12T12:00:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
