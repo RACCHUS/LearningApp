@@ -136,6 +136,52 @@ $claim$;
 END
 $claim$;
 
+-- Provisional completion is bound to the brokered SHA attestation, so even a
+-- leaked processing lease cannot attach a result to a different workbook.
+CREATE OR REPLACE FUNCTION software_learning_private.sl_complete_excel_processing(
+  p_lease_id uuid, p_digest text, p_status text, p_feedback text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $complete$
+DECLARE
+  v_completed uuid;
+BEGIN
+  IF p_lease_id IS NULL OR p_digest IS NULL OR
+     p_digest !~ '^[a-f0-9]{64}
+ 'SHA-256 of authenticated broker readback, not evidence of learner mastery';
+COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
+ 'Private Storage version pinned by broker, checked again before grading';
+COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
+ 'Broker commit timestamp; direct client Storage INSERT remains prohibited';
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
+ 'Atomic private claim only for server-brokered, SHA-sealed workbook uploads; still provisional';
+COMMIT;
+ OR
+     p_status NOT IN ('pass','fail','inconclusive') OR
+     p_status IS NULL OR p_feedback IS NULL OR
+     char_length(p_feedback) > 300
+  THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.software_learning_attempts a
+  SET status='processed',
+      artifact_sha256=p_digest,
+      provisional_status=p_status,
+      provisional_feedback=p_feedback
+  WHERE a.processing_lease_id=p_lease_id
+    AND a.upload_sha256 = p_digest
+    AND a.status='processing'
+    AND a.upload_enabled=false
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_completed;
+
+  RETURN v_completed IS NOT NULL;
+END
+$complete$;
+
 COMMENT ON COLUMN public.software_learning_attempts.upload_sha256 IS
  'SHA-256 of authenticated broker readback, not evidence of learner mastery';
 COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
