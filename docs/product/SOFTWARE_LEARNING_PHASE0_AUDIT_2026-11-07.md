@@ -89,3 +89,20 @@ The checked-in pure Excel checker currently returns `unverified_checker_only`, e
 - [ ] Receive owner sign-off on Phase 0 exit.
 
 Until the open items are completed, the branch is **implementation work in progress**, **not deployable**, and must not be merged as a released Excel feature.
+
+
+## Implementation progress — restricted workbook pipeline (same branch, 2026-11-07)
+
+The following **prototype** components are now committed:
+
+- `tool/software_learning/xlsx_snapshot.py` — strictly bounded ZIP/OOXML admission, one Budget worksheet, safe typed values, no formula execution or cached-value trust.
+- `tool/tests/test_xlsx_snapshot.py` — malformed/macro/external/ZIP-abuse regression tests, plus UTF-16 entity/DTD bypass prevention (the test failed before the parser was patched).
+- `tool/software_learning/xlsx_worker.py` — separate stdin/stdout worker protocol, provisional tagged values only; rejects without echoing potentially sensitive document contents.
+- `tool/tests/test_xlsx_worker.py` — independent subprocess/CLI contract and negative tests.
+- `deploy/software-learning/Dockerfile` and `deploy/software-learning/README.md` — unprivileged image and explicitly restrictive sample sandbox flags; no services or uploads exposed.
+- `tool/software_learning/pilot_pipeline.py` and `tool/tests/test_excel_pilot_pipeline.py` — unverified worker-output adapter to the existing deterministic criterion checker, with negative tests against forged trust and inconsistent values.
+- CI tests the Python parser, worker, and provisional checker. A Docker smoke step exercises the worker with no network access, a read-only filesystem, no extra capabilities, and resource limits. This validates the example CI invocation but **not** a future production orchestration platform.
+
+**Trust boundary remains unchanged:** The parser and local checker are NOT evidence authority. There is still no authenticated issuance, upload endpoint, private storage, file retention/deletion pipeline, `record_events` integration, trusted skill award, or learner-facing submission button. Phase 0 is still **open**, and owner/security review is still required before enabling any learner file upload.
+
+**Compatibility note:** This reader deliberately rejects many legitimate complex XLSX files (other sheets, embedded objects, unsupported features) rather than relaxing the whitelist. Broader Excel compatibility should be assessed only after the security and evidence gates.
