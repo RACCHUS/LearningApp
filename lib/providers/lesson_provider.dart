@@ -185,6 +185,9 @@ final lessonProvider =
                 : <String>[],
             correctAnswer: e['correct_answer'] is int ? e['correct_answer'] : 0,
             questionType: e['type']?.toString(),
+            acceptedAnswers: (e['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
+            gradingMethod: e['grading_method']?.toString(),
+            numericTolerance: (e['numeric_tolerance'] as num?)?.toDouble(),
             explanation: e['explanation']?.toString() ?? '',
             createdAt: e['created_at'] != null 
                 ? DateTime.tryParse(e['created_at']) ?? DateTime.now()
