@@ -2,12 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/verify_published_pathways.dart';
 
 void main() {
-  final baseTime = DateTime.utc(2026, 10, 16, 12, 0, 0);
+  final baseTime = DateTime.utc(2026, 11, 7, 6, 0, 0);
 
   Map<String, dynamic> makeRow({
     required String ns,
     required String key,
-    int rev = 1,
+    int rev = 2,\n    int supersedesRevision = 1,\n    String pathwayKind = 'initial_licensure',
     String title = 'Valid Pathway Title With Requirements',
     String status = 'published',
     String review = 'approved',
@@ -19,7 +19,7 @@ void main() {
     return {
       'source_namespace': ns,
       'source_key': key,
-      'revision': rev,
+      'revision': rev,\n      'supersedes_revision': supersedesRevision,\n      'pathway_kind': pathwayKind,
       'title': title,
       'publication_status': status,
       'review_status': review,
@@ -32,8 +32,8 @@ void main() {
 
   List<Map<String, dynamic>> makeValidSet() {
     return [
-      makeRow(ns: 'fl_bon', key: 'registered-nurse'),
-      makeRow(ns: 'fl_bon', key: 'licensed-practical-nurse'),
+      makeRow(ns: 'fl_bon', key: 'registered-nurse', routeKind: 'other'),
+      makeRow(ns: 'fl_bon', key: 'licensed-practical-nurse', routeKind: 'other'),
       makeRow(
         ns: 'fl_dfs',
         key: 'general-lines-2-20',
@@ -129,11 +129,11 @@ void main() {
 
     test('revision mismatch fails closed with error', () {
       final rows = makeValidSet();
-      rows[3]['revision'] = 2;
+      rows[3]['revision'] = 1;
       final result = verifyPathwayRecords(rows, now: baseTime);
 
       expect(result.isSuccess, isFalse);
-      expect(result.errors.any((e) => e.contains('has revision 2')), isTrue);
+      expect(result.errors.any((e) => e.contains('has revision 1 (expected 2')), isTrue);
     });
 
     test('non-HTTPS source_url fails closed with error', () {
