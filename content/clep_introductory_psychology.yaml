@@ -308,9 +308,9 @@ domains:
                 response_spec:
                   options:
                     - "Acetylcholine"
-                    - "Gamma-aminobutyric acid (GABA)"
+                    - "Glutamate"
                     - "Dopamine"
-                    - "Norepinephrine"
+                    - "Serotonin"
                 scoring_spec:
                   correct_index: 2
                 explanation: "Dopamine governs voluntary movement, pleasure, and reward reinforcement. A deficiency of dopamine in the substantia nigra causes Parkinson's disease, whereas excessive dopamine receptor activity is implicated in schizophrenia."
