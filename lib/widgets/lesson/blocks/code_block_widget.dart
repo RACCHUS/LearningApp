@@ -178,12 +178,14 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
                     ),
                     const SizedBox(width: 16),
                     // Code content column
-                    SelectableText(
-                      code,
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: baseFontSize,
-                        height: 1.5,
-                        color: const Color(0xFFF8FAFC),
+                    SelectionArea(
+                      child: Text(
+                        code,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: baseFontSize,
+                          height: 1.5,
+                          color: const Color(0xFFF8FAFC),
+                        ),
                       ),
                     ),
                   ],
@@ -219,12 +221,14 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    SelectableText(
-                      output,
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 12.5 * widget.fontSizeFactor,
-                        height: 1.4,
-                        color: const Color(0xFF34D399),
+                    SelectionArea(
+                      child: Text(
+                        output,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 12.5 * widget.fontSizeFactor,
+                          height: 1.4,
+                          color: const Color(0xFF34D399),
+                        ),
                       ),
                     ),
                   ],
