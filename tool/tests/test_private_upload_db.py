@@ -81,7 +81,11 @@ class UploadDbTests(unittest.TestCase):
             with self.subTest(result=result):
                 conn = Connection(result)
                 repo = DbApiUploadRepository(conn)
-                self.assertIsNone(repo.begin(OWNER, SESSION, ATTEMPT, AT))
+                if result == (None,):
+                    self.assertIsNone(repo.begin(OWNER, SESSION, ATTEMPT, AT))
+                else:
+                    with self.assertRaises(ValueError):
+                        repo.begin(OWNER, SESSION, ATTEMPT, AT)
                 self.assertEqual(conn.commits, 0)
                 self.assertEqual(conn.rollbacks, 1)
 
