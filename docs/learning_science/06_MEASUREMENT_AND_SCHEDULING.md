@@ -5,7 +5,7 @@ This specification defines the **client vs. server security trust boundary** for
 > **Implementation Status Note**: Neither `public.learning_events` nor `record_events` exists on the `main` (`a23cebb`, following the merge of PR `#136`) baseline. They are **proposed Phase 1 (`ARCH-1`) specifications** designed to be implemented via guarded migrations.
 >
 > **Alignment & Supersession of Summary Sketches in `/ARCHITECTURE_REVIEW.md`**:
-> `/ARCHITECTURE_REVIEW.md` serves as the Phase 0 architectural audit, while **`/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md` and `/docs/learning_science/01..08` provide the full normative specifications**:
+> `/ARCHITECTURE_REVIEW.md` serves as the Phase 0 architectural audit, while **[`EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md) and `/docs/learning_science/01..08` provide the full normative specifications**:
 > 1. **`presented_option_ids: text[]`** supersedes `presented_order` (`List<int>`).
 > 2. **`fsrs_rating`** (`1..4`, populated **only** on `memory_card_review` events) is kept strictly separate from **`learner_confidence`** (`1..3` metacognitive self-report) and from `user_concept_state.confidence` (observation-count sufficiency band).
 > 3. **FSRS-6 (`scheduler_version = 'v2_fsrs6'`)** models individual memory-card retrievability $R(t)$ only—it is never equated with multi-facet concept mastery or exam readiness, never initialized by fabricating parameters from SM-2 counters or `ContentComplexityProfile` priors, and kept separate from exam-date daily workload planning.

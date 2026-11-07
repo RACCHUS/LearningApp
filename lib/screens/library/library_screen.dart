@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -50,6 +52,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   late final TextEditingController _search =
       TextEditingController(text: widget.initialQuery ?? '');
   String _query = '';
+  Timer? _searchDebounce;
   String? _selectedCategory;
   bool _isScoped = true;
   _CatalogSource _source = _CatalogSource.trusted;
@@ -70,6 +73,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     super.didUpdateWidget(oldWidget);
     // Searches launched from the desktop sidebar update this existing page.
     if (widget.initialQuery != oldWidget.initialQuery) {
+      _searchDebounce?.cancel();
       _search.text = widget.initialQuery ?? '';
       _query = widget.initialQuery ?? '';
       _isScoped = false;
@@ -78,8 +82,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _search.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || _query == value) return;
+      setState(() => _query = value);
+    });
   }
 
   @override
@@ -252,7 +265,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           TextField(
             key: const Key('library-search'),
             controller: _search,
-            onChanged: (v) => setState(() => _query = v),
+            onChanged: _onSearchChanged,
             decoration: InputDecoration(
               hintText: 'Search targets, courses, lessons, concepts...',
               prefixIcon: const Icon(Icons.search),
@@ -264,6 +277,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   : IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () {
+                        _searchDebounce?.cancel();
                         _search.clear();
                         setState(() => _query = '');
                       },
@@ -1033,6 +1047,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             onTap: () {
                               Navigator.pop(modalContext);
                               setState(() {
+                                _searchDebounce?.cancel();
                                 _search.text = f.name;
                                 _query = f.name;
                               });

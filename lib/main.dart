@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:learning_pwa/config/brand_config.dart';
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -12,9 +14,6 @@ import 'package:learning_pwa/config/supabase_config.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/services/push_notification_service.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
-import 'package:learning_pwa/services/audio_service.dart';
-import 'package:learning_pwa/services/voice_input_service.dart';
-import 'package:learning_pwa/services/hands_free_settings_service.dart';
 import 'package:learning_pwa/providers/app_initialization_provider.dart';
 import 'package:learning_pwa/core/errors/global_error_handler.dart';
 import 'package:learning_pwa/core/logging/error_reporting_service.dart';
@@ -61,45 +60,6 @@ Future<void> main() async {
     await hiveService.init();
     print('✅ Hive initialized successfully');
 
-    // Initialize Web Notification Service
-    final List<String> degradedServices = [];
-    try {
-      print('🔄 Initializing Notifications...');
-      await PushNotificationService().init();
-      print('✅ Notifications initialized successfully');
-    } catch (e) {
-      degradedServices.add('Notifications');
-      if (kDebugMode) {
-        print('⚠️ Notification initialization failed: $e');
-      }
-    }
-
-    // Initialize Audio Services
-    try {
-      print('🔄 Initializing Audio Services...');
-      await AudioService().initialize();
-      print('✅ Audio Service initialized successfully');
-    } catch (e) {
-      degradedServices.add('Audio');
-      if (kDebugMode) {
-        print('⚠️ Audio service initialization failed: $e');
-      }
-    }
-
-    try {
-      await VoiceInputService().initialize();
-      print('✅ Voice Input initialized successfully');
-    } catch (e) {
-      degradedServices.add('Voice Input');
-      if (kDebugMode) {
-        print('⚠️ Voice input initialization failed: $e');
-      }
-    }
-
-    if (degradedServices.isNotEmpty) {
-      print('⚠️ App running with degraded services: ${degradedServices.join(", ")}');
-    }
-
     // Validate Supabase configuration
     print('🔄 Checking Supabase configuration...');
     if (!SupabaseConfig.isConfigured) {
@@ -123,21 +83,18 @@ Future<void> main() async {
     );
     print('✅ Supabase initialized successfully');
 
-    // Initialize hands-free settings and check for auto-enable
-    print('🔄 Initializing Hands-Free Mode...');
-    await _initializeHandsFreeMode();
-    print('✅ Hands-Free Mode initialized successfully');
-
-    if (degradedServices.isNotEmpty) {
-      print('🚀 Launching app (degraded: ${degradedServices.join(", ")})...');
-    } else {
-      print('🚀 All services initialized - launching app...');
-    }
+    print('🚀 Launching app...');
     runApp(
-      ProviderScope(
-        child: LearningApp(degradedServices: degradedServices),
+      const ProviderScope(
+        child: LearningApp(),
       ),
     );
+
+    // Optional integrations must not delay the first usable frame. The app
+    // shell and core learning routes are available before these services start.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_initializeOptionalServices());
+    });
   } catch (e, stackTrace) {
     if (kDebugMode) {
       print('❌ App initialization failed: $e');
@@ -179,24 +136,14 @@ Future<void> main() async {
   }
 }
 
-/// Initialize hands-free mode based on user settings
-Future<void> _initializeHandsFreeMode() async {
+/// Initialize browser notifications after the first frame. Audio and voice
+/// services are initialized by their feature providers only when first needed.
+Future<void> _initializeOptionalServices() async {
   try {
-    final settingsService = HandsFreeSettingsService();
-    await settingsService.initialize();
-    final settings = settingsService.settings;
-
-    if (settings.defaultHandsFreeMode || settingsService.isHandsFreeEnabled) {
-      if (kDebugMode) {
-        print('🎙️ Auto-enabling hands-free mode based on user settings');
-      }
-      // Note: Actual global voice enabling will be handled by the app after provider initialization
-      // This just loads the setting that indicates hands-free should be enabled
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      print('⚠️ Failed to check hands-free settings: $e');
-    }
+    await PushNotificationService().init();
+  } catch (error, stackTrace) {
+    debugPrint('Optional notification initialization failed: $error');
+    if (kDebugMode) debugPrintStack(stackTrace: stackTrace);
   }
 }
 

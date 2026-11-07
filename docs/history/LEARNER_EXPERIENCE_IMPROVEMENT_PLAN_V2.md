@@ -1,5 +1,6 @@
 # LearningApp — Learner Experience Improvement Plan (v2)
 
+**Status:** Completed and verified on `main` via PRs #161, #162, #163, #164, #165, and #166. Archived to `docs/history/` on 2026-11-07.  
 **Review draft v2 | 5 November 2026**
 **Supersedes:** v1 (same date). v1 was written from a first-pass inspection; v2 is checked against repo commit `422296d` (2026-11-05), `UI_ARCHITECTURE_LOCKED.md`, and the original feedback.
 **Method note:** Findings come from reading the code, not from running the app. Anything that needs the running app is listed under "Verify first."

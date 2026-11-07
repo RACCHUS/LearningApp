@@ -178,7 +178,7 @@ Raised by the product owner against the shipped Learn home, Create Goal flow, an
 
 ### 1.10 Amendment in v1.7 (Direct User Evidence)
 
-Raised from learner feedback and verified in code (`LearningApp_Learner_Experience_Improvement_Plan_v2.md` §3.1, A1, A2, A8). Accepted under the **User evidence** ground (§14). Destination-level IA is unchanged.
+Raised from learner feedback and verified in code ([`docs/history/LEARNER_EXPERIENCE_IMPROVEMENT_PLAN_V2.md`](docs/history/LEARNER_EXPERIENCE_IMPROVEMENT_PLAN_V2.md) §3.1, A1, A2, A8). Accepted under the **User evidence** ground (§14). Destination-level IA is unchanged.
 
 | # | Finding | Resolution |
 |---|---|---|

@@ -108,10 +108,14 @@ class LearningEventOutbox {
           currentList.addAll(encodedEvents);
           await prefs.setStringList(key, currentList);
         }
-      } catch (e) {
+      } catch (error, stackTrace) {
         if (kDebugMode) {
-          print('⚠️ Error saving learning events to local outbox: $e');
+          print('⚠️ Error saving learning events to local outbox: $error');
         }
+        // Never report an event as queued when durable local persistence failed.
+        // Propagate the failure so the caller can surface/retry it instead of
+        // silently losing learning evidence while offline.
+        Error.throwWithStackTrace(error, stackTrace);
       }
     });
 
