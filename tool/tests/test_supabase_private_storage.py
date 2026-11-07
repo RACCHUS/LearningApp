@@ -119,7 +119,7 @@ class PrivateStorageTests(unittest.TestCase):
         self.assertEqual(request.get_method(), "POST")
         self.assertEqual(request.get_header("Content-type"), MIME)
         self.assertEqual(request.get_header("X-upsert"), "false")
-        self.assertEqual(request.data, b"PK\\x03\\x04safe")
+        self.assertEqual(request.data, b"PK\x03\x04safe")
         self.assertEqual(store.stat(PRIVATE_BUCKET, PATH), VERSION)
 
     def test_create_only_rejects_oversized_or_bad_paths_without_network(self):
@@ -136,7 +136,7 @@ class PrivateStorageTests(unittest.TestCase):
     def test_create_only_does_not_retry_conflicts_or_redirects(self):
         store, http = self.store(FakeAPI(failure=HTTPError("https://host",409,"exists",{},None)))
         with self.assertRaises(StorageFailure):
-            store.create_only(PRIVATE_BUCKET, PATH, b"PK\\x03\\x04okay")
+            store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04okay")
         self.assertEqual(len(http.requests), 1)
 
     def test_foreign_bucket_and_path_rejected_before_network(self):
