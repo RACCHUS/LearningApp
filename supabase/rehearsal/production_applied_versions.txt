@@ -1,5 +1,5 @@
 # Hosted ledger snapshot for project xzvkdwebtbxlrxagtzlv (supabase migration list --linked),
-# taken 2026-11-07 after the partial guarded backfill. Used only by the CI backfill rehearsal.
+# taken 2026-11-07 after the second partial guarded backfill. Used only by the CI backfill rehearsal.
 20241228000000
 20250101000001
 20250101000002
@@ -82,5 +82,12 @@
 20261101170000
 20261101180000
 20261101190000
+20261101195000
+20261101200000
+20261102140000
+20261106000000
+20261106010000
+20261106020000
+20261106030000
 20261107025537
 20261107041341

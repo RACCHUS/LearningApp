@@ -3,3 +3,4 @@
 # before a never-applied historical migration during a guarded backfill; every
 # other immutability rule still applies. Adding an entry requires owner review.
 20261101195000 Production user_progress predates the baseline and lacks study_time_seconds, which 20261101200000 (pending historical backfill) requires; must sort before it.
+20261107045000 Hosted CLI login role cannot resolve unqualified digest() used by pending 20261107050000; temporary shim must sort before it (dropped by 20261107110000).
