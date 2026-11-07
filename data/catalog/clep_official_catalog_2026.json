@@ -4,7 +4,7 @@
   "issuer": "College Board",
   "issuer_url": "https://clep.collegeboard.org",
   "retrieved_at": "2026-11-07",
-  "notice": "Reconciled against official College Board CLEP exam specifications (November 2026). Standard credit recommendations are established by the American Council on Education (ACE). Individual higher education institutions determine specific credit-award thresholds and course equivalencies.",
+  "notice": "Reconciled against official College Board CLEP exam specifications (November 2026). Standard credit recommendations are established by the American Council on Education (ACE). ACE credit recommendations are advisory; each individual higher education institution independently determines its own credit-award thresholds, minimum acceptable scaled scores (typically 50 or higher), and specific course equivalencies. LearningApp does not grant college credit or guarantee institutional acceptance.",
   "total_exams": 34,
   "categories": [
     "Composition and Literature",
@@ -497,6 +497,7 @@
         {
           "code": "1.0",
           "title": "History, Approaches, and Methods",
+          "official_percentage_range": "11-12%",
           "weight_min": 0.11,
           "weight_max": 0.12,
           "weight_nominal": 0.115
@@ -504,6 +505,7 @@
         {
           "code": "2.0",
           "title": "Biological Bases of Behavior",
+          "official_percentage_range": "8-9%",
           "weight_min": 0.08,
           "weight_max": 0.09,
           "weight_nominal": 0.085
@@ -511,6 +513,7 @@
         {
           "code": "3.0",
           "title": "Sensation and Perception",
+          "official_percentage_range": "7-8%",
           "weight_min": 0.07,
           "weight_max": 0.08,
           "weight_nominal": 0.075
@@ -518,6 +521,7 @@
         {
           "code": "4.0",
           "title": "States of Consciousness",
+          "official_percentage_range": "5-6%",
           "weight_min": 0.05,
           "weight_max": 0.06,
           "weight_nominal": 0.055
@@ -525,6 +529,7 @@
         {
           "code": "5.0",
           "title": "Learning",
+          "official_percentage_range": "8-9%",
           "weight_min": 0.08,
           "weight_max": 0.09,
           "weight_nominal": 0.085
@@ -532,6 +537,7 @@
         {
           "code": "6.0",
           "title": "Cognition",
+          "official_percentage_range": "8-9%",
           "weight_min": 0.08,
           "weight_max": 0.09,
           "weight_nominal": 0.085
@@ -539,6 +545,7 @@
         {
           "code": "7.0",
           "title": "Motivation and Emotion",
+          "official_percentage_range": "5-6%",
           "weight_min": 0.05,
           "weight_max": 0.06,
           "weight_nominal": 0.055
@@ -546,6 +553,7 @@
         {
           "code": "8.0",
           "title": "Developmental Psychology Across the Lifespan",
+          "official_percentage_range": "8-9%",
           "weight_min": 0.08,
           "weight_max": 0.09,
           "weight_nominal": 0.085
@@ -553,6 +561,7 @@
         {
           "code": "9.0",
           "title": "Personality",
+          "official_percentage_range": "7-8%",
           "weight_min": 0.07,
           "weight_max": 0.08,
           "weight_nominal": 0.075
@@ -560,6 +569,7 @@
         {
           "code": "10.0",
           "title": "Psychological Disorders and Health",
+          "official_percentage_range": "8-9%",
           "weight_min": 0.08,
           "weight_max": 0.09,
           "weight_nominal": 0.085
@@ -567,6 +577,7 @@
         {
           "code": "11.0",
           "title": "Treatment of Psychological Disorders",
+          "official_percentage_range": "6-7%",
           "weight_min": 0.06,
           "weight_max": 0.07,
           "weight_nominal": 0.065
@@ -574,6 +585,7 @@
         {
           "code": "12.0",
           "title": "Social Psychology",
+          "official_percentage_range": "9-10%",
           "weight_min": 0.09,
           "weight_max": 0.10,
           "weight_nominal": 0.095
@@ -581,6 +593,7 @@
         {
           "code": "13.0",
           "title": "Statistics, Tests, and Measurement",
+          "official_percentage_range": "3-4%",
           "weight_min": 0.03,
           "weight_max": 0.04,
           "weight_nominal": 0.035
