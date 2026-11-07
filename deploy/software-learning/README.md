@@ -2,29 +2,29 @@
 
 **Status: prototype. Not a production service, upload endpoint, or trusted-assessment path.**
 
-This worker reads the raw bytes of **one** .xlsx document on standard input, extracts a strictly bounded \`Budget\` worksheet snapshot, and returns one JSON object on standard output. It does **not** access Supabase, execute formulas/macros, calculate skill proficiency, store files, or transfer workbook data to AI.
+This worker reads the raw bytes of **one** .xlsx document on standard input, extracts a strictly bounded `Budget` worksheet snapshot, and returns one JSON object on standard output. It does **not** access Supabase, execute formulas/macros, calculate skill proficiency, store files, or transfer workbook data to AI.
 
 ## Local image build
 
 From repository root:
 
-\`\`\`sh
+```sh
 docker build -f deploy/software-learning/Dockerfile \
   -t learningapp-xlsx-worker:pilot tool/software_learning
-\`\`\`
+```
 
 ## Isolation requirements for the invoking host
 
 The orchestrator must use equivalent or stricter isolation to this prototype invocation:
 
-\`\`\`sh
+```sh
 docker run --rm -i --network none --read-only \
   --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
   --pids-limit 32 --memory 128m --cpus 0.5 \
   --ulimit nofile=64:64 --ulimit fsize=10485760:10485760 \
   --tmpfs /tmp:rw,nosuid,noexec,size=8m \
   learningapp-xlsx-worker:pilot budget.xlsx < synthetic-budget.xlsx
-\`\`\`
+```
 
 Do **not** run uploads inside Flutter or a privileged Supabase function. Do not expose Docker sockets to application requests. No network egress, persistent writable mounts, secrets, or ambient cloud credentials may be present in the worker environment. Before production, pin the base image digest, enforce elapsed-time limits in the orchestrator, verify the container/sandbox platform's security defaults, and run hostile-file fixtures *inside* the container.
 
@@ -38,7 +38,7 @@ Do not enable a public file route or trusted evidence until all of these are rev
 - access and rate limits, worker scheduling and concurrency quotas;
 - private object storage with a documented retention/deletion lifecycle and erasure tests;
 - server-only expected values and deterministic checker version pinning;
-- trust reconciliation with \`record_events\` and the unified software/simulation evidence envelope;
+- trust reconciliation with `record_events` and the unified software/simulation evidence envelope;
 - idempotent submission/grade recording and cross-account negative tests;
 - accessible mobile upload UI with plain-language privacy notice;
 - no AI transfer without informed learner consent;
