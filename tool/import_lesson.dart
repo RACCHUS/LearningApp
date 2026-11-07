@@ -172,13 +172,16 @@ Map<String, dynamic> _normalizeToDbFormat(
     if (json['questions'] is List) {
       for (final q in json['questions']) {
         content.add({
-          'type': 'mcq',
+          'type': q['type'] ?? (q['accepted_answers'] != null ? 'short_answer' : 'mcq'),
           'id': q['id']?.toString() ?? _uuid.v4(),
           'order': order++,
           'question': q['question'] ?? q['question_text'] ?? '',
           'options':
               q['options'] is List ? List<String>.from(q['options']) : <String>[],
           'correctIndex': q['correct_answer'] ?? q['correctIndex'] ?? 0,
+          if (q['accepted_answers'] != null) 'accepted_answers': q['accepted_answers'],
+          if (q['grading_method'] != null) 'grading_method': q['grading_method'],
+          if (q['numeric_tolerance'] != null) 'numeric_tolerance': q['numeric_tolerance'],
           'explanation': q['explanation'] ?? '',
         });
       }
@@ -254,12 +257,20 @@ List<String> _validate(Map<String, dynamic> normalized) {
         }
         break;
       case 'mcq':
+      case 'short_answer':
         mcqs++;
         if ((item['question'] ?? '').toString().trim().isEmpty) {
           issues.add('$label: empty "question"');
         }
+        if (type == 'short_answer') {
+          final accepted = item['accepted_answers'];
+          if (accepted is! List || accepted.isEmpty || accepted.any((a) => a.toString().trim().isEmpty)) issues.add('$label: short_answer requires accepted_answers');
+          final method = item['grading_method']?.toString() ?? 'normalized_text';
+          if (!['exact', 'normalized_text', 'numeric'].contains(method)) issues.add('$label: unsupported grading_method "$method"');
+          if (item['numeric_tolerance'] != null && (item['numeric_tolerance'] is! num || (item['numeric_tolerance'] as num) < 0)) issues.add('$label: numeric_tolerance must be non-negative');
+          break;
+        }
         final options = item['options'];
-        if (options is! List || options.length < 2) {
           issues.add('$label: needs at least 2 options');
         } else {
           final texts =
@@ -360,13 +371,17 @@ Future<void> _importLesson(_Config cfg, Map<String, dynamic> normalized) async {
         });
         break;
       case 'mcq':
+      case 'short_answer':
         questions.add({
           'id': _uuid.v4(),
           'lesson_id': lessonId,
           'question_text': raw['question'],
           'options': raw['options'],
-          'correct_answer': raw['correctIndex'],
-          'type': 'mcq',
+          'correct_answer': raw['correctIndex'] ?? 0,
+          'type': raw['type'] ?? 'mcq',
+          'accepted_answers': raw['accepted_answers'] ?? [],
+          'grading_method': raw['grading_method'] ?? 'normalized_text',
+          'numeric_tolerance': raw['numeric_tolerance'],
           'explanation': raw['explanation'],
           'user_id': null,
         });
