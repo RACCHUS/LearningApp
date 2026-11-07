@@ -1,7 +1,7 @@
 # Color Contrast and Readability Audit
 
 Created: 2026-11-06. Implements the "audit before redesign" steps of §5.5 in
-`LearningApp_Learner_Experience_Improvement_Plan_v2.md`. Follow
+[`docs/history/LEARNER_EXPERIENCE_IMPROVEMENT_PLAN_V2.md`](../history/LEARNER_EXPERIENCE_IMPROVEMENT_PLAN_V2.md). Follow
 `COLOR_SYSTEM_GUIDELINES.md` for migrations.
 
 ## Method
