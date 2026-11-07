@@ -117,7 +117,18 @@ void main() {
     });
 
     test('All canonical ModerationTargetType database values parse and roundtrip', () {
-      const dbTargets = ['course', 'lesson', 'study_set', 'word_list', 'curriculum', 'resource', 'question', 'profile'];
+      const dbTargets = [
+        'course',
+        'lesson',
+        'study_set',
+        'word_list',
+        'curriculum',
+        'resource',
+        'question',
+        'profile',
+        'community_question',
+        'community_answer',
+      ];
       for (final dbVal in dbTargets) {
         final target = ModerationTargetType.fromDb(dbVal);
         expect(target.dbValue, dbVal);

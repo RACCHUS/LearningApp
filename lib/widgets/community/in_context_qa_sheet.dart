@@ -8,6 +8,19 @@ import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
+import 'package:learning_pwa/models/governance/moderation_report.dart';
+import 'package:learning_pwa/services/community/spam_rate_limiter.dart';
+import 'package:learning_pwa/widgets/community/report_content_dialog.dart';
+import 'package:learning_pwa/widgets/community/adult_age_confirmation_dialog.dart';
+import 'package:learning_pwa/models/community/community_bookmark.dart';
+import 'package:learning_pwa/models/community/educator_profile.dart';
+import 'package:learning_pwa/models/community/educator_reputation.dart';
+import 'package:learning_pwa/models/community/educator_verification.dart';
+import 'package:learning_pwa/services/community/educator_service.dart';
+import 'package:learning_pwa/services/community/educator_reputation_service.dart';
+import 'package:learning_pwa/services/community/community_bookmark_service.dart';
+import 'package:learning_pwa/widgets/community/educator_credential_badge.dart';
+import 'package:learning_pwa/widgets/community/bookmarked_explanations_sheet.dart';
 
 /// Opens the in-context Concept Q&A sheet for learning screens (ECO-01 & ECO-02).
 Future<void> showInContextQaSheet(
@@ -18,6 +31,10 @@ Future<void> showInContextQaSheet(
   String? topicTitle,
   CommunityQaService? service,
   ModerationService? moderationService,
+  EducatorService? educatorService,
+  EducatorReputationService? reputationService,
+  CommunityBookmarkService? bookmarkService,
+  bool isAdultConfirmed = false,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   final effectiveService = service ?? CommunityQaService();
@@ -39,6 +56,10 @@ Future<void> showInContextQaSheet(
           topicTitle: topicTitle,
           service: effectiveService,
           moderationService: effectiveModService,
+          educatorService: educatorService,
+          reputationService: reputationService,
+          bookmarkService: bookmarkService,
+          isAdultConfirmed: isAdultConfirmed,
         ),
       ),
     );
@@ -62,6 +83,10 @@ Future<void> showInContextQaSheet(
             topicTitle: topicTitle,
             service: effectiveService,
             moderationService: effectiveModService,
+            educatorService: educatorService,
+            reputationService: reputationService,
+            bookmarkService: bookmarkService,
+            isAdultConfirmed: isAdultConfirmed,
           ),
         ),
       ),
@@ -76,6 +101,10 @@ class InContextQaSheet extends StatefulWidget {
   final String? topicTitle;
   final CommunityQaService service;
   final ModerationService? moderationService;
+  final EducatorService? educatorService;
+  final EducatorReputationService? reputationService;
+  final CommunityBookmarkService? bookmarkService;
+  final bool isAdultConfirmed;
 
   const InContextQaSheet({
     super.key,
@@ -85,6 +114,10 @@ class InContextQaSheet extends StatefulWidget {
     this.topicTitle,
     required this.service,
     this.moderationService,
+    this.educatorService,
+    this.reputationService,
+    this.bookmarkService,
+    this.isAdultConfirmed = false,
   });
 
   @override
@@ -117,6 +150,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   bool _isLoading = true;
   bool _isSubmitting = false;
   bool _isModerator = false;
+  late bool _isAdultConfirmed;
   int _reviewSubTab = 0; // 0: Questions, 1: Answers, 2: Audit History
   String? _statusMessage;
   List<CommunityQuestion> _seedFaqs = [];
@@ -131,6 +165,37 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   final Map<String, List<CommunityAnswer>> _answersCache = {};
   final Set<String> _expandedQuestions = {};
   final Set<String> _userUpvoted = {};
+  final SpamRateLimiter _spamLimiter = SpamRateLimiter();
+  late final EducatorService _educatorService;
+  late final EducatorReputationService _reputationService;
+  late final CommunityBookmarkService _bookmarkService;
+  final Map<String, List<EducatorVerification>> _authorVerificationsCache = {};
+  final Map<String, EducatorProfile> _authorProfilesCache = {};
+  final Map<String, EducatorReputation> _authorReputationsCache = {};
+
+  Future<void> _handleReportQuestion(CommunityQuestion q) async {
+    if (widget.moderationService == null) return;
+    await ReportContentDialog.show(
+      context,
+      targetType: ModerationTargetType.communityQuestion,
+      targetId: q.id,
+      contentSnippet: q.title,
+      moderationService: widget.moderationService!,
+    );
+  }
+
+  Future<void> _handleReportAnswer(CommunityAnswer ans) async {
+    if (widget.moderationService == null) return;
+    await ReportContentDialog.show(
+      context,
+      targetType: ModerationTargetType.communityAnswer,
+      targetId: ans.id,
+      contentSnippet: ans.bodyMarkdown.length > 80
+          ? '${ans.bodyMarkdown.substring(0, 80)}...'
+          : ans.bodyMarkdown,
+      moderationService: widget.moderationService!,
+    );
+  }
 
   bool _isSessionValid(int sessionGen, String? sessionUserId) {
     return mounted && sessionGen == _authSessionGeneration && widget.service.currentUserId == sessionUserId;
@@ -173,7 +238,11 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   @override
   void initState() {
     super.initState();
+    _isAdultConfirmed = widget.isAdultConfirmed;
     _activeUserId = widget.service.currentUserId;
+    _educatorService = widget.educatorService ?? EducatorService();
+    _reputationService = widget.reputationService ?? EducatorReputationService(educatorService: _educatorService);
+    _bookmarkService = widget.bookmarkService ?? CommunityBookmarkService();
     _subscribeToAuthChanges();
     _loadData();
   }
@@ -190,6 +259,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   void _onUserChanged(String? newUserId) {
     if (!mounted) return;
     _authSessionGeneration++;
+    _isAdultConfirmed = widget.isAdultConfirmed;
     _dismissActiveDialogs();
     _titleController.clear();
     _bodyController.clear();
@@ -373,7 +443,280 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
       setState(() {
         _answersCache[questionId] = answers;
       });
+      for (final a in answers) {
+        if (a.authorId.isNotEmpty && a.authorId != 'offline-demo' && a.authorId != 'system') {
+          _fetchAuthorVerifications(a.authorId);
+        }
+      }
     } catch (_) {}
+  }
+
+  Future<void> _fetchAuthorVerifications(String authorId) async {
+    if (_authorVerificationsCache.containsKey(authorId)) return;
+    try {
+      final vers = await _educatorService.fetchPublicVerifications(authorId);
+      final profile = await _educatorService.fetchProfile(authorId);
+      final rep = await _reputationService.fetchReputation(authorId);
+      if (mounted) {
+        setState(() {
+          _authorVerificationsCache[authorId] = vers;
+          if (profile != null) {
+            _authorProfilesCache[authorId] = profile;
+          }
+          _authorReputationsCache[authorId] = rep;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleBookmark(CommunityAnswer ans, CommunityQuestion q) async {
+    final isBookmarked = _bookmarkService.isBookmarked(ans.id);
+    if (isBookmarked) {
+      await _bookmarkService.removeBookmark(ans.id);
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removed from saved bookmarks')),
+        );
+      }
+    } else {
+      final bmk = CommunityBookmark(
+        id: 'bmk_${ans.id}',
+        userId: widget.service.currentUserId ?? 'local_user',
+        contentType: 'answer',
+        contentId: ans.id,
+        title: q.title,
+        bodySnippet: ans.bodyMarkdown.length > 120
+            ? '${ans.bodyMarkdown.substring(0, 120)}...'
+            : ans.bodyMarkdown,
+        conceptId: q.conceptId ?? widget.conceptId,
+        authorId: ans.authorId,
+        authorDisplayName: _authorProfilesCache[ans.authorId]?.displayName ?? (ans.isSeeded ? 'Curated FAQ' : 'Community Educator'),
+        isVerifiedAuthor: _authorVerificationsCache[ans.authorId]?.any((v) => v.isVerified) ?? false,
+        createdAt: DateTime.now(),
+      );
+      await _bookmarkService.addBookmark(bmk);
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved to bookmarks for study review')),
+        );
+      }
+    }
+  }
+
+  void _openBookmarksSheet() {
+    BookmarkedExplanationsSheet.show(
+      context,
+      bookmarkService: _bookmarkService,
+      filterConceptId: widget.conceptId,
+    );
+  }
+
+  Future<void> _openTeachThisTopicDialog(CommunityQuestion q) async {
+    if (!_isAdultConfirmed) {
+      final confirmed = await AdultAgeConfirmationDialog.show(context);
+      if (confirmed != true) return;
+      if (mounted) {
+        setState(() => _isAdultConfirmed = true);
+      }
+    }
+
+    if (widget.service.currentUserId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in as an adult contributor to teach this topic.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final controller = TextEditingController();
+    bool isSubmitting = false;
+    String? localError;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.school, color: Colors.teal),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Teach This Topic', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.teal.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Question:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.teal[800])),
+                        const SizedBox(height: 2),
+                        Text(q.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        if (q.bodyMarkdown.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(q.bodyMarkdown, style: const TextStyle(fontSize: 12, color: Colors.black87), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (localError != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(localError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
+                  TextField(
+                    key: const Key('teach_topic_answer_field'),
+                    controller: controller,
+                    maxLines: 5,
+                    minLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Your Explanation / Answer (Markdown supported) *',
+                      hintText: 'Explain the core concept clearly with examples or practical steps...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Answers from verified contributors display credential badges and earn evidence-weighted reputation.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              key: const Key('submit_teach_answer_button'),
+              icon: isSubmitting
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.send, size: 14),
+              label: const Text('Contribute Answer'),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final text = controller.text.trim();
+                      if (text.length < 10) {
+                        setDialogState(() => localError = 'Answer must be at least 10 characters long.');
+                        return;
+                      }
+                      setDialogState(() {
+                        isSubmitting = true;
+                        localError = null;
+                      });
+                      try {
+                        await widget.service.createDraftAnswer(
+                          questionId: q.id,
+                          bodyMarkdown: text,
+                          submitForReview: true,
+                        );
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                        _answersCache.remove(q.id);
+                        await _loadAnswers(q.id);
+                        await _loadData();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Answer submitted for editorial review!')),
+                          );
+                        }
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          setDialogState(() {
+                            localError = 'Failed to submit answer: $e';
+                            isSubmitting = false;
+                          });
+                        }
+                      }
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeachThisTopicBanner(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.teal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.teal.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.teal.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.school, color: Colors.teal, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Teach This Topic',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal),
+                ),
+                Text(
+                  'Subject experts: share explanations and earn evidence-weighted reputation.',
+                  style: TextStyle(fontSize: 11, color: Colors.teal.shade900),
+                ),
+              ],
+            ),
+          ),
+          if (_seedFaqs.isNotEmpty)
+            FilledButton.tonal(
+              key: const Key('teach_first_topic_button'),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              ),
+              onPressed: () {
+                final firstQ = _seedFaqs.first;
+                _openTeachThisTopicDialog(firstQ);
+              },
+              child: const Text('Contribute', style: TextStyle(fontSize: 12)),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleVote(CommunityQuestion question) async {
@@ -553,15 +896,37 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
     final int sessionGen = _authSessionGeneration;
     final String? sessionUserId = widget.service.currentUserId;
 
+    // Invariant 3: Adult age assurance gate
+    if (!_isAdultConfirmed) {
+      final isAdult = await AdultAgeConfirmationDialog.show(context);
+      if (!isAdult) return;
+      _isAdultConfirmed = true;
+    }
+
+    // Invariant 4: Spam rate limit check
+    final rateLimitCheck = _spamLimiter.validateQuestionSubmission(
+      userId: sessionUserId ?? 'anon',
+      title: _titleController.text,
+      body: _bodyController.text,
+    );
+    if (!rateLimitCheck.isAllowed) {
+      setState(() {
+        _statusMessage = rateLimitCheck.rejectionReason;
+      });
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _statusMessage = null;
     });
 
     try {
+      final title = _titleController.text;
+      final body = _bodyController.text;
       final newQuestion = await widget.service.createDraftQuestion(
-        title: _titleController.text,
-        bodyMarkdown: _bodyController.text,
+        title: title,
+        bodyMarkdown: body,
         conceptId: widget.conceptId,
         targetId: widget.targetId,
         lessonId: widget.lessonId,
@@ -573,6 +938,11 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
       }
 
       if (newQuestion != null) {
+        _spamLimiter.recordQuestionSubmission(
+          userId: sessionUserId ?? 'anon',
+          title: title,
+          body: body,
+        );
         _titleController.clear();
         _bodyController.clear();
         setState(() {
@@ -672,6 +1042,12 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                 ),
               ),
               IconButton(
+                key: const Key('open_bookmarks_button'),
+                icon: const Icon(Icons.bookmark_outline),
+                tooltip: 'Saved Explanations',
+                onPressed: _openBookmarksSheet,
+              ),
+              IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
                 tooltip: 'Close',
@@ -756,35 +1132,44 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
 
   Widget _buildSeedFaqsTab(ThemeData theme) {
     if (_seedFaqs.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lightbulb_outline, size: 40, color: Colors.grey),
-              const SizedBox(height: 12),
-              Text(
-                'No FAQs Available For This Topic Yet',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+      return ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          _buildTeachThisTopicBanner(theme),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lightbulb_outline, size: 40, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No FAQs Available For This Topic Yet',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Submit a private question in the "Ask a Question" tab to have educators review and expand our curated answers.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Submit a private question in the "Ask a Question" tab to have educators review and expand our curated answers.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: _seedFaqs.length,
+      itemCount: _seedFaqs.length + 1,
       itemBuilder: (context, index) {
-        final q = _seedFaqs[index];
+        if (index == 0) {
+          return _buildTeachThisTopicBanner(theme);
+        }
+        final q = _seedFaqs[index - 1];
         final isExpanded = _expandedQuestions.contains(q.id);
         final isUpvoted = _userUpvoted.contains(q.id);
         final isOfflineDemo = q.authorId == 'offline-demo';
@@ -848,6 +1233,13 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                       onPressed: isOfflineDemo ? null : () => _handleVote(q),
                       tooltip: isOfflineDemo ? 'Voting disabled for offline preview' : 'Upvote',
                     ),
+                    if (widget.moderationService != null && !isOfflineDemo)
+                      IconButton(
+                        key: Key('report_question_${q.id}'),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                        onPressed: () => _handleReportQuestion(q),
+                        tooltip: 'Report question',
+                      ),
                     IconButton(
                       icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
                       onPressed: () {
@@ -880,6 +1272,15 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                         for (final ans in _answersCache[q.id]!)
                           _buildAnswerCard(ans, q, isOfflineDemo, theme),
                       ],
+                      const SizedBox(height: 8),
+                      Center(
+                        child: OutlinedButton.icon(
+                          key: Key('teach_topic_button_${q.id}'),
+                          icon: const Icon(Icons.school_outlined, size: 16),
+                          label: const Text('Teach This Topic: Contribute Answer', style: TextStyle(fontSize: 12)),
+                          onPressed: isOfflineDemo ? null : () => _openTeachThisTopicDialog(q),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -917,11 +1318,13 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
@@ -990,14 +1393,52 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                         ],
                       ),
                     ),
+                  if (_authorReputationsCache.containsKey(ans.authorId))
+                    EducatorReputationBadge(
+                      tier: _authorReputationsCache[ans.authorId]!.tier,
+                      score: _authorReputationsCache[ans.authorId]!.score,
+                      isCompact: true,
+                    ),
+                  if (_authorVerificationsCache.containsKey(ans.authorId) &&
+                      _authorVerificationsCache[ans.authorId]!.isNotEmpty) ...[
+                    for (final v in _authorVerificationsCache[ans.authorId]!)
+                      EducatorCredentialBadge(verification: v, isCompact: true),
+                  ],
                 ],
               ),
-              if (!ans.isAccepted && _isModerator && !isOfflineDemo)
-                TextButton.icon(
-                  icon: const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
-                  label: const Text('Accept', style: TextStyle(fontSize: 11, color: Colors.green)),
-                  onPressed: () => _handleAcceptAnswer(ans.id, q.id),
-                ),
+            ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: Key('bookmark_answer_${ans.id}'),
+                    icon: Icon(
+                      _bookmarkService.isBookmarked(ans.id) ? Icons.bookmark : Icons.bookmark_border,
+                      size: 16,
+                      color: _bookmarkService.isBookmarked(ans.id) ? Colors.amber[800] : null,
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    tooltip: _bookmarkService.isBookmarked(ans.id) ? 'Remove bookmark' : 'Bookmark answer',
+                    onPressed: () => _toggleBookmark(ans, q),
+                  ),
+                  if (!ans.isAccepted && _isModerator && !isOfflineDemo)
+                    TextButton.icon(
+                      icon: const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                      label: const Text('Accept', style: TextStyle(fontSize: 11, color: Colors.green)),
+                      onPressed: () => _handleAcceptAnswer(ans.id, q.id),
+                    ),
+                  if (widget.moderationService != null && !isOfflineDemo)
+                    IconButton(
+                      key: Key('report_answer_${ans.id}'),
+                      icon: const Icon(Icons.flag_outlined, size: 16),
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _handleReportAnswer(ans),
+                      tooltip: 'Report answer',
+                    ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1986,6 +2427,14 @@ class _AnswerRevisionDialogState extends State<_AnswerRevisionDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final text = _answerController.text.trim();
+    if (text.length < 20 || text.length > 1000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Answer must be between 20 and 1,000 characters.')),
+      );
+      return;
+    }
 
     if (!widget.isSessionValid(widget.sessionGen, widget.dialogAuthorId)) {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();

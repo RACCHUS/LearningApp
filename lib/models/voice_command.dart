@@ -1,18 +1,6 @@
-enum VoiceCommandType {
-  navigation,
-  answer,
-  control,
-  mode,
-}
+enum VoiceCommandType { navigation, answer, control, mode }
 
-enum NavigationCommand {
-  next,
-  previous,
-  first,
-  last,
-  back,
-  jumpToPage,
-}
+enum NavigationCommand { next, previous, first, last, back, jumpToPage }
 
 enum ControlCommand {
   play,
@@ -28,12 +16,7 @@ enum ControlCommand {
   showProgress,
 }
 
-enum ModeCommand {
-  flashcards,
-  questions,
-  concepts,
-  mixed,
-}
+enum ModeCommand { flashcards, questions, concepts, mixed }
 
 class VoiceCommand {
   final VoiceCommandType type;
@@ -148,7 +131,7 @@ class VoiceCommand {
   static bool _matchesWithWordBoundary(String text, String phrase) {
     // Exact match
     if (text == phrase) return true;
-    
+
     // Word boundary match using regex
     final pattern = RegExp(
       r'(^|\s)' + RegExp.escape(phrase) + r'($|\s|[.,!?])',
@@ -158,7 +141,9 @@ class VoiceCommand {
   }
 
   /// Sort entries by key length (longest first) to prioritize specific matches
-  static List<MapEntry<String, T>> _sortByLengthDescending<T>(Map<String, T> map) {
+  static List<MapEntry<String, T>> _sortByLengthDescending<T>(
+    Map<String, T> map,
+  ) {
     final entries = map.entries.toList();
     entries.sort((a, b) => b.key.length.compareTo(a.key.length));
     return entries;
@@ -166,28 +151,34 @@ class VoiceCommand {
 
   static VoiceCommand? parseCommand(String text, {double confidence = 1.0}) {
     final normalizedText = text.toLowerCase().trim();
-    
+
     // Reject very low confidence input
     if (confidence < 0.4) {
       return null;
     }
-    
+
     // Check for "go to page [number]" command
-    final pagePattern = RegExp(r'go to page (\d+)|page (\d+)|jump to page (\d+)');
+    final pagePattern = RegExp(
+      r'go to page (\d+)|page (\d+)|jump to page (\d+)',
+    );
     final pageMatch = pagePattern.firstMatch(normalizedText);
     if (pageMatch != null) {
-      final pageNumber = int.tryParse(pageMatch.group(1) ?? pageMatch.group(2) ?? pageMatch.group(3) ?? '');
+      final pageNumber = int.tryParse(
+        pageMatch.group(1) ?? pageMatch.group(2) ?? pageMatch.group(3) ?? '',
+      );
       if (pageNumber != null) {
         return VoiceCommand(
           type: VoiceCommandType.navigation,
           phrase: 'go to page $pageNumber',
           value: NavigationCommand.jumpToPage,
-          alternatives: [pageNumber.toString()], // Store page number in alternatives
+          alternatives: [
+            pageNumber.toString(),
+          ], // Store page number in alternatives
           confidence: confidence,
         );
       }
     }
-    
+
     // Check navigation commands (sorted by length - longest first)
     for (final entry in _sortByLengthDescending(navigationCommands)) {
       if (_matchesWithWordBoundary(normalizedText, entry.key)) {
@@ -227,9 +218,13 @@ class VoiceCommand {
     // Check MCQ answers (require higher confidence for answers)
     if (confidence >= 0.6) {
       for (final entry in _sortByLengthDescending(mcqAnswers)) {
-        // For MCQ answers, check exact match or word boundary
-        if (normalizedText == entry.key || 
-            _matchesWithWordBoundary(normalizedText, entry.key)) {
+        // Single-letter keys ('a', 'b', 'c', 'd') must match the entire utterance
+        // so words like the article "a" inside a sentence do not falsely match.
+        final isMatch = entry.key.length == 1
+            ? normalizedText == entry.key
+            : (normalizedText == entry.key ||
+                  _matchesWithWordBoundary(normalizedText, entry.key));
+        if (isMatch) {
           return VoiceCommand(
             type: VoiceCommandType.answer,
             phrase: entry.key,

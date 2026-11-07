@@ -1,0 +1,372 @@
+{
+  "$schema": "https://learningapp.io/schemas/seed_faqs_manifest_v1.json",
+  "version": "1.0.0",
+  "totalCount": 36,
+  "domains": [
+    "adult_literacy",
+    "workplace_safety",
+    "florida_licensure"
+  ],
+  "faqs": [
+    {
+      "id": "seed-faq-001",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.cvc.basics",
+      "title": "What is the CVC pattern in phonics and how is it taught?",
+      "body_markdown": "What does the CVC acronym stand for, and why is it considered the foundational pattern in early phonics instruction?",
+      "answer_markdown": "CVC stands for Consonant-Vowel-Consonant (e.g., \"cat\", \"pin\", \"sun\", \"bed\", \"fog\"). In CVC words, the single vowel in the middle always makes its short vowel sound. Blending these three distinct phonemes (onset, vowel nucleus, and coda) is the core initial milestone in phonemic decoding before learners progress to consonant blends, vowel teams, or silent-e patterns.",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-002",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.sight_words",
+      "title": "How do sight words differ from decodable words?",
+      "body_markdown": "Why are high-frequency words often called sight words, and should learners sound them out or memorize them?",
+      "answer_markdown": "Decodable words follow transparent phonetic rules that learners can sound out letter by letter using taught grapheme-phoneme correspondences. High-frequency \"sight words\" (such as \"the\", \"was\", \"said\", \"of\") often contain irregular or advanced spelling patterns. Modern evidence-based reading instruction recommends \"orthographic mapping\"\u2014pointing out the regular sound parts while explicitly highlighting the irregular \"heart\" sounds, enabling instantaneous word retrieval without pure rote memorization.",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-003",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.phonics.blending",
+      "title": "What is the difference between continuous blending and segmented blending?",
+      "body_markdown": "When teaching a struggling reader to blend letter sounds into words, what is continuous blending and why is it recommended?",
+      "answer_markdown": "Segmented blending pauses between each individual sound (e.g., /s/ ... /a/ ... /t/), which places heavy demands on working memory. Continuous blending (also called additive or connected phonation) stretches continuous sounds smoothly into one another without pausing (e.g., \"ssssaaaat\"). Research indicates continuous blending significantly reduces memory drop-off and error rates for early and struggling readers.",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-004",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.digraphs",
+      "title": "What is a consonant digraph versus a consonant blend?",
+      "body_markdown": "What distinguishes consonant digraphs like \"sh\" and \"th\" from consonant blends like \"bl\" and \"st\"?",
+      "answer_markdown": "A consonant digraph consists of two letters that team together to represent a single, unique phoneme (e.g., \"sh\" in \"ship\", \"th\" in \"thin\", \"ch\" in \"chin\", \"ck\" in \"duck\"). In contrast, a consonant blend consists of two or three consonants where each letter retains its own distinct individual sound that can still be heard when spoken together (e.g., /b/ and /l/ in \"black\", /s/ and /t/ in \"stop\").",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-005",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.rhyming",
+      "title": "How does onset-rime awareness support phonological development?",
+      "body_markdown": "Why is dividing words into onset and rime beneficial for pre-readers and developing spellers?",
+      "answer_markdown": "In phonological awareness, the \"onset\" is the initial consonant sound before the vowel (e.g., /c/ in \"cat\"), and the \"rime\" is the vowel and any subsequent consonants (e.g., \"-at\"). Recognizing common rimes (word families like \"-at\", \"-in\", \"-op\") accelerates reading fluency because learners can rapidly map and read dozens of new words by simply swapping the onset consonant.",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-006",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.silent_e",
+      "title": "How does the silent-e (split digraph) change vowel sounds in English?",
+      "body_markdown": "What is the phonics principle behind the \"magic e\" or silent-e pattern in words like \"hop\" vs \"hope\"?",
+      "answer_markdown": "In the VCe (Vowel-Consonant-e) pattern, the final silent \"e\" signals that the preceding vowel represents its long vowel sound (saying its name) rather than the short vowel sound heard in closed CVC syllables (e.g., \"cap\" becomes \"cape\", \"pin\" becomes \"pine\", \"tub\" becomes \"tube\"). Linguistically, this is a split vowel digraph, where the two vowel letters work together across the intervening consonant.",
+      "source_citation": "National Reading Panel & Evidence-Based Reading Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-007",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.ppe",
+      "title": "What are the five levels of the Hierarchy of Controls in workplace safety?",
+      "body_markdown": "Under NIOSH and OSHA standards, how should employers prioritize hazard mitigation methods?",
+      "answer_markdown": "The Hierarchy of Controls prioritizes hazard mitigation from most to least effective: 1) Elimination (physically remove the hazard); 2) Substitution (replace the hazard with a safer alternative); 3) Engineering Controls (isolate people from the hazard, e.g., machine guards, ventilation); 4) Administrative Controls (change the way people work through procedures, training, and signs); and 5) Personal Protective Equipment (PPE: gloves, respirators, hard hats, earplugs). PPE is the last line of defense, not the first.",
+      "source_citation": "OSHA & NIOSH Safety Standards. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-008",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.hazcom",
+      "title": "What information must be included on an OSHA-compliant GHS chemical safety label?",
+      "body_markdown": "What are the mandatory elements required on hazardous chemical container labels under OSHA HazCom 2012?",
+      "answer_markdown": "Under OSHA's Hazard Communication Standard (29 CFR 1910.1200) aligned with the Globally Harmonized System (GHS), container labels must include six mandatory elements: 1) Product Identifier (chemical name/code); 2) Signal Word (\"Danger\" for severe hazards, \"Warning\" for less severe); 3) Hazard Statements (nature and degree of hazard); 4) Precautionary Statements (prevention, response, storage, disposal); 5) GHS Pictograms (red diamond borders with black hazard symbols); and 6) Supplier Identification (manufacturer name, address, and emergency telephone number).",
+      "source_citation": "OSHA HazCom Standard (29 CFR 1910.1200). Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-009",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.fire",
+      "title": "What is the PASS method for operating a portable fire extinguisher?",
+      "body_markdown": "What four-step sequence should workers follow when using a portable fire extinguisher during an incipient-stage fire?",
+      "answer_markdown": "The PASS acronym summarizes the correct technique: 1) Pull the safety pin from the handle; 2) Aim low, pointing the extinguisher nozzle or hose at the base of the fire (not into the flames); 3) Squeeze the handle lever slowly and evenly to discharge the extinguishing agent; 4) Sweep the nozzle from side to side across the base of the fire until the fire is completely out. Workers should only fight fires in their incipient stage when a safe exit path is behind them.",
+      "source_citation": "OSHA Standard 29 CFR 1910.157 & NFPA Guidelines. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-010",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.lockout_tagout",
+      "title": "What is Lockout/Tagout (LOTO) and why is it mandatory during machinery maintenance?",
+      "body_markdown": "Under OSHA standard 29 CFR 1910.147, what is the primary purpose of hazardous energy control procedures?",
+      "answer_markdown": "Lockout/Tagout (LOTO) establishes minimum performance requirements to prevent unexpected energization, startup, or release of stored energy during servicing or maintenance of machines and equipment. A designated lockout device physically holds the energy-isolating mechanism in a safe position, while a standardized tagout warning tag indicates the equipment must not be energized until the authorized technician removes the lock.",
+      "source_citation": "OSHA Standard 29 CFR 1910.147. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-011",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.slips_trips_falls",
+      "title": "What are the primary OSHA walking-working surface requirements for housekeeping?",
+      "body_markdown": "How should walkways, aisles, and floors be maintained in commercial and industrial workspaces to prevent fall injuries?",
+      "answer_markdown": "Under OSHA 29 CFR 1910.22, all places of employment, passageways, storerooms, and service rooms must be kept clean, orderly, and in a sanitary condition. Floors must be kept dry and clear of debris, electrical cords, and protrusions. Where wet processes are used, employers must provide adequate drainage, non-slip mats, or false floors to maintain traction.",
+      "source_citation": "OSHA Standard 29 CFR 1910.22. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-012",
+      "domain": "workplace_safety",
+      "concept_id": "workplace.safety.emergency_action",
+      "title": "What core components are required in an OSHA Emergency Action Plan (EAP)?",
+      "body_markdown": "When an employer is required to have an Emergency Action Plan under 29 CFR 1910.38, what procedures must be documented?",
+      "answer_markdown": "An OSHA Emergency Action Plan must document: 1) Procedures for reporting fires and other emergencies; 2) Emergency evacuation procedures, including designated exit route assignments; 3) Procedures for employees who remain to operate critical operations before evacuation; 4) Procedures to account for all employees after evacuation; 5) Rescue and medical duties for assigned workers; and 6) Preferred names or job titles of individuals to contact for further information.",
+      "source_citation": "OSHA Standard 29 CFR 1910.38. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-013",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.cosmetology.ce",
+      "title": "What are the continuing education (CE) requirements for Florida Cosmetology license renewal?",
+      "body_markdown": "How many continuing education hours are required by the Florida Board of Cosmetology for biennial license renewal?",
+      "answer_markdown": "Under Section 477.019, Florida Statutes, and Rule 61G5-20.002, Florida Administrative Code (F.A.C.), Florida licensed cosmetologists must complete 10 hours of Board-approved continuing education prior to biennial license renewal. Cosmetology licenses are divided into two renewal groups: Group 1 expires October 31 of odd-numbered years, and Group 2 expires October 31 of even-numbered years. The mandatory 10-hour curriculum allocation requires: 1 hour of Board-approved HIV/AIDS education, 3 hours of sanitation and sterilization, 0.5 hour of Occupational Safety and Health Administration (OSHA) regulations, 0.5 hour of Workers' Compensation law, 1 hour of Florida and Federal laws and rules, and 4 hours of General cosmetology courses or specialty electives.",
+      "source_citation": "Florida DBPR Board of Cosmetology (Rule 61G5-20.002, F.A.C.; \u00a7 477.019, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-014",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.cna.renewal",
+      "title": "What are the work and in-service training requirements to renew a Florida CNA certificate?",
+      "body_markdown": "How does a Certified Nursing Assistant maintain an active license with the Florida Board of Nursing?",
+      "answer_markdown": "Under Florida Statutes Chapter 464 and Rule 64B9-15, F.A.C., a Certified Nursing Assistant (CNA) license renews biennially. To qualify for active renewal, the CNA must perform nursing-related services for monetary compensation within the 24-month renewal cycle and complete a minimum of 24 hours of in-service training (12 hours per calendar year) covering mandatory topics such as medical error prevention, infection control, CPR, patient rights, and HIPAA compliance.",
+      "source_citation": "Florida Board of Nursing (Rule 64B9-15, F.A.C.; Ch. 464, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-015",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.real_estate.post_licensing",
+      "title": "What is the first-renewal post-licensing requirement for Florida Real Estate Sales Associates?",
+      "body_markdown": "What coursework must a newly licensed Florida real estate sales associate complete before their initial license expiration date?",
+      "answer_markdown": "Florida Real Estate Commission (FREC) Rule 61J2-3 requires all newly licensed sales associates to satisfactorily complete a commission-approved 45-hour post-licensing education course prior to their first biennial license expiration date. There is no grace period in Florida: failure to complete the 45-hour post-licensing course before the expiration date renders the license null and void by operation of law.",
+      "source_citation": "Florida Real Estate Commission (Rule 61J2-3, F.A.C.; Ch. 475, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-016",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.electrical.reciprocity",
+      "title": "How does license reciprocity work for Florida Certified Electrical Contractors?",
+      "body_markdown": "Does the Florida Electrical Contractors' Licensing Board (ECLB) grant reciprocal recognition to electrical licenses from other states?",
+      "answer_markdown": "The Florida Electrical Contractors' Licensing Board (ECLB) explicitly states that Florida does not have reciprocal licensing agreements with any other state. Under Section 489.511, Florida Statutes, out-of-state contractors must apply for Licensure by Endorsement rather than reciprocity. To qualify for endorsement without retaking the Florida technical examination, an applicant must demonstrate either: 1) They passed a state or national examination substantially equivalent to Florida's examination at the time taken; or 2) They held a valid, active electrical contractor license in another state for at least 10 years, with qualifications meeting or exceeding Florida statutory standards. All endorsement applicants must independently satisfy Florida financial responsibility requirements, credit reporting, fingerprint-based criminal history background checks, and proof of active workers' compensation insurance.",
+      "source_citation": "Florida DBPR Electrical Contractors' Licensing Board (ECLB; \u00a7 489.511, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-017",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.security_guard.class_d",
+      "title": "What training hours are required for the Florida Class D Security Officer License?",
+      "body_markdown": "Under Florida Chapter 493, what curriculum and hours must an applicant complete to earn a Class D Security Officer License?",
+      "answer_markdown": "Under Florida Statutes Chapter 493, applicants for the Class \"D\" Security Officer License must successfully complete a 40-hour training curriculum at a licensed security officer school. The training covers Florida law, security officer conduct, observation techniques, report writing, emergency procedures, terrorism awareness, and first aid. Once completed, the license is issued by the Florida Department of Agriculture and Consumer Services (FDACS) and is valid for two years.",
+      "source_citation": "Florida Department of Agriculture and Consumer Services (FDACS; Ch. 493, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-018",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.construction.general_contractor",
+      "title": "What experience qualifications are required for the Florida Certified General Contractor (CGC) exam?",
+      "body_markdown": "What combination of education and four years of commercial construction experience is required by the Florida CILB?",
+      "answer_markdown": "The Florida Construction Industry Licensing Board (CILB) requires applicants for the Certified General Contractor (CGC) license under Section 489.111, Florida Statutes, and Rule 61G4-15.001, F.A.C., to demonstrate four years of proven commercial construction experience. For general contractors, commercial high-rise experience is specifically defined as new commercial construction of structures of not less than four stories (at least four stories or taller). Qualifying experience must encompass substantial structural knowledge in: foundations and piers, structural framing, elevated slabs and post-tensioning, structural masonry, and curtain walls. Acceptable qualifying paths include: 1) A 4-year accredited degree in construction, engineering, or architecture plus 1 year of proven supervisory experience; 2) 3 years of accredited college credits plus 1 year of supervisory experience; or 3) 4 years of active field experience, with at least 1 year acting as a foreman or supervisor on commercial projects including structures of not less than four stories.",
+      "source_citation": "Florida DBPR Construction Industry Licensing Board (CILB; \u00a7 489.111, Fla. Stat.; Rule 61G4-15.001, F.A.C.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel or regulatory endorsement.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-019",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.phonics.syllable_division",
+      "title": "How does syllable division (VC/CV vs V/CV) help in decoding multisyllabic words?",
+      "body_markdown": "How should an adult reader break down longer unfamiliar words into manageable syllables?",
+      "answer_markdown": "Syllable division provides reliable roadmaps for chunking words. In the VC/CV pattern (e.g., \"nap-kin\", \"den-tist\"), the word divides between the two consonants, closing the first syllable and signaling a short vowel. In the V/CV pattern (e.g., \"ro-bot\", \"mu-sic\"), the word typically divides before the consonant, leaving an open syllable with a long vowel. Mastered syllable division prevents guessing and builds word independence.",
+      "source_citation": "Linnea Ehri & National Reading Panel Research. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-020",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.phonics.diphthongs",
+      "title": "What are vowel diphthongs and how are they pronounced?",
+      "body_markdown": "What is the difference between regular vowel teams and diphthongs like \"oi/oy\" and \"ou/ow\"?",
+      "answer_markdown": "A diphthong is a complex speech sound that begins with one vowel sound and glides smoothly into another within the same syllable (e.g., /oi/ spelled \"oi\" in \"coin\" or \"oy\" in \"boy\", and /ow/ spelled \"ou\" in \"cloud\" or \"ow\" in \"cow\"). The mouth noticeably changes shape during pronunciation. In contrast, simple vowel teams like \"ee\" in \"tree\" or \"ai\" in \"rain\" produce a single monophthong vowel sound.",
+      "source_citation": "Orton-Gillingham Academy & National Reading Panel. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-021",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.phonics.r_controlled",
+      "title": "How do r-controlled vowels affect vowel pronunciation?",
+      "body_markdown": "Why do vowels followed by the letter \"r\" sound neither long nor short?",
+      "answer_markdown": "When a vowel is immediately followed by the letter \"r\" in the same syllable, the \"r\" modifies or \"controls\" the vowel sound, creating a unique acoustic quality that is neither typically short nor long (e.g., \"ar\" in \"car\", \"or\" in \"fork\", and the identical sound /er/ spelled \"er\" in \"her\", \"ir\" in \"bird\", or \"ur\" in \"turn\"). These are treated as a distinct syllable category in evidence-based decoding programs.",
+      "source_citation": "Evidence-Based Reading Research Register. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-022",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.morphology.inflectional_suffixes",
+      "title": "What are the three different pronunciations of the past-tense suffix \"-ed\"?",
+      "body_markdown": "Why does \"-ed\" sound like /t/ in \"jumped\", /d/ in \"played\", and /id/ in \"landed\"?",
+      "answer_markdown": "The past-tense suffix \"-ed\" has three distinct phonetic realizations depending on the final sound of the base verb: 1) /id/ after base words ending in /t/ or /d/ (\"landed\", \"wanted\"); 2) /t/ after unvoiced consonant sounds like /p/, /k/, /s/, /sh/, /ch/ (\"jumped\", \"kicked\"); and 3) /d/ after all voiced sounds and vowels (\"played\", \"called\"). Teaching these regular phonological rules eliminates spelling and reading hesitation.",
+      "source_citation": "Linguistics in Reading Instruction, Chall & Adams. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-023",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.fluency.decodable_texts",
+      "title": "Why are decodable texts preferred over leveled guessing texts in early literacy?",
+      "body_markdown": "How do decodable readers build confidence and prevent poor reading habits in adult learners?",
+      "answer_markdown": "Decodable readers contain words composed exclusively of previously taught phonics concepts and high-frequency mapped words. This forces the learner to practice authentic sounding-out rather than relying on picture guessing or context memorization. Once accuracy reaches 95%+, decodable texts establish the orthographic mapping foundation necessary to transition smoothly into general trade books and technical training manuals.",
+      "source_citation": "Mark Seidenberg (Language at the Speed of Sight) & NRP. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-024",
+      "domain": "adult_literacy",
+      "concept_id": "literacy.morphology.roots_and_affixes",
+      "title": "How does morphological analysis expand adult vocabulary and spelling?",
+      "body_markdown": "How can studying prefixes, Latin roots, and suffixes help adults understand technical words?",
+      "answer_markdown": "Morphology studies meaningful word parts: prefixes, base roots, and suffixes. Because over 60% of multisyllabic English words (especially in science, healthcare, and trades) derive from Latin and Greek roots (e.g., \"struct\" = build, \"port\" = carry, \"dict\" = speak), mastering common affixes (un-, re-, -tion, -able) enables adult learners to infer the meanings and correct spellings of thousands of advanced workplace words.",
+      "source_citation": "Institute of Education Sciences (IES) Adult Literacy Practice Guide. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-025",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.bloodborne_pathogens",
+      "title": "What are Universal Precautions under the OSHA Bloodborne Pathogens Standard?",
+      "body_markdown": "How must employees handle potential exposure to blood or other potentially infectious materials (OPIM)?",
+      "answer_markdown": "Under 29 CFR 1910.1030, Universal Precautions is an infection control approach where all human blood and certain human body fluids are treated as if known to be infectious for HIV, HBV, HCV, and other bloodborne pathogens. Control measures mandate engineering controls (sharps containers, needleless systems), PPE (gloves, eye protection, gowns), post-exposure evaluation, and free Hepatitis B vaccination offered to exposed workers.",
+      "source_citation": "OSHA Standard 29 CFR 1910.1030. Verified October 2026. Note: Platform-curated educational reference; does not replace employer site safety training.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-026",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.respiratory_protection",
+      "title": "What are the medical evaluation and fit-testing rules for tight-fitting respirators?",
+      "body_markdown": "Can an employee wear an N95 or half-mask elastomeric respirator without prior evaluation or fit testing?",
+      "answer_markdown": "Under 29 CFR 1910.134, before any employee uses a negative- or positive-pressure tight-fitting respirator, the employer must provide a confidential medical evaluation by a licensed healthcare professional to ensure the worker is physically able to wear it. In addition, mandatory qualitative or quantitative fit testing must be completed prior to initial use and at least annually thereafter using the exact make, model, and size.",
+      "source_citation": "OSHA Respiratory Protection Standard 29 CFR 1910.134. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-027",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.confined_spaces",
+      "title": "What is the mandatory atmospheric testing sequence for permit-required confined spaces?",
+      "body_markdown": "In what order must internal atmospheres be tested before workers enter a permit confined space?",
+      "answer_markdown": "Under 29 CFR 1910.146, atmospheric testing must be performed strictly in the following sequence: 1) Oxygen content (safe range 19.5% to 23.5%); 2) Flammable gases and vapors (must be below 10% of the Lower Explosive Limit - LEL); and 3) Potential toxic contaminants and gases (e.g., Carbon Monoxide < 35 ppm, Hydrogen Sulfide < 10 ppm). Oxygen must always be verified first because most combustible gas sensors require oxygen to function accurately.",
+      "source_citation": "OSHA Confined Space Standard 29 CFR 1910.146. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-028",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.fall_protection",
+      "title": "What are the trigger heights for fall protection across industry sectors?",
+      "body_markdown": "At what elevated working height must employers provide fall protection systems under OSHA rules?",
+      "answer_markdown": "OSHA mandates fall protection at different trigger heights depending on industry sector: 1) General Industry (29 CFR 1910.28): 4 feet; 2) Construction (29 CFR 1926.501): 6 feet; 3) Shipyards: 5 feet; and 4) Longshoring operations: 8 feet. Regardless of the fall distance, fall protection (guardrails, personal fall arrest systems, or safety nets) is required whenever employees work over dangerous equipment or machinery.",
+      "source_citation": "OSHA 29 CFR 1910.28 & 29 CFR 1926.501. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-029",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.heat_illness",
+      "title": "What are the core components of an OSHA heat illness prevention program?",
+      "body_markdown": "How should outdoor and indoor hot workplace environments protect workers from heat exhaustion and stroke?",
+      "answer_markdown": "OSHA's National Emphasis Program on Outdoor and Indoor Heat Hazards centers on \"Water, Rest, and Shade\": 1) Potable cool drinking water provided at 1 quart per worker per hour; 2) Dedicated shaded or air-conditioned break areas; 3) Mandatory rest breaks scaled according to the Heat Index; 4) A 7- to 14-day gradual acclimatization protocol for new and returning workers; and 5) Buddy systems and rapid emergency response protocols for early symptoms.",
+      "source_citation": "OSHA National Emphasis Program on Heat Illness (CPL 03-00-024). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-030",
+      "domain": "workplace_safety",
+      "concept_id": "safety.osha.sds_sections",
+      "title": "What are the 16 standardized sections of a GHS Safety Data Sheet (SDS)?",
+      "body_markdown": "How is chemical safety information structured on an SDS under HazCom 2012?",
+      "answer_markdown": "Under OSHA HazCom 2012, all SDS documents follow a rigid 16-section format: 1) Identification; 2) Hazard(s) Identification; 3) Composition/Ingredients; 4) First-Aid Measures; 5) Fire-Fighting Measures; 6) Accidental Release Measures; 7) Handling and Storage; 8) Exposure Controls/PPE; 9) Physical and Chemical Properties; 10) Stability and Reactivity; 11) Toxicological Information; 12) Ecological Information; 13) Disposal Considerations; 14) Transport Information; 15) Regulatory Information; and 16) Other Information. Sections 1-8 and 11 prioritize immediate worker safety.",
+      "source_citation": "OSHA 29 CFR 1910.1200 Appendix D. Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-031",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.home_inspector.prelicensing",
+      "title": "What are the Florida pre-licensing education requirements for Home Inspectors?",
+      "body_markdown": "How many hours of Board-approved study are required by DBPR before sitting for the Home Inspector exam?",
+      "answer_markdown": "Under Section 468.8314, Florida Statutes, and Rule 61-30, F.A.C., candidates for a Florida Home Inspector license must complete a minimum of 120 hours of approved pre-licensing education covering eight mandatory subjects: structure, roofing, electrical, HVAC, plumbing, interior, exterior, and site conditions. Following course completion, applicants must pass a proctored state examination or accredited psychometrically validated exam (e.g., NHIE), submit fingerprints for criminal background checks, and maintain a minimum of $300,000 commercial general liability insurance.",
+      "source_citation": "Florida DBPR Home Inspectors Licensing Program (\u00a7 468.8314, Fla. Stat.; Rule 61-30, F.A.C.). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-032",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.hvac.epa_608",
+      "title": "What are the four certification types under EPA Section 608 for HVAC technicians?",
+      "body_markdown": "Which equipment classes are covered under Type I, Type II, Type III, and Universal certifications?",
+      "answer_markdown": "Section 608 of the Clean Air Act mandates certification for technicians servicing stationary refrigeration and air conditioning equipment: 1) Type I: Small appliances holding five pounds or less of refrigerant; 2) Type II: High-pressure appliances (split systems, heat pumps, commercial chillers); 3) Type III: Low-pressure appliances (low-pressure chillers); and 4) Universal: Certification covering all three equipment types. Technicians must pass a Core exam plus the relevant specialty sections at an EPA-approved testing organization.",
+      "source_citation": "EPA Section 608 Clean Air Act Guidelines (40 CFR Part 82 Subpart F). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-033",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.cam.requirements",
+      "title": "What are the licensing and renewal rules for Florida Community Association Managers (CAM)?",
+      "body_markdown": "What pre-licensing hours and biennial continuing education are required under Chapter 468?",
+      "answer_markdown": "Under Section 468.432, Florida Statutes, and Rule 61-20, F.A.C., managers supervising homeowner, condominium, or cooperative associations with more than 10 units or budgets exceeding $100,000 must obtain a CAM license. Requirements include 16 hours of approved in-person or distance pre-licensing education, passing the state CAM exam, and submitting electronic fingerprints. Once licensed, CAMs must complete 15 hours of approved continuing education every two years (including 3 hours legal update, 3 hours insurance, 3 hours financial management, and 6 hours general).",
+      "source_citation": "Florida Regulatory Council of Community Association Managers (Ch. 468, Fla. Stat.; Rule 61-20, F.A.C.). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-034",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.barbering.examination",
+      "title": "What is the difference between a Florida Barber license and a Restricted Barber license?",
+      "body_markdown": "What training hour thresholds and service scopes apply to barbers under Florida Chapter 476?",
+      "answer_markdown": "Under Section 476.114, Florida Statutes, a full Florida Barber license requires completing 900 hours of training at an approved school and passing both written and practical examinations, granting authority to perform all barbering services including chemical treatments and coloring. A Restricted Barber license requires completing 600 hours of training, but prohibits the application of chemical waving, chemical relaxing, or hair coloring solutions.",
+      "source_citation": "Florida Barbers' Board (\u00a7 476.114, Fla. Stat.; Rule 61G3, F.A.C.). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-035",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.appraisal.trainee",
+      "title": "What are the entry requirements for a Florida Registered Trainee Real Estate Appraiser?",
+      "body_markdown": "What pre-requisite courses and supervisory oversight are needed before beginning appraisal practice?",
+      "answer_markdown": "Under Rule 61J1-10, F.A.C., and Section 475.611, Florida Statutes, an applicant must complete 100 hours of Board-approved qualifying appraisal education: 30 hours Basic Appraisal Principles, 30 hours Basic Appraisal Procedures, 15 hours National USPAP, 21 hours Real Estate Market Analysis, and the 4-hour Supervisor/Trainee Course. In addition, the trainee must be registered under a state-certified general or residential supervisory appraiser in good standing prior to active inspection work.",
+      "source_citation": "Florida Real Estate Appraisal Board (FREAB; \u00a7 475.611, Fla. Stat.; Rule 61J1-10, F.A.C.). Verified October 2026. Note: Platform-curated educational reference.",
+      "verified_date": "2026-10-31"
+    },
+    {
+      "id": "seed-faq-036",
+      "domain": "florida_licensure",
+      "concept_id": "licensure.dbpr.background_disclosure",
+      "title": "How does Florida DBPR review applicant background disclosures and criminal history?",
+      "body_markdown": "Are criminal records automatic disqualifiers for professional licensing under Chapter 455?",
+      "answer_markdown": "Under Section 455.227 and Section 112.011, Florida Statutes, past criminal history is not an automatic bar to professional licensure. The relevant professional board evaluates applications on a case-by-case basis considering: 1) The nature and severity of the offense; 2) The direct relationship between the crime and the licensed occupation; 3) The time elapsed since the conviction; and 4) Evidence of rehabilitation, honest disclosure on application documents, and clean subsequent record. Failure to truthfully disclose prior adjudications on the application itself constitutes independent grounds for license denial.",
+      "source_citation": "Florida DBPR General Licensing Provisions (\u00a7 455.227, Fla. Stat.; \u00a7 112.011, Fla. Stat.). Verified October 2026. Note: Platform-curated educational reference; does not constitute legal counsel.",
+      "verified_date": "2026-10-31"
+    }
+  ]
+}
