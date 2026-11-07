@@ -35,6 +35,7 @@ class _RichLessonReaderState extends State<RichLessonReader> {
       0x7FFFFFFF;
   final Map<String, int> _itemAttemptNonces = {};
   final Map<String, List<int>> _itemLastOrders = {};
+  final Map<String, List<int>> _itemPreviousOrders = {};
   double _scrollProgress = 0.0;
   double _fontSizeFactor = 1.0;
   bool _showAssessmentSection = false;
@@ -81,7 +82,12 @@ class _RichLessonReaderState extends State<RichLessonReader> {
   int _assignNextNonceForItem(AssessmentItem item) {
     final optionsRaw = item.responseSpec['options'] as List?;
     final options = optionsRaw?.map((e) => e.toString()).toList();
-    final previousOrder = _itemLastOrders[item.id];
+    final previousOrder = _itemLastOrders[item.id] != null
+        ? List<int>.from(_itemLastOrders[item.id]!)
+        : null;
+    if (previousOrder != null) {
+      _itemPreviousOrders[item.id] = previousOrder;
+    }
     _attemptNonce = McqOptions.nextPresentationNonce(
       currentNonce: _attemptNonce,
       options: options,
@@ -94,6 +100,7 @@ class _RichLessonReaderState extends State<RichLessonReader> {
         options,
         presentationSeed: _attemptNonce ^ item.id.hashCode,
         shuffle: true,
+        avoidOrder: previousOrder,
       );
     }
     return _attemptNonce;
@@ -432,6 +439,12 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                               key: ValueKey(item.id),
                               item: item,
                               presentationSeed: itemNonce,
+                              avoidOrder: _itemPreviousOrders[item.id],
+                              onPresentationOrderChanged: (order) {
+                                _itemLastOrders[item.id] = List<int>.from(
+                                  order,
+                                );
+                              },
                               onRetry: () => retryAssessmentItem(item.id),
                             ),
                           );

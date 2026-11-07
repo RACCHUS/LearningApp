@@ -15,6 +15,8 @@ class AssessmentItemRenderer extends StatefulWidget {
   final ValueChanged<dynamic>? onResponseChanged;
   final bool shuffleOptions;
   final int? presentationSeed;
+  final List<int>? avoidOrder;
+  final ValueChanged<List<int>>? onPresentationOrderChanged;
 
   const AssessmentItemRenderer({
     super.key,
@@ -27,6 +29,8 @@ class AssessmentItemRenderer extends StatefulWidget {
     this.onResponseChanged,
     this.shuffleOptions = true,
     this.presentationSeed,
+    this.avoidOrder,
+    this.onPresentationOrderChanged,
   });
 
   @override
@@ -66,8 +70,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   @override
   void initState() {
     super.initState();
-    _localAttemptNonce = _nextLocalNonce();
-    _initInteractionState();
+    _localAttemptNonce = _nextLocalNonce(previousOrder: widget.avoidOrder);
+    _initInteractionState(previousOrder: widget.avoidOrder);
   }
 
   int _nextLocalNonce({List<int>? previousOrder}) {
@@ -82,23 +86,33 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     return _globalAttemptNonce;
   }
 
+  static bool _nullableOrdersEqual(List<int>? a, List<int>? b) {
+    if (identical(a, b)) return true;
+    if (a == null || b == null) return false;
+    return McqOptions.listsEqual(a, b);
+  }
+
   @override
   void didUpdateWidget(covariant AssessmentItemRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.id != widget.item.id ||
         oldWidget.initialResponse != widget.initialResponse ||
-        oldWidget.presentationSeed != widget.presentationSeed) {
-      final previousOrder =
+        oldWidget.presentationSeed != widget.presentationSeed ||
+        !_nullableOrdersEqual(oldWidget.avoidOrder, widget.avoidOrder)) {
+      final inStatePreviousOrder =
           (oldWidget.item.id == widget.item.id &&
               oldWidget.presentationSeed != widget.presentationSeed &&
               _presentationOrder.isNotEmpty)
           ? List<int>.from(_presentationOrder)
           : null;
+      final effectivePreviousOrder = widget.avoidOrder ?? inStatePreviousOrder;
       if (widget.presentationSeed == null) {
-        _localAttemptNonce = _nextLocalNonce(previousOrder: previousOrder);
+        _localAttemptNonce = _nextLocalNonce(
+          previousOrder: effectivePreviousOrder,
+        );
       }
       _resetState();
-      _initInteractionState(previousOrder: previousOrder);
+      _initInteractionState(previousOrder: effectivePreviousOrder);
     }
   }
 
@@ -169,9 +183,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
           optionStrings,
           presentationSeed: seed,
           shuffle: true,
-          avoidOrder: previousOrder,
+          avoidOrder: previousOrder ?? widget.avoidOrder,
         );
       }
+      widget.onPresentationOrderChanged?.call(
+        List.unmodifiable(_presentationOrder),
+      );
     }
 
     if (widget.item.interactionType ==

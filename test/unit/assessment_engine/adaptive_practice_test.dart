@@ -285,11 +285,170 @@ void main() {
           thirdOrder,
         );
         expect(
-          allSameBetweenFirstAndSecond && allSameBetweenSecondAndThird,
+          allSameBetweenFirstAndSecond,
           isFalse,
           reason:
-              'Consecutive 4-option items in AdaptivePracticeScreen must not collapse to identical permutations',
+              'Item 2 in AdaptivePracticeScreen receives avoidOrder from Item 1 and must not share the same permutation',
         );
+        expect(
+          allSameBetweenSecondAndThird,
+          isFalse,
+          reason:
+              'Item 3 in AdaptivePracticeScreen receives avoidOrder from Item 2 and must not share the same permutation',
+        );
+      },
+    );
+
+    testWidgets(
+      'AdaptivePracticeScreen carries previousPresentationOrder into AssessmentItemRenderer avoidOrder and guarantees distinct order across consecutive items with identical option lists',
+      (tester) async {
+        final now = DateTime.now().toUtc();
+        const sharedOptions = ['Allow', 'Deny', 'None of the above'];
+        final itemPool = <AssessmentItem>[
+          AssessmentItem(
+            id: 'cat-shared-1',
+            interactionType: AssessmentInteractionType.singleChoice,
+            prompt: 'Default firewall policy for unmatched inbound traffic?',
+            difficulty: 'beginner',
+            responseSpec: const {'options': sharedOptions},
+            scoringSpec: const {'correct_index': 1},
+            createdAt: now,
+            updatedAt: now,
+          ),
+          AssessmentItem(
+            id: 'cat-shared-2',
+            interactionType: AssessmentInteractionType.singleChoice,
+            prompt: 'Implicit rule at the end of an access control list?',
+            difficulty: 'intermediate',
+            responseSpec: const {'options': sharedOptions},
+            scoringSpec: const {'correct_index': 1},
+            createdAt: now,
+            updatedAt: now,
+          ),
+          AssessmentItem(
+            id: 'cat-shared-3',
+            interactionType: AssessmentInteractionType.singleChoice,
+            prompt: 'Zero-trust baseline action before authentication?',
+            difficulty: 'advanced',
+            responseSpec: const {'options': sharedOptions},
+            scoringSpec: const {'correct_index': 1},
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ];
+
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: AdaptivePracticeScreen(
+                userId: 'usr-123',
+                targetVersionId: 'tv-sy0-701',
+                targetTitle: 'Security+ Practice',
+                candidatePool: itemPool,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final screenState =
+            tester.state(find.byType(AdaptivePracticeScreen)) as dynamic;
+        var rendererWidget = tester.widget<AssessmentItemRenderer>(
+          find.byType(AssessmentItemRenderer),
+        );
+        var rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+
+        final item1Order = List<int>.from(
+          rendererState.presentationOrder as List<int>,
+        );
+        expect(item1Order.last, 2, reason: 'Anchor option stays pinned at end');
+        expect(screenState.lastPresentationOrder, isNotNull);
+        expect(
+          McqOptions.listsEqual(
+            List<int>.from(screenState.lastPresentationOrder as List<int>),
+            item1Order,
+          ),
+          isTrue,
+          reason:
+              'AdaptivePracticeScreen must record the actual rendered presentationOrder from AssessmentItemRenderer',
+        );
+
+        // Advance to Item 2 (new ValueKey creates fresh AssessmentItemRenderer state)
+        rendererState.selectOptionByVoice('Option A');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Check Answer'));
+        await tester.tap(find.text('Check Answer'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Next Question'));
+        await tester.tap(find.text('Next Question'));
+        await tester.pumpAndSettle();
+
+        rendererWidget = tester.widget<AssessmentItemRenderer>(
+          find.byType(AssessmentItemRenderer),
+        );
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final item2Order = List<int>.from(
+          rendererState.presentationOrder as List<int>,
+        );
+
+        expect(rendererWidget.avoidOrder, isNotNull);
+        expect(
+          McqOptions.listsEqual(rendererWidget.avoidOrder!, item1Order),
+          isTrue,
+          reason:
+              'AssessmentItemRenderer for Item 2 must receive Item 1 presentationOrder as avoidOrder',
+        );
+        expect(
+          McqOptions.listsEqual(item1Order, item2Order),
+          isFalse,
+          reason:
+              'Item 2 must render a distinct option permutation from Item 1 even with a fresh ValueKey',
+        );
+        expect(item2Order.last, 2, reason: 'Anchor option stays pinned at end');
+        expect(screenState.lastPresentationOrder, isNotNull);
+        expect(
+          McqOptions.listsEqual(
+            List<int>.from(screenState.lastPresentationOrder as List<int>),
+            item2Order,
+          ),
+          isTrue,
+        );
+
+        // Advance to Item 3
+        rendererState.selectOptionByVoice('Option A');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Check Answer'));
+        await tester.tap(find.text('Check Answer'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Next Question'));
+        await tester.tap(find.text('Next Question'));
+        await tester.pumpAndSettle();
+
+        rendererWidget = tester.widget<AssessmentItemRenderer>(
+          find.byType(AssessmentItemRenderer),
+        );
+        rendererState =
+            tester.state(find.byType(AssessmentItemRenderer)) as dynamic;
+        final item3Order = List<int>.from(
+          rendererState.presentationOrder as List<int>,
+        );
+
+        expect(rendererWidget.avoidOrder, isNotNull);
+        expect(
+          McqOptions.listsEqual(rendererWidget.avoidOrder!, item2Order),
+          isTrue,
+          reason:
+              'AssessmentItemRenderer for Item 3 must receive Item 2 presentationOrder as avoidOrder',
+        );
+        expect(
+          McqOptions.listsEqual(item2Order, item3Order),
+          isFalse,
+          reason:
+              'Item 3 must render a distinct option permutation from Item 2 even with a fresh ValueKey',
+        );
+        expect(item3Order.last, 2, reason: 'Anchor option stays pinned at end');
       },
     );
   });

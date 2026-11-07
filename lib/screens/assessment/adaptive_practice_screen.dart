@@ -31,11 +31,19 @@ class _AdaptivePracticeScreenState
   AssessmentItem? _currentItem;
   late int _attemptNonce;
   int _attemptCount = 0;
+  List<int>? _previousPresentationOrder;
   List<int>? _lastPresentationOrder;
 
   int get attemptNonce => _attemptNonce;
   int get attemptCount => _attemptCount;
   AssessmentItem? get currentItem => _currentItem;
+  List<int>? get previousPresentationOrder =>
+      _previousPresentationOrder != null
+          ? List.unmodifiable(_previousPresentationOrder!)
+          : null;
+  List<int>? get lastPresentationOrder => _lastPresentationOrder != null
+      ? List.unmodifiable(_lastPresentationOrder!)
+      : null;
 
   @override
   void initState() {
@@ -59,11 +67,15 @@ class _AdaptivePracticeScreenState
   void _advanceAttemptNonceFor(AssessmentItem? item) {
     final optionsRaw = item?.responseSpec['options'] as List?;
     final options = optionsRaw?.map((e) => e.toString()).toList();
+    final priorOrder = _lastPresentationOrder != null
+        ? List<int>.from(_lastPresentationOrder!)
+        : null;
+    _previousPresentationOrder = priorOrder;
     _attemptNonce = McqOptions.nextPresentationNonce(
       currentNonce: _attemptNonce,
       options: options,
       itemHash: item?.id.hashCode,
-      previousOrder: _lastPresentationOrder,
+      previousOrder: priorOrder,
     );
     _attemptCount++;
     if (item != null && options != null && options.length > 1) {
@@ -71,7 +83,7 @@ class _AdaptivePracticeScreenState
         options,
         presentationSeed: _attemptNonce ^ item.id.hashCode,
         shuffle: true,
-        avoidOrder: _lastPresentationOrder,
+        avoidOrder: priorOrder,
       );
     } else {
       _lastPresentationOrder = null;
@@ -359,6 +371,12 @@ class _AdaptivePracticeScreenState
                                   onCompleted: _pickNextQuestion,
                                   onRetry: retryCurrentQuestion,
                                   presentationSeed: _attemptNonce,
+                                  avoidOrder: _previousPresentationOrder,
+                                  onPresentationOrderChanged: (order) {
+                                    _lastPresentationOrder = List<int>.from(
+                                      order,
+                                    );
+                                  },
                                 ),
                               ),
                             ],
