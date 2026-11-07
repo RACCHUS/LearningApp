@@ -130,6 +130,17 @@ class AssessmentItem {
     this.concepts = const [],
   });
 
+  /// Columns clients may read directly. `scoring_spec` and `explanation` are
+  /// server-only (FIX-12); use `grade_assessment_items` to grade and reveal them.
+  static const String clientReadableColumns =
+      'id, lesson_id, stimulus_id, interaction_type, prompt, response_spec, '
+      'difficulty, cognitive_level, metadata, user_id, '
+      'origin_target_version_id, created_at, updated_at';
+
+  /// True when the answer key was loaded locally (authoring, offline caches,
+  /// or bundled content) rather than hidden by the server.
+  bool get hasLocalScoringSpec => scoringSpec.isNotEmpty;
+
   factory AssessmentItem.fromJson(Map<String, dynamic> json) {
     final rawConcepts = json['concepts'] as List?;
     final conceptsList = rawConcepts != null
