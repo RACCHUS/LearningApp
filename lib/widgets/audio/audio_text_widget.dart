@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
 
 /// A reusable widget that displays text with an optional audio control
@@ -26,9 +25,7 @@ class AudioTextWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canSpeak = ref.watch(canSpeakProvider);
-    
-    if (!canSpeak || !showAudioControl) {
+    if (!showAudioControl) {
       // Just show text without audio controls
       return _buildText();
     }

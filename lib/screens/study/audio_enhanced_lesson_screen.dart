@@ -11,6 +11,7 @@ import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/widgets/audio/hands_free_indicator.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 
 class AudioEnhancedLessonScreen extends ConsumerStatefulWidget {
@@ -172,6 +173,7 @@ class _AudioEnhancedLessonScreenState extends ConsumerState<AudioEnhancedLessonS
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
             actions: [
+              const AudioPreferencesAction(),
               // Hands-free mode toggle
               IconButton(
                 icon: Icon(_isOrchestratorMode ? Icons.record_voice_over : Icons.touch_app),

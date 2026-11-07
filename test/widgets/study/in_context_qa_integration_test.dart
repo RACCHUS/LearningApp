@@ -36,6 +36,7 @@ void main() {
             learnerIdProvider.overrideWith((ref) => 'user-1'),
             lessonProvider('lesson-qa-101').overrideWith((ref) => sampleLesson),
             canSpeakProvider.overrideWithValue(false),
+        readAloudOffProvider.overrideWithValue(false),
             canListenProvider.overrideWithValue(false),
           ],
           child: const MaterialApp(
@@ -75,6 +76,7 @@ void main() {
         ProviderScope(
           overrides: [
             canSpeakProvider.overrideWithValue(false),
+        readAloudOffProvider.overrideWithValue(false),
             canListenProvider.overrideWithValue(false),
           ],
           child: MaterialApp(

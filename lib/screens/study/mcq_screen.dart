@@ -9,6 +9,7 @@ import 'package:learning_pwa/screens/study/session_results_screen.dart';
 import 'package:learning_pwa/widgets/audio/audio_mcq_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/study/break_overlay.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class McqScreen extends ConsumerStatefulWidget {
@@ -259,6 +260,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                   backgroundColor: theme.scaffoldBackgroundColor,
                   foregroundColor: theme.colorScheme.onSurface,
                   actions: [
+                    const AudioPreferencesAction(),
                     IconButton(
                       icon: const Icon(Icons.visibility_off_outlined),
                       tooltip: 'Focus mode',

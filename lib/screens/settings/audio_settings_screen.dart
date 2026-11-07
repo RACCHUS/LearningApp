@@ -256,9 +256,13 @@ class _AudioSettingsScreenState extends ConsumerState<AudioSettingsScreen> {
                   ),
                 ),
                 // Master toggle
+                // Gate on availability, not canSpeak: canSpeak is false
+                // whenever this switch is off, which made it impossible to
+                // turn read-aloud back on.
                 Switch(
+                  key: const Key('audio-read-aloud-switch'),
                   value: settings.isEnabled,
-                  onChanged: canSpeak
+                  onChanged: audioState.isAvailable
                       ? (value) => settingsNotifier.toggleEnabled()
                       : null,
                 ),

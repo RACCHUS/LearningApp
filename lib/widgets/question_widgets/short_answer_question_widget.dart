@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/models/content_types.dart';
-import 'package:learning_pwa/services/audio_service.dart';
+import 'package:learning_pwa/widgets/audio_control_widget.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/short_answer_field.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
@@ -81,16 +81,9 @@ class _ShortAnswerQuestionWidgetState extends State<ShortAnswerQuestionWidget> {
                               ),
                         ),
                         const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.volume_up, size: 20),
-                          onPressed: () {
-                            AudioService().speak(
-                              'Explanation: ${widget.content.explanation!}',
-                              interrupt: true,
-                            );
-                          },
+                        AudioControlWidget(
+                          text: 'Explanation: ${widget.content.explanation!}',
                           tooltip: 'Read explanation aloud',
-                          visualDensity: VisualDensity.compact,
                         ),
                       ],
                     ),

@@ -10,6 +10,7 @@ import 'package:learning_pwa/widgets/audio/audio_flashcard_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 import 'package:learning_pwa/widgets/study/break_overlay.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
@@ -246,6 +247,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   backgroundColor: theme.scaffoldBackgroundColor,
                   foregroundColor: theme.colorScheme.onSurface,
                   actions: [
+                    const AudioPreferencesAction(),
                     IconButton(
                       icon: Icon(_recallBeforeReveal
                           ? Icons.psychology
