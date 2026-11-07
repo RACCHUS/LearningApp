@@ -822,6 +822,137 @@ Log timestamp: 20261015120000 INFO process finished at 2026-10-15T12:00:00Z
       expect(result.error, contains('Postflight applied versions do not match expected deployed ledger'));
     });
 
+    group('approved historical backfill', () {
+      GuardedDeploymentManager backfillManager(
+        Directory reportDir,
+        List<List<String>> calls, {
+        required List<String> reportedBackfill,
+      }) {
+        final refFile = File('${tempDir.path}/supabase/.temp/project-ref');
+        refFile.createSync(recursive: true);
+        refFile.writeAsStringSync('xzvkdwebtbxlrxagtzlv\n');
+        return GuardedDeploymentManager(
+          workingDirectory: tempDir,
+          processRunner: (executable, args, {workingDirectory, runInShell = false}) {
+            calls.add([executable, ...args]);
+            if (args.contains('--version')) return ProcessResult(0, 0, '2.67.1\n', '');
+            if (args.contains('--porcelain')) return ProcessResult(0, 0, '', '');
+            if (args.contains('--preflight-hosted')) {
+              File('${reportDir.path}/preflight_report.json').writeAsStringSync(jsonEncode({
+                'status': 'PASSED',
+                'pending_versions': [...reportedBackfill, '20261005000000'],
+                'applied_versions': ['20261001000000', '20261004000000'],
+                'historical_backfill_versions': reportedBackfill,
+              }));
+              return ProcessResult(0, 0, 'Preflight passed\n', '');
+            }
+            if (args.contains('--dry-run')) {
+              return ProcessResult(0, 0,
+                  'Would push these migrations:\n • 20261002000000_a.sql\n • 20261003000000_b.sql\n • 20261005000000_c.sql\n', '');
+            }
+            if (executable == 'supabase' && args.contains('push')) {
+              return ProcessResult(0, 0, 'Finished supabase db push.\n', '');
+            }
+            if (args.contains('--postflight-hosted')) {
+              File('${reportDir.path}/postflight_report.json').writeAsStringSync(jsonEncode({
+                'status': 'PASSED',
+                'pending_versions': <String>[],
+                'applied_versions': [
+                  '20261001000000',
+                  '20261002000000',
+                  '20261003000000',
+                  '20261004000000',
+                  '20261005000000',
+                ],
+              }));
+              return ProcessResult(0, 0, 'Postflight passed\n', '');
+            }
+            return ProcessResult(0, 0, '', '');
+          },
+        );
+      }
+
+      test('applies the approved set with --include-all and verifies interleaved parity', () async {
+        final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+        final calls = <List<String>>[];
+        final manager = backfillManager(
+          reportDir,
+          calls,
+          reportedBackfill: ['20261002000000', '20261003000000'],
+        );
+
+        final result = await manager.runDeployment(
+          reportDirPath: 'reports',
+          approvedHistoricalBackfill: ['20261003000000', '20261002000000'],
+        );
+
+        expect(result.exitCode, 0, reason: result.error);
+        expect(result.status, 'success');
+        final preflight = calls.firstWhere((c) => c.contains('--preflight-hosted'));
+        expect(
+          preflight.sublist(preflight.indexOf('--approve-historical-backfill') + 1).first,
+          '20261002000000,20261003000000',
+        );
+        final pushes = calls.where((c) => c.first == 'supabase' && c.contains('push')).toList();
+        expect(pushes, hasLength(2));
+        expect(pushes.every((c) => c.contains('--include-all')), isTrue);
+        expect(calls.any((c) => c.contains('repair')), isFalse);
+        final postflight = calls.firstWhere((c) => c.contains('--postflight-hosted'));
+        expect(postflight.contains('--approve-historical-backfill'), isFalse);
+      });
+
+      test('fails closed when the preflight backfill set differs from the approval', () async {
+        final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+        final calls = <List<String>>[];
+        final manager = backfillManager(
+          reportDir,
+          calls,
+          reportedBackfill: ['20261002000000'],
+        );
+
+        final result = await manager.runDeployment(
+          reportDirPath: 'reports',
+          approvedHistoricalBackfill: ['20261002000000', '20261003000000'],
+        );
+
+        expect(result.exitCode, 1);
+        expect(result.phase, 'preflight_version_gate');
+        expect(calls.any((c) => c.contains('push')), isFalse);
+      });
+
+      test('refuses backfill without a resolved git baseline', () async {
+        final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+        final calls = <List<String>>[];
+        final manager = backfillManager(
+          reportDir,
+          calls,
+          reportedBackfill: ['20261002000000'],
+        );
+
+        final result = await manager.runDeployment(
+          reportDirPath: 'reports',
+          requireBase: false,
+          approvedHistoricalBackfill: ['20261002000000'],
+        );
+
+        expect(result.exitCode, 1);
+        expect(result.phase, 'backfill_approval');
+        expect(calls.where((c) => c.first != 'git'), isEmpty);
+      });
+
+      test('ordinary deployments never add --include-all', () async {
+        final reportDir = Directory('${tempDir.path}/reports')..createSync(recursive: true);
+        final calls = <List<String>>[];
+        final manager = backfillManager(reportDir, calls, reportedBackfill: const []);
+
+        await manager.runDeployment(reportDirPath: 'reports', dryRunOnly: true);
+
+        final pushes = calls.where((c) => c.first == 'supabase' && c.contains('push'));
+        expect(pushes, isNotEmpty);
+        expect(pushes.any((c) => c.contains('--include-all')), isFalse);
+      });
+    });
+
     test('.gitignore contains supabase/.deployment.lock', () {
       final gitignoreFile = File('.gitignore');
       expect(gitignoreFile.existsSync(), isTrue);
