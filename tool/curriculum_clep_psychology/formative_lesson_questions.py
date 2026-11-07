@@ -629,6 +629,7 @@ def build_balanced_formative_questions() -> dict[str, list[dict]]:
                 "correct_answer": target_pos,
                 "explanation": raw["explanation"],
                 "concept_slugs": raw["concept_slugs"],
+                "citation": "OpenStax Psychology 2e, CC BY 4.0",
             })
             q_index += 1
         balanced[title] = lesson_qs

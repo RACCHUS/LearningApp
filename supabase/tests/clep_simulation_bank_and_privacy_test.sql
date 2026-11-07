@@ -169,8 +169,7 @@ select cmp_ok(
   (
     select count(*) from public.questions q
     join public.lessons l on l.id = q.lesson_id
-    join public.curriculum_nodes n on n.id = l.objective_id
-    join public.target_versions v on v.id = n.target_version_id
+    join public.target_versions v on v.id = l.origin_target_version_id
     where v.version_code = '2026-PRIV'
   ),
   '=',

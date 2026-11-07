@@ -295,6 +295,7 @@ domains:
         explanation: Structuralism, founded by Wilhelm Wundt and expanded by Edward Titchener, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.
         concept_slugs:
         - psyc-structuralism
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: A researcher who studies how natural selection has shaped human mate preferences is operating primarily from which contemporary perspective?
         options:
         - Behavioral perspective
@@ -305,6 +306,7 @@ domains:
         explanation: The evolutionary perspective applies principles of natural selection and Darwinian adaptation to explain mental processes and behavioral patterns across generations.
         concept_slugs:
         - psyc-contemporary-perspectives
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What milestone occurred in 1879 that marks the formal birth of scientific psychology?
       back: Wilhelm Wundt founded the first formal experimental psychology laboratory at the University of Leipzig.
@@ -543,6 +545,7 @@ domains:
         explanation: Random assignment ensures that participant characteristics (such as baseline intelligence or motivation) are equally distributed across conditions, controlling for confounding variables and enabling causal inferences.
         concept_slugs:
         - psyc-experimental-methodology
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: A study finds a correlation of -0.78 between hours spent playing video games and grade point average. What does this statistical correlation indicate?
         options:
         - Playing video games directly causes students to perform poorly on exams
@@ -553,6 +556,7 @@ domains:
         explanation: 'A negative correlation indicates an inverse relationship: as the value of one variable increases, the value of the other tends to decrease. Correlation does not establish causation.'
         concept_slugs:
         - psyc-correlational-research
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the key difference between an independent variable and a dependent variable?
       back: The independent variable is manipulated by the experimenter; the dependent variable is the measured outcome that may change in response.
@@ -760,6 +764,7 @@ domains:
         explanation: At rest (approximately -70 mV), potassium ions (K+) are concentrated inside the cell, while sodium ions (Na+) are concentrated outside, maintained by the sodium-potassium pump.
         concept_slugs:
         - psyc-neuron-structure
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Which neurotransmitter is primarily involved in motor movement, attention, and reward pathways, and is depleted in Parkinson's disease?
         options:
         - Serotonin
@@ -770,6 +775,7 @@ domains:
         explanation: Dopamine governs voluntary movement, motivation, and reward; degeneration of dopamine-producing neurons in the substantia nigra causes the motor tremors of Parkinson's disease.
         concept_slugs:
         - psyc-neurotransmitters
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the resting membrane potential of a typical neuron?
       back: -70 millivolts (mV), maintained by the sodium-potassium pump.
@@ -988,6 +994,7 @@ domains:
         explanation: Broca's area, located in the posterior inferior frontal gyrus of the dominant (usually left) hemisphere, controls the motor mechanics of speech production; damage causes non-fluent, expressive aphasia.
         concept_slugs:
         - psyc-brain-structures
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In a classic split-brain study, when a picture of a fork is flashed exclusively to the patient's left visual field, how can the patient demonstrate recognition?
         options:
         - By immediately verbally stating the word 'fork'
@@ -998,6 +1005,7 @@ domains:
         explanation: Images in the left visual field project to the right hemisphere, which controls the left hand. Because the corpus callosum is severed and speech is left-lateralized, the patient cannot name the object verbally but can identify it haptically with the left hand.
         concept_slugs:
         - psyc-hemispheric-specialization
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: Which brain structure is primary for consolidating new long-term declarative memories?
       back: The hippocampus.
@@ -1183,6 +1191,7 @@ domains:
         explanation: The difference threshold, or just noticeable difference (JND), is the smallest physical change between two stimuli that an individual can detect 50% of the time, described quantitatively by Weber's law.
         concept_slugs:
         - psyc-sensory-thresholds
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: According to signal detection theory, which psychological and environmental factor directly influences an observer's response bias (criterion)?
         options:
         - The absolute density of retinal photoreceptor cells
@@ -1193,6 +1202,7 @@ domains:
         explanation: Signal detection theory posits that detecting a stimulus depends not just on sensory sensitivity, but on decision criteria influenced by expectations, motivation, alertness, and the payoff/cost of false alarms versus misses.
         concept_slugs:
         - psyc-signal-detection
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is transduction in sensation?
       back: The conversion of environmental physical energy into neural electrical impulses.
@@ -1399,6 +1409,7 @@ domains:
         explanation: Cones are densely packed in the central fovea, mediate sharp spatial resolution, operate in photopic (bright) illumination, and contain photopigments responsive to red, green, or blue wavelengths.
         concept_slugs:
         - psyc-visual-auditory-systems
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Which Gestalt principle explains why we perceive individual dots aligned in a smooth, continuous curve as belonging together rather than as separate points?
         options:
         - Principle of proximity
@@ -1409,6 +1420,7 @@ domains:
         explanation: The Gestalt principle of continuity states that observers perceive elements that follow a smooth vector or continuous line as a unified perceptual figure rather than as disjointed segments.
         concept_slugs:
         - psyc-perceptual-organization
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What anatomical feature creates the visual blind spot?
       back: The exit point where the optic nerve leaves the retina, which lacks photoreceptors.
@@ -1546,6 +1558,7 @@ domains:
         explanation: The suprachiasmatic nucleus (SCN) in the hypothalamus receives photic signals directly from retinal ganglion cells and synchronizes 24-hour biological rhythms by inhibiting melatonin release from the pineal gland during daylight.
         concept_slugs:
         - psyc-circadian-rhythms
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: EEG recordings showing sleep spindles and K-complexes are diagnostic of which stage of the non-REM sleep cycle?
         options:
         - Stage N1 sleep
@@ -1556,6 +1569,7 @@ domains:
         explanation: Stage N2 sleep is characterized electrophysiologically by sleep spindles (brief 12-14 Hz bursts) and K-complexes (high-amplitude biphasic waves), which represent neural mechanisms protecting sleep from sensory arousal.
         concept_slugs:
         - psyc-sleep-stages
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: Which gland releases melatonin in response to signals from the suprachiasmatic nucleus?
       back: The pineal gland.
@@ -1721,6 +1735,7 @@ domains:
         explanation: Narcolepsy is characterized by severe daytime hypersomnolence, cataplexy (sudden loss of muscle tone), and rapid sleep-onset REM episodes, often linked to hypocretin/orexin neuron loss.
         concept_slugs:
         - psyc-sleep-disorders-dreams
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they agonize GABA receptors?
         options:
         - Stimulants
@@ -1731,6 +1746,7 @@ domains:
         explanation: Depressants reduce central nervous system arousal, motor activity, and anxiety by enhancing the inhibitory neurotransmitter GABA.
         concept_slugs:
         - psyc-psychoactive-drugs
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the difference between manifest and latent dream content in Freud's theory?
       back: Manifest content is the remembered storyline; latent content is the underlying, hidden psychological meaning.
@@ -1930,6 +1946,7 @@ domains:
         explanation: The unconditioned stimulus (UCS) is an environmental stimulus that naturally and reflexively triggers an innate physiological response (the UCR) without prior conditioning; in Pavlov's experiment, this was the food powder.
         concept_slugs:
         - psyc-classical-conditioning
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: John Garcia's experiments with taste aversion conditioning challenged classical behaviorist assumptions by demonstrating what biological principle?
         options:
         - Any neutral conditioned stimulus can be paired equally easily with any unconditioned response
@@ -1940,6 +1957,7 @@ domains:
         explanation: 'Garcia demonstrated biological preparedness: rats readily formed associations between novel tastes and radiation-induced nausea even after hours-long delays, but could not associate visual or auditory cues with nausea.'
         concept_slugs:
         - psyc-biological-constraints
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the difference between stimulus generalization and stimulus discrimination?
       back: Generalization is responding similarly to resembling stimuli; discrimination is learning to respond exclusively to the specific CS.
@@ -2134,6 +2152,7 @@ domains:
         explanation: A variable-ratio schedule delivers reinforcement after an unpredictable, varying number of responses; it generates high, steady response rates that are extremely resistant to extinction.
         concept_slugs:
         - psyc-operant-conditioning
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In Albert Bandura's classic Bobo doll experiments, children who observed an adult model display aggressive behavior toward an inflatable doll subsequently exhibited what behavior?
         options:
         - Showed decreased aggressive play due to cathartic vicarious relief
@@ -2144,6 +2163,7 @@ domains:
         explanation: 'Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors, disproving the claim that observing aggression produces catharsis.'
         concept_slugs:
         - psyc-observational-learning
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the operational definition of negative reinforcement?
       back: Increasing the frequency of a behavior by removing an aversive stimulus.
@@ -2364,6 +2384,7 @@ domains:
         explanation: The central executive directs cognitive focus, manages attentional switching, suppresses irrelevant information, and coordinates the phonological loop and visuospatial sketchpad.
         concept_slugs:
         - psyc-memory-models
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: An individual who can recall childhood events perfectly but is incapable of forming new conscious declarative memories after bilateral hippocampus surgery exhibits what condition?
         options:
         - Retrograde amnesia
@@ -2374,6 +2395,7 @@ domains:
         explanation: Anterograde amnesia is the inability to consolidate and transfer new declarative information from short-term to long-term memory following hippocampal trauma (as famously observed in patient H.M.).
         concept_slugs:
         - psyc-memory-systems-forgetting
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the difference between proactive and retroactive interference?
       back: Proactive interference occurs when old memories block new ones; retroactive interference occurs when new learning disrupts old memories.
@@ -2577,6 +2599,7 @@ domains:
         explanation: An algorithm is a step-by-step, methodical procedure or formula that guarantees a correct solution if followed correctly, though it may be slow and exhaustive compared to heuristics.
         concept_slugs:
         - psyc-problem-solving-biases
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Noam Chomsky proposed that humans are born with an innate neural mechanism that facilitates language acquisition, termed what?
         options:
         - Operant vocalization apparatus
@@ -2587,6 +2610,7 @@ domains:
         explanation: Chomsky posited the Language Acquisition Device (LAD), an innate biological predisposition and universal grammar that enables infants to acquire complex natural language effortlessly without formal instruction.
         concept_slugs:
         - psyc-language-development
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is an algorithm versus a heuristic in problem solving?
       back: An algorithm is a step-by-step rule that guarantees a solution; a heuristic is a fast mental shortcut that is prone to errors.
@@ -2737,6 +2761,7 @@ domains:
         explanation: Maslow proposed a pyramid structure where basic physiological needs (food, water) and safety needs must be substantially met before higher-order social belongingness and love motives emerge.
         concept_slugs:
         - psyc-motivation-theories
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Bilateral lesioning of which hypothalamic nucleus in a laboratory rat causes continuous hyperphagia (overeating) and extreme obesity?
         options:
         - Lateral hypothalamus (LH)
@@ -2747,6 +2772,7 @@ domains:
         explanation: The ventromedial hypothalamus (VMH) serves as a primary satiety center; destroying it abolishes satiety signals, leading to uncontrollable overeating and rapid obesity.
         concept_slugs:
         - psyc-hunger-physiology
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What occurs when the lateral hypothalamus is destroyed in an animal?
       back: The animal starves (aphagia) because the hunger-stimulating center is destroyed.
@@ -2916,6 +2942,7 @@ domains:
         explanation: 'The James-Lange theory asserts that physiological arousal precedes and triggers emotional experience: sensory stimuli generate bodily reactions, and the conscious emotion is our awareness of those changes.'
         concept_slugs:
         - psyc-emotion-theories
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In Hans Selye's General Adaptation Syndrome (GAS), during which second stage does the endocrine system sustain elevated cortisol secretion to cope with prolonged stressors?
         options:
         - Alarm reaction stage
@@ -2926,6 +2953,7 @@ domains:
         explanation: In the resistance stage of Selye's GAS, the body adapts to the ongoing stressor; physiological arousal remains elevated and the adrenal cortex releases glucocorticoids (cortisol) to sustain defense.
         concept_slugs:
         - psyc-stress-gas
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What are the three stages of Hans Selye's General Adaptation Syndrome?
       back: 1. Alarm reaction, 2. Resistance, 3. Exhaustion.
@@ -3109,6 +3137,7 @@ domains:
         explanation: Conservation, mastered during Piaget's concrete operational stage (ages 7-11), is the understanding that quantitative physical properties (mass, volume) remain invariant despite perceptual changes in shape.
         concept_slugs:
         - psyc-cognitive-development-stages
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: A newborn infant who turns their head toward a gentle stroke on their cheek and opens their mouth to suck is exhibiting which primitive survival reflex?
         options:
         - Moro reflex
@@ -3119,6 +3148,7 @@ domains:
         explanation: 'The rooting reflex assists the neonate in finding a source of nourishment: touching the cheek causes the infant to orient their mouth toward the stimulus.'
         concept_slugs:
         - psyc-prenatal-infant-development
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the key milestone achieved in Piaget's concrete operational stage?
       back: Conservation (understanding volume/mass remain constant across physical transformations).
@@ -3300,6 +3330,7 @@ domains:
         explanation: Securely attached infants utilize the caregiver as a safe base for environmental exploration, display appropriate distress when separated, and are readily comforted upon the parent's return.
         concept_slugs:
         - psyc-attachment-parenting
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: At which of Lawrence Kohlberg's levels of moral reasoning does an individual justify actions based on universal ethical principles, human rights, and social justice rather than written laws or punishment?
         options:
         - Preconventional morality
@@ -3310,6 +3341,7 @@ domains:
         explanation: Postconventional moral reasoning evaluates moral dilemmas against abstract ethical principles of justice, individual dignity, and human rights, recognizing that existing civil laws may sometimes be unjust.
         concept_slugs:
         - psyc-psychosocial-moral-development
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What did Harry Harlow's study with rhesus monkeys disprove about attachment?
       back: It disproved that attachment is based merely on who feeds the infant, proving contact comfort is foundational.
@@ -3489,6 +3521,7 @@ domains:
         explanation: The id is the innate, primitive psychodynamic structure present at birth that contains instinctual sexual and aggressive drives (Eros and Thanatos) driven entirely by the pleasure principle.
         concept_slugs:
         - psyc-freudian-psychodynamics
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Carl Rogers asserted that psychological health and personal growth are fostered when parents and therapists provide which condition without contingencies?
         options:
         - Rational cognitive disputation
@@ -3499,6 +3532,7 @@ domains:
         explanation: Unconditional positive regard is an attitude of total acceptance, empathy, and warmth extended to an individual regardless of their faults or behaviors, promoting congruence between actual and ideal selves.
         concept_slugs:
         - psyc-humanistic-personality
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What principle governs the id versus the ego?
       back: The id operates on the pleasure principle; the ego operates on the reality principle.
@@ -3702,6 +3736,7 @@ domains:
         explanation: Conscientiousness reflects self-regulation, impulse control, thoroughness, dependability, and persistence in pursuing long-term objectives.
         concept_slugs:
         - psyc-big-five-traits
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Albert Bandura's concept that behavioral patterns, cognitive internal personal factors, and environmental contexts constantly influence and shape one another is called what?
         options:
         - Locus of control
@@ -3712,6 +3747,7 @@ domains:
         explanation: Reciprocal determinism describes the dynamic bidirectional interaction where personal cognitive factors, overt behavior, and environmental events mutually influence one another.
         concept_slugs:
         - psyc-social-cognitive-assessment
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What are the Big Five personality traits in the OCEAN model?
       back: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.
@@ -3913,6 +3949,7 @@ domains:
         explanation: Compulsions are repetitive behaviors performed according to rigid rules to diminish the severe anxiety or distress evoked by intrusive, uncontrollable obsessive thoughts.
         concept_slugs:
         - psyc-anxiety-ocd-ptsd
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: What is the primary manual published by the American Psychiatric Association used by clinicians in the United States to diagnose psychological disorders?
         options:
         - International Classification of Diseases (ICD-11)
@@ -3923,6 +3960,7 @@ domains:
         explanation: The DSM-5 (and DSM-5-TR) is the standard classification manual in US clinical practice, establishing diagnostic criteria, symptom thresholds, and exclusionary conditions for mental disorders.
         concept_slugs:
         - psyc-disorder-classification
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the difference between an obsession and a compulsion?
       back: An obsession is an intrusive anxiety-provoking thought; a compulsion is a repetitive behavior performed to reduce that anxiety.
@@ -4110,6 +4148,7 @@ domains:
         explanation: Bipolar I disorder is defined by the occurrence of at least one full manic episode (characterized by inflated self-esteem, grandiosity, reduced sleep, and impulsive spending), typically alternating with major depressive episodes.
         concept_slugs:
         - psyc-mood-bipolar-disorders
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In schizophrenia, auditory hallucinations and persecutory delusions are classified as which type of symptoms?
         options:
         - Negative symptoms
@@ -4120,6 +4159,7 @@ domains:
         explanation: Positive symptoms in schizophrenia represent excess or distortion of normal functioning (hallucinations, delusions, disorganized speech), whereas negative symptoms represent deficits (avolition, flat affect).
         concept_slugs:
         - psyc-schizophrenia-personality
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the difference between positive and negative symptoms of schizophrenia?
       back: Positive symptoms are additions to normal behavior (hallucinations, delusions); negative symptoms are deficits (flat affect, avolition).
@@ -4296,6 +4336,7 @@ domains:
         explanation: Beck's cognitive therapy systematically targets cognitive distortions (such as catastrophizing, black-and-white thinking, and negative schemas about self, world, and future) through empirical cognitive restructuring.
         concept_slugs:
         - psyc-cognitive-behavioral-therapy
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: Which behavioral exposure therapy technique pairs gradual exposure to an anxiety-provoking hierarchy with progressive muscle relaxation?
         options:
         - Aversive counterconditioning
@@ -4306,6 +4347,7 @@ domains:
         explanation: 'Developed by Joseph Wolpe, systematic desensitization utilizes counterconditioning: clients learn progressive relaxation and mentally or in vivo confront a graduated fear hierarchy, replacing anxiety with relaxation.'
         concept_slugs:
         - psyc-psychotherapy-modalities
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the core principle behind Joseph Wolpe's systematic desensitization?
       back: 'Counterconditioning: an individual cannot be simultaneously relaxed and terrified (reciprocal inhibition).'
@@ -4462,6 +4504,7 @@ domains:
         explanation: SSRIs selectively bind to and inhibit the serotonin transporter (SERT) protein on the presynaptic terminal, prolonging the presence and availability of serotonin in the synaptic cleft.
         concept_slugs:
         - psyc-biomedical-pharmacology
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In clinical treatment outcome research, what statistical technique combines the quantitative findings across dozens of independent clinical trials into a single summary effect size?
         options:
         - Factor analysis
@@ -4472,6 +4515,7 @@ domains:
         explanation: Meta-analysis mathematically aggregates effect sizes from multiple empirical studies to determine the overall effectiveness and reliability of an intervention across heterogeneous patient samples.
         concept_slugs:
         - psyc-treatment-efficacy-meta-analysis
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: How do SSRIs work at the neuronal synapse?
       back: They block the reuptake of serotonin by the presynaptic neuron, increasing serotonin availability.
@@ -4699,6 +4743,7 @@ domains:
         explanation: The fundamental attribution error is the pervasive tendency to overestimate internal dispositional factors and underestimate situational external factors when analyzing other people's behaviors.
         concept_slugs:
         - psyc-attribution-dissonance
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: In Stanley Milgram's classic obedience experiments, which situational factor significantly reduced participants' willingness to administer the highest voltage shocks?
         options:
         - Conducting the experiment at prestigious Yale University rather than a downtown office
@@ -4709,6 +4754,7 @@ domains:
         explanation: When two confederate teachers rebelled and refused to continue shocking the learner, participant obedience to the maximum 450-volt level dropped precipitously from 65% to only 10%.
         concept_slugs:
         - psyc-conformity-obedience
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What percentage of participants obeyed orders up to the maximum 450 volts in Milgram's baseline experiment?
       back: 65% of participants.
@@ -4900,6 +4946,7 @@ domains:
         explanation: "Darley and Latan\xE9 investigated the bystander effect: individuals are significantly less likely to intervene in an emergency when other bystanders are present due to diffusion of responsibility."
         concept_slugs:
         - psyc-prejudice-altruism
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: When like-minded group members discuss a contentious topic and their post-discussion viewpoints become substantially more extreme than their initial pre-discussion opinions, what has occurred?
         options:
         - Groupthink tendency
@@ -4910,6 +4957,7 @@ domains:
         explanation: Group polarization occurs when group deliberation strengthens and intensifies the prevailing shared inclinations of its members, shifting decisions toward a more extreme pole.
         concept_slugs:
         - psyc-group-dynamics
+        citation: OpenStax Psychology 2e, CC BY 4.0
     flashcards:
     - front: What is the bystander effect and what drives it?
       back: People are less likely to help when others are present, driven by diffusion of responsibility.
@@ -5118,6 +5166,7 @@ domains:
         explanation: In a positively skewed distribution, extreme high scores pull the mean toward the right tail, resulting in Mode < Median < Mean.
         concept_slugs:
         - psyc-descriptive-inferential-statistics
+        citation: OpenStax Psychology 2e, CC BY 4.0
       - question_text: A psychometric exam that yields consistent, stable scores across repeated administrations to the same cohort of students demonstrates what measurement property?
         options:
         - High construct validity
@@ -5128,3 +5177,4 @@ domains:
         explanation: Reliability refers to the internal consistency and repeatability of a test's measurement results; a test that gives consistent scores over time has high test-retest reliability.
         concept_slugs:
         - psyc-psychometric-reliability-validity
+        citation: OpenStax Psychology 2e, CC BY 4.0
