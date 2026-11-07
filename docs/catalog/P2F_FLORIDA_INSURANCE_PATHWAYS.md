@@ -1,40 +1,25 @@
-# P2f — Florida Insurance Licensure Pathways (DFS 2-20 & 2-15)
+# P2f — Florida DFS Insurance Licensure Pathways (2-20 and 2-15)
 
-**Source review:** 2026-10-13. **Scope:** selected examination-route steps for Florida General Lines (2-20) and Life, Health & Variable Annuity (2-15) agent licenses. **Not** an exhaustive legal eligibility determination.
+**Revision 2 source review:** 2026-11-06. **Scope:** selected regulator-sourced steps for Florida resident agent licenses; not a complete eligibility determination.
 
-## Product distinctions
+## 2-20 General Lines
 
-1. **State License vs. Exam**: A Florida insurance license (issued by the Florida Department of Financial Services) is state-granted regulatory authority to transact insurance. An exam (administered by Pearson VUE) or a pre-licensing training course is only one qualifying step, not the license itself.
-2. **Partial Pathway Scope**: In line with the verified issuer directory, `requirements_status='not_verified'` remains true for comprehensive prerequisite audits, individual criminal/disciplinary background disclosures, non-resident reciprocity, and company appointments.
-3. **Statutory Qualification Alternatives**: Florida law (Florida Statutes § 626.732 for 2-20 and § 626.785 / § 626.831 for 2-15) explicitly establishes multiple alternative paths (pre-licensing course, practical experience, college degree, or professional designation). Learning App represents these as an explicit `any` operator rather than collapsing them into a single course mandate.
-4. **No License Issuance**: Neither Learning App nor any creator on the platform can issue an insurance license, grant an insurer appointment, or determine legal qualification.
+Revision 2 models six alternatives in the DFS resident guide: (1) 200-hour approved property/casualty course; (2) one year in the prior four years of full-time responsible insurance duties across all listed lines; (3) one year in the prior four years as a licensed and appointed 4-40, 20-44 or 0-55 representative **and** a 40-hour approved course; (4) accredited insurance degree with at least 18 semester hours in property, casualty, health and commercial insurance; (5) equivalent resident license held continuously at least one year before Florida residency, with Florida application within 90 days of becoming a resident; and (6) CPCU designation. The former CIC alternative is removed because the reviewed resident 2-20 guide identifies CPCU, not CIC.
 
-## Regulatory Sources
+Examination requirements are conditional: the first three routes require the state exam; degree, qualifying transfer and CPCU routes are exam-exempt. A passing exam from within one year can also remove the need to retake it. Appointment is required for validity; DFS states unappointed licenses expire after 48 months.
 
-- [Florida Department of Financial Services — Agent and Adjuster Qualifications](https://www.myfloridacfo.com/division/agents/licensing/agents-and-adjusters/qualifications), reviewed 2026-10-13.
-- [Florida DFS Resident General Lines (2-20) Qualification Guide](https://myfloridacfo.com/docs-sf/insurance-agents-and-agency-services-libraries/agents-docs/licensure/agents-adjusters/2-20-resident-general-lines.pdf?sfvrsn=a4426e2d_8).
-- [Florida DFS Resident Health and Life (2-15) Qualification Guide](https://www.myfloridacfo.com/docs-sf/insurance-agents-and-agency-services-libraries/agents-docs/licensure/agents-adjusters/2-15-resident-health-life-agent-license.pdf).
+## 2-15 Life, Health and Variable Annuity
 
-## Technical Implementation
+Revision 2 represents the combined route as (one of: 30-hour life/annuity/variable-contract course, ChFC or FLMI) **and** (one of: 40-hour health course, CEBS, ChHC, HIA, REBC or RHU). Other alternatives are a 60-hour approved course; a degree with at least nine credit hours specifically covering health, life, annuities and variable contracts; equivalent resident license held at least one continuous year with application within 90 days of Florida residency; equivalent license in a reciprocal state within the four years before application (prelicensing waiver but exam still required); or CLU (exam-exempt). A passing exam from within one year can also remove the need to retake it. Appointment is required for validity; DFS states unappointed licenses expire after 48 months.
 
-- **Data Manifest**: `data/catalog/florida_insurance_p2f_pathways_2026_10.json` models 2 versioned partial pathways, revision 1:
-  - `fl_dfs` / `general-lines-2-20`: 4 statutory qualification alternatives (200-hr course, 1 yr experience + 40-hr course, 18-sem-hr college degree, or CPCU/CIC designation) followed by application, fingerprinting, state exam (Pearson VUE), license issuance, and insurer appointment within 48 months.
-  - `fl_dfs` / `life-health-2-15`: 3 statutory qualification alternatives (60-hr course, 9-sem-hr college degree, or CLU designation) followed by application, fingerprinting, state exam, license issuance, and insurer appointment.
-- **Validation Engine**: `tool/catalog_p2f_insurance_pathways.py validate` checks fixed identities, schema version 1, exact DFS URLs, 180-day review freshness, and tree validity (`all`/`any`/`step` operators).
-- **SQL Generator**: `tool/catalog_p2f_insurance_pathways.py render-sql` emits guarded, transactional, idempotent SQL with fail-closed assertion checks against `catalog_verified_destinations`.
-- **Test Suite**: `tool/tests/test_catalog_p2f_insurance_pathways.py` tests all invariants and negative edge cases (rejecting lookalike domains, unreviewed claims, missing URLs, flattened alternative trees, and illegal modifications).
+## Versioning and safety
 
-## Production Deployment Gates
+Revision 2 supersedes revision 1; revision 1 is never edited in place. Each step cites the relevant DFS resident qualification PDF; the record's canonical source URL remains the DFS qualifications directory to match the published issuer record. Fees and individual background/reciprocity determinations are not claimed as comprehensively verified. The generated SQL retires revision 1 and inserts revision 2 in one transaction; it is not executed against hosted Supabase in this PR.
 
-1. Validate manifest and tests:
-   ```bash
-   python tool/catalog_p2f_insurance_pathways.py validate
-   python -m unittest tool/tests/test_catalog_p2f_insurance_pathways.py -v
-   ```
-2. Render deployment SQL:
-   ```bash
-   python tool/catalog_p2f_insurance_pathways.py render-sql > deploy_p2f.sql
-   ```
-3. Apply to Supabase production project `xzvkdwebtbxlrxagtzlv` with `service_role`.
-4. Verify published pathway count increases from 2 (Nursing RN & LPN) to **4** (Nursing RN/LPN + Insurance 2-20 & 2-15).
-5. Verify anonymous session sees all 4 approved pathways through the existing RLS policy `catalog_license_pathway_reviewed_public_select`.
+## Validation
+
+```bash
+python3 tool/catalog_p2f_insurance_pathways.py validate
+python3 -m unittest tool/tests/test_catalog_p2f_insurance_pathways.py -v
+python3 tool/catalog_p2f_insurance_pathways.py render-sql
+```

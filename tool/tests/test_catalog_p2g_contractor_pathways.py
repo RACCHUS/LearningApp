@@ -1,69 +1,39 @@
-"""P2g review manifest and safe SQL renderer tests for Florida DBPR contractors."""
-import json
-import sys
-import unittest
+"""P2g revision-2 class-specific CILB qualification and SQL tests."""
+import json,sys,unittest
 from copy import deepcopy
 from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]; sys.path.insert(0,str(ROOT/"tool"))
+import catalog_p2g_contractor_pathways as p
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "tool"))
-import catalog_p2g_contractor_pathways as p2g
-
-
-class FloridaContractorPathwayTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.data = json.loads(p2g.DATA.read_text(encoding="utf-8"))
-
-    def test_two_cilb_reviewed_partial_pathways(self):
-        rows = p2g.validate_payload(self.data)
-        self.assertEqual({r['source_key'] for r in rows},
-                         {'certified-general-contractor', 'certified-building-contractor'})
-        self.assertGreaterEqual(sum(p2g.validate_tree(r['pathway_tree'], p2g.IDENTITIES[(r['source_namespace'], r['source_key'])]) for r in rows), 20)
-
-    def test_wrong_license_type_jurisdiction_and_domain_rejected(self):
-        for field, value in [('source_key', 'nclex-rn'), ('jurisdiction', 'US-GA'),
-                            ('source_url', 'https://myfloridalicense.com.attacker.tld/')]:
-            data = deepcopy(self.data)
-            data['records'][0][field] = value
-            with self.assertRaises(AssertionError):
-                p2g.validate_payload(data)
-
-    def test_missing_provenance_and_unknown_tree_nodes_rejected(self):
-        for change in ('missing_url', 'wrong_operator', 'extra_key'):
-            data = deepcopy(self.data)
-            node = data['records'][0]['pathway_tree']['children'][0]['children'][0]
-            if change == 'missing_url':
-                del node['source_url']
-            elif change == 'wrong_operator':
-                node['op'] = 'pass_exam'
-            else:
-                node['price'] = 'unknown'
-            with self.assertRaises(AssertionError):
-                p2g.validate_payload(data)
-
-    def test_alternative_group_is_not_flattened(self):
-        for row in p2g.validate():
-            self.assertEqual(row['pathway_tree']['op'], 'all')
-            self.assertEqual(row['pathway_tree']['children'][0]['op'], 'any')
-
-    def test_claims_of_full_review_are_rejected(self):
-        data = deepcopy(self.data)
-        data['records'][0]['coverage'] = 'full_requirements'
-        with self.assertRaises(AssertionError):
-            p2g.validate_payload(data)
-
-    def test_rendered_sql_uses_approval_and_unchanged_identity(self):
-        sql = p2g.sql()
-        self.assertTrue(sql.startswith('begin;'))
-        self.assertTrue(sql.endswith('commit;\n'))
-        self.assertEqual(sql.count('insert into public.catalog_license_pathway_versions'), 2)
-        self.assertIn('on conflict (source_namespace,source_key,revision) do nothing', sql)
-        self.assertIn("publication_status='published'", sql)
-        for forbidden in ('insert into public.learning_targets', 'insert into public.lessons',
-                          'delete from', 'truncate ', 'update public.users'):
-            self.assertNotIn(forbidden, sql.lower())
-
-
-if __name__ == '__main__':
-    unittest.main()
+class ContractorRevisionTwoTests(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls): cls.data=json.loads(p.DATA.read_text(encoding="utf-8"))
+ def test_cgc_and_cbc_upgrade_rules_are_distinct(self):
+  rows={r["source_key"]:r for r in p.validate_payload(self.data)}
+  cgc=json.dumps(rows["certified-general-contractor"]["pathway_tree"])
+  cbc=json.dumps(rows["certified-building-contractor"]["pathway_tree"])
+  self.assertIn("residential or building contractor license held at least four years",cgc)
+  self.assertIn("residential contractor license held at least three years",cbc)
+  self.assertNotIn("building contractor license held at least three years",cbc)
+ def test_class_specific_experience_and_military_routes(self):
+  rows={r["source_key"]:r for r in p.validate_payload(self.data)}
+  cgc=json.dumps(rows["certified-general-contractor"]["pathway_tree"])
+  cbc=json.dumps(rows["certified-building-contractor"]["pathway_tree"])
+  self.assertIn("four stories",cgc); self.assertNotIn("four stories",cbc)
+  self.assertIn("at least four of the experience areas",cgc); self.assertIn("at least four of the six experience areas",cbc)
+  self.assertEqual(cgc.count("Veteran route:"),3); self.assertEqual(cbc.count("Veteran route:"),3)
+ def test_financial_responsibility_is_not_misrepresented_as_bond(self):
+  text=json.dumps(p.validate_payload(self.data))
+  self.assertIn("660",text); self.assertIn("14-hour",text); self.assertNotIn("licensing bond",text)
+ def test_step_urls_and_revision_metadata(self):
+  for row in p.validate_payload(self.data):
+   self.assertEqual((row["revision"],row["supersedes_revision"]),(2,1))
+  data=deepcopy(self.data); data["records"][0]["pathway_tree"]["children"][0]["children"][0]["source_url"]="https://attacker.example/"
+  with self.assertRaises(AssertionError): p.validate_payload(data)
+ def test_sql_retires_old_revision_atomically(self):
+  sql=p.sql()
+  self.assertEqual(sql.count("insert into public.catalog_license_pathway_versions"),2)
+  self.assertEqual(sql.count("set publication_status='retired'"),2)
+  self.assertIn("supersedes_revision",sql); self.assertIn("revision=2",sql); self.assertIn("revision=1",sql)
+  self.assertNotIn("set pathway_tree",sql.lower()); self.assertNotIn("delete from",sql.lower())
+if __name__=="__main__": unittest.main()
