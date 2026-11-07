@@ -49,8 +49,15 @@ def _untrusted(message: str = "Unsupported or unsafe workbook") -> WorkbookRejec
 
 def _xml(data: bytes) -> ET.Element:
     # XML entities and DTDs are out of scope; never resolve external entities.
-    lower = data.lower()
-    if b"<!doctype" in lower or b"<!entity" in lower or b"<![cdata[" in lower:
+    # UTF-16 can hide a DOCTYPE from a raw byte search. Support UTF-8
+    # only, and explicitly reject DTD/entities before the XML parser runs.
+    try:
+        decoded = data.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise _untrusted("Unsupported workbook XML encoding") from exc
+    lower = decoded.casefold()
+    if ("\x00" in decoded or "<!doctype" in lower or "<!entity" in lower
+        or "<![cdata[" in lower):
         raise _untrusted()
     try:
         return ET.fromstring(data)
