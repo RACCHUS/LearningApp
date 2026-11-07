@@ -50,11 +50,52 @@ import 'package:learning_pwa/screens/taxonomy/occupation_detail_screen.dart'
 import 'package:learning_pwa/screens/literacy/foundational_literacy_screen.dart';
 import 'package:learning_pwa/screens/literacy/life_milestones_screen.dart';
 import 'package:learning_pwa/screens/literacy/life_domains_screen.dart';
-import 'package:learning_pwa/screens/simulation/simulation_screen.dart' deferred as simulation_screen;
+import 'package:learning_pwa/screens/simulation/simulation_screen.dart'
+    deferred as simulation_screen;
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
+
+/// Builds the deferred simulation route. [loader] is injectable so the
+/// load-failure return path can be tested end to end.
+Widget buildSimulationRoute({
+  required String simulationId,
+  required String version,
+  LibraryLoader? loader,
+}) {
+  return DeferredLoaderWidget(
+    loader: loader ?? simulation_screen.loadLibrary,
+    builder: () => simulation_screen.SimulationScreen(
+      simulationId: simulationId,
+      version: version,
+    ),
+    errorBuilder: (context, error) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Interactive practice unavailable'),
+        actions: const [HelpAction()],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'The simulation could not load. Return to the lesson '
+              'and use its alternative activity.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const Key('simulation-load-failure-return'),
+              onPressed: () => context.pop(),
+              child: const Text('Return to lesson'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -227,35 +268,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/simulation/:simulationId/:version',
         name: 'simulation',
-        builder: (context, state) => DeferredLoaderWidget(
-          loader: simulation_screen.loadLibrary,
-          builder: () => simulation_screen.SimulationScreen(
-            simulationId: state.pathParameters['simulationId']!,
-            version: state.pathParameters['version']!,
-          ),
-          errorBuilder: (context, error) => Scaffold(
-            appBar: AppBar(
-              title: const Text('Interactive practice unavailable'),
-              actions: const [HelpAction()],
-            ),
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'The simulation could not load. Return to the lesson '
-                    'and use its alternative activity.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.pop(),
-                    child: const Text('Return to lesson'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        builder: (context, state) => buildSimulationRoute(
+          simulationId: state.pathParameters['simulationId']!,
+          version: state.pathParameters['version']!,
         ),
       ),
 

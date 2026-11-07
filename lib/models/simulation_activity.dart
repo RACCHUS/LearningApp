@@ -20,6 +20,13 @@ const simulationPreviewEnabled =
     !kReleaseMode &&
     bool.fromEnvironment('ENABLE_SIMULATION_PREVIEW', defaultValue: false);
 
+/// The single preview gate. Release builds can never launch a simulation,
+/// even when a caller explicitly requests preview.
+bool isSimulationPreviewAllowed({
+  required bool requested,
+  bool isReleaseBuild = kReleaseMode,
+}) => requested && !isReleaseBuild;
+
 class SimulationCapabilities {
   final bool supportsPauseAndResume;
 

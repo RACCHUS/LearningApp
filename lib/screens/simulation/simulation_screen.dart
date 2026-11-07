@@ -35,8 +35,12 @@ class _SimulationScreenState extends State<SimulationScreen> {
       widget.version,
     );
     final activity = _activity;
-    if (activity != null && widget.previewEnabled) {
-      _session = SimulationSession(activity: activity, enabled: true)..start();
+    if (activity != null &&
+        isSimulationPreviewAllowed(requested: widget.previewEnabled)) {
+      _session = SimulationSession(
+        activity: activity,
+        enabled: widget.previewEnabled,
+      )..start();
     }
   }
 
@@ -83,41 +87,43 @@ class _SimulationScreenState extends State<SimulationScreen> {
         child: Focus(
           autofocus: true,
           child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              key: const Key('exit-simulation'),
-              tooltip: 'Exit simulation',
-              icon: const Icon(Icons.close),
-              onPressed: _exit,
+            appBar: AppBar(
+              leading: IconButton(
+                key: const Key('exit-simulation'),
+                tooltip: 'Exit simulation',
+                icon: const Icon(Icons.close),
+                onPressed: _exit,
+              ),
+              title: Text(_titleFor(activity.id)),
+              actions: const [HelpAction()],
             ),
-            title: Text(_titleFor(activity.id)),
-            actions: const [HelpAction()],
-          ),
-          body: SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 840),
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (activity.id ==
-                        SimulationActivityRegistry.atmWithdrawal.id)
-                      const _PracticeSafetyNotice(
-                        message:
-                            'Practice only. Do not enter a real card number or PIN.',
-                      ),
-                    const SizedBox(height: 8),
-                    if (activity.id == SimulationActivityRegistry.networking.id)
-                      NetworkTroubleshootingSimulation(session: session)
-                    else
-                      CurrencyAtmWidget(
-                        onAtmCompleted: () => session.complete(),
-                      ),
-                  ],
+            body: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 840),
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (activity.id ==
+                          SimulationActivityRegistry.atmWithdrawal.id)
+                        const _PracticeSafetyNotice(
+                          message:
+                              'Practice only. Do not enter a real card number or PIN.',
+                        ),
+                      const SizedBox(height: 8),
+                      if (activity.id ==
+                          SimulationActivityRegistry.networking.id)
+                        NetworkTroubleshootingSimulation(session: session)
+                      else
+                        CurrencyAtmWidget(
+                          initialSection: CurrencyActivitySection.atmSimulator,
+                          onAtmCompleted: () => session.complete(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           ),
         ),
       ),

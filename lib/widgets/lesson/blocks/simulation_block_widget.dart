@@ -50,7 +50,7 @@ class SimulationBlockWidget extends StatelessWidget {
               block: fallback,
               fontSizeFactor: fontSizeFactor,
             ),
-            if (previewEnabled &&
+            if (isSimulationPreviewAllowed(requested: previewEnabled) &&
                 _hasSupportedActivity &&
                 _simulationId != null &&
                 _simulationVersion != null) ...[

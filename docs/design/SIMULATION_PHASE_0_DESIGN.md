@@ -87,10 +87,17 @@ that work; do not create a second simulation-specific mastery system.
 ## Local prototype contract
 
 Simulation launch requires a registered ID/version and an explicitly enabled
-`ENABLE_SIMULATION_PREVIEW` flag. That flag is off by default and forcibly off
-in release builds; tests can enable a session directly. The flag is not an
-approval to expose the preview route: the owner, accessibility, fallback, and
-privacy gates below still apply.
+`ENABLE_SIMULATION_PREVIEW` flag. That flag is off by default. Every launch
+boundary — the lesson block's launch button, the simulation screen, and
+`SimulationSession` — calls `isSimulationPreviewAllowed`, which returns false
+when `kReleaseMode` is true, regardless of any explicit `previewEnabled` or
+`enabled` constructor override. Debug-mode tests may pass those overrides. The
+flag is not an approval to expose the preview route: the owner, accessibility,
+fallback, and privacy gates below still apply.
+
+The `atm-withdrawal` activity opens `CurrencyAtmWidget` with
+`initialSection: CurrencyActivitySection.atmSimulator`; other callers keep the
+default coins-and-bills section.
 
 An activity configuration contains a host-provided simulation ID and immutable
 version plus declared capabilities. It is not a content manifest or a learner
@@ -244,10 +251,21 @@ cannot establish causal effectiveness.
 
 ## Implementation and verification status
 
-- `flutter test test/widgets/simulation/simulation_route_test.dart test/services/simulation/simulation_session_test.dart test/widgets/simulation/atm_simulation_integration_test.dart`
-  passed: 19 tests. A temporary copy of the placeholder `.env.example` was
-  needed because the asset bundle requires `.env`.
+- `flutter test test/widgets/simulation/ test/services/simulation/`
+  passed: 22 tests. These include the release-gate unit test
+  (`isReleaseBuild: true` always denies preview), ATM direct entry with the
+  unchanged default section, and a route-level deferred-load failure test that
+  exercises the real `buildSimulationRoute` error view, Help, and the
+  "Return to lesson" pop back to the launching page. A temporary copy of the
+  placeholder `.env.example` was needed because the asset bundle requires `.env`.
+  Widget tests run in debug mode, so release behavior is verified by the gate
+  unit test plus the compile-time `kReleaseMode` constant, not by launching a
+  release build end to end.
 - `flutter analyze` passed with no issues using the same temporary `.env`.
+- `flutter build web --release --dart-define=ENABLE_SIMULATION_PREVIEW=true`
+  compiled successfully (existing `flutter_tts` WebAssembly dry-run warnings
+  only). This confirms the gated code compiles for release; it was not served
+  or exercised in a browser.
 - `dart run tool/self_host_bootstrap.dart --generate-bundle deploy/self-host/init-scripts/01-full-schema.sql`
   regenerated the bundle with 92 migrations through
   `20261107100000_simulation_lesson_blocks`; it was not deployed. The

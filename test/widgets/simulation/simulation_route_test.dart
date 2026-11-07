@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/screens/simulation/simulation_screen.dart';
-import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
+import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/simulation_block_widget.dart';
 
 LessonBlock _simulationBlock({
@@ -271,24 +271,56 @@ void main() {
       expect(find.byKey(const Key('help-action')), findsOneWidget);
     });
 
-    testWidgets('shows the custom fallback when deferred loading fails', (
+    testWidgets('real simulation route recovers from a deferred load failure', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: DeferredLoaderWidget(
-            loader: () async {
-              throw StateError('load failure');
-            },
-            builder: () => const Text('Loaded'),
-            errorBuilder: (context, error) =>
-                const Scaffold(body: Text('Return to the lesson')),
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () =>
+                      context.push('/simulation/networking-basics/1.0.0'),
+                  child: const Text('Lesson page'),
+                ),
+              ),
+            ),
           ),
-        ),
+          GoRoute(
+            path: '/simulation/:simulationId/:version',
+            builder: (context, state) => buildSimulationRoute(
+              simulationId: state.pathParameters['simulationId']!,
+              version: state.pathParameters['version']!,
+              loader: () async => throw StateError('chunk load failure'),
+            ),
+          ),
+        ],
       );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+      await tester.tap(find.text('Lesson page'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Return to the lesson'), findsOneWidget);
+      expect(find.text('Interactive practice unavailable'), findsOneWidget);
+      expect(
+        find.text(
+          'The simulation could not load. Return to the lesson '
+          'and use its alternative activity.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('help-action')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('simulation-load-failure-return')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lesson page'), findsOneWidget);
+      expect(find.text('Interactive practice unavailable'), findsNothing);
     });
   });
 }

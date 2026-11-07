@@ -10,7 +10,7 @@ class SimulationSession {
   SimulationSession({
     required this.activity,
     bool enabled = simulationPreviewEnabled,
-  }) : _enabled = enabled;
+  }) : _enabled = isSimulationPreviewAllowed(requested: enabled);
 
   SimulationLifecycleState get state => _state;
   List<SimulationEvent> get events => List.unmodifiable(_events);

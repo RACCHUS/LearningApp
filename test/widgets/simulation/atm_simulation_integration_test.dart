@@ -5,6 +5,7 @@ import 'package:learning_pwa/models/currency_survival_item.dart';
 import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
+import 'package:learning_pwa/screens/simulation/simulation_screen.dart';
 import 'package:learning_pwa/services/pre_reader_audio_service.dart';
 import 'package:learning_pwa/services/simulation/simulation_session.dart';
 import 'package:learning_pwa/widgets/literacy/currency_atm_widget.dart';
@@ -24,6 +25,56 @@ class _FakeAudioService extends PreReaderAudioService {
 }
 
 void main() {
+  testWidgets('atm-withdrawal activity opens directly in the ATM simulator', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          preReaderAudioServiceProvider.overrideWithValue(_FakeAudioService()),
+        ],
+        child: const MaterialApp(
+          home: SimulationScreen(
+            simulationId: 'atm-withdrawal',
+            version: '1.0.0',
+            previewEnabled: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Next ATM Action'), findsOneWidget);
+  });
+
+  testWidgets('CurrencyAtmWidget keeps coins and bills as its default', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          preReaderAudioServiceProvider.overrideWithValue(_FakeAudioService()),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: CurrencyAtmWidget()),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Next ATM Action'), findsNothing);
+  });
+
   testWidgets('ATM completion is local, unscored, and emitted at most once', (
     tester,
   ) async {

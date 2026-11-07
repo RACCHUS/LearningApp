@@ -23,6 +23,21 @@ void main() {
       );
     });
 
+    test('release builds cannot enable preview even when requested', () {
+      expect(
+        isSimulationPreviewAllowed(requested: true, isReleaseBuild: true),
+        isFalse,
+      );
+      expect(
+        isSimulationPreviewAllowed(requested: false, isReleaseBuild: false),
+        isFalse,
+      );
+      expect(
+        isSimulationPreviewAllowed(requested: true, isReleaseBuild: false),
+        isTrue,
+      );
+    });
+
     test('rejects a disabled preview without emitting an event', () {
       final session = SimulationSession(activity: _activity(), enabled: false);
 

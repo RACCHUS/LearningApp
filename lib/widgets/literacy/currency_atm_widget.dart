@@ -12,15 +12,20 @@ enum CurrencyActivitySection { coinsAndBills, atmSimulator, verifyChange }
 /// Fully compliant with 18 U.S.C. § 504 and 31 CFR Part 411 digital currency rules.
 class CurrencyAtmWidget extends ConsumerStatefulWidget {
   final VoidCallback? onAtmCompleted;
+  final CurrencyActivitySection initialSection;
 
-  const CurrencyAtmWidget({super.key, this.onAtmCompleted});
+  const CurrencyAtmWidget({
+    super.key,
+    this.onAtmCompleted,
+    this.initialSection = CurrencyActivitySection.coinsAndBills,
+  });
 
   @override
   ConsumerState<CurrencyAtmWidget> createState() => _CurrencyAtmWidgetState();
 }
 
 class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
-  CurrencyActivitySection _section = CurrencyActivitySection.coinsAndBills;
+  late CurrencyActivitySection _section = widget.initialSection;
   int _activeDenomIndex = 0;
 
   // ATM Simulator State
