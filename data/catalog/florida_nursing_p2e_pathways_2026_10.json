@@ -7,17 +7,18 @@
     {
       "source_namespace": "fl_bon",
       "source_key": "registered-nurse",
-      "revision": 1,
+      "revision": 2,
+      "supersedes_revision": 1,
       "jurisdiction": "US-FL",
-      "route_kind": "examination",
-      "title": "Florida RN initial licensure: selected examination-path steps",
-      "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
+      "route_kind": "other",
+      "title": "Florida RN initial licensure: examination, prior-NCLEX and MOBILE routes",
+      "overview": "Selected official Board steps for initial Florida Registered Nurse licensure. The alternatives shown are initial licensure by examination, application after a previously passed NCLEX, and MOBILE endorsement. This is not a complete eligibility determination; Board equivalency, individual screening, disciplinary and other exceptions remain subject to Board review. Re-examination and multistate-upgrade procedures are outside this pathway.",
       "coverage": "selected_steps_only",
       "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
       "source_checked_on": "2026-11-06",
       "reviewed_on": "2026-11-06",
-      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
-      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "review_note": "Revision 2 separates first-time NCLEX applicants, applicants who already passed NCLEX, and MOBILE endorsement. RN-specific pre-licensure MSN/higher education remains RN-only. MOBILE conditions follow the Board page and Florida Statutes §456.0145. Re-examination and multistate upgrade remain out of scope.",
+      "source_retrieved_at": "2026-11-07T04:41:18Z",
       "uncertainty_status": "conditional",
       "pathway_kind": "initial_licensure",
       "pathway_tree": {
@@ -27,67 +28,211 @@
             "op": "any",
             "children": [
               {
-                "op": "step",
-                "label": "Graduate from a Florida-approved or accredited nursing education program",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "any",
+                    "children": [
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from a Florida-approved or accredited nursing education program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from a home-jurisdiction-recognized nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: obtain Board equivalency approval for a non-NCSBN or international nursing program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "The Board determines equivalency and may require additional documentation"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from a pre-licensure MSN or higher program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "RN-specific alternative"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: submit applicable education proof to the Board",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: complete electronic fingerprinting and Level 2 background screening",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: submit the initial application and required fees",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: obtain Board approval to test and pass the NCLEX",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "For applicants who have not previously passed the applicable NCLEX"
+                  }
+                ]
               },
               {
-                "op": "step",
-                "label": "Graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN-issued NCLEX code",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "any",
+                    "children": [
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from a Florida-approved or accredited nursing education program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from a home-jurisdiction-recognized nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: obtain Board equivalency approval for a non-NCSBN or international nursing program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "The Board determines equivalency and may require additional documentation"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from a pre-licensure MSN or higher program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "RN-specific alternative"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: submit applicable education proof to the Board",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: complete electronic fingerprinting and Level 2 background screening",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: submit the initial application and required fees",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: have the prior passing NCLEX result verified by the Board",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "No Pearson VUE registration or repeat NCLEX is required when the passing result can be verified"
+                  }
+                ]
               },
               {
-                "op": "step",
-                "label": "Graduate from a recognized nursing program in another jurisdiction that has an NCSBN-issued NCLEX code",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-              },
-              {
-                "op": "step",
-                "label": "Graduate from an international or non-NCSBN program that the Board determines equivalent",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-                "condition": "Requires a Board equivalency determination and additional documentation"
-              },
-              {
-                "op": "step",
-                "label": "Graduate from a pre-licensure MSN or higher program with an NCSBN-issued NCLEX code",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-                "condition": "RN-specific alternative"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: hold an active, unencumbered out-of-state, District of Columbia or territorial license in a profession with a similar scope",
+                    "stage": "authorization",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: have passed a national licensure examination or hold a national certification recognized by the Board",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: document at least two years of active practice during the four years immediately before applying",
+                    "stage": "experience",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "Applicants without two years of practice may need to apply by examination"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: satisfy the National Practitioner Data Bank reporting condition",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "No report unless successfully appealed and removed, or the adverse action would not violate Florida law or rule"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: not be subject to a practice-related disciplinary proceeding in a licensing jurisdiction or by the U.S. Department of Defense",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: have no disciplinary action in the five years immediately before applying",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: submit the initial endorsement application and required supporting materials",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: arrange verification of the out-of-state license and transfer of national examination scores",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: complete required electronic fingerprinting",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  }
+                ]
               }
             ]
           },
           {
             "op": "step",
-            "label": "Provide the applicable education documentation to the Florida Board of Nursing",
+            "label": "Complete any Board review and supplemental-document requirements applicable to the selected route",
             "stage": "application",
             "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
           },
           {
             "op": "step",
-            "label": "Complete the required electronic fingerprinting and Level 2 background screening",
-            "stage": "background_screening",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-          },
-          {
-            "op": "step",
-            "label": "Submit the initial licensure-by-examination application and required fees",
-            "stage": "application",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-          },
-          {
-            "op": "step",
-            "label": "Obtain the Board's approval for NCLEX eligibility and take the NCLEX examination",
-            "stage": "examination",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-            "condition": "Applicable to applicants who have not previously passed the NCLEX"
-          },
-          {
-            "op": "step",
-            "label": "Receive the state nursing license only after passing the NCLEX and meeting all licensing criteria",
+            "label": "Receive the Florida nursing license only after the Board confirms all requirements for the selected route",
             "stage": "authorization",
             "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
           }
@@ -97,17 +242,18 @@
     {
       "source_namespace": "fl_bon",
       "source_key": "licensed-practical-nurse",
-      "revision": 1,
+      "revision": 2,
+      "supersedes_revision": 1,
       "jurisdiction": "US-FL",
-      "route_kind": "examination",
-      "title": "Florida LPN initial licensure: selected examination-path steps",
-      "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
+      "route_kind": "other",
+      "title": "Florida LPN initial licensure: examination, prior-NCLEX and MOBILE routes",
+      "overview": "Selected official Board steps for initial Florida Licensed Practical Nurse licensure. The alternatives shown are initial licensure by examination, application after a previously passed NCLEX, and MOBILE endorsement. Practical Nursing Equivalency is an LPN-specific education option for eligible applicants already enrolled in an RN program. This is not a complete eligibility determination; individual screening, disciplinary and other exceptions remain subject to Board review.",
       "coverage": "selected_steps_only",
       "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
       "source_checked_on": "2026-11-06",
       "reviewed_on": "2026-11-06",
-      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
-      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "review_note": "Revision 2 separates first-time NCLEX applicants, applicants who already passed NCLEX, and MOBILE endorsement. Practical Nursing Equivalency remains LPN-specific. MOBILE conditions follow the Board page and Florida Statutes §456.0145. Re-examination and multistate upgrade remain out of scope.",
+      "source_retrieved_at": "2026-11-07T04:41:18Z",
       "uncertainty_status": "conditional",
       "pathway_kind": "initial_licensure",
       "pathway_tree": {
@@ -117,67 +263,211 @@
             "op": "any",
             "children": [
               {
-                "op": "step",
-                "label": "Graduate from a Florida-approved or accredited nursing education program",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "any",
+                    "children": [
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from a Florida-approved or accredited nursing education program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: graduate from a home-jurisdiction-recognized nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: obtain Board equivalency approval for a non-NCSBN or international nursing program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "The Board determines equivalency and may require additional documentation"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Examination route: qualify through Practical Nursing Equivalency while enrolled in an RN program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "LPN-specific; equivalent LPN coursework and additional documentation are required"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: submit applicable education proof to the Board",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: complete electronic fingerprinting and Level 2 background screening",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: submit the initial application and required fees",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Examination route: obtain Board approval to test and pass the NCLEX",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "For applicants who have not previously passed the applicable NCLEX"
+                  }
+                ]
               },
               {
-                "op": "step",
-                "label": "Graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN-issued NCLEX code",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "any",
+                    "children": [
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from a Florida-approved or accredited nursing education program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from an ACEN- or CCNE-accredited nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: graduate from a home-jurisdiction-recognized nursing program with an NCSBN NCLEX code",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: obtain Board equivalency approval for a non-NCSBN or international nursing program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "The Board determines equivalency and may require additional documentation"
+                      },
+                      {
+                        "op": "step",
+                        "label": "Already-passed NCLEX route: qualify through Practical Nursing Equivalency while enrolled in an RN program",
+                        "stage": "education",
+                        "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                        "condition": "LPN-specific; equivalent LPN coursework and additional documentation are required"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: submit applicable education proof to the Board",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: complete electronic fingerprinting and Level 2 background screening",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: submit the initial application and required fees",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "Already-passed NCLEX route: have the prior passing NCLEX result verified by the Board",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "No Pearson VUE registration or repeat NCLEX is required when the passing result can be verified"
+                  }
+                ]
               },
               {
-                "op": "step",
-                "label": "Graduate from a recognized nursing program in another jurisdiction that has an NCSBN-issued NCLEX code",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-              },
-              {
-                "op": "step",
-                "label": "Graduate from an international or non-NCSBN program that the Board determines equivalent",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-                "condition": "Requires a Board equivalency determination and additional documentation"
-              },
-              {
-                "op": "step",
-                "label": "Meet Practical Nursing Equivalency criteria while enrolled in an RN program",
-                "stage": "education",
-                "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-                "condition": "LPN applicants; additional equivalency documentation is required"
+                "op": "all",
+                "children": [
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: hold an active, unencumbered out-of-state, District of Columbia or territorial license in a profession with a similar scope",
+                    "stage": "authorization",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: have passed a national licensure examination or hold a national certification recognized by the Board",
+                    "stage": "examination",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: document at least two years of active practice during the four years immediately before applying",
+                    "stage": "experience",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "Applicants without two years of practice may need to apply by examination"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: satisfy the National Practitioner Data Bank reporting condition",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
+                    "condition": "No report unless successfully appealed and removed, or the adverse action would not violate Florida law or rule"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: not be subject to a practice-related disciplinary proceeding in a licensing jurisdiction or by the U.S. Department of Defense",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: have no disciplinary action in the five years immediately before applying",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: submit the initial endorsement application and required supporting materials",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: arrange verification of the out-of-state license and transfer of national examination scores",
+                    "stage": "application",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  },
+                  {
+                    "op": "step",
+                    "label": "MOBILE route: complete required electronic fingerprinting",
+                    "stage": "background_screening",
+                    "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
+                  }
+                ]
               }
             ]
           },
           {
             "op": "step",
-            "label": "Provide the applicable education documentation to the Florida Board of Nursing",
+            "label": "Complete any Board review and supplemental-document requirements applicable to the selected route",
             "stage": "application",
             "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
           },
           {
             "op": "step",
-            "label": "Complete the required electronic fingerprinting and Level 2 background screening",
-            "stage": "background_screening",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-          },
-          {
-            "op": "step",
-            "label": "Submit the initial licensure-by-examination application and required fees",
-            "stage": "application",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
-          },
-          {
-            "op": "step",
-            "label": "Obtain the Board's approval for NCLEX eligibility and take the NCLEX examination",
-            "stage": "examination",
-            "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-            "condition": "Applicable to applicants who have not previously passed the NCLEX"
-          },
-          {
-            "op": "step",
-            "label": "Receive the state nursing license only after passing the NCLEX and meeting all licensing criteria",
+            "label": "Receive the Florida nursing license only after the Board confirms all requirements for the selected route",
             "stage": "authorization",
             "source_url": "https://floridasnursing.gov/nurse-rn-lpn/"
           }
