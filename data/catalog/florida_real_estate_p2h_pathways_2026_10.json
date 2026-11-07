@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "reviewed_jurisdiction": "US-FL",
+  "regulator_name": "Florida Real Estate Commission (DBPR FREC)",
+  "regulator_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=25&chBoard=true&div=Real+Estate",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "records": [
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "real-estate-sales-associate",
+      "revision": 1,
+      "supersedes_revision": null,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Real Estate Sales Associate: FREC qualification, examination, and activation routes",
+      "overview": "Selected official DBPR and Florida Real Estate Commission (FREC) licensing steps for Florida Real Estate Sales Associates under Florida Statutes Chapter 475 and Florida Administrative Code Rule 61J2. Represents pre-licensing education alternatives (including 63-hour course, real estate degree exemption, Florida Bar attorney exemption, and mutual recognition out-of-state reciprocity), electronic fingerprint screening, Pearson VUE state examination, broker affiliation activation, and mandatory 45-hour post-licensing renewal requirements. This is not a formal legal determination of eligibility; individual applications are evaluated directly by the Department.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=25&chBoard=true&div=Real+Estate",
+      "source_checked_on": "2026-11-07",
+      "reviewed_on": "2026-11-07",
+      "review_note": "Revision 1 establishes the verified FREC sales associate licensing pathway based on F.S. § 475.17, F.A.C. Rule 61J2-3, and DBPR Form RE 1 candidate guidance. Correctly isolates statutory exemptions (active Florida Bar members and four-year real estate degree holders) from the standard 63-hour pre-licensing course, documents non-Florida resident mutual recognition agreements, captures the active-broker registration requirement for valid practice, and highlights the non-extendable 45-hour post-licensing first-renewal condition.",
+      "source_retrieved_at": "2026-11-07T13:40:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Complete a FREC-approved 63-classroom-hour pre-licensing Course I for sales associates and pass the course end exam with at least 70%",
+                "stage": "education",
+                "source_url": "https://www2.myfloridalicense.com/pro/re/documents/re1.pdf",
+                "condition": "Course completion certificate valid for two years from exam date under Rule 61J2-3.008"
+              },
+              {
+                "op": "step",
+                "label": "Exempt from pre-licensing education with an accredited four-year degree or higher in real estate",
+                "stage": "education",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/475.17",
+                "condition": "Per F.S. § 475.17(2); official university transcripts required with application"
+              },
+              {
+                "op": "step",
+                "label": "Exempt from pre-licensing education as an active member in good standing of The Florida Bar",
+                "stage": "education",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/475.17",
+                "condition": "Per F.S. § 475.17(2); Florida Bar number verified with DBPR; state examination still required"
+              },
+              {
+                "op": "step",
+                "label": "Qualify under a mutual recognition agreement holding an active real estate license in a recognized qualifying state",
+                "stage": "experience",
+                "source_url": "https://www2.myfloridalicense.com/pro/re/documents/re1.pdf",
+                "condition": "Non-Florida residents holding active license in AL, AR, CT, GA, IL, KY, MS, NE, RI, or WV; 40-question law exam required"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Be at least 18 years of age and hold a high school diploma or its recognized equivalent",
+            "stage": "authorization",
+            "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/475.17",
+            "condition": "F.S. § 475.17(1); United States Social Security number required"
+          },
+          {
+            "op": "step",
+            "label": "Submit electronic fingerprints through a Florida Department of Law Enforcement (FDLE) approved Livescan service vendor",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=750&clientCode=2501&xactCode=1010",
+            "condition": "Use DBPR Originating Agency Identifier (ORI) FL920010Z"
+          },
+          {
+            "op": "step",
+            "label": "Submit completed DBPR RE 1 Application for Real Estate Sales Associate License with required state fees",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=25&chBoard=true&div=Real+Estate",
+            "condition": "Submit online via DBPR Online Services or by mail; approval required before Pearson VUE testing"
+          },
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Pass the Florida Real Estate Sales Associate Examination administered by Pearson VUE with a scaled score of 75 or higher",
+                "stage": "examination",
+                "source_url": "https://www2.myfloridalicense.com/pro/re/documents/re1.pdf",
+                "condition": "100 multiple-choice questions covering real estate principles, practices, and law"
+              },
+              {
+                "op": "step",
+                "label": "Mutual recognition candidates: pass the 40-question Florida Real Estate Law examination with a score of 30 or higher (75%)",
+                "stage": "examination",
+                "source_url": "https://www2.myfloridalicense.com/pro/re/documents/re1.pdf",
+                "condition": "Exempt from general real estate principles section"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Activate license by affiliating with a licensed Florida real estate broker or owner-developer using DBPR Form RE 11",
+            "stage": "appointment",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=25&chBoard=true&div=Real+Estate",
+            "condition": "Issued in inactive status upon passing exam until registered under an active broker"
+          },
+          {
+            "op": "step",
+            "label": "Complete a 45-hour FREC-approved post-licensing course prior to the initial license expiration date",
+            "stage": "continuing_education",
+            "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/475.17",
+            "condition": "Mandatory under F.S. § 475.17(3); failure to complete causes license to become null and void without grace period"
+          }
+        ]
+      }
+    }
+  ]
+}
+
