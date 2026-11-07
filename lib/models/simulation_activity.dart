@@ -22,10 +22,11 @@ const simulationPreviewEnabled =
 
 /// The single preview gate. Release builds can never launch a simulation,
 /// even when a caller explicitly requests preview.
-bool isSimulationPreviewAllowed({
-  required bool requested,
-  bool isReleaseBuild = kReleaseMode,
-}) => requested && !isReleaseBuild;
+/// Release mode is read only from the compile-time [kReleaseMode] constant;
+/// callers cannot supply their own definition of release mode.
+bool isSimulationPreviewAllowed({required bool requested}) {
+  return requested && !kReleaseMode;
+}
 
 class SimulationCapabilities {
   final bool supportsPauseAndResume;

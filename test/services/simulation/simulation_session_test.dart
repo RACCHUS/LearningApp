@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/services/simulation/simulation_session.dart';
@@ -23,19 +24,9 @@ void main() {
       );
     });
 
-    test('release builds cannot enable preview even when requested', () {
-      expect(
-        isSimulationPreviewAllowed(requested: true, isReleaseBuild: true),
-        isFalse,
-      );
-      expect(
-        isSimulationPreviewAllowed(requested: false, isReleaseBuild: false),
-        isFalse,
-      );
-      expect(
-        isSimulationPreviewAllowed(requested: true, isReleaseBuild: false),
-        isTrue,
-      );
+    test('preview gate is bound to the compile-time release constant', () {
+      expect(isSimulationPreviewAllowed(requested: false), isFalse);
+      expect(isSimulationPreviewAllowed(requested: true), !kReleaseMode);
     });
 
     test('rejects a disabled preview without emitting an event', () {

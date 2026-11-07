@@ -252,8 +252,9 @@ cannot establish causal effectiveness.
 ## Implementation and verification status
 
 - `flutter test test/widgets/simulation/ test/services/simulation/`
-  passed: 22 tests. These include the release-gate unit test
-  (`isReleaseBuild: true` always denies preview), ATM direct entry with the
+  passed: 22 tests. These include a gate test bound to the compile-time
+  `kReleaseMode` constant (`isSimulationPreviewAllowed` has no caller-supplied
+  release-mode parameter), ATM direct entry with the
   unchanged default section, and a route-level deferred-load failure test that
   exercises the real `buildSimulationRoute` error view, Help, and the
   "Return to lesson" pop back to the launching page. A temporary copy of the
