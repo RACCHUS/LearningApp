@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:learning_pwa/config/brand_config.dart';
 import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -83,11 +85,7 @@ Future<void> main() async {
     );
     print('✅ Supabase initialized successfully');
 
-    if (degradedServices.isNotEmpty) {
-      print('🚀 Launching app (degraded: ${degradedServices.join(", ")})...');
-    } else {
-      print('🚀 All services initialized - launching app...');
-    }
+    print('🚀 Launching app...');
     runApp(
       const ProviderScope(
         child: LearningApp(),
