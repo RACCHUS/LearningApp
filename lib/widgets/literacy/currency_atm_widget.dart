@@ -5,30 +5,34 @@ import '../../providers/pre_reader_provider.dart';
 import '../../theme/design_tokens.dart';
 
 /// Currency activity section tabs.
-enum CurrencyActivitySection {
-  coinsAndBills,
-  atmSimulator,
-  verifyChange,
-}
+enum CurrencyActivitySection { coinsAndBills, atmSimulator, verifyChange }
 
 /// Interactive US currency recognition and ATM cash withdrawal simulator.
 ///
 /// Fully compliant with 18 U.S.C. § 504 and 31 CFR Part 411 digital currency rules.
 class CurrencyAtmWidget extends ConsumerStatefulWidget {
-  const CurrencyAtmWidget({super.key});
+  final VoidCallback? onAtmCompleted;
+  final CurrencyActivitySection initialSection;
+
+  const CurrencyAtmWidget({
+    super.key,
+    this.onAtmCompleted,
+    this.initialSection = CurrencyActivitySection.coinsAndBills,
+  });
 
   @override
   ConsumerState<CurrencyAtmWidget> createState() => _CurrencyAtmWidgetState();
 }
 
 class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
-  CurrencyActivitySection _section = CurrencyActivitySection.coinsAndBills;
+  late CurrencyActivitySection _section = widget.initialSection;
   int _activeDenomIndex = 0;
 
   // ATM Simulator State
   int _atmStepIndex = 0;
   String _enteredPin = '';
   int? _selectedAtmAmount;
+  bool _atmCompleted = false;
 
   @override
   void initState() {
@@ -44,6 +48,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
       _atmStepIndex = 0;
       _enteredPin = '';
       _selectedAtmAmount = null;
+      _atmCompleted = false;
     });
     _announceCurrentActivity();
   }
@@ -59,7 +64,8 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
         audio.speak('${step.actionTitle}. ${step.spokenGuidance}');
       case CurrencyActivitySection.verifyChange:
         audio.speak(
-            'Verify Change Drill. Always check your change before walking away from the register.');
+          'Verify Change Drill. Always check your change before walking away from the register.',
+        );
     }
   }
 
@@ -70,7 +76,9 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
     final item = officialCurrencyCatalog[index];
     ref
         .read(preReaderAudioServiceProvider)
-        .speak('${item.name}. ${item.spokenDescription} Tip: ${item.practicalTip}');
+        .speak(
+          '${item.name}. ${item.spokenDescription} Tip: ${item.practicalTip}',
+        );
   }
 
   void _pressPinDigit(String digit) {
@@ -89,6 +97,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
   }
 
   void _advanceAtmStep() {
+    if (_atmCompleted) return;
     if (_atmStepIndex + 1 < officialAtmSteps.length) {
       setState(() {
         _atmStepIndex++;
@@ -98,14 +107,21 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
           .read(preReaderAudioServiceProvider)
           .speak('${nextStep.actionTitle}. ${nextStep.spokenGuidance}');
     } else {
+      setState(() {
+        _atmCompleted = true;
+      });
       // Completed withdrawal
-      ref.read(preReaderAudioServiceProvider).speak(
-          'Withdrawal complete! You safely took your cash and your debit card.');
+      ref
+          .read(preReaderAudioServiceProvider)
+          .speak(
+            'Withdrawal complete! You safely took your cash and your debit card.',
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('ATM cash withdrawal simulated successfully!'),
         ),
       );
+      widget.onAtmCompleted?.call();
     }
   }
 
@@ -146,12 +162,18 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
 
         // Section Content
         switch (_section) {
-          CurrencyActivitySection.coinsAndBills =>
-            _buildCoinsAndBillsContent(theme, colorScheme),
-          CurrencyActivitySection.atmSimulator =>
-            _buildAtmContent(theme, colorScheme),
-          CurrencyActivitySection.verifyChange =>
-            _buildVerifyChangeContent(theme, colorScheme),
+          CurrencyActivitySection.coinsAndBills => _buildCoinsAndBillsContent(
+            theme,
+            colorScheme,
+          ),
+          CurrencyActivitySection.atmSimulator => _buildAtmContent(
+            theme,
+            colorScheme,
+          ),
+          CurrencyActivitySection.verifyChange => _buildVerifyChangeContent(
+            theme,
+            colorScheme,
+          ),
         },
 
         const SizedBox(height: DesignTokens.space4),
@@ -234,7 +256,10 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                 padding: const EdgeInsets.only(right: DesignTokens.space2),
                 child: FilterChip(
                   selected: isSelected,
-                  avatar: Text(item.visualEmoji, style: const TextStyle(fontSize: 16)),
+                  avatar: Text(
+                    item.visualEmoji,
+                    style: const TextStyle(fontSize: 16),
+                  ),
                   label: Text(
                     item.displayValue,
                     style: TextStyle(
@@ -293,7 +318,9 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                 Container(
                   padding: const EdgeInsets.all(DesignTokens.space3),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                   ),
                   child: Text(
@@ -392,10 +419,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
               ),
               child: Column(
                 children: [
-                  Text(
-                    step.iconEmoji,
-                    style: const TextStyle(fontSize: 48),
-                  ),
+                  Text(step.iconEmoji, style: const TextStyle(fontSize: 48)),
                   const SizedBox(height: DesignTokens.space2),
                   Text(
                     step.instruction,
@@ -441,7 +465,10 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                               foregroundColor: Colors.white,
                             ),
                             onPressed: () => _pressPinDigit('$i'),
-                            child: Text('$i', style: const TextStyle(fontSize: 18)),
+                            child: Text(
+                              '$i',
+                              style: const TextStyle(fontSize: 18),
+                            ),
                           ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -450,7 +477,10 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                             foregroundColor: Colors.white,
                           ),
                           onPressed: _clearPin,
-                          child: const Text('Clear', style: TextStyle(fontSize: 11)),
+                          child: const Text(
+                            'Clear',
+                            style: TextStyle(fontSize: 11),
+                          ),
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -459,7 +489,10 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                             foregroundColor: Colors.white,
                           ),
                           onPressed: () => _pressPinDigit('0'),
-                          child: const Text('0', style: TextStyle(fontSize: 18)),
+                          child: const Text(
+                            '0',
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ],
                     ),
@@ -475,7 +508,9 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                         final isSel = _selectedAtmAmount == amount;
                         return ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isSel ? Colors.green : Colors.blueGrey.shade800,
+                            backgroundColor: isSel
+                                ? Colors.green
+                                : Colors.blueGrey.shade800,
                             foregroundColor: Colors.white,
                           ),
                           onPressed: () {
@@ -486,7 +521,10 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                                 .read(preReaderAudioServiceProvider)
                                 .speak('Selected $amount dollars.');
                           },
-                          child: Text('\$$amount', style: const TextStyle(fontSize: 18)),
+                          child: Text(
+                            '\$$amount',
+                            style: const TextStyle(fontSize: 18),
+                          ),
                         );
                       }).toList(),
                     ),
@@ -528,7 +566,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                     ? 'Next ATM Action'
                     : 'Complete Withdrawal',
               ),
-              onPressed: _advanceAtmStep,
+              onPressed: _atmCompleted ? null : _advanceAtmStep,
             ),
           ],
         ),
@@ -563,8 +601,11 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                   icon: const Icon(Icons.volume_up),
                   tooltip: 'Read scenario aloud',
                   onPressed: () {
-                    ref.read(preReaderAudioServiceProvider).speak(
-                        'Practice problem: You buy groceries for 14 dollars. You hand the cashier a 20 dollar bill. How much change should you get back? The answer is 6 dollars.');
+                    ref
+                        .read(preReaderAudioServiceProvider)
+                        .speak(
+                          'Practice problem: You buy groceries for 14 dollars. You hand the cashier a 20 dollar bill. How much change should you get back? The answer is 6 dollars.',
+                        );
                   },
                 ),
               ],
@@ -574,21 +615,38 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
             Container(
               padding: const EdgeInsets.all(DesignTokens.space3),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
               child: const Column(
                 children: [
-                  Text('Item Cost: \$14.00', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Item Cost: \$14.00',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 4),
-                  Text('You Pay: \$20.00 bill (💵)', style: TextStyle(fontSize: 16)),
+                  Text(
+                    'You Pay: \$20.00 bill (💵)',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   SizedBox(height: 8),
                   Divider(),
                   SizedBox(height: 8),
-                  Text('Your Correct Change: \$6.00',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text(
+                    'Your Correct Change: \$6.00',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
                   SizedBox(height: 4),
-                  Text('One \$5 bill + One \$1 bill', style: TextStyle(fontSize: 14)),
+                  Text(
+                    'One \$5 bill + One \$1 bill',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ],
               ),
             ),
@@ -598,8 +656,11 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
               icon: const Icon(Icons.volume_up),
               label: const Text('Listen to Change Calculation'),
               onPressed: () {
-                ref.read(preReaderAudioServiceProvider).speak(
-                    'Start at 14 dollars. Count up: One dollar makes 15. Five dollars makes 20. Your change is 6 dollars.');
+                ref
+                    .read(preReaderAudioServiceProvider)
+                    .speak(
+                      'Start at 14 dollars. Count up: One dollar makes 15. Five dollars makes 20. Your change is 6 dollars.',
+                    );
               },
             ),
           ],
