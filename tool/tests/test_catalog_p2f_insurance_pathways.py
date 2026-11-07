@@ -1,9 +1,9 @@
 """P2f review manifest and safe SQL renderer tests for Florida DFS insurance."""
 import json
-from datetime import datetime
 import sys
 import unittest
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]

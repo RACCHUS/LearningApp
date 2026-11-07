@@ -21,7 +21,7 @@ The official resident 2-20 PDF presents distinct OR alternatives:
 - Equivalent resident license held continuously for at least one year and Florida application within 90 days of becoming a Florida resident; exam-exempt.
 - CPCU designation; exam-exempt.
 
-The current P2f tree does not accurately express all these branches and includes claims not established by this source (including a CIC alternative and a generic 48-month appointment expiry). Do not repeat those claims as verified facts. The PDF warns applicants to ensure they have the current version.
+The current P2f tree does not accurately express all these branches and includes a CIC alternative not established by this source. The 2-20 PDF itself confirms that the license requires an appointment to be valid and expires if unappointed for 48 months (Section 626.431(3)); do not omit that source-supported rule. The PDF warns applicants to ensure they have the current version.
 
 Source: https://www.myfloridacfo.com/docs-sf/insurance-agents-and-agency-services-libraries/agents-docs/licensure/agents-adjusters/2-20-resident-general-lines.pdf
 
