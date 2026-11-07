@@ -136,6 +136,9 @@ jobs:
       - name: Test server-only Excel private workbook handoff
         run: python3 -m unittest discover -s tool/tests -p 'test_private_assessment.py' -v
 
+      - name: Test Supabase server-confirmed Excel processing identity
+        run: python3 -m unittest discover -s tool/tests -p 'test_supabase_auth_gateway.py' -v
+
       - name: Test private Excel DB lease adapter
         run: python3 -m unittest discover -s tool/tests -p 'test_private_assessment_db.py' -v
 
