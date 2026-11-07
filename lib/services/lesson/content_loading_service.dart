@@ -55,67 +55,16 @@ class ContentLoadingService {
       concepts: <Concept>[],
     );
 
-    // 2. Fetch ordered lesson blocks (V2 document model)
-    List<LessonBlock> blocks = [];
-    try {
-      final List<dynamic> blocksRaw = await _supabase
-          .from('lesson_blocks')
-          .select('*')
-          .eq('lesson_id', lessonId)
-          .order('sort_order', ascending: true);
-
-      blocks = blocksRaw
-          .map((b) => LessonBlock.fromJson((b as Map).cast<String, dynamic>()))
-          .toList();
-      log('✅ Loaded ${blocks.length} lesson_blocks', name: 'ContentLoadingService');
-    } catch (e) {
-      log('⚠️ Could not load lesson_blocks: $e', name: 'ContentLoadingService');
-    }
-
-    // 3. Fetch polymorphic assessment items (V2 items)
-    List<AssessmentItem> assessmentItems = [];
-    try {
-      final List<dynamic> itemsRaw = await _supabase
-          .from('assessment_items')
-          .select('*, assessment_stimuli(*), concepts:assessment_item_concepts(*)')
-          .eq('lesson_id', lessonId)
-          .order('created_at', ascending: true);
-
-      assessmentItems = itemsRaw.map((raw) {
-        final map = (raw as Map).cast<String, dynamic>();
-        AssessmentStimulus? stimulus;
-        if (map['assessment_stimuli'] is Map) {
-          stimulus = AssessmentStimulus.fromJson(
-            (map['assessment_stimuli'] as Map).cast<String, dynamic>(),
-          );
-        }
-        final item = AssessmentItem.fromJson(map);
-        return stimulus != null ? item.copyWith(stimulus: stimulus) : item;
-      }).toList();
-      log('✅ Loaded ${assessmentItems.length} assessment_items', name: 'ContentLoadingService');
-    } catch (e) {
-      log('⚠️ Could not load assessment_items: $e', name: 'ContentLoadingService');
-    }
-
-    // 4. Fetch canonical concepts linked via lesson_concepts
-    List<KnowledgeConcept> concepts = [];
-    try {
-      final List<dynamic> conceptsRaw = await _supabase
-          .from('lesson_concepts')
-          .select('knowledge_concepts(*)')
-          .eq('lesson_id', lessonId);
-
-      for (final row in conceptsRaw) {
-        if (row is Map && row['knowledge_concepts'] is Map) {
-          concepts.add(KnowledgeConcept.fromJson(
-            (row['knowledge_concepts'] as Map).cast<String, dynamic>(),
-          ));
-        }
-      }
-      log('✅ Loaded ${concepts.length} linked knowledge_concepts', name: 'ContentLoadingService');
-    } catch (e) {
-      log('⚠️ Could not load lesson_concepts: $e', name: 'ContentLoadingService');
-    }
+    // These three content branches are independent once the lesson row is known.
+    // Fetch them concurrently to reduce lesson-open latency on high-latency networks.
+    final contentResults = await Future.wait<Object>([
+      _loadLessonBlocks(lessonId),
+      _loadAssessmentItems(lessonId),
+      _loadLessonConcepts(lessonId),
+    ]);
+    final blocks = contentResults[0] as List<LessonBlock>;
+    final assessmentItems = contentResults[1] as List<AssessmentItem>;
+    final concepts = contentResults[2] as List<KnowledgeConcept>;
 
     // 5. Fetch provenance & blueprint citations
     List<ContentSourceMapping> provenance = [];
@@ -154,6 +103,70 @@ class ContentLoadingService {
       provenance: provenance,
       legacyContent: legacyContent,
     );
+  }
+
+  Future<List<LessonBlock>> _loadLessonBlocks(String lessonId) async {
+    try {
+      final rows = await _supabase
+          .from('lesson_blocks')
+          .select('*')
+          .eq('lesson_id', lessonId)
+          .order('sort_order', ascending: true);
+      final blocks = rows
+          .map((row) => LessonBlock.fromJson((row as Map).cast<String, dynamic>()))
+          .toList();
+      log('✅ Loaded ${blocks.length} lesson_blocks', name: 'ContentLoadingService');
+      return blocks;
+    } catch (error) {
+      log('⚠️ Could not load lesson_blocks: $error', name: 'ContentLoadingService');
+      return [];
+    }
+  }
+
+  Future<List<AssessmentItem>> _loadAssessmentItems(String lessonId) async {
+    try {
+      final rows = await _supabase
+          .from('assessment_items')
+          .select('*, assessment_stimuli(*), concepts:assessment_item_concepts(*)')
+          .eq('lesson_id', lessonId)
+          .order('created_at', ascending: true);
+      return rows.map((raw) {
+        final map = (raw as Map).cast<String, dynamic>();
+        AssessmentStimulus? stimulus;
+        if (map['assessment_stimuli'] is Map) {
+          stimulus = AssessmentStimulus.fromJson(
+            (map['assessment_stimuli'] as Map).cast<String, dynamic>(),
+          );
+        }
+        final item = AssessmentItem.fromJson(map);
+        return stimulus != null ? item.copyWith(stimulus: stimulus) : item;
+      }).toList();
+    } catch (error) {
+      log('⚠️ Could not load assessment_items: $error', name: 'ContentLoadingService');
+      return [];
+    }
+  }
+
+  Future<List<KnowledgeConcept>> _loadLessonConcepts(String lessonId) async {
+    try {
+      final rows = await _supabase
+          .from('lesson_concepts')
+          .select('knowledge_concepts(*)')
+          .eq('lesson_id', lessonId);
+      final concepts = <KnowledgeConcept>[];
+      for (final row in rows) {
+        if (row is Map && row['knowledge_concepts'] is Map) {
+          concepts.add(KnowledgeConcept.fromJson(
+            (row['knowledge_concepts'] as Map).cast<String, dynamic>(),
+          ));
+        }
+      }
+      log('✅ Loaded ${concepts.length} linked knowledge_concepts', name: 'ContentLoadingService');
+      return concepts;
+    } catch (error) {
+      log('⚠️ Could not load lesson_concepts: $error', name: 'ContentLoadingService');
+      return [];
+    }
   }
 
   Future<List<LessonContent>> _loadLegacyContent(String lessonId, Lesson lesson) async {
