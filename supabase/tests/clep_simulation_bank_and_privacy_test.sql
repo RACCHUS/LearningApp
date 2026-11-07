@@ -158,7 +158,19 @@ select is(
 );
 
 -- ----------------------------------------------------------------------------
--- 3. Verify Privacy Under Anon Role (Unauthenticated Learner)
+-- 3. Transition TargetVersion to Published for Public Learner Experience
+-- ----------------------------------------------------------------------------
+-- Transition TargetVersion: draft -> review_ready -> published
+update public.target_versions
+set status = 'review_ready'
+where version_code = '2026-PRIV';
+
+update public.target_versions
+set status = 'published'
+where version_code = '2026-PRIV';
+
+-- ----------------------------------------------------------------------------
+-- 4. Verify Privacy Under Anon Role (Unauthenticated Learner)
 -- ----------------------------------------------------------------------------
 reset role;
 set local role anon;
