@@ -23,7 +23,7 @@ class RegulatorPathwayTests(unittest.TestCase):
         for row in rows:
             retrieved_at = datetime.fromisoformat(row['source_retrieved_at'].replace('Z', '+00:00'))
             self.assertIsNotNone(retrieved_at.tzinfo)
-            self.assertEqual(row['source_retrieved_at'], '2026-11-07T03:18:00Z')
+            self.assertEqual(row['source_retrieved_at'], '2026-11-07T03:22:03Z')
             self.assertEqual(row['source_checked_on'], '2026-11-06')
             self.assertEqual(row['reviewed_on'], '2026-11-06')
             self.assertGreaterEqual(len(row['review_note']), 80)
@@ -69,7 +69,7 @@ class RegulatorPathwayTests(unittest.TestCase):
         self.assertIn('uncertainty_status', sql)
         self.assertIn('pathway_kind', sql)
         self.assertIn('source_checked_at', sql)
-        self.assertIn('2026-11-07T03:18:00Z', sql)
+        self.assertIn('2026-11-07T03:22:03Z', sql)
         self.assertIn('on conflict (source_namespace,source_key,revision) do nothing',sql)
         self.assertIn('publication_status=\'published\'',sql)
         for forbidden in ('insert into public.learning_targets','insert into public.lessons',
