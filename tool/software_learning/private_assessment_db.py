@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import json
+import re
 from typing import Mapping
 
 from .private_assessment import AssessmentLease
@@ -16,6 +17,7 @@ from .private_assessment import AssessmentLease
 _KEYS = frozenset({
     "lease_id", "owner_id", "session_id", "attempt_id", "exercise_id",
     "checker_version", "expires_at", "expected_inputs",
+    "expected_sha256", "object_version",
     "evidence_trust", "can_award_skill",
 })
 _INPUT_KEYS = frozenset(f"C{i}" for i in range(2, 10))
@@ -44,6 +46,11 @@ def _strict_lease(raw: object, owner: str, session: str,
         raise ValueError("Invalid expiry") from None
     if expires_at.tzinfo is None:
         raise ValueError("Expiry timezone required")
+    if (not isinstance(raw["expected_sha256"], str) or
+        re.fullmatch(r"[a-f0-9]{64}", raw["expected_sha256"]) is None or
+        not isinstance(raw["object_version"], str) or
+        re.fullmatch(r"[a-zA-Z0-9._:-]{1,256}", raw["object_version"]) is None):
+        raise ValueError("Unsealed or invalid private workbook source")
     inputs = raw["expected_inputs"]
     if (not isinstance(inputs, Mapping) or set(inputs) != _INPUT_KEYS or
         any(type(v) is not int or v < 10 or v > 99 for v in inputs.values())):
@@ -54,6 +61,8 @@ def _strict_lease(raw: object, owner: str, session: str,
         exercise_id="excel-budget-total-v1", checker_version=1,
         expires_at=expires_at,
         expected_inputs={cell: inputs[cell] for cell in sorted(_INPUT_KEYS)},
+        expected_sha256=raw["expected_sha256"],
+        object_version=raw["object_version"],
     )
 
 
