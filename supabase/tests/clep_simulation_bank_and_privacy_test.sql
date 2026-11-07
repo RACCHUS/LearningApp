@@ -490,6 +490,9 @@ select ok(
   'User 1 issues fresh simulation exam for valid completion testing'
 );
 
+create temp table _submission_res (data jsonb) on commit drop;
+grant all on table _submission_res to public, authenticated, service_role, anon;
+
 -- Submit attempt with Item 1 answered (correct: 0) and Item 2 left unanswered
 do $$
 declare
@@ -511,6 +514,8 @@ begin
     v_att_id,
     jsonb_build_object(v_item_1, 0)
   );
+
+  insert into _submission_res (data) values (v_sub_res);
 
   -- Assert score: 1 correct out of 2 total
   if (v_sub_res->>'raw_score')::int <> 1 then
@@ -577,15 +582,8 @@ select ok(
 
 select ok(
   (
-    select public.clep_submit_simulation_exam(
-      a.id,
-      jsonb_build_object(a.issued_item_ids[1]::text, 0)
-    )->>'scoring_disclaimer' like '%Diagnostic score estimate only%'
-    from (
-      select (public.clep_issue_simulation_exam(tv.id)->>'attempt_id')::uuid as id
-      from public.target_versions tv where tv.version_code = '2026-PRIV'
-    ) sub
-    join public.clep_simulation_attempts a on a.id = sub.id
+    select data->>'scoring_disclaimer' like '%Diagnostic score estimate only%'
+    from _submission_res
   ),
   'Submission response includes explicit disclaimer prohibiting official score equivalence'
 );
