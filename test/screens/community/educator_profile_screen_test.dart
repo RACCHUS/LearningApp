@@ -174,7 +174,7 @@ void main() {
       expect(find.text('Following'), findsOneWidget);
     });
 
-    testWidgets('shows edit button when current user is profile owner', (tester) async {
+    testWidgets('shows edit button and author resource button when current user is profile owner', (tester) async {
       final ownerService = _MockEducatorService(
         profile: profile,
         subjects: subjects,
@@ -191,6 +191,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('edit_profile_icon_button')), findsOneWidget);
+      expect(find.text('Authored Resources & Guides'), findsOneWidget);
+      expect(find.byKey(const Key('author_new_resource_button')), findsOneWidget);
     });
   });
 }
