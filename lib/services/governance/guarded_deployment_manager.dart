@@ -455,6 +455,30 @@ class GuardedDeploymentManager {
     return reportFile;
   }
 
+  /// Fails closed unless the preflight report's historical backfill list is
+  /// exactly the owner-approved set and every backfill version is pending.
+  void verifyBackfillReport(
+    Map<String, dynamic> data, {
+    required Set<String> approved,
+    required List<String> pendingVersions,
+  }) {
+    final raw = data['historical_backfill_versions'];
+    if (raw != null && raw is! List) {
+      throw const FormatException('"historical_backfill_versions" must be a list.');
+    }
+    final reported = <String>{for (final v in (raw as List?) ?? const []) v.toString()};
+    if (reported.length != approved.length || !reported.containsAll(approved)) {
+      throw StateError(
+        'Preflight historical backfill ${reported.toList()..sort()} does not match '
+        'the approved set ${approved.toList()..sort()}.',
+      );
+    }
+    final notPending = reported.difference(pendingVersions.toSet());
+    if (notPending.isNotEmpty) {
+      throw StateError('Approved backfill versions are not pending: ${notPending.toList()..sort()}.');
+    }
+  }
+
   /// Strictly validates the preflight or postflight report structure and data types.
   ///
   /// Guarantees fail-closed behavior:
@@ -526,6 +550,7 @@ class GuardedDeploymentManager {
     bool forceUnlock = false,
     bool allowUnpinnedCli = false,
     bool quiet = false,
+    List<String> approvedHistoricalBackfill = const [],
   }) async {
     final reportDirectory = Directory('${workingDirectory.path}/$reportDirPath');
     if (!reportDirectory.existsSync()) {
@@ -534,10 +559,32 @@ class GuardedDeploymentManager {
 
     final preflightReportPath = '${reportDirectory.path}/preflight_report.json';
     final postflightReportPath = '${reportDirectory.path}/postflight_report.json';
+    final backfillSet = approvedHistoricalBackfill.toSet();
+    final backfillCsv = (backfillSet.toList()..sort()).join(',');
+    final pushScopeArgs = backfillSet.isEmpty ? const <String>[] : const ['--include-all'];
 
     String detectedCliVersion = 'unknown';
     String currentPhase = 'initialization';
     bool lockAcquired = false;
+
+    if (backfillSet.isNotEmpty && !requireBase) {
+      const error = 'Historical backfill requires a resolved git baseline; --allow-no-base is not permitted.';
+      stderrSink.writeln('❌ FATAL: $error');
+      emitDeploymentReport(
+        reportDirectory: reportDirectory,
+        status: 'failed',
+        phase: 'backfill_approval',
+        projectRef: targetProjectRef,
+        cliVersion: detectedCliVersion,
+        error: error,
+      );
+      return const DeploymentExecutionResult(
+        exitCode: 1,
+        status: 'failed',
+        phase: 'backfill_approval',
+        error: error,
+      );
+    }
 
     try {
       // 1. Verify CLI version
@@ -651,6 +698,7 @@ class GuardedDeploymentManager {
           baseRef,
           '--report-out',
           preflightReportPath,
+          if (backfillSet.isNotEmpty) ...['--approve-historical-backfill', backfillCsv],
           if (quiet) '--quiet',
         ],
         workingDirectory: workingDirectory.path,
@@ -729,6 +777,7 @@ class GuardedDeploymentManager {
         );
         pendingList = validated.pendingList;
         appliedList = validated.appliedList;
+        verifyBackfillReport(preflightData, approved: backfillSet, pendingVersions: pendingList);
       } catch (e) {
         final error = 'Invalid preflight report structure at $preflightReportPath: $e';
         stderrSink.writeln('❌ FATAL: $error');
@@ -779,7 +828,7 @@ class GuardedDeploymentManager {
       stdoutSink.writeln('\n[2/4] Executing Supabase DB Push Dry Run...');
       final dryRunResult = processRunner(
         'supabase',
-        ['db', 'push', '--linked', '--dry-run'],
+        ['db', 'push', '--linked', '--dry-run', ...pushScopeArgs],
         workingDirectory: workingDirectory.path,
         runInShell: true,
       );
@@ -859,7 +908,7 @@ class GuardedDeploymentManager {
       stdoutSink.writeln('\n[3/4] Applying Pending Migrations to Hosted Project...');
       final pushResult = processRunner(
         'supabase',
-        ['db', 'push', '--linked'],
+        ['db', 'push', '--linked', ...pushScopeArgs],
         workingDirectory: workingDirectory.path,
         runInShell: true,
       );
@@ -999,7 +1048,7 @@ class GuardedDeploymentManager {
         }
 
         // Compare postflight applied versions directly against expected deployed list
-        final expectedApplied = [...appliedList, ...pendingList];
+        final expectedApplied = [...appliedList, ...pendingList]..sort();
         if (validated.appliedList.length != expectedApplied.length) {
           throw StateError(
             'Postflight applied migrations count mismatch! '

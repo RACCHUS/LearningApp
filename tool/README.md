@@ -162,6 +162,8 @@ dart run tool/verify_migration_history.dart --isolate-pending build/pending_migr
 dart run tool/verify_migration_history.dart --restore-pending build/pending_migrations
 ```
 
+A new migration older than the latest merged one is rejected unless its exact version is listed, with a reason, in `supabase/governance/approved_backdated_migrations.txt`. That registry is reserved for owner-reviewed reconciliations that must run before a never-applied historical migration during a guarded backfill.
+
 ### `mcp_server/`
 **Purpose**: High-performance, zero-overhead Model Context Protocol (MCP) server written in pure Dart. Exposes LearningApp's curriculum blueprints, FSRS learner models, item psychometrics, and pedagogical validation gates to any AI assistant (Claude Desktop, Cursor, Antigravity, VS Code, ChatGPT).
 

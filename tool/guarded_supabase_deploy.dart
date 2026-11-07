@@ -14,10 +14,19 @@ void main(List<String> args) async {
   String targetProjectRef = GuardedDeploymentManager.defaultProjectRef;
   String reportDir = 'build/migration_deployment_reports';
   String workingDir = '.';
+  final approvedBackfill = <String>[];
 
   for (var i = 0; i < args.length; i++) {
     final arg = args[i];
-    if (arg == '--dry-run') {
+    if (arg == '--approve-historical-backfill' && i + 1 < args.length) {
+      for (final v in args[++i].split(',').map((s) => s.trim()).where((s) => s.isNotEmpty)) {
+        if (!RegExp(r'^20\d{12}$').hasMatch(v)) {
+          stderr.writeln('❌ --approve-historical-backfill expects exact 14-digit versions; got "$v".');
+          exit(1);
+        }
+        approvedBackfill.add(v);
+      }
+    } else if (arg == '--dry-run') {
       dryRunOnly = true;
     } else if (arg == '--allow-dirty') {
       allowDirty = true;
@@ -63,6 +72,7 @@ void main(List<String> args) async {
     forceUnlock: forceUnlock,
     allowUnpinnedCli: allowUnpinnedCli,
     quiet: quiet,
+    approvedHistoricalBackfill: approvedBackfill,
   );
 
   // Exit cleanly with the computed result code
@@ -92,6 +102,10 @@ Options:
   --base-ref <ref>        Git reference to verify migration immutability against (default: origin/main).
   --allow-no-base         Allow deployment without a resolved git baseline (not recommended in production).
   --project-ref <id>      Expected Supabase project ref (default: xzvkdwebtbxlrxagtzlv).
+  --approve-historical-backfill <v1,v2,...>
+                          Owner-approved exact versions of never-applied historical migrations to
+                          apply out of order (adds --include-all to push). Must equal the full
+                          missing historical set; runs their SQL, never repairs the ledger.
   --report-dir <dir>      Directory to store audit reports (default: build/migration_deployment_reports).
   --working-dir <dir>     Base repository directory (default: .).
   --quiet                 Suppress verbose logs.

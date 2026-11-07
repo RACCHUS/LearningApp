@@ -192,9 +192,16 @@ class MigrationHistoryValidator {
 
   /// Compares current branch migration files against an authoritative baseline (e.g. origin/main)
   /// to enforce strict immutability of previously merged migrations.
+  ///
+  /// [approvedBackdatedVersions] lists exact versions from the reviewed registry
+  /// (see [parseApprovedBackdatedRegistry]) that may be added with an older
+  /// timestamp, e.g. a reconciliation that must run before a never-applied
+  /// historical migration. They are reported as warnings; every other rule
+  /// still applies.
   List<MigrationValidationIssue> compareWithBaseline({
     required Map<String, String> baselineFiles,
     required Map<String, String> currentFiles,
+    Set<String> approvedBackdatedVersions = const {},
   }) {
     final issues = <MigrationValidationIssue>[];
 
@@ -255,7 +262,18 @@ class MigrationHistoryValidator {
         final match = MigrationRecord.filenamePattern.firstMatch(filename);
         if (match != null && maxBaseTimestamp.isNotEmpty) {
           final newTimestamp = match.group(1)!;
-          if (newTimestamp.compareTo(maxBaseTimestamp) <= 0) {
+          if (newTimestamp.compareTo(maxBaseTimestamp) <= 0 &&
+              approvedBackdatedVersions.contains(newTimestamp)) {
+            issues.add(
+              MigrationValidationIssue(
+                severity: MigrationIssueSeverity.warning,
+                rule: 'approved_backdated_migration',
+                filename: filename,
+                message:
+                    'New migration $newTimestamp is older than latest baseline ($maxBaseTimestamp) and is explicitly approved in the backdated-migration registry.',
+              ),
+            );
+          } else if (newTimestamp.compareTo(maxBaseTimestamp) <= 0) {
             issues.add(
               MigrationValidationIssue(
                 severity: MigrationIssueSeverity.error,
@@ -271,6 +289,26 @@ class MigrationHistoryValidator {
     }
 
     return issues;
+  }
+
+  /// Parses the reviewed backdated-migration registry. Each non-comment line is
+  /// `<14-digit version> <reason>`; a missing reason or malformed version throws
+  /// [FormatException] so approvals are never implicit.
+  static Map<String, String> parseApprovedBackdatedRegistry(String content) {
+    final approved = <String, String>{};
+    final linePattern = RegExp(r'^(\d{14})\s+(\S.*)$');
+    for (final raw in content.split(RegExp(r'\r?\n'))) {
+      final line = raw.trim();
+      if (line.isEmpty || line.startsWith('#')) continue;
+      final match = linePattern.firstMatch(line);
+      if (match == null) {
+        throw FormatException(
+          'Invalid backdated-migration registry line (expected "<14-digit version> <reason>"): $line',
+        );
+      }
+      approved[match.group(1)!] = match.group(2)!.trim();
+    }
+    return approved;
   }
 
   /// Identifies all newly added migrations in current files that do not exist in the baseline.
@@ -425,9 +463,16 @@ class MigrationHistoryValidator {
   /// 4. All local migrations with timestamp <= latest remote version must be recorded as applied on remote (blocks missing historical).
   /// 5. Any local migrations with timestamp > latest remote version are classified as pending.
   /// 6. Pending migrations must be strictly monotonic.
+  ///
+  /// [approvedHistoricalBackfill] lists exact versions an owner has approved to
+  /// apply out of order (local, never applied, older than the latest remote
+  /// version). The approved set must equal the missing historical set exactly;
+  /// approved versions become pending in timestamp order and are never marked
+  /// applied without their SQL running.
   HostedMigrationComparisonResult compareWithHosted({
     required List<MigrationRecord> localRecords,
     required List<String> remoteVersions,
+    Set<String> approvedHistoricalBackfill = const {},
   }) {
     final issues = <MigrationValidationIssue>[];
     final localMap = {for (final r in localRecords) r.timestamp: r};
@@ -435,6 +480,7 @@ class MigrationHistoryValidator {
     final pendingVersions = <String>[];
     final remoteOnlyVersions = <String>[];
     final missingRemoteVersions = <String>[];
+    final backfillVersions = <String>[];
 
     final tsRegex = RegExp(r'^[0-9]{14}$');
 
@@ -508,7 +554,11 @@ class MigrationHistoryValidator {
     if (maxRemoteTimestamp.isNotEmpty) {
       for (final record in localRecords) {
         if (record.timestamp.compareTo(maxRemoteTimestamp) <= 0) {
-          if (!seenRemote.contains(record.timestamp)) {
+          if (!seenRemote.contains(record.timestamp) &&
+              approvedHistoricalBackfill.contains(record.timestamp)) {
+            backfillVersions.add(record.timestamp);
+            pendingVersions.add(record.timestamp);
+          } else if (!seenRemote.contains(record.timestamp)) {
             missingRemoteVersions.add(record.timestamp);
             issues.add(
               MigrationValidationIssue(
@@ -534,12 +584,36 @@ class MigrationHistoryValidator {
       }
     }
 
+    // 4. Every approved backfill version must be an actual missing historical migration.
+    for (final approved in approvedHistoricalBackfill.toList()..sort()) {
+      if (backfillVersions.contains(approved)) continue;
+      final String reason;
+      if (!localMap.containsKey(approved)) {
+        reason = 'does not exist as a local migration';
+      } else if (seenRemote.contains(approved)) {
+        reason = 'is already applied on the hosted ledger';
+      } else {
+        reason = 'is not older than the latest applied remote version ($maxRemoteTimestamp); it is an ordinary pending migration';
+      }
+      issues.add(
+        MigrationValidationIssue(
+          severity: MigrationIssueSeverity.error,
+          rule: 'invalid_historical_backfill_approval',
+          filename: approved,
+          message: 'Approved historical backfill version "$approved" $reason.',
+        ),
+      );
+    }
+
+    pendingVersions.sort();
+
     return HostedMigrationComparisonResult(
       issues: issues,
       appliedVersions: appliedVersions,
       pendingVersions: pendingVersions,
       remoteOnlyVersions: remoteOnlyVersions,
       missingRemoteVersions: missingRemoteVersions,
+      backfillVersions: backfillVersions,
     );
   }
 
@@ -604,12 +678,16 @@ class HostedMigrationComparisonResult {
   final List<String> remoteOnlyVersions;
   final List<String> missingRemoteVersions;
 
+  /// Historical versions approved for out-of-order application (also in [pendingVersions]).
+  final List<String> backfillVersions;
+
   const HostedMigrationComparisonResult({
     required this.issues,
     required this.appliedVersions,
     required this.pendingVersions,
     required this.remoteOnlyVersions,
     required this.missingRemoteVersions,
+    this.backfillVersions = const [],
   });
 
   bool get isValid => issues.every((i) => !i.isError);

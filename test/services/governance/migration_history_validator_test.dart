@@ -238,6 +238,56 @@ void main() {
       expect(issues.first.isError, isTrue);
       expect(issues.first.message, contains('which is <= latest baseline migration'));
     });
+
+    test('downgrades only registry-approved backdated migrations to warnings', () {
+      final baseline = {
+        '20261009000003_control_auth.sql': 'create table t1 (id int);',
+      };
+      final current = {
+        ...baseline,
+        '20261005000000_reconcile.sql': 'select 1;',
+        '20261006000000_unapproved.sql': 'select 2;',
+      };
+
+      final issues = validator.compareWithBaseline(
+        baselineFiles: baseline,
+        currentFiles: current,
+        approvedBackdatedVersions: {'20261005000000'},
+      );
+
+      final approved = issues.singleWhere((i) => i.filename == '20261005000000_reconcile.sql');
+      expect(approved.rule, 'approved_backdated_migration');
+      expect(approved.isError, isFalse);
+      final rejected = issues.singleWhere((i) => i.filename == '20261006000000_unapproved.sql');
+      expect(rejected.rule, 'backdated_new_migration');
+      expect(rejected.isError, isTrue);
+    });
+
+    test('registry approval does not excuse modifying a baseline migration', () {
+      final issues = validator.compareWithBaseline(
+        baselineFiles: {'20261005000000_a.sql': 'select 1;'},
+        currentFiles: {'20261005000000_a.sql': 'select 2;'},
+        approvedBackdatedVersions: {'20261005000000'},
+      );
+      expect(issues.single.rule, 'modified_baseline_migration');
+    });
+
+    test('registry requires a version and a reason on every entry', () {
+      expect(
+        MigrationHistoryValidator.parseApprovedBackdatedRegistry(
+          '# header\n\n20261101195000 reconcile hosted drift\r\n',
+        ),
+        {'20261101195000': 'reconcile hosted drift'},
+      );
+      expect(
+        () => MigrationHistoryValidator.parseApprovedBackdatedRegistry('20261101195000'),
+        throwsFormatException,
+      );
+      expect(
+        () => MigrationHistoryValidator.parseApprovedBackdatedRegistry('2026110119 reason'),
+        throwsFormatException,
+      );
+    });
   });
 
   group('MigrationHistoryValidator - Hosted Version Parsing & Pre/Postflight Gates', () {
@@ -436,6 +486,77 @@ Fatal corruption or unrecognized output
       expect(result.isValid, isFalse);
       expect(result.missingRemoteVersions, equals(['20261002000000']));
       expect(result.issues.first.rule, equals('missing_remote_historical_migration'));
+    });
+
+    group('approved historical backfill', () {
+      final records = [
+        makeRecord('20261001000000_first.sql', 'select 1;'),
+        makeRecord('20261002000000_skipped_a.sql', 'select 2;'),
+        makeRecord('20261003000000_skipped_b.sql', 'select 3;'),
+        makeRecord('20261004000000_applied_later.sql', 'select 4;'),
+        makeRecord('20261005000000_new.sql', 'select 5;'),
+      ];
+      final remote = ['20261001000000', '20261004000000'];
+
+      test('exact approved set becomes ordered pending work, never applied', () {
+        final result = validator.compareWithHosted(
+          localRecords: records,
+          remoteVersions: remote,
+          approvedHistoricalBackfill: {'20261003000000', '20261002000000'},
+        );
+
+        expect(result.isValid, isTrue);
+        expect(result.issues, isEmpty);
+        expect(result.missingRemoteVersions, isEmpty);
+        expect(result.backfillVersions, equals(['20261002000000', '20261003000000']));
+        expect(
+          result.pendingVersions,
+          equals(['20261002000000', '20261003000000', '20261005000000']),
+        );
+        expect(result.appliedVersions, equals(remote));
+      });
+
+      test('partial approval still blocks the unapproved missing version', () {
+        final result = validator.compareWithHosted(
+          localRecords: records,
+          remoteVersions: remote,
+          approvedHistoricalBackfill: {'20261002000000'},
+        );
+
+        expect(result.isValid, isFalse);
+        expect(result.missingRemoteVersions, equals(['20261003000000']));
+        expect(result.issues.single.rule, equals('missing_remote_historical_migration'));
+      });
+
+      test('rejects approvals that are unknown, already applied, or ordinary pending', () {
+        final result = validator.compareWithHosted(
+          localRecords: records,
+          remoteVersions: remote,
+          approvedHistoricalBackfill: {
+            '20261002000000',
+            '20261003000000',
+            '20260101000000',
+            '20261004000000',
+            '20261005000000',
+          },
+        );
+
+        expect(result.isValid, isFalse);
+        final invalid = result.issues
+            .where((i) => i.rule == 'invalid_historical_backfill_approval')
+            .map((i) => i.filename)
+            .toList();
+        expect(invalid, equals(['20260101000000', '20261004000000', '20261005000000']));
+      });
+
+      test('postflight ignores approvals and requires exact parity', () {
+        final postflight = validator.compareHostedPostflight(
+          localRecords: records,
+          remoteVersions: remote,
+        );
+        expect(postflight.isValid, isFalse);
+        expect(postflight.missingRemoteVersions, equals(['20261002000000', '20261003000000']));
+      });
     });
 
     test('compareWithHosted flags duplicate or out-of-order remote versions', () {

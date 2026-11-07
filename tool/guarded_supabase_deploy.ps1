@@ -29,6 +29,10 @@
 .PARAMETER ReportDir
     Directory to store audit reports (default: build/migration_deployment_reports).
 
+.PARAMETER ApproveHistoricalBackfill
+    Owner-approved exact versions of never-applied historical migrations to apply out of order.
+    Must equal the full missing historical set; runs their SQL and never repairs the ledger.
+
 .EXAMPLE
     .\tool\guarded_supabase_deploy.ps1 -DryRun
 #>
@@ -40,7 +44,8 @@ param(
     [switch]$AllowNoBase,
     [string]$BaseRef = "origin/main",
     [string]$ProjectRef = "xzvkdwebtbxlrxagtzlv",
-    [string]$ReportDir = "build/migration_deployment_reports"
+    [string]$ReportDir = "build/migration_deployment_reports",
+    [string[]]$ApproveHistoricalBackfill = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,6 +58,7 @@ if ($AllowNoBase) { $argsList += "--allow-no-base" }
 if ($BaseRef) { $argsList += "--base-ref"; $argsList += $BaseRef }
 if ($ProjectRef) { $argsList += "--project-ref"; $argsList += $ProjectRef }
 if ($ReportDir) { $argsList += "--report-dir"; $argsList += $ReportDir }
+if ($ApproveHistoricalBackfill.Count -gt 0) { $argsList += "--approve-historical-backfill"; $argsList += ($ApproveHistoricalBackfill -join ",") }
 
 Write-Host "Invoking guarded migration deployment workflow..." -ForegroundColor Cyan
 & dart $argsList
