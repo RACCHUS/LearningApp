@@ -169,6 +169,9 @@ jobs:
       - name: Test single-use Excel upload DB transaction lock
         run: python3 -m unittest discover -s tool/tests -p 'test_private_upload_db.py' -v
 
+      - name: Test isolated no-Docker Excel upload host
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_runtime.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
