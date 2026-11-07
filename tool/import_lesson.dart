@@ -393,6 +393,7 @@ Future<void> _importLesson(_Config cfg, Map<String, dynamic> normalized) async {
         });
         break;
       case 'mcq':
+      case 'true_false':
       case 'short_answer':
         questions.add({
           'id': _uuid.v4(),
