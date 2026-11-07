@@ -163,6 +163,9 @@ jobs:
       - name: Test unified provisional software/simulation evidence envelope
         run: python3 -m unittest discover -s tool/tests -p 'test_shared_evidence.py' -v
 
+      - name: Test sealed server-brokered Excel upload (prototype only)
+        run: python3 -m unittest discover -s tool/tests -p 'test_brokered_upload.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
