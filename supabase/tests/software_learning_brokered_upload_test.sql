@@ -134,5 +134,37 @@ SELECT is((SELECT status FROM public.software_learning_attempts
  'Only a sealed file can reach provisional processed state');
 
 RESET ROLE;
+CREATE TEMP TABLE sl_session_revoke_attempt AS SELECT gen_random_uuid() AS id;
+GRANT SELECT ON sl_session_revoke_attempt TO service_role;
+INSERT INTO public.software_learning_attempts
+ (id,owner_id,issued_session_id,issued_at,expires_at)
+SELECT id,'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ now(),now()+interval '45 minutes'
+FROM sl_session_revoke_attempt;
+SET LOCAL ROLE service_role;
+SELECT ok(software_learning_private.sl_lock_excel_upload(
+ (SELECT id FROM sl_session_revoke_attempt),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid) IS NOT NULL,
+ 'Before revocation a valid live session can lock an unsealed attempt');
+RESET ROLE;
+DELETE FROM auth.sessions
+ WHERE id='ba620000-0000-4000-8000-000000000001'::uuid;
+SET LOCAL ROLE service_role;
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_session_revoke_attempt),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('a',64),'revision-1'),false,
+ 'Revoked session cannot seal an in-flight upload');
+SELECT is(software_learning_private.sl_lock_excel_upload(
+ (SELECT id FROM sl_session_revoke_attempt),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid),
+ NULL::jsonb,
+ 'Revoked session cannot obtain a fresh upload lock');
+
+RESET ROLE;
 SELECT * FROM finish();
 ROLLBACK;
