@@ -6,7 +6,8 @@ enum LessonBlockType {
   image,
   formula,
   example,
-  practicePrompt;
+  practicePrompt,
+  simulation;
 
   static LessonBlockType fromString(String value) {
     switch (value) {
@@ -27,6 +28,8 @@ enum LessonBlockType {
       case 'practice_prompt':
       case 'practicePrompt':
         return LessonBlockType.practicePrompt;
+      case 'simulation':
+        return LessonBlockType.simulation;
       default:
         return LessonBlockType.markdown;
     }
@@ -50,6 +53,8 @@ enum LessonBlockType {
         return 'example';
       case LessonBlockType.practicePrompt:
         return 'practice_prompt';
+      case LessonBlockType.simulation:
+        return 'simulation';
     }
   }
 }
@@ -80,7 +85,9 @@ class LessonBlock {
       id: json['id'] as String,
       lessonId: json['lesson_id'] as String,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
-      blockType: LessonBlockType.fromString(json['block_type'] as String? ?? 'markdown'),
+      blockType: LessonBlockType.fromString(
+        json['block_type'] as String? ?? 'markdown',
+      ),
       content: (json['content'] as Map?)?.cast<String, dynamic>() ?? const {},
       metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
       createdAt: json['created_at'] != null

@@ -93,7 +93,7 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261107060000'));
+      expect(scanResult.migrations.last.version, equals('20261107100000'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
