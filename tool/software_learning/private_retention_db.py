@@ -147,6 +147,36 @@ class DbApiRetentionRepository:
             raise ValueError("Invalid retention result batch")
         return [_record(row) for row in rows]
 
+    def list_owner_attempts(
+        self, *, owner_id: str, max_results: int = 50,
+    ) -> list[RetentionRecord]:
+        """Include active leases so account deletion cannot hide blockers.
+
+        A separate Auth-admin controller MUST revoke sessions first. This
+        method never deletes records; the erasure coordinator refuses to
+        declare completion until independent Storage prefix enumeration.
+        """
+        if not _uuid(owner_id) or type(max_results) is not int or not 1 <= max_results <= 100:
+            raise ValueError("Invalid owner erasure query")
+        cursor = self._connection.cursor()
+        try:
+            cursor.execute(
+                "SELECT owner_id::text, id::text "
+                "FROM public.software_learning_attempts "
+                "WHERE owner_id=%s::uuid "
+                "ORDER BY issued_at,id LIMIT %s",
+                (owner_id, max_results),
+            )
+            rows = cursor.fetchall()
+        except Exception:
+            self._connection.rollback()
+            raise
+        finally:
+            cursor.close()
+        if not isinstance(rows, list) or len(rows) > max_results:
+            raise ValueError("Invalid owner erasure records")
+        return [_record(row, owner=owner_id) for row in rows]
+
     def prune_issuance_log(self, *, max_results: int = 50) -> int:
         """Delete only issuance timestamps older than 48h in bounded batches.
 
