@@ -124,6 +124,9 @@ jobs:
       - name: Test bounded XLSX snapshot reader (no uploads, credentials, or network)
         run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_snapshot.py' -v
 
+      - name: Test provisional XLSX worker envelope (no external services)
+        run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_worker.py' -v
+
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
           python3 -m pip install 'openpyxl==3.1.5'
