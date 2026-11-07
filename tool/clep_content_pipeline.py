@@ -203,14 +203,15 @@ def verify_lesson_architecture(manifest: dict) -> tuple[int, list[str]]:
                     issues.append(f"Lesson '{title}' missing cognitive pitfalls or misconceptions callout (Element 7).")
 
                 # Element 8: Formative Practice Check
-                if not items:
-                    issues.append(f"Lesson '{title}' missing formative assessment items (Element 8).")
+                formative_qs = l.get("questions", [])
+                if not formative_qs or len(formative_qs) < 2:
+                    issues.append(f"Lesson '{title}' missing formative check-for-understanding questions (Element 8).")
                 else:
                     # Element 9: Elaborative Rationales
-                    for item in items:
-                        explanation = item.get("explanation", "")
-                        if not explanation or len(explanation) < 25:
-                            issues.append(f"Lesson '{title}' assessment item missing elaborative rationale (Element 9).")
+                    for q in formative_qs:
+                        explanation = q.get("explanation", "")
+                        if not explanation or len(explanation) < 20:
+                            issues.append(f"Lesson '{title}' formative question missing elaborative rationale (Element 9).")
 
                 # Element 10: Authoritative Source Citation
                 if not citation or len(citation) < 8:

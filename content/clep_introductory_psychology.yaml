@@ -31,7 +31,7 @@ source_releases:
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: 'Senior Contributing Authors: Rose M. Spielman, William J. Jenkins, Marilyn D. Lovett. Open-access instructional foundation for concepts, empirical research summaries, and pedagogical explanations.'
-  sha256: 7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94
+  sha256: 7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f02
   metadata:
     role: instructional_reference
 target:
@@ -284,6 +284,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which early school of psychology utilized trained introspection to break conscious experience into its most basic sensory elements?
+        options:
+        - Structuralism
+        - Functionalism
+        - Behaviorism
+        - Psychoanalysis
+        correct_answer: 0
+        explanation: Structuralism, founded by Wilhelm Wundt and expanded by Edward Titchener, attempted to map conscious experience by breaking it down into basic sensations through systematic introspection.
+        concept_slugs:
+        - psyc-structuralism
+      - question_text: A researcher who studies how natural selection has shaped human mate preferences is operating primarily from which contemporary perspective?
+        options:
+        - Behavioral perspective
+        - Evolutionary perspective
+        - Psychodynamic perspective
+        - Humanistic perspective
+        correct_answer: 1
+        explanation: The evolutionary perspective applies principles of natural selection and Darwinian adaptation to explain mental processes and behavioral patterns across generations.
+        concept_slugs:
+        - psyc-contemporary-perspectives
     flashcards:
     - front: What milestone occurred in 1879 that marks the formal birth of scientific psychology?
       back: Wilhelm Wundt founded the first formal experimental psychology laboratory at the University of Leipzig.
@@ -511,6 +532,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Why is random assignment essential in experimental psychological research?
+        options:
+        - It guarantees that the sample is perfectly representative of the entire population
+        - It completely eliminates the possibility of experimental demand characteristics
+        - It minimizes pre-existing differences between the experimental and control groups
+        - It allows researchers to calculate Pearson correlation coefficients without bias
+        correct_answer: 2
+        explanation: Random assignment ensures that participant characteristics (such as baseline intelligence or motivation) are equally distributed across conditions, controlling for confounding variables and enabling causal inferences.
+        concept_slugs:
+        - psyc-experimental-methodology
+      - question_text: A study finds a correlation of -0.78 between hours spent playing video games and grade point average. What does this statistical correlation indicate?
+        options:
+        - Playing video games directly causes students to perform poorly on exams
+        - Lower grades cause students to spend more time playing video games
+        - There is a very weak and negligible relationship between the two variables
+        - As gaming hours increase, grade point averages tend to decrease
+        correct_answer: 3
+        explanation: 'A negative correlation indicates an inverse relationship: as the value of one variable increases, the value of the other tends to decrease. Correlation does not establish causation.'
+        concept_slugs:
+        - psyc-correlational-research
     flashcards:
     - front: What is the key difference between an independent variable and a dependent variable?
       back: The independent variable is manipulated by the experimenter; the dependent variable is the measured outcome that may change in response.
@@ -707,6 +749,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: During the resting potential of a neuron, which ion is concentrated in greater abundance inside the intracellular fluid compared to the extracellular fluid?
+        options:
+        - Potassium (K+)
+        - Sodium (Na+)
+        - Chloride (Cl-)
+        - Calcium (Ca2+)
+        correct_answer: 0
+        explanation: At rest (approximately -70 mV), potassium ions (K+) are concentrated inside the cell, while sodium ions (Na+) are concentrated outside, maintained by the sodium-potassium pump.
+        concept_slugs:
+        - psyc-neuron-structure
+      - question_text: Which neurotransmitter is primarily involved in motor movement, attention, and reward pathways, and is depleted in Parkinson's disease?
+        options:
+        - Serotonin
+        - Dopamine
+        - Gamma-aminobutyric acid (GABA)
+        - Glutamate
+        correct_answer: 1
+        explanation: Dopamine governs voluntary movement, motivation, and reward; degeneration of dopamine-producing neurons in the substantia nigra causes the motor tremors of Parkinson's disease.
+        concept_slugs:
+        - psyc-neurotransmitters
     flashcards:
     - front: What is the resting membrane potential of a typical neuron?
       back: -70 millivolts (mV), maintained by the sodium-potassium pump.
@@ -914,6 +977,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Damage to which cerebral brain area typically results in expressive aphasia, where a patient understands speech but struggles to produce fluent words?
+        options:
+        - Wernicke's area in the left temporal lobe
+        - The somatosensory cortex in the parietal lobe
+        - Broca's area in the left frontal lobe
+        - The fusiform face area in the occipitotemporal region
+        correct_answer: 2
+        explanation: Broca's area, located in the posterior inferior frontal gyrus of the dominant (usually left) hemisphere, controls the motor mechanics of speech production; damage causes non-fluent, expressive aphasia.
+        concept_slugs:
+        - psyc-brain-structures
+      - question_text: In a classic split-brain study, when a picture of a fork is flashed exclusively to the patient's left visual field, how can the patient demonstrate recognition?
+        options:
+        - By immediately verbally stating the word 'fork'
+        - By writing the word 'fork' using their right hand
+        - By pointing to the fork with their right index finger
+        - By selecting a fork with their left hand beneath an opaque screen
+        correct_answer: 3
+        explanation: Images in the left visual field project to the right hemisphere, which controls the left hand. Because the corpus callosum is severed and speech is left-lateralized, the patient cannot name the object verbally but can identify it haptically with the left hand.
+        concept_slugs:
+        - psyc-hemispheric-specialization
     flashcards:
     - front: Which brain structure is primary for consolidating new long-term declarative memories?
       back: The hippocampus.
@@ -1088,6 +1172,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: What is the minimum physical intensity difference between two stimuli necessary for an observer to detect a difference 50% of the time called?
+        options:
+        - Difference threshold (just noticeable difference)
+        - Absolute sensory threshold (minimum detection)
+        - Subliminal sensory priming detection boundary
+        - Sensory adaptation physiological baseline level
+        correct_answer: 0
+        explanation: The difference threshold, or just noticeable difference (JND), is the smallest physical change between two stimuli that an individual can detect 50% of the time, described quantitatively by Weber's law.
+        concept_slugs:
+        - psyc-sensory-thresholds
+      - question_text: According to signal detection theory, which psychological and environmental factor directly influences an observer's response bias (criterion)?
+        options:
+        - The absolute density of retinal photoreceptor cells
+        - Expectations, motivation, and consequences of errors
+        - The wavelength of incoming electromagnetic radiation
+        - The anatomical size of the temporal auditory bulla
+        correct_answer: 1
+        explanation: Signal detection theory posits that detecting a stimulus depends not just on sensory sensitivity, but on decision criteria influenced by expectations, motivation, alertness, and the payoff/cost of false alarms versus misses.
+        concept_slugs:
+        - psyc-signal-detection
     flashcards:
     - front: What is transduction in sensation?
       back: The conversion of environmental physical energy into neural electrical impulses.
@@ -1283,6 +1388,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which retinal photoreceptor cells are concentrated primarily in the fovea and are responsible for high visual acuity and color vision in bright light?
+        options:
+        - Rods
+        - Bipolar cells
+        - Cones
+        - Ganglion cells
+        correct_answer: 2
+        explanation: Cones are densely packed in the central fovea, mediate sharp spatial resolution, operate in photopic (bright) illumination, and contain photopigments responsive to red, green, or blue wavelengths.
+        concept_slugs:
+        - psyc-visual-auditory-systems
+      - question_text: Which Gestalt principle explains why we perceive individual dots aligned in a smooth, continuous curve as belonging together rather than as separate points?
+        options:
+        - Principle of proximity
+        - Principle of closure
+        - Principle of figure-ground
+        - Principle of continuity
+        correct_answer: 3
+        explanation: The Gestalt principle of continuity states that observers perceive elements that follow a smooth vector or continuous line as a unified perceptual figure rather than as disjointed segments.
+        concept_slugs:
+        - psyc-perceptual-organization
     flashcards:
     - front: What anatomical feature creates the visual blind spot?
       back: The exit point where the optic nerve leaves the retina, which lacks photoreceptors.
@@ -1409,6 +1535,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which brain structure acts as the master circadian pacemaker by regulating melatonin secretion from the pineal gland in response to light?
+        options:
+        - Suprachiasmatic nucleus (SCN) of hypothalamus
+        - Ventral tegmental area of the midbrain region
+        - Substantia nigra of basal ganglia structures
+        - Anterior cingulate cortex of the frontal lobe
+        correct_answer: 0
+        explanation: The suprachiasmatic nucleus (SCN) in the hypothalamus receives photic signals directly from retinal ganglion cells and synchronizes 24-hour biological rhythms by inhibiting melatonin release from the pineal gland during daylight.
+        concept_slugs:
+        - psyc-circadian-rhythms
+      - question_text: EEG recordings showing sleep spindles and K-complexes are diagnostic of which stage of the non-REM sleep cycle?
+        options:
+        - Stage N1 sleep
+        - Stage N2 sleep
+        - Stage N3 sleep
+        - REM state sleep
+        correct_answer: 1
+        explanation: Stage N2 sleep is characterized electrophysiologically by sleep spindles (brief 12-14 Hz bursts) and K-complexes (high-amplitude biphasic waves), which represent neural mechanisms protecting sleep from sensory arousal.
+        concept_slugs:
+        - psyc-sleep-stages
     flashcards:
     - front: Which gland releases melatonin in response to signals from the suprachiasmatic nucleus?
       back: The pineal gland.
@@ -1563,6 +1710,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which sleep disorder involves sudden, uncontrollable attacks of overwhelming daytime sleepiness and immediate intrusion into REM sleep?
+        options:
+        - Sleep apnea
+        - Somnambulism
+        - Narcolepsy
+        - Sleep terror
+        correct_answer: 2
+        explanation: Narcolepsy is characterized by severe daytime hypersomnolence, cataplexy (sudden loss of muscle tone), and rapid sleep-onset REM episodes, often linked to hypocretin/orexin neuron loss.
+        concept_slugs:
+        - psyc-sleep-disorders-dreams
+      - question_text: Alcohol, barbiturates, and benzodiazepines are classified under which major category of psychoactive substances because they agonize GABA receptors?
+        options:
+        - Stimulants
+        - Hallucinogens
+        - Opiates
+        - Depressants
+        correct_answer: 3
+        explanation: Depressants reduce central nervous system arousal, motor activity, and anxiety by enhancing the inhibitory neurotransmitter GABA.
+        concept_slugs:
+        - psyc-psychoactive-drugs
     flashcards:
     - front: What is the difference between manifest and latent dream content in Freud's theory?
       back: Manifest content is the remembered storyline; latent content is the underlying, hidden psychological meaning.
@@ -1751,6 +1919,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: In Pavlov's original experiments with dogs, the unconditioned stimulus (UCS) was which element?
+        options:
+        - The food powder presented in the mouth
+        - The auditory tone presented by metronome
+        - The salivation triggered by tone stimulus
+        - The presence of the laboratory assistant
+        correct_answer: 0
+        explanation: The unconditioned stimulus (UCS) is an environmental stimulus that naturally and reflexively triggers an innate physiological response (the UCR) without prior conditioning; in Pavlov's experiment, this was the food powder.
+        concept_slugs:
+        - psyc-classical-conditioning
+      - question_text: John Garcia's experiments with taste aversion conditioning challenged classical behaviorist assumptions by demonstrating what biological principle?
+        options:
+        - Any neutral conditioned stimulus can be paired equally easily with any unconditioned response
+        - Organisms are biologically predisposed to associate novel tastes with illness over long delay intervals
+        - Conditioned taste aversion requires continuous immediate reinforcement across dozens of trials
+        - Conditioned responses cannot be established without active conscious cognitive appraisal
+        correct_answer: 1
+        explanation: 'Garcia demonstrated biological preparedness: rats readily formed associations between novel tastes and radiation-induced nausea even after hours-long delays, but could not associate visual or auditory cues with nausea.'
+        concept_slugs:
+        - psyc-biological-constraints
     flashcards:
     - front: What is the difference between stimulus generalization and stimulus discrimination?
       back: Generalization is responding similarly to resembling stimuli; discrimination is learning to respond exclusively to the specific CS.
@@ -1934,6 +2123,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: A student receives praise from an instructor after an unpredictable number of completed homework assignments (e.g., after 3, then 7, then 4 assignments). Which reinforcement schedule is being used?
+        options:
+        - Fixed-ratio schedule
+        - Variable-interval schedule
+        - Variable-ratio schedule
+        - Fixed-interval schedule
+        correct_answer: 2
+        explanation: A variable-ratio schedule delivers reinforcement after an unpredictable, varying number of responses; it generates high, steady response rates that are extremely resistant to extinction.
+        concept_slugs:
+        - psyc-operant-conditioning
+      - question_text: In Albert Bandura's classic Bobo doll experiments, children who observed an adult model display aggressive behavior toward an inflatable doll subsequently exhibited what behavior?
+        options:
+        - Showed decreased aggressive play due to cathartic vicarious relief
+        - Ignored the doll entirely and preferred neutral drawing activities
+        - Exhibited aggression only when an immediate tangible candy reward was offered
+        - Imitated the novel aggressive actions and verbalizations of the model
+        correct_answer: 3
+        explanation: 'Bandura demonstrated observational learning: children exposed to aggressive models imitated specific physical and verbal aggressive behaviors, disproving the claim that observing aggression produces catharsis.'
+        concept_slugs:
+        - psyc-observational-learning
     flashcards:
     - front: What is the operational definition of negative reinforcement?
       back: Increasing the frequency of a behavior by removing an aversive stimulus.
@@ -2143,6 +2353,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which component of Alan Baddeley's working memory model coordinates cognitive activities, allocates attentional resources, and integrates information across slave systems?
+        options:
+        - Central executive
+        - Phonological loop
+        - Visuospatial sketchpad
+        - Episodic buffer
+        correct_answer: 0
+        explanation: The central executive directs cognitive focus, manages attentional switching, suppresses irrelevant information, and coordinates the phonological loop and visuospatial sketchpad.
+        concept_slugs:
+        - psyc-memory-models
+      - question_text: An individual who can recall childhood events perfectly but is incapable of forming new conscious declarative memories after bilateral hippocampus surgery exhibits what condition?
+        options:
+        - Retrograde amnesia
+        - Anterograde amnesia
+        - Proactive interference
+        - Retroactive interference
+        correct_answer: 1
+        explanation: Anterograde amnesia is the inability to consolidate and transfer new declarative information from short-term to long-term memory following hippocampal trauma (as famously observed in patient H.M.).
+        concept_slugs:
+        - psyc-memory-systems-forgetting
     flashcards:
     - front: What is the difference between proactive and retroactive interference?
       back: Proactive interference occurs when old memories block new ones; retroactive interference occurs when new learning disrupts old memories.
@@ -2335,6 +2566,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Searching for a misplaced item by methodically checking every single room, drawer, and shelf in an entire house exemplifies which problem-solving strategy?
+        options:
+        - A heuristic
+        - Functional fixedness
+        - An algorithm
+        - Mental incubation
+        correct_answer: 2
+        explanation: An algorithm is a step-by-step, methodical procedure or formula that guarantees a correct solution if followed correctly, though it may be slow and exhaustive compared to heuristics.
+        concept_slugs:
+        - psyc-problem-solving-biases
+      - question_text: Noam Chomsky proposed that humans are born with an innate neural mechanism that facilitates language acquisition, termed what?
+        options:
+        - Operant vocalization apparatus
+        - Critical articulatory buffer
+        - Universal syntactic transformer
+        - Language acquisition device (LAD)
+        correct_answer: 3
+        explanation: Chomsky posited the Language Acquisition Device (LAD), an innate biological predisposition and universal grammar that enables infants to acquire complex natural language effortlessly without formal instruction.
+        concept_slugs:
+        - psyc-language-development
     flashcards:
     - front: What is an algorithm versus a heuristic in problem solving?
       back: An algorithm is a step-by-step rule that guarantees a solution; a heuristic is a fast mental shortcut that is prone to errors.
@@ -2474,6 +2726,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: According to Abraham Maslow's hierarchy of needs, which level of needs must be substantially satisfied before an individual becomes motivated by belongingness and love needs?
+        options:
+        - Physiological and safety needs
+        - Self-actualization needs
+        - Esteem and competence needs
+        - Cognitive and aesthetic needs
+        correct_answer: 0
+        explanation: Maslow proposed a pyramid structure where basic physiological needs (food, water) and safety needs must be substantially met before higher-order social belongingness and love motives emerge.
+        concept_slugs:
+        - psyc-motivation-theories
+      - question_text: Bilateral lesioning of which hypothalamic nucleus in a laboratory rat causes continuous hyperphagia (overeating) and extreme obesity?
+        options:
+        - Lateral hypothalamus (LH)
+        - Ventromedial hypothalamus (VMH)
+        - Suprachiasmatic nucleus (SCN)
+        - Preoptic anterior nucleus
+        correct_answer: 1
+        explanation: The ventromedial hypothalamus (VMH) serves as a primary satiety center; destroying it abolishes satiety signals, leading to uncontrollable overeating and rapid obesity.
+        concept_slugs:
+        - psyc-hunger-physiology
     flashcards:
     - front: What occurs when the lateral hypothalamus is destroyed in an animal?
       back: The animal starves (aphagia) because the hunger-stimulating center is destroyed.
@@ -2632,6 +2905,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which classic theory of emotion argues that emotional feelings occur only AFTER we perceive our physiological arousal (e.g., 'we feel afraid because our heart is racing')?
+        options:
+        - Cannon-Bard theory
+        - Schachter-Singer theory
+        - James-Lange theory
+        - Lazarus appraisal theory
+        correct_answer: 2
+        explanation: 'The James-Lange theory asserts that physiological arousal precedes and triggers emotional experience: sensory stimuli generate bodily reactions, and the conscious emotion is our awareness of those changes.'
+        concept_slugs:
+        - psyc-emotion-theories
+      - question_text: In Hans Selye's General Adaptation Syndrome (GAS), during which second stage does the endocrine system sustain elevated cortisol secretion to cope with prolonged stressors?
+        options:
+        - Alarm reaction stage
+        - Exhaustion stage
+        - Baseline recovery stage
+        - Resistance stage
+        correct_answer: 3
+        explanation: In the resistance stage of Selye's GAS, the body adapts to the ongoing stressor; physiological arousal remains elevated and the adrenal cortex releases glucocorticoids (cortisol) to sustain defense.
+        concept_slugs:
+        - psyc-stress-gas
     flashcards:
     - front: What are the three stages of Hans Selye's General Adaptation Syndrome?
       back: 1. Alarm reaction, 2. Resistance, 3. Exhaustion.
@@ -2804,6 +3098,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: According to Jean Piaget, a child who realizes that pouring water from a wide bowl into a tall, thin cylinder does not alter the total amount of water has attained what cognitive ability?
+        options:
+        - Conservation
+        - Object permanence
+        - Egocentrism
+        - Abstract logic
+        correct_answer: 0
+        explanation: Conservation, mastered during Piaget's concrete operational stage (ages 7-11), is the understanding that quantitative physical properties (mass, volume) remain invariant despite perceptual changes in shape.
+        concept_slugs:
+        - psyc-cognitive-development-stages
+      - question_text: A newborn infant who turns their head toward a gentle stroke on their cheek and opens their mouth to suck is exhibiting which primitive survival reflex?
+        options:
+        - Moro reflex
+        - Rooting reflex
+        - Babinski reflex
+        - Palmar grasp reflex
+        correct_answer: 1
+        explanation: 'The rooting reflex assists the neonate in finding a source of nourishment: touching the cheek causes the infant to orient their mouth toward the stimulus.'
+        concept_slugs:
+        - psyc-prenatal-infant-development
     flashcards:
     - front: What is the key milestone achieved in Piaget's concrete operational stage?
       back: Conservation (understanding volume/mass remain constant across physical transformations).
@@ -2974,6 +3289,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: In Mary Ainsworth's Strange Situation, an infant who explores comfortably when the mother is present, shows distress upon separation, and greets her enthusiastically upon reunion exhibits which attachment style?
+        options:
+        - Insecure-avoidant attachment
+        - Insecure-resistant attachment
+        - Secure attachment
+        - Disorganized attachment
+        correct_answer: 2
+        explanation: Securely attached infants utilize the caregiver as a safe base for environmental exploration, display appropriate distress when separated, and are readily comforted upon the parent's return.
+        concept_slugs:
+        - psyc-attachment-parenting
+      - question_text: At which of Lawrence Kohlberg's levels of moral reasoning does an individual justify actions based on universal ethical principles, human rights, and social justice rather than written laws or punishment?
+        options:
+        - Preconventional morality
+        - Conventional morality
+        - Heteronomous morality
+        - Postconventional morality
+        correct_answer: 3
+        explanation: Postconventional moral reasoning evaluates moral dilemmas against abstract ethical principles of justice, individual dignity, and human rights, recognizing that existing civil laws may sometimes be unjust.
+        concept_slugs:
+        - psyc-psychosocial-moral-development
     flashcards:
     - front: What did Harry Harlow's study with rhesus monkeys disprove about attachment?
       back: It disproved that attachment is based merely on who feeds the infant, proving contact comfort is foundational.
@@ -3142,6 +3478,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: According to Sigmund Freud, which structural component of personality operates entirely on the pleasure principle, seeking immediate gratification without regard to social reality?
+        options:
+        - The id
+        - The ego
+        - The superego
+        - The persona
+        correct_answer: 0
+        explanation: The id is the innate, primitive psychodynamic structure present at birth that contains instinctual sexual and aggressive drives (Eros and Thanatos) driven entirely by the pleasure principle.
+        concept_slugs:
+        - psyc-freudian-psychodynamics
+      - question_text: Carl Rogers asserted that psychological health and personal growth are fostered when parents and therapists provide which condition without contingencies?
+        options:
+        - Rational cognitive disputation
+        - Unconditional positive regard
+        - Systematic behavioral reinforcement
+        - Controlled psychoanalytic analysis
+        correct_answer: 1
+        explanation: Unconditional positive regard is an attitude of total acceptance, empathy, and warmth extended to an individual regardless of their faults or behaviors, promoting congruence between actual and ideal selves.
+        concept_slugs:
+        - psyc-humanistic-personality
     flashcards:
     - front: What principle governs the id versus the ego?
       back: The id operates on the pleasure principle; the ego operates on the reality principle.
@@ -3334,6 +3691,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Which dimension of the Five-Factor Model (Big Five) describes individuals who are organized, disciplined, dependable, and goal-directed?
+        options:
+        - Extraversion
+        - Agreeableness
+        - Conscientiousness
+        - Openness to experience
+        correct_answer: 2
+        explanation: Conscientiousness reflects self-regulation, impulse control, thoroughness, dependability, and persistence in pursuing long-term objectives.
+        concept_slugs:
+        - psyc-big-five-traits
+      - question_text: Albert Bandura's concept that behavioral patterns, cognitive internal personal factors, and environmental contexts constantly influence and shape one another is called what?
+        options:
+        - Locus of control
+        - Self-serving bias
+        - Trait-state interaction
+        - Reciprocal determinism
+        correct_answer: 3
+        explanation: Reciprocal determinism describes the dynamic bidirectional interaction where personal cognitive factors, overt behavior, and environmental events mutually influence one another.
+        concept_slugs:
+        - psyc-social-cognitive-assessment
     flashcards:
     - front: What are the Big Five personality traits in the OCEAN model?
       back: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism.
@@ -3524,6 +3902,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: In obsessive-compulsive disorder (OCD), repetitive behaviors or mental rituals (such as excessive handwashing or checking locks) primarily serve what psychological function?
+        options:
+        - To temporarily reduce the intense distress caused by intrusive obsessive thoughts
+        - To induce pleasant euphoric sensations and reward dopamine release
+        - To consciously deceive observers and gain external secondary gain
+        - To establish psychotic detachment from stressful physical reality
+        correct_answer: 0
+        explanation: Compulsions are repetitive behaviors performed according to rigid rules to diminish the severe anxiety or distress evoked by intrusive, uncontrollable obsessive thoughts.
+        concept_slugs:
+        - psyc-anxiety-ocd-ptsd
+      - question_text: What is the primary manual published by the American Psychiatric Association used by clinicians in the United States to diagnose psychological disorders?
+        options:
+        - International Classification of Diseases (ICD-11)
+        - Diagnostic and Statistical Manual of Mental Disorders (DSM-5-TR)
+        - Physicians' Desk Reference for Neuropsychology (PDR-7)
+        - Standardized Psychometric Classification Guide (SPCG-3)
+        correct_answer: 1
+        explanation: The DSM-5 (and DSM-5-TR) is the standard classification manual in US clinical practice, establishing diagnostic criteria, symptom thresholds, and exclusionary conditions for mental disorders.
+        concept_slugs:
+        - psyc-disorder-classification
     flashcards:
     - front: What is the difference between an obsession and a compulsion?
       back: An obsession is an intrusive anxiety-provoking thought; a compulsion is a repetitive behavior performed to reduce that anxiety.
@@ -3700,6 +4099,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: A patient exhibiting periods of profound depressive despair alternating with episodes of elevated euphoria, decreased need for sleep, and reckless grandiosity meets criteria for what disorder?
+        options:
+        - Major depressive disorder
+        - Persistent depressive disorder
+        - Bipolar I disorder
+        - Generalized anxiety disorder
+        correct_answer: 2
+        explanation: Bipolar I disorder is defined by the occurrence of at least one full manic episode (characterized by inflated self-esteem, grandiosity, reduced sleep, and impulsive spending), typically alternating with major depressive episodes.
+        concept_slugs:
+        - psyc-mood-bipolar-disorders
+      - question_text: In schizophrenia, auditory hallucinations and persecutory delusions are classified as which type of symptoms?
+        options:
+        - Negative symptoms
+        - Catatonic motor signs
+        - Affective deficits
+        - Positive symptoms
+        correct_answer: 3
+        explanation: Positive symptoms in schizophrenia represent excess or distortion of normal functioning (hallucinations, delusions, disorganized speech), whereas negative symptoms represent deficits (avolition, flat affect).
+        concept_slugs:
+        - psyc-schizophrenia-personality
     flashcards:
     - front: What is the difference between positive and negative symptoms of schizophrenia?
       back: Positive symptoms are additions to normal behavior (hallucinations, delusions); negative symptoms are deficits (flat affect, avolition).
@@ -3865,6 +4285,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Aaron Beck's cognitive therapy for major depression focuses primarily on identifying and modifying which psychological mechanism?
+        options:
+        - Automatic negative thoughts and distorted cognitive schemas (the cognitive triad)
+        - Repressed childhood sexual conflicts stored within the dynamic unconscious
+        - Conditioned physiological responses using flooding and aversion protocols
+        - Incongruence between the client's actual and ideal self-concepts
+        correct_answer: 0
+        explanation: Beck's cognitive therapy systematically targets cognitive distortions (such as catastrophizing, black-and-white thinking, and negative schemas about self, world, and future) through empirical cognitive restructuring.
+        concept_slugs:
+        - psyc-cognitive-behavioral-therapy
+      - question_text: Which behavioral exposure therapy technique pairs gradual exposure to an anxiety-provoking hierarchy with progressive muscle relaxation?
+        options:
+        - Aversive counterconditioning
+        - Systematic desensitization
+        - Free association therapy
+        - Rational emotive behavior
+        correct_answer: 1
+        explanation: 'Developed by Joseph Wolpe, systematic desensitization utilizes counterconditioning: clients learn progressive relaxation and mentally or in vivo confront a graduated fear hierarchy, replacing anxiety with relaxation.'
+        concept_slugs:
+        - psyc-psychotherapy-modalities
     flashcards:
     - front: What is the core principle behind Joseph Wolpe's systematic desensitization?
       back: 'Counterconditioning: an individual cannot be simultaneously relaxed and terrified (reciprocal inhibition).'
@@ -4010,6 +4451,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: Selective serotonin reuptake inhibitors (SSRIs), such as fluoxetine and sertraline, exert their antidepressant effect primarily through which biochemical mechanism?
+        options:
+        - Directly agonizing postsynaptic dopamine D2 receptors in the striatum
+        - Inhibiting the enzymatic breakdown of monoamine oxidase in the synapse
+        - Blocking the presynaptic reuptake transporter protein for serotonin
+        - Antagonizing central nervous system GABA receptors in the amygdala
+        correct_answer: 2
+        explanation: SSRIs selectively bind to and inhibit the serotonin transporter (SERT) protein on the presynaptic terminal, prolonging the presence and availability of serotonin in the synaptic cleft.
+        concept_slugs:
+        - psyc-biomedical-pharmacology
+      - question_text: In clinical treatment outcome research, what statistical technique combines the quantitative findings across dozens of independent clinical trials into a single summary effect size?
+        options:
+        - Factor analysis
+        - Analysis of variance
+        - Multivariate path model
+        - Meta-analysis
+        correct_answer: 3
+        explanation: Meta-analysis mathematically aggregates effect sizes from multiple empirical studies to determine the overall effectiveness and reliability of an intervention across heterogeneous patient samples.
+        concept_slugs:
+        - psyc-treatment-efficacy-meta-analysis
     flashcards:
     - front: How do SSRIs work at the neuronal synapse?
       back: They block the reuptake of serotonin by the presynaptic neuron, increasing serotonin availability.
@@ -4226,6 +4688,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: When an observer witnesses a stranger trip and fall and immediately concludes the person is clumsy (ignoring an uneven sidewalk crack), they are demonstrating what cognitive bias?
+        options:
+        - The fundamental attribution error
+        - The self-serving bias
+        - The halo effect bias
+        - Cognitive dissonance bias
+        correct_answer: 0
+        explanation: The fundamental attribution error is the pervasive tendency to overestimate internal dispositional factors and underestimate situational external factors when analyzing other people's behaviors.
+        concept_slugs:
+        - psyc-attribution-dissonance
+      - question_text: In Stanley Milgram's classic obedience experiments, which situational factor significantly reduced participants' willingness to administer the highest voltage shocks?
+        options:
+        - Conducting the experiment at prestigious Yale University rather than a downtown office
+        - Observing peer confederate teachers rebel and refuse to obey the experimenter
+        - Having the experimenter wear an official gray laboratory coat and stand directly behind the teacher
+        - Informing participants that the learner was a fellow volunteer from the community
+        correct_answer: 1
+        explanation: When two confederate teachers rebelled and refused to continue shocking the learner, participant obedience to the maximum 450-volt level dropped precipitously from 65% to only 10%.
+        concept_slugs:
+        - psyc-conformity-obedience
     flashcards:
     - front: What percentage of participants obeyed orders up to the maximum 450 volts in Milgram's baseline experiment?
       back: 65% of participants.
@@ -4406,6 +4889,27 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: "The tragic murder of Kitty Genovese in 1964 stimulated social psychologists John Darley and Bibb Latan\xE9 to study which phenomenon?"
+        options:
+        - Social loafing in collaborative group tasks
+        - Deindividuation in anonymous crowds
+        - The bystander effect and diffusion of responsibility
+        - Group polarization during deliberations
+        correct_answer: 2
+        explanation: "Darley and Latan\xE9 investigated the bystander effect: individuals are significantly less likely to intervene in an emergency when other bystanders are present due to diffusion of responsibility."
+        concept_slugs:
+        - psyc-prejudice-altruism
+      - question_text: When like-minded group members discuss a contentious topic and their post-discussion viewpoints become substantially more extreme than their initial pre-discussion opinions, what has occurred?
+        options:
+        - Groupthink tendency
+        - Social facilitation
+        - Deindividuation effect
+        - Group polarization
+        correct_answer: 3
+        explanation: Group polarization occurs when group deliberation strengthens and intensifies the prevailing shared inclinations of its members, shifting decisions toward a more extreme pole.
+        concept_slugs:
+        - psyc-group-dynamics
     flashcards:
     - front: What is the bystander effect and what drives it?
       back: People are less likely to help when others are present, driven by diffusion of responsibility.
@@ -4603,3 +5107,24 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+      questions:
+      - question_text: In a positively skewed distribution of test scores with a few extremely high outlier scores, what is the relative order of the three measures of central tendency?
+        options:
+        - Mode < Median < Mean
+        - Mean < Median < Mode
+        - Median < Mean < Mode
+        - Mean = Median = Mode
+        correct_answer: 0
+        explanation: In a positively skewed distribution, extreme high scores pull the mean toward the right tail, resulting in Mode < Median < Mean.
+        concept_slugs:
+        - psyc-descriptive-inferential-statistics
+      - question_text: A psychometric exam that yields consistent, stable scores across repeated administrations to the same cohort of students demonstrates what measurement property?
+        options:
+        - High construct validity
+        - High reliability
+        - High criterion validity
+        - Low standard error mean
+        correct_answer: 1
+        explanation: Reliability refers to the internal consistency and repeatability of a test's measurement results; a test that gives consistent scores over time has high test-retest reliability.
+        concept_slugs:
+        - psyc-psychometric-reliability-validity

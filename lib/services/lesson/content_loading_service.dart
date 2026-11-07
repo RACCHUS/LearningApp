@@ -140,6 +140,14 @@ class ContentLoadingService {
         }
         final item = AssessmentItem.fromJson(map);
         return stimulus != null ? item.copyWith(stimulus: stimulus) : item;
+      }).where((item) {
+        // Enforce strict question-bank separation: protected simulation items
+        // are NEVER returned in formative lesson reading.
+        final meta = item.metadata;
+        final isProtected = meta['is_protected'] == true || meta['is_protected'] == 'true';
+        final isSimBank = meta['bank'] == 'simulation_exam';
+        final isTimedOnly = meta['exposure'] == 'timed_exam_only';
+        return !isProtected && !isSimBank && !isTimedOnly;
       }).toList();
     } catch (error) {
       log('⚠️ Could not load assessment_items: $error', name: 'ContentLoadingService');

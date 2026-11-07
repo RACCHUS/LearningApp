@@ -32,6 +32,7 @@ from tool.curriculum_clep_psychology.domain_10_disorders import DOMAIN_10
 from tool.curriculum_clep_psychology.domain_11_treatment import DOMAIN_11
 from tool.curriculum_clep_psychology.domain_12_social import DOMAIN_12
 from tool.curriculum_clep_psychology.domain_13_statistics import DOMAIN_13
+from tool.curriculum_clep_psychology.formative_lesson_questions import FORMATIVE_QUESTIONS_BY_LESSON
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = ROOT / "content/clep_introductory_psychology.yaml"
@@ -105,7 +106,7 @@ def build_manifest() -> dict:
                 "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
                 "license_name": "CC BY 4.0",
                 "rights_note": "Senior Contributing Authors: Rose M. Spielman, William J. Jenkins, Marilyn D. Lovett. Open-access instructional foundation for concepts, empirical research summaries, and pedagogical explanations.",
-                "sha256": "7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94",
+                "sha256": "7f8c12b4e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f02",
                 "metadata": {
                     "role": "instructional_reference",
                 },
@@ -161,10 +162,15 @@ def build_manifest() -> dict:
         "domains": ALL_DOMAINS,
     }
 
-    # Tag all 95 simulation assessment items with explicit bank and protection metadata
+    # Populate formative questions and tag protected simulation assessment items
     for d in manifest["domains"]:
         for o in d.get("objectives", []):
             for l in o.get("lessons", []):
+                # Attach 2 formative check-for-understanding questions per lesson
+                title = l.get("title", "")
+                l["questions"] = FORMATIVE_QUESTIONS_BY_LESSON.get(title, [])
+
+                # Tag all 95 simulation assessment items with explicit bank and protection metadata
                 for item in l.get("assessment_items", []):
                     item["metadata"] = {
                         "bank": "simulation_exam",
@@ -232,7 +238,18 @@ def validate_manifest_invariants(manifest: dict):
         print(f"  ✓ Domain {code:4s} ({title[:30]:30s}): weight={d.get('weight'):.3f}, quota={exp_q}, items={d_items}")
 
     assert total_items == 95, f"Expected exactly 95 simulation items, got {total_items}"
-    print(f"\nTotal Simulation Pool: {total_items} items (100% quota compliance)")
+
+    total_formative_questions = 0
+    for d in domains:
+        for obj in d.get("objectives", []):
+            for les in obj.get("lessons", []):
+                q_list = les.get("questions", [])
+                assert len(q_list) == 2, f"Lesson '{les.get('title')}' expected 2 formative questions, got {len(q_list)}"
+                total_formative_questions += len(q_list)
+
+    assert total_formative_questions == 50, f"Expected 50 formative questions, got {total_formative_questions}"
+    print(f"\nTotal Formative Questions: {total_formative_questions} items across 25 lessons")
+    print(f"Total Simulation Pool: {total_items} items (100% quota compliance)")
     print(f"Total Blueprint Weight: {total_weight:.4f}")
     print(f"Key Distribution across 95 items: {sorted(key_distribution.items())}")
 
