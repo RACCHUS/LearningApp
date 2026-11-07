@@ -11,6 +11,19 @@ const Set<String> kExpectedPublishedPathways = {
   'dbpr_fl:certified-building-contractor',
 };
 
+/// Expected published revision for each reviewed Florida pathway identity.
+const Map<String, int> kExpectedPublishedPathwayRevisions = {
+  'fl_bon:registered-nurse': 2,
+  'fl_bon:licensed-practical-nurse': 2,
+  'fl_dfs:general-lines-2-20': 2,
+  'fl_dfs:life-health-2-15': 2,
+  'dbpr_fl:certified-general-contractor': 2,
+  'dbpr_fl:certified-building-contractor': 2,
+};
+
+/// Revision 2 is an immutable successor to revision 1.
+const int kExpectedSupersededRevision = 1;
+
 /// Maximum age of source_checked_at before the RLS policy hides the row (180 days).
 const int kMaxSourceAgeDays = 180;
 
@@ -64,6 +77,8 @@ PathwayVerificationResult verifyPathwayRecords(
     final review = raw['review_status'] as String?;
     final coverage = raw['coverage'] as String?;
     final routeKind = raw['route_kind'] as String?;
+    final supersedesRevision = raw['supersedes_revision'];
+    final pathwayKind = raw['pathway_kind'] as String?;
     final sourceUrlStr = raw['source_url'] as String?;
     final sourceCheckedStr = raw['source_checked_at'] as String?;
     final effectiveFromStr = raw['effective_from'] as String?;
@@ -102,14 +117,33 @@ PathwayVerificationResult verifyPathwayRecords(
       errors.add('$identity has coverage "$coverage" (expected "selected_steps_only")');
     }
 
-    // Route kind
-    if (routeKind != 'examination') {
-      errors.add('$identity has route_kind "$routeKind" (expected "examination")');
+    // Route kind differs by pathway family: nursing groups multiple initial routes.
+    final expectedRouteKind = identity.startsWith('fl_bon:')
+        ? 'other'
+        : 'examination';
+    if (routeKind != expectedRouteKind) {
+      errors.add(
+        '$identity has route_kind "$routeKind" (expected "$expectedRouteKind")',
+      );
     }
 
-    // Revision check
-    if (rev != 1) {
-      errors.add('$identity has revision $rev (expected 1 for current release)');
+    // Revision and immutable lineage checks.
+    final expectedRevision = kExpectedPublishedPathwayRevisions[identity];
+    if (expectedRevision != null && rev != expectedRevision) {
+      errors.add(
+        '$identity has revision $rev (expected $expectedRevision for current release)',
+      );
+    }
+    if (supersedesRevision != kExpectedSupersededRevision) {
+      errors.add(
+        '$identity has supersedes_revision $supersedesRevision '
+        '(expected $kExpectedSupersededRevision)',
+      );
+    }
+    if (pathwayKind != 'initial_licensure') {
+      errors.add(
+        '$identity has pathway_kind "$pathwayKind" (expected "initial_licensure")',
+      );
     }
 
     // Title validation
@@ -234,7 +268,7 @@ Future<void> main() async {
   final client = HttpClient();
   final uri = Uri.parse(
     '$url/rest/v1/catalog_license_pathway_versions?'
-    'select=source_namespace,source_key,revision,jurisdiction,route_kind,title,'
+    'select=source_namespace,source_key,revision,supersedes_revision,pathway_kind,jurisdiction,route_kind,title,'
     'coverage,source_url,source_checked_at,reviewed_at,reviewer,review_status,'
     'publication_status,effective_from,effective_until'
     '&order=source_namespace,source_key',
@@ -268,11 +302,12 @@ Future<void> main() async {
       final ns = r['source_namespace'];
       final key = r['source_key'];
       final rev = r['revision'];
+      final supersedes = r['supersedes_revision'];
       final title = r['title'];
       final status = r['publication_status'];
       final review = r['review_status'];
       final checked = r['source_checked_at'];
-      stdout.writeln('• [$ns] $key (rev $rev)');
+      stdout.writeln('• [$ns] $key (rev $rev, supersedes $supersedes)');
       stdout.writeln('  Title: "$title"');
       stdout.writeln('  Status: $status | Review: $review | Checked: $checked');
     }

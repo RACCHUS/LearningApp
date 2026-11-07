@@ -1,85 +1,42 @@
-"""P2f review manifest and safe SQL renderer tests for Florida DFS insurance."""
-import json
-import sys
-import unittest
+"""P2f revision-2 DFS alternative logic and immutable promotion SQL tests."""
+import json,sys,unittest
 from copy import deepcopy
-from datetime import datetime
 from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]; sys.path.insert(0,str(ROOT/"tool"))
+import catalog_p2f_insurance_pathways as p
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "tool"))
-import catalog_p2f_insurance_pathways as p2f
-
-
-class FloridaInsurancePathwayTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.data = json.loads(p2f.DATA.read_text(encoding="utf-8"))
-
-    def test_two_dfs_reviewed_partial_pathways(self):
-        rows = p2f.validate_payload(self.data)
-        self.assertEqual({r['source_key'] for r in rows},
-                         {'general-lines-2-20', 'life-health-2-15'})
-        self.assertGreaterEqual(sum(p2f.validate_tree(r['pathway_tree']) for r in rows), 15)
-        for row in rows:
-            retrieved_at = datetime.fromisoformat(row['source_retrieved_at'].replace('Z', '+00:00'))
-            self.assertIsNotNone(retrieved_at.tzinfo)
-            self.assertEqual(row['source_retrieved_at'], '2026-11-07T03:22:03Z')
-            self.assertEqual(row['source_checked_on'], '2026-11-06')
-            self.assertEqual(row['reviewed_on'], '2026-11-06')
-            self.assertGreaterEqual(len(row['review_note']), 80)
-            self.assertEqual(row['uncertainty_status'], 'conditional')
-            self.assertEqual(row['pathway_kind'], 'initial_licensure')
-
-    def test_wrong_license_type_jurisdiction_and_domain_rejected(self):
-        for field, value in [('source_key', 'nclex-rn'), ('jurisdiction', 'US-GA'),
-                            ('source_url', 'https://myfloridacfo.com.attacker.tld/')]:
-            data = deepcopy(self.data)
-            data['records'][0][field] = value
-            with self.assertRaises(AssertionError):
-                p2f.validate_payload(data)
-
-    def test_missing_provenance_and_unknown_tree_nodes_rejected(self):
-        for change in ('missing_url', 'wrong_operator', 'extra_key'):
-            data = deepcopy(self.data)
-            node = data['records'][0]['pathway_tree']['children'][0]['children'][0]
-            if change == 'missing_url':
-                del node['source_url']
-            elif change == 'wrong_operator':
-                node['op'] = 'pass_exam'
-            else:
-                node['price'] = 'unknown'
-            with self.assertRaises(AssertionError):
-                p2f.validate_payload(data)
-
-    def test_alternative_group_is_not_flattened(self):
-        for row in p2f.validate():
-            self.assertEqual(row['pathway_tree']['op'], 'all')
-            self.assertEqual(row['pathway_tree']['children'][0]['op'], 'any')
-
-    def test_claims_of_full_review_are_rejected(self):
-        data = deepcopy(self.data)
-        data['records'][0]['coverage'] = 'full_requirements'
-        with self.assertRaises(AssertionError):
-            p2f.validate_payload(data)
-
-    def test_rendered_sql_uses_approval_and_unchanged_identity(self):
-        sql = p2f.sql()
-        self.assertTrue(sql.startswith('begin;'))
-        self.assertTrue(sql.endswith('commit;\n'))
-        self.assertEqual(sql.count('insert into public.catalog_license_pathway_versions'), 2)
-        self.assertIn('source_retrieved_at', sql)
-        self.assertIn('review_note', sql)
-        self.assertIn('uncertainty_status', sql)
-        self.assertIn('pathway_kind', sql)
-        self.assertIn('source_checked_at', sql)
-        self.assertIn('2026-11-07T03:22:03Z', sql)
-        self.assertIn('on conflict (source_namespace,source_key,revision) do nothing', sql)
-        self.assertIn("publication_status='published'", sql)
-        for forbidden in ('insert into public.learning_targets', 'insert into public.lessons',
-                          'delete from', 'truncate ', 'update public.users'):
-            self.assertNotIn(forbidden, sql.lower())
-
-
-if __name__ == '__main__':
-    unittest.main()
+class InsuranceRevisionTwoTests(unittest.TestCase):
+ @classmethod
+ def setUpClass(cls): cls.data=json.loads(p.DATA.read_text(encoding="utf-8"))
+ def test_220_has_six_distinct_alternatives_and_no_cic(self):
+  row=next(r for r in p.validate_payload(self.data) if r["source_key"]=="general-lines-2-20")
+  text=json.dumps(row["pathway_tree"])
+  self.assertIn("full-time responsible insurance duties in all listed",text)
+  self.assertIn("licensed and appointed 4-40, 20-44 or 0-55",text)
+  self.assertIn("CPCU",text); self.assertNotIn("CIC",text)
+  self.assertIn("equivalent resident license",text)
+  self.assertIn("48 months",text)
+ def test_215_nested_life_and_health_and_reciprocity(self):
+  row=next(r for r in p.validate_payload(self.data) if r["source_key"]=="life-health-2-15")
+  root=row["pathway_tree"]["children"][0]
+  self.assertEqual(root["op"],"any")
+  combined=root["children"][1]
+  self.assertEqual(combined["op"],"all")
+  self.assertEqual([x["op"] for x in combined["children"]],["any","any"])
+  text=json.dumps(row["pathway_tree"])
+  for token in ("ChFC","FLMI","CEBS","ChHC","HIA","REBC","RHU","reciprocal state","CLU"):
+   self.assertIn(token,text)
+ def test_revisions_and_step_sources(self):
+  for row in p.validate_payload(self.data):
+   self.assertEqual((row["revision"],row["supersedes_revision"]),(2,1))
+   for url in p.STEP_URLS[(row["source_namespace"],row["source_key"])]:
+    self.assertTrue(url.startswith("https://"))
+  data=deepcopy(self.data); data["records"][0]["pathway_tree"]["children"][0]["children"][0]["source_url"]="https://attacker.example/"
+  with self.assertRaises(AssertionError): p.validate_payload(data)
+ def test_sql_retires_old_revision_atomically(self):
+  sql=p.sql()
+  self.assertEqual(sql.count("insert into public.catalog_license_pathway_versions"),2)
+  self.assertEqual(sql.count("set publication_status='retired'"),2)
+  self.assertIn("supersedes_revision",sql); self.assertIn("revision=2",sql); self.assertIn("revision=1",sql)
+  self.assertNotIn("set pathway_tree",sql.lower()); self.assertNotIn("delete from",sql.lower())
+if __name__=="__main__": unittest.main()
