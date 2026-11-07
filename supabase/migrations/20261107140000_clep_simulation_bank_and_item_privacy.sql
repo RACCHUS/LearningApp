@@ -1419,8 +1419,55 @@ revoke all on function public.ingest_curriculum_manifest(jsonb) from public, ano
 grant execute on function public.ingest_curriculum_manifest(jsonb) to service_role;
 
 
--- 4. Secure Simulation Exam Issuance RPC (Authenticated & Anon)
--- Returns safe question projections ONLY (options without scoring_spec or explanations).
+-- ============================================================================
+-- 4. CLEP Simulation Exam Attempt Tracking & Attempt Lifecycle (EXM Security)
+-- ============================================================================
+
+create table if not exists public.clep_simulation_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  target_id uuid not null references public.learning_targets(id),
+  target_version_id uuid not null references public.target_versions(id),
+  status text not null default 'in_progress' check (status in ('in_progress', 'completed', 'expired', 'abandoned')),
+  issued_item_ids uuid[] not null,
+  total_questions integer not null check (total_questions > 0),
+  issued_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  submitted_at timestamptz,
+  time_spent_seconds integer check (time_spent_seconds is null or time_spent_seconds >= 0),
+  raw_score integer check (raw_score is null or (raw_score >= 0 and raw_score <= total_questions)),
+  accuracy_percentage numeric(5,2) check (accuracy_percentage is null or (accuracy_percentage >= 0 and accuracy_percentage <= 100)),
+  response_sha256 text,
+  responses jsonb,
+  results jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint clep_attempt_valid_expiry check (expires_at > issued_at)
+);
+
+create index if not exists clep_sim_attempts_user_idx
+  on public.clep_simulation_attempts(user_id, issued_at desc);
+
+create index if not exists clep_sim_attempts_version_idx
+  on public.clep_simulation_attempts(target_version_id);
+
+alter table public.clep_simulation_attempts enable row level security;
+revoke all on public.clep_simulation_attempts from public, anon, authenticated;
+grant select on public.clep_simulation_attempts to authenticated;
+grant all on public.clep_simulation_attempts to service_role;
+
+drop policy if exists clep_simulation_attempts_select_owner on public.clep_simulation_attempts;
+create policy clep_simulation_attempts_select_owner
+  on public.clep_simulation_attempts for select to authenticated
+  using (user_id = (select auth.uid()));
+
+comment on table public.clep_simulation_attempts is
+  'Server-recorded CLEP simulation exam attempts. Enforces single-use attempt lifecycle, server-calculated elapsed time, and owner-only read isolation.';
+
+
+-- ============================================================================
+-- 5. Secure Simulation Exam Issuance RPC (Authenticated Learner Only)
+-- ============================================================================
 create or replace function public.clep_issue_simulation_exam(
   p_target_version_id uuid
 )
@@ -1430,19 +1477,77 @@ security definer
 set search_path = public, pg_catalog, pg_temp
 as $$
 declare
-  v_questions jsonb;
+  v_user_id uuid;
+  v_target_id uuid;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_item_ids uuid[];
   v_count integer;
+  v_issued_at timestamptz;
+  v_expires_at timestamptz;
+  v_attempt_id uuid;
+  v_questions jsonb;
 begin
-  perform 1
-  from public.target_versions
-  where id = p_target_version_id;
-
-  if not found then
-    raise exception 'Target version not found: %', p_target_version_id using errcode = '42501';
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to issue simulation exam' using errcode = '42501';
   end if;
 
-  -- Project ONLY safe visible question fields.
-  -- Zero scoring_spec, zero correct_index, zero explanation returned.
+  -- 2. Verify target version is published and public
+  select v.target_id, v.status, t.status, t.is_public
+  into v_target_id, v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
+  end if;
+
+  -- 3. Gather protected simulation item IDs
+  select array_agg(i.id order by i.created_at, i.id), count(i.id)
+  into v_item_ids, v_count
+  from public.assessment_items i
+  where i.origin_target_version_id = p_target_version_id
+    and public.is_protected_simulation_item(i.metadata);
+
+  if v_count = 0 or v_item_ids is null then
+    raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- 4. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  v_issued_at := clock_timestamp();
+  v_expires_at := v_issued_at + interval '95 minutes';
+
+  -- 5. Record attempt in database
+  insert into public.clep_simulation_attempts (
+    user_id,
+    target_id,
+    target_version_id,
+    status,
+    issued_item_ids,
+    total_questions,
+    issued_at,
+    expires_at
+  ) values (
+    v_user_id,
+    v_target_id,
+    p_target_version_id,
+    'in_progress',
+    v_item_ids,
+    v_count,
+    v_issued_at,
+    v_expires_at
+  )
+  returning id into v_attempt_id;
+
+  -- 6. Project ONLY safe question fields (ZERO scoring keys or explanations leaked)
   select jsonb_agg(
     jsonb_build_object(
       'id', i.id,
@@ -1462,31 +1567,33 @@ begin
   )
   into v_questions
   from public.assessment_items i
-  where i.origin_target_version_id = p_target_version_id
-    and public.is_protected_simulation_item(i.metadata);
-
-  v_count := jsonb_array_length(coalesce(v_questions, '[]'::jsonb));
+  where i.id = any(v_item_ids);
 
   return jsonb_build_object(
+    'attempt_id', v_attempt_id,
     'target_version_id', p_target_version_id,
     'total_questions', v_count,
     'time_limit_minutes', 90,
-    'practice_only', true,
+    'issued_at', v_issued_at,
+    'expires_at', v_expires_at,
     'questions', coalesce(v_questions, '[]'::jsonb)
   );
 end;
 $$;
 
 revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon;
-grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated, anon;
+grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
 comment on function public.clep_issue_simulation_exam(uuid) is
-  'Issues authorized 90-minute CLEP simulation exam questions. Returns safe options only; scoring keys and explanations remain server-side.';
+  'Issues authorized 90-minute CLEP simulation exam questions bound to a server-recorded attempt. Returns safe options only; scoring keys and explanations remain server-side.';
 
--- 5. Secure Simulation Exam Submission & Server-Side Scoring RPC
+
+-- ============================================================================
+-- 6. Secure Simulation Exam Submission & Server-Side Scoring RPC
+-- ============================================================================
 create or replace function public.clep_submit_simulation_exam(
-  p_target_version_id uuid,
-  p_responses jsonb,
-  p_time_spent_seconds integer default 0
+  p_attempt_id uuid,
+  p_responses jsonb
 )
 returns jsonb
 language plpgsql
@@ -1494,63 +1601,146 @@ security definer
 set search_path = public, pg_catalog, pg_temp
 as $$
 declare
+  v_user_id uuid;
+  a public.clep_simulation_attempts%rowtype;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_answered_count integer;
+  v_key text;
+  v_item_uuid uuid;
   v_item record;
   v_user_answer integer;
   v_correct_answer integer;
   v_is_correct boolean;
   v_correct_count integer := 0;
-  v_total_questions integer := 0;
   v_percentage numeric;
   v_results jsonb := '[]'::jsonb;
   v_readiness text;
+  v_time_spent_seconds integer;
+  v_response_hash text;
 begin
-  if p_responses is null or jsonb_typeof(p_responses) <> 'object' then
-    raise exception 'Valid response map required' using errcode = '22023';
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to submit simulation exam' using errcode = '42501';
   end if;
 
+  -- 2. Input validation
+  if p_attempt_id is null or p_responses is null or jsonb_typeof(p_responses) <> 'object' then
+    raise exception 'Valid attempt_id and response object required' using errcode = '22023';
+  end if;
+
+  -- 3. Lock attempt row and verify ownership
+  select * into a
+  from public.clep_simulation_attempts
+  where id = p_attempt_id
+  for update;
+
+  if not found then
+    raise exception 'Simulation attempt not found: %', p_attempt_id using errcode = 'P0002';
+  end if;
+
+  if a.user_id <> v_user_id then
+    raise exception 'Unauthorized: caller does not own this simulation attempt' using errcode = '42501';
+  end if;
+
+  -- 4. Replay protection: attempt must be in_progress
+  if a.status <> 'in_progress' then
+    raise exception 'Simulation attempt has already been submitted or closed (status: %)', a.status using errcode = '23505';
+  end if;
+
+  -- 5. Server-enforced deadline check
+  if clock_timestamp() > a.expires_at then
+    update public.clep_simulation_attempts
+    set status = 'expired', updated_at = clock_timestamp()
+    where id = a.id;
+    raise exception 'Simulation attempt has expired (deadline: %)', a.expires_at using errcode = '42501';
+  end if;
+
+  -- 6. Target version must still be published and public
+  select v.status, t.status, t.is_public
+  into v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = a.target_version_id;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Target version is no longer published' using errcode = '42501';
+  end if;
+
+  -- 7. Reject empty response object (cannot scrape answers without answering)
+  select count(*) into v_answered_count
+  from jsonb_object_keys(p_responses);
+
+  if v_answered_count = 0 then
+    raise exception 'Cannot submit empty responses: at least one answered question is required' using errcode = '22023';
+  end if;
+
+  -- 8. Validate that all submitted keys are valid UUIDs and belong to the issued items
+  for v_key in select jsonb_object_keys(p_responses)
+  loop
+    begin
+      v_item_uuid := v_key::uuid;
+    exception when others then
+      raise exception 'Invalid question ID format in responses: %', v_key using errcode = '22023';
+    end;
+
+    if not (v_item_uuid = any(a.issued_item_ids)) then
+      raise exception 'Submitted question does not belong to this exam attempt: %', v_key using errcode = '22023';
+    end if;
+  end loop;
+
+  -- 9. Server-calculated elapsed time (does not trust client-reported time)
+  v_time_spent_seconds := round(extract(epoch from (clock_timestamp() - a.issued_at)))::integer;
+  if v_time_spent_seconds < 0 then
+    v_time_spent_seconds := 0;
+  end if;
+
+  -- 10. Grade answers and apply selective review policy
   for v_item in
     select
       i.id,
       i.prompt,
       i.response_spec,
       i.scoring_spec,
-      i.explanation,
-      i.metadata
+      i.explanation
     from public.assessment_items i
-    where i.origin_target_version_id = p_target_version_id
-      and public.is_protected_simulation_item(i.metadata)
+    where i.id = any(a.issued_item_ids)
     order by i.created_at, i.id
   loop
-    v_total_questions := v_total_questions + 1;
     v_correct_answer := (v_item.scoring_spec->>'correct_index')::integer;
 
     if p_responses ? (v_item.id::text) then
       v_user_answer := (p_responses->>(v_item.id::text))::integer;
       v_is_correct := (v_user_answer = v_correct_answer);
+      if v_is_correct then
+        v_correct_count := v_correct_count + 1;
+      end if;
+
+      -- Reveal post-submission explanation & key ONLY for answered questions
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', true,
+        'is_correct', v_is_correct,
+        'user_answer', v_user_answer,
+        'correct_answer', v_correct_answer,
+        'explanation', v_item.explanation
+      );
     else
-      v_user_answer := null;
-      v_is_correct := false;
+      -- Unanswered question: marked unattempted, ZERO correct key or explanation revealed
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', false,
+        'is_correct', false,
+        'user_answer', null,
+        'correct_answer', null,
+        'explanation', null
+      );
     end if;
-
-    if v_is_correct then
-      v_correct_count := v_correct_count + 1;
-    end if;
-
-    -- Now safely reveal explanation and correct answer POST-submission
-    v_results := v_results || jsonb_build_object(
-      'id', v_item.id,
-      'is_correct', v_is_correct,
-      'user_answer', v_user_answer,
-      'correct_answer', v_correct_answer,
-      'explanation', v_item.explanation
-    );
   end loop;
 
-  if v_total_questions = 0 then
-    raise exception 'No simulation items found for version: %', p_target_version_id;
-  end if;
-
-  v_percentage := round((v_correct_count::numeric / v_total_questions::numeric) * 100, 1);
+  v_percentage := round((v_correct_count::numeric / a.total_questions::numeric) * 100, 1);
 
   if v_percentage >= 70.0 then
     v_readiness := 'Competitive Diagnostic Standing';
@@ -1560,12 +1750,28 @@ begin
     v_readiness := 'Needs Reinforcement';
   end if;
 
+  v_response_hash := encode(sha256(convert_to(p_responses::text, 'UTF8')), 'hex');
+
+  -- 11. Atomic state transition: mark attempt completed with grading results
+  update public.clep_simulation_attempts
+  set status = 'completed',
+      submitted_at = clock_timestamp(),
+      time_spent_seconds = v_time_spent_seconds,
+      raw_score = v_correct_count,
+      accuracy_percentage = v_percentage,
+      response_sha256 = v_response_hash,
+      responses = p_responses,
+      results = v_results,
+      updated_at = clock_timestamp()
+  where id = a.id;
+
   return jsonb_build_object(
-    'target_version_id', p_target_version_id,
+    'attempt_id', a.id,
+    'target_version_id', a.target_version_id,
     'raw_score', v_correct_count,
-    'total_questions', v_total_questions,
+    'total_questions', a.total_questions,
     'accuracy_percentage', v_percentage,
-    'time_spent_seconds', p_time_spent_seconds,
+    'time_spent_seconds', v_time_spent_seconds,
     'readiness_indicator', v_readiness,
     'is_calibrated_clep_score', false,
     'scoring_disclaimer', 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating and proprietary form calibration.',
@@ -1574,7 +1780,8 @@ begin
 end;
 $$;
 
-revoke all on function public.clep_submit_simulation_exam(uuid, jsonb, integer) from public, anon;
-grant execute on function public.clep_submit_simulation_exam(uuid, jsonb, integer) to authenticated, anon;
-comment on function public.clep_submit_simulation_exam(uuid, jsonb, integer) is
-  'Evaluates submitted simulation exam answers on the server against canonical scoring keys. Computes diagnostic metrics and returns post-submission review.';
+revoke all on function public.clep_submit_simulation_exam(uuid, jsonb) from public, anon;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to authenticated;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to service_role;
+comment on function public.clep_submit_simulation_exam(uuid, jsonb) is
+  'Evaluates submitted simulation exam answers on the server against canonical scoring keys. Requires an active, authenticated attempt; enforces deadlines and single submission.';

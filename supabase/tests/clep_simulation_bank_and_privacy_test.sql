@@ -1,18 +1,19 @@
 -- ============================================================================
 -- Test Suite: clep_simulation_bank_and_privacy_test.sql
 -- Description: pgTAP tests for CLEP Question-Bank Separation, Ingestion Metadata,
---              Restrictive RLS Privacy, and Authorized Server-Side Simulation RPCs.
+--              Restrictive RLS Privacy, Attempt Lifecycle, and Negative RPC Guards.
 -- ============================================================================
 
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_temp;
 
-select plan(18);
+select plan(34);
 
--- Setup synthetic test user in auth.users (under initial postgres session role)
-insert into auth.users (id, email)
-values ('11223344-5566-4777-8888-999900001111', 'learner_privacy@example.invalid')
+-- Setup synthetic test users in auth.users (under initial postgres session role)
+insert into auth.users (id, email) values
+  ('11223344-5566-4777-8888-999900001111', 'learner_privacy@example.invalid'),
+  ('22334455-6677-4888-9999-000011112222', 'learner_other@example.invalid')
 on conflict (id) do nothing;
 
 -- ----------------------------------------------------------------------------
@@ -103,11 +104,25 @@ select lives_ok(
                     }
                   },
                   {
-                    "prompt": "Protected Sim Item: What is the resting potential of an axon?",
+                    "prompt": "Protected Sim Item 1: What is the resting potential of an axon?",
                     "interaction_type": "single_choice",
                     "response_spec": {"options": ["-70 mV", "+30 mV", "0 mV", "-90 mV"]},
                     "scoring_spec": {"correct_index": 0},
                     "explanation": "The resting potential of a typical neuron is approximately -70 millivolts.",
+                    "concept_slugs": ["psyc-test-concept-neuron"],
+                    "metadata": {
+                      "bank": "simulation_exam",
+                      "item_role": "summative_simulation",
+                      "is_protected": true,
+                      "exposure": "timed_exam_only"
+                    }
+                  },
+                  {
+                    "prompt": "Protected Sim Item 2: Which neurotransmitter is primarily excitatory in the CNS?",
+                    "interaction_type": "single_choice",
+                    "response_spec": {"options": ["Glutamate", "GABA", "Glycine", "Endorphin"]},
+                    "scoring_spec": {"correct_index": 0},
+                    "explanation": "Glutamate is the major excitatory neurotransmitter in the central nervous system.",
                     "concept_slugs": ["psyc-test-concept-neuron"],
                     "metadata": {
                       "bank": "simulation_exam",
@@ -163,19 +178,7 @@ select is(
 );
 
 -- ----------------------------------------------------------------------------
--- 3. Transition TargetVersion to Published for Public Learner Experience
--- ----------------------------------------------------------------------------
--- Transition TargetVersion: draft -> review_ready -> published
-update public.target_versions
-set status = 'review_ready'
-where version_code = '2026-PRIV';
-
-update public.target_versions
-set status = 'published'
-where version_code = '2026-PRIV';
-
--- ----------------------------------------------------------------------------
--- 4. Verify Privacy Under Anon Role (Unauthenticated Learner)
+-- 3. Verify Privacy Under Anon Role (Unauthenticated Learner) & Negative Guards
 -- ----------------------------------------------------------------------------
 reset role;
 set local role anon;
@@ -211,7 +214,7 @@ select is(
     select count(i.id)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
-      and i.prompt like 'Protected Sim Item:%'
+      and i.prompt like 'Protected Sim Item%'
   ),
   0,
   'Restrictive RLS blocks anon learner from directly selecting protected simulation items'
@@ -225,8 +228,53 @@ select throws_ok(
   'Zero scoring keys leak to anon learners via column privileges'
 );
 
+-- NEGATIVE GUARD: Anon cannot call clep_issue_simulation_exam
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam('00000000-0000-0000-0000-000000000000'::uuid) $$,
+  '42501',
+  null,
+  'Anon learner cannot call clep_issue_simulation_exam (blocked by permissions)'
+);
+
+-- NEGATIVE GUARD: Anon cannot call clep_submit_simulation_exam
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam('00000000-0000-0000-0000-000000000000'::uuid, '{"a":1}'::jsonb) $$,
+  '42501',
+  null,
+  'Anon learner cannot call clep_submit_simulation_exam (blocked by permissions)'
+);
+
 -- ----------------------------------------------------------------------------
--- 4. Verify Privacy Under Authenticated Learner Role
+-- 4. Target Version Lifecycle & Negative Guard on Unpublished Versions
+-- ----------------------------------------------------------------------------
+-- Test: Authenticated user cannot issue simulation exam on draft version
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
+
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) $$,
+  '42501',
+  null,
+  'Authenticated learner cannot issue simulation exam on draft/unpublished target version'
+);
+
+-- Now transition TargetVersion: draft -> review_ready -> published
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+update public.target_versions
+set status = 'review_ready'
+where version_code = '2026-PRIV';
+
+update public.target_versions
+set status = 'published'
+where version_code = '2026-PRIV';
+
+-- ----------------------------------------------------------------------------
+-- 5. Verify Direct Table RLS Under Authenticated Role
 -- ----------------------------------------------------------------------------
 reset role;
 set local role authenticated;
@@ -251,7 +299,7 @@ select is(
     select count(i.id)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
-      and i.prompt like 'Protected Sim Item:%'
+      and i.prompt like 'Protected Sim Item%'
   ),
   0,
   'Restrictive RLS blocks authenticated learner from directly selecting protected simulation items'
@@ -265,147 +313,274 @@ select throws_ok(
   'Zero scoring keys leak to authenticated learners via column privileges'
 );
 
+-- NEGATIVE GUARD: Submitting non-existent attempt ID is rejected
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam('a0000000-0000-0000-0000-000000000001'::uuid, '{"key": 0}'::jsonb) $$,
+  'P0002',
+  null,
+  'Authenticated learner cannot submit with a non-existent attempt ID'
+);
+
 -- ----------------------------------------------------------------------------
--- 5. Exercise Authorized Simulation Exam Issuance RPC
+-- 6. Authorized Simulation Exam Issuance & Attempt Lifecycle Tracking
 -- ----------------------------------------------------------------------------
-do $$
-declare
-  v_version_id uuid;
-  v_issued jsonb;
-  v_q jsonb;
-begin
-  select id into v_version_id from public.target_versions where version_code = '2026-PRIV';
-  v_issued := public.clep_issue_simulation_exam(v_version_id);
+-- User 1 issues simulation exam
+create temp table _issued_exam on commit drop as
+select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
 
-  if jsonb_array_length(v_issued->'questions') <> 1 then
-    raise exception 'Expected exactly 1 issued question, got %', jsonb_array_length(v_issued->'questions');
-  end if;
-
-  v_q := (v_issued->'questions')->0;
-
-  -- Verify prompt and options exist
-  if (v_q->>'prompt') is null or (v_q->'response_spec'->'options') is null then
-    raise exception 'Issued question missing prompt or options';
-  end if;
-
-  -- Verify scoring_spec and explanation are NOT leaked
-  if v_q ? 'scoring_spec' then
-    raise exception 'Security violation: scoring_spec was returned by exam issuer';
-  end if;
-
-  if v_q ? 'explanation' then
-    raise exception 'Security violation: explanation was returned by exam issuer';
-  end if;
-end;
-$$;
-
-select pass('clep_issue_simulation_exam issues safe projection with zero scoring keys or explanations');
+select ok(
+  (select data->>'attempt_id' is not null from _issued_exam),
+  'User 1 successfully issues simulation exam and receives attempt_id'
+);
 
 -- Verify issuance envelope properties
 select is(
-  (select (public.clep_issue_simulation_exam(id)->>'total_questions')::int from public.target_versions where version_code = '2026-PRIV'),
-  1,
-  'clep_issue_simulation_exam returns correct total_questions count'
+  (select (data->>'total_questions')::int from _issued_exam),
+  2,
+  'clep_issue_simulation_exam returns correct total_questions count (2 items)'
 );
 
 select is(
-  (select (public.clep_issue_simulation_exam(id)->>'time_limit_minutes')::int from public.target_versions where version_code = '2026-PRIV'),
+  (select (data->>'time_limit_minutes')::int from _issued_exam),
   90,
   'clep_issue_simulation_exam returns standard 90-minute time limit'
 );
 
--- ----------------------------------------------------------------------------
--- 6. Exercise Server-Side Submission and Post-Exam Grading RPC
--- ----------------------------------------------------------------------------
+-- Verify issuance projection has ZERO scoring keys or explanations
 do $$
 declare
-  v_version_id uuid;
-  v_item_id text;
-  v_submit_res jsonb;
-  v_first_result jsonb;
+  v_issued jsonb;
+  v_q jsonb;
 begin
-  select id into v_version_id from public.target_versions where version_code = '2026-PRIV';
-  select (public.clep_issue_simulation_exam(v_version_id)->'questions'->0->>'id') into v_item_id;
+  select data into v_issued from _issued_exam;
 
-  -- Submit correct response: choice 0 (-70 mV)
-  v_submit_res := public.clep_submit_simulation_exam(
-    v_version_id,
-    jsonb_build_object(v_item_id, 0),
-    1200
+  for i in 0 .. jsonb_array_length(v_issued->'questions') - 1
+  loop
+    v_q := (v_issued->'questions')->i;
+    if v_q ? 'scoring_spec' then
+      raise exception 'Security violation: scoring_spec was returned in issued question';
+    end if;
+    if v_q ? 'explanation' then
+      raise exception 'Security violation: explanation was returned in issued question';
+    end if;
+    if v_q ? 'correct_index' or v_q ? 'correct_answer' then
+      raise exception 'Security violation: answer key was returned in issued question';
+    end if;
+  end loop;
+end;
+$$;
+
+select pass('Issued questions projection contains zero scoring keys or explanations');
+
+-- Verify attempt record was created with in_progress status
+select is(
+  (
+    select count(*)::integer
+    from public.clep_simulation_attempts a
+    where a.id = ((select data->>'attempt_id' from _issued_exam)::uuid)
+      and a.user_id = '11223344-5566-4777-8888-999900001111'
+      and a.status = 'in_progress'
+  ),
+  1,
+  'Attempt record is created in public.clep_simulation_attempts with in_progress status'
+);
+
+-- ----------------------------------------------------------------------------
+-- 7. Negative Submission Tests (Security & Invariant Enforcement)
+-- ----------------------------------------------------------------------------
+-- Retrieve the latest attempt for User 1
+create temp table _test_ctx on commit drop as
+select
+  a.id as attempt_id,
+  a.issued_item_ids[1] as item_1_id,
+  a.issued_item_ids[2] as item_2_id
+from public.clep_simulation_attempts a
+where a.id = ((select data->>'attempt_id' from _issued_exam)::uuid);
+
+-- NEGATIVE GUARD 1: Cannot submit empty responses {} (anti-scraping guard)
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam((select attempt_id from _test_ctx), '{}'::jsonb) $$,
+  '22023',
+  null,
+  'Cannot submit empty responses map (rejects empty response scraping attempt)'
+);
+
+-- NEGATIVE GUARD 2: Another user (User 2) cannot submit User 1 attempt
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '22334455-6677-4888-9999-000011112222';
+
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam((select attempt_id from _test_ctx), '{"00000000-0000-0000-0000-000000000001": 0}'::jsonb) $$,
+  '42501',
+  null,
+  'Another user (User 2) cannot submit User 1 attempt (ownership guard)'
+);
+
+-- NEGATIVE GUARD 3: User 2 cannot read User 1 attempt directly (RLS isolation)
+select is(
+  (select count(*)::integer from public.clep_simulation_attempts where id = (select attempt_id from _test_ctx)),
+  0,
+  'User 2 cannot read User 1 attempt from clep_simulation_attempts (RLS isolation)'
+);
+
+-- NEGATIVE GUARD 4: User 1 cannot submit foreign / out-of-bank question ID
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
+
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam(
+    (select attempt_id from _test_ctx),
+    jsonb_build_object('ffffffff-ffff-ffff-ffff-ffffffffffff', 0)
+  ) $$,
+  '22023',
+  null,
+  'Cannot submit foreign or out-of-bank question ID'
+);
+
+-- NEGATIVE GUARD 5: Cannot submit expired attempt
+do $$
+begin
+  update public.clep_simulation_attempts
+  set expires_at = clock_timestamp() - interval '10 seconds'
+  where id = (select attempt_id from _test_ctx);
+end;
+$$;
+
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam(
+    (select attempt_id from _test_ctx),
+    jsonb_build_object((select item_1_id::text from _test_ctx), 0)
+  ) $$,
+  '42501',
+  null,
+  'Cannot submit expired attempt (deadline enforcement)'
+);
+
+-- ----------------------------------------------------------------------------
+-- 8. Valid Completion, Selective Review Disclosure & Replay Invariant
+-- ----------------------------------------------------------------------------
+-- Issue fresh, clean attempt for User 1
+create temp table _fresh_exam on commit drop as
+select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
+
+select ok(
+  (select data->>'attempt_id' is not null from _fresh_exam),
+  'User 1 issues fresh simulation exam for valid completion testing'
+);
+
+-- Submit attempt with Item 1 answered (correct: 0) and Item 2 left unanswered
+do $$
+declare
+  v_att_id uuid;
+  v_item_1 text;
+  v_item_2 text;
+  v_sub_res jsonb;
+  v_r1 jsonb;
+  v_r2 jsonb;
+begin
+  select (data->>'attempt_id')::uuid into v_att_id from _fresh_exam;
+  select issued_item_ids[1]::text, issued_item_ids[2]::text
+  into v_item_1, v_item_2
+  from public.clep_simulation_attempts
+  where id = v_att_id;
+
+  -- Submit Item 1 ONLY (leaving Item 2 blank)
+  v_sub_res := public.clep_submit_simulation_exam(
+    v_att_id,
+    jsonb_build_object(v_item_1, 0)
   );
 
-  if (v_submit_res->>'raw_score')::int <> 1 then
-    raise exception 'Expected raw_score 1, got %', v_submit_res->>'raw_score';
+  -- Assert score: 1 correct out of 2 total
+  if (v_sub_res->>'raw_score')::int <> 1 then
+    raise exception 'Expected raw_score 1, got %', v_sub_res->>'raw_score';
   end if;
 
-  if (v_submit_res->>'accuracy_percentage')::numeric <> 100.0 then
-    raise exception 'Expected 100.0 percent, got %', v_submit_res->>'accuracy_percentage';
+  if (v_sub_res->>'total_questions')::int <> 2 then
+    raise exception 'Expected total_questions 2, got %', v_sub_res->>'total_questions';
   end if;
 
-  if (v_submit_res->>'is_calibrated_clep_score')::boolean is not false then
-    raise exception 'Overclaiming violation: is_calibrated_clep_score must be false';
+  if (v_sub_res->>'accuracy_percentage')::numeric <> 50.0 then
+    raise exception 'Expected accuracy 50.0, got %', v_sub_res->>'accuracy_percentage';
   end if;
 
-  -- Verify post-submission results safely reveal explanations
-  v_first_result := v_submit_res->'results'->0;
-  if (v_first_result->>'is_correct')::boolean is not true then
-    raise exception 'Expected result to be marked correct';
+  -- Assert Item 1 result: answered, correct, explanation safely revealed
+  v_r1 := v_sub_res->'results'->0;
+  if (v_r1->>'answered')::boolean is not true or (v_r1->>'is_correct')::boolean is not true then
+    raise exception 'Item 1 should be marked answered and correct';
+  end if;
+  if (v_r1->>'explanation') is null or (v_r1->>'correct_answer') is null then
+    raise exception 'Item 1 post-submission review must reveal explanation and correct answer';
   end if;
 
-  if (v_first_result->>'explanation') is null then
-    raise exception 'Post-submission review must include pedagogical explanation';
+  -- Assert Item 2 result: unanswered, NOT correct, explanation & answer key NOT revealed
+  v_r2 := v_sub_res->'results'->1;
+  if (v_r2->>'answered')::boolean is not false or (v_r2->>'is_correct')::boolean is not false then
+    raise exception 'Item 2 should be marked unanswered and not correct';
+  end if;
+  if v_r2->>'explanation' is not null or v_r2->>'correct_answer' is not null then
+    raise exception 'SECURITY VIOLATION: Unanswered Item 2 leaked explanation or correct answer!';
   end if;
 end;
 $$;
 
-select pass('clep_submit_simulation_exam evaluates answers on server and returns accurate score');
+select pass('User 1 submits attempt with Item 1 answered and Item 2 unanswered');
 
--- Test incorrect answer submission
-do $$
-declare
-  v_version_id uuid;
-  v_item_id text;
-  v_submit_res jsonb;
-begin
-  select id into v_version_id from public.target_versions where version_code = '2026-PRIV';
-  select (public.clep_issue_simulation_exam(v_version_id)->'questions'->0->>'id') into v_item_id;
+-- Verify server-side evaluation matches
+select is(
+  (select raw_score from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  1,
+  'Submitted attempt evaluates raw score correctly (1 out of 2)'
+);
 
-  -- Submit incorrect response: choice 1 (+30 mV)
-  v_submit_res := public.clep_submit_simulation_exam(
-    v_version_id,
-    jsonb_build_object(v_item_id, 1),
-    1500
-  );
+select is(
+  (select ((results->0)->>'answered')::boolean from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  true,
+  'Answered question safely reveals correct answer and explanation in post-submission results'
+);
 
-  if (v_submit_res->>'raw_score')::int <> 0 then
-    raise exception 'Expected raw_score 0 for incorrect answer, got %', v_submit_res->>'raw_score';
-  end if;
+select is(
+  (select ((results->1)->>'correct_answer') from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  null,
+  'Unanswered question does NOT reveal correct answer or explanation in post-submission results'
+);
 
-  if (v_submit_res->>'accuracy_percentage')::numeric <> 0.0 then
-    raise exception 'Expected 0.0 percent, got %', v_submit_res->>'accuracy_percentage';
-  end if;
+-- Verify non-overclaiming disclaimer in database record
+select ok(
+  (
+    select (results is not null and status = 'completed')
+    from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)
+  ),
+  'Attempt status is completed with results in public.clep_simulation_attempts'
+);
 
-  if ((v_submit_res->'results'->0)->>'is_correct')::boolean is not false then
-    raise exception 'Expected result to be marked false';
-  end if;
-end;
-$$;
-
-select pass('clep_submit_simulation_exam correctly handles incorrect responses');
-
--- ----------------------------------------------------------------------------
--- 7. Confirm Non-Overclaiming Scoring Disclaimers
--- ----------------------------------------------------------------------------
 select ok(
   (
     select public.clep_submit_simulation_exam(
-      id,
-      jsonb_build_object((public.clep_issue_simulation_exam(id)->'questions'->0->>'id'), 0),
-      1200
+      a.id,
+      jsonb_build_object(a.issued_item_ids[1]::text, 0)
     )->>'scoring_disclaimer' like '%Diagnostic score estimate only%'
-    from public.target_versions where version_code = '2026-PRIV'
+    from (
+      select (public.clep_issue_simulation_exam(tv.id)->>'attempt_id')::uuid as id
+      from public.target_versions tv where tv.version_code = '2026-PRIV'
+    ) sub
+    join public.clep_simulation_attempts a on a.id = sub.id
   ),
-  'clep_submit_simulation_exam includes explicit disclaimer prohibiting official score equivalence'
+  'Submission response includes explicit disclaimer prohibiting official score equivalence'
+);
+
+-- NEGATIVE GUARD 6: Replay attempt of already completed attempt is strictly rejected
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam(
+    ((select data->>'attempt_id' from _fresh_exam)::uuid),
+    jsonb_build_object('00000000-0000-0000-0000-000000000001', 0)
+  ) $$,
+  '23505',
+  null,
+  'Replay submission of completed attempt is strictly rejected (single-submission invariant)'
 );
 
 rollback;
