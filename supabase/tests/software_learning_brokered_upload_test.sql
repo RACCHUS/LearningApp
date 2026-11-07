@@ -11,6 +11,20 @@ SELECT has_column('public','software_learning_attempts','upload_object_version',
  'Uploaded file has server-held object version');
 SELECT has_column('public','software_learning_attempts','upload_committed_at',
  'Uploaded file has transactional seal timestamp');
+SELECT has_function('software_learning_private','sl_lock_excel_upload',
+ ARRAY['uuid','uuid','uuid']::text[], 'Backend lock RPC exists');
+SELECT has_function('software_learning_private','sl_seal_excel_upload',
+ ARRAY['uuid','uuid','uuid','text','text']::text[], 'Backend seal RPC exists');
+SELECT ok(NOT has_function_privilege('authenticated',
+ 'software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)','EXECUTE'),
+ 'No learner may lock or inspect the private upload permit');
+SELECT ok(NOT has_function_privilege('authenticated',
+ 'software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)','EXECUTE'),
+ 'No learner may seal or forge a workbook digest');
+SELECT ok(has_function_privilege('service_role',
+ 'software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)','EXECUTE'),
+ 'Only trusted backend role may lock via the private session-check RPC');
+
 SELECT ok(EXISTS(
  SELECT 1 FROM pg_policies p WHERE p.schemaname='storage'
   AND p.tablename='objects' AND p.policyname='sl_excel_insert_client_denied'
@@ -59,12 +73,38 @@ SELECT throws_ok($q$
  WHERE id=(SELECT id FROM sl_unsealed)
 $q$,'23514',NULL,'Malformed broker SHA is rejected');
 
-UPDATE public.software_learning_attempts
- SET upload_sha256=repeat('a',64), upload_object_version='revision-1',
-     upload_committed_at=now(), upload_enabled=true
- WHERE id=(SELECT id FROM sl_unsealed);
-
 SET LOCAL ROLE service_role;
+SELECT is(software_learning_private.sl_lock_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000099'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid),
+ NULL::jsonb, 'Cross-account broker lock does not disclose an attempt');
+CREATE TEMP TABLE sl_broker_lock AS
+ SELECT software_learning_private.sl_lock_excel_upload(
+  (SELECT id FROM sl_unsealed),
+  'ba610000-0000-4000-8000-000000000001'::uuid,
+  'ba620000-0000-4000-8000-000000000001'::uuid) AS response;
+SELECT is((SELECT response->>'attempt_id' FROM sl_broker_lock),
+ (SELECT id::text FROM sl_unsealed),
+ 'Private broker validates live session and obtains the attempt lock');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ 'bad','revision-1'),false,
+ 'Malformed broker digest cannot authorize processing');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('a',64),'revision-1'),true,
+ 'First valid service-side seal commits a synthetic workbook attestation');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('b',64),'revision-2'),false,
+ 'Replayed seal cannot overwrite the first workbook attestation');
 CREATE TEMP TABLE sl_sealed_claim AS
  SELECT software_learning_private.sl_claim_excel_processing(
   (SELECT id FROM sl_unsealed),
