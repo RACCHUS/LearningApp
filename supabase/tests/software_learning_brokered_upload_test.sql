@@ -97,6 +97,18 @@ SELECT is(software_learning_private.sl_seal_excel_upload(
  (SELECT id FROM sl_unsealed),
  'ba610000-0000-4000-8000-000000000001'::uuid,
  'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('a',64),repeat('v',257)),false,
+ 'Oversized object revision rejects cleanly without a PostgreSQL regex error');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('a',64),'invalid/revision'),false,
+ 'Object revision whitelist rejects path-like values');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_unsealed),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
  repeat('a',64),'revision-1'),true,
  'First valid service-side seal commits a synthetic workbook attestation');
 SELECT is(software_learning_private.sl_seal_excel_upload(
