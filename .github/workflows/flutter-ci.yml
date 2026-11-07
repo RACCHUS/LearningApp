@@ -175,6 +175,9 @@ jobs:
       - name: Test disabled internal binary Excel upload ingress
         run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_ingress.py' -v
 
+      - name: Test guarded Excel account workbook erasure
+        run: python3 -m unittest discover -s tool/tests -p 'test_account_erasure.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
