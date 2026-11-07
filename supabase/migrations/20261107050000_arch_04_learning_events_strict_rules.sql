@@ -159,7 +159,6 @@ DECLARE
   v_context_id TEXT;
   v_content_id TEXT;
   v_presented_opts JSONB;
-  v_presented_opts_arr TEXT[];
   v_learner_resp JSONB;
   v_fsrs_rat SMALLINT;
   v_assistance JSONB;
@@ -173,8 +172,8 @@ DECLARE
   v_digest TEXT;
 
   v_batch JSONB := '[]'::JSONB;
-  v_canonical_indices INTEGER[] := '{}';
-  v_item_results JSONB[] := '{}';
+  v_canonical_indices INTEGER[] := ARRAY[]::INTEGER[];
+  v_item_results JSONB[] := ARRAY[]::JSONB[];
 
   v_grp RECORD;
   v_stored RECORD;
@@ -306,9 +305,7 @@ BEGIN
     v_context_id := v_raw_item->>'context_id';
     v_content_id := COALESCE(v_raw_item->>'content_id', v_item_id);
 
-    v_presented_opts_arr := NULL;
     IF v_raw_item ? 'presented_option_ids' AND jsonb_typeof(v_raw_item->'presented_option_ids') = 'array' THEN
-      v_presented_opts_arr := ARRAY(SELECT jsonb_array_elements_text(v_raw_item->'presented_option_ids'));
       v_presented_opts := v_raw_item->'presented_option_ids';
     ELSE
       v_presented_opts := '[]'::JSONB;
