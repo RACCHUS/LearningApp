@@ -54,6 +54,8 @@ class Repository:
             attempt_id=ATTEMPT, exercise_id="excel-budget-total-v1",
             checker_version=1, expires_at=NOW + timedelta(minutes=4),
             expected_inputs=EXPECTED,
+            expected_sha256=hashlib.sha256(zip_bytes()).hexdigest(),
+            object_version="v1",
         )
         self.claimed = False
         self.receipts = []
@@ -193,6 +195,13 @@ class PrivateAssessmentTests(unittest.TestCase):
         result, repo, store, runner, _ = assess(now=NOW + timedelta(minutes=5))
         self.assertEqual(result["status"], "rejected")
         self.assertEqual(store.seen, [])
+
+    def test_same_storage_revision_cannot_hide_changed_workbook_bytes(self):
+        result, repo, store, runner, _ = assess(store=Store(blob=zip_bytes() + b"tampered"))
+        self.assertEqual(result["status"], "rejected")
+        self.assertEqual(repo.receipts, [])
+        self.assertEqual(runner.called, [])
+        self.assertEqual(repo.failures, [LEASE_ID])
 
     def test_object_replacement_fails_before_grading(self):
         result, repo, store, runner, _ = assess(store=Store(before="v1", after="v2"))
