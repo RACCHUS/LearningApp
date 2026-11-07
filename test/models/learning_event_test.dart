@@ -45,10 +45,20 @@ void main() {
         schedulerStateAfter: {'stability': 5.8, 'difficulty': 3.8},
         metadata: {'platform': 'web'},
         appVersion: '2.0.0',
+        idempotencyKey: 'idem-key-123',
+        clientSeq: 42,
+        attemptId: 'attempt-uuid-777',
+        presentedOptionIds: ['opt-a', 'opt-b'],
+        assistanceProvided: ['hint_1'],
       );
 
       final json = event.toJson();
       expect(json['id'], 'event-uuid-1');
+      expect(json['idempotency_key'], 'idem-key-123');
+      expect(json['client_seq'], 42);
+      expect(json['attempt_id'], 'attempt-uuid-777');
+      expect(json['presented_option_ids'], ['opt-a', 'opt-b']);
+      expect(json['assistance_provided'], ['hint_1']);
       expect(json['user_id'], 'user-uuid-1');
       expect(json['occurred_at'], now.toIso8601String());
       expect(json['event_type'], 'question_answered');
@@ -60,6 +70,11 @@ void main() {
 
       final parsed = LearningEvent.fromJson(json);
       expect(parsed.id, event.id);
+      expect(parsed.idempotencyKey, 'idem-key-123');
+      expect(parsed.clientSeq, 42);
+      expect(parsed.attemptId, 'attempt-uuid-777');
+      expect(parsed.presentedOptionIds, ['opt-a', 'opt-b']);
+      expect(parsed.assistanceProvided, ['hint_1']);
       expect(parsed.userId, event.userId);
       expect(parsed.occurredAt, event.occurredAt);
       expect(parsed.eventType, event.eventType);

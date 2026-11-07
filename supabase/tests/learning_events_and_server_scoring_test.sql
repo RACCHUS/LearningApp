@@ -182,6 +182,7 @@ select lives_ok(
   $$ select record_events(array[
        jsonb_build_object(
          'id', 'ee000000-0000-4000-8000-000000000001',
+         'idempotency_key', 'ee000000-0000-4000-8000-000000000001',
          'event_type', 'review',
          'item_type', 'term',
          'item_id', 'card-1',
@@ -213,9 +214,21 @@ select lives_ok(
   $$ select record_events(array[
        jsonb_build_object(
          'id', 'ee000000-0000-4000-8000-000000000001',
+         'idempotency_key', 'ee000000-0000-4000-8000-000000000001',
          'event_type', 'review',
+         'item_type', 'term',
          'item_id', 'card-1',
-         'scheduler_state_after', jsonb_build_object('stability', 3.5)
+         'rating', 3,
+         'score', 1.0,
+         'presented_order', jsonb_build_array(1, 0, 2, 3),
+         'scheduler_state_after', jsonb_build_object(
+           'stability', 3.5,
+           'difficulty', 4.8,
+           'state', 2,
+           'step', 0,
+           'total_reviews', 1,
+           'due', (now() + interval '3 days')::text
+         )
        )
      ]) $$,
   'Replaying duplicate event executes safely'

@@ -22,6 +22,11 @@ class LearningEvent {
   final Map<String, dynamic>? schedulerStateAfter;
   final Map<String, dynamic> metadata;
   final String? appVersion;
+  final String? idempotencyKey;
+  final int? clientSeq;
+  final String? attemptId;
+  final List<String>? presentedOptionIds;
+  final List<String>? assistanceProvided;
 
   LearningEvent({
     String? id,
@@ -44,6 +49,11 @@ class LearningEvent {
     this.schedulerStateAfter,
     this.metadata = const {},
     this.appVersion,
+    this.idempotencyKey,
+    this.clientSeq,
+    this.attemptId,
+    this.presentedOptionIds,
+    this.assistanceProvided,
   })  : id = id ?? const Uuid().v4(),
         occurredAt = occurredAt ?? DateTime.now().toUtc();
 
@@ -53,20 +63,22 @@ class LearningEvent {
       userId: json['user_id'] as String?,
       occurredAt: json['occurred_at'] != null
           ? DateTime.parse(json['occurred_at'] as String)
-          : DateTime.now().toUtc(),
+          : (json['client_occurred_at'] != null
+              ? DateTime.parse(json['client_occurred_at'] as String)
+              : DateTime.now().toUtc()),
       eventType: json['event_type'] as String,
       itemType: json['item_type'] as String? ?? 'unknown',
       itemId: json['item_id'] as String,
       itemVersion: json['item_version'] as String?,
       contextId: json['context_id'] as String?,
       sessionId: json['session_id'] as String?,
-      rating: json['rating'] as int?,
+      rating: json['rating'] as int? ?? (json['fsrs_rating'] as int?),
       score: (json['score'] as num?)?.toDouble(),
-      response: json['response'],
+      response: json['response'] ?? json['learner_response'],
       presentedOrder: (json['presented_order'] as List?)?.map((e) => e as int).toList(),
-      latencyMs: json['latency_ms'] as int?,
+      latencyMs: json['latency_ms'] as int? ?? (json['client_latency_ms'] as int?),
       hintsUsed: json['hints_used'] as int? ?? 0,
-      confidence: json['confidence'] as int?,
+      confidence: json['confidence'] as int? ?? (json['learner_confidence'] as int?),
       schedulerStateBefore: json['scheduler_state_before'] != null
           ? Map<String, dynamic>.from(json['scheduler_state_before'] as Map)
           : null,
@@ -77,6 +89,11 @@ class LearningEvent {
           ? Map<String, dynamic>.from(json['metadata'] as Map)
           : const {},
       appVersion: json['app_version'] as String?,
+      idempotencyKey: json['idempotency_key'] as String?,
+      clientSeq: json['client_seq'] as int?,
+      attemptId: json['attempt_id'] as String?,
+      presentedOptionIds: (json['presented_option_ids'] as List?)?.map((e) => e.toString()).toList(),
+      assistanceProvided: (json['assistance_provided'] as List?)?.map((e) => e.toString()).toList(),
     );
   }
 
@@ -85,19 +102,29 @@ class LearningEvent {
       'id': id,
       if (userId != null) 'user_id': userId,
       'occurred_at': occurredAt.toIso8601String(),
+      'client_occurred_at': occurredAt.toIso8601String(),
       'event_type': eventType,
       'item_type': itemType,
       'item_id': itemId,
       if (itemVersion != null) 'item_version': itemVersion,
       if (contextId != null) 'context_id': contextId,
       if (sessionId != null) 'session_id': sessionId,
+      'idempotency_key': idempotencyKey ?? id,
+      if (clientSeq != null) 'client_seq': clientSeq,
+      if (attemptId != null) 'attempt_id': attemptId,
       if (rating != null) 'rating': rating,
+      if (rating != null) 'fsrs_rating': rating,
       if (score != null) 'score': score,
       if (response != null) 'response': response,
+      if (response != null) 'learner_response': response,
       if (presentedOrder != null) 'presented_order': presentedOrder,
+      if (presentedOptionIds != null) 'presented_option_ids': presentedOptionIds,
       if (latencyMs != null) 'latency_ms': latencyMs,
+      if (latencyMs != null) 'client_latency_ms': latencyMs,
+      if (assistanceProvided != null) 'assistance_provided': assistanceProvided,
       'hints_used': hintsUsed,
       if (confidence != null) 'confidence': confidence,
+      if (confidence != null) 'learner_confidence': confidence,
       if (schedulerStateBefore != null) 'scheduler_state_before': schedulerStateBefore,
       if (schedulerStateAfter != null) 'scheduler_state_after': schedulerStateAfter,
       'metadata': metadata,
