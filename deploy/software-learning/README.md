@@ -65,3 +65,14 @@ The **trusted host** (not the parser container) needs restricted Storage and dat
 A formula check can return `pass`, `fail` or `inconclusive`, but every result remains `unverified_checker_only` and `skill_award_enabled=false`. The private database receipt records an artifact SHA-256 and outcome for accountability; it does not prove who authored the workbook, create a `record_events` event, or raise a skill level.
 
 The worker host must not be deployed merely because its isolated unit tests pass. Threat-model and verify Storage API deletion, revocation during processing, retries after a host crash, signed URL expiration, malicious archive rejection under hosted resource quotas, object/account erasure, telemetry redaction and opt-in AI handling before a learner-facing submission can be enabled.
+
+### Restricted network adapters (host process only, source prototype)
+
+The host now also contains two explicit Supabase API adapters, which are **not** part of the Docker worker image:
+
+- `tool/software_learning/supabase_auth_gateway.py` contacts the configured project's **Auth `/user`** endpoint to confirm the bearer token and current permanent user. Only after the server response is accepted are matching JWT `sub` and `session_id` claims used. The private SQL claim independently verifies the original session exists in `auth.sessions`.
+- `tool/software_learning/supabase_private_storage.py` talks only to the configured project's private Storage object endpoints, using a **host-only secret key**, canonical `owner/attempt/workbook.xlsx` paths, bounded object-info responses and downloaded bytes. It validates Storage metadata/version before the handoff and uses the Storage API for idempotent file deletion. No signed URL generation or arbitrary remote fetching is supported.
+
+**Neither module is a public service or deployed integration.** Before production, prove that the deployed Auth/Storage API schema and content metadata match the adapter assumptions, secure service-secret handling and TLS endpoint policies, verify object versions under concurrent uploads, and implement a real HTTP or job handler with rate limits and durable queues. The parser container must continue receiving **only raw workbook bytes**. The host must protect the worker's Docker socket and database connection, and must provide data deletion, retention schedules and audited trusted-evidence projection.
+
+`GET /auth/v1/user` is used for server-confirmed identity, not a client-side JWT decode or an application-owned user lookup. All tests mock the HTTP transport; no real account, secret, workbook or production Storage object has been read or modified.
