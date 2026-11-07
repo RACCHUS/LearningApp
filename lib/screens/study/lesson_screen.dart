@@ -32,6 +32,7 @@ import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/unified_lesson_provider.dart';
 import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
@@ -314,6 +315,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               ],
             ),
             actions: [
+              const AudioPreferencesAction(),
               if (isOwner)
                 IconButton(
                   key: const Key('lesson_visibility_action'),

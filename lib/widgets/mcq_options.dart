@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/answer_feedback.dart';
 
 class McqOptions extends StatelessWidget {
   final List<String> options;
@@ -195,15 +196,16 @@ class McqOptions extends StatelessWidget {
     return Column(
       children: presentationOrder.map((originalIdx) {
         final text = options[originalIdx];
-        Color? color;
+        bool? mark;
         if (showCorrect && correctIndex != null) {
           if (originalIdx == correctIndex) {
-            color = Colors.green;
-          } else if (selectedIndex == originalIdx &&
-              originalIdx != correctIndex) {
-            color = Colors.red;
+            mark = true;
+          } else if (selectedIndex == originalIdx) {
+            mark = false;
           }
         }
+        final color =
+            mark == null ? null : answerColor(context, correct: mark);
         return ListTile(
           title: Text(text),
           onTap: () => onChanged(originalIdx),
@@ -212,6 +214,7 @@ class McqOptions extends StatelessWidget {
             groupValue: selectedIndex,
             onChanged: (v) => onChanged(originalIdx),
           ),
+          trailing: mark == null ? null : AnswerMarkIcon(correct: mark),
           tileColor: color?.withValues(alpha: 0.1),
         );
       }).toList(),

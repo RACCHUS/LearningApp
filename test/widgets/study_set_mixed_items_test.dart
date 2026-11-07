@@ -109,7 +109,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [canSpeakProvider.overrideWithValue(false)],
+          overrides: [
+            canSpeakProvider.overrideWithValue(false),
+            readAloudOffProvider.overrideWithValue(false),
+          ],
           child: MaterialApp(home: MixedModeScreen(preSortedItems: items)),
         ),
       );

@@ -205,6 +205,7 @@ void main() {
             overrides: [
               canSpeakProvider.overrideWithValue(false),
               canListenProvider.overrideWithValue(false),
+              readAloudOffProvider.overrideWithValue(false),
             ],
             child: MaterialApp(
               home: Scaffold(

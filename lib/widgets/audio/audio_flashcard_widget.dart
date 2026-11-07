@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/widgets/audio_control_widget.dart';
 
 /// A reusable widget for flashcard content with audio
@@ -51,7 +50,6 @@ class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final canSpeak = ref.watch(canSpeakProvider);
     final isBack = _effectiveShowBack;
     final currentText = isBack ? widget.backText : widget.frontText;
     final currentStyle = isBack ? widget.backStyle : widget.frontStyle;
@@ -81,15 +79,13 @@ class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
                     child: widget.customTextBuilder?.call(currentText) ?? 
                            Text(currentText, style: currentStyle, textAlign: TextAlign.center),
                   ),
-                  if (canSpeak) ...[
-                    const SizedBox(width: 8),
+                  const SizedBox(width: 8),
                     AudioControlWidget(
                       text: currentText,
                       contentType: 'content',
                       autoPlay: widget.autoPlayOverride ?? (!isBack), // Respect override or auto-play front side
                       tooltip: isBack ? 'Listen to definition' : 'Listen to term',
                     ),
-                  ],
                 ],
               ),
               
@@ -110,14 +106,12 @@ class _AudioFlashcardWidgetState extends ConsumerState<AudioFlashcardWidget> {
                                ),
                              ),
                     ),
-                    if (canSpeak) ...[
-                      const SizedBox(width: 8),
+                    const SizedBox(width: 8),
                       AudioControlWidget(
                         text: 'Example: ${widget.example}',
                         contentType: 'content',
                         tooltip: 'Listen to example',
                       ),
-                    ],
                   ],
                 ),
               ],

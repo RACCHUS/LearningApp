@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/answer_feedback.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/audio/audio_question_header.dart';
+import 'package:learning_pwa/widgets/audio/audio_text_widget.dart';
 
 class McqQuestionWidget extends StatefulWidget {
   final QuestionContent content;
@@ -147,22 +149,16 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
         if (widget.showCorrect && widget.selectedIndex != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              widget.selectedIndex == widget.content.correctAnswer
-                  ? 'Correct!'
-                  : 'Incorrect',
-              style: TextStyle(
-                color: widget.selectedIndex == widget.content.correctAnswer
-                    ? Colors.green
-                    : Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+            child: AnswerFeedbackText(
+              correct: widget.selectedIndex == widget.content.correctAnswer,
             ),
           ),
         if (widget.showCorrect && widget.content.explanation != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Explanation: ${widget.content.explanation!}'),
+            child: AudioTextWidget(
+              text: 'Explanation: ${widget.content.explanation!}',
+            ),
           ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
+import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/lesson_content_renderer.dart';
 
 class LessonModeScreen extends ConsumerStatefulWidget {
@@ -37,6 +38,7 @@ class _LessonModeScreenState extends ConsumerState<LessonModeScreen> {
           appBar: AppBar(
             title: Text(lessonData.lesson.title),
             actions: [
+              const AudioPreferencesAction(),
               if (pageIndex < contentList.length - 1)
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),

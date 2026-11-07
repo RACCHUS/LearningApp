@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/answer_feedback.dart';
 
 class TrueFalseSelector extends StatelessWidget {
   final bool? value;
@@ -16,27 +17,36 @@ class TrueFalseSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color? trueColor;
-    Color? falseColor;
-    if (showCorrect && correctValue != null) {
-      trueColor = correctValue == true ? Colors.green : (value == true ? Colors.red : null);
-      falseColor = correctValue == false ? Colors.green : (value == false ? Colors.red : null);
+    bool? markFor(bool option) {
+      if (!showCorrect || correctValue == null) return null;
+      if (correctValue == option) return true;
+      return value == option ? false : null;
     }
+
+    final trueMark = markFor(true);
+    final falseMark = markFor(false);
+    Color? tint(bool? mark) => mark == null
+        ? null
+        : answerColor(context, correct: mark).withValues(alpha: 0.2);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ChoiceChip(
           label: const Text('True'),
+          avatar: trueMark == null ? null : AnswerMarkIcon(correct: trueMark),
+          showCheckmark: trueMark == null,
           selected: value == true,
           onSelected: (_) => onChanged(true),
-          selectedColor: trueColor,
+          selectedColor: tint(trueMark),
         ),
         const SizedBox(width: 16),
         ChoiceChip(
           label: const Text('False'),
+          avatar: falseMark == null ? null : AnswerMarkIcon(correct: falseMark),
+          showCheckmark: falseMark == null,
           selected: value == false,
           onSelected: (_) => onChanged(false),
-          selectedColor: falseColor,
+          selectedColor: tint(falseMark),
         ),
       ],
     );
