@@ -81,20 +81,31 @@ class SupabasePrivateWorkbookStore:
 
     def _request(self, url: str, method: str, *,
                  allow_missing: bool = False, max_read: int = 0,
-                 expected_mime: str | None = None):
-        request = Request(
-            url,
-            headers={
-                "Authorization": f"Bearer {self._key}",
-                "apikey": self._key,
-                "Accept": "application/json" if expected_mime is None else _MIME,
-            },
-            method=method,
-        )
+                 expected_mime: str | None = None,
+                 data: bytes | None = None):
+        if method not in ("GET", "DELETE", "POST"):
+            raise StorageFailure("Workbook storage unavailable")
+        headers = {
+            "Authorization": f"Bearer {self._key}",
+            "apikey": self._key,
+            "Accept": "application/json" if expected_mime is None else _MIME,
+        }
+        if method == "POST":
+            if not isinstance(data, bytes):
+                raise StorageFailure("Workbook storage unavailable")
+            # Supabase Storage standard upload. No signed URL, no upsert.
+            headers.update({"Content-Type": _MIME, "x-upsert": "false",
+                            "Cache-Control": "no-store"})
+        elif data is not None:
+            raise StorageFailure("Workbook storage unavailable")
+        request = Request(url, headers=headers, data=data, method=method)
         try:
             with self._execute(request, timeout=5) as response:
                 if (response.geturl() != url or
-                    response.status not in ((200, 204) if method == "DELETE" else (200,))):
+                    response.status not in (
+                    (200, 204) if method == "DELETE" else
+                    (200, 201) if method == "POST" else (200,)
+                )):
                     raise StorageFailure("Workbook storage unavailable")
                 if expected_mime is not None:
                     content_type = response.headers.get("Content-Type", "")
@@ -150,6 +161,20 @@ class SupabasePrivateWorkbookStore:
         if type(limit) is not int or not 0 < limit <= MAX_UPLOAD_BYTES + 1:
             raise StorageFailure("Workbook storage unavailable")
         return self._request(url, "GET", max_read=limit, expected_mime=_MIME)
+
+    def create_only(self, bucket: str, path: str, blob: bytes) -> None:
+        """Create one fixed-path XLSX using service credentials, with no upsert.
+
+        Only a trusted broker holding a DB row lock may call this method.
+        It intentionally does not retry ambiguous transport errors; the
+        broker must reconcile or remove any possibly committed object.
+        """
+        url = self._url("object", bucket, path)
+        if (not isinstance(blob, bytes) or
+            not 4 <= len(blob) <= MAX_UPLOAD_BYTES or
+            not blob.startswith(b"PK\x03\x04")):
+            raise StorageFailure("Workbook storage unavailable")
+        self._request(url, "POST", data=blob)
 
     def exists(self, bucket: str, path: str) -> bool:
         return self.stat(bucket, path) is not None
