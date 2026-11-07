@@ -191,7 +191,7 @@ select is(
 -- Formative assessment item (unprotected) IS accessible
 select is(
   (
-    select count(*)::integer from public.assessment_items i
+    select count(i.id)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Formative Item:%'
@@ -203,7 +203,7 @@ select is(
 -- Restrictive RLS policy BLOCKS direct select of protected simulation items
 select is(
   (
-    select count(*)::integer from public.assessment_items i
+    select count(i.id)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Protected Sim Item:%'
@@ -212,17 +212,12 @@ select is(
   'Restrictive RLS blocks anon learner from directly selecting protected simulation items'
 );
 
--- Restrictive RLS BLOCKS direct read of scoring_spec for simulation items
-select is(
-  (
-    select count(*)::integer from public.assessment_items i
-    join public.target_versions v on v.id = i.origin_target_version_id
-    where v.version_code = '2026-PRIV'
-      and i.scoring_spec->>'correct_index' is not null
-      and i.prompt like 'Protected Sim Item:%'
-  ),
-  0,
-  'Zero scoring keys for protected simulation items leak to anon learners'
+-- Zero scoring keys for assessment items leak to anon learners (blocked by column privileges)
+select throws_ok(
+  $$ select scoring_spec from public.assessment_items $$,
+  '42501',
+  null,
+  'Zero scoring keys leak to anon learners via column privileges'
 );
 
 -- ----------------------------------------------------------------------------
@@ -240,16 +235,36 @@ set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';
 set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
 
--- Authenticated learner also CANNOT read protected simulation items via direct select
+-- Authenticated learner CAN read formative assessment items
 select is(
   (
-    select count(*)::integer from public.assessment_items i
+    select count(i.id)::integer from public.assessment_items i
+    join public.target_versions v on v.id = i.origin_target_version_id
+    where v.version_code = '2026-PRIV'
+      and i.prompt like 'Formative Item:%'
+  ),
+  1,
+  'Authenticated learner can read unprotected formative assessment items'
+);
+
+-- Authenticated learner CANNOT read protected simulation items via direct select
+select is(
+  (
+    select count(i.id)::integer from public.assessment_items i
     join public.target_versions v on v.id = i.origin_target_version_id
     where v.version_code = '2026-PRIV'
       and i.prompt like 'Protected Sim Item:%'
   ),
   0,
   'Restrictive RLS blocks authenticated learner from directly selecting protected simulation items'
+);
+
+-- Zero scoring keys for assessment items leak to authenticated learners (blocked by column privileges)
+select throws_ok(
+  $$ select scoring_spec from public.assessment_items $$,
+  '42501',
+  null,
+  'Zero scoring keys leak to authenticated learners via column privileges'
 );
 
 -- ----------------------------------------------------------------------------
