@@ -58,7 +58,7 @@ Return ONLY valid JSON matching this schema:
       { "title": "Concept name", "purpose": "What this concept teaches", "depends_on_terms": ["Term name"], "order": 1 }
     ],
     "mcqs": [
-      { "tests_concept": "Concept name", "cognitive_level": "recall|understand|apply|analyze", "order": 1 }
+      { "tests_concept": "Concept name", "question_type": "mcq|short_answer", "cognitive_level": "recall|understand|apply|analyze", "order": 1 }
     ]
   },
   "progression_notes": "How content builds from simple to complex",
@@ -213,11 +213,13 @@ $contextBlock
 </context>
 
 <task>
-Generate MCQ questions for items $batchStart through ${batchStart + batchSize - 1} from content_manifest.mcqs (0-indexed).
+Generate assessment questions for items $batchStart through ${batchStart + batchSize - 1} from content_manifest.mcqs (0-indexed). The manifest may request mcq or short_answer.
 </task>
 
 <critical_rules>
-- Each MCQ must test the specific concept listed in "tests_concept".
+- Each question must test the specific concept listed in "tests_concept".
+- Follow the manifest's requested question type. For short_answer, use options: [], accepted_answers: a non-empty array of valid answer variants, and grading_method: exact, normalized_text, or numeric.
+- Use normalized_text by default; use exact only when punctuation/case/spacing are meaningful; use numeric only for numeric answers and provide a non-negative numeric_tolerance.
 - Match the cognitive_level specified in the manifest:
   - recall: testing definitions/facts
   - understand: testing comprehension of concepts
@@ -232,11 +234,14 @@ Generate MCQ questions for items $batchStart through ${batchStart + batchSize - 
 Return ONLY a JSON array:
 [
   {
-    "type": "mcq",
+    "type": "mcq | short_answer",
     "question": "Clear question testing the mapped concept",
     "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correct_answer": "The correct option text (must match exactly)",
-    "explanation": "Why correct + brief note on why each distractor is wrong",
+    "correct_answer": "Exact option text for MCQ; optional primary answer for short_answer",
+    "accepted_answers": ["All accepted short-answer variants"],
+    "grading_method": "exact | normalized_text | numeric",
+    "numeric_tolerance": 0.01,
+    "explanation": "Teaching explanation",
     "tests_concept": "Concept title from manifest",
     "cognitive_level": "recall|understand|apply|analyze"
   }
@@ -247,9 +252,9 @@ Return ONLY a JSON array:
 Before outputting, verify:
 - [ ] Each MCQ maps to its specified concept
 - [ ] Cognitive levels match the manifest
-- [ ] All 4 options are plausible
-- [ ] correct_answer exactly matches one of the options
-- [ ] Explanation addresses all options
+- [ ] For MCQ, correct_answer exactly matches one plausible option
+- [ ] For short_answer, accepted_answers is non-empty and grading_method matches the response
+- [ ] Explanation is substantive
 - [ ] Terminology matches the lesson's glossary
 </quality_checklist>
 ''';

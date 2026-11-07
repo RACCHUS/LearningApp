@@ -103,11 +103,15 @@ class LessonImportService {
                   correctAnswer: q['correct_answer'] is int
                       ? q['correct_answer']
                       : int.tryParse(q['correct_answer']?.toString() ?? '') ?? 0,
-                  type: q['type']?.toString() ?? 'mcq',
+                  type: q['type']?.toString() ??
+                      ((q['accepted_answers'] is List) ? 'short_answer' : 'mcq'),
                   explanation: q['explanation']?.toString(),
+                  acceptedAnswers: (q['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
+                  gradingMethod: q['grading_method']?.toString(),
+                  numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
                   createdBy: q['created_by']?.toString() ?? userId,
                 ))
-            .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
+            .where((q) => q.questionText.isNotEmpty && (q.options.isNotEmpty || (q.type == 'short_answer' && (q.acceptedAnswers?.isNotEmpty ?? false))))
             .toList();
         if (questions.isNotEmpty) {
           await _contentService.addQuestions(lessonId, questions);
@@ -163,6 +167,8 @@ class LessonImportService {
           await _importTermFromContent(lessonId, item, userId);
           break;
         case 'mcq':
+        case 'true_false':
+        case 'short_answer':
         case 'question':
           await _importQuestionFromContent(lessonId, item, userId);
           break;
@@ -210,9 +216,12 @@ class LessonImportService {
           : int.tryParse(data['correct_answer']?.toString() ?? '') ?? 0,
       type: data['type']?.toString() ?? 'mcq',
       explanation: data['explanation']?.toString(),
+      acceptedAnswers: (data['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
+      gradingMethod: data['grading_method']?.toString(),
+      numericTolerance: (data['numeric_tolerance'] as num?)?.toDouble(),
       createdBy: data['created_by']?.toString() ?? userId,
     );
-    if (question.questionText.isEmpty || question.options.isEmpty) {
+    if (question.questionText.isEmpty || (question.options.isEmpty && (question.type != 'short_answer' || !(question.acceptedAnswers?.isNotEmpty ?? false)))) {
       debugPrint('⚠️ Skipping question with empty text/options');
       return;
     }

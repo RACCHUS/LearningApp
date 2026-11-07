@@ -28,6 +28,12 @@ class Question {
 
   @HiveField(7)
   final DateTime createdAt;
+  @HiveField(8)
+  final List<String>? acceptedAnswers;
+  @HiveField(9)
+  final String? gradingMethod;
+  @HiveField(10)
+  final double? numericTolerance;
 
   Question({
     required this.id,
@@ -38,6 +44,9 @@ class Question {
     this.explanation,
     required this.createdBy,
     DateTime? createdAt,
+    this.acceptedAnswers,
+    this.gradingMethod,
+    this.numericTolerance,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Question copyWith({
@@ -49,6 +58,9 @@ class Question {
     String? explanation,
     String? createdBy,
     DateTime? createdAt,
+    List<String>? acceptedAnswers,
+    String? gradingMethod,
+    double? numericTolerance,
   }) {
     return Question(
       id: id ?? this.id,
@@ -59,6 +71,9 @@ class Question {
       explanation: explanation ?? this.explanation,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
+      acceptedAnswers: acceptedAnswers ?? this.acceptedAnswers,
+      gradingMethod: gradingMethod ?? this.gradingMethod,
+      numericTolerance: numericTolerance ?? this.numericTolerance,
     );
   }
 
@@ -115,6 +130,9 @@ class Question {
       explanation: explanation,
       createdBy: createdBy!,
       createdAt: createdAt,
+      acceptedAnswers: (json['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
+      gradingMethod: json['grading_method']?.toString(),
+      numericTolerance: (json['numeric_tolerance'] as num?)?.toDouble(),
     );
   }
 
@@ -127,6 +145,9 @@ class Question {
         'explanation': explanation,
         'created_by': createdBy,
         'created_at': createdAt.toIso8601String(),
+        'accepted_answers': acceptedAnswers,
+        'grading_method': gradingMethod,
+        'numeric_tolerance': numericTolerance,
       };
 
   @override

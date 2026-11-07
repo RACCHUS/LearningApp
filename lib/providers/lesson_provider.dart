@@ -184,6 +184,10 @@ final lessonProvider =
                 ? List<String>.from(e['options'].map((o) => o?.toString() ?? ''))
                 : <String>[],
             correctAnswer: e['correct_answer'] is int ? e['correct_answer'] : 0,
+            questionType: e['type']?.toString(),
+            acceptedAnswers: (e['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
+            gradingMethod: e['grading_method']?.toString(),
+            numericTolerance: (e['numeric_tolerance'] as num?)?.toDouble(),
             explanation: e['explanation']?.toString() ?? '',
             createdAt: e['created_at'] != null 
                 ? DateTime.tryParse(e['created_at']) ?? DateTime.now()
@@ -269,7 +273,8 @@ if (response['content'] is Map && response['content']['content'] is List) {
     if (type == 'term') {
       final match = terms.where((t) => t.id == item['id']).toList();
       if (match.isNotEmpty) lessonContent.add(match.first);
-    } else if (type == 'question' || type == 'mcq') {
+    } else if (type == 'question' ||
+        QuestionContent.supportedQuestionTypes.contains(type)) {
       final match = questions.where((q) => q.id == item['id']).toList();
       if (match.isNotEmpty) lessonContent.add(match.first);
     } else if (type == 'concept') {
@@ -372,6 +377,7 @@ FullLesson _fullLessonFromAsset(Lesson lesson) {
         questionText: question.questionText,
         options: question.options,
         correctAnswer: question.correctAnswer,
+        questionType: question.type,
         explanation: question.explanation ?? '',
         createdAt: lesson.createdAt,
         updatedAt: lesson.updatedAt,

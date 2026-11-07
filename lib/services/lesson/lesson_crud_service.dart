@@ -216,6 +216,9 @@ class LessonCrudService {
               options: List<String>.from(q['options']),
               type: q['type'],
               explanation: q['explanation'],
+              acceptedAnswers: (q['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
+              gradingMethod: q['grading_method']?.toString(),
+              numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
               createdBy: q['user_id'] ?? '',
             ))
         .toList();

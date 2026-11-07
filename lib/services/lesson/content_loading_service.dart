@@ -205,6 +205,10 @@ class ContentLoadingService {
                 ? List<String>.from((q['options'] as List).map((o) => o?.toString() ?? ''))
                 : <String>[],
             correctAnswer: q['correct_answer'] is int ? q['correct_answer'] as int : 0,
+            questionType: q['type']?.toString(),
+            acceptedAnswers: (q['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
+            gradingMethod: q['grading_method']?.toString(),
+            numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
             explanation: q['explanation']?.toString() ?? '',
             createdAt: q['created_at'] != null ? DateTime.tryParse(q['created_at']) ?? DateTime.now() : DateTime.now(),
             updatedAt: q['updated_at'] != null ? DateTime.tryParse(q['updated_at']) ?? DateTime.now() : DateTime.now(),

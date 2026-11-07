@@ -80,20 +80,29 @@ void main() {
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
     });
 
-    test('SelfHostBootstrap.scanAndValidate verifies 88 migrations sequentially', () {
+    test('SelfHostBootstrap.scanAndValidate verifies every migration sequentially', () {
       final scanResult = SelfHostBootstrap.scanAndValidate('supabase/migrations');
 
       expect(scanResult.isValid, isTrue, reason: 'Errors: ${scanResult.errors}');
       expect(scanResult.errors, isEmpty);
-      expect(scanResult.migrations.length, equals(88));
+      // Keep this assertion forward-compatible as append-only migrations land in PRs.
+      final migrationFileCount = Directory('supabase/migrations')
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.sql'))
+          .length;
+      expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261106030000'));
+      expect(scanResult.migrations.last.version, equals('20261107041341'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
       expect(bundle, contains('COMMIT;'));
       expect(bundle, contains('20241228000000_legacy_base_tables.sql'));
+      expect(bundle, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
       expect(bundle, contains('20261106030000_catalog_pathway_evidence_provenance.sql'));
+      expect(bundle, contains('20261107025537_short_answer_grading_persistence.sql'));
+      expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
     });
   });
 }

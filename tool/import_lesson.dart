@@ -172,13 +172,16 @@ Map<String, dynamic> _normalizeToDbFormat(
     if (json['questions'] is List) {
       for (final q in json['questions']) {
         content.add({
-          'type': 'mcq',
+          'type': q['type'] ?? (q['accepted_answers'] != null ? 'short_answer' : 'mcq'),
           'id': q['id']?.toString() ?? _uuid.v4(),
           'order': order++,
           'question': q['question'] ?? q['question_text'] ?? '',
           'options':
               q['options'] is List ? List<String>.from(q['options']) : <String>[],
-          'correctIndex': q['correct_answer'] ?? q['correctIndex'] ?? 0,
+          'correctIndex': (q['type'] == 'short_answer' || q['accepted_answers'] != null) ? 0 : (q['correct_answer'] ?? q['correctIndex'] ?? 0),
+          if (q['accepted_answers'] != null) 'accepted_answers': q['accepted_answers'],
+          if (q['grading_method'] != null) 'grading_method': q['grading_method'],
+          if (q['numeric_tolerance'] != null) 'numeric_tolerance': q['numeric_tolerance'],
           'explanation': q['explanation'] ?? '',
         });
       }
@@ -223,7 +226,9 @@ List<String> _validate(Map<String, dynamic> normalized) {
     return issues;
   }
 
-  var terms = 0, concepts = 0, mcqs = 0;
+  var terms = 0;
+  var concepts = 0;
+  var questions = 0;
 
   for (var i = 0; i < content.length; i++) {
     final item = content[i];
@@ -254,29 +259,57 @@ List<String> _validate(Map<String, dynamic> normalized) {
         }
         break;
       case 'mcq':
-        mcqs++;
+      case 'true_false':
+      case 'short_answer':
+        questions++;
         if ((item['question'] ?? '').toString().trim().isEmpty) {
           issues.add('$label: empty "question"');
         }
-        final options = item['options'];
-        if (options is! List || options.length < 2) {
+        if (type == 'short_answer') {
+          final accepted = item['accepted_answers'];
+          if (accepted is! List ||
+              accepted.isEmpty ||
+              accepted.any((answer) => answer.toString().trim().isEmpty)) {
+            issues.add('$label: short_answer requires accepted_answers');
+          }
+          final method =
+              item['grading_method']?.toString() ?? 'normalized_text';
+          if (!['exact', 'normalized_text', 'numeric'].contains(method)) {
+            issues.add('$label: unsupported grading_method "$method"');
+          }
+          final tolerance = item['numeric_tolerance'];
+          if (method == 'numeric' && tolerance is! num) {
+            issues.add('$label: numeric grading requires numeric_tolerance');
+          } else if (tolerance != null &&
+              (tolerance is! num || tolerance < 0)) {
+            issues.add('$label: numeric_tolerance must be non-negative');
+          }
+          break;
+        }
+
+        final rawOptions = item['options'];
+        if (rawOptions is! List || rawOptions.length < 2) {
           issues.add('$label: needs at least 2 options');
-        } else {
-          final texts =
-              options.map((o) => o.toString().trim()).toList(growable: false);
-          if (texts.any((t) => t.isEmpty)) {
-            issues.add('$label: contains an empty option');
-          }
-          if (texts.toSet().length != texts.length) {
-            issues.add('$label: contains duplicate options');
-          }
-          final ci = item['correctIndex'];
-          if (ci is! int) {
-            issues.add('$label: "correctIndex" must be an integer');
-          } else if (ci < 0 || ci >= options.length) {
-            issues.add(
-                '$label: "correctIndex" $ci out of range (0..${options.length - 1})');
-          }
+          break;
+        }
+        final options = rawOptions;
+        final texts = options
+            .map((option) => option.toString().trim())
+            .toList(growable: false);
+        if (texts.any((text) => text.isEmpty)) {
+          issues.add('$label: contains an empty option');
+        }
+        if (texts.toSet().length != texts.length) {
+          issues.add('$label: contains duplicate options');
+        }
+        final correctIndex = item['correctIndex'];
+        if (correctIndex is! int) {
+          issues.add('$label: "correctIndex" must be an integer');
+        } else if (correctIndex < 0 || correctIndex >= options.length) {
+          issues.add(
+            '$label: "correctIndex" $correctIndex out of range '
+            '(0..${options.length - 1})',
+          );
         }
         if ((item['explanation'] ?? '').toString().trim().isEmpty) {
           issues.add('$label: empty "explanation"');
@@ -287,8 +320,8 @@ List<String> _validate(Map<String, dynamic> normalized) {
     }
   }
 
-  if (terms + concepts + mcqs == 0) {
-    issues.add('Lesson has no recognizable content (terms/concepts/mcqs)');
+  if (terms + concepts + questions == 0) {
+    issues.add('Lesson has no recognizable content (terms/concepts/questions)');
   }
 
   return issues;
@@ -360,13 +393,18 @@ Future<void> _importLesson(_Config cfg, Map<String, dynamic> normalized) async {
         });
         break;
       case 'mcq':
+      case 'true_false':
+      case 'short_answer':
         questions.add({
           'id': _uuid.v4(),
           'lesson_id': lessonId,
           'question_text': raw['question'],
           'options': raw['options'],
-          'correct_answer': raw['correctIndex'],
-          'type': 'mcq',
+          'correct_answer': raw['correctIndex'] ?? 0,
+          'type': raw['type'] ?? 'mcq',
+          'accepted_answers': raw['accepted_answers'] ?? [],
+          'grading_method': raw['grading_method'] ?? 'normalized_text',
+          'numeric_tolerance': raw['numeric_tolerance'],
           'explanation': raw['explanation'],
           'user_id': null,
         });

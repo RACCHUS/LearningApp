@@ -27,13 +27,16 @@ class QuestionAdapter extends TypeAdapter<Question> {
       explanation: fields[5] as String?,
       createdBy: fields[6] as String,
       createdAt: fields[7] as DateTime?,
+      acceptedAnswers: (fields[8] as List?)?.cast<String>(),
+      gradingMethod: fields[9] as String?,
+      numericTolerance: (fields[10] as num?)?.toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Question obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -49,7 +52,13 @@ class QuestionAdapter extends TypeAdapter<Question> {
       ..writeByte(6)
       ..write(obj.createdBy)
       ..writeByte(7)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(8)
+      ..write(obj.acceptedAnswers)
+      ..writeByte(9)
+      ..write(obj.gradingMethod)
+      ..writeByte(10)
+      ..write(obj.numericTolerance);
   }
 
   @override

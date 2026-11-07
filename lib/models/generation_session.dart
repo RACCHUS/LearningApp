@@ -200,24 +200,32 @@ class GenerationSession {
       final options = source['options'] is List
           ? List<String>.from(source['options'])
           : <String>[];
+      final questionType = source['type']?.toString() ?? 'mcq';
+      final isShortAnswer = questionType == 'short_answer';
       final correctText = source['correct_answer']?.toString() ?? '';
-
-      // Convert text answer to index with fallback matching
-      var correctIndex = _resolveCorrectIndex(correctText, options);
+      final acceptedAnswers = (source['accepted_answers'] as List?)
+          ?.map((a) => a.toString())
+          .where((a) => a.trim().isNotEmpty)
+          .toList();
+      final correctIndex = isShortAnswer ? null : _resolveCorrectIndex(correctText, options);
 
       final result = <String, dynamic>{
         'id': source['id'] ?? '',
         'question': source['question'] ?? source['question_text'] ?? '',
+        'type': questionType,
         'options': options,
         'correct_answer': correctIndex ?? 0,
         'explanation': source['explanation'] ?? '',
+        if (isShortAnswer) 'accepted_answers': acceptedAnswers ?? (correctText.isNotEmpty ? [correctText] : []),
+        if (isShortAnswer) 'grading_method': source['grading_method'] ?? 'normalized_text',
+        if (isShortAnswer && source['numeric_tolerance'] != null) 'numeric_tolerance': source['numeric_tolerance'],
       };
 
-      // Flag for review if answer didn't match
-      if (correctIndex == null) {
+      if ((!isShortAnswer && correctIndex == null) ||
+          (isShortAnswer && (result['accepted_answers'] as List).isEmpty)) {
         result['_needs_review'] = true;
         result['_review_reason'] =
-            'correct_answer "$correctText" did not match any option';
+            isShortAnswer ? 'short_answer has no accepted_answers' : 'correct_answer "$correctText" did not match any option';
       }
 
       // Cross-check: duplicate options

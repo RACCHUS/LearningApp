@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/models/content_types.dart';
-import 'package:learning_pwa/utils/math_utils.dart';
+import 'package:learning_pwa/services/assessment/short_answer_grader.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/audio/audio_text_widget.dart';
 import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
@@ -289,7 +289,7 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
   }
 
   Widget _buildQuestionContent(QuestionContent content) {
-    switch (_effectiveQuestionType(content)) {
+    switch (content.effectiveQuestionType) {
       case 'mcq':
         return McqQuestionWidget(
           content: content,
@@ -327,13 +327,13 @@ class _LessonContentRendererState extends State<LessonContentRenderer> {
             // Handle answer changed if needed
           },
           onSubmit: () {
-            final isCorrect = MathUtils.isAnswerCorrect(
+            final grade = ShortAnswerGrader.grade(
+              content,
               shortAnswerController.text,
-              content.options[content.correctAnswer],
             );
             setState(() {
               showSaCorrect = true;
-              shortAnswerFeedback = isCorrect ? 'Correct!' : 'Incorrect';
+              shortAnswerFeedback = grade.feedback;
             });
           },
           onNext: widget.onNext,
