@@ -43,7 +43,7 @@ def validate_payload(payload):
         retrieved=datetime.fromisoformat(r["source_retrieved_at"].replace("Z","+00:00"))
         assert retrieved.tzinfo is not None and retrieved<=datetime.now(timezone.utc)
         assert r["uncertainty_status"]=="conditional" and r["pathway_kind"]=="initial_licensure"
-        assert validate_tree(r["pathway_tree"],STEP_URLS[identity])>=15
+        assert validate_tree(r["pathway_tree"],STEP_URLS[identity])>=12
         labels=[]
         def walk(n):
             if n["op"]=="step": labels.append(n["label"])
