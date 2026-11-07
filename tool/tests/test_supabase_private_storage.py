@@ -102,6 +102,43 @@ class PrivateStorageTests(unittest.TestCase):
         self.assertEqual(http.requests[0][0].get_header("Authorization"),
                          "Bearer sb_secret_test")
 
+    def test_create_only_post_has_no_upsert_and_forced_xlsx_mime(self):
+        class UploadHTTP(FakeAPI):
+            def __call__(self, request, timeout):
+                if request.get_method() == "POST":
+                    self.requests.append((request, timeout))
+                    self.blob = request.data
+                    self.info["metadata"]["size"] = len(self.blob)
+                    return Response(request.full_url, b'{"Key":"accepted"}',
+                                    status=201)
+                return super().__call__(request, timeout)
+
+        store, http = self.store(UploadHTTP())
+        store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04" + b"safe")
+        request = http.requests[0][0]
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.get_header("Content-type"), MIME)
+        self.assertEqual(request.get_header("X-upsert"), "false")
+        self.assertEqual(request.data, b"PK\\x03\\x04safe")
+        self.assertEqual(store.stat(PRIVATE_BUCKET, PATH), VERSION)
+
+    def test_create_only_rejects_oversized_or_bad_paths_without_network(self):
+        store, http = self.store()
+        for path, payload in (
+            (PATH, b""),
+            (PATH, b"x" * (10 * 1024 * 1024 + 1)),
+            (f"{OWNER}/../{ATTEMPT}/workbook.xlsx", b"PK\x03\x04"),
+        ):
+            with self.subTest(path=path, size=len(payload)), self.assertRaises(StorageFailure):
+                store.create_only(PRIVATE_BUCKET, path, payload)
+        self.assertEqual(http.requests, [])
+
+    def test_create_only_does_not_retry_conflicts_or_redirects(self):
+        store, http = self.store(FakeAPI(failure=HTTPError("https://host",409,"exists",{},None)))
+        with self.assertRaises(StorageFailure):
+            store.create_only(PRIVATE_BUCKET, PATH, b"PK\\x03\\x04okay")
+        self.assertEqual(len(http.requests), 1)
+
     def test_foreign_bucket_and_path_rejected_before_network(self):
         store, http = self.store()
         for bucket, path in (
