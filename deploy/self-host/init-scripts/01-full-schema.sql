@@ -35476,7 +35476,8 @@ DECLARE
 BEGIN
   IF (p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL
     OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}$'
-    OR p_version IS NULL OR p_version !~ '^[a-zA-Z0-9._:-]{1,256}$')
+    OR p_version IS NULL OR char_length(p_version) NOT BETWEEN 1 AND 256
+    OR p_version !~ '^[a-zA-Z0-9._:-]+$')
   THEN
     RETURN false;
   END IF;
