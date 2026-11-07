@@ -63,8 +63,8 @@ def validate_payload(payload: dict) -> list[dict]:
         assert r["route_kind"] == "examination"
         assert r["coverage"] == "selected_steps_only"
         assert r["source_url"] == expected_url
-        assert r["source_checked_on"] == "2026-10-13"
-        assert r["reviewed_on"] == "2026-10-13"
+        assert r["source_checked_on"] == "2026-11-06"
+        assert r["reviewed_on"] == "2026-11-06"
         assert date.fromisoformat(r["source_checked_on"]) <= date.today()
         assert 80 <= len(r["overview"].strip()) <= 1200
         assert 8 <= len(r["title"].strip()) <= 180
