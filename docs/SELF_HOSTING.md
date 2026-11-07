@@ -1,6 +1,6 @@
 # 🌐 Turnkey Self-Hosting & Forking Guide
 
-> **Normative Platform Reference**: `ARCHITECTURE_REVIEW.md §3 (OPP-6)` & `EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`  
+> **Normative Platform Reference**: `ARCHITECTURE_REVIEW.md §3 (OPP-6)` & [`docs/learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md`](learning_science/EVIDENCE_BASED_LEARNING_OPTIMIZATION_PLAN.md)  
 > **Status**: Production Ready (Phase 3 Milestone 2)
 
 LearningApp provides a first-class, turnkey self-hosting and white-label forking architecture. Any educational institution, training provider, or open-source contributor can deploy their own completely sovereign, private learning instance with zero dependence on proprietary third-party clouds or vendor lock-in.

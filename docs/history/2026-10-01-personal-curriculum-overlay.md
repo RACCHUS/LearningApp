@@ -8,7 +8,7 @@
 
 **Tech Stack:** Flutter/Dart, Riverpod, Supabase/Postgres RLS, pgTAP, Hive, Flutter widget tests.
 
-**Spec:** `docs/superpowers/specs/2026-10-01-personal-curriculum-overlay-design.md`
+**Spec:** [`2026-10-01-personal-curriculum-overlay-design.md`](2026-10-01-personal-curriculum-overlay-design.md)
 
 ## Global Constraints
 
