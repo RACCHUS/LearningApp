@@ -42,7 +42,7 @@ select throws_ok(
   'P0001',null,'New publication requires retrieval provenance and a review note');
 
 select lives_ok(
-  $fixture$update public.catalog_license_pathway_versions set source_retrieved_at=now(),review_note='Reviewed against the exact regulator page; individual exceptions remain outside this selected pathway.',uncertainty_status='conditional',pathway_kind='initial_licensure' where source_namespace='p2e_fixture' and source_key='rn-test'$fixture$,
+  $fixture$update public.catalog_license_pathway_versions set source_retrieved_at=source_checked_at,review_note='Reviewed against the exact regulator page; individual exceptions remain outside this selected pathway.',uncertainty_status='conditional',pathway_kind='initial_licensure' where source_namespace='p2e_fixture' and source_key='rn-test'$fixture$,
   'Draft records can store provenance and visible uncertainty');
 
 select lives_ok(
