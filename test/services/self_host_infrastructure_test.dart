@@ -85,6 +85,7 @@ void main() {
 
       expect(scanResult.isValid, isTrue, reason: 'Errors: ${scanResult.errors}');
       expect(scanResult.errors, isEmpty);
+      // Keep this assertion forward-compatible as append-only migrations land in PRs.
       final migrationFileCount = Directory('supabase/migrations')
           .listSync()
           .whereType<File>()
