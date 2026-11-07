@@ -452,12 +452,14 @@ select throws_ok(
 
 -- NEGATIVE GUARD 5: Cannot submit expired attempt
 -- Note: Must update attempt under service_role privilege because client roles have SELECT-only
+-- Preserves check (expires_at > issued_at) by shifting both into the past
 reset role;
 set local role service_role;
 set local "request.jwt.claim.role" to 'service_role';
 
 update public.clep_simulation_attempts
-set expires_at = clock_timestamp() - interval '10 seconds'
+set issued_at = clock_timestamp() - interval '100 minutes',
+    expires_at = clock_timestamp() - interval '5 minutes'
 where id = (select attempt_id from _test_ctx);
 
 reset role;
