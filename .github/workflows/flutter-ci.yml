@@ -172,6 +172,9 @@ jobs:
       - name: Test isolated no-Docker Excel upload host
         run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_runtime.py' -v
 
+      - name: Test disabled internal binary Excel upload ingress
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_ingress.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
