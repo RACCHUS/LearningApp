@@ -157,6 +157,26 @@ void main() {
       expect(domainCodes, equals(['CS-101', 'CS-201', 'CS-301', 'CS-401', 'CS-501']));
     });
 
+    test('CLEP Introductory Psychology manifest conforms to College Board 13-domain blueprint', () {
+      final manifest = loadManifest('content/clep_introductory_psychology.yaml');
+      validateManifestStructure(manifest, 'clep-introductory-psychology');
+
+      final domains = manifest['domains'] as List<dynamic>;
+      expect(domains.length, equals(13));
+
+      final domainCodes = domains.map((d) => (d as Map)['code']).toList();
+      expect(domainCodes, equals([
+        '1.0', '2.0', '3.0', '4.0', '5.0', '6.0', '7.0',
+        '8.0', '9.0', '10.0', '11.0', '12.0', '13.0',
+      ]));
+
+      final totalWeight = domains.fold<double>(
+        0.0,
+        (sum, d) => sum + ((d as Map)['weight'] as num).toDouble(),
+      );
+      expect((totalWeight - 1.0).abs(), lessThan(0.001));
+    });
+
     test('Lesson concept scoping regression test: Objective A concepts do not leak into Objective B lessons', () {
       final manifest = loadManifest('content/security_plus_sy0_701.yaml');
       final domains = manifest['domains'] as List<dynamic>;
