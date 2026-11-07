@@ -40,6 +40,8 @@ class AssessmentLease:
     checker_version: int
     expires_at: datetime
     expected_inputs: Mapping[str, object]
+    expected_sha256: str | None = None
+    object_version: str | None = None
 
 
 class SessionGateway(Protocol):
@@ -98,7 +100,12 @@ def _eligible(lease: AssessmentLease, user: VerifiedIdentity,
         type(lease.checker_version) is not int or
         lease.checker_version != 1 or
         lease.expires_at.tzinfo is None or
-        lease.expires_at <= at):
+        lease.expires_at <= at or
+        not isinstance(lease.expected_sha256, str) or
+        len(lease.expected_sha256) != 64 or
+        any(v not in "0123456789abcdef" for v in lease.expected_sha256) or
+        not isinstance(lease.object_version, str) or
+        not 1 <= len(lease.object_version) <= 256):
         return False
     return True
 
@@ -148,11 +155,12 @@ def assess_private_workbook(
 
         object_name = f"{identity.owner_id}/{attempt_id}/workbook.xlsx"
         before = storage.stat(PRIVATE_BUCKET, object_name)
-        if not isinstance(before, str) or not before or len(before) > 256:
+        if before != lease.object_version:
             return _rejected()
 
         blob = storage.download_limited(PRIVATE_BUCKET, object_name, _MAX_BYTES + 1)
-        if not isinstance(blob, bytes) or not blob or len(blob) > _MAX_BYTES:
+        if (not isinstance(blob, bytes) or not blob or len(blob) > _MAX_BYTES
+            or hashlib.sha256(blob).hexdigest() != lease.expected_sha256):
             return _rejected()
 
         after = storage.stat(PRIVATE_BUCKET, object_name)
