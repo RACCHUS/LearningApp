@@ -110,7 +110,7 @@ class LessonImportService {
                   numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
                   createdBy: q['created_by']?.toString() ?? userId,
                 ))
-            .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
+            .where((q) => q.questionText.isNotEmpty && (q.options.isNotEmpty || (q.type == 'short_answer' && (q.acceptedAnswers?.isNotEmpty ?? false))))
             .toList();
         if (questions.isNotEmpty) {
           await _contentService.addQuestions(lessonId, questions);
