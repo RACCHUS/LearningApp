@@ -16,18 +16,21 @@ class CreateTargetDialog extends ConsumerStatefulWidget {
   final TargetType? initialType;
   final VerifiedDestination? initialDestination;
   final String? initialDescription;
+  final String? initialTitle;
 
   const CreateTargetDialog({
     super.key,
     this.initialType,
     this.initialDestination,
     this.initialDescription,
+    this.initialTitle,
   });
 
   static Future<LearningTarget?> show(BuildContext context, {
     TargetType? initialType,
     VerifiedDestination? initialDestination,
     String? initialDescription,
+    String? initialTitle,
   }) {
     return showDialog<LearningTarget>(
       context: context,
@@ -35,6 +38,7 @@ class CreateTargetDialog extends ConsumerStatefulWidget {
         initialType: initialType,
         initialDestination: initialDestination,
         initialDescription: initialDescription,
+        initialTitle: initialTitle,
       ),
     );
   }
@@ -62,7 +66,7 @@ class _CreateTargetDialogState extends ConsumerState<CreateTargetDialog> {
     super.initState();
     _selectedType = widget.initialDestination?.supportedPrivateGoalType ??
         widget.initialType ?? TargetType.career;
-    _titleController = TextEditingController();
+    _titleController = TextEditingController(text: widget.initialTitle ?? '');
     _descController = TextEditingController(text: widget.initialDescription ?? '');
     _providerController = TextEditingController();
     _jurisdictionController = TextEditingController(
