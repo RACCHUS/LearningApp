@@ -3,6 +3,7 @@ import json
 import sys
 import unittest
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -19,6 +20,15 @@ class RegulatorPathwayTests(unittest.TestCase):
         self.assertEqual({r['source_key'] for r in rows},
             {'registered-nurse','licensed-practical-nurse'})
         self.assertGreaterEqual(sum(p2e.validate_tree(r['pathway_tree']) for r in rows),15)
+        for row in rows:
+            retrieved_at = datetime.fromisoformat(row['source_retrieved_at'].replace('Z', '+00:00'))
+            self.assertIsNotNone(retrieved_at.tzinfo)
+            self.assertEqual(row['source_retrieved_at'], '2026-11-07T03:22:03Z')
+            self.assertEqual(row['source_checked_on'], '2026-11-06')
+            self.assertEqual(row['reviewed_on'], '2026-11-06')
+            self.assertGreaterEqual(len(row['review_note']), 80)
+            self.assertEqual(row['uncertainty_status'], 'conditional')
+            self.assertEqual(row['pathway_kind'], 'initial_licensure')
 
     def test_wrong_license_type_jurisdiction_and_domain_rejected(self):
         for field,value in [('source_key','nclex-rn'),('jurisdiction','US-GA'),
@@ -54,6 +64,12 @@ class RegulatorPathwayTests(unittest.TestCase):
         self.assertTrue(sql.startswith('begin;'))
         self.assertTrue(sql.endswith('commit;\n'))
         self.assertEqual(sql.count('insert into public.catalog_license_pathway_versions'),2)
+        self.assertIn('source_retrieved_at', sql)
+        self.assertIn('review_note', sql)
+        self.assertIn('uncertainty_status', sql)
+        self.assertIn('pathway_kind', sql)
+        self.assertIn('source_checked_at', sql)
+        self.assertIn('2026-11-07T03:22:03Z', sql)
         self.assertIn('on conflict (source_namespace,source_key,revision) do nothing',sql)
         self.assertIn('publication_status=\'published\'',sql)
         for forbidden in ('insert into public.learning_targets','insert into public.lessons',
