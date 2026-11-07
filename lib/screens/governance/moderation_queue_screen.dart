@@ -589,7 +589,10 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
       case ModerationTargetType.resource:
         return Icons.folder_shared;
       case ModerationTargetType.question:
+      case ModerationTargetType.communityQuestion:
         return Icons.help_outline;
+      case ModerationTargetType.communityAnswer:
+        return Icons.chat_bubble_outline;
       case ModerationTargetType.profile:
         return Icons.person;
     }

@@ -14,9 +14,12 @@
       "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
       "coverage": "selected_steps_only",
       "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-      "source_checked_on": "2026-10-12",
-      "reviewed_on": "2026-10-12",
-      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_checked_on": "2026-11-06",
+      "reviewed_on": "2026-11-06",
+      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [
@@ -101,9 +104,12 @@
       "overview": "Selected regulator-sourced steps for Florida nursing licensure by examination. Education alternatives are conditional; this summary omits other individual eligibility, endorsement, criminal or disciplinary, exemption and examination-history circumstances. Always consult the Board directly. Learning App cannot issue a nursing license or determine eligibility.",
       "coverage": "selected_steps_only",
       "source_url": "https://floridasnursing.gov/nurse-rn-lpn/",
-      "source_checked_on": "2026-10-12",
-      "reviewed_on": "2026-10-12",
-      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on October 12, 2026. The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_checked_on": "2026-11-06",
+      "reviewed_on": "2026-11-06",
+      "review_note": "Reviewed against the Florida Board of Nursing RN and LPN examination application page on November 6, 2026 (source retrieved at 2026-11-07T03:22:03Z UTC). The board describes alternative education qualifications, fingerprints, application, NCLEX eligibility and license issuance as distinct stages. Selected steps only; individual exceptions are not fully covered.",
+      "source_retrieved_at": "2026-11-07T03:22:03Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
       "pathway_tree": {
         "op": "all",
         "children": [

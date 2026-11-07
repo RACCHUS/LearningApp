@@ -100,8 +100,10 @@ void main() {
       expect(bundle, contains('COMMIT;'));
       expect(bundle, contains('20241228000000_legacy_base_tables.sql'));
       expect(bundle, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
+      expect(bundle, contains('20261106030000_catalog_pathway_evidence_provenance.sql'));
       expect(bundle, contains('20261107025537_short_answer_grading_persistence.sql'));
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
+    });
     });
   });
 }

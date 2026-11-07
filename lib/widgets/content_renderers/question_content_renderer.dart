@@ -19,6 +19,7 @@ class QuestionContentRenderer extends ConsumerStatefulWidget {
   final VoidCallback onNext;
   final bool? autoPlayOverride;
   final bool isOrchestratorMode;
+  final int? presentationSeed;
 
   const QuestionContentRenderer({
     super.key,
@@ -26,14 +27,25 @@ class QuestionContentRenderer extends ConsumerStatefulWidget {
     required this.onNext,
     this.autoPlayOverride,
     this.isOrchestratorMode = false,
+    this.presentationSeed,
   });
 
   @override
-  ConsumerState<QuestionContentRenderer> createState() => _QuestionContentRendererState();
+  ConsumerState<QuestionContentRenderer> createState() =>
+      _QuestionContentRendererState();
 }
 
-class _QuestionContentRendererState extends ConsumerState<QuestionContentRenderer> {
+class _QuestionContentRendererState
+    extends ConsumerState<QuestionContentRenderer> {
+  static int _globalAttemptNonce = 0x369CF258;
+
+  late int _attemptNonce;
   late int _presentationSeed;
+  List<int> _presentationOrder = const [];
+
+  int get attemptNonce => _attemptNonce;
+  int get presentationSeed => _presentationSeed;
+  List<int> get presentationOrder => List.unmodifiable(_presentationOrder);
 
   // MCQ state
   int? selectedMcq;
@@ -51,7 +63,7 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
   @override
   void initState() {
     super.initState();
-    _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+    _initPresentationState();
   }
 
   @override
@@ -63,15 +75,65 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
   @override
   void didUpdateWidget(QuestionContentRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reset state when content changes
-    if (oldWidget.content != widget.content) {
-      _resetState();
+    // Reset state when content or presentationSeed changes
+    if (oldWidget.content != widget.content ||
+        oldWidget.presentationSeed != widget.presentationSeed) {
+      final previousOrder =
+          (oldWidget.content.id == widget.content.id &&
+              _presentationOrder.isNotEmpty)
+          ? List<int>.from(_presentationOrder)
+          : null;
+      _resetState(previousOrder: previousOrder);
     }
   }
 
-  void _resetState() {
+  void _initPresentationState({List<int>? previousOrder}) {
+    final options = widget.content.options;
+
+    if (widget.presentationSeed != null) {
+      _attemptNonce = widget.presentationSeed!;
+      int candidateSeed = _attemptNonce ^ widget.content.id.hashCode;
+      if (previousOrder != null &&
+          McqOptions.countNonAnchorOptions(options) > 1) {
+        final candidateOrder = McqOptions.computePresentationOrder(
+          options,
+          presentationSeed: candidateSeed,
+          shuffle: true,
+        );
+        if (McqOptions.listsEqual(candidateOrder, previousOrder)) {
+          _attemptNonce = McqOptions.nextPresentationNonce(
+            currentNonce: _attemptNonce,
+            options: options,
+            itemHash: widget.content.id.hashCode,
+            previousOrder: previousOrder,
+          );
+          candidateSeed = _attemptNonce ^ widget.content.id.hashCode;
+        }
+      }
+      _presentationSeed = candidateSeed;
+    } else {
+      _globalAttemptNonce = McqOptions.nextPresentationNonce(
+        currentNonce:
+            _globalAttemptNonce ^ DateTime.now().microsecondsSinceEpoch,
+        options: options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: previousOrder,
+      );
+      _attemptNonce = _globalAttemptNonce;
+      _presentationSeed = _attemptNonce ^ widget.content.id.hashCode;
+    }
+
+    _presentationOrder = McqOptions.computePresentationOrder(
+      options,
+      presentationSeed: _presentationSeed,
+      shuffle: true,
+      avoidOrder: previousOrder,
+    );
+  }
+
+  void _resetState({List<int>? previousOrder}) {
     setState(() {
-      _presentationSeed = DateTime.now().microsecondsSinceEpoch ^ widget.content.id.hashCode;
+      _initPresentationState(previousOrder: previousOrder);
       selectedMcq = null;
       showMcqCorrect = false;
       selectedTf = null;
@@ -80,6 +142,56 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
       shortAnswerFeedback = null;
       showSaCorrect = false;
     });
+  }
+
+  /// Retries the current question with a fresh per-attempt nonce and option permutation.
+  void retryQuestion() {
+    final previousOrder = _presentationOrder.isNotEmpty
+        ? List<int>.from(_presentationOrder)
+        : null;
+    setState(() {
+      _globalAttemptNonce = McqOptions.nextPresentationNonce(
+        currentNonce: _attemptNonce,
+        options: widget.content.options,
+        itemHash: widget.content.id.hashCode,
+        previousOrder: previousOrder,
+      );
+      _attemptNonce = _globalAttemptNonce;
+      _presentationSeed = _attemptNonce ^ widget.content.id.hashCode;
+      _presentationOrder = McqOptions.computePresentationOrder(
+        widget.content.options,
+        presentationSeed: _presentationSeed,
+        shuffle: true,
+        avoidOrder: previousOrder,
+      );
+      selectedMcq = null;
+      showMcqCorrect = false;
+      selectedTf = null;
+      showTfCorrect = false;
+      shortAnswerController.clear();
+      shortAnswerFeedback = null;
+      showSaCorrect = false;
+    });
+  }
+
+  String _effectiveQuestionType(QuestionContent content) {
+    if (content.type == 'mcq' ||
+        content.type == 'true_false' ||
+        content.type == 'short_answer') {
+      return content.type;
+    }
+    if (content.options.length == 2) {
+      final normalized = content.options
+          .map((o) => o.toLowerCase().trim())
+          .toSet();
+      if (normalized.contains('true') && normalized.contains('false')) {
+        return 'true_false';
+      }
+    }
+    if (content.options.length <= 1) {
+      return 'short_answer';
+    }
+    return 'mcq';
   }
 
   @override
@@ -95,11 +207,6 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
 
     switch (widget.content.effectiveQuestionType) {
       case 'mcq':
-        final presentationOrder = McqOptions.computePresentationOrder(
-          widget.content.options,
-          presentationSeed: _presentationSeed,
-          shuffle: true,
-        );
         return McqQuestionWidget(
           content: widget.content,
           selectedIndex: selectedMcq,
@@ -117,18 +224,8 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
             setState(() => showMcqCorrect = true);
           },
           onNext: widget.onNext,
-          onVoiceInput: (voiceInput) {
-            final result = VoiceInputHandler.handleMcqVoiceInput(
-              voiceInput,
-              widget.content,
-              presentationOrder: presentationOrder,
-            );
-            if (result != null) {
-              setState(() => selectedMcq = result);
-            } else {
-              _handleVoiceInput(voiceInput);
-            }
-          },
+          onRetry: retryQuestion,
+          onVoiceInput: handleVoiceInput,
           customTextBuilder: _renderText,
         );
 
@@ -139,7 +236,8 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
           showCorrect: showTfCorrect,
           onSelectionChanged: (value) => setState(() => selectedTf = value),
           onSubmit: () {
-            final correctValue = widget.content.correctAnswer == 0; // 0=true, 1=false
+            final correctValue =
+                widget.content.correctAnswer == 0; // 0=true, 1=false
             final isCorrect = selectedTf == correctValue;
             if (isCorrect) {
               HapticUtils.success();
@@ -188,6 +286,21 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
     }
   }
 
+  void handleVoiceInput(String voiceInput) {
+    if (_effectiveQuestionType(widget.content) == 'mcq') {
+      final result = VoiceInputHandler.handleMcqVoiceInput(
+        voiceInput,
+        widget.content,
+        presentationOrder: _presentationOrder,
+      );
+      if (result != null) {
+        setState(() => selectedMcq = result);
+        return;
+      }
+    }
+    _handleVoiceInput(voiceInput);
+  }
+
   void _handleVoiceInput(String voiceInput) {
     if (widget.isOrchestratorMode) {
       // In orchestrator mode, voice input is handled by the orchestrator
@@ -195,9 +308,15 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
     }
 
     // Legacy voice input handling for non-orchestrator mode
-    final context = VoiceCommandRouter.getContextFromContent(widget.content);
-    final command = VoiceCommandRouter.parseContextAwareCommand(voiceInput, context: context);
-    
+    final rawContext = VoiceCommandRouter.getContextFromContent(widget.content);
+    final effectiveContext = (rawContext == null || rawContext == 'question')
+        ? _effectiveQuestionType(widget.content)
+        : rawContext;
+    final command = VoiceCommandRouter.parseContextAwareCommand(
+      voiceInput,
+      context: effectiveContext,
+    );
+
     if (command?.type == VoiceCommandType.answer) {
       _processAnswerCommand(command!);
     }
@@ -213,33 +332,33 @@ class _QuestionContentRendererState extends ConsumerState<QuestionContentRendere
     switch (widget.content.effectiveQuestionType) {
       case 'mcq':
         if (command.value is String) {
-          final slotIndex = command.value.codeUnitAt(0) - 65; // A=0, B=1, etc.
-          final presentationOrder = McqOptions.computePresentationOrder(
-            widget.content.options,
-            presentationSeed: _presentationSeed,
-            shuffle: true,
-          );
-          if (slotIndex >= 0 && slotIndex < presentationOrder.length) {
-            final canonicalIndex = presentationOrder[slotIndex];
+          final slotIndex =
+              (command.value as String).toUpperCase().codeUnitAt(0) -
+              65; // A=0, B=1, etc.
+          if (slotIndex >= 0 && slotIndex < _presentationOrder.length) {
+            final canonicalIndex = _presentationOrder[slotIndex];
             setState(() => selectedMcq = canonicalIndex);
           }
         }
         break;
       case 'true_false':
         if (command.value is bool) {
-          setState(() => selectedTf = command.value);
+          setState(() => selectedTf = command.value as bool);
         }
         break;
       case 'short_answer':
         if (command.value is String) {
-          shortAnswerController.text = command.value;
+          shortAnswerController.text = command.value as String;
         }
         break;
     }
   }
 
   Widget _renderText(String text) {
-    if (text.contains(r'\(') || text.contains(r'\[') || text.contains(r'\frac') || text.contains(r'\sqrt')) {
+    if (text.contains(r'\(') ||
+        text.contains(r'\[') ||
+        text.contains(r'\frac') ||
+        text.contains(r'\sqrt')) {
       return Math.tex(text, textStyle: Theme.of(context).textTheme.titleLarge);
     }
     return Text(text, style: Theme.of(context).textTheme.titleLarge);
