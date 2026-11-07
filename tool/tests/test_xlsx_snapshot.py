@@ -129,6 +129,12 @@ class XLSXSnapshotTests(unittest.TestCase):
         book = BOOK.replace(b"<workbook", b'<!DOCTYPE workbook [<!ENTITY x "xx">]><workbook')
         self._reject(zip_bytes({"xl/workbook.xml": book}))
 
+    def test_utf16_doctype_fails_closed(self):
+        xml = BOOK.decode("utf-8")
+        xml = xml.replace("<workbook",
+            '<!DOCTYPE workbook [<!ENTITY short "safe">]><workbook', 1)
+        self._reject(zip_bytes({"xl/workbook.xml": xml.encode("utf-16")}))
+
     def test_hidden_formula_rejected(self):
         extra = '<row r="11"><c r="A11"><f>WEBSERVICE("http://bad")</f></c></row>'
         self._reject(zip_bytes({"xl/worksheets/sheet1.xml": sheet(extra=extra)}))
