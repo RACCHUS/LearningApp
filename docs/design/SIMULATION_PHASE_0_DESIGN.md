@@ -81,7 +81,7 @@ activity-to-concept mapping, and update the existing authoritative projection.
 `arch_04`'s idempotency and server-side write boundary alone do not satisfy
 those requirements. The existing
 [measurement roadmap](../learning_science/06_MEASUREMENT_AND_SCHEDULING.md)
-and [platform plan](../../PLATFORM_VISION_AND_EXECUTION_PLAN.md) should govern
+and [platform plan](../product/PLATFORM_VISION_AND_EXECUTION_PLAN.md) should govern
 that work; do not create a second simulation-specific mastery system.
 
 ## Local prototype contract
@@ -267,12 +267,27 @@ cannot establish causal effectiveness.
   compiled successfully (existing `flutter_tts` WebAssembly dry-run warnings
   only). This confirms the gated code compiles for release; it was not served
   or exercised in a browser.
+- After merging `origin/main` (`126c4e1`), the full `flutter test` suite passed
+  (2,261 passed, 1 skipped), and `dart run tool/verify_migration_history.dart --base-ref origin/main`
+  verified append-only, monotonic history. The self-host test's latest-version
+  assertion now expects `20261107100000`.
 - `dart run tool/self_host_bootstrap.dart --generate-bundle deploy/self-host/init-scripts/01-full-schema.sql`
-  regenerated the bundle with 92 migrations through
-  `20261107100000_simulation_lesson_blocks`; it was not deployed. The
+  regenerated the bundle against the combined history: 93 migrations, with
+  `20261107060000_performance_library_search_trigram_indexes` followed by
+  `20261107100000_simulation_lesson_blocks`. It was not deployed. The
   migration also requires the backward-compatible `body` fallback.
+- [The pgTAP suite](../../supabase/tests/simulation_lesson_blocks_test.sql)
+  now inserts real rows. It accepts a simulation block with a body; rejects a
+  missing, empty, or whitespace-only body and an unknown block type
+  (`23514`); and accepts all eight existing block types without a simulation
+  body. It runs in a rolled-back transaction.
 - Hot restart was attempted, but no running Flutter app was connected to this
   workspace.
-- `supabase` pgTAP and real authenticated database checks were **not run**:
-  the Docker engine was unavailable. No database or production deployment was
-  started or modified.
+- pgTAP could **not** run locally because the Docker engine was unavailable. It
+  must pass in the PR's `verify-database` CI job, which runs `supabase test db`
+  against both incremental and clean local databases. No hosted or production
+  database was started, deployed, or modified.
+- Feature-enablement gates (not merge gates for preview-disabled code): a
+  release browser must refuse both block and direct-route launches even with
+  `ENABLE_SIMULATION_PREVIEW=true`, and WCAG 2.2 AA review plus the equivalent
+  learning alternative must be verified.
