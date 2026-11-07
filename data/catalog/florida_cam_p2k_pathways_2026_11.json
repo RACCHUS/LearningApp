@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "review_scope": "selected_regulator_sourced_steps",
+  "reviewed_jurisdiction": "US-FL",
+  "regulator_name": "Florida Regulatory Council of Community Association Managers (DBPR RCCAM)",
+  "regulator_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=38&chBoard=true&professionid=3801",
+  "no_license_issuance": true,
+  "no_fees_verified": true,
+  "destination": {
+    "source_namespace": "dbpr_fl",
+    "source_key": "community-association-manager",
+    "destination_type": "professional_license",
+    "title": "Florida Community Association Manager License",
+    "issuer_name": "Florida Department of Business and Professional Regulation",
+    "issuer_url": "https://www2.myfloridalicense.com/licensing-and-regulation/",
+    "official_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=38&chBoard=true&professionid=3801",
+    "jurisdiction": "US-FL",
+    "verification_note": "Florida DBPR official application center names Community Association Manager and provides CAM 1 initial license requirements and guidelines.",
+    "reviewed_on": "2026-11-07",
+    "editorial_order": 28,
+    "resource": {
+      "resource_key": "dbpr-cam1-checklist",
+      "title": "DBPR CAM 1 Community Association Manager Initial Application Checklist",
+      "resource_kind": "regulator_license_checklist",
+      "resource_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=5042&clientCode=3801&xactCode=1010",
+      "source_publisher": "Florida Department of Business and Professional Regulation",
+      "review_note": "Official regulator application checklist detailing CAM 1 pre-licensing education, examination, electronic fingerprinting, and application requirements.",
+      "rights_scope": "external_link_only",
+      "status": "published",
+      "sort_order": 28
+    }
+  },
+  "records": [
+    {
+      "source_namespace": "dbpr_fl",
+      "source_key": "community-association-manager",
+      "revision": 1,
+      "supersedes_revision": null,
+      "jurisdiction": "US-FL",
+      "route_kind": "examination",
+      "title": "Florida Community Association Manager (CAM): RCCAM qualification, examination, and licensing routes",
+      "overview": "Selected official DBPR and Regulatory Council of Community Association Managers (RCCAM) licensing steps for Florida Community Association Managers (CAM) under Florida Statutes Chapter 468, Part VIII and Florida Administrative Code Chapters 61-20 and 61E14. Represents pre-licensing education alternatives (including the 16-hour DBPR-approved course and out-of-state endorsement pathways), age and moral character eligibility, electronic fingerprint screening (ORI FL921932Z), Pearson VUE state competency examination, DBPR Form CAM 1 initial licensure application, and mandatory 20-hour biennial continuing education requirements. This is not a formal legal determination of eligibility; individual applications are evaluated directly by the Department.",
+      "coverage": "selected_steps_only",
+      "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=38&chBoard=true&professionid=3801",
+      "source_checked_on": "2026-11-07",
+      "reviewed_on": "2026-11-07",
+      "review_note": "Revision 1 establishes the verified DBPR Regulatory Council of Community Association Managers licensing pathway based on F.S. § 468.433, F.A.C. Rule 61-20, and DBPR Form CAM 1 candidate guidance. Correctly identifies the 16-hour pre-licensing education prerequisite completed within 12 months, out-of-state endorsement alternative under F.S. § 468.433(4), exact electronic fingerprinting ORI FL921932Z, Pearson VUE state examination passing score of 75%, and 20-hour biennial continuing education renewal condition.",
+      "source_retrieved_at": "2026-11-07T14:40:00Z",
+      "uncertainty_status": "conditional",
+      "pathway_kind": "initial_licensure",
+      "pathway_tree": {
+        "op": "all",
+        "children": [
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Complete a DBPR-approved 16-hour pre-licensure education course covering Florida community association law, financial management, governance, and insurance within 12 months prior to examination",
+                "stage": "education",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+                "condition": "Course completion certificate valid for 12 months per F.S. § 468.433(2)(d) and F.A.C. 61-20.5011"
+              },
+              {
+                "op": "step",
+                "label": "Qualify via endorsement holding an active community association manager license from another state or jurisdiction with substantially equivalent requirements",
+                "stage": "experience",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+                "condition": "Per F.S. § 468.433(4); submit license certification and DBPR Form CAM 1-A"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Be at least 18 years of age and of good moral character",
+            "stage": "authorization",
+            "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+            "condition": "Statutory qualification per F.S. § 468.433(2)(b)-(c)"
+          },
+          {
+            "op": "step",
+            "label": "Submit electronic fingerprints through an FDLE-approved Livescan service vendor for state and national criminal history background checks",
+            "stage": "background_screening",
+            "source_url": "https://www.myfloridalicense.com/CheckListDetail.asp?XACT_DEFN_ID=5042&clientCode=3801&xactCode=1010",
+            "condition": "Use DBPR Regulatory Council of Community Association Managers Originating Agency Identifier (ORI) FL921932Z"
+          },
+          {
+            "op": "step",
+            "label": "Submit completed DBPR Form CAM 1 Application for Community Association Manager Initial License with required state fees",
+            "stage": "application",
+            "source_url": "https://www.myfloridalicense.com/intentions2.asp?boardid=38&chBoard=true&professionid=3801",
+            "condition": "Submit online through DBPR Online Services or by mail; approval required prior to sitting for Pearson VUE exam"
+          },
+          {
+            "op": "any",
+            "children": [
+              {
+                "op": "step",
+                "label": "Pass the Florida Community Association Manager Examination administered by Pearson VUE with a score of 75% or higher",
+                "stage": "examination",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+                "condition": "100 multiple-choice questions covering Florida statutes, financial management, meetings, and governance; valid for 12 months"
+              },
+              {
+                "op": "step",
+                "label": "Endorsement applicants: verify department approval of out-of-state equivalent examination or credential",
+                "stage": "authorization",
+                "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+                "condition": "Exempt from Florida examination if approved under F.S. § 468.433(4)"
+              }
+            ]
+          },
+          {
+            "op": "step",
+            "label": "Complete 20 hours of DBPR-approved continuing education biennially to maintain and renew active license status",
+            "stage": "continuing_education",
+            "source_url": "https://www.flsenate.gov/Laws/Statutes/2026/468.433",
+            "condition": "Mandatory under F.S. § 468.4336; includes legal update, insurance/financial management, and operation standards"
+          }
+        ]
+      }
+    }
+  ]
+}
+
