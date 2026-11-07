@@ -15,7 +15,14 @@ class EducatorService {
   final _logger = AppLogger('EducatorService');
 
   final SupabaseClient? _injectedClient;
-  SupabaseClient get _supabase => _injectedClient ?? Supabase.instance.client;
+  SupabaseClient? get _supabase {
+    if (_injectedClient != null) return _injectedClient;
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
 
   EducatorService({SupabaseClient? supabase})
       : _injectedClient = supabase;
@@ -23,7 +30,7 @@ class EducatorService {
   /// Returns current authenticated user ID, or null if unauthenticated.
   String? get currentUserId {
     try {
-      return _supabase.auth.currentUser?.id;
+      return _supabase?.auth.currentUser?.id;
     } catch (_) {
       return null;
     }
@@ -32,7 +39,7 @@ class EducatorService {
   /// Broadcast stream of authentication state changes.
   Stream<AuthState>? get authStateChanges {
     try {
-      return _supabase.auth.onAuthStateChange;
+      return _supabase?.auth.onAuthStateChange;
     } catch (_) {
       return null;
     }
@@ -47,8 +54,10 @@ class EducatorService {
 
   /// Fetches an educator profile by ID.
   Future<EducatorProfile?> fetchProfile(String educatorId) async {
+    final client = _supabase;
+    if (client == null) return null;
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_profiles')
           .select()
           .eq('id', educatorId)
@@ -72,8 +81,10 @@ class EducatorService {
     bool isAcceptingQuestions = true,
     String status = 'draft',
   }) async {
+    final client = _supabase;
+    if (client == null) throw StateError('Supabase client unavailable');
     try {
-      final res = await _supabase.rpc('upsert_my_educator_profile', params: {
+      final res = await client.rpc('upsert_my_educator_profile', params: {
         'p_display_name': displayName,
         'p_headline': headline,
         'p_bio': bio,
@@ -86,7 +97,6 @@ class EducatorService {
       if (res is Map<String, dynamic>) {
         return EducatorProfile.fromJson(res);
       }
-      // If RPC returns single row data
       return await fetchMyProfile();
     } catch (e, stack) {
       _logger.error('Failed to upsert educator profile', error: e, stackTrace: stack);
@@ -96,8 +106,10 @@ class EducatorService {
 
   /// Fetches all subject associations for an educator.
   Future<List<EducatorSubject>> fetchSubjects(String educatorId) async {
+    final client = _supabase;
+    if (client == null) return [];
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_subjects')
           .select()
           .eq('educator_id', educatorId)
@@ -120,12 +132,13 @@ class EducatorService {
     String? experienceSummary,
   }) async {
     final uid = currentUserId;
-    if (uid == null) {
+    final client = _supabase;
+    if (uid == null || client == null) {
       throw StateError('Authentication required to add subject association');
     }
 
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_subjects')
           .insert({
             'educator_id': uid,
@@ -146,8 +159,10 @@ class EducatorService {
 
   /// Removes a subject association by ID.
   Future<bool> removeSubject(String subjectAssociationId) async {
+    final client = _supabase;
+    if (client == null) return false;
     try {
-      await _supabase
+      await client
           .from('educator_subjects')
           .delete()
           .eq('id', subjectAssociationId);
@@ -161,8 +176,10 @@ class EducatorService {
   /// Fetches verification claims and credentials for an educator.
   /// Direct table read: restricted to the educator owner and moderators.
   Future<List<EducatorVerification>> fetchVerifications(String educatorId) async {
+    final client = _supabase;
+    if (client == null) return [];
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_verifications')
           .select()
           .eq('educator_id', educatorId)
@@ -181,8 +198,10 @@ class EducatorService {
   /// Queries the column-shielded `public_educator_verifications` view which omits
   /// sensitive verifier attribution (verified_by) and unredacted references (credential_reference).
   Future<List<EducatorVerification>> fetchPublicVerifications(String educatorId) async {
+    final client = _supabase;
+    if (client == null) return [];
     try {
-      final res = await _supabase
+      final res = await client
           .from('public_educator_verifications')
           .select()
           .eq('educator_id', educatorId)
@@ -206,12 +225,13 @@ class EducatorService {
     String? credentialReference,
   }) async {
     final uid = currentUserId;
-    if (uid == null) {
+    final client = _supabase;
+    if (uid == null || client == null) {
       throw StateError('Authentication required to submit verification claim');
     }
 
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_verifications')
           .insert({
             'educator_id': uid,
@@ -235,7 +255,8 @@ class EducatorService {
   /// Follows an educator.
   Future<bool> followEducator(String educatorId) async {
     final uid = currentUserId;
-    if (uid == null) {
+    final client = _supabase;
+    if (uid == null || client == null) {
       throw StateError('Authentication required to follow educator');
     }
     if (uid == educatorId) {
@@ -243,7 +264,7 @@ class EducatorService {
     }
 
     try {
-      await _supabase.from('educator_follows').insert({
+      await client.from('educator_follows').insert({
         'follower_id': uid,
         'educator_id': educatorId,
       });
@@ -257,10 +278,11 @@ class EducatorService {
   /// Unfollows an educator.
   Future<bool> unfollowEducator(String educatorId) async {
     final uid = currentUserId;
-    if (uid == null) return false;
+    final client = _supabase;
+    if (uid == null || client == null) return false;
 
     try {
-      await _supabase
+      await client
           .from('educator_follows')
           .delete()
           .eq('follower_id', uid)
@@ -275,10 +297,11 @@ class EducatorService {
   /// Checks if the current user is following an educator.
   Future<bool> isFollowing(String educatorId) async {
     final uid = currentUserId;
-    if (uid == null) return false;
+    final client = _supabase;
+    if (uid == null || client == null) return false;
 
     try {
-      final res = await _supabase
+      final res = await client
           .from('educator_follows')
           .select('id')
           .eq('follower_id', uid)
@@ -291,6 +314,46 @@ class EducatorService {
     }
   }
 
+  /// Fetches educator profiles followed by the current user.
+  Future<List<EducatorProfile>> fetchFollowedEducators() async {
+    final uid = currentUserId;
+    final client = _supabase;
+    if (uid == null || client == null) return [];
+
+    try {
+      final res = await client
+          .from('educator_follows')
+          .select('educator_id, educator_profiles(*)')
+          .eq('follower_id', uid);
+
+      final list = <EducatorProfile>[];
+      for (final row in res as List) {
+        if (row is Map<String, dynamic> && row['educator_profiles'] != null) {
+          list.add(EducatorProfile.fromJson(row['educator_profiles'] as Map<String, dynamic>));
+        }
+      }
+      return list;
+    } catch (e, stack) {
+      _logger.error('Failed to fetch followed educators', error: e, stackTrace: stack);
+      return [];
+    }
+  }
+
+  /// Fetches follower count for an educator.
+  Future<int> fetchFollowerCount(String educatorId) async {
+    final client = _supabase;
+    if (client == null) return 0;
+    try {
+      final res = await client
+          .from('educator_follows')
+          .select('id')
+          .eq('educator_id', educatorId);
+      return (res as List).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   /// Moderator verification of a credential claim.
   Future<Map<String, dynamic>> verifyCredential({
     required String verificationId,
@@ -299,8 +362,10 @@ class EducatorService {
     String? notes,
     String? internalNotes,
   }) async {
+    final client = _supabase;
+    if (client == null) throw StateError('Supabase client unavailable');
     try {
-      final res = await _supabase.rpc(
+      final res = await client.rpc(
         'verify_educator_credential',
         params: {
           'p_verification_id': verificationId,
@@ -322,8 +387,10 @@ class EducatorService {
   Future<List<Map<String, dynamic>>> fetchMyCredentialFeedback({
     String? verificationId,
   }) async {
+    final client = _supabase;
+    if (client == null) return const [];
     try {
-      final res = await _supabase.rpc(
+      final res = await client.rpc(
         'fetch_my_credential_feedback',
         params: {
           if (verificationId != null) 'p_verification_id': verificationId,
