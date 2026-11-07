@@ -159,22 +159,36 @@ class _NetworkTroubleshootingSimulationState
     required Map<String, String> choices,
     required ValueChanged<String?> onChanged,
   }) {
+    // Each question is its own labelled radio group so assistive technology
+    // announces which question a choice belongs to (WCAG 1.3.1).
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          for (final entry in choices.entries)
-            RadioListTile<String>(
-              value: entry.key,
-              groupValue: groupValue,
-              title: Text(entry.value),
-              onChanged: onChanged,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-            ),
-        ],
+      child: Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: title,
+        child: RadioGroup<String>(
+          groupValue: groupValue,
+          onChanged: onChanged,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ExcludeSemantics(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              for (final entry in choices.entries)
+                RadioListTile<String>(
+                  value: entry.key,
+                  title: Text(entry.value),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
