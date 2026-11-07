@@ -83,6 +83,7 @@ declare
   v_to_concept_slug text;
   v_mapping_type text;
   v_from_tv_id uuid;
+  v_to_tv_id uuid;
   v_transfer_weight numeric;
   v_concept_mappings_count int := 0;
 begin
@@ -1179,9 +1180,36 @@ begin
           raise exception 'Source concept with slug "%" not found for concept mapping.', v_from_concept_slug;
         end if;
 
-        -- Resolve destination concept ID (nullable for 'removed')
+        -- Validate source concept is attached to source version through curriculum_node_concepts
+        if not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_from_tv_id
+            and cnc.concept_id = v_from_concept_id
+        ) then
+          raise exception 'Source concept "%" (id: %) is not associated with source target version "%" (version_code: %).',
+            v_from_concept_slug, v_from_concept_id, v_from_tv_id, v_from_version_code;
+        end if;
+
+        -- Validate destination concept and mapping invariant
         v_to_concept_id := null;
-        if v_to_concept_slug is not null and trim(v_to_concept_slug) <> '' then
+        if v_mapping_type = 'removed' then
+          if v_to_concept_slug is not null and trim(v_to_concept_slug) <> '' then
+            raise exception 'Removed concept mapping for source concept "%" cannot specify a destination concept (got "%").',
+              v_from_concept_slug, v_to_concept_slug;
+          end if;
+
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null and (v_mapping->>'transfer_weight')::numeric <> 0.0 then
+            raise exception 'Removed concept mapping for source concept "%" must have transfer_weight = 0 (got %).',
+              v_from_concept_slug, (v_mapping->>'transfer_weight')::numeric;
+          end if;
+          v_transfer_weight := 0.0;
+        else
+          if v_to_concept_slug is null or trim(v_to_concept_slug) = '' then
+            raise exception 'Destination concept slug must be specified for mapping_type "%".', v_mapping_type;
+          end if;
+
           if v_concepts_map ? v_to_concept_slug then
             v_to_concept_id := (v_concepts_map->>v_to_concept_slug)::uuid;
           else
@@ -1191,23 +1219,31 @@ begin
             limit 1;
           end if;
 
-          if v_to_concept_id is null and v_mapping_type <> 'removed' then
+          if v_to_concept_id is null then
             raise exception 'Destination concept with slug "%" not found for concept mapping.', v_to_concept_slug;
           end if;
-        elsif v_mapping_type <> 'removed' then
-          raise exception 'Destination concept slug must be specified for mapping_type "%".', v_mapping_type;
-        end if;
 
-        if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
-          v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
-        elsif v_mapping_type = 'removed' then
-          v_transfer_weight := 0.0;
-        else
-          v_transfer_weight := 1.0;
-        end if;
+          -- Validate destination concept is attached to destination version through curriculum_node_concepts
+          if not exists (
+            select 1
+            from public.curriculum_node_concepts cnc
+            join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+            where cn.target_version_id = v_version_id
+              and cnc.concept_id = v_to_concept_id
+          ) then
+            raise exception 'Destination concept "%" (id: %) is not associated with destination target version "%".',
+              v_to_concept_slug, v_to_concept_id, v_version_id;
+          end if;
 
-        if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
-          raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+            v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+          else
+            v_transfer_weight := 1.0;
+          end if;
+
+          if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
+            raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+          end if;
         end if;
 
         insert into public.target_version_concept_mappings (
@@ -1237,7 +1273,7 @@ begin
       else
         -- Backwards compatibility with raw UUID payload
         v_from_concept_id := (v_mapping->>'from_concept_id')::uuid;
-        v_to_concept_id := case when v_mapping->>'to_concept_id' is not null
+        v_to_concept_id := case when v_mapping->>'to_concept_id' is not null and trim(v_mapping->>'to_concept_id') <> ''
                                 then (v_mapping->>'to_concept_id')::uuid
                                 else null end;
         v_mapping_type := coalesce(v_mapping->>'mapping_type', 'unchanged');
@@ -1245,12 +1281,60 @@ begin
           v_mapping_type := 'unchanged';
         end if;
 
-        if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
-          v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
-        elsif v_mapping_type = 'removed' then
+        if v_mapping_type not in ('unchanged', 'renamed', 'expanded', 'narrowed', 'replaced', 'removed') then
+          raise exception 'Invalid mapping_type "%" for concept mapping.', v_mapping_type;
+        end if;
+
+        v_from_tv_id := coalesce((v_mapping->>'from_target_version_id')::uuid, v_version_id);
+        v_to_tv_id := coalesce((v_mapping->>'to_target_version_id')::uuid, v_version_id);
+
+        if v_mapping_type = 'removed' then
+          if v_to_concept_id is not null then
+            raise exception 'Removed concept mapping for source concept id % cannot specify a destination concept.', v_from_concept_id;
+          end if;
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null and (v_mapping->>'transfer_weight')::numeric <> 0.0 then
+            raise exception 'Removed concept mapping for source concept id % must have transfer_weight = 0 (got %).',
+              v_from_concept_id, (v_mapping->>'transfer_weight')::numeric;
+          end if;
           v_transfer_weight := 0.0;
         else
-          v_transfer_weight := 1.0;
+          if v_to_concept_id is null then
+            raise exception 'Destination concept id must be specified for mapping_type "%".', v_mapping_type;
+          end if;
+
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+            v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+          else
+            v_transfer_weight := 1.0;
+          end if;
+
+          if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
+            raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+          end if;
+        end if;
+
+        -- Validate source concept attached to from_target_version
+        if not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_from_tv_id
+            and cnc.concept_id = v_from_concept_id
+        ) then
+          raise exception 'Source concept id % is not associated with source target version %.',
+            v_from_concept_id, v_from_tv_id;
+        end if;
+
+        -- Validate destination concept attached to to_target_version if present
+        if v_to_concept_id is not null and not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_to_tv_id
+            and cnc.concept_id = v_to_concept_id
+        ) then
+          raise exception 'Destination concept id % is not associated with destination target version %.',
+            v_to_concept_id, v_to_tv_id;
         end if;
 
         insert into public.target_version_concept_mappings (
@@ -1258,9 +1342,9 @@ begin
           mapping_type, transfer_weight, metadata,
           confidence, rationale
         ) values (
-          coalesce((v_mapping->>'from_target_version_id')::uuid, v_version_id),
+          v_from_tv_id,
           v_from_concept_id,
-          coalesce((v_mapping->>'to_target_version_id')::uuid, v_version_id),
+          v_to_tv_id,
           v_to_concept_id,
           v_mapping_type,
           v_transfer_weight,
@@ -1284,7 +1368,6 @@ begin
       end if;
     end loop;
   end if;
-
   -- 13. Return Ingestion Summary
   return jsonb_build_object(
     'target_version_id', v_version_id,
