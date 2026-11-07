@@ -76,7 +76,9 @@ PathwayVerificationResult verifyPathwayRecords(
     final status = raw['publication_status'] as String?;
     final review = raw['review_status'] as String?;
     final coverage = raw['coverage'] as String?;
-    final routeKind = raw['route_kind'] as String?;\n    final supersedesRevision = raw['supersedes_revision'];\n    final pathwayKind = raw['pathway_kind'] as String?;
+    final routeKind = raw['route_kind'] as String?;
+    final supersedesRevision = raw['supersedes_revision'];
+    final pathwayKind = raw['pathway_kind'] as String?;
     final sourceUrlStr = raw['source_url'] as String?;
     final sourceCheckedStr = raw['source_checked_at'] as String?;
     final effectiveFromStr = raw['effective_from'] as String?;
@@ -299,7 +301,8 @@ Future<void> main() async {
     if (r is Map) {
       final ns = r['source_namespace'];
       final key = r['source_key'];
-      final rev = r['revision'];\n      final supersedes = r['supersedes_revision'];
+      final rev = r['revision'];
+      final supersedes = r['supersedes_revision'];
       final title = r['title'];
       final status = r['publication_status'];
       final review = r['review_status'];

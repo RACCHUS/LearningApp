@@ -7,7 +7,9 @@ void main() {
   Map<String, dynamic> makeRow({
     required String ns,
     required String key,
-    int rev = 2,\n    int supersedesRevision = 1,\n    String pathwayKind = 'initial_licensure',
+    int rev = 2,
+    int supersedesRevision = 1,
+    String pathwayKind = 'initial_licensure',
     String title = 'Valid Pathway Title With Requirements',
     String status = 'published',
     String review = 'approved',
@@ -19,7 +21,9 @@ void main() {
     return {
       'source_namespace': ns,
       'source_key': key,
-      'revision': rev,\n      'supersedes_revision': supersedesRevision,\n      'pathway_kind': pathwayKind,
+      'revision': rev,
+      'supersedes_revision': supersedesRevision,
+      'pathway_kind': pathwayKind,
       'title': title,
       'publication_status': status,
       'review_status': review,
