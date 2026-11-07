@@ -259,6 +259,24 @@ jobs:
           # 5. Run pgTAP test suite against incrementally upgraded database
           supabase test db
 
+      - name: Rehearse historical backfill in hosted-ledger order
+        # Replays production's actual order: reset with only the versions in the
+        # hosted ledger snapshot, then apply every never-applied migration out of
+        # order (as `--approve-historical-backfill` does) and run pgTAP.
+        run: |
+          ledger=supabase/rehearsal/production_applied_versions.txt
+          mkdir -p build/backfill_rehearsal
+          for f in supabase/migrations/*.sql; do
+            v=$(basename "$f" | cut -c1-14)
+            grep -qx "$v" "$ledger" || mv "$f" build/backfill_rehearsal/
+          done
+          echo "Held back for out-of-order application: $(ls build/backfill_rehearsal | wc -l)"
+          supabase db reset
+          mv build/backfill_rehearsal/*.sql supabase/migrations/
+          git diff --exit-code -- supabase/migrations
+          supabase migration up --local --include-all
+          supabase test db
+
       - name: Verify clean-slate migrations and initial pgTAP tests from scratch
         run: |
           supabase db reset
