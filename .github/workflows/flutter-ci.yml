@@ -151,6 +151,9 @@ jobs:
       - name: Test DB-backed Excel retention adapter (service-only)
         run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_db.py' -v
 
+      - name: Test bounded Excel expiration sweep (dry run by default)
+        run: python3 -m unittest discover -s tool/tests -p 'test_retention_batch.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
