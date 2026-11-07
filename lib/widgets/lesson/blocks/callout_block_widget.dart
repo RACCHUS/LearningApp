@@ -104,24 +104,25 @@ class CalloutBlockWidget extends StatelessWidget {
                       ),
                       if (body.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        MarkdownBody(
-                          data: body,
-                          selectable: true,
-                          styleSheet: MarkdownStyleSheet(
-                            p: GoogleFonts.inter(
-                              fontSize: 14.5 * fontSizeFactor,
-                              height: 1.5,
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                        SelectionArea(
+                          child: MarkdownBody(
+                            data: body,
+                            styleSheet: MarkdownStyleSheet(
+                              p: GoogleFonts.inter(
+                                fontSize: 14.5 * fontSizeFactor,
+                                height: 1.5,
+                                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                              ),
+                              strong: const TextStyle(fontWeight: FontWeight.bold),
+                              em: const TextStyle(fontStyle: FontStyle.italic),
+                              code: GoogleFonts.jetBrainsMono(
+                                fontSize: 13 * fontSizeFactor,
+                                backgroundColor: isDark
+                                    ? Colors.black.withValues(alpha: 0.3)
+                                    : Colors.white.withValues(alpha: 0.7),
+                              ),
                             ),
-                            strong: const TextStyle(fontWeight: FontWeight.bold),
-                            em: const TextStyle(fontStyle: FontStyle.italic),
-                            code: GoogleFonts.jetBrainsMono(
-                              fontSize: 13 * fontSizeFactor,
-                              backgroundColor: isDark
-                                  ? Colors.black.withValues(alpha: 0.3)
-                                  : Colors.white.withValues(alpha: 0.7),
                             ),
-                          ),
                         ),
                       ],
                       if (example != null && example.isNotEmpty) ...[

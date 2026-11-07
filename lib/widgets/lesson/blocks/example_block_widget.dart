@@ -90,17 +90,18 @@ class ExampleBlockWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (scenario.isNotEmpty)
-                  MarkdownBody(
-                    data: scenario,
-                    selectable: true,
-                    styleSheet: MarkdownStyleSheet(
-                      p: GoogleFonts.inter(
-                        fontSize: 14.5 * fontSizeFactor,
-                        height: 1.5,
-                        color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                  SelectionArea(
+                    child: MarkdownBody(
+                      data: scenario,
+                      styleSheet: MarkdownStyleSheet(
+                        p: GoogleFonts.inter(
+                          fontSize: 14.5 * fontSizeFactor,
+                          height: 1.5,
+                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                        ),
+                        strong: const TextStyle(fontWeight: FontWeight.bold),
+                        em: const TextStyle(fontStyle: FontStyle.italic),
                       ),
-                      strong: const TextStyle(fontWeight: FontWeight.bold),
-                      em: const TextStyle(fontStyle: FontStyle.italic),
                     ),
                   ),
                 if (explanation != null && explanation.isNotEmpty) ...[
