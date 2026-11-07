@@ -58,6 +58,11 @@ class _Storage:
         if not self.sticky:
             self.present = False
 
+class _FalseNegativeBeforeDelete(_Storage):
+    def exists(self, bucket, path):
+        self.calls.append(("exists", bucket, path))
+        return False
+
 class RetentionTests(unittest.TestCase):
     def call(self, repo, store, *, owner=OWNER, attempt=ATTEMPT):
         return erase_owned_attempt(
@@ -68,7 +73,6 @@ class RetentionTests(unittest.TestCase):
         self.assertEqual(self.call(repo, store), "erased")
         self.assertEqual(repo.calls, ["find", "freeze", "delete"])
         self.assertEqual(store.calls, [
-            ("exists", PRIVATE_BUCKET, PATH),
             ("remove", PRIVATE_BUCKET, PATH),
             ("exists", PRIVATE_BUCKET, PATH)])
         self.assertIsNone(repo.record)
@@ -98,6 +102,12 @@ class RetentionTests(unittest.TestCase):
         self.assertIsNotNone(repo.record)
         self.assertNotIn("delete", repo.calls)
 
+    def test_list_false_negative_does_not_skip_storage_api_delete(self):
+        repo, store = _Repository(), _FalseNegativeBeforeDelete()
+        self.assertEqual(self.call(repo, store), "erased")
+        self.assertIn(("remove", PRIVATE_BUCKET, PATH), store.calls)
+        self.assertFalse(store.present)
+
     def test_sticky_object_prevents_database_erasure(self):
         repo, store = _Repository(), _Storage(sticky=True)
         self.assertEqual(self.call(repo, store), "retry")
@@ -107,7 +117,9 @@ class RetentionTests(unittest.TestCase):
     def test_already_missing_file_can_erase_owned_metadata(self):
         repo, store = _Repository(), _Storage(present=False)
         self.assertEqual(self.call(repo, store), "erased")
-        self.assertEqual(store.calls, [("exists", PRIVATE_BUCKET, PATH)])
+        self.assertEqual(store.calls, [
+            ("remove", PRIVATE_BUCKET, PATH),
+            ("exists", PRIVATE_BUCKET, PATH)])
 
     def test_failed_metadata_delete_returns_retry(self):
         repo, store = _Repository(delete=False), _Storage()
