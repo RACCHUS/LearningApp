@@ -93,7 +93,13 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261107100000'));
+      final newestVersion = Directory('supabase/migrations')
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.sql'))
+          .map((file) => file.uri.pathSegments.last.substring(0, 14))
+          .reduce((left, right) => left.compareTo(right) > 0 ? left : right);
+      expect(scanResult.migrations.last.version, equals(newestVersion));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
@@ -105,6 +111,7 @@ void main() {
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
       expect(bundle, contains('20261107050000_arch_04_learning_events_strict_rules.sql'));
       expect(bundle, contains('20261107060000_performance_library_search_trigram_indexes.sql'));
+      expect(bundle, contains('20261107120000_software_learning_excel_attempt_issuance.sql'));
     });
   });
 }
