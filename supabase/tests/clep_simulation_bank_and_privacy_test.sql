@@ -147,6 +147,7 @@ create temp table _fixture_ids on commit drop as
 select v.id as version_id
 from public.target_versions v
 where v.version_code = '2026-PRIV';
+grant all on table _fixture_ids to public, authenticated, service_role, anon;
 
 -- ----------------------------------------------------------------------------
 -- 2. Verify Database Persistence of Item Metadata
@@ -333,6 +334,7 @@ select throws_ok(
 -- User 1 issues simulation exam
 create temp table _issued_exam on commit drop as
 select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
+grant all on table _issued_exam to public, authenticated, service_role, anon;
 
 select ok(
   (select data->>'attempt_id' is not null from _issued_exam),
@@ -402,6 +404,7 @@ select
   a.issued_item_ids[2] as item_2_id
 from public.clep_simulation_attempts a
 where a.id = ((select data->>'attempt_id' from _issued_exam)::uuid);
+grant all on table _test_ctx to public, authenticated, service_role, anon;
 
 -- NEGATIVE GUARD 1: Cannot submit empty responses {} (anti-scraping guard)
 select throws_ok(
@@ -478,6 +481,7 @@ select throws_ok(
 -- Issue fresh, clean attempt for User 1
 create temp table _fresh_exam on commit drop as
 select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
+grant all on table _fresh_exam to public, authenticated, service_role, anon;
 
 select ok(
   (select data->>'attempt_id' is not null from _fresh_exam),
