@@ -110,6 +110,32 @@ class UploadIngressTests(unittest.TestCase):
                 self.assertEqual(status, 403)
         self.assertEqual(worker.calls, [])
 
+    def test_malformed_asgi_header_and_body_event_never_invoke_broker(self):
+        gateway, worker = build()
+        async def exercise(header_bad=False):
+            headers = [
+                (b"host", HOST.encode()), (b"x-learningapp-internal-key",KEY.encode()),
+                (b"authorization",b"Bearer jwt.token"),
+                (b"x-upload-attempt-id",ATTEMPT.encode()),
+                (b"content-type",MIME),
+                (b"content-length",str(len(BLOB)).encode()),
+            ]
+            if header_bad:
+                headers.append((b"broken",))
+            sent=[]
+            async def receive():
+                return None
+            async def send(x):
+                sent.append(x)
+            await gateway({
+                "type":"http","method":"POST","path":"/internal/v1/excel/upload",
+                "scheme":"https","query_string":b"","headers":headers,
+            },receive,send)
+            return next(x["status"] for x in sent if x["type"]=="http.response.start")
+        self.assertEqual(asyncio.run(exercise(header_bad=True)),403)
+        self.assertEqual(asyncio.run(exercise(header_bad=False)),400)
+        self.assertEqual(worker.calls, [])
+
     def test_oversize_body_rejected_before_reading(self):
         gateway, worker = build()
         status, _ = call(gateway, body=b"x"* (10*1024*1024 + 1))
