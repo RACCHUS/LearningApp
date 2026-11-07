@@ -181,6 +181,9 @@ jobs:
       - name: Verify brokered Excel migration is identical in self-host bundle
         run: python3 -m unittest discover -s tool/tests -p 'test_excel_bundle_integrity.py' -v
 
+      - name: Test Excel upload-to-provisional-grade integrated lifecycle
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_broker_to_grade_integration.py' -v
+
       - name: Build and smoke-test isolated Excel worker container (prototype)
         run: |
           docker build -f deploy/software-learning/Dockerfile \
