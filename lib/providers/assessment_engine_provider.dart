@@ -6,6 +6,7 @@ import '../models/assessment_engine/mock_exam_blueprint.dart';
 import '../models/assessment_engine/mock_exam_session.dart';
 import '../models/assessment_item.dart';
 import '../services/assessment/adaptive_practice_service.dart';
+import '../services/assessment/assessment_grading_service.dart';
 import '../services/assessment/exam_evaluation_service.dart';
 import '../services/assessment/exam_practice_elapsed_clock.dart';
 
@@ -38,14 +39,18 @@ final mockExamBlueprintProvider =
 /// refreshes display state and cannot be treated as an official exam clock.
 class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
   final ExamEvaluationService _evaluationService;
+  final AssessmentGradingService _gradingService;
   final ExamPracticeElapsedClock _clock;
   Timer? _timer;
   bool _submitted = false;
+  bool _submitting = false;
 
   ExamSessionNotifier(
     this._evaluationService, {
     ExamPracticeElapsedClock? clock,
+    AssessmentGradingService? gradingService,
   })  : _clock = clock ?? StopwatchExamPracticeElapsedClock(),
+        _gradingService = gradingService ?? AssessmentGradingService(),
         super(null);
 
   void _cancelTicker() {
@@ -147,10 +152,12 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     }
   }
 
-  /// Only the first submission is evaluated. An expired practice session
-  /// remains expired in its result; a late click cannot make it "completed".
-  ExamDiagnosticReport? submitExam() {
-    if (state == null || _submitted) return null;
+  /// Only the first successful submission is evaluated. An expired practice
+  /// session remains expired in its result; a late click cannot make it
+  /// "completed". Hidden answer keys are revealed by the server after
+  /// submission; if that fails the learner can submit again.
+  Future<ExamDiagnosticReport?> submitExam() async {
+    if (state == null || _submitted || _submitting) return null;
     _syncElapsed();
     _cancelTicker();
     _clock.stop();
@@ -159,12 +166,25 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     final finishedSession = current.status == ExamSessionStatus.expired
         ? current
         : current.copyWith(
-            completedAt: DateTime.now(),
+            completedAt: current.completedAt ?? DateTime.now(),
             status: ExamSessionStatus.completed,
           );
-    _submitted = true;
     state = finishedSession;
-    return _evaluationService.evaluateExam(finishedSession);
+    _submitting = true;
+    try {
+      final gradedItems = await _gradingService.revealScoring(
+        finishedSession.items,
+        finishedSession.userResponses,
+        revealUnanswered: true,
+      );
+      final report = _evaluationService.evaluateExam(
+        finishedSession.copyWith(items: gradedItems),
+      );
+      _submitted = true;
+      return report;
+    } finally {
+      _submitting = false;
+    }
   }
 
   @override

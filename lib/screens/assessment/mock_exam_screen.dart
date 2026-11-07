@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../providers/assessment_engine_provider.dart';
+import '../../services/assessment/assessment_grading_service.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import 'exam_report_screen.dart';
 import 'secure_exam_part_practice_screen.dart';
@@ -150,14 +151,29 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
     }
   }
 
-  void _executeSubmission() {
-    final report = ref.read(examSessionProvider.notifier).submitExam();
-    if (report != null && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ExamReportScreen(report: report),
-        ),
-      );
+  bool _submittingExam = false;
+
+  Future<void> _executeSubmission() async {
+    if (_submittingExam) return;
+    _submittingExam = true;
+    try {
+      final report =
+          await ref.read(examSessionProvider.notifier).submitExam();
+      if (report != null && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ExamReportScreen(report: report),
+          ),
+        );
+      }
+    } on AssessmentGradingException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${error.message} Submit again to retry.')),
+        );
+      }
+    } finally {
+      _submittingExam = false;
     }
   }
 

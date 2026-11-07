@@ -45,10 +45,18 @@ class UnifiedLesson {
   /// Returns legacy concepts if present
   List<ConceptContent> get legacyConcepts => legacyContent.whereType<ConceptContent>().toList();
 
-  /// Synthesizes LessonBlocks from legacy content if no rich blocks exist
+  /// Synthesizes LessonBlocks from legacy content if no rich blocks exist.
+  /// Authored lessons keep their blocks, followed by any legacy questions.
   List<LessonBlock> get effectiveBlocks {
     if (hasRichBlocks) {
-      return blocks;
+      if (legacyQuestions.isEmpty) return blocks;
+      final nextOrder = blocks.fold<int>(
+            0,
+            (maxOrder, block) =>
+                block.sortOrder > maxOrder ? block.sortOrder : maxOrder,
+          ) +
+          1;
+      return [...blocks, ..._legacyQuestionBlocks(nextOrder)];
     }
 
     final synthesized = <LessonBlock>[];
@@ -103,6 +111,14 @@ class UnifiedLesson {
     }
 
     // 4. Legacy Questions converted to Practice Prompt blocks
+    synthesized.addAll(_legacyQuestionBlocks(order));
+
+    return synthesized;
+  }
+
+  List<LessonBlock> _legacyQuestionBlocks(int startOrder) {
+    final synthesized = <LessonBlock>[];
+    var order = startOrder;
     for (final q in legacyQuestions) {
       final correctOption = (q.options.isNotEmpty && q.correctAnswer >= 0 && q.correctAnswer < q.options.length)
           ? q.options[q.correctAnswer]

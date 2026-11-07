@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/services/assessment/assessment_grading_service.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
@@ -18,6 +19,9 @@ class AssessmentItemRenderer extends StatefulWidget {
   final List<int>? avoidOrder;
   final ValueChanged<List<int>>? onPresentationOrderChanged;
 
+  /// Grades items whose answer keys are hidden from the client.
+  final AssessmentGradingService? gradingService;
+
   const AssessmentItemRenderer({
     super.key,
     required this.item,
@@ -31,6 +35,7 @@ class AssessmentItemRenderer extends StatefulWidget {
     this.presentationSeed,
     this.avoidOrder,
     this.onPresentationOrderChanged,
+    this.gradingService,
   });
 
   @override
@@ -66,6 +71,14 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   bool _isCorrect = false;
   double _score = 0.0;
   String _feedbackMessage = '';
+
+  // Server-revealed scoring for items whose keys are hidden from the client.
+  AssessmentItem? _revealedItem;
+  bool _grading = false;
+  String? _gradingError;
+
+  AssessmentItem get _item =>
+      _revealedItem?.id == widget.item.id ? _revealedItem! : widget.item;
 
   @override
   void initState() {
@@ -164,6 +177,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     _isCorrect = false;
     _score = 0.0;
     _feedbackMessage = '';
+    _grading = false;
+    _gradingError = null;
   }
 
   void _initInteractionState({List<int>? previousOrder}) {
@@ -226,9 +241,54 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   }
 
   void _submitAnswer() {
-    if (_submitted) return;
+    if (_submitted || _grading) return;
+    if (_item.hasLocalScoringSpec) {
+      _gradeWith(_item);
+    } else {
+      _gradeOnServer();
+    }
+  }
 
+  dynamic _currentResponse() {
+    switch (widget.item.interactionType) {
+      case AssessmentInteractionType.singleChoice:
+        return _selectedSingleChoice;
+      case AssessmentInteractionType.multiSelect:
+        return (_selectedMultiIndices.toList()..sort());
+      case AssessmentInteractionType.orderedResponse:
+        return List<String>.from(_orderedItems);
+      case AssessmentInteractionType.matching:
+        return Map<String, String>.from(_userMatches);
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _gradeOnServer() async {
     final item = widget.item;
+    setState(() {
+      _grading = true;
+      _gradingError = null;
+    });
+    try {
+      final service = widget.gradingService ?? AssessmentGradingService();
+      final revealed = await service.revealForResponse(item, _currentResponse());
+      if (!mounted || widget.item.id != item.id) return;
+      setState(() {
+        _revealedItem = revealed;
+        _grading = false;
+      });
+      _gradeWith(revealed);
+    } on AssessmentGradingException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _grading = false;
+        _gradingError = error.message;
+      });
+    }
+  }
+
+  void _gradeWith(AssessmentItem item) {
     final scoring = item.scoringSpec;
 
     bool correct = false;
@@ -350,7 +410,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final item = widget.item;
+    final item = _item;
 
     return SingleChildScrollView(
       child: Column(
@@ -472,7 +532,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 // Submit Button
                 if (!widget.isExamMode && !_submitted)
                   ElevatedButton(
-                    onPressed: _canSubmit() ? _submitAnswer : null,
+                    onPressed: _canSubmit() && !_grading ? _submitAnswer : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -483,13 +543,23 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'Check Answer',
+                      _grading ? 'Checking…' : 'Check Answer',
                       style: GoogleFonts.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
+                if (_gradingError != null && !_submitted) ...[
+                  const SizedBox(height: 10),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _gradingError!,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+                ],
                 // Submitted Feedback & Explanations
                 if (!widget.isExamMode && _submitted) ...[
                   _buildFeedbackBanner(context, isDark),
@@ -660,8 +730,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
     final options = optionsRaw.map((o) => o.toString()).toList();
     final correctIdx =
-        widget.item.scoringSpec['correct_index'] as int? ??
-        widget.item.scoringSpec['correct_answer'] as int? ??
+        _item.scoringSpec['correct_index'] as int? ??
+        _item.scoringSpec['correct_answer'] as int? ??
         0;
 
     final presentation =
@@ -797,7 +867,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
     final options = optionsRaw.map((o) => o.toString()).toList();
     final List<dynamic> correctIndicesRaw =
-        widget.item.scoringSpec['correct_indices'] as List? ?? [];
+        _item.scoringSpec['correct_indices'] as List? ?? [];
     final correctSet = correctIndicesRaw.map((e) => (e as num).toInt()).toSet();
 
     final presentation =

@@ -116,7 +116,7 @@ void main() {
     expect(notifier.state!.userResponses['item-1'], 0);
   });
 
-  test('late submission stays expired and may be scored only once', () {
+  test('late submission stays expired and may be scored only once', () async {
     final clock = _ManualPracticeClock();
     final notifier = ExamSessionNotifier(
       ExamEvaluationService(),
@@ -126,17 +126,17 @@ void main() {
 
     notifier.startSession(_session(limitSeconds: 20));
     clock.advance(const Duration(seconds: 26));
-    final report = notifier.submitExam();
+    final report = await notifier.submitExam();
 
     expect(report, isNotNull);
     expect(report!.durationTaken, const Duration(seconds: 26));
     expect(notifier.state!.status, ExamSessionStatus.expired);
-    expect(notifier.submitExam(), isNull);
+    expect(await notifier.submitExam(), isNull);
     notifier.recordResponse('item-1', 0);
     expect(notifier.state!.userResponses, isEmpty);
   });
 
-  test('manual submission finishes once, fresh session resets clock', () {
+  test('manual submission finishes once, fresh session resets clock', () async {
     final clock = _ManualPracticeClock();
     final notifier = ExamSessionNotifier(
       ExamEvaluationService(),
@@ -147,15 +147,15 @@ void main() {
     notifier.startSession(_session());
     clock.advance(const Duration(seconds: 8));
     notifier.recordResponse('item-1', 0);
-    expect(notifier.submitExam(), isNotNull);
+    expect(await notifier.submitExam(), isNotNull);
     expect(notifier.state!.status, ExamSessionStatus.completed);
-    expect(notifier.submitExam(), isNull);
+    expect(await notifier.submitExam(), isNull);
 
     notifier.startSession(_session(id: 'practice-2'));
     expect(notifier.state!.id, 'practice-2');
     expect(notifier.state!.elapsedSeconds, 0);
     expect(notifier.state!.status, ExamSessionStatus.inProgress);
-    expect(notifier.submitExam(), isNotNull);
+    expect(await notifier.submitExam(), isNotNull);
   });
 
   testWidgets('timer callback reconciles an entire throttled interval',
@@ -176,7 +176,7 @@ void main() {
     expect(notifier.state!.remainingDuration, Duration.zero);
   });
 
-  test('zero-duration practice session expires immediately', () {
+  test('zero-duration practice session expires immediately', () async {
     final clock = _ManualPracticeClock();
     final notifier = ExamSessionNotifier(
       ExamEvaluationService(),
@@ -186,7 +186,7 @@ void main() {
 
     notifier.startSession(_session(limitSeconds: 0));
     expect(notifier.state!.status, ExamSessionStatus.expired);
-    expect(notifier.submitExam(), isNotNull);
-    expect(notifier.submitExam(), isNull);
+    expect(await notifier.submitExam(), isNotNull);
+    expect(await notifier.submitExam(), isNull);
   });
 }

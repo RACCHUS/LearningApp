@@ -9,6 +9,7 @@ import '../../models/assessment_item.dart';
 import '../../models/user_concept_state.dart';
 import '../concept_evidence_service.dart';
 import '../saved_study_set_service.dart';
+import 'assessment_grading_service.dart';
 import 'exam_evaluation_service.dart';
 import 'exam_part_curriculum_scope.dart';
 
@@ -35,13 +36,17 @@ class DiagnosticAssessmentService {
   final ConceptEvidenceService _evidenceService;
   final SavedStudySetService _studySetService;
   final ExamEvaluationService _evaluationService;
+  final AssessmentGradingService _gradingService;
 
   DiagnosticAssessmentService({
     SupabaseClient? supabase,
     ConceptEvidenceService? evidenceService,
     SavedStudySetService? studySetService,
     ExamEvaluationService? evaluationService,
+    AssessmentGradingService? gradingService,
   })  : _supabase = supabase ?? Supabase.instance.client,
+        _gradingService =
+            gradingService ?? AssessmentGradingService(supabase: supabase),
         _evidenceService = evidenceService ??
             ConceptEvidenceService(supabase: supabase),
         _studySetService =
@@ -130,10 +135,21 @@ class DiagnosticAssessmentService {
 
     final conceptTotals = <String, _ConceptAccumulator>{};
 
+    // Answer keys are hidden from clients; the server reveals them only for
+    // the submitted responses. Items it cannot grade fail closed (score 0).
+    final gradedItems = await _gradingService.revealScoring(
+      items.map((entry) => entry.item).toList(),
+      {
+        for (final submission in submissions)
+          submission.itemId: submission.response,
+      },
+    );
+    final gradedById = {for (final item in gradedItems) item.id: item};
+
     for (final entry in items) {
       final response = submissionByItem[entry.item.id]!.response;
       final score = _evaluationService.evaluateItemResponse(
-        entry.item,
+        gradedById[entry.item.id] ?? entry.item,
         response,
       );
 
@@ -463,7 +479,7 @@ class DiagnosticAssessmentService {
 
     final itemRows = await _supabase
         .from('assessment_items')
-        .select('*, assessment_stimuli(*)')
+        .select('${AssessmentItem.clientReadableColumns}, assessment_stimuli(*)')
         .eq('origin_target_version_id', targetVersionId);
 
     final assessmentItems = (itemRows as List)
@@ -628,6 +644,12 @@ class DiagnosticAssessmentService {
     final supported = type == AssessmentInteractionType.singleChoice ||
         type == AssessmentInteractionType.multiSelect;
     if (!supported) return false;
+
+    // Keys hidden by the server are validated when it grades the response.
+    if (!item.hasLocalScoringSpec) {
+      final options = item.responseSpec['options'] as List?;
+      return options != null && options.length >= 2;
+    }
 
     switch (type) {
       case AssessmentInteractionType.singleChoice:
