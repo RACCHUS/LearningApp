@@ -49,6 +49,10 @@ CREATE TEMP TABLE sl_processing_attempt AS
  SELECT (public.sl_issue_excel_budget_attempt()->>'attempt_id')::uuid AS id;
 CREATE TEMP TABLE sl_second_attempt AS
  SELECT (public.sl_issue_excel_budget_attempt()->>'attempt_id')::uuid AS id;
+-- Authenticated owns these fixture tables. Grant the simulated trusted
+-- service role SELECT; real attempt authorization still occurs in the
+-- private service-only claim function and not via these temporary tables.
+GRANT SELECT ON sl_processing_attempt, sl_second_attempt TO service_role;
 RESET ROLE;
 UPDATE public.software_learning_attempts SET upload_enabled=true
  WHERE id=(SELECT id FROM sl_processing_attempt);
