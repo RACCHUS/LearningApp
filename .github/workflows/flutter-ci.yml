@@ -127,6 +127,28 @@ jobs:
       - name: Test provisional XLSX worker envelope (no external services)
         run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_worker.py' -v
 
+      - name: Build and smoke-test isolated Excel worker container (prototype)
+        run: |
+          docker build -f deploy/software-learning/Dockerfile \
+            -t learningapp-xlsx-worker:ci tool/software_learning
+          mkdir -p build
+          python3 -c "import sys,pathlib; sys.path.insert(0,'tool/tests'); from test_xlsx_snapshot import zip_bytes; pathlib.Path('build/excel-pilot-fixture.xlsx').write_bytes(zip_bytes())"
+          docker run --rm -i --network none --read-only \
+            --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 32 --memory 128m --cpus 0.5 \
+            --ulimit nofile=64:64 --ulimit fsize=10485760:10485760 \
+            learningapp-xlsx-worker:ci budget.xlsx \
+            < build/excel-pilot-fixture.xlsx > build/excel-worker-result.json
+          python3 -c "import json; r=json.load(open('build/excel-worker-result.json')); assert r['status']=='parsed_unverified'; assert r['cells']['C10']['value']=='=SUM(C2:C9)'; assert r['can_award_skill'] is False"
+          if printf 'not a workbook' | docker run --rm -i --network none --read-only \
+            --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 32 --memory 128m --cpus 0.5 \
+            learningapp-xlsx-worker:ci budget.xlsx > build/excel-worker-reject.json; then
+            echo "Worker incorrectly accepted malformed file" >&2
+            exit 1
+          fi
+          python3 -c "import json; r=json.load(open('build/excel-worker-reject.json')); assert r=={'status':'rejected','reason':'unsupported_or_unsafe_workbook'}"
+
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
           python3 -m pip install 'openpyxl==3.1.5'
