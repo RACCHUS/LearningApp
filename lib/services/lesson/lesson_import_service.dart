@@ -105,6 +105,9 @@ class LessonImportService {
                       : int.tryParse(q['correct_answer']?.toString() ?? '') ?? 0,
                   type: q['type']?.toString() ?? 'mcq',
                   explanation: q['explanation']?.toString(),
+                  acceptedAnswers: (q['accepted_answers'] as List?)?.map((e) => e.toString()).toList(),
+                  gradingMethod: q['grading_method']?.toString(),
+                  numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
                   createdBy: q['created_by']?.toString() ?? userId,
                 ))
             .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
