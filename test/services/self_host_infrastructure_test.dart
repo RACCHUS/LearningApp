@@ -104,6 +104,5 @@ void main() {
       expect(bundle, contains('20261107025537_short_answer_grading_persistence.sql'));
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
     });
-    });
   });
 }
