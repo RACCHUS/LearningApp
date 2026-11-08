@@ -155,11 +155,13 @@ void main() {
           'The cable carries network traffic from the router to the laptop.',
         ]) {
           await tester.ensureVisible(find.text(choice));
+          await tester.pumpAndSettle();
           await tester.tap(find.text(choice));
           await tester.pumpAndSettle();
         }
 
         await tester.ensureVisible(find.text('Review the scenario'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Review the scenario'));
         await tester.pumpAndSettle();
         expect(
@@ -397,6 +399,12 @@ void main() {
         questionFor('The laptop screen routes traffic between devices.'),
         '3. Why is that the right first step?',
       );
+      final diagramLabels = tester
+          .getSemantics(find.text('Router'))
+          .label
+          .split('\n');
+      expect(diagramLabels, contains('Router network device'));
+      expect(diagramLabels, isNot(contains('Router')));
       handle.dispose();
     });
   });
@@ -506,10 +514,12 @@ void main() {
         'The cable carries network traffic from the router to the laptop.',
       ]) {
         await tester.ensureVisible(find.text(choice));
+        await tester.pumpAndSettle();
         await tester.tap(find.text(choice));
         await tester.pumpAndSettle();
       }
       await tester.ensureVisible(find.text('Review the scenario'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Review the scenario'));
       await tester.pumpAndSettle();
 

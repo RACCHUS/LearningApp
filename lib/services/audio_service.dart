@@ -19,6 +19,8 @@ class AudioService {
   AudioSettings get currentSettings => _settings;
 
   bool _isInitialized = false;
+  Future<void>? _initialization;
+  int _stopGeneration = 0;
 
   /// Completer that resolves when the current speak() call finishes.
   Completer<void>? _speakCompleter;
@@ -28,7 +30,9 @@ class AudioService {
   Future<void> get speakCompletion =>
       _speakCompleter?.future ?? Future.value();
 
-  Future<void> initialize() async {
+  Future<void> initialize() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
     if (_isInitialized) return;
 
     try {
@@ -332,6 +336,7 @@ class AudioService {
       return false;
     }
 
+    final stopGeneration = _stopGeneration;
     try {
       if (_state.availableVoices.isEmpty) {
         await _ensureVoicesLoaded();
@@ -348,9 +353,11 @@ class AudioService {
         await _applyVoice(voiceToUse);
       }
 
+      if (stopGeneration != _stopGeneration) return false;
       if (interrupt && _state.isPlaying) {
-        await stop();
+        await _stopPlayback();
       }
+      if (stopGeneration != _stopGeneration) return false;
 
       // Create a new completer for this utterance
       _completeSpeaking(); // resolve any dangling completer
@@ -446,6 +453,11 @@ class AudioService {
   }
 
   Future<void> stop() async {
+    _stopGeneration++;
+    await _stopPlayback();
+  }
+
+  Future<void> _stopPlayback() async {
     if (_flutterTts == null) return;
     
     try {
