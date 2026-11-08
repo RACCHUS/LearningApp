@@ -66,3 +66,20 @@ def sweep_owner_workbooks(
             # or orphan requires investigation; never claim global erasure.
             results["blocked"] += 1
     return results
+
+
+def probe_owner_workbook_objects(
+    *, owner_id: str, inventory, revocation_confirmed: bool = False,
+) -> dict[str, object]:
+    """Observe owner Storage prefix after revocation, never declare deletion."""
+    if not _uuid(owner_id):
+        raise ValueError("Invalid inventory owner")
+    if revocation_confirmed is not True:
+        raise ValueError("Authentication revocation must be confirmed")
+    try:
+        result = inventory.probe(owner_id)
+    except Exception:
+        result = "unavailable"
+    if result not in ("objects_visible", "empty_observed"):
+        result = "unavailable"
+    return {"owner_prefix_inventory": result, "account_erasure_confirmed": False}
