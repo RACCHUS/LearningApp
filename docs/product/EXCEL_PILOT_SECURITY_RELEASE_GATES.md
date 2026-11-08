@@ -145,3 +145,14 @@ This is not an approved operational scheduler: live provider staging,
 separate cleanup credentials, an authenticated private runner, durable retry
 queue, monitoring/alerts, retention consent/disclosure and independent
 security review are still required. Do not enable execution in production.
+
+
+### Retention sweep completion semantics
+
+The isolated one-shot retention job now returns **preview_only** for all dry
+runs; **retry_required** when any deletion failed; and **more_pending** when
+either candidate cleanup or 48-hour issuance pruning hits its batch cap.
+Only a short, retry-free authorized execution returns **complete**, which
+means that *single sweep* completed, **not** that every account or workbook
+has been erased. Malformed prune counts fail closed. This is tested in CI;
+no scheduler or production worker is activated.

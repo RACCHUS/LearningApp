@@ -32,7 +32,7 @@ class RetentionJobTests(unittest.TestCase):
              patch("software_learning.private_retention_job.DbApiRetentionRepository") as adapter:
             result = run_retention_once(connection_factory=factory, storage=object())
         self.assertEqual(result, {
-            "status": "complete", "dry_run": True, "candidates": 4,
+            "status": "preview_only", "dry_run": True, "candidates": 4,
             "erased": 0, "retry": 0, "issuance_records_pruned": 0,
             "account_erasure_confirmed": False,
         })
@@ -99,6 +99,49 @@ class RetentionJobTests(unittest.TestCase):
                 run_retention_once(connection_factory=factory, storage=object(),
                                    **arguments)
         self.assertEqual(factory.calls, 0)
+
+    def test_full_expiry_batch_or_full_prune_batch_reports_more_pending(self):
+        for scan_count, pruned_count in ((3, 0), (0, 2), (3, 2)):
+            factory = Factory()
+            with self.subTest(scan_count=scan_count, pruned_count=pruned_count), \
+                 patch("software_learning.private_retention_job.sweep_expired_attempts",
+                       return_value={"candidates": scan_count,
+                                     "erased": scan_count, "retry": 0}), \
+                 patch("software_learning.private_retention_job.DbApiRetentionRepository") as repo:
+                repo.return_value.prune_issuance_log.return_value = pruned_count
+                result = run_retention_once(
+                    connection_factory=factory, storage=object(),
+                    authorized=True, execute=True, max_results=3, prune_limit=2)
+            self.assertEqual(result["status"], "more_pending")
+            self.assertFalse(result["account_erasure_confirmed"])
+            self.assertEqual(factory.connection.closed, 1)
+
+    def test_short_successful_expiry_and_prune_batches_can_complete_one_sweep(self):
+        factory = Factory()
+        with patch("software_learning.private_retention_job.sweep_expired_attempts",
+                   return_value={"candidates": 2, "erased": 2, "retry": 0}), \
+             patch("software_learning.private_retention_job.DbApiRetentionRepository") as repo:
+            repo.return_value.prune_issuance_log.return_value = 1
+            result = run_retention_once(
+                connection_factory=factory, storage=object(),
+                authorized=True, execute=True, max_results=3, prune_limit=2)
+        self.assertEqual(result["status"], "complete")
+        self.assertFalse(result["account_erasure_confirmed"])
+
+    def test_untrusted_prune_count_never_claims_completion(self):
+        for pruned in (True, -1, 9999, None):
+            with self.subTest(value=pruned), \
+                 patch("software_learning.private_retention_job.sweep_expired_attempts",
+                       return_value={"candidates": 1, "erased": 1, "retry": 0}), \
+                 patch("software_learning.private_retention_job.DbApiRetentionRepository") as repo:
+                factory = Factory()
+                repo.return_value.prune_issuance_log.return_value = pruned
+                result = run_retention_once(
+                    connection_factory=factory, storage=object(),
+                    authorized=True, execute=True, max_results=3, prune_limit=2)
+            self.assertEqual(result["status"], "unavailable")
+            self.assertFalse(result["account_erasure_confirmed"])
+            self.assertEqual(factory.connection.closed, 1)
 
     def test_close_error_never_claims_complete(self):
         class BrokenClose(Connection):

@@ -24,6 +24,7 @@ def run_retention_once(
     This function intentionally cannot schedule itself or certify deletion.
     Any failed deletion leaves its DB metadata for a subsequent authorized
     sweep, and must be surfaced to an external alerting controller.
+    A full batch is not proof of exhaustion; dry-runs are previews only.
     """
     if (type(authorized) is not bool or type(execute) is not bool
         or (execute and not authorized)
@@ -59,10 +60,21 @@ def run_retention_once(
         if execute:
             # Never prune issuance quota logs if the expiry sweep could not
             # even enumerate candidates. These logs preserve the 24h quota.
-            result["issuance_records_pruned"] = repository.prune_issuance_log(
-                max_results=prune_limit
-            )
-        result["status"] = "retry_required" if result["retry"] else "complete"
+            pruned = repository.prune_issuance_log(max_results=prune_limit)
+            if type(pruned) is not int or not 0 <= pruned <= prune_limit:
+                raise ValueError("Invalid issuance prune count")
+            result["issuance_records_pruned"] = pruned
+            if result["retry"]:
+                result["status"] = "retry_required"
+            elif result["candidates"] == max_results or pruned == prune_limit:
+                # Reaching either page limit means another page may exist.
+                # Never report full completion from a truncated scan.
+                result["status"] = "more_pending"
+            else:
+                result["status"] = "complete"
+        else:
+            # No files or quota records were deleted in a dry run.
+            result["status"] = "preview_only"
     except Exception:
         # Database errors, credentials, owner IDs and file names never appear
         # in outputs. Keep any prior retry counts; this is not a success.
