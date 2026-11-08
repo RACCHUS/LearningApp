@@ -92,3 +92,20 @@ These unit-tested components do not satisfy the hosting, provider-concurrency, p
 The retention DB adapter now performs a terminal state transition when freezing an **issued** workbook attempt: `upload_enabled=false` **and** `status='failed'`, committed before Storage deletion. This prevents a new broker from locking an unsealed attempt after cleanup has begun. For processed, failed, or expired-and-grace-cleared processing attempts, cleanup retains the appropriate status. DB/pgTAP regression tests cover the original live session's rejection after the transition. The provider-level lock/write race and distributed cleanup behavior still require live staging tests.
 
 A rejected broker call may leave an unsealed object after Storage accepted a write, or may correspond to a sealed object if the database commit acknowledgment was lost. The hot upload path must never delete either case. The server-side attempt remains available to the existing expiry/account-erasure coordinator, which freezes uploads, deletes through the private Storage API, confirms absence, and only then erases metadata. Reusing the same attempt path or treating an upload error as proof that no object exists is forbidden. These are code-level invariants; retention scheduling, orphan inventory, provider race tests, and alarms are **not** live and still block rollout.
+
+
+### Read-only account Storage inventory prototype (disabled)
+
+A separate, server-only \`SupabaseExcelOwnerInventory\` makes one bounded
+\`POST /object/list/{bucket}\` query under a canonical owner UUID prefix,
+using the reserved Excel bucket only. A folder or file entry is enough to
+block account erasure. It cannot read workbook bytes, issue signed tokens,
+delete objects, or reveal object names in its returned status.
+
+The diagnostic wrapper requires externally confirmed Auth-session revocation,
+and reports only \`objects_visible\`, \`empty_observed\`, or \`unavailable\`.
+**Every result has \`account_erasure_confirmed=false\`: an empty provider
+listing can be stale and is not authoritative deletion proof.** The actual
+retention scheduler, retries/alerts, independent database/object consistency,
+multi-pass erasure proof, and Auth deletion controller remain unimplemented
+and require staging + privacy review. New tests are synthetic only.
