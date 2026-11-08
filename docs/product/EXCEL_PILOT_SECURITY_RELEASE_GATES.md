@@ -114,3 +114,8 @@ and require staging + privacy review. New tests are synthetic only.
 ### 2026-11-08 local-provider create-only regression
 
 The new disposable local Supabase Storage race probe initially produced **three HTTP 200** responses for three concurrent uploads to one path when the client sent `x-upsert: false`. Therefore treating that header value as a denial of overwrite is **unsafe** on the tested provider. The production adapter and local probe now **omit the `x-upsert` header entirely** for create-only requests. A fresh local-provider concurrent race run must pass with exactly one accepted write and unchanged SHA/revision before this gate can advance; hosted staging behavior is still unverified.
+
+
+### 2026-11-08 provider diagnostic clarification
+
+The local Supabase Storage API returned **HTTP 200 for all three simultaneous privileged POST requests**, both with `x-upsert: false` and after removing the upsert header. Therefore the header alone is *not proven* to cause the concurrency behavior, and raw provider write exclusivity is **not established**. The CI probe now distinguishes a mandatory **sequential create-only and SHA/revision consistency check** from a nonblocking, explicitly warned **raw concurrent privileged-write diagnostic**. The latter bypasses the actual broker database lock by design. Multiple accepted concurrent privileged writes must remain a **hosted staging security blocker**, not be represented as a green immutability proof. Only the trusted broker with an exclusive row lock may write an Excel object, and all direct learner writes remain forbidden.

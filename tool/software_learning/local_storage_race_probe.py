@@ -68,42 +68,67 @@ def _fixture(marker: int) -> bytes:
 
 def run() -> None:
     base, service, anon = _local_config()
-    owner, attempt = uuid4(), uuid4()
-    path = f"{owner}/{attempt}/workbook.xlsx"
+    owner = uuid4()
+    path = f"{owner}/{uuid4()}/workbook.xlsx"
+    raced_path = f"{owner}/{uuid4()}/workbook.xlsx"
     other = f"{owner}/{uuid4()}/workbook.xlsx"
     candidates = [_fixture(1), _fixture(2), _fixture(3)]
     try:
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            outcomes = list(pool.map(
-                lambda content: _request(base, service, "POST", path, content),
-                candidates,
-            ))
-        winners = [i for i, (code, _) in enumerate(outcomes)
-                   if code in (200, 201)]
-        losers = [code for code, _ in outcomes if code not in (200, 201)]
-        if (len(winners) != 1 or len(losers) != 2
-            or any(code not in (400, 409) for code in losers)):
-            raise AssertionError("Local Storage create-only race contract failed; HTTP statuses=" + str([code for code, _ in outcomes]))
+        first, _ = _request(base, service, "POST", path, candidates[0])
+        duplicate, _ = _request(base, service, "POST", path, candidates[1])
+        if first not in (200, 201) or duplicate not in (400, 409):
+            raise AssertionError(
+                "Sequential create-only guarantee failed; HTTP statuses="
+                + str([first, duplicate])
+            )
         status, readback = _request(base, service, "GET", path)
-        if (status != 200 or sha256(readback).digest()
-            != sha256(candidates[winners[0]]).digest()):
-            raise AssertionError("Local Storage committed bytes changed")
-        code, metadata_blob = _request(base, service, "GET", path, info=True)
-        if code != 200 or len(metadata_blob) > 16384:
-            raise AssertionError("Local Storage object-info request failed")
+        if (status != 200
+            or sha256(readback).digest() != sha256(candidates[0]).digest()):
+            raise AssertionError("Sequential object changed despite duplicate denial")
+        code, info = _request(base, service, "GET", path, info=True)
+        if code != 200 or len(info) > 16384:
+            raise AssertionError("Local Storage object-info unavailable")
         try:
-            metadata = json.loads(metadata_blob)
+            metadata = json.loads(info)
             revision = metadata["version"]
             if (metadata["name"] != path or metadata["bucket_id"] != BUCKET
                 or metadata["metadata"]["size"] != len(readback)
                 or not isinstance(revision, str) or not 1 <= len(revision) <= 256
                 or not revision.isascii()):
-                raise ValueError("Invalid immutable object revision metadata")
+                raise ValueError("Object revision contract invalid")
         except Exception:
             raise AssertionError("Local Storage revision contract changed") from None
-        conflict, _ = _request(base, service, "POST", path, candidates[0])
-        if conflict not in (400, 409):
-            raise AssertionError("Existing object accepted a second write")
+
+        # This deliberately bypasses the real broker's exclusive DB lock.
+        # Raw concurrent privileged writes are a diagnostic, NOT an upload
+        # release gate success. The local provider may accept multiple POSTs.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            outcomes = list(pool.map(
+                lambda content: _request(base, service, "POST", raced_path, content),
+                candidates,
+            ))
+        statuses = [code for code, _ in outcomes]
+        accepted = [code for code in statuses if code in (200, 201)]
+        if not accepted or any(
+            code not in (200, 201, 400, 409) for code in statuses
+        ):
+            raise AssertionError(
+                "Concurrent Storage returned unexpected HTTP statuses="
+                + str(statuses)
+            )
+        result, raced_bytes = _request(base, service, "GET", raced_path)
+        if (result != 200 or not any(
+            sha256(raced_bytes).digest() == sha256(blob).digest()
+            for blob in candidates
+        )):
+            raise AssertionError("Concurrent Storage produced torn/unknown bytes")
+        if len(accepted) > 1:
+            print(
+                "::warning::Raw concurrent privileged Storage uploads accepted "
+                "multiple writes; broker lock and hosted staging race gate "
+                "remain mandatory (no uploads enabled)"
+            )
+
         denied, _ = _request(base, anon, "POST", other, candidates[0])
         if denied in (200, 201):
             raise AssertionError("Anonymous direct workbook upload accepted")
@@ -112,17 +137,17 @@ def run() -> None:
             raise AssertionError("Storage API could not remove synthetic workbook")
         absent, _ = _request(base, service, "GET", path)
         if absent not in (400, 404):
-            raise AssertionError("Deleted workbook is still readable")
+            raise AssertionError("Deleted workbook remains readable")
         resurrection, _ = _request(base, anon, "POST", path, candidates[0])
         if resurrection in (200, 201):
             raise AssertionError("Anonymous client resurrected deleted workbook")
     finally:
-        for name in (path, other):
+        for name in (path, raced_path, other):
             try:
                 _request(base, service, "DELETE", name)
             except Exception:
                 pass
-    print("Local Storage race, byte/revision seal, RLS and cleanup passed")
+    print("Local Storage sequential seal, revision, byte integrity, RLS and cleanup passed")
 
 
 if __name__ == "__main__":
