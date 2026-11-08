@@ -160,6 +160,9 @@ jobs:
       - name: Test isolated Excel retention host GET/DELETE-only capability
         run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_host.py' -v
 
+      - name: Test read-only Excel retention backlog and alert signal
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_monitor.py' -v
+
       - name: Test disabled-by-default internal Excel assessment gateway
         run: python3 -m unittest discover -s tool/tests -p 'test_hosted_internal.py' -v
 

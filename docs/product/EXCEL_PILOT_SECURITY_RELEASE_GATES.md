@@ -240,3 +240,21 @@ Do **not** interpret a green local probe as hosted object-store
 immutability, byte-level absence, operational deletion SLAs, or
 account-erasure certification. Hosted consistency guarantees and a
 reviewed deletion-absence verification method remain release blockers.
+
+
+### Read-only 24-hour retention backlog monitor (source only)
+
+`private_retention_monitor.inspect_excel_retention_backlog` now queries
+the private PostgreSQL attempt table for **aggregate-only** counts of
+records older than the *proposed* 24-hour-after-expiry purge target and
+processing leases whose expiry and claim timestamp are both older than
+the 30-minute grace. Zero counts return `clear_observed`, **not**
+proof of raw Storage-byte deletion or global account erasure. Any
+backlog, unexpected response, SQL exception, invalid connection, or
+resource-close failure produces an operator `alert_required` signal
+without exposing attempt IDs, workbook names, session IDs or secrets.
+
+This monitor **does not schedule itself, send notifications, configure
+cron, or persist an alarm**. Staging still needs a separately privileged
+hourly operator, monitoring and escalation, live Storage inventory,
+retries and deletion audit evidence before making a retention SLA claim.
