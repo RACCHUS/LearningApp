@@ -35075,807 +35075,7 @@ GRANT EXECUTE ON FUNCTION public.grade_assessment_items(JSONB)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108000000', 'assessment_item_server_grading') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [98/102] Migration: 20261108010000_software_learning_excel_attempt_issuance.sql
--- --------------------------------------------------------------------
--- Software Learning Excel pilot: authenticated, server-issued synthetic attempts.
--- DRAFT FOUNDATION ONLY. No workbook upload/storage, grading, learning_events
--- projection, skill awards or user file handling is enabled by this migration.
--- Append-only; deploy only after the guarded release process and owner review.
-BEGIN;
-
-CREATE SCHEMA IF NOT EXISTS software_learning_private;
-REVOKE ALL ON SCHEMA software_learning_private FROM PUBLIC, anon, authenticated;
-
-CREATE TABLE public.software_learning_attempts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  issued_session_id uuid NOT NULL,
-  exercise_id text NOT NULL DEFAULT 'excel-budget-total-v1'
-    CHECK (exercise_id = 'excel-budget-total-v1'),
-  checker_version integer NOT NULL DEFAULT 1
-    CHECK (checker_version = 1),
-  issued_at timestamptz NOT NULL DEFAULT now(),
-  expires_at timestamptz NOT NULL,
-  status text NOT NULL DEFAULT 'issued'
-    CHECK (status = 'issued'),
-  CONSTRAINT sl_excel_limited_expiration_check
-    CHECK (expires_at > issued_at AND
-      expires_at <= issued_at + interval '45 minutes')
-);
-CREATE INDEX sl_attempts_owner_issue_idx
-  ON public.software_learning_attempts (owner_id,issued_at DESC);
-CREATE INDEX sl_attempts_owner_expiry_idx
-  ON public.software_learning_attempts (owner_id,expires_at)
-  WHERE status='issued';
-
-ALTER TABLE public.software_learning_attempts ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON TABLE public.software_learning_attempts FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON TABLE public.software_learning_attempts TO authenticated;
-CREATE POLICY sl_attempts_owner_read
-  ON public.software_learning_attempts FOR SELECT TO authenticated
-  USING (owner_id=(SELECT auth.uid()) AND expires_at > now());
-
-CREATE TABLE software_learning_private.excel_attempt_inputs (
-  attempt_id uuid PRIMARY KEY
-    REFERENCES public.software_learning_attempts(id) ON DELETE CASCADE,
-  expected_inputs jsonb NOT NULL CHECK (jsonb_typeof(expected_inputs)='object')
-);
-ALTER TABLE software_learning_private.excel_attempt_inputs ENABLE ROW LEVEL SECURITY;
-
--- Issuance accounting intentionally survives deleting an individual attempt,
--- otherwise a learner could evade the 12-in-24h quota by erasing each attempt.
--- Contains account ID and timestamp only, no workbook data or responses.
--- Account erasure cascades; periodic age-based pruning is a release gate.
-CREATE TABLE software_learning_private.excel_issuance_log (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  issued_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX sl_excel_issue_log_owner_window_idx
-  ON software_learning_private.excel_issuance_log(owner_id,issued_at DESC);
-ALTER TABLE software_learning_private.excel_issuance_log ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON ALL TABLES IN SCHEMA software_learning_private
-  FROM PUBLIC, anon, authenticated;
-
--- No user-controlled exercise ID, checker version, score, expected values or
--- owner ID parameters are accepted. This issuer returns only safe synthetic
--- transaction amounts; there is no file/assessment upload capability.
-CREATE FUNCTION public.sl_issue_excel_budget_attempt()
-RETURNS jsonb
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $issue$
-DECLARE
-  v_actor uuid;
-  v_session uuid;
-  v_now timestamptz := now();
-  v_id uuid;
-  v_inputs jsonb := '{}'::jsonb;
-  v_quota integer;
-BEGIN
-  v_actor := (SELECT auth.uid());
-  IF v_actor IS NULL
-     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
-     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
-     OR coalesce(auth.jwt()->>'session_id','') !~
-       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-  THEN
-    RAISE EXCEPTION 'Permanent authenticated session required'
-      USING ERRCODE='42501';
-  END IF;
-  v_session := (auth.jwt()->>'session_id')::uuid;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=v_session AND s.user_id=v_actor
-      AND (s.not_after IS NULL OR s.not_after>v_now)
-  ) THEN
-    RAISE EXCEPTION 'Authentication session is no longer active'
-      USING ERRCODE='42501';
-  END IF;
-
-  -- Serialize issuance by account so parallel requests cannot bypass quotas.
-  PERFORM pg_advisory_xact_lock(hashtextextended(v_actor::text, 61732));
-  SELECT count(*)::integer INTO v_quota
-  FROM software_learning_private.excel_issuance_log l
-  WHERE l.owner_id=v_actor AND l.issued_at>v_now-interval '24 hours';
-  IF v_quota >= 12 THEN
-    RAISE EXCEPTION 'Excel practice issuance quota reached'
-      USING ERRCODE='42501';
-  END IF;
-
-  SELECT count(*)::integer INTO v_quota
-  FROM public.software_learning_attempts a
-  WHERE a.owner_id=v_actor AND a.expires_at>v_now AND a.status='issued';
-  IF v_quota >= 2 THEN
-    RAISE EXCEPTION 'Finish or erase an existing Excel attempt first'
-      USING ERRCODE='42501';
-  END IF;
-
-  -- New numeric inputs are generated server-side for each attempt.
-  -- They are synthetic learning data, NOT anti-cheating secrets.
-  FOR v_i IN 2..9 LOOP
-    v_inputs := v_inputs || jsonb_build_object(
-      'C' || v_i, (10+floor(random()*90)::integer)
-    );
-  END LOOP;
-
-  INSERT INTO public.software_learning_attempts
-    (owner_id,issued_session_id,issued_at,expires_at)
-  VALUES (v_actor,v_session,v_now,v_now+interval '45 minutes')
-  RETURNING id INTO v_id;
-  INSERT INTO software_learning_private.excel_attempt_inputs
-    (attempt_id,expected_inputs)
-  VALUES (v_id,v_inputs);
-  INSERT INTO software_learning_private.excel_issuance_log
-    (owner_id,issued_at)
-  VALUES (v_actor,v_now);
-
-  RETURN jsonb_build_object(
-    'attempt_id',v_id,
-    'exercise_id','excel-budget-total-v1',
-    'checker_version',1,
-    'worksheet','Budget',
-    'target_cell','C10',
-    'inputs',v_inputs,
-    'issued_at',v_now,
-    'expires_at',v_now+interval '45 minutes',
-    'status','issued',
-    'upload_enabled',false,
-    'evidence_trust','unverified'
-  );
-END
-$issue$;
-
-REVOKE ALL ON FUNCTION public.sl_issue_excel_budget_attempt()
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.sl_issue_excel_budget_attempt()
-  TO authenticated;
-
--- Owner erasure of the synthetic attempt and its private numeric inputs.
--- No attempt contents or foreign-attempt existence is disclosed to callers.
-CREATE FUNCTION public.sl_delete_excel_budget_attempt(p_attempt_id uuid)
-RETURNS boolean
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $erase$
-DECLARE
-  v_actor uuid;
-  v_session uuid;
-  v_deleted uuid;
-BEGIN
-  v_actor := (SELECT auth.uid());
-  IF v_actor IS NULL
-     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
-     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
-     OR coalesce(auth.jwt()->>'session_id','') !~
-       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-  THEN
-    RAISE EXCEPTION 'Permanent authenticated session required'
-      USING ERRCODE='42501';
-  END IF;
-  v_session := (auth.jwt()->>'session_id')::uuid;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=v_session AND s.user_id=v_actor
-      AND (s.not_after IS NULL OR s.not_after>now())
-  ) THEN
-    RAISE EXCEPTION 'Authentication session is no longer active'
-      USING ERRCODE='42501';
-  END IF;
-
-  DELETE FROM public.software_learning_attempts a
-  WHERE a.id=p_attempt_id AND a.owner_id=v_actor
-  RETURNING a.id INTO v_deleted;
-  RETURN v_deleted IS NOT NULL;
-END
-$erase$;
-
-REVOKE ALL ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
-  TO authenticated;
-
-COMMENT ON TABLE public.software_learning_attempts IS
-  'Excel pilot: owner-visible server-issued synthetic attempt metadata; no scoring or file submission enabled.';
-COMMENT ON TABLE software_learning_private.excel_attempt_inputs IS
-  'Server-owned synthetic transaction cells, never directly readable by clients.';
-COMMENT ON FUNCTION public.sl_issue_excel_budget_attempt() IS
-  'Live permanent-session, owner-bound and quota-limited issue of synthetic Excel budget practice; unverified only.';
-COMMENT ON FUNCTION public.sl_delete_excel_budget_attempt(uuid) IS
-  'Live-session owner deletion; atomically cascades to private Excel practice inputs.';
-COMMIT;
-
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108010000', 'software_learning_excel_attempt_issuance') ON CONFLICT (version) DO NOTHING;
-
-
--- --------------------------------------------------------------------
--- [99/102] Migration: 20261108020000_software_learning_excel_private_upload_gate.sql
--- --------------------------------------------------------------------
--- Excel pilot: private storage bucket with authenticated owner/session/path gate.
--- No learner-facing file upload or worker processing is released here.
--- All issued attempts remain upload_enabled=false; only trusted server
--- orchestration can opt in after the independent retention/security review.
--- Objects must be deleted using Storage API, never SQL metadata DELETE.
-BEGIN;
-
-ALTER TABLE public.software_learning_attempts
-  ADD COLUMN upload_enabled boolean NOT NULL DEFAULT false;
-COMMENT ON COLUMN public.software_learning_attempts.upload_enabled IS
-  'Server-only release gate; default false, not changeable by learners. An enabled attempt still requires active original Auth session and exact path.';
-
--- Reserve a NEW bucket ID only: never silently adopt/modify a pre-existing
--- object bucket that might contain learner files or have public settings.
-DO $reserved_bucket$
-BEGIN
-  IF EXISTS (SELECT 1 FROM storage.buckets b
-             WHERE b.id='learningapp-excel-private') THEN
-    RAISE EXCEPTION 'Excel storage bucket already exists; require manual review'
-      USING ERRCODE='55000';
-  END IF;
-END
-$reserved_bucket$;
-
-INSERT INTO storage.buckets
-  (id,name,public,file_size_limit,allowed_mime_types)
-VALUES (
-  'learningapp-excel-private',
-  'learningapp-excel-private',
-  false,
-  10485760,
-  ARRAY['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']::text[]
-);
-
--- Safe boolean for Storage RLS: never returns an attempt record or private
--- expected inputs. PostgREST must verify JWT signature; this method also
--- verifies permanent-account status, the still-active Auth session and
--- the one exact canonical workbook path for an explicitly enabled attempt.
-CREATE FUNCTION public.sl_excel_storage_upload_authorized(p_object_name text)
-RETURNS boolean
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $gate$
-DECLARE
-  v_actor uuid;
-  v_session uuid;
-BEGIN
-  v_actor := (SELECT auth.uid());
-  IF p_object_name IS NULL OR octet_length(p_object_name)>100
-     OR v_actor IS NULL
-     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
-     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
-     OR coalesce(auth.jwt()->>'session_id','') !~
-        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-  THEN
-    RETURN false;
-  END IF;
-  v_session := (auth.jwt()->>'session_id')::uuid;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=v_session AND s.user_id=v_actor
-      AND (s.not_after IS NULL OR s.not_after>now())
-  ) THEN
-    RETURN false;
-  END IF;
-
-  RETURN EXISTS (
-    SELECT 1 FROM public.software_learning_attempts a
-    WHERE a.owner_id=v_actor AND a.issued_session_id=v_session
-      AND a.status='issued' AND a.expires_at>now()
-      AND a.upload_enabled IS true
-      AND p_object_name=v_actor::text || '/' || a.id::text || '/workbook.xlsx'
-  );
-END
-$gate$;
-REVOKE ALL ON FUNCTION public.sl_excel_storage_upload_authorized(text)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.sl_excel_storage_upload_authorized(text)
-  TO authenticated;
-
--- A restrictive gate is essential: a pre-existing permissive bucket INSERT
--- policy must not authorize uploads to the reserved Excel bucket.
-CREATE POLICY sl_excel_insert_enforce ON storage.objects
-AS RESTRICTIVE FOR INSERT TO authenticated
-WITH CHECK (
-  bucket_id <> 'learningapp-excel-private'
-  OR public.sl_excel_storage_upload_authorized(name)
-);
-
--- Anonymous DB role is deliberately separate: it cannot execute the gated
--- authenticated-only helper. This prevents a policy permission error from
--- affecting unrelated buckets with existing public upload rules.
-CREATE POLICY sl_excel_insert_anon_denied ON storage.objects
-AS RESTRICTIVE FOR INSERT TO anon
-WITH CHECK (bucket_id <> 'learningapp-excel-private');
-
--- Explicit client-side direct upload permission only if a trusted operator
--- later sets the attempt's server-only gate. No signed URL or upsert flows.
-CREATE POLICY sl_excel_insert_owner ON storage.objects
-FOR INSERT TO authenticated
-WITH CHECK (
-  bucket_id = 'learningapp-excel-private'
-  AND public.sl_excel_storage_upload_authorized(name)
-);
-
--- Block all learner reads, overwrites, and deletions for this bucket even
--- if other RLS policies become more permissive later. A scoped trusted
--- processor must use the authenticated Storage API for read/delete.
-CREATE POLICY sl_excel_deny_read ON storage.objects
-AS RESTRICTIVE FOR SELECT TO anon,authenticated
-USING (bucket_id <> 'learningapp-excel-private');
-
-CREATE POLICY sl_excel_deny_update ON storage.objects
-AS RESTRICTIVE FOR UPDATE TO anon,authenticated
-USING (bucket_id <> 'learningapp-excel-private')
-WITH CHECK (bucket_id <> 'learningapp-excel-private');
-
-CREATE POLICY sl_excel_deny_delete ON storage.objects
-AS RESTRICTIVE FOR DELETE TO anon,authenticated
-USING (bucket_id <> 'learningapp-excel-private');
-
--- A DB-only deletion must never leave actual bytes in object storage.
--- Until the Storage-API cleanup orchestration is implemented, refuse
--- deleting an attempt whose canonical uploaded object still exists.
-CREATE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
-RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path=pg_catalog
-AS $protect$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM storage.objects o
-    WHERE o.bucket_id='learningapp-excel-private'
-      AND o.name=old.owner_id::text || '/' || old.id::text || '/workbook.xlsx'
-  ) THEN
-    RAISE EXCEPTION
-      'Remove Excel workbook via Storage API before erasing attempt metadata'
-      USING ERRCODE='55000';
-  END IF;
-  RETURN old;
-END
-$protect$;
-REVOKE ALL ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
-  FROM PUBLIC, anon, authenticated;
-
-CREATE TRIGGER sl_excel_prevent_orphan_delete
-  BEFORE DELETE ON public.software_learning_attempts
-  FOR EACH ROW
-  EXECUTE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete();
-
-COMMENT ON FUNCTION public.sl_excel_storage_upload_authorized(text) IS
-  'Default-deny permanent-session and owner-bound canonical Excel Storage path check. Never a skill/evidence authority.';
-COMMENT ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete() IS
-  'Fail-closed protection against SQL-only erasure of workbook metadata while bytes remain in Storage.';
-COMMIT;
-
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108020000', 'software_learning_excel_private_upload_gate') ON CONFLICT (version) DO NOTHING;
-
-
--- --------------------------------------------------------------------
--- [100/102] Migration: 20261108030000_software_learning_excel_processing_lease.sql
--- --------------------------------------------------------------------
--- Excel pilot: service-only, single-use processing lease and provisional receipt.
--- No learner-facing upload/grade route. No learning_events or skill awards.
--- The owner/session-authenticated Storage admission remains default DISABLED.
--- This append-only migration is source-only pending guarded deployment review.
-BEGIN;
-
-ALTER TABLE public.software_learning_attempts
-  DROP CONSTRAINT software_learning_attempts_status_check;
-ALTER TABLE public.software_learning_attempts
-  ADD CONSTRAINT software_learning_attempts_status_check
-  CHECK (status IN ('issued','processing','processed','failed'));
-
-ALTER TABLE public.software_learning_attempts
-  ADD COLUMN processing_lease_id uuid UNIQUE,
-  ADD COLUMN processing_claimed_at timestamptz,
-  ADD COLUMN artifact_sha256 text,
-  ADD COLUMN provisional_status text,
-  ADD COLUMN provisional_feedback text,
-  ADD CONSTRAINT sl_excel_artifact_sha_check
-    CHECK (artifact_sha256 IS NULL OR artifact_sha256 ~ '^[a-f0-9]{64}$'),
-  ADD CONSTRAINT sl_excel_provisional_status_check
-    CHECK (provisional_status IS NULL OR
-           provisional_status IN ('pass','fail','inconclusive')),
-  ADD CONSTRAINT sl_excel_provisional_feedback_check
-    CHECK (provisional_feedback IS NULL OR
-           char_length(provisional_feedback) <= 300);
-
--- This schema is deliberately absent from the public Data API. Only the
--- trusted service role is permitted to invoke the state-machine methods.
-GRANT USAGE ON SCHEMA software_learning_private TO service_role;
-
-CREATE FUNCTION software_learning_private.sl_claim_excel_processing(
-  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $claim$
-DECLARE
-  v_now timestamptz := now();
-  v_lease uuid := gen_random_uuid();
-  v_attempt public.software_learning_attempts%ROWTYPE;
-  v_inputs jsonb;
-BEGIN
-  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  -- Additional live-session check in the DB; the invoking service MUST
-  -- independently validate bearer JWT and permanence before passing IDs.
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=p_session_id AND s.user_id=p_owner_id
-      AND (s.not_after IS NULL OR s.not_after > v_now)
-  ) THEN
-    RETURN NULL;
-  END IF;
-
-  -- This UPDATE is atomic and single-use: simultaneous calls cannot both
-  -- claim the same issued attempt. It also disables future upload INSERTs.
-  UPDATE public.software_learning_attempts a
-  SET status='processing',
-      upload_enabled=false,
-      processing_lease_id=v_lease,
-      processing_claimed_at=v_now
-  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
-    AND a.issued_session_id=p_session_id
-    AND a.status='issued' AND a.upload_enabled=true
-    AND a.expires_at>v_now
-  RETURNING a.* INTO v_attempt;
-
-  IF NOT FOUND THEN
-    RETURN NULL;
-  END IF;
-
-  SELECT i.expected_inputs INTO v_inputs
-  FROM software_learning_private.excel_attempt_inputs i
-  WHERE i.attempt_id=v_attempt.id;
-  IF v_inputs IS NULL THEN
-    RAISE EXCEPTION 'Server-issued workbook inputs missing'
-      USING ERRCODE='55000';
-  END IF;
-
-  RETURN jsonb_build_object(
-    'lease_id',v_lease,
-    'attempt_id',v_attempt.id,
-    'owner_id',v_attempt.owner_id,
-    'session_id',v_attempt.issued_session_id,
-    'exercise_id',v_attempt.exercise_id,
-    'checker_version',v_attempt.checker_version,
-    'expires_at',v_attempt.expires_at,
-    'expected_inputs',v_inputs,
-    'evidence_trust','unverified_checker_only',
-    'can_award_skill',false
-  );
-END
-$claim$;
-
-CREATE FUNCTION software_learning_private.sl_complete_excel_processing(
-  p_lease_id uuid, p_digest text, p_status text, p_feedback text
-)
-RETURNS boolean
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $complete$
-DECLARE
-  v_completed uuid;
-BEGIN
-  IF p_lease_id IS NULL OR p_digest IS NULL OR
-     p_digest !~ '^[a-f0-9]{64}$' OR
-     p_status NOT IN ('pass','fail','inconclusive') OR
-     p_status IS NULL OR p_feedback IS NULL OR
-     char_length(p_feedback) > 300
-  THEN
-    RETURN false;
-  END IF;
-
-  UPDATE public.software_learning_attempts a
-  SET status='processed',
-      artifact_sha256=p_digest,
-      provisional_status=p_status,
-      provisional_feedback=p_feedback
-  WHERE a.processing_lease_id=p_lease_id
-    AND a.status='processing'
-    AND a.upload_enabled=false
-    AND a.expires_at>now()
-  RETURNING a.id INTO v_completed;
-
-  RETURN v_completed IS NOT NULL;
-END
-$complete$;
-
-CREATE FUNCTION software_learning_private.sl_fail_excel_processing(
-  p_lease_id uuid
-)
-RETURNS boolean
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $fail$
-DECLARE
-  v_failed uuid;
-BEGIN
-  IF p_lease_id IS NULL THEN
-    RETURN false;
-  END IF;
-  UPDATE public.software_learning_attempts a
-  SET status='failed', upload_enabled=false
-  WHERE a.processing_lease_id=p_lease_id AND a.status='processing'
-  RETURNING a.id INTO v_failed;
-  RETURN v_failed IS NOT NULL;
-END
-$fail$;
-
--- Never expose these security-definer functions to any learner role or
--- anonymous RPC. Only the trusted backend obtains the private expected data.
-REVOKE ALL ON FUNCTION
-  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
-  FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION
-  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
-  FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION
-  software_learning_private.sl_fail_excel_processing(uuid)
-  FROM PUBLIC, anon, authenticated;
-
-GRANT EXECUTE ON FUNCTION
-  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
-  TO service_role;
-GRANT EXECUTE ON FUNCTION
-  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
-  TO service_role;
-GRANT EXECUTE ON FUNCTION
-  software_learning_private.sl_fail_excel_processing(uuid)
-  TO service_role;
-
-COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
- IS 'Atomic service-only Excel claim; freezes upload and exposes expected inputs solely to trusted processor.';
-COMMENT ON FUNCTION software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
- IS 'Provisional result only; never verified learning events or skill award.';
-COMMENT ON FUNCTION software_learning_private.sl_fail_excel_processing(uuid)
- IS 'Finalizes a failed one-time claim without reopening upload access.';
-COMMIT;
-
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108030000', 'software_learning_excel_processing_lease') ON CONFLICT (version) DO NOTHING;
-
--- --------------------------------------------------------------------
--- [101/102] Migration: 20261108040000_software_learning_excel_brokered_upload_seal.sql
--- --------------------------------------------------------------------
--- Excel pilot: broker-sealed upload; client Storage inserts stay denied.
--- Source-only feature; no hosted service or learner upload enabled.
-BEGIN;
-
-ALTER TABLE public.software_learning_attempts
-  ADD COLUMN upload_sha256 text,
-  ADD COLUMN upload_object_version text,
-  ADD COLUMN upload_committed_at timestamptz,
-  ADD CONSTRAINT sl_excel_upload_sha_check
-    CHECK (upload_sha256 IS NULL OR upload_sha256 ~ '^[a-f0-9]{64}$'),
-  ADD CONSTRAINT sl_excel_upload_revision_check
-    CHECK (upload_object_version IS NULL OR
-           (char_length(upload_object_version) BETWEEN 1 AND 256 AND
-            upload_object_version ~ '^[a-zA-Z0-9._:-]+$')),
-  ADD CONSTRAINT sl_excel_upload_attestation_complete_check
-    CHECK (
-      (upload_sha256 IS NULL AND upload_object_version IS NULL
-       AND upload_committed_at IS NULL)
-      OR
-      (upload_sha256 IS NOT NULL AND upload_object_version IS NOT NULL
-       AND upload_committed_at IS NOT NULL)
-    ),
-  ADD CONSTRAINT sl_excel_upload_enabled_requires_seal_check
-    CHECK (NOT upload_enabled OR upload_committed_at IS NOT NULL);
-
-DROP POLICY IF EXISTS sl_excel_insert_owner ON storage.objects;
-DROP POLICY IF EXISTS sl_excel_insert_enforce ON storage.objects;
-CREATE POLICY sl_excel_insert_client_denied ON storage.objects
-AS RESTRICTIVE FOR INSERT TO authenticated
-WITH CHECK (bucket_id <> 'learningapp-excel-private');
-
--- Server-side broker locks attempt row for entire exclusive transaction;
--- no service-role privilege to auth.sessions is granted.
-CREATE FUNCTION software_learning_private.sl_lock_excel_upload(
-  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $brokerlock$
-DECLARE
-  v_now timestamptz := now();
-  v_attempt public.software_learning_attempts%ROWTYPE;
-BEGIN
-  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
-    RETURN NULL;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=p_session_id AND s.user_id=p_owner_id
-      AND (s.not_after IS NULL OR s.not_after>v_now)
-  ) THEN
-    RETURN NULL;
-  END IF;
-  SELECT a.* INTO v_attempt
-  FROM public.software_learning_attempts a
-  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
-    AND a.issued_session_id=p_session_id
-    AND a.status='issued' AND a.upload_enabled=false
-    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
-    AND a.upload_committed_at IS NULL
-    AND a.expires_at>v_now+interval '2 minutes'
-  FOR UPDATE OF a NOWAIT;
-  IF NOT FOUND THEN
-    RETURN NULL;
-  END IF;
-  RETURN jsonb_build_object(
-    'owner_id',v_attempt.owner_id,
-    'session_id',v_attempt.issued_session_id,
-    'attempt_id',v_attempt.id,
-    'expires_at',v_attempt.expires_at
-  );
-END
-$brokerlock$;
-
-CREATE FUNCTION software_learning_private.sl_seal_excel_upload(
-  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid,
-  p_digest text, p_version text
-)
-RETURNS boolean
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $brokerseal$
-DECLARE
-  v_updated uuid;
-BEGIN
-  IF (p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL
-    OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}$'
-    OR p_version IS NULL OR char_length(p_version) NOT BETWEEN 1 AND 256
-    OR p_version !~ '^[a-zA-Z0-9._:-]+$')
-  THEN
-    RETURN false;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=p_session_id AND s.user_id=p_owner_id
-      AND (s.not_after IS NULL OR s.not_after>now())
-  ) THEN
-    RETURN false;
-  END IF;
-  UPDATE public.software_learning_attempts a
-  SET upload_sha256=p_digest, upload_object_version=p_version,
-      upload_committed_at=now(), upload_enabled=true
-  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
-    AND a.issued_session_id=p_session_id
-    AND a.status='issued' AND a.upload_enabled=false
-    AND a.upload_committed_at IS NULL
-    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
-    AND a.expires_at>now()
-  RETURNING a.id INTO v_updated;
-  RETURN v_updated IS NOT NULL;
-END
-$brokerseal$;
-
--- A sealed workbook, verified against the live session, is required before
--- any processing claim. Returned hash/revision are immutable trust inputs.
-CREATE OR REPLACE FUNCTION software_learning_private.sl_claim_excel_processing(
-  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $claim$
-DECLARE
-  v_now timestamptz := now();
-  v_lease uuid := gen_random_uuid();
-  v_attempt public.software_learning_attempts%ROWTYPE;
-  v_inputs jsonb;
-BEGIN
-  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
-    RETURN NULL;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM auth.sessions s
-    WHERE s.id=p_session_id AND s.user_id=p_owner_id
-      AND (s.not_after IS NULL OR s.not_after>v_now)
-  ) THEN
-    RETURN NULL;
-  END IF;
-  UPDATE public.software_learning_attempts a
-  SET status='processing', upload_enabled=false,
-      processing_lease_id=v_lease, processing_claimed_at=v_now
-  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
-    AND a.issued_session_id=p_session_id
-    AND a.status='issued' AND a.upload_enabled=true
-    AND a.upload_committed_at IS NOT NULL
-    AND a.upload_sha256 ~ '^[a-f0-9]{64}$'
-    AND a.upload_object_version IS NOT NULL
-    AND a.expires_at>v_now
-  RETURNING a.* INTO v_attempt;
-
-  IF NOT FOUND THEN
-    RETURN NULL;
-  END IF;
-  SELECT i.expected_inputs INTO v_inputs
-  FROM software_learning_private.excel_attempt_inputs i
-  WHERE i.attempt_id=v_attempt.id;
-  IF v_inputs IS NULL THEN
-    RAISE EXCEPTION 'Server-issued workbook inputs missing'
-      USING ERRCODE='55000';
-  END IF;
-  RETURN jsonb_build_object(
-    'lease_id',v_lease,
-    'attempt_id',v_attempt.id,
-    'owner_id',v_attempt.owner_id,
-    'session_id',v_attempt.issued_session_id,
-    'exercise_id',v_attempt.exercise_id,
-    'checker_version',v_attempt.checker_version,
-    'expires_at',v_attempt.expires_at,
-    'expected_inputs',v_inputs,
-    'expected_sha256',v_attempt.upload_sha256,
-    'object_version',v_attempt.upload_object_version,
-    'evidence_trust','unverified_checker_only',
-    'can_award_skill',false
-  );
-END
-$claim$;
-
-CREATE OR REPLACE FUNCTION software_learning_private.sl_complete_excel_processing(
-  p_lease_id uuid, p_digest text, p_status text, p_feedback text
-)
-RETURNS boolean
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path=pg_catalog
-AS $complete$
-DECLARE
-  v_completed uuid;
-BEGIN
-  IF p_lease_id IS NULL OR p_digest IS NULL OR
-     p_digest !~ '^[a-f0-9]{64}$' OR
-     p_status NOT IN ('pass','fail','inconclusive') OR
-     p_status IS NULL OR p_feedback IS NULL OR
-     char_length(p_feedback) > 300
-  THEN
-    RETURN false;
-  END IF;
-  UPDATE public.software_learning_attempts a
-  SET status='processed', artifact_sha256=p_digest,
-      provisional_status=p_status, provisional_feedback=p_feedback
-  WHERE a.processing_lease_id=p_lease_id
-    AND a.upload_sha256=p_digest
-    AND a.status='processing' AND a.upload_enabled=false
-    AND a.expires_at>now()
-  RETURNING a.id INTO v_completed;
-  RETURN v_completed IS NOT NULL;
-END
-$complete$;
-
-REVOKE ALL ON FUNCTION
-  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
-  FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION
-  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION
-  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
-  TO service_role;
-GRANT EXECUTE ON FUNCTION
-  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
-  TO service_role;
-
-COMMENT ON COLUMN public.software_learning_attempts.upload_sha256 IS
-  'SHA-256 of authenticated broker readback, not evidence of learner mastery';
-COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
-  'Private Storage version pinned by broker, checked again before grading';
-COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
-  'Broker commit timestamp; direct client Storage INSERT remains prohibited';
-COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
-  'Atomic private claim for server-brokered SHA-sealed uploads; provisional only';
-COMMIT;
-
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108040000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
-
--- --------------------------------------------------------------------
--- [102/102] Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
+-- [98/102] Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
 -- --------------------------------------------------------------------
 -- Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
 -- Description: Enforce database-level question-bank separation, metadata persistence in ingest_curriculum_manifest,
@@ -37926,6 +37126,806 @@ revoke all on function public.grade_assessment_items(jsonb) from public;
 grant execute on function public.grade_assessment_items(jsonb) to anon, authenticated, service_role;
 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108140000', 'clep_simulation_bank_and_item_privacy') ON CONFLICT (version) DO NOTHING;
+-- --------------------------------------------------------------------
+-- [99/102] Migration: 20261108150000_software_learning_excel_attempt_issuance.sql
+-- --------------------------------------------------------------------
+-- Software Learning Excel pilot: authenticated, server-issued synthetic attempts.
+-- DRAFT FOUNDATION ONLY. No workbook upload/storage, grading, learning_events
+-- projection, skill awards or user file handling is enabled by this migration.
+-- Append-only; deploy only after the guarded release process and owner review.
+BEGIN;
+
+CREATE SCHEMA IF NOT EXISTS software_learning_private;
+REVOKE ALL ON SCHEMA software_learning_private FROM PUBLIC, anon, authenticated;
+
+CREATE TABLE public.software_learning_attempts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  issued_session_id uuid NOT NULL,
+  exercise_id text NOT NULL DEFAULT 'excel-budget-total-v1'
+    CHECK (exercise_id = 'excel-budget-total-v1'),
+  checker_version integer NOT NULL DEFAULT 1
+    CHECK (checker_version = 1),
+  issued_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  status text NOT NULL DEFAULT 'issued'
+    CHECK (status = 'issued'),
+  CONSTRAINT sl_excel_limited_expiration_check
+    CHECK (expires_at > issued_at AND
+      expires_at <= issued_at + interval '45 minutes')
+);
+CREATE INDEX sl_attempts_owner_issue_idx
+  ON public.software_learning_attempts (owner_id,issued_at DESC);
+CREATE INDEX sl_attempts_owner_expiry_idx
+  ON public.software_learning_attempts (owner_id,expires_at)
+  WHERE status='issued';
+
+ALTER TABLE public.software_learning_attempts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.software_learning_attempts FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.software_learning_attempts TO authenticated;
+CREATE POLICY sl_attempts_owner_read
+  ON public.software_learning_attempts FOR SELECT TO authenticated
+  USING (owner_id=(SELECT auth.uid()) AND expires_at > now());
+
+CREATE TABLE software_learning_private.excel_attempt_inputs (
+  attempt_id uuid PRIMARY KEY
+    REFERENCES public.software_learning_attempts(id) ON DELETE CASCADE,
+  expected_inputs jsonb NOT NULL CHECK (jsonb_typeof(expected_inputs)='object')
+);
+ALTER TABLE software_learning_private.excel_attempt_inputs ENABLE ROW LEVEL SECURITY;
+
+-- Issuance accounting intentionally survives deleting an individual attempt,
+-- otherwise a learner could evade the 12-in-24h quota by erasing each attempt.
+-- Contains account ID and timestamp only, no workbook data or responses.
+-- Account erasure cascades; periodic age-based pruning is a release gate.
+CREATE TABLE software_learning_private.excel_issuance_log (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  issued_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX sl_excel_issue_log_owner_window_idx
+  ON software_learning_private.excel_issuance_log(owner_id,issued_at DESC);
+ALTER TABLE software_learning_private.excel_issuance_log ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON ALL TABLES IN SCHEMA software_learning_private
+  FROM PUBLIC, anon, authenticated;
+
+-- No user-controlled exercise ID, checker version, score, expected values or
+-- owner ID parameters are accepted. This issuer returns only safe synthetic
+-- transaction amounts; there is no file/assessment upload capability.
+CREATE FUNCTION public.sl_issue_excel_budget_attempt()
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $issue$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+  v_now timestamptz := now();
+  v_id uuid;
+  v_inputs jsonb := '{}'::jsonb;
+  v_quota integer;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RAISE EXCEPTION 'Permanent authenticated session required'
+      USING ERRCODE='42501';
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RAISE EXCEPTION 'Authentication session is no longer active'
+      USING ERRCODE='42501';
+  END IF;
+
+  -- Serialize issuance by account so parallel requests cannot bypass quotas.
+  PERFORM pg_advisory_xact_lock(hashtextextended(v_actor::text, 61732));
+  SELECT count(*)::integer INTO v_quota
+  FROM software_learning_private.excel_issuance_log l
+  WHERE l.owner_id=v_actor AND l.issued_at>v_now-interval '24 hours';
+  IF v_quota >= 12 THEN
+    RAISE EXCEPTION 'Excel practice issuance quota reached'
+      USING ERRCODE='42501';
+  END IF;
+
+  SELECT count(*)::integer INTO v_quota
+  FROM public.software_learning_attempts a
+  WHERE a.owner_id=v_actor AND a.expires_at>v_now AND a.status='issued';
+  IF v_quota >= 2 THEN
+    RAISE EXCEPTION 'Finish or erase an existing Excel attempt first'
+      USING ERRCODE='42501';
+  END IF;
+
+  -- New numeric inputs are generated server-side for each attempt.
+  -- They are synthetic learning data, NOT anti-cheating secrets.
+  FOR v_i IN 2..9 LOOP
+    v_inputs := v_inputs || jsonb_build_object(
+      'C' || v_i, (10+floor(random()*90)::integer)
+    );
+  END LOOP;
+
+  INSERT INTO public.software_learning_attempts
+    (owner_id,issued_session_id,issued_at,expires_at)
+  VALUES (v_actor,v_session,v_now,v_now+interval '45 minutes')
+  RETURNING id INTO v_id;
+  INSERT INTO software_learning_private.excel_attempt_inputs
+    (attempt_id,expected_inputs)
+  VALUES (v_id,v_inputs);
+  INSERT INTO software_learning_private.excel_issuance_log
+    (owner_id,issued_at)
+  VALUES (v_actor,v_now);
+
+  RETURN jsonb_build_object(
+    'attempt_id',v_id,
+    'exercise_id','excel-budget-total-v1',
+    'checker_version',1,
+    'worksheet','Budget',
+    'target_cell','C10',
+    'inputs',v_inputs,
+    'issued_at',v_now,
+    'expires_at',v_now+interval '45 minutes',
+    'status','issued',
+    'upload_enabled',false,
+    'evidence_trust','unverified'
+  );
+END
+$issue$;
+
+REVOKE ALL ON FUNCTION public.sl_issue_excel_budget_attempt()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_issue_excel_budget_attempt()
+  TO authenticated;
+
+-- Owner erasure of the synthetic attempt and its private numeric inputs.
+-- No attempt contents or foreign-attempt existence is disclosed to callers.
+CREATE FUNCTION public.sl_delete_excel_budget_attempt(p_attempt_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $erase$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+  v_deleted uuid;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RAISE EXCEPTION 'Permanent authenticated session required'
+      USING ERRCODE='42501';
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RAISE EXCEPTION 'Authentication session is no longer active'
+      USING ERRCODE='42501';
+  END IF;
+
+  DELETE FROM public.software_learning_attempts a
+  WHERE a.id=p_attempt_id AND a.owner_id=v_actor
+  RETURNING a.id INTO v_deleted;
+  RETURN v_deleted IS NOT NULL;
+END
+$erase$;
+
+REVOKE ALL ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
+  TO authenticated;
+
+COMMENT ON TABLE public.software_learning_attempts IS
+  'Excel pilot: owner-visible server-issued synthetic attempt metadata; no scoring or file submission enabled.';
+COMMENT ON TABLE software_learning_private.excel_attempt_inputs IS
+  'Server-owned synthetic transaction cells, never directly readable by clients.';
+COMMENT ON FUNCTION public.sl_issue_excel_budget_attempt() IS
+  'Live permanent-session, owner-bound and quota-limited issue of synthetic Excel budget practice; unverified only.';
+COMMENT ON FUNCTION public.sl_delete_excel_budget_attempt(uuid) IS
+  'Live-session owner deletion; atomically cascades to private Excel practice inputs.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108150000', 'software_learning_excel_attempt_issuance') ON CONFLICT (version) DO NOTHING;
+
+
+-- --------------------------------------------------------------------
+-- [100/102] Migration: 20261108160000_software_learning_excel_private_upload_gate.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: private storage bucket with authenticated owner/session/path gate.
+-- No learner-facing file upload or worker processing is released here.
+-- All issued attempts remain upload_enabled=false; only trusted server
+-- orchestration can opt in after the independent retention/security review.
+-- Objects must be deleted using Storage API, never SQL metadata DELETE.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN upload_enabled boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.software_learning_attempts.upload_enabled IS
+  'Server-only release gate; default false, not changeable by learners. An enabled attempt still requires active original Auth session and exact path.';
+
+-- Reserve a NEW bucket ID only: never silently adopt/modify a pre-existing
+-- object bucket that might contain learner files or have public settings.
+DO $reserved_bucket$
+BEGIN
+  IF EXISTS (SELECT 1 FROM storage.buckets b
+             WHERE b.id='learningapp-excel-private') THEN
+    RAISE EXCEPTION 'Excel storage bucket already exists; require manual review'
+      USING ERRCODE='55000';
+  END IF;
+END
+$reserved_bucket$;
+
+INSERT INTO storage.buckets
+  (id,name,public,file_size_limit,allowed_mime_types)
+VALUES (
+  'learningapp-excel-private',
+  'learningapp-excel-private',
+  false,
+  10485760,
+  ARRAY['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']::text[]
+);
+
+-- Safe boolean for Storage RLS: never returns an attempt record or private
+-- expected inputs. PostgREST must verify JWT signature; this method also
+-- verifies permanent-account status, the still-active Auth session and
+-- the one exact canonical workbook path for an explicitly enabled attempt.
+CREATE FUNCTION public.sl_excel_storage_upload_authorized(p_object_name text)
+RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $gate$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF p_object_name IS NULL OR octet_length(p_object_name)>100
+     OR v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RETURN false;
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.software_learning_attempts a
+    WHERE a.owner_id=v_actor AND a.issued_session_id=v_session
+      AND a.status='issued' AND a.expires_at>now()
+      AND a.upload_enabled IS true
+      AND p_object_name=v_actor::text || '/' || a.id::text || '/workbook.xlsx'
+  );
+END
+$gate$;
+REVOKE ALL ON FUNCTION public.sl_excel_storage_upload_authorized(text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_excel_storage_upload_authorized(text)
+  TO authenticated;
+
+-- A restrictive gate is essential: a pre-existing permissive bucket INSERT
+-- policy must not authorize uploads to the reserved Excel bucket.
+CREATE POLICY sl_excel_insert_enforce ON storage.objects
+AS RESTRICTIVE FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id <> 'learningapp-excel-private'
+  OR public.sl_excel_storage_upload_authorized(name)
+);
+
+-- Anonymous DB role is deliberately separate: it cannot execute the gated
+-- authenticated-only helper. This prevents a policy permission error from
+-- affecting unrelated buckets with existing public upload rules.
+CREATE POLICY sl_excel_insert_anon_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO anon
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+-- Explicit client-side direct upload permission only if a trusted operator
+-- later sets the attempt's server-only gate. No signed URL or upsert flows.
+CREATE POLICY sl_excel_insert_owner ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'learningapp-excel-private'
+  AND public.sl_excel_storage_upload_authorized(name)
+);
+
+-- Block all learner reads, overwrites, and deletions for this bucket even
+-- if other RLS policies become more permissive later. A scoped trusted
+-- processor must use the authenticated Storage API for read/delete.
+CREATE POLICY sl_excel_deny_read ON storage.objects
+AS RESTRICTIVE FOR SELECT TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private');
+
+CREATE POLICY sl_excel_deny_update ON storage.objects
+AS RESTRICTIVE FOR UPDATE TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private')
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+CREATE POLICY sl_excel_deny_delete ON storage.objects
+AS RESTRICTIVE FOR DELETE TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private');
+
+-- A DB-only deletion must never leave actual bytes in object storage.
+-- Until the Storage-API cleanup orchestration is implemented, refuse
+-- deleting an attempt whose canonical uploaded object still exists.
+CREATE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=pg_catalog
+AS $protect$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM storage.objects o
+    WHERE o.bucket_id='learningapp-excel-private'
+      AND o.name=old.owner_id::text || '/' || old.id::text || '/workbook.xlsx'
+  ) THEN
+    RAISE EXCEPTION
+      'Remove Excel workbook via Storage API before erasing attempt metadata'
+      USING ERRCODE='55000';
+  END IF;
+  RETURN old;
+END
+$protect$;
+REVOKE ALL ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
+  FROM PUBLIC, anon, authenticated;
+
+CREATE TRIGGER sl_excel_prevent_orphan_delete
+  BEFORE DELETE ON public.software_learning_attempts
+  FOR EACH ROW
+  EXECUTE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete();
+
+COMMENT ON FUNCTION public.sl_excel_storage_upload_authorized(text) IS
+  'Default-deny permanent-session and owner-bound canonical Excel Storage path check. Never a skill/evidence authority.';
+COMMENT ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete() IS
+  'Fail-closed protection against SQL-only erasure of workbook metadata while bytes remain in Storage.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108160000', 'software_learning_excel_private_upload_gate') ON CONFLICT (version) DO NOTHING;
+
+
+-- --------------------------------------------------------------------
+-- [101/102] Migration: 20261108170000_software_learning_excel_processing_lease.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: service-only, single-use processing lease and provisional receipt.
+-- No learner-facing upload/grade route. No learning_events or skill awards.
+-- The owner/session-authenticated Storage admission remains default DISABLED.
+-- This append-only migration is source-only pending guarded deployment review.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  DROP CONSTRAINT software_learning_attempts_status_check;
+ALTER TABLE public.software_learning_attempts
+  ADD CONSTRAINT software_learning_attempts_status_check
+  CHECK (status IN ('issued','processing','processed','failed'));
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN processing_lease_id uuid UNIQUE,
+  ADD COLUMN processing_claimed_at timestamptz,
+  ADD COLUMN artifact_sha256 text,
+  ADD COLUMN provisional_status text,
+  ADD COLUMN provisional_feedback text,
+  ADD CONSTRAINT sl_excel_artifact_sha_check
+    CHECK (artifact_sha256 IS NULL OR artifact_sha256 ~ '^[a-f0-9]{64}$'),
+  ADD CONSTRAINT sl_excel_provisional_status_check
+    CHECK (provisional_status IS NULL OR
+           provisional_status IN ('pass','fail','inconclusive')),
+  ADD CONSTRAINT sl_excel_provisional_feedback_check
+    CHECK (provisional_feedback IS NULL OR
+           char_length(provisional_feedback) <= 300);
+
+-- This schema is deliberately absent from the public Data API. Only the
+-- trusted service role is permitted to invoke the state-machine methods.
+GRANT USAGE ON SCHEMA software_learning_private TO service_role;
+
+CREATE FUNCTION software_learning_private.sl_claim_excel_processing(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $claim$
+DECLARE
+  v_now timestamptz := now();
+  v_lease uuid := gen_random_uuid();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+  v_inputs jsonb;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  -- Additional live-session check in the DB; the invoking service MUST
+  -- independently validate bearer JWT and permanence before passing IDs.
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after > v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  -- This UPDATE is atomic and single-use: simultaneous calls cannot both
+  -- claim the same issued attempt. It also disables future upload INSERTs.
+  UPDATE public.software_learning_attempts a
+  SET status='processing',
+      upload_enabled=false,
+      processing_lease_id=v_lease,
+      processing_claimed_at=v_now
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=true
+    AND a.expires_at>v_now
+  RETURNING a.* INTO v_attempt;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT i.expected_inputs INTO v_inputs
+  FROM software_learning_private.excel_attempt_inputs i
+  WHERE i.attempt_id=v_attempt.id;
+  IF v_inputs IS NULL THEN
+    RAISE EXCEPTION 'Server-issued workbook inputs missing'
+      USING ERRCODE='55000';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'lease_id',v_lease,
+    'attempt_id',v_attempt.id,
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'exercise_id',v_attempt.exercise_id,
+    'checker_version',v_attempt.checker_version,
+    'expires_at',v_attempt.expires_at,
+    'expected_inputs',v_inputs,
+    'evidence_trust','unverified_checker_only',
+    'can_award_skill',false
+  );
+END
+$claim$;
+
+CREATE FUNCTION software_learning_private.sl_complete_excel_processing(
+  p_lease_id uuid, p_digest text, p_status text, p_feedback text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $complete$
+DECLARE
+  v_completed uuid;
+BEGIN
+  IF p_lease_id IS NULL OR p_digest IS NULL OR
+     p_digest !~ '^[a-f0-9]{64}$' OR
+     p_status NOT IN ('pass','fail','inconclusive') OR
+     p_status IS NULL OR p_feedback IS NULL OR
+     char_length(p_feedback) > 300
+  THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.software_learning_attempts a
+  SET status='processed',
+      artifact_sha256=p_digest,
+      provisional_status=p_status,
+      provisional_feedback=p_feedback
+  WHERE a.processing_lease_id=p_lease_id
+    AND a.status='processing'
+    AND a.upload_enabled=false
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_completed;
+
+  RETURN v_completed IS NOT NULL;
+END
+$complete$;
+
+CREATE FUNCTION software_learning_private.sl_fail_excel_processing(
+  p_lease_id uuid
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $fail$
+DECLARE
+  v_failed uuid;
+BEGIN
+  IF p_lease_id IS NULL THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='failed', upload_enabled=false
+  WHERE a.processing_lease_id=p_lease_id AND a.status='processing'
+  RETURNING a.id INTO v_failed;
+  RETURN v_failed IS NOT NULL;
+END
+$fail$;
+
+-- Never expose these security-definer functions to any learner role or
+-- anonymous RPC. Only the trusted backend obtains the private expected data.
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_fail_excel_processing(uuid)
+  FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_fail_excel_processing(uuid)
+  TO service_role;
+
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+ IS 'Atomic service-only Excel claim; freezes upload and exposes expected inputs solely to trusted processor.';
+COMMENT ON FUNCTION software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+ IS 'Provisional result only; never verified learning events or skill award.';
+COMMENT ON FUNCTION software_learning_private.sl_fail_excel_processing(uuid)
+ IS 'Finalizes a failed one-time claim without reopening upload access.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108170000', 'software_learning_excel_processing_lease') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [102/102] Migration: 20261108180000_software_learning_excel_brokered_upload_seal.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: broker-sealed upload; client Storage inserts stay denied.
+-- Source-only feature; no hosted service or learner upload enabled.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN upload_sha256 text,
+  ADD COLUMN upload_object_version text,
+  ADD COLUMN upload_committed_at timestamptz,
+  ADD CONSTRAINT sl_excel_upload_sha_check
+    CHECK (upload_sha256 IS NULL OR upload_sha256 ~ '^[a-f0-9]{64}$'),
+  ADD CONSTRAINT sl_excel_upload_revision_check
+    CHECK (upload_object_version IS NULL OR
+           (char_length(upload_object_version) BETWEEN 1 AND 256 AND
+            upload_object_version ~ '^[a-zA-Z0-9._:-]+$')),
+  ADD CONSTRAINT sl_excel_upload_attestation_complete_check
+    CHECK (
+      (upload_sha256 IS NULL AND upload_object_version IS NULL
+       AND upload_committed_at IS NULL)
+      OR
+      (upload_sha256 IS NOT NULL AND upload_object_version IS NOT NULL
+       AND upload_committed_at IS NOT NULL)
+    ),
+  ADD CONSTRAINT sl_excel_upload_enabled_requires_seal_check
+    CHECK (NOT upload_enabled OR upload_committed_at IS NOT NULL);
+
+DROP POLICY IF EXISTS sl_excel_insert_owner ON storage.objects;
+DROP POLICY IF EXISTS sl_excel_insert_enforce ON storage.objects;
+CREATE POLICY sl_excel_insert_client_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO authenticated
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+-- Server-side broker locks attempt row for entire exclusive transaction;
+-- no service-role privilege to auth.sessions is granted.
+CREATE FUNCTION software_learning_private.sl_lock_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerlock$
+DECLARE
+  v_now timestamptz := now();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+  SELECT a.* INTO v_attempt
+  FROM public.software_learning_attempts a
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
+    AND a.upload_committed_at IS NULL
+    AND a.expires_at>v_now+interval '2 minutes'
+  FOR UPDATE OF a NOWAIT;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  RETURN jsonb_build_object(
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'attempt_id',v_attempt.id,
+    'expires_at',v_attempt.expires_at
+  );
+END
+$brokerlock$;
+
+CREATE FUNCTION software_learning_private.sl_seal_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid,
+  p_digest text, p_version text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerseal$
+DECLARE
+  v_updated uuid;
+BEGIN
+  IF (p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL
+    OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}$'
+    OR p_version IS NULL OR char_length(p_version) NOT BETWEEN 1 AND 256
+    OR p_version !~ '^[a-zA-Z0-9._:-]+$')
+  THEN
+    RETURN false;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET upload_sha256=p_digest, upload_object_version=p_version,
+      upload_committed_at=now(), upload_enabled=true
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_committed_at IS NULL
+    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_updated;
+  RETURN v_updated IS NOT NULL;
+END
+$brokerseal$;
+
+-- A sealed workbook, verified against the live session, is required before
+-- any processing claim. Returned hash/revision are immutable trust inputs.
+CREATE OR REPLACE FUNCTION software_learning_private.sl_claim_excel_processing(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $claim$
+DECLARE
+  v_now timestamptz := now();
+  v_lease uuid := gen_random_uuid();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+  v_inputs jsonb;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='processing', upload_enabled=false,
+      processing_lease_id=v_lease, processing_claimed_at=v_now
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=true
+    AND a.upload_committed_at IS NOT NULL
+    AND a.upload_sha256 ~ '^[a-f0-9]{64}$'
+    AND a.upload_object_version IS NOT NULL
+    AND a.expires_at>v_now
+  RETURNING a.* INTO v_attempt;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  SELECT i.expected_inputs INTO v_inputs
+  FROM software_learning_private.excel_attempt_inputs i
+  WHERE i.attempt_id=v_attempt.id;
+  IF v_inputs IS NULL THEN
+    RAISE EXCEPTION 'Server-issued workbook inputs missing'
+      USING ERRCODE='55000';
+  END IF;
+  RETURN jsonb_build_object(
+    'lease_id',v_lease,
+    'attempt_id',v_attempt.id,
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'exercise_id',v_attempt.exercise_id,
+    'checker_version',v_attempt.checker_version,
+    'expires_at',v_attempt.expires_at,
+    'expected_inputs',v_inputs,
+    'expected_sha256',v_attempt.upload_sha256,
+    'object_version',v_attempt.upload_object_version,
+    'evidence_trust','unverified_checker_only',
+    'can_award_skill',false
+  );
+END
+$claim$;
+
+CREATE OR REPLACE FUNCTION software_learning_private.sl_complete_excel_processing(
+  p_lease_id uuid, p_digest text, p_status text, p_feedback text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $complete$
+DECLARE
+  v_completed uuid;
+BEGIN
+  IF p_lease_id IS NULL OR p_digest IS NULL OR
+     p_digest !~ '^[a-f0-9]{64}$' OR
+     p_status NOT IN ('pass','fail','inconclusive') OR
+     p_status IS NULL OR p_feedback IS NULL OR
+     char_length(p_feedback) > 300
+  THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='processed', artifact_sha256=p_digest,
+      provisional_status=p_status, provisional_feedback=p_feedback
+  WHERE a.processing_lease_id=p_lease_id
+    AND a.upload_sha256=p_digest
+    AND a.status='processing' AND a.upload_enabled=false
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_completed;
+  RETURN v_completed IS NOT NULL;
+END
+$complete$;
+
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+  FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+  TO service_role;
+
+COMMENT ON COLUMN public.software_learning_attempts.upload_sha256 IS
+  'SHA-256 of authenticated broker readback, not evidence of learner mastery';
+COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
+  'Private Storage version pinned by broker, checked again before grading';
+COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
+  'Broker commit timestamp; direct client Storage INSERT remains prohibited';
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
+  'Atomic private claim for server-brokered SHA-sealed uploads; provisional only';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108180000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
+
 
 COMMIT;
 
