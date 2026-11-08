@@ -548,7 +548,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-domain-restrictions"],
                         },
                         {
-                            "prompt": "Which of the following is equivalent to the complex fraction $\\frac{\\frac{1}{x} - \\frac{1}{y}}{\\frac{1}{x^2} - \\frac{1}{y^2}}$ for all non-zero $x, y$ with $x \\neq y$?",
+                            "prompt": "Which of the following is equivalent to the complex fraction $\\frac{\\frac{1}{x} - \\frac{1}{y}}{\\frac{1}{x^2} - \\frac{1}{y^2}}$ for all non-zero real numbers $x, y$ with $x \\neq \\pm y$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
@@ -559,7 +559,7 @@ DOMAIN_01 = {
                                 ]
                             },
                             "scoring_spec": {"correct_index": 3},
-                            "explanation": "Multiply numerator and denominator by the LCD of all inner fractions, which is x^2 y^2: Numerator becomes (1/x - 1/y) * x^2 y^2 = xy^2 - x^2 y = xy(y - x). Denominator becomes (1/x^2 - 1/y^2) * x^2 y^2 = y^2 - x^2 = (y - x)(y + x). Dividing gives [xy(y - x)] / [(y - x)(y + x)] = xy / (x + y).",
+                            "explanation": "Multiply numerator and denominator by the LCD of all inner fractions, which is x^2 y^2 (valid for all non-zero x, y with x != \\pm y): Numerator becomes (1/x - 1/y) * x^2 y^2 = xy^2 - x^2 y = xy(y - x). Denominator becomes (1/x^2 - 1/y^2) * x^2 y^2 = y^2 - x^2 = (y - x)(y + x). Dividing gives [xy(y - x)] / [(y - x)(y + x)] = xy / (x + y). Note that x != \\pm y ensures that neither (y - x) nor (y + x) equals zero.",
                             "difficulty": "intermediate",
                             "cognitive_level": "analysis",
                             "citation": "OpenStax College Algebra 1e, Section 1.6",

@@ -5,6 +5,7 @@ import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../providers/assessment_engine_provider.dart';
 import '../../services/assessment/assessment_grading_service.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
+import '../../widgets/calculator/scientific_calculator_widget.dart';
 import 'exam_report_screen.dart';
 import 'secure_exam_part_practice_screen.dart';
 
@@ -295,6 +296,53 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
     );
   }
 
+  void _showCalculatorSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          height: MediaQuery.of(ctx).size.height * 0.85,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Exam Tools · Scientific Calculator',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('close_calculator_sheet_button'),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Close Calculator',
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              const Expanded(
+                child: ScientificCalculatorWidget(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildLegendItem(Color color, String label, bool isDark) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -429,6 +477,14 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
             ),
           ),
           const SizedBox(width: 6),
+          // Scientific Calculator Button (for quantitative / algebra simulation)
+          IconButton(
+            key: const Key('exam_calculator_button'),
+            icon: const Icon(Icons.calculate_outlined),
+            tooltip: 'Scientific Calculator',
+            onPressed: () => _showCalculatorSheet(context),
+          ),
+          const SizedBox(width: 4),
           // Question Navigator Matrix Button
           IconButton(
             icon: const Icon(Icons.grid_view_rounded),

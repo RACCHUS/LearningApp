@@ -154,6 +154,46 @@ void main() {
       expect(find.textContaining('Estimated Scaled Score'), findsNothing);
     });
 
+    testWidgets('MockExamScreen launches scientific calculator tool from exam AppBar and allows calculations', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: MockExamScreen(initialSession: session),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify calculator action icon in the exam app bar
+      final calcButton = find.byKey(const Key('exam_calculator_button'));
+      expect(calcButton, findsOneWidget);
+
+      // 2. Tap to open calculator bottom sheet during exam
+      await tester.tap(calcButton);
+      await tester.pumpAndSettle();
+
+      // 3. Verify calculator sheet renders with mandatory disclaimer banner
+      expect(find.text('Exam Tools · Scientific Calculator'), findsOneWidget);
+      expect(find.text('Scientific Calculator'), findsOneWidget);
+      expect(find.textContaining('Practice substitute only'), findsOneWidget);
+      expect(find.textContaining('Not official TI-30XS software'), findsOneWidget);
+
+      // 4. Close calculator sheet and return to exam question
+      final closeButton = find.byKey(const Key('close_calculator_sheet_button'));
+      expect(closeButton, findsOneWidget);
+      await tester.tap(closeButton);
+      await tester.pumpAndSettle();
+
+      // 5. Verify returned to active exam view
+      expect(find.text('Exam Tools · Scientific Calculator'), findsNothing);
+      expect(find.text('Question 1 of 2'), findsOneWidget);
+    });
+
     testWidgets('routes to SecureExamPartPracticeScreen when examPartKey is provided', (tester) async {
       const partBlueprint = MockExamBlueprint(
         targetVersionId: 'tv-test',

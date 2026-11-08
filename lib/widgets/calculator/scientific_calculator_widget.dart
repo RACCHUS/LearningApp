@@ -52,6 +52,12 @@ class ScientificCalculatorEngine {
       if (!parser.isAtEnd) {
         return const CalculationResult.error('Error: Syntax');
       }
+      if (val.isNaN) {
+        return const CalculationResult.error('Error: Undefined real result');
+      }
+      if (val.isInfinite) {
+        return const CalculationResult.error('Error: Non-finite / Overflow');
+      }
       return CalculationResult.success(val);
     } on _CalcException catch (e) {
       return CalculationResult.error(e.message);
@@ -63,7 +69,7 @@ class ScientificCalculatorEngine {
   static List<_Token> _tokenize(String input) {
     final tokens = <_Token>[];
     int i = 0;
-    final s = input.replaceAll(' ', '');
+    final s = input.replaceAll(RegExp(r'\s+'), '');
 
     while (i < s.length) {
       final c = s[i];
@@ -90,7 +96,7 @@ class ScientificCalculatorEngine {
         }
         tokens.add(_Token(_TokenType.identifier, s.substring(start, i).toLowerCase()));
       } else {
-        i++;
+        throw _CalcException("Error: Unrecognized character '$c'");
       }
     }
     return tokens;
@@ -154,12 +160,12 @@ class _Parser {
   }
 
   double parseTerm() {
-    double left = parsePower();
+    double left = parseUnary();
     while (!isAtEnd) {
       if (match('*')) {
-        left *= parsePower();
+        left *= parseUnary();
       } else if (match('/')) {
-        final right = parsePower();
+        final right = parseUnary();
         if (right == 0.0) {
           throw _CalcException('Error: Division by zero');
         }
@@ -171,15 +177,6 @@ class _Parser {
     return left;
   }
 
-  double parsePower() {
-    double base = parseUnary();
-    if (!isAtEnd && match('^')) {
-      final exponent = parsePower(); // right-associative
-      return math.pow(base, exponent).toDouble();
-    }
-    return base;
-  }
-
   double parseUnary() {
     if (match('-')) {
       return -parseUnary();
@@ -187,7 +184,20 @@ class _Parser {
     if (match('+')) {
       return parseUnary();
     }
-    return parsePostfix();
+    return parsePower();
+  }
+
+  double parsePower() {
+    double base = parsePostfix();
+    if (!isAtEnd && match('^')) {
+      final exponent = parseUnary(); // right-associative power, supports signed exponent e.g. 2^-3
+      final res = math.pow(base, exponent).toDouble();
+      if (res.isNaN) {
+        throw _CalcException('Error: Undefined real power');
+      }
+      return res;
+    }
+    return base;
   }
 
   double parsePostfix() {

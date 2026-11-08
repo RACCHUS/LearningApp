@@ -62,9 +62,10 @@ def build_manifest() -> dict:
                 "license": "College Board Proprietary (Educational Reference Blueprint)",
                 "license_name": "Proprietary Examination Blueprint",
                 "rights_note": "Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board.",
-                "sha256": "c56b7d2f95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f03",
                 "metadata": {
                     "role": "blueprint_authority",
+                    "checksum_status": "unverified_remote_document",
+                    "checksum_verification_note": "Online specification blueprint. No offline cryptographic archive artifact pinned; verification based on official College Board domain percentages and time limits.",
                     "total_domains": 4,
                     "exam_code": "CLEP-ALG",
                     "passing_score": 50,
@@ -83,16 +84,18 @@ def build_manifest() -> dict:
                 "publisher": "OpenStax / Rice University",
                 "title": "College Algebra (OpenStax 1st Edition)",
                 "version": "1st Edition (2015)",
-                "source_url": "https://openstax.org/details/books/college-algebra",
+                "source_url": "https://openstax.org/books/college-algebra/pages/preface",
                 "retrieved_at": "2026-11-08T00:00:00Z",
                 "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
                 "license_name": "CC BY 4.0",
                 "rights_note": "Senior Contributing Author: Jay Abramson. Open-access instructional foundation for algebraic principles, definitions, worked examples, and pedagogical explanations. Licensed under CC BY 4.0.",
-                "sha256": "8e9f23a5b67432c91d4e7bf3f5698ab9213bc54784a621e25e9d3d3a77a94f04",
                 "metadata": {
                     "role": "instructional_reference",
                     "edition": "1st Edition",
                     "cc_license": "CC BY 4.0",
+                    "checksum_status": "unverified_remote_document",
+                    "checksum_verification_note": "OpenStax 1st Edition instructional foundation licensed under CC BY 4.0. Note: OpenStax College Algebra 2e shifted to CC BY-NC-SA 4.0 (comparison URL: https://openstax.org/books/college-algebra-2e/pages/preface). All curriculum exposition strictly adheres to 1st Edition CC BY 4.0.",
+                    "comparison_url_2e": "https://openstax.org/books/college-algebra-2e/pages/preface",
                 },
             },
         ],
@@ -231,3 +234,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

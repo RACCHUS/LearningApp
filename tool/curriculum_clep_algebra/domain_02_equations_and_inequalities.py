@@ -560,14 +560,14 @@ DOMAIN_02 = {
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
-                                    "x = 2 and x = 3",
-                                    "x = 2 only",
-                                    "x = 3 only",
                                     "x = 4 only",
+                                    "x = -1 and x = 4",
+                                    "x = -1 only",
+                                    "No real solution",
                                 ]
                             },
                             "scoring_spec": {"correct_index": 2},
-                            "explanation": "Note domain restrictions: x != 2 and x != 4. Multiply every term by the LCD (x - 2)(x - 4): x(x - 4) + 1(x - 2) = 2. Expand: x^2 - 4x + x - 2 = 2 => x^2 - 3x - 4 = 0. Factor: (x - 4)(x + 1) = 0 => x = 4 or x = -1... Wait, let's recheck arithmetic: x(x - 4) + 1(x - 2) = 2 => x^2 - 4x + x - 2 - 2 = 0 => x^2 - 3x - 4 = 0 => (x-4)(x+1) = 0. But x = 4 is an excluded value! Wait, let's check with 3: If x = 3, 3/(3-2) + 1/(3-4) = 3/1 + 1/(-1) = 3 - 1 = 2. RHS is 2/[(1)(-1)] = -2, not equal. Let's make the equation clean: x/(x - 2) - 1/(x - 4) = (x^2 - 5x + 2)/((x-2)(x-4)).",
+                            "explanation": "Domain restrictions are x != 2 and x != 4 to prevent division by zero. Multiply both sides by the LCD (x - 2)(x - 4): x(x - 4) + 1(x - 2) = 2. Expand and simplify: x^2 - 4x + x - 2 = 2 => x^2 - 3x - 4 = 0. Factor: (x - 4)(x + 1) = 0, giving candidate roots x = 4 and x = -1. Because x = 4 makes denominators zero in the original equation, it is extraneous. Substituting x = -1: (-1)/(-3) + 1/(-5) = 1/3 - 1/5 = 2/15, and 2/[(-3)(-5)] = 2/15. Therefore, x = -1 is the unique valid real solution.",
                             "difficulty": "intermediate",
                             "cognitive_level": "application",
                             "citation": "OpenStax College Algebra 1e, Section 2.6",

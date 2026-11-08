@@ -66,6 +66,51 @@ void main() {
       expect(nonPosLn.isError, isTrue);
       expect(nonPosLn.format(), contains('Non-positive log'));
     });
+
+    test('evaluates unary minus, power precedence, right-associativity, and negative exponents', () {
+      // Standard algebraic notation: -3^2 = -(3^2) = -9
+      expect(ScientificCalculatorEngine.evaluate('-3^2').format(), '-9');
+      // Parenthesized base: (-3)^2 = 9
+      expect(ScientificCalculatorEngine.evaluate('(-3)^2').format(), '9');
+      // Negative exponent: 2^-3 = 0.125
+      expect(ScientificCalculatorEngine.evaluate('2^-3').format(), '0.125');
+      // Right-associative exponentiation: 2^3^2 = 2^(3^2) = 2^9 = 512
+      expect(ScientificCalculatorEngine.evaluate('2^3^2').format(), '512');
+      // Parenthesized exponentiation with unary: -(3^2) = -9
+      expect(ScientificCalculatorEngine.evaluate('-(3^2)').format(), '-9');
+      // Unary minus with power: -2^3 = -8
+      expect(ScientificCalculatorEngine.evaluate('-2^3').format(), '-8');
+      // Term subtraction vs power: 4 - 3^2 = 4 - 9 = -5
+      expect(ScientificCalculatorEngine.evaluate('4 - 3^2').format(), '-5');
+      // Term multiplication with unary power: 4 * -2^2 = 4 * (-4) = -16
+      expect(ScientificCalculatorEngine.evaluate('4 * -2^2').format(), '-16');
+    });
+
+    test('rejects malformed inputs, invalid characters, and unrecognized symbols', () {
+      // Rejects unknown characters e.g. @ instead of silently dropping them
+      final atChar = ScientificCalculatorEngine.evaluate('12@+3');
+      expect(atChar.isError, isTrue);
+      expect(atChar.format(), contains('Unrecognized character'));
+
+      // Rejects hash and currency symbols
+      final hashChar = ScientificCalculatorEngine.evaluate('5 # 2');
+      expect(hashChar.isError, isTrue);
+      expect(hashChar.format(), contains('Unrecognized character'));
+
+      // Rejects unknown functions
+      final unknownFunc = ScientificCalculatorEngine.evaluate('foo(5)');
+      expect(unknownFunc.isError, isTrue);
+      expect(unknownFunc.format(), contains('Unknown function'));
+
+      // Rejects unmatched parentheses
+      final unmatchedParen = ScientificCalculatorEngine.evaluate('((2 + 3)');
+      expect(unmatchedParen.isError, isTrue);
+      expect(unmatchedParen.format(), contains('Unmatched parenthesis'));
+
+      // Rejects dangling operators
+      final danglingOp = ScientificCalculatorEngine.evaluate('2 + * 3');
+      expect(danglingOp.isError, isTrue);
+    });
   });
 
   group('ScientificCalculatorWidget Integration & Accessibility Tests', () {
@@ -198,3 +243,4 @@ void main() {
     });
   });
 }
+

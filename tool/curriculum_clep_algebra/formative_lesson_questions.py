@@ -525,3 +525,4 @@ def build_balanced_formative_questions() -> dict[str, list[dict]]:
 
 
 FORMATIVE_QUESTIONS_BY_LESSON = build_balanced_formative_questions()
+
