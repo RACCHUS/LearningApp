@@ -257,7 +257,7 @@ class MockExamGeneratorService {
 
     final itemsRes = await _supabase
         .from('assessment_items')
-        .select('*, assessment_stimuli(*)')
+        .select('${AssessmentItem.clientReadableColumns}, assessment_stimuli(*)')
         .eq('origin_target_version_id', targetVersionId);
 
     final allItems = (itemsRes as List? ?? [])

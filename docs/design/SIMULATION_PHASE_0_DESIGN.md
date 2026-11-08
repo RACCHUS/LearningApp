@@ -327,7 +327,23 @@ cannot establish causal effectiveness.
   - Still outstanding: a manual screen-reader pass (NVDA/JAWS on Windows,
     VoiceOver on macOS/iOS, TalkBack on Android). Simulations must not be
     described as WCAG 2.2 AA approved until that pass is done.
-- **Equivalent learning alternative: pending content.** No lesson in
-  `assets/`, `content/`, or `data/` contains a simulation block yet. Each
-  lesson that adds one must show that its `body` fallback teaches the same
-  objective before that simulation is enabled.
+- **Equivalent learning alternative: approved for draft inclusion (PR #195).**
+  `content/drafts/networking_basics_simulation.yaml` pairs the
+  `networking-basics@1.0.0` block with a `body` fallback and three practice
+  questions covering the same objective (find the broken link, choose the
+  physical fix first, explain why). The option lengths are balanced and the
+  correct positions rotate across all three choices. It was ingested into an
+  isolated local stack and tested with Playwright on release web builds:
+  - Preview off: the fallback and practice questions render and the
+    simulation does not launch. Preview on: the in-lesson launch opens the
+    simulation and returns to the lesson.
+  - Fixed during this pass: lesson block text was not exposed to screen
+    readers on web (PR #193). Legacy practice questions were not shown on
+    block lessons, and hidden-key assessment items could not be graded after
+    FIX-12. Both are fixed by server-side grading in PR #194, deployed as
+    migration `20261108000000`.
+  - This is a draft only, not a published lesson. It must remain outside
+    production curriculum ingestion until the manual accessibility gate is
+    complete and the lesson is separately approved for publication.
+  - Each further lesson that adds a simulation must show the same
+    equivalence before that simulation is enabled.

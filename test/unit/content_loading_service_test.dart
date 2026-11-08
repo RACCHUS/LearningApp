@@ -124,6 +124,51 @@ void main() {
       expect(synthBlocks[3].content['prompt'], equals('Which algorithm is asymmetric?'));
     });
 
+    test('UnifiedLesson appends legacy questions after authored blocks', () {
+      final block = LessonBlock(
+        id: 'block-1',
+        lessonId: 'lesson-1',
+        sortOrder: 7,
+        blockType: LessonBlockType.markdown,
+        content: {'body': 'Authored lesson body.'},
+        createdAt: now,
+        updatedAt: now,
+      );
+      final question = QuestionContent(
+        id: 'q-1',
+        lessonId: 'lesson-1',
+        order: 0,
+        questionText: 'Which algorithm is asymmetric?',
+        options: ['AES', 'RSA'],
+        correctAnswer: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final unified = UnifiedLesson(
+        lesson: testLesson,
+        blocks: [block],
+        legacyContent: [question],
+      );
+
+      final effective = unified.effectiveBlocks;
+      expect(effective.map((b) => b.id), ['block-1', 'synth-q-q-1']);
+      expect(effective.last.blockType, LessonBlockType.practicePrompt);
+      expect(effective.last.sortOrder, greaterThan(block.sortOrder));
+      expect(effective.last.content['answer'], 'RSA');
+    });
+
+    test('AssessmentItem client columns never request hidden answer keys', () {
+      final columns = AssessmentItem.clientReadableColumns
+          .split(',')
+          .map((c) => c.trim())
+          .toSet();
+      expect(columns, isNot(contains('*')));
+      expect(columns, isNot(contains('scoring_spec')));
+      expect(columns, isNot(contains('explanation')));
+      expect(columns, containsAll(['id', 'prompt', 'response_spec']));
+    });
+
     test('AssessmentItem parses polymorphic specs and linked stimulus correctly', () {
       final stimulus = AssessmentStimulus(
         id: 'stim-1',
