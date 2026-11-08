@@ -8,7 +8,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_temp;
 
-select plan(34);
+select plan(36);
 
 -- Setup synthetic test users in auth.users (under initial postgres session role)
 insert into auth.users (id, email) values
@@ -478,7 +478,7 @@ select throws_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- 8. Valid Completion, Selective Review Disclosure & Replay Invariant
+-- 8. Valid Completion, Confidential Simulation Bank & Anti-Scraping Regression
 -- ----------------------------------------------------------------------------
 -- Issue fresh, clean attempt for User 1
 create temp table _fresh_exam on commit drop as
@@ -493,15 +493,15 @@ select ok(
 create temp table _submission_res (data jsonb) on commit drop;
 grant all on table _submission_res to public, authenticated, service_role, anon;
 
--- Submit attempt with Item 1 answered (correct: 0) and Item 2 left unanswered
+-- Submit attempt with ALL questions answered (guessing 0 for both Item 1 and Item 2)
+-- Regression: learner attempts to scrape bank by answering all questions immediately
 do $$
 declare
   v_att_id uuid;
   v_item_1 text;
   v_item_2 text;
   v_sub_res jsonb;
-  v_r1 jsonb;
-  v_r2 jsonb;
+  v_r jsonb;
 begin
   select (data->>'attempt_id')::uuid into v_att_id from _fresh_exam;
   select issued_item_ids[1]::text, issued_item_ids[2]::text
@@ -509,66 +509,83 @@ begin
   from public.clep_simulation_attempts
   where id = v_att_id;
 
-  -- Submit Item 1 ONLY (leaving Item 2 blank)
+  -- Submit answers for ALL items
   v_sub_res := public.clep_submit_simulation_exam(
     v_att_id,
-    jsonb_build_object(v_item_1, 0)
+    jsonb_build_object(v_item_1, 0, v_item_2, 0)
   );
 
   insert into _submission_res (data) values (v_sub_res);
 
-  -- Assert score: 1 correct out of 2 total
-  if (v_sub_res->>'raw_score')::int <> 1 then
-    raise exception 'Expected raw_score 1, got %', v_sub_res->>'raw_score';
+  -- Assert score: 2 correct out of 2 total (both items have correct_index = 0)
+  if (v_sub_res->>'raw_score')::int <> 2 then
+    raise exception 'Expected raw_score 2, got %', v_sub_res->>'raw_score';
   end if;
 
   if (v_sub_res->>'total_questions')::int <> 2 then
     raise exception 'Expected total_questions 2, got %', v_sub_res->>'total_questions';
   end if;
 
-  if (v_sub_res->>'accuracy_percentage')::numeric <> 50.0 then
-    raise exception 'Expected accuracy 50.0, got %', v_sub_res->>'accuracy_percentage';
+  if (v_sub_res->>'accuracy_percentage')::numeric <> 100.0 then
+    raise exception 'Expected accuracy 100.0, got %', v_sub_res->>'accuracy_percentage';
   end if;
 
-  -- Assert Item 1 result: answered, correct, explanation safely revealed
-  v_r1 := v_sub_res->'results'->0;
-  if (v_r1->>'answered')::boolean is not true or (v_r1->>'is_correct')::boolean is not true then
-    raise exception 'Item 1 should be marked answered and correct';
-  end if;
-  if (v_r1->>'explanation') is null or (v_r1->>'correct_answer') is null then
-    raise exception 'Item 1 post-submission review must reveal explanation and correct answer';
-  end if;
+  -- Verify CONFIDENTIALITY: neither item leaks correct_answer or explanation
+  for i in 0 .. jsonb_array_length(v_sub_res->'results') - 1
+  loop
+    v_r := (v_sub_res->'results')->i;
 
-  -- Assert Item 2 result: unanswered, NOT correct, explanation & answer key NOT revealed
-  v_r2 := v_sub_res->'results'->1;
-  if (v_r2->>'answered')::boolean is not false or (v_r2->>'is_correct')::boolean is not false then
-    raise exception 'Item 2 should be marked unanswered and not correct';
-  end if;
-  if v_r2->>'explanation' is not null or v_r2->>'correct_answer' is not null then
-    raise exception 'SECURITY VIOLATION: Unanswered Item 2 leaked explanation or correct answer!';
-  end if;
+    if (v_r->>'answered')::boolean is not true then
+      raise exception 'Item should be marked answered';
+    end if;
+
+    if (v_r->>'is_correct')::boolean is not true then
+      raise exception 'Item should be marked correct';
+    end if;
+
+    if v_r ? 'correct_answer' and (v_r->>'correct_answer') is not null then
+      raise exception 'SECURITY VIOLATION: Simulation item leaked correct_answer in submission response!';
+    end if;
+
+    if v_r ? 'explanation' and (v_r->>'explanation') is not null then
+      raise exception 'SECURITY VIOLATION: Simulation item leaked explanation in submission response!';
+    end if;
+
+    if not (v_r ? 'concept_ids') then
+      raise exception 'Simulation result must provide concept_ids for targeted remediation';
+    end if;
+  end loop;
 end;
 $$;
 
-select pass('User 1 submits attempt with Item 1 answered and Item 2 unanswered');
+select pass('User 1 submits attempt with all questions answered and receives zero answer keys or explanations');
 
--- Verify server-side evaluation matches
+-- Verify server-side evaluation matches in database record
 select is(
   (select raw_score from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
-  1,
-  'Submitted attempt evaluates raw score correctly (1 out of 2)'
+  2,
+  'Submitted attempt evaluates raw score correctly (2 out of 2)'
 );
 
+-- Verify learner can read correctness and targeted remediation concepts under RLS
 select is(
-  (select ((results->0)->>'answered')::boolean from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  (select ((results->0)->>'is_correct')::boolean from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
   true,
-  'Answered question safely reveals correct answer and explanation in post-submission results'
+  'Attempt owner can read item correctness (is_correct) in post-submission results'
 );
 
+-- Verify owner-readable database record strictly omits correct_answer and explanation
 select is(
-  (select ((results->1)->>'correct_answer') from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
-  null,
-  'Unanswered question does NOT reveal correct answer or explanation in post-submission results'
+  (
+    select count(*)
+    from jsonb_array_elements(
+      (select results from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid))
+    ) elem
+    where (elem ? 'correct_answer' and (elem->>'correct_answer') is not null)
+       or (elem ? 'explanation' and (elem->>'explanation') is not null)
+  ),
+  0::bigint,
+  'Owner-readable clep_simulation_attempts.results strictly omits correct_answer and explanation (anti-harvesting)'
 );
 
 -- Verify non-overclaiming disclaimer in database record
@@ -597,6 +614,39 @@ select throws_ok(
   '23505',
   null,
   'Replay submission of completed attempt is strictly rejected (single-submission invariant)'
+);
+
+-- ----------------------------------------------------------------------------
+-- 9. Anti-Abuse Regressions: Formative Server Grading & Repeated Issuance Abuse
+-- ----------------------------------------------------------------------------
+-- Anti-Bypass Guard: grade_assessment_items must NOT grade or leak protected simulation items
+select is(
+  (
+    select (res->0->>'error')
+    from (
+      select public.grade_assessment_items(
+        jsonb_build_array(
+          jsonb_build_object(
+            'item_id', (select item_1_id from _test_ctx),
+            'response', 0
+          )
+        )
+      ) as res
+    ) sub
+  ),
+  'not_available',
+  'grade_assessment_items rejects protected simulation items with not_available error (zero key leakage)'
+);
+
+-- Anti-Abuse Guard: Repeated attempt issuance produces a fresh attempt that also leaks zero keys
+select ok(
+  (
+    select (data->>'attempt_id' is not null and jsonb_array_length(data->'questions') = 2)
+    from (
+      select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data
+    ) sub
+  ),
+  'Repeated exam issuance produces a fresh tracked attempt with zero scoring keys'
 );
 
 rollback;
