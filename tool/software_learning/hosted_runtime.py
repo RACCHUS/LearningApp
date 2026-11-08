@@ -65,7 +65,8 @@ class TrustedExcelAssessment:
         conn = None
         try:
             conn = self._connect()
-            if conn is None or not hasattr(conn, "close"):
+            if (conn is None or not hasattr(conn, "close") or
+                getattr(conn, "autocommit", True) is not False):
                 return _unavailable()
             return assess_private_workbook(
                 bearer_token=bearer_token,

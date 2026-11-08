@@ -76,6 +76,9 @@ class DbApiAttemptRepository:
     """
 
     def __init__(self, connection) -> None:
+        if (connection is None or
+            getattr(connection, "autocommit", True) is not False):
+            raise ValueError("Exclusive non-autocommit DB connection required")
         self._connection = connection
 
     def _execute(self, sql: str, args: tuple):

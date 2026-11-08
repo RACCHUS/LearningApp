@@ -15,6 +15,7 @@ ATTEMPT = "ba430000-0000-4000-8000-000000000001"
 
 
 class Conn:
+    autocommit = False
     def __init__(self):
         self.closed = 0
     def close(self):
@@ -68,6 +69,23 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result["status"], "rejected")
         self.assertNotIn("secret", str(result))
         self.assertEqual(conns[0].closed, 1)
+
+    def test_autocommit_database_does_not_enter_assessment_and_is_closed(self):
+        class AutoCommitConn(Conn):
+            autocommit = True
+        conns = []
+        def connect():
+            c = AutoCommitConn()
+            conns.append(c)
+            return c
+        host = TrustedExcelAssessment(
+            sessions=Sessions(), storage=Storage(), runner=Runner(),
+            connection_factory=connect)
+        with patch("software_learning.hosted_runtime.assess_private_workbook") as assessment:
+            result = host("bearer.jwt.claim", ATTEMPT)
+        self.assertEqual(result["status"], "rejected")
+        assessment.assert_not_called()
+        self.assertEqual([conn.closed for conn in conns], [1])
 
     def test_invalid_attempt_never_opens_database(self):
         opened = []

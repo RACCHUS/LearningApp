@@ -156,3 +156,22 @@ Only a short, retry-free authorized execution returns **complete**, which
 means that *single sweep* completed, **not** that every account or workbook
 has been erased. Malformed prune counts fail closed. This is tested in CI;
 no scheduler or production worker is activated.
+
+
+### Stronger server-only service transaction and deletion capability (source only)
+
+The grading service now refuses a database connection unless
+`autocommit is False`, both at the trusted host entrypoint and the
+processing-lease repository. A misconfigured connection must not enter a
+lease claim or accidentally split transaction boundaries. Regression tests
+verify no SQL executes on an invalid adapter and that the host closes
+an invalid connection without calling the assessor.
+
+A separate, disabled-by-default `private_retention_host` composition
+grants its Storage adapter **GET + DELETE only, never POST**. The learner
+upload host retains **GET + POST**; the grading host **GET only**. The
+retention host cannot run a scheduled job or establish authority on its
+own, and explicit execution still requires an externally authenticated
+internal service. Method scoping is defense in depth, **not** credential
+IAM isolation. Staging must demonstrate three independently constrained
+identities, private network policy, and audit/retry alarms before activation.

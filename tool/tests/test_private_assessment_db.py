@@ -43,7 +43,8 @@ class Cursor:
         self.connection.calls.append(("close",))
 
 class Connection:
-    def __init__(self, response, fail_execute=False):
+    def __init__(self, response, fail_execute=False, autocommit=False):
+        self.autocommit = autocommit
         self.response = response
         self.fail_execute = fail_execute
         self.calls = []
@@ -56,6 +57,18 @@ class Connection:
         self.calls.append(("rollback",))
 
 class DbAdapterTests(unittest.TestCase):
+    def test_autocommit_or_missing_transaction_contract_rejected_before_sql(self):
+        for conn in (Connection((None,), autocommit=True),
+                     Connection((None,), autocommit=None)):
+            with self.subTest(autocommit=conn.autocommit), self.assertRaises(ValueError):
+                DbApiAttemptRepository(conn)
+            self.assertEqual(conn.calls, [])
+        class NoTransactionSetting:
+            def cursor(self):
+                raise AssertionError("should not open cursor")
+        with self.assertRaises(ValueError):
+            DbApiAttemptRepository(NoTransactionSetting())
+
     def test_claim_uses_private_function_and_parameter_binding(self):
         conn = Connection((lease_json(),))
         result = DbApiAttemptRepository(conn).claim(
