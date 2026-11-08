@@ -74,7 +74,7 @@ class UploadRuntimeTests(unittest.TestCase):
             host._slots.release()
 
     def test_factory_scopes_upload_network_methods_without_delete(self):
-        with patch("software_learning.hosted_upload_runtime.SupabaseUserGateway"), \\
+        with patch("software_learning.hosted_upload_runtime.SupabaseUserGateway"), \
              patch("software_learning.hosted_upload_runtime.SupabasePrivateWorkbookStore") as store:
             host = build_trusted_excel_upload_host(
                 project_ref="xzvkdwebtbxlrxagtzlv",

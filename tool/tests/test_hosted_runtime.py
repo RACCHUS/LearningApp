@@ -94,8 +94,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(conns, [])
 
     def test_factory_scopes_grading_storage_to_read_only(self):
-        with patch("software_learning.hosted_runtime.SupabaseUserGateway"), \\
-             patch("software_learning.hosted_runtime.SupabasePrivateWorkbookStore") as store, \\
+        with patch("software_learning.hosted_runtime.SupabaseUserGateway"), \
+             patch("software_learning.hosted_runtime.SupabasePrivateWorkbookStore") as store, \
              patch("software_learning.hosted_runtime.DockerXlsxWorker"):
             host = build_trusted_excel_host(
                 project_ref="xzvkdwebtbxlrxagtzlv",

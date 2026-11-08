@@ -213,7 +213,7 @@ class PrivateStorageTests(unittest.TestCase):
                         if operation == "remove":
                             store.remove(PRIVATE_BUCKET, PATH)
                         else:
-                            store.create_only(PRIVATE_BUCKET, PATH, b"PK\\x03\\x04safe")
+                            store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04safe")
                 self.assertEqual([r.get_method() for r, _ in http.requests], ["GET"])
 
     def test_invalid_method_scope_rejected_before_network(self):
