@@ -119,3 +119,10 @@ The new disposable local Supabase Storage race probe initially produced **three 
 ### 2026-11-08 provider diagnostic clarification
 
 The local Supabase Storage API returned **HTTP 200 for all three simultaneous privileged POST requests**, both with `x-upsert: false` and after removing the upsert header. Therefore the header alone is *not proven* to cause the concurrency behavior, and raw provider write exclusivity is **not established**. The CI probe now distinguishes a mandatory **sequential create-only and SHA/revision consistency check** from a nonblocking, explicitly warned **raw concurrent privileged-write diagnostic**. The latter bypasses the actual broker database lock by design. Multiple accepted concurrent privileged writes must remain a **hosted staging security blocker**, not be represented as a green immutability proof. Only the trusted broker with an exclusive row lock may write an Excel object, and all direct learner writes remain forbidden.
+
+
+### 2026-11-08 local Storage metadata compatibility
+
+The loopback provider returns a canonical private object name, bucket, and a string revision, but the object-info JSON's `metadata` may **omit `size`**. The private Storage adapter now treats a missing or null size as optional, while rejecting malformed or over-limit sizes whenever supplied. This is not a relaxation of file-content bounds: the HTTP client rejects large `Content-Length` and reads at most the configured limit plus one byte, the upload broker checks the original workbook length and SHA-256 readback, and the private bucket has a 10 MiB limit. The synthetic local-provider test checks the same behavior. This needs fresh CI; hosted verification remains pending.
+
+Note: the earlier concurrency-gate text above was superseded by the separate strict sequential and warned raw concurrent diagnostic; simultaneous raw service-role writes are not considered a verified single-writer guarantee.

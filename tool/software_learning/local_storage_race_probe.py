@@ -91,8 +91,14 @@ def run() -> None:
         try:
             metadata = json.loads(info)
             revision = metadata["version"]
+            attributes = metadata["metadata"]
+            if not isinstance(attributes, dict):
+                raise ValueError("Invalid object metadata")
+            optional_size = attributes.get("size")
             if (metadata["name"] != path or metadata["bucket_id"] != BUCKET
-                or metadata["metadata"]["size"] != len(readback)
+                or (optional_size is not None and
+                    (type(optional_size) is not int or
+                     optional_size != len(readback)))
                 or not isinstance(revision, str) or not 1 <= len(revision) <= 256
                 or not revision.isascii()):
                 raise ValueError("Object revision contract invalid")

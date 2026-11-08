@@ -172,11 +172,25 @@ class PrivateStorageTests(unittest.TestCase):
              "metadata": {"size": -1}},
             {"version": VERSION, "bucket_id": PRIVATE_BUCKET,
              "name": "wrong.xlsx", "metadata": {"size": 10}},
+            {"version": VERSION, "bucket_id": PRIVATE_BUCKET,
+             "name": PATH, "metadata": {"size": "10"}},
+            {"version": VERSION, "bucket_id": PRIVATE_BUCKET,
+             "name": PATH, "metadata": {"size": True}},
         ):
             with self.subTest(info=info):
                 store, _ = self.store(FakeAPI(info=info))
                 with self.assertRaises(StorageFailure):
                     store.stat(PRIVATE_BUCKET, PATH)
+
+    def test_optional_info_size_never_disables_bounded_download(self):
+        for metadata in ({}, {"size": None}):
+            with self.subTest(metadata=metadata):
+                info = {"version": VERSION, "bucket_id": PRIVATE_BUCKET,
+                        "name": PATH, "metadata": metadata}
+                store, _ = self.store(FakeAPI(blob=b"x" * 102, info=info))
+                self.assertEqual(store.stat(PRIVATE_BUCKET, PATH), VERSION)
+                with self.assertRaises(StorageFailure):
+                    store.download_limited(PRIVATE_BUCKET, PATH, 101)
 
     def test_bounded_download_rejects_payload_and_mime_variants(self):
         for blob, mime in (

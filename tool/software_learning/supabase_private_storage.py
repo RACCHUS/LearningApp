@@ -153,12 +153,15 @@ class SupabasePrivateWorkbookStore:
             data = json.loads(response.decode("utf-8", errors="strict"))
             metadata = data["metadata"]
             version = data["version"]
-            size = metadata["size"]
+            # Storage may omit the optional metadata size; the streaming GET
+            # still enforces the 10 MiB bound. Reject malformed supplied sizes.
+            size = metadata.get("size")
             if (not isinstance(data, dict) or
                 data.get("name") != path or
                 data.get("bucket_id") != bucket or
                 not isinstance(metadata, dict) or
-                type(size) is not int or size < 0 or size > MAX_UPLOAD_BYTES or
+                (size is not None and
+                 (type(size) is not int or size < 0 or size > MAX_UPLOAD_BYTES)) or
                 not isinstance(version, str) or not 1 <= len(version) <= 256 or
                 not version.isascii()):
                 raise StorageFailure("Workbook storage unavailable")
