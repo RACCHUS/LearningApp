@@ -146,6 +146,51 @@ SELECT is((SELECT status FROM public.software_learning_attempts
  'Only a sealed file can reach provisional processed state');
 
 RESET ROLE;
+-- The private cleanup adapter must atomically replace the issued state with
+-- a terminal one before Storage API deletion. upload_enabled=false alone is
+-- NOT a freeze; the broker deliberately starts with that default value.
+CREATE TEMP TABLE sl_cleanup_freeze AS SELECT gen_random_uuid() AS id;
+GRANT SELECT ON sl_cleanup_freeze TO service_role;
+INSERT INTO public.software_learning_attempts
+ (id,owner_id,issued_session_id,issued_at,expires_at)
+SELECT id,'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ now(),now()+interval '45 minutes'
+FROM sl_cleanup_freeze;
+SET LOCAL ROLE service_role;
+SELECT ok(software_learning_private.sl_lock_excel_upload(
+ (SELECT id FROM sl_cleanup_freeze),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid) IS NOT NULL,
+ 'Before cleanup freeze an issued unsealed attempt allows broker admission');
+RESET ROLE;
+UPDATE public.software_learning_attempts
+SET upload_enabled=false,
+    status=CASE WHEN status='issued' THEN 'failed' ELSE status END
+WHERE id=(SELECT id FROM sl_cleanup_freeze);
+SELECT is((SELECT status FROM public.software_learning_attempts
+ WHERE id=(SELECT id FROM sl_cleanup_freeze)), 'failed',
+ 'Cleanup marks a previously issued unsealed attempt terminal');
+SET LOCAL ROLE service_role;
+SELECT is(software_learning_private.sl_lock_excel_upload(
+ (SELECT id FROM sl_cleanup_freeze),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid),
+ NULL::jsonb,
+ 'Late broker cannot obtain upload lock after terminal cleanup freeze');
+SELECT is(software_learning_private.sl_seal_excel_upload(
+ (SELECT id FROM sl_cleanup_freeze),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid,
+ repeat('a',64),'revision-1'), false,
+ 'Late broker cannot seal workbook after terminal cleanup freeze');
+SELECT is(software_learning_private.sl_claim_excel_processing(
+ (SELECT id FROM sl_cleanup_freeze),
+ 'ba610000-0000-4000-8000-000000000001'::uuid,
+ 'ba620000-0000-4000-8000-000000000001'::uuid),
+ NULL::jsonb, 'Terminal cleanup prevents an assessment lease');
+
+RESET ROLE;
 CREATE TEMP TABLE sl_session_revoke_attempt AS SELECT gen_random_uuid() AS id;
 GRANT SELECT ON sl_session_revoke_attempt TO service_role;
 INSERT INTO public.software_learning_attempts

@@ -96,8 +96,26 @@ class DbRetentionTests(unittest.TestCase):
             ("exists", "learningapp-excel-private", FILE),
         ])
         self.assertIn("upload_enabled=false",conn.statements[1][0])
+        self.assertIn("status=CASE WHEN status='issued' THEN 'failed' ELSE status END",
+                      conn.statements[1][0])
         self.assertIn("status IN",conn.statements[1][0])
         self.assertEqual(conn.statements[1][1], (OWNER, ATTEMPT))
+
+    def test_unsealed_cleanup_freeze_cannot_reopen_issued_upload(self):
+        conn = Connection((ATTEMPT,))
+        repo = DbApiRetentionRepository(conn)
+        self.assertTrue(repo.freeze_upload(OWNER, ATTEMPT))
+        sql, args = conn.statements[0]
+        self.assertIn("status=CASE WHEN status='issued' THEN 'failed' ELSE status END", sql)
+        self.assertIn("SET upload_enabled=false", sql)
+        self.assertEqual(args, (OWNER, ATTEMPT))
+        self.assertEqual(conn.commits, 1)
+        self.assertEqual(conn.rollbacks, 0)
+
+    def test_missing_freeze_row_never_claims_a_successful_freeze(self):
+        conn = Connection(None)
+        self.assertFalse(DbApiRetentionRepository(conn).freeze_upload(OWNER, ATTEMPT))
+        self.assertEqual(conn.commits, 1)
 
     def test_storage_failed_keeps_metadata_after_freeze(self):
         conn = Connection((OWNER, ATTEMPT), (ATTEMPT,))
