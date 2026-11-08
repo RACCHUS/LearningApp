@@ -217,3 +217,26 @@ metadata avoidance, timeout-after-write and lost DB commit response.
 This does **not** prove that the underlying provider prevents hostile
 concurrent privileged writers: independent hosted staging and narrowly
 isolated Storage credentials remain mandatory.
+
+
+### Local Storage deletion verification limitation
+
+In the disposable local Supabase version, object-info returns HTTP
+**400** for a missing object both before creation and after deletion.
+The production Storage adapter intentionally does **not** accept every
+400 as proof of absence, so operational account/expiry cleanup may
+remain retryable on that provider.
+
+The **CI-only** DB/Storage broker race probe now performs a stricter
+independent local check after its acknowledged Storage API DELETE:
+it queries the disposable `storage.objects` metadata table
+read-only through a loopback PostgreSQL connection and confirms the
+canonical object row is absent; it also rejects a still-readable
+GET response. This does not access the hosted database, does not use
+direct SQL to delete Storage metadata, and does not weaken the hosted
+retention adapter's fail-closed behavior.
+
+Do **not** interpret a green local probe as hosted object-store
+immutability, byte-level absence, operational deletion SLAs, or
+account-erasure certification. Hosted consistency guarantees and a
+reviewed deletion-absence verification method remain release blockers.

@@ -45,8 +45,8 @@ def _local_db_url() -> str:
 
 
 class LocalObjects:
-    def __init__(self, api: str, key: str):
-        self._api, self._key = api, key
+    def __init__(self, api: str, key: str, database: str):
+        self._api, self._key, self._db = api, key, database
         self._guard = Lock()
         self.create_calls = 0
         self.stat_statuses: list[int] = []
@@ -97,7 +97,28 @@ class LocalObjects:
         return data
 
     def exists(self, bucket: str, path: str) -> bool:
-        return self.stat(bucket, path) is not None
+        if bucket != BUCKET:
+            raise RuntimeError("Unexpected private bucket")
+        # The local provider can return HTTP 400 for a missing object after
+        # deletion. Never classify arbitrary 400 responses as absent. Only
+        # after an acknowledged Storage DELETE, use an independent privileged
+        # read of the *local* storage.objects metadata for absence. This is
+        # a disposable CI diagnostic, not the hosted retention adapter.
+        http_status, _ = _request(self._api, self._key, "GET", path)
+        if http_status == 200:
+            return True
+        if http_status not in (400, 404):
+            raise RuntimeError("Unexpected synthetic Storage read status")
+        with _connect(self._db, service=False) as conn:
+            found = conn.execute(
+                "SELECT EXISTS(SELECT 1 FROM storage.objects "
+                "WHERE bucket_id=%s AND name=%s)",
+                (bucket, path),
+            ).fetchone()
+        if (not isinstance(found, tuple) or len(found) != 1
+            or type(found[0]) is not bool):
+            raise RuntimeError("Untrusted local Storage metadata check")
+        return found[0]
 
     def remove(self, bucket: str, path: str) -> None:
         if bucket != BUCKET:
@@ -136,7 +157,7 @@ def run() -> None:
     owner, session, attempt = (str(uuid4()) for _ in range(3))
     path = f"{owner}/{attempt}/workbook.xlsx"
     first, second = _fixture(1), _fixture(2)
-    objects = LocalObjects(api, key)
+    objects = LocalObjects(api, key, database)
     gateway = LocalIdentity(owner, session)
     prepared = False
 
