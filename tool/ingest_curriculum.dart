@@ -682,6 +682,19 @@ void _executeDryRun(
         totalFlashcards++;
       }
 
+      // Objective Assessment Items
+      final objAssessmentItems = objective['assessment_items'] as List<dynamic>? ?? [];
+      for (final item in objAssessmentItems) {
+        if (item is! Map) continue;
+        final prompt = item['prompt']?.toString() ?? '';
+        final interactionType = item['interaction_type']?.toString();
+        if (prompt.isEmpty) throw Exception('Assessment item prompt cannot be empty');
+        if (interactionType == null || interactionType.isEmpty) {
+          throw Exception('Assessment item missing interaction_type: "$prompt"');
+        }
+        totalAssessmentItems++;
+      }
+
       // Lessons
       final lessons = objective['lessons'] as List<dynamic>? ?? [];
       for (final lesson in lessons) {
@@ -939,6 +952,9 @@ Map<String, dynamic> _prepareManifestPayload({
           'response_spec': item['response_spec'] ?? {},
           'scoring_spec': item['scoring_spec'] ?? {},
           'explanation': item['explanation'],
+          'difficulty': item['difficulty'] ?? 'intermediate',
+          'cognitive_level': item['cognitive_level'],
+          'metadata': item['metadata'] ?? {},
           'concept_ids': cIds,
           'concept_slugs': cSlugs.isNotEmpty ? cSlugs : objConceptSlugs,
           'source_release_id': item['source_release_id'],
@@ -1015,6 +1031,9 @@ Map<String, dynamic> _prepareManifestPayload({
             'response_spec': item['response_spec'] ?? {},
             'scoring_spec': item['scoring_spec'] ?? {},
             'explanation': item['explanation'],
+            'difficulty': item['difficulty'] ?? 'intermediate',
+            'cognitive_level': item['cognitive_level'],
+            'metadata': item['metadata'] ?? {},
             'concept_ids': cIds,
             'concept_slugs': cSlugs.isNotEmpty ? cSlugs : (lConceptSlugs ?? objConceptSlugs),
             'source_release_id': item['source_release_id'],

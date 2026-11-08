@@ -1,0 +1,821 @@
+{
+  "schema_version": 1,
+  "program": "College-Level Examination Program (CLEP)",
+  "issuer": "College Board",
+  "issuer_url": "https://clep.collegeboard.org",
+  "retrieved_at": "2026-11-07",
+  "notice": "Reconciled against official College Board CLEP exam specifications (November 2026). Standard credit recommendations are established by the American Council on Education (ACE). ACE credit recommendations are advisory; each individual higher education institution independently determines its own credit-award thresholds, minimum acceptable scaled scores (typically 50 or higher), and specific course equivalencies. LearningApp does not grant college credit or guarantee institutional acceptance.",
+  "total_exams": 34,
+  "categories": [
+    "Composition and Literature",
+    "Science and Mathematics",
+    "Business",
+    "History and Social Sciences",
+    "World Languages"
+  ],
+  "exams": [
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-american-literature",
+      "exam_code": "CLEP-AMER-LIT",
+      "title": "American Literature",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/american-literature",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-analyzing-interpreting-literature",
+      "exam_code": "CLEP-ANAL-LIT",
+      "title": "Analyzing and Interpreting Literature",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/analyzing-interpreting-literature",
+      "time_limit_minutes": 90,
+      "question_count_approx": 80,
+      "format": "Multiple-choice (optional essay section depending on institution)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Optional institutional essay",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-college-composition",
+      "exam_code": "CLEP-COMP",
+      "title": "College Composition",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/college-composition",
+      "time_limit_minutes": 115,
+      "question_count_approx": 50,
+      "format": "Multiple-choice (50 questions, 45 min) plus 2 centralized essays (70 min)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Two mandatory essays (source-based synthesis and argumentative)",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-college-composition-modular",
+      "exam_code": "CLEP-COMP-MOD",
+      "title": "College Composition Modular",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/college-composition-modular",
+      "time_limit_minutes": 90,
+      "question_count_approx": 90,
+      "format": "Multiple-choice (optional essay scored by institution)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Optional essay scored directly by college",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-english-literature",
+      "exam_code": "CLEP-ENG-LIT",
+      "title": "English Literature",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/english-literature",
+      "time_limit_minutes": 90,
+      "question_count_approx": 95,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-humanities",
+      "exam_code": "CLEP-HUM",
+      "title": "Humanities",
+      "category": "Composition and Literature",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/humanities",
+      "time_limit_minutes": 90,
+      "question_count_approx": 140,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-biology",
+      "exam_code": "CLEP-BIO",
+      "title": "Biology",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/biology",
+      "time_limit_minutes": 90,
+      "question_count_approx": 115,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-calculus",
+      "exam_code": "CLEP-CALC",
+      "title": "Calculus",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/calculus",
+      "time_limit_minutes": 90,
+      "question_count_approx": 44,
+      "format": "Multiple-choice in two timed sections (calculator and non-calculator)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 4,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded graphing calculator available during Section 1",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-chemistry",
+      "exam_code": "CLEP-CHEM",
+      "title": "Chemistry",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/chemistry",
+      "time_limit_minutes": 90,
+      "question_count_approx": 75,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded scientific calculator and periodic table available",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-college-algebra",
+      "exam_code": "CLEP-ALG",
+      "title": "College Algebra",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/college-algebra",
+      "time_limit_minutes": 90,
+      "question_count_approx": 60,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded scientific calculator available throughout exam",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-college-mathematics",
+      "exam_code": "CLEP-MATH",
+      "title": "College Mathematics",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/college-mathematics",
+      "time_limit_minutes": 90,
+      "question_count_approx": 60,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded scientific calculator available throughout exam",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-natural-sciences",
+      "exam_code": "CLEP-NAT-SCI",
+      "title": "Natural Sciences",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/natural-sciences",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-precalculus",
+      "exam_code": "CLEP-PRECALC",
+      "title": "Precalculus",
+      "category": "Science and Mathematics",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/precalculus",
+      "time_limit_minutes": 90,
+      "question_count_approx": 48,
+      "format": "Multiple-choice in two timed sections (calculator and non-calculator)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded graphing calculator available during Section 1",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-financial-accounting",
+      "exam_code": "CLEP-ACCT",
+      "title": "Financial Accounting",
+      "category": "Business",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/financial-accounting",
+      "time_limit_minutes": 90,
+      "question_count_approx": 75,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded basic four-function calculator available",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-information-systems",
+      "exam_code": "CLEP-INFO-SYS",
+      "title": "Information Systems",
+      "category": "Business",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/information-systems",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-introductory-business-law",
+      "exam_code": "CLEP-BUS-LAW",
+      "title": "Introductory Business Law",
+      "category": "Business",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/introductory-business-law",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-principles-of-management",
+      "exam_code": "CLEP-MGMT",
+      "title": "Principles of Management",
+      "category": "Business",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/principles-management",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-principles-of-marketing",
+      "exam_code": "CLEP-MKTG",
+      "title": "Principles of Marketing",
+      "category": "Business",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/principles-marketing",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-american-government",
+      "exam_code": "CLEP-GOV",
+      "title": "American Government",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/american-government",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-history-us-1",
+      "exam_code": "CLEP-US-HIST-1",
+      "title": "History of the United States I: Early Colonization to 1877",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/history-united-states-1",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-history-us-2",
+      "exam_code": "CLEP-US-HIST-2",
+      "title": "History of the United States II: 1865 to the Present",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/history-united-states-2",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-human-growth-development",
+      "exam_code": "CLEP-HGD",
+      "title": "Human Growth and Development",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/human-growth-development",
+      "time_limit_minutes": 90,
+      "question_count_approx": 90,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-introduction-educational-psychology",
+      "exam_code": "CLEP-ED-PSYC",
+      "title": "Introduction to Educational Psychology",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/introduction-educational-psychology",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-introductory-psychology",
+      "exam_code": "CLEP-PSYC",
+      "title": "Introductory Psychology",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/introductory-psychology",
+      "time_limit_minutes": 90,
+      "question_count_approx": 95,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "sourced",
+      "pilot_priority": 1,
+      "domains": [
+        {
+          "code": "1.0",
+          "title": "History, Approaches, and Methods",
+          "official_percentage_range": "11-12%",
+          "weight_min": 0.11,
+          "weight_max": 0.12,
+          "weight_nominal": 0.115
+        },
+        {
+          "code": "2.0",
+          "title": "Biological Bases of Behavior",
+          "official_percentage_range": "8-9%",
+          "weight_min": 0.08,
+          "weight_max": 0.09,
+          "weight_nominal": 0.085
+        },
+        {
+          "code": "3.0",
+          "title": "Sensation and Perception",
+          "official_percentage_range": "7-8%",
+          "weight_min": 0.07,
+          "weight_max": 0.08,
+          "weight_nominal": 0.075
+        },
+        {
+          "code": "4.0",
+          "title": "States of Consciousness",
+          "official_percentage_range": "5-6%",
+          "weight_min": 0.05,
+          "weight_max": 0.06,
+          "weight_nominal": 0.055
+        },
+        {
+          "code": "5.0",
+          "title": "Learning",
+          "official_percentage_range": "8-9%",
+          "weight_min": 0.08,
+          "weight_max": 0.09,
+          "weight_nominal": 0.085
+        },
+        {
+          "code": "6.0",
+          "title": "Cognition",
+          "official_percentage_range": "8-9%",
+          "weight_min": 0.08,
+          "weight_max": 0.09,
+          "weight_nominal": 0.085
+        },
+        {
+          "code": "7.0",
+          "title": "Motivation and Emotion",
+          "official_percentage_range": "5-6%",
+          "weight_min": 0.05,
+          "weight_max": 0.06,
+          "weight_nominal": 0.055
+        },
+        {
+          "code": "8.0",
+          "title": "Developmental Psychology Across the Lifespan",
+          "official_percentage_range": "8-9%",
+          "weight_min": 0.08,
+          "weight_max": 0.09,
+          "weight_nominal": 0.085
+        },
+        {
+          "code": "9.0",
+          "title": "Personality",
+          "official_percentage_range": "7-8%",
+          "weight_min": 0.07,
+          "weight_max": 0.08,
+          "weight_nominal": 0.075
+        },
+        {
+          "code": "10.0",
+          "title": "Psychological Disorders and Health",
+          "official_percentage_range": "8-9%",
+          "weight_min": 0.08,
+          "weight_max": 0.09,
+          "weight_nominal": 0.085
+        },
+        {
+          "code": "11.0",
+          "title": "Treatment of Psychological Disorders",
+          "official_percentage_range": "6-7%",
+          "weight_min": 0.06,
+          "weight_max": 0.07,
+          "weight_nominal": 0.065
+        },
+        {
+          "code": "12.0",
+          "title": "Social Psychology",
+          "official_percentage_range": "9-10%",
+          "weight_min": 0.09,
+          "weight_max": 0.10,
+          "weight_nominal": 0.095
+        },
+        {
+          "code": "13.0",
+          "title": "Statistics, Tests, and Measurement",
+          "official_percentage_range": "3-4%",
+          "weight_min": 0.03,
+          "weight_max": 0.04,
+          "weight_nominal": 0.035
+        }
+      ],
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-introductory-sociology",
+      "exam_code": "CLEP-SOC",
+      "title": "Introductory Sociology",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/introductory-sociology",
+      "time_limit_minutes": 90,
+      "question_count_approx": 100,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-principles-of-macroeconomics",
+      "exam_code": "CLEP-MACRO",
+      "title": "Principles of Macroeconomics",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/principles-macroeconomics",
+      "time_limit_minutes": 90,
+      "question_count_approx": 80,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded basic four-function calculator available",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-principles-of-microeconomics",
+      "exam_code": "CLEP-MICRO",
+      "title": "Principles of Microeconomics",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/principles-microeconomics",
+      "time_limit_minutes": 90,
+      "question_count_approx": 80,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Embedded basic four-function calculator available",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-social-sciences-history",
+      "exam_code": "CLEP-SSH",
+      "title": "Social Sciences and History",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/social-sciences-history",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-western-civilization-1",
+      "exam_code": "CLEP-WEST-CIV-1",
+      "title": "Western Civilization I: Ancient Near East to 1648",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/western-civilization-1",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-western-civilization-2",
+      "exam_code": "CLEP-WEST-CIV-2",
+      "title": "Western Civilization II: 1648 to the Present",
+      "category": "History and Social Sciences",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/western-civilization-2",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 3,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "None",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-french-language",
+      "exam_code": "CLEP-FREN",
+      "title": "French Language (Levels 1 and 2)",
+      "category": "World Languages",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/french-language",
+      "time_limit_minutes": 90,
+      "question_count_approx": 121,
+      "format": "Multiple-choice (Section 1: Listening approx. 40 min; Section 2: Reading approx. 50 min)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "level_1_score": 50,
+        "level_1_semester_hours": 6,
+        "level_2_score": 59,
+        "level_2_semester_hours": 9,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Mandatory audio playback section (listening comprehension)",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-german-language",
+      "exam_code": "CLEP-GERM",
+      "title": "German Language (Levels 1 and 2)",
+      "category": "World Languages",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/german-language",
+      "time_limit_minutes": 90,
+      "question_count_approx": 120,
+      "format": "Multiple-choice (Section 1: Listening approx. 40 min; Section 2: Reading approx. 50 min)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "level_1_score": 50,
+        "level_1_semester_hours": 6,
+        "level_2_score": 60,
+        "level_2_semester_hours": 9,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Mandatory audio playback section (listening comprehension)",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-spanish-language",
+      "exam_code": "CLEP-SPAN",
+      "title": "Spanish Language (Levels 1 and 2)",
+      "category": "World Languages",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/spanish-language",
+      "time_limit_minutes": 90,
+      "question_count_approx": 121,
+      "format": "Multiple-choice (Section 1: Listening approx. 40 min; Section 2: Reading approx. 50 min)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "level_1_score": 50,
+        "level_1_semester_hours": 6,
+        "level_2_score": 63,
+        "level_2_semester_hours": 9,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Mandatory audio playback section (listening comprehension)",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    },
+    {
+      "source_namespace": "college_board",
+      "source_key": "clep-spanish-with-writing",
+      "exam_code": "CLEP-SPAN-WRIT",
+      "title": "Spanish with Writing (Levels 1 and 2)",
+      "category": "World Languages",
+      "destination_type": "standardized_exam",
+      "official_url": "https://clep.collegeboard.org/clep-exams/spanish-with-writing",
+      "time_limit_minutes": 110,
+      "question_count_approx": 100,
+      "format": "Multiple-choice (Listening and Reading) plus 2 writing tasks (approx. 20 min)",
+      "credit_recommendation": {
+        "standard_score": 50,
+        "semester_hours": 6,
+        "level_1_score": 50,
+        "level_1_semester_hours": 6,
+        "level_2_score": 65,
+        "level_2_semester_hours": 9,
+        "recommending_body": "ACE"
+      },
+      "special_requirements": "Listening audio playback section plus 2 constructed-response written tasks",
+      "status": "planned",
+      "last_verified_on": "2026-11-07"
+    }
+  ]
+}
