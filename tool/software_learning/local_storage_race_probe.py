@@ -46,7 +46,7 @@ def _request(base: str, key: str, method: str, name: str,
             "apikey": key, "Authorization": f"Bearer {key}",
             "Content-Type": MIME,
             "Accept": "application/json" if info or method != "GET" else MIME,
-            "x-upsert": "false", "Cache-Control": "no-store",
+            "Cache-Control": "no-store",
         },
     )
     try:

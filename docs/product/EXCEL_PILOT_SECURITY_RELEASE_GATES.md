@@ -109,3 +109,8 @@ listing can be stale and is not authoritative deletion proof.** The actual
 retention scheduler, retries/alerts, independent database/object consistency,
 multi-pass erasure proof, and Auth deletion controller remain unimplemented
 and require staging + privacy review. New tests are synthetic only.
+
+
+### 2026-11-08 local-provider create-only regression
+
+The new disposable local Supabase Storage race probe initially produced **three HTTP 200** responses for three concurrent uploads to one path when the client sent `x-upsert: false`. Therefore treating that header value as a denial of overwrite is **unsafe** on the tested provider. The production adapter and local probe now **omit the `x-upsert` header entirely** for create-only requests. A fresh local-provider concurrent race run must pass with exactly one accepted write and unchanged SHA/revision before this gate can advance; hosted staging behavior is still unverified.

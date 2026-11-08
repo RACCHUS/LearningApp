@@ -118,7 +118,7 @@ class PrivateStorageTests(unittest.TestCase):
         request = http.requests[0][0]
         self.assertEqual(request.get_method(), "POST")
         self.assertEqual(request.get_header("Content-type"), MIME)
-        self.assertEqual(request.get_header("X-upsert"), "false")
+        self.assertIsNone(request.get_header("X-upsert"))
         self.assertEqual(request.data, b"PK\x03\x04safe")
         self.assertEqual(store.stat(PRIVATE_BUCKET, PATH), VERSION)
 

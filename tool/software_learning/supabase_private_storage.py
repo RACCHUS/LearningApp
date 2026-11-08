@@ -102,8 +102,10 @@ class SupabasePrivateWorkbookStore:
             if not isinstance(data, bytes):
                 raise StorageFailure("Workbook storage unavailable")
             # Supabase Storage standard upload. No signed URL, no upsert.
-            headers.update({"Content-Type": _MIME, "x-upsert": "false",
+            headers.update({"Content-Type": _MIME,
                             "Cache-Control": "no-store"})
+            # Never send x-upsert at all: some Storage servers treat header
+            # presence (even the string "false") as an upsert request.
         elif data is not None:
             raise StorageFailure("Workbook storage unavailable")
         request = Request(url, headers=headers, data=data, method=method)
