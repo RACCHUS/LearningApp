@@ -1451,6 +1451,9 @@ create index if not exists clep_sim_attempts_user_idx
 create index if not exists clep_sim_attempts_version_idx
   on public.clep_simulation_attempts(target_version_id);
 
+create unique index if not exists clep_sim_attempts_user_version_uidx
+  on public.clep_simulation_attempts(user_id, target_version_id);
+
 alter table public.clep_simulation_attempts enable row level security;
 revoke all on public.clep_simulation_attempts from public, anon, authenticated;
 grant select on public.clep_simulation_attempts to authenticated;
@@ -1462,7 +1465,7 @@ create policy clep_simulation_attempts_select_owner
   using (user_id = (select auth.uid()));
 
 comment on table public.clep_simulation_attempts is
-  'Server-recorded CLEP simulation exam attempts. Enforces single-use attempt lifecycle, server-calculated elapsed time, and owner-only read isolation.';
+  'Server-recorded CLEP simulation exam attempts. Enforces single-attempt per learner per exam version, single-use attempt lifecycle, server-calculated elapsed time, and owner-only read isolation.';
 
 
 -- ============================================================================
@@ -1510,7 +1513,17 @@ begin
     raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
   end if;
 
-  -- 3. Gather protected simulation item IDs
+  -- 3. Enforce single simulation attempt per learner per exam version (anti-harvesting guard)
+  if exists (
+    select 1
+    from public.clep_simulation_attempts
+    where user_id = v_user_id
+      and target_version_id = p_target_version_id
+  ) then
+    raise exception 'Simulation attempt already exists for this exam version: only one official simulation attempt is permitted per learner' using errcode = '23505';
+  end if;
+
+  -- 4. Gather protected simulation item IDs
   select array_agg(i.id order by i.created_at, i.id), count(i.id)
   into v_item_ids, v_count
   from public.assessment_items i
@@ -1521,11 +1534,11 @@ begin
     raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
   end if;
 
-  -- 4. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  -- 5. Establish server-controlled timestamps (90-min test + 5-min network buffer)
   v_issued_at := clock_timestamp();
   v_expires_at := v_issued_at + interval '95 minutes';
 
-  -- 5. Record attempt in database
+  -- 6. Record attempt in database
   insert into public.clep_simulation_attempts (
     user_id,
     target_id,
@@ -1547,7 +1560,7 @@ begin
   )
   returning id into v_attempt_id;
 
-  -- 6. Project ONLY safe question fields (ZERO scoring keys or explanations leaked)
+  -- 7. Project ONLY safe question fields (ZERO scoring keys or explanations leaked)
   select jsonb_agg(
     jsonb_build_object(
       'id', i.id,
@@ -1585,7 +1598,7 @@ revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon
 grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
 grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
 comment on function public.clep_issue_simulation_exam(uuid) is
-  'Issues authorized 90-minute CLEP simulation exam questions bound to a server-recorded attempt. Returns safe options only; scoring keys and explanations remain server-side.';
+  'Issues authorized 90-minute CLEP simulation exam questions bound to a server-recorded attempt. Enforces single attempt per learner per published target version to prevent answer harvesting. Returns safe options only; scoring keys and explanations remain server-side.';
 
 
 -- ============================================================================

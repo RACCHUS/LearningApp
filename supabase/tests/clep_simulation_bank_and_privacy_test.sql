@@ -8,7 +8,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_temp;
 
-select plan(36);
+select plan(39);
 
 -- Setup synthetic test users in auth.users (under initial postgres session role)
 insert into auth.users (id, email) values
@@ -450,46 +450,9 @@ select throws_ok(
   'Cannot submit foreign or out-of-bank question ID'
 );
 
--- NEGATIVE GUARD 5: Cannot submit expired attempt
--- Note: Must update attempt under service_role privilege because client roles have SELECT-only
--- Preserves check (expires_at > issued_at) by shifting both into the past
-reset role;
-set local role service_role;
-set local "request.jwt.claim.role" to 'service_role';
-
-update public.clep_simulation_attempts
-set issued_at = clock_timestamp() - interval '100 minutes',
-    expires_at = clock_timestamp() - interval '5 minutes'
-where id = (select attempt_id from _test_ctx);
-
-reset role;
-set local role authenticated;
-set local "request.jwt.claim.role" to 'authenticated';
-set local "request.jwt.claim.sub" to '11223344-5566-4777-8888-999900001111';
-
-select throws_ok(
-  $$ select public.clep_submit_simulation_exam(
-    (select attempt_id from _test_ctx),
-    jsonb_build_object((select item_1_id::text from _test_ctx), 0)
-  ) $$,
-  '42501',
-  null,
-  'Cannot submit expired attempt (deadline enforcement)'
-);
-
 -- ----------------------------------------------------------------------------
 -- 8. Valid Completion, Confidential Simulation Bank & Anti-Scraping Regression
 -- ----------------------------------------------------------------------------
--- Issue fresh, clean attempt for User 1
-create temp table _fresh_exam on commit drop as
-select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
-grant all on table _fresh_exam to public, authenticated, service_role, anon;
-
-select ok(
-  (select data->>'attempt_id' is not null from _fresh_exam),
-  'User 1 issues fresh simulation exam for valid completion testing'
-);
-
 create temp table _submission_res (data jsonb) on commit drop;
 grant all on table _submission_res to public, authenticated, service_role, anon;
 
@@ -503,11 +466,12 @@ declare
   v_sub_res jsonb;
   v_r jsonb;
 begin
-  select (data->>'attempt_id')::uuid into v_att_id from _fresh_exam;
-  select issued_item_ids[1]::text, issued_item_ids[2]::text
-  into v_item_1, v_item_2
-  from public.clep_simulation_attempts
-  where id = v_att_id;
+  select
+    attempt_id,
+    item_1_id::text,
+    item_2_id::text
+  into v_att_id, v_item_1, v_item_2
+  from _test_ctx;
 
   -- Submit answers for ALL items
   v_sub_res := public.clep_submit_simulation_exam(
@@ -562,14 +526,14 @@ select pass('User 1 submits attempt with all questions answered and receives zer
 
 -- Verify server-side evaluation matches in database record
 select is(
-  (select raw_score from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  (select raw_score from public.clep_simulation_attempts where id = (select attempt_id from _test_ctx)),
   2,
   'Submitted attempt evaluates raw score correctly (2 out of 2)'
 );
 
 -- Verify learner can read correctness and targeted remediation concepts under RLS
 select is(
-  (select ((results->0)->>'is_correct')::boolean from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)),
+  (select ((results->0)->>'is_correct')::boolean from public.clep_simulation_attempts where id = (select attempt_id from _test_ctx)),
   true,
   'Attempt owner can read item correctness (is_correct) in post-submission results'
 );
@@ -579,7 +543,7 @@ select is(
   (
     select count(*)
     from jsonb_array_elements(
-      (select results from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid))
+      (select results from public.clep_simulation_attempts where id = (select attempt_id from _test_ctx))
     ) elem
     where (elem ? 'correct_answer' and (elem->>'correct_answer') is not null)
        or (elem ? 'explanation' and (elem->>'explanation') is not null)
@@ -592,7 +556,7 @@ select is(
 select ok(
   (
     select (results is not null and status = 'completed')
-    from public.clep_simulation_attempts where id = ((select data->>'attempt_id' from _fresh_exam)::uuid)
+    from public.clep_simulation_attempts where id = (select attempt_id from _test_ctx)
   ),
   'Attempt status is completed with results in public.clep_simulation_attempts'
 );
@@ -605,10 +569,10 @@ select ok(
   'Submission response includes explicit disclaimer prohibiting official score equivalence'
 );
 
--- NEGATIVE GUARD 6: Replay attempt of already completed attempt is strictly rejected
+-- NEGATIVE GUARD 5: Replay attempt of already completed attempt is strictly rejected
 select throws_ok(
   $$ select public.clep_submit_simulation_exam(
-    ((select data->>'attempt_id' from _fresh_exam)::uuid),
+    (select attempt_id from _test_ctx),
     jsonb_build_object('00000000-0000-0000-0000-000000000001', 0)
   ) $$,
   '23505',
@@ -617,7 +581,7 @@ select throws_ok(
 );
 
 -- ----------------------------------------------------------------------------
--- 9. Anti-Abuse Regressions: Formative Server Grading & Repeated Issuance Abuse
+-- 9. Anti-Abuse Regressions: Formative Server Grading & Anti-Harvesting Attempt Limits
 -- ----------------------------------------------------------------------------
 -- Anti-Bypass Guard: grade_assessment_items must NOT grade or leak protected simulation items
 select is(
@@ -638,15 +602,91 @@ select is(
   'grade_assessment_items rejects protected simulation items with not_available error (zero key leakage)'
 );
 
--- Anti-Abuse Guard: Repeated attempt issuance produces a fresh attempt that also leaks zero keys
+-- Anti-Harvesting Guard 1: User 1 cannot issue second simulation attempt for same exam version
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) $$,
+  '23505',
+  null,
+  'User 1 cannot issue second simulation attempt for same exam version (anti-harvesting)'
+);
+
+-- Anti-Harvesting Guard 2: User 1 cannot issue third simulation attempt for same exam version
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) $$,
+  '23505',
+  null,
+  'User 1 cannot issue third simulation attempt for same exam version (anti-harvesting)'
+);
+
+-- Anti-Harvesting Guard 3: Database unique index clep_sim_attempts_user_version_uidx blocks concurrent duplicate attempt insertion
+select throws_ok(
+  $$ insert into public.clep_simulation_attempts (
+       user_id, target_id, target_version_id, status, issued_item_ids, total_questions, issued_at, expires_at
+     ) values (
+       '11223344-5566-4777-8888-999900001111',
+       (select target_id from public.target_versions where version_code = '2026-PRIV'),
+       (select id from public.target_versions where version_code = '2026-PRIV'),
+       'in_progress',
+       array[(select item_1_id from _test_ctx)],
+       1,
+       clock_timestamp(),
+       clock_timestamp() + interval '95 minutes'
+     ) $$,
+  '23505',
+  null,
+  'Database unique index clep_sim_attempts_user_version_uidx blocks concurrent duplicate attempt insertion'
+);
+
+-- ----------------------------------------------------------------------------
+-- 10. Multi-Tenant Learner Isolation & Deadline Expiration
+-- ----------------------------------------------------------------------------
+-- Authenticate as User 2 (a different authenticated learner)
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '22334455-6677-4888-9999-000011112222';
+
+-- User 2 successfully issues their own simulation attempt for the same exam version
+create temp table _user2_exam on commit drop as
+select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data;
+grant all on table _user2_exam to public, authenticated, service_role, anon;
+
 select ok(
-  (
-    select (data->>'attempt_id' is not null and jsonb_array_length(data->'questions') = 2)
-    from (
-      select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) as data
-    ) sub
-  ),
-  'Repeated exam issuance produces a fresh tracked attempt with zero scoring keys'
+  (select data->>'attempt_id' is not null from _user2_exam),
+  'Different authenticated learner (User 2) can issue their own simulation attempt for the same exam version'
+);
+
+-- User 2 cannot issue a second simulation attempt for the same exam version
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam((select id from public.target_versions where version_code = '2026-PRIV')) $$,
+  '23505',
+  null,
+  'User 2 cannot issue duplicate simulation attempt for the same exam version (anti-harvesting)'
+);
+
+-- Expire User 2's attempt to verify deadline enforcement on submission
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+update public.clep_simulation_attempts
+set issued_at = clock_timestamp() - interval '100 minutes',
+    expires_at = clock_timestamp() - interval '5 minutes'
+where id = ((select data->>'attempt_id' from _user2_exam)::uuid);
+
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '22334455-6677-4888-9999-000011112222';
+
+select throws_ok(
+  $$ select public.clep_submit_simulation_exam(
+    ((select data->>'attempt_id' from _user2_exam)::uuid),
+    jsonb_build_object((select item_1_id::text from _test_ctx), 0)
+  ) $$,
+  '42501',
+  null,
+  'Cannot submit expired attempt (deadline enforcement)'
 );
 
 rollback;
