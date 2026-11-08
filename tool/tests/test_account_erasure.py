@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tool"))
-from software_learning.account_erasure import sweep_owner_workbooks
+from software_learning.account_erasure import sweep_owner_workbooks, probe_owner_workbook_objects
 
 OWNER = "ba410000-0000-4000-8000-000000000001"
 OTHER = "ba410000-0000-4000-8000-000000000002"
@@ -55,6 +55,28 @@ class Storage:
 
 
 class AccountErasureTests(unittest.TestCase):
+    def test_owner_inventory_requires_revocation_and_never_confirms_erasure(self):
+        class Inventory:
+            def __init__(self, answer):
+                self.answer, self.calls = answer, []
+            def probe(self, owner):
+                self.calls.append(owner)
+                if isinstance(self.answer, Exception):
+                    raise self.answer
+                return self.answer
+        for observed in ("objects_visible", "empty_observed", "unknown",
+                         RuntimeError("private token")):
+            probe = Inventory(observed)
+            with self.assertRaises(ValueError):
+                probe_owner_workbook_objects(owner_id=OWNER, inventory=probe)
+            self.assertEqual(probe.calls, [])
+            result = probe_owner_workbook_objects(
+                owner_id=OWNER, inventory=probe, revocation_confirmed=True)
+            self.assertFalse(result["account_erasure_confirmed"])
+            expected = observed if observed in ("objects_visible", "empty_observed") else "unavailable"
+            self.assertEqual(result["owner_prefix_inventory"], expected)
+            self.assertEqual(probe.calls, [OWNER])
+
     def test_no_revocation_cannot_access_records(self):
         repo, storage = Repository([Record(OWNER, ATTEMPT)]), Storage()
         with self.assertRaises(ValueError):
