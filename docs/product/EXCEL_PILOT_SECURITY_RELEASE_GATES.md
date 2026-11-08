@@ -126,3 +126,22 @@ The local Supabase Storage API returned **HTTP 200 for all three simultaneous pr
 The loopback provider returns a canonical private object name, bucket, and a string revision, but the object-info JSON's `metadata` may **omit `size`**. The private Storage adapter now treats a missing or null size as optional, while rejecting malformed or over-limit sizes whenever supplied. This is not a relaxation of file-content bounds: the HTTP client rejects large `Content-Length` and reads at most the configured limit plus one byte, the upload broker checks the original workbook length and SHA-256 readback, and the private bucket has a 10 MiB limit. The synthetic local-provider test checks the same behavior. This needs fresh CI; hosted verification remains pending.
 
 Note: the earlier concurrency-gate text above was superseded by the separate strict sequential and warned raw concurrent diagnostic; simultaneous raw service-role writes are not considered a verified single-writer guarantee.
+
+
+### One-shot retention service composition (source only)
+
+`private_retention_job.run_retention_once` now combines the existing
+owner-bound expiration sweep and private issuance-log pruning into one
+bounded, **dry-run-by-default** invocation. Destructive execution requires
+an explicit privileged authorization flag and a fresh exclusive,
+non-autocommit connection; results expose only aggregate counts and
+`retry_required` or `unavailable` status, without workbook content or
+account identifiers. The module neither schedules itself nor deletes Auth
+accounts, and never declares account erasure complete. The CI suite tests
+authorization denial, cleanup failures, pruning order, connection closure,
+invalid configurations, and redaction.
+
+This is not an approved operational scheduler: live provider staging,
+separate cleanup credentials, an authenticated private runner, durable retry
+queue, monitoring/alerts, retention consent/disclosure and independent
+security review are still required. Do not enable execution in production.

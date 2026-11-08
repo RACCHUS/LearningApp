@@ -154,6 +154,9 @@ jobs:
       - name: Test bounded Excel expiration sweep (dry run by default)
         run: python3 -m unittest discover -s tool/tests -p 'test_retention_batch.py' -v
 
+      - name: Test private bounded Excel retention job composition (disabled)
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_job.py' -v
+
       - name: Test disabled-by-default internal Excel assessment gateway
         run: python3 -m unittest discover -s tool/tests -p 'test_hosted_internal.py' -v
 
