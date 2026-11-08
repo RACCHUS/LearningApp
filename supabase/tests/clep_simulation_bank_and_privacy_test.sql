@@ -619,6 +619,11 @@ select throws_ok(
 );
 
 -- Anti-Harvesting Guard 3: Database unique index clep_sim_attempts_user_version_uidx blocks concurrent duplicate attempt insertion
+-- Test under service_role so table permissions pass and PostgreSQL hits the unique index
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
 select throws_ok(
   $$ insert into public.clep_simulation_attempts (
        user_id, target_id, target_version_id, status, issued_item_ids, total_questions, issued_at, expires_at
