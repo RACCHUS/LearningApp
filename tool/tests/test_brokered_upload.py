@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tool"))
 from software_learning.brokered_upload import accept_workbook, UploadPermit
 from software_learning.private_assessment import VerifiedIdentity
+from software_learning.retention_batch import sweep_expired_attempts
+from types import SimpleNamespace
 from test_xlsx_snapshot import zip_bytes
 
 OWNER = "ba410000-0000-4000-8000-000000000001"
@@ -253,6 +255,80 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(store.blob, BLOB)
         self.assertNotIn("remove", [x[0] for x in store.calls])
         self.assertEqual(repo.calls[-1], ("abort",))
+
+
+
+    def test_ambiguous_write_is_recovered_by_expiry_with_retry(self):
+        class TimeoutAfterStored(Storage):
+            def create_only(self, bucket, path, blob):
+                super().create_only(bucket, path, blob)
+                raise TimeoutError("object committed but client lost response")
+            def exists(self, bucket, path):
+                self.calls.append(("exists", bucket, path))
+                return self.blob is not None
+
+        class ExpiredRecordRepository:
+            def __init__(self):
+                self.expired = False
+                self.present = True
+                self.frozen = False
+                self.calls = []
+            def list_expired(self, *, max_results):
+                self.calls.append("list")
+                if not self.expired or not self.present:
+                    return []
+                return [SimpleNamespace(owner_id=OWNER, attempt_id=ATTEMPT)]
+            def find_owned(self, owner_id, attempt_id):
+                self.calls.append("find")
+                if not self.present or (owner_id, attempt_id) != (OWNER, ATTEMPT):
+                    return None
+                return SimpleNamespace(owner_id=OWNER, attempt_id=ATTEMPT)
+            def freeze_upload(self, owner_id, attempt_id):
+                self.calls.append("freeze")
+                self.frozen = True
+                return True
+            def delete_attempt(self, owner_id, attempt_id):
+                self.calls.append("delete")
+                if not self.frozen:
+                    return False
+                self.present = False
+                return True
+
+        repo, store = Repository(), TimeoutAfterStored()
+        rejected, _, _, _ = do(repo=repo, store=store)
+        self.assertEqual(rejected["status"], "rejected")
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [call[0] for call in store.calls])
+
+        retention = ExpiredRecordRepository()
+        not_yet = sweep_expired_attempts(repository=retention, storage=store,
+                                         execute=True)
+        self.assertEqual(not_yet["candidates"], 0)
+        self.assertEqual(store.blob, BLOB)
+        retention.expired = True
+        preview = sweep_expired_attempts(repository=retention, storage=store)
+        self.assertTrue(preview["dry_run"])
+        self.assertEqual(preview["candidates"], 1)
+        self.assertNotIn("remove", [call[0] for call in store.calls])
+
+        store.fail_remove = True
+        failed = sweep_expired_attempts(repository=retention, storage=store,
+                                        execute=True)
+        self.assertEqual(failed["retry"], 1)
+        self.assertTrue(retention.present)
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("delete", retention.calls)
+
+        store.fail_remove = False
+        recovered = sweep_expired_attempts(repository=retention, storage=store,
+                                           execute=True)
+        self.assertEqual(recovered["erased"], 1)
+        self.assertEqual(recovered["retry"], 0)
+        self.assertFalse(retention.present)
+        self.assertIsNone(store.blob)
+        self.assertEqual([x[0] for x in store.calls].count("remove"), 2)
+        self.assertEqual(sweep_expired_attempts(
+            repository=retention, storage=store, execute=True)["candidates"], 0)
 
 
 if __name__ == "__main__":
