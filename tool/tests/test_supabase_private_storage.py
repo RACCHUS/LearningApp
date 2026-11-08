@@ -196,6 +196,35 @@ class PrivateStorageTests(unittest.TestCase):
                 store.download_limited(PRIVATE_BUCKET, PATH, 100)
             self.assertNotIn("sb_secret_test", str(cm.exception))
 
+    def test_upload_and_grade_method_scopes_reject_forbidden_operations(self):
+        for scope, operations in (
+            (frozenset({"GET", "POST"}), ("remove",)),
+            (frozenset({"GET"}), ("remove", "create_only")),
+        ):
+            with self.subTest(scope=scope):
+                http = FakeAPI()
+                store = SupabasePrivateWorkbookStore(
+                    project_ref=REF, secret_key="sb_secret_test",
+                    execute=http, allowed_methods=scope,
+                )
+                self.assertEqual(store.stat(PRIVATE_BUCKET, PATH), VERSION)
+                for operation in operations:
+                    with self.assertRaises(StorageFailure):
+                        if operation == "remove":
+                            store.remove(PRIVATE_BUCKET, PATH)
+                        else:
+                            store.create_only(PRIVATE_BUCKET, PATH, b"PK\\x03\\x04safe")
+                self.assertEqual([r.get_method() for r, _ in http.requests], ["GET"])
+
+    def test_invalid_method_scope_rejected_before_network(self):
+        for scope in (frozenset(), {"GET"}, frozenset({"PATCH"}),
+                      frozenset({"GET", "POST", "PATCH"}), ("GET",)):
+            with self.subTest(scope=scope), self.assertRaises(ValueError):
+                SupabasePrivateWorkbookStore(
+                    project_ref=REF, secret_key="sb_secret_test",
+                    execute=FakeAPI(), allowed_methods=scope,
+                )
+
     def test_untrusted_project_or_key_rejected(self):
         for ref in ("http://evil", "fake.invalid", REF.upper(), ""):
             with self.assertRaises(ValueError):

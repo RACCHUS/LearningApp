@@ -41,6 +41,7 @@ The 24-hour purge and hourly scan are **proposed operating targets**, not guaran
 - Internal gateway: TLS, no public reachability, no browser CORS, trusted internal capability, independently verified learner bearer, rate/body limits and private routing.
 - The internal ASGI entrypoint defaults off and validates fixed route, host and request shape. Backend composition opens a fresh DB connection per request and limits per-process concurrency. Neither alone proves a production-safe hosting topology.
 - **Never expose a Docker socket or privileged DB/Storage credentials to a public HTTP process.** Use a separate authenticated broker/worker tier; keep credentials and file bytes out of browser and parser container.
+- The private Storage adapter now denies disallowed HTTP methods in each host: upload host **GET/POST only**, grading host **GET only**. This is a fail-closed code-level defense against accidental cross-service operations, **not** independent secret or infrastructure isolation; live host IAM, routing and permission separation still require staging review.
 - Keep the parser's network disabled, filesystem read-only, and CPU, memory, PID, runtime and output sizes bounded. Pin the worker image and review dependency provenance.
 - No file or extracted contents are transmitted to AI; any future AI transfer requires prior informed learner consent.
 

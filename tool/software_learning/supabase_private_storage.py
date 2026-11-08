@@ -60,13 +60,21 @@ class SupabasePrivateWorkbookStore:
     """
 
     def __init__(self, *, project_ref: str, secret_key: str,
-                 execute=None) -> None:
+                 execute=None, allowed_methods: frozenset[str] | None = None) -> None:
         if not isinstance(project_ref, str) or _REF.fullmatch(project_ref) is None:
             raise ValueError("Invalid configured Supabase project reference")
         if (not isinstance(secret_key, str) or
             not secret_key.startswith("sb_secret_") or
             len(secret_key) > 512):
             raise ValueError("A server-held Supabase secret key is required")
+        if allowed_methods is None:
+            # Cleanup jobs may use all operations, but upload and grading
+            # hosts MUST explicitly pass their narrower method grants.
+            allowed_methods = frozenset({"GET", "POST", "DELETE"})
+        if (type(allowed_methods) is not frozenset or not allowed_methods
+            or not allowed_methods.issubset({"GET", "POST", "DELETE"})):
+            raise ValueError("Invalid private Storage operation scope")
+        self._allowed_methods = allowed_methods
         self._base = f"https://{project_ref}.supabase.co/storage/v1"
         self._key = secret_key
         self._execute = execute if execute is not None else _safe_fetch
@@ -83,7 +91,7 @@ class SupabasePrivateWorkbookStore:
                  allow_missing: bool = False, max_read: int = 0,
                  expected_mime: str | None = None,
                  data: bytes | None = None):
-        if method not in ("GET", "DELETE", "POST"):
+        if method not in self._allowed_methods:
             raise StorageFailure("Workbook storage unavailable")
         headers = {
             "Authorization": f"Bearer {self._key}",
@@ -167,7 +175,8 @@ class SupabasePrivateWorkbookStore:
 
         Only a trusted broker holding a DB row lock may call this method.
         It intentionally does not retry ambiguous transport errors; the
-        broker must reconcile or remove any possibly committed object.
+        broker must preserve ambiguous bytes for later Storage-first
+        retention recovery, never perform an unversioned inline DELETE.
         """
         url = self._url("object", bucket, path)
         if (not isinstance(blob, bytes) or

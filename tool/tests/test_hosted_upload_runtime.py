@@ -8,7 +8,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tool"))
-from software_learning.hosted_upload_runtime import TrustedExcelUpload
+from software_learning.hosted_upload_runtime import (TrustedExcelUpload,
+                                                      build_trusted_excel_upload_host)
 
 ATTEMPT = "ba430000-0000-4000-8000-000000000001"
 BLOB = b"PK\x03\x04" + b"test"
@@ -71,6 +72,20 @@ class UploadRuntimeTests(unittest.TestCase):
         finally:
             host._slots.release()
             host._slots.release()
+
+    def test_factory_scopes_upload_network_methods_without_delete(self):
+        with patch("software_learning.hosted_upload_runtime.SupabaseUserGateway"), \\
+             patch("software_learning.hosted_upload_runtime.SupabasePrivateWorkbookStore") as store:
+            host = build_trusted_excel_upload_host(
+                project_ref="xzvkdwebtbxlrxagtzlv",
+                publishable_key="sb_publishable_mock",
+                private_storage_key="sb_secret_mock",
+                connection_factory=lambda: Connection(),
+            )
+            self.assertIsInstance(host, TrustedExcelUpload)
+            self.assertEqual(store.call_args.kwargs["allowed_methods"],
+                             frozenset({"GET", "POST"}))
+            self.assertNotIn("DELETE", store.call_args.kwargs["allowed_methods"])
 
     def test_invalid_configuration_and_no_docker_reference(self):
         for x in (0, -1, True, 9):

@@ -102,8 +102,10 @@ def build_trusted_excel_host(
     return TrustedExcelAssessment(
         sessions=SupabaseUserGateway(project_ref=project_ref,
                                      publishable_key=publishable_key),
-        storage=SupabasePrivateWorkbookStore(project_ref=project_ref,
-                                            secret_key=private_storage_key),
+        storage=SupabasePrivateWorkbookStore(
+            project_ref=project_ref, secret_key=private_storage_key,
+            allowed_methods=frozenset({"GET"}),
+        ),
         runner=DockerXlsxWorker(pinned_worker_image),
         connection_factory=connection_factory,
         max_inflight=max_inflight,

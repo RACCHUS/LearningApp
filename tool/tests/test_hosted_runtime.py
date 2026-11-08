@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tool"))
-from software_learning.hosted_runtime import TrustedExcelAssessment
+from software_learning.hosted_runtime import TrustedExcelAssessment, build_trusted_excel_host
 
 ATTEMPT = "ba430000-0000-4000-8000-000000000001"
 
@@ -92,6 +92,21 @@ class RuntimeTests(unittest.TestCase):
             host._slots.release()
         self.assertEqual(result["status"], "rejected")
         self.assertEqual(conns, [])
+
+    def test_factory_scopes_grading_storage_to_read_only(self):
+        with patch("software_learning.hosted_runtime.SupabaseUserGateway"), \\
+             patch("software_learning.hosted_runtime.SupabasePrivateWorkbookStore") as store, \\
+             patch("software_learning.hosted_runtime.DockerXlsxWorker"):
+            host = build_trusted_excel_host(
+                project_ref="xzvkdwebtbxlrxagtzlv",
+                publishable_key="sb_publishable_mock",
+                private_storage_key="sb_secret_mock",
+                pinned_worker_image="test@sha256:" + "a" * 64,
+                connection_factory=lambda: Conn(),
+            )
+            self.assertIsInstance(host, TrustedExcelAssessment)
+            self.assertEqual(store.call_args.kwargs["allowed_methods"],
+                             frozenset({"GET"}))
 
     def test_invalid_constructor_configuration_refused(self):
         for n in (0, -1, True, 10000):
