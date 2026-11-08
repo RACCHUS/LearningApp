@@ -128,11 +128,12 @@ def accept_workbook(
         if not _eligible(permit, identity, attempt_id, now):
             return _deny()
 
-        # Refuse any existing object; never "fix" a conflict by overwriting
-        # or deleting a pre-existing workbook.
-        if storage.stat(PRIVATE_BUCKET, path) is not None:
-            return _deny()
-
+        # A missing-object info lookup is NOT a reliable prerequisite:
+        # some Storage versions return HTTP 400 for a missing object rather
+        # than 404. Only the trusted create-only POST may establish absence,
+        # and a conflict MUST reject without upsert, retry or inline delete.
+        # The exclusive DB lock prevents another compliant broker from
+        # issuing a simultaneous POST to this canonical attempt path.
         storage.create_only(PRIVATE_BUCKET, path, blob)
         revision = storage.stat(PRIVATE_BUCKET, path)
         if (not isinstance(revision, str) or not 1 <= len(revision) <= 256

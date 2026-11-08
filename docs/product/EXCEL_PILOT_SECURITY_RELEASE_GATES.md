@@ -195,3 +195,25 @@ JWT/session revocation behavior, hosted provider concurrency, broker crash
 recovery, infrastructure network/secret segregation or retention scheduling.
 CI failure blocks merge review. Hosted staged end-to-end races and operational
 review remain release gates.
+
+
+### Fail-safe Storage admission without missing-object metadata preflight
+
+The disposable local DB + Storage integration probe exposed another
+compatibility issue: this local provider returns HTTP **400** for
+`GET /object/info` on a missing object, while the private adapter
+deliberately treats only 404 as a safe absent response. We do **not**
+classify arbitrary HTTP 400 responses as missing: that could conflate
+permission or malformed-request errors with object absence.
+
+Instead, under the **exclusive private PostgreSQL `NOWAIT` broker lock**,
+the trusted broker now issues exactly one **create-only, no-upsert POST**;
+an existing-object conflict fails closed and preserves the bytes.
+Only *after* a successful POST does it require the revision and bounded
+SHA-256 readback before transactionally sealing the attempt.
+No ambiguous upload gets an inline unversioned DELETE. Unit tests
+cover 400-for-missing info, existing-object conflict, stale negative
+metadata avoidance, timeout-after-write and lost DB commit response.
+This does **not** prove that the underlying provider prevents hostile
+concurrent privileged writers: independent hosted staging and narrowly
+isolated Storage credentials remain mandatory.

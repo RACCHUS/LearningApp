@@ -111,7 +111,7 @@ class UploadTests(unittest.TestCase):
         ])
         self.assertEqual(store.blob, BLOB)
         self.assertEqual([x[0] for x in store.calls],
-                         ["stat", "create", "stat", "download", "stat"])
+                         ["create", "stat", "download", "stat"])
         self.assertNotIn("workbook.xlsx", str(result))
 
     def test_invalid_bearer_and_anonymous_never_access_storage(self):
@@ -152,8 +152,21 @@ class UploadTests(unittest.TestCase):
         result, _, _, _ = do(repo=repo, store=store)
         self.assertEqual(result["status"], "rejected")
         self.assertFalse(repo.sealed)
-        self.assertEqual([x[0] for x in store.calls], ["stat"])
+        self.assertEqual([x[0] for x in store.calls], ["create"])
         self.assertEqual(repo.calls[-1], ("abort",))
+
+    def test_missing_object_info_http_400_does_not_block_first_upload(self):
+        class InfoMissingAsBadRequest(Storage):
+            def stat(self, bucket, path):
+                if self.blob is None:
+                    raise RuntimeError("provider returns HTTP 400 for missing info")
+                return super().stat(bucket, path)
+        repo, store = Repository(), InfoMissingAsBadRequest()
+        result, _, _, _ = do(repo=repo, store=store)
+        self.assertEqual(result["status"], "accepted")
+        self.assertEqual([x[0] for x in store.calls],
+                         ["create", "stat", "download", "stat"])
+        self.assertEqual(store.blob, BLOB)
 
     def test_failed_storage_write_preserves_unsealed_attempt(self):
         repo, store = Repository(), Storage(fail_write=True)
@@ -210,7 +223,7 @@ class UploadTests(unittest.TestCase):
         self.assertNotIn("remove", [x[0] for x in store.calls])
 
 
-    def test_stale_missing_stat_then_create_conflict_preserves_foreign_object(self):
+    def test_create_only_conflict_preserves_object_without_stale_metadata_preflight(self):
         class StaleStatStorage(Storage):
             def __init__(self):
                 super().__init__()
@@ -225,7 +238,8 @@ class UploadTests(unittest.TestCase):
         result, _, _, _ = do(repo=repo, store=store)
         self.assertEqual(result["status"], "rejected")
         self.assertEqual(store.blob, b"preexisting-object")
-        self.assertEqual([x[0] for x in store.calls], ["stat", "create"])
+        self.assertEqual([x[0] for x in store.calls], ["create"])
+        self.assertEqual(store.stat_calls, 0)
         self.assertEqual(repo.calls[-1], ("abort",))
 
     def test_storage_timeout_after_successful_write_preserves_orphan_for_cleanup(self):
