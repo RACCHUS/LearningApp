@@ -313,6 +313,12 @@ jobs:
           # 5. Run pgTAP test suite against incrementally upgraded database
           supabase test db
 
+      - name: Verify local Supabase Storage create-only and cleanup races (synthetic)
+        run: |
+          eval "$(supabase status -o env)"
+          export API_URL SERVICE_ROLE_KEY ANON_KEY
+          python3 tool/software_learning/local_storage_race_probe.py
+
       - name: Rehearse historical backfill in hosted-ledger order
         # Replays production's actual order: reset with only the versions in the
         # hosted ledger snapshot, then apply every never-applied migration out of
