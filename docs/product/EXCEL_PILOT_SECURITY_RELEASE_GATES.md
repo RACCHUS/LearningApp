@@ -86,3 +86,7 @@ Account erasure now has a service-only, revoked-session-gated, bounded, dry-run-
 7. Review signed-upload token handling, worker ownership, idempotent shared evidence, user privacy notice, mobile UX and skill progression with no self-verified awards.
 
 These unit-tested components do not satisfy the hosting, provider-concurrency, privacy approval or deployment gates. Leave the upload entrypoint disabled and PR #188 draft until independent security review.
+
+### Failure recovery boundary (not activated)
+
+A rejected broker call may leave an unsealed object after Storage accepted a write, or may correspond to a sealed object if the database commit acknowledgment was lost. The hot upload path must never delete either case. The server-side attempt remains available to the existing expiry/account-erasure coordinator, which freezes uploads, deletes through the private Storage API, confirms absence, and only then erases metadata. Reusing the same attempt path or treating an upload error as proof that no object exists is forbidden. These are code-level invariants; retention scheduling, orphan inventory, provider race tests, and alarms are **not** live and still block rollout.
