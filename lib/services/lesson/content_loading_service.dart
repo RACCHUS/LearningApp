@@ -88,11 +88,15 @@ class ContentLoadingService {
       log('⚠️ Could not load content_source_mappings: $e', name: 'ContentLoadingService');
     }
 
-    // 6. If no rich blocks exist, load legacy content for fallback synthesis
+    // 6. Load legacy content: everything for fallback synthesis when no rich
+    // blocks exist, otherwise only legacy questions (appended as practice).
     List<LessonContent> legacyContent = [];
     if (blocks.isEmpty) {
       log('ℹ️ Lesson has no lesson_blocks; loading legacy terms/questions/concepts', name: 'ContentLoadingService');
       legacyContent = await _loadLegacyContent(lessonId, lesson);
+    } else {
+      legacyContent =
+          await _loadLegacyContent(lessonId, lesson, questionsOnly: true);
     }
 
     return UnifiedLesson(
@@ -127,7 +131,10 @@ class ContentLoadingService {
     try {
       final rows = await _supabase
           .from('assessment_items')
-          .select('*, assessment_stimuli(*), concepts:assessment_item_concepts(*)')
+          .select(
+            '${AssessmentItem.clientReadableColumns}, '
+            'assessment_stimuli(*), concepts:assessment_item_concepts(*)',
+          )
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: true);
       return rows.map((raw) {
@@ -177,34 +184,40 @@ class ContentLoadingService {
     }
   }
 
-  Future<List<LessonContent>> _loadLegacyContent(String lessonId, Lesson lesson) async {
+  Future<List<LessonContent>> _loadLegacyContent(
+    String lessonId,
+    Lesson lesson, {
+    bool questionsOnly = false,
+  }) async {
     final legacyItems = <LessonContent>[];
     var order = 0;
 
     // Load terms
-    try {
-      final List<dynamic> termsRaw = await _supabase
-          .from('terms')
-          .select('*')
-          .eq('lesson_id', lessonId)
-          .order('created_at');
+    if (!questionsOnly) {
+      try {
+        final List<dynamic> termsRaw = await _supabase
+            .from('terms')
+            .select('*')
+            .eq('lesson_id', lessonId)
+            .order('created_at');
 
-      for (final t in termsRaw) {
-        if (t is Map<String, dynamic>) {
-          legacyItems.add(TermContent(
-            id: t['id']?.toString() ?? '',
-            lessonId: lessonId,
-            order: (t['order_index'] as int?) ?? order++,
-            term: t['term']?.toString() ?? '',
-            definition: t['definition']?.toString() ?? '',
-            example: t['example']?.toString() ?? '',
-            createdAt: t['created_at'] != null ? DateTime.tryParse(t['created_at']) ?? DateTime.now() : DateTime.now(),
-            updatedAt: t['updated_at'] != null ? DateTime.tryParse(t['updated_at']) ?? DateTime.now() : DateTime.now(),
-          ));
+        for (final t in termsRaw) {
+          if (t is Map<String, dynamic>) {
+            legacyItems.add(TermContent(
+              id: t['id']?.toString() ?? '',
+              lessonId: lessonId,
+              order: (t['order_index'] as int?) ?? order++,
+              term: t['term']?.toString() ?? '',
+              definition: t['definition']?.toString() ?? '',
+              example: t['example']?.toString() ?? '',
+              createdAt: t['created_at'] != null ? DateTime.tryParse(t['created_at']) ?? DateTime.now() : DateTime.now(),
+              updatedAt: t['updated_at'] != null ? DateTime.tryParse(t['updated_at']) ?? DateTime.now() : DateTime.now(),
+            ));
+          }
         }
+      } catch (e) {
+        log('Could not load legacy terms: $e', name: 'ContentLoadingService');
       }
-    } catch (e) {
-      log('Could not load legacy terms: $e', name: 'ContentLoadingService');
     }
 
     // Load questions
@@ -241,31 +254,33 @@ class ContentLoadingService {
     }
 
     // Load concepts
-    try {
-      final List<dynamic> conceptsRaw = await _supabase
-          .from('concepts')
-          .select('*')
-          .eq('lesson_id', lessonId)
-          .order('created_at');
+    if (!questionsOnly) {
+      try {
+        final List<dynamic> conceptsRaw = await _supabase
+            .from('concepts')
+            .select('*')
+            .eq('lesson_id', lessonId)
+            .order('created_at');
 
-      for (final c in conceptsRaw) {
-        if (c is Map<String, dynamic>) {
-          legacyItems.add(ConceptContent(
-            id: c['id']?.toString() ?? '',
-            lessonId: lessonId,
-            order: (c['order_index'] as int?) ?? (500 + order++),
-            conceptText: c['concept_text']?.toString() ?? '',
-            exampleText: c['example_text']?.toString() ?? '',
-            keyPoints: c['key_points'] is List
-                ? List<String>.from((c['key_points'] as List).map((k) => k?.toString() ?? ''))
-                : null,
-            createdAt: c['created_at'] != null ? DateTime.tryParse(c['created_at']) ?? DateTime.now() : DateTime.now(),
-            updatedAt: c['updated_at'] != null ? DateTime.tryParse(c['updated_at']) ?? DateTime.now() : DateTime.now(),
-          ));
+        for (final c in conceptsRaw) {
+          if (c is Map<String, dynamic>) {
+            legacyItems.add(ConceptContent(
+              id: c['id']?.toString() ?? '',
+              lessonId: lessonId,
+              order: (c['order_index'] as int?) ?? (500 + order++),
+              conceptText: c['concept_text']?.toString() ?? '',
+              exampleText: c['example_text']?.toString() ?? '',
+              keyPoints: c['key_points'] is List
+                  ? List<String>.from((c['key_points'] as List).map((k) => k?.toString() ?? ''))
+                  : null,
+              createdAt: c['created_at'] != null ? DateTime.tryParse(c['created_at']) ?? DateTime.now() : DateTime.now(),
+              updatedAt: c['updated_at'] != null ? DateTime.tryParse(c['updated_at']) ?? DateTime.now() : DateTime.now(),
+            ));
+          }
         }
+      } catch (e) {
+        log('Could not load legacy concepts: $e', name: 'ContentLoadingService');
       }
-    } catch (e) {
-      log('Could not load legacy concepts: $e', name: 'ContentLoadingService');
     }
 
     legacyItems.sort((a, b) => a.order.compareTo(b.order));

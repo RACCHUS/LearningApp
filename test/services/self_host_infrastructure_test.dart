@@ -93,7 +93,7 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261107140000'));
+      expect(scanResult.migrations.last.version, equals('20261108140000'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
@@ -105,7 +105,8 @@ void main() {
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
       expect(bundle, contains('20261107050000_arch_04_learning_events_strict_rules.sql'));
       expect(bundle, contains('20261107060000_performance_library_search_trigram_indexes.sql'));
-      expect(bundle, contains('20261107140000_clep_simulation_bank_and_item_privacy.sql'));
+      expect(bundle, contains('20261108000000_assessment_item_server_grading.sql'));
+      expect(bundle, contains('20261108140000_clep_simulation_bank_and_item_privacy.sql'));
     });
   });
 }

@@ -297,3 +297,51 @@ cannot establish causal effectiveness.
   release browser must refuse both block and direct-route launches even with
   `ENABLE_SIMULATION_PREVIEW=true`, and WCAG 2.2 AA review plus the equivalent
   learning alternative must be verified.
+
+### Feature-enablement gate results (post-merge of PR #187)
+
+- **Release browser: passed.** A `--release` web build with
+  `ENABLE_SIMULATION_PREVIEW=true` was served locally and opened in Chrome via
+  Playwright. Direct links to `/#/simulation/networking-basics/1.0.0` and
+  `/#/simulation/atm-withdrawal/1.0.0` showed only the "unavailable" fallback
+  with Help, "Return to lesson" reached `/#/learn`, and the console had no
+  errors. The in-lesson launch button could not be exercised because no
+  authored lesson contains a simulation block yet.
+- **Accessibility (automated and keyboard review, using a `--profile` build
+  with preview enabled):**
+  - Network practice: the Tab order is logical, the whole activity can be
+    completed with the keyboard (answer all three questions, review, finish
+    to `/learn`), and Escape exits. At 320 px wide it reflows with no
+    horizontal scrolling. All targets are at least 24×24. The broken link is
+    shown by icon shape and text, not by colour alone. Text and status colours
+    meet contrast in both themes (lowest is 4.56:1 for primary on card, light
+    theme).
+  - ATM: it reflows at 320 px, targets meet the minimum size, and Escape exits.
+  - Fixed, WCAG 1.3.1: question titles were not tied to their radios, so
+    assistive tech merged all three into one label. Each question is now a
+    labelled group containing a `RadioGroup`, which also gives standard
+    arrow-key navigation and a single Tab stop per question.
+  - Fixed, routing: going from one simulation URL to another on an open
+    screen kept showing the previous activity. The route now keys
+    `SimulationScreen` by activity ID and version.
+  - Still outstanding: a manual screen-reader pass (NVDA/JAWS on Windows,
+    VoiceOver on macOS/iOS, TalkBack on Android). Simulations must not be
+    described as WCAG 2.2 AA approved until that pass is done.
+- **Equivalent learning alternative: draft ready for owner review (PR #195).**
+  `content/drafts/networking_basics_simulation.yaml` pairs the
+  `networking-basics@1.0.0` block with a `body` fallback and three practice
+  questions covering the same objective (find the broken link, choose the
+  physical fix first, explain why). It was ingested into an isolated local
+  stack and tested with Playwright on release web builds:
+  - Preview off: the fallback and practice questions render and the
+    simulation does not launch. Preview on: the in-lesson launch opens the
+    simulation and returns to the lesson.
+  - Fixed during this pass: lesson block text was not exposed to screen
+    readers on web (PR #193). Legacy practice questions were not shown on
+    block lessons, and hidden-key assessment items could not be graded after
+    FIX-12. Both are fixed by server-side grading in PR #194, deployed as
+    migration `20261108000000`.
+  - Content issue to resolve before publishing: in practice question 2 the
+    correct option is noticeably longer than the distractors.
+  - Each further lesson that adds a simulation must show the same
+    equivalence before that simulation is enabled.

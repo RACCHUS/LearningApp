@@ -67,7 +67,10 @@ Widget buildSimulationRoute({
 }) {
   return DeferredLoaderWidget(
     loader: loader ?? simulation_screen.loadLibrary,
+    // Keyed so switching between simulations on this route rebuilds the
+    // screen and ends the previous session instead of reusing stale state.
     builder: () => simulation_screen.SimulationScreen(
+      key: ValueKey('simulation/$simulationId/$version'),
       simulationId: simulationId,
       version: version,
     ),
