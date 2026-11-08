@@ -114,19 +114,19 @@ domains:
                 concept_slugs: ["net-home-network-path"]
               - question_text: "The laptop's Ethernet cable to the router is loose. What should you check first?"
                 options:
-                  - "Reconnect the router-to-laptop Ethernet cable"
-                  - "Change the Wi-Fi password on the router"
-                  - "Replace the laptop screen with a new one"
+                  - "Reconnect the laptop's loose Ethernet cable"
+                  - "Restart the router and modem to reconnect"
+                  - "Change the laptop's network settings first"
                 correct_answer: 0
                 type: "mcq"
                 explanation: "Reseat the loose cable first, then check whether the laptop reconnects."
                 concept_slugs: ["net-physical-link-repair"]
-              - question_text: "Why is reconnecting the router-to-laptop cable the right first step?"
+              - question_text: "Why is reconnecting the laptop's loose Ethernet cable the right first step?"
                 options:
-                  - "The cable carries network traffic from the router to the laptop."
-                  - "The laptop screen routes traffic between devices."
-                  - "Changing a password reconnects a physically loose cable."
-                correct_answer: 0
+                  - "Restarting the router repairs the loose cable."
+                  - "Changing settings repairs the loose cable."
+                  - "The cable carries network traffic to the laptop."
+                correct_answer: 2
                 type: "mcq"
-                explanation: "The cable is the physical path for the laptop's traffic. Settings or a screen cannot restore a disconnected physical link."
+                explanation: "The cable is the physical path for the laptop's traffic. Restarting the router or changing settings cannot repair a loose cable."
                 concept_slugs: ["net-physical-link-repair"]
