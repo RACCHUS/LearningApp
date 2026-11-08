@@ -97,7 +97,30 @@ def run() -> None:
                 or not revision.isascii()):
                 raise ValueError("Object revision contract invalid")
         except Exception:
-            raise AssertionError("Local Storage revision contract changed") from None
+            # Redacted provider-shape diagnostics: no object IDs, names, key,
+            # revision contents, workbook contents or private metadata values.
+            descriptor = {
+                "json_object": isinstance(locals().get("metadata"), dict),
+                "fields": sorted(k for k in metadata if k in (
+                    "version", "name", "bucket_id", "metadata", "id"
+                )) if isinstance(locals().get("metadata"), dict) else [],
+                "name_equal": metadata.get("name") == path
+                    if isinstance(locals().get("metadata"), dict) else False,
+                "bucket_equal": metadata.get("bucket_id") == BUCKET
+                    if isinstance(locals().get("metadata"), dict) else False,
+                "revision_type": type(metadata.get("version")).__name__
+                    if isinstance(locals().get("metadata"), dict) else "unknown",
+                "metadata_type": type(metadata.get("metadata")).__name__
+                    if isinstance(locals().get("metadata"), dict) else "unknown",
+                "size_type": type(metadata.get("metadata", {}).get("size")).__name__
+                    if isinstance(locals().get("metadata"), dict)
+                    and isinstance(metadata.get("metadata"), dict) else "unknown",
+                "size_equal": metadata.get("metadata", {}).get("size") == len(readback)
+                    if isinstance(locals().get("metadata"), dict)
+                    and isinstance(metadata.get("metadata"), dict) else False,
+            }
+            raise AssertionError("Local Storage revision contract changed; structure="
+                                 + json.dumps(descriptor, sort_keys=True)) from None
 
         # This deliberately bypasses the real broker's exclusive DB lock.
         # Raw concurrent privileged writes are a diagnostic, NOT an upload
