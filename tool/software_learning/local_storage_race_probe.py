@@ -44,7 +44,8 @@ def _request(base: str, key: str, method: str, name: str,
         f"{base}/storage/v1/{endpoint}/{BUCKET}/{name}", method=method,
         data=data, headers={
             "apikey": key, "Authorization": f"Bearer {key}",
-            "Content-Type": MIME, "Accept": "application/json" if info else MIME,
+            "Content-Type": MIME,
+            "Accept": "application/json" if info or method != "GET" else MIME,
             "x-upsert": "false", "Cache-Control": "no-store",
         },
     )
@@ -82,7 +83,7 @@ def run() -> None:
         losers = [code for code, _ in outcomes if code not in (200, 201)]
         if (len(winners) != 1 or len(losers) != 2
             or any(code not in (400, 409) for code in losers)):
-            raise AssertionError("Local Storage create-only race contract failed")
+            raise AssertionError("Local Storage create-only race contract failed; HTTP statuses=" + str([code for code, _ in outcomes]))
         status, readback = _request(base, service, "GET", path)
         if (status != 200 or sha256(readback).digest()
             != sha256(candidates[winners[0]]).digest()):
