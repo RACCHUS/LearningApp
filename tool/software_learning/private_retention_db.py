@@ -4,8 +4,10 @@ Only construct this adapter with an exclusively owned privileged connection.
 The host supplies authentication, the Storage API adapter, a bounded scheduler
 and secret isolation. No HTTP endpoint, cron trigger or live service is created.
 
-Two-phase cleanup is intentional: commit upload freeze *before* touching
-Storage, then delete the metadata only after the Storage API confirms absence.
+Two-phase cleanup is intentional: commit a terminal status transition for
+unsealed issued attempts *before* touching Storage, then delete metadata only
+after the Storage API confirms absence. Merely setting upload_enabled=false
+would REOPEN eligibility for a broker lock on an unsealed issued attempt.
 Processing claims are only reclaimed after both expiry and the processing
 lease timestamp exceed a 30-minute grace; no active lease is deleted.
 """
@@ -86,12 +88,17 @@ class DbApiRetentionRepository:
         try:
             raw = self._query_one(
                 "UPDATE public.software_learning_attempts "
-                "SET upload_enabled=false "
+                "SET upload_enabled=false, "
+                "status=CASE WHEN status='issued' THEN 'failed' ELSE status END "
                 "WHERE owner_id=%s::uuid AND id=%s::uuid "
                 "AND " + _ELIGIBLE + " "
                 "RETURNING id::text",
                 (owner_id, attempt_id),
             )
+            # This UPDATE takes the attempt row lock. A competing broker lock
+            # must finish before it can commit; after this commit an unsealed
+            # attempt is no longer 'issued', so sl_lock_excel_upload cannot
+            # start a late write between Storage deletion and DB erasure.
             # The host must not reuse this connection concurrently.
             self._connection.commit()
             return raw == (attempt_id,)
