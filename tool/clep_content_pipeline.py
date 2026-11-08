@@ -24,27 +24,60 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data/catalog/clep_official_catalog_2026.json"
 MANIFEST_PATH = ROOT / "content/clep_introductory_psychology.yaml"
 
-# Official College Board CLEP Introductory Psychology Exam Specifications (2026)
-OFFICIAL_PSYCH_DOMAINS = {
-    "1.0": {"title": "History, Approaches, and Methods", "official_range": "11–12%", "weight": 0.115, "quota": 11},
-    "2.0": {"title": "Biological Bases of Behavior", "official_range": "8–9%", "weight": 0.090, "quota": 9},
-    "3.0": {"title": "Sensation and Perception", "official_range": "7–8%", "weight": 0.075, "quota": 7},
-    "4.0": {"title": "States of Consciousness", "official_range": "5–6%", "weight": 0.055, "quota": 5},
-    "5.0": {"title": "Learning", "official_range": "8–9%", "weight": 0.085, "quota": 8},
-    "6.0": {"title": "Cognition", "official_range": "8–9%", "weight": 0.090, "quota": 9},
-    "7.0": {"title": "Motivation and Emotion", "official_range": "5–6%", "weight": 0.055, "quota": 5},
-    "8.0": {"title": "Developmental Psychology Across the Lifespan", "official_range": "8–9%", "weight": 0.085, "quota": 8},
-    "9.0": {"title": "Personality", "official_range": "7–8%", "weight": 0.075, "quota": 7},
-    "10.0": {"title": "Psychological Disorders and Health", "official_range": "8–9%", "weight": 0.085, "quota": 8},
-    "11.0": {"title": "Treatment of Psychological Disorders", "official_range": "6–7%", "weight": 0.065, "quota": 6},
-    "12.0": {"title": "Social Psychology", "official_range": "9–10%", "weight": 0.095, "quota": 9},
-    "13.0": {"title": "Statistics, Tests, and Measurement", "official_range": "3–4%", "weight": 0.030, "quota": 3},
+# Official College Board CLEP Specifications Registry
+OFFICIAL_COURSE_SPECS = {
+    "clep-introductory-psychology": {
+        "title": "Introductory Psychology",
+        "exam_code": "CLEP-PSYC",
+        "total_simulation_questions": 95,
+        "domains": {
+            "1.0": {"title": "History, Approaches, and Methods", "official_range": "11–12%", "weight": 0.115, "quota": 11},
+            "2.0": {"title": "Biological Bases of Behavior", "official_range": "8–9%", "weight": 0.090, "quota": 9},
+            "3.0": {"title": "Sensation and Perception", "official_range": "7–8%", "weight": 0.075, "quota": 7},
+            "4.0": {"title": "States of Consciousness", "official_range": "5–6%", "weight": 0.055, "quota": 5},
+            "5.0": {"title": "Learning", "official_range": "8–9%", "weight": 0.085, "quota": 8},
+            "6.0": {"title": "Cognition", "official_range": "8–9%", "weight": 0.090, "quota": 9},
+            "7.0": {"title": "Motivation and Emotion", "official_range": "5–6%", "weight": 0.055, "quota": 5},
+            "8.0": {"title": "Developmental Psychology Across the Lifespan", "official_range": "8–9%", "weight": 0.085, "quota": 8},
+            "9.0": {"title": "Personality", "official_range": "7–8%", "weight": 0.075, "quota": 7},
+            "10.0": {"title": "Psychological Disorders and Health", "official_range": "8–9%", "weight": 0.085, "quota": 8},
+            "11.0": {"title": "Treatment of Psychological Disorders", "official_range": "6–7%", "weight": 0.065, "quota": 6},
+            "12.0": {"title": "Social Psychology", "official_range": "9–10%", "weight": 0.095, "quota": 9},
+            "13.0": {"title": "Statistics, Tests, and Measurement", "official_range": "3–4%", "weight": 0.030, "quota": 3},
+        },
+    },
+    "clep-college-algebra": {
+        "title": "College Algebra",
+        "exam_code": "CLEP-ALG",
+        "total_simulation_questions": 60,
+        "domains": {
+            "1.0": {"title": "Algebraic operations", "official_range": "25%", "weight": 0.250, "quota": 15},
+            "2.0": {"title": "Equations and inequalities", "official_range": "25%", "weight": 0.250, "quota": 15},
+            "3.0": {"title": "Functions and their properties", "official_range": "30%", "weight": 0.300, "quota": 18},
+            "4.0": {"title": "Number systems and operations", "official_range": "20%", "weight": 0.200, "quota": 12},
+        },
+    },
 }
 
+# Backward compatibility constants (defaults to Introductory Psychology)
+OFFICIAL_PSYCH_DOMAINS = OFFICIAL_COURSE_SPECS["clep-introductory-psychology"]["domains"]
 EXPECTED_PSYCH_DOMAINS = list(OFFICIAL_PSYCH_DOMAINS.keys())
 TOTAL_SIMULATION_QUESTIONS = 95
 COGNITIVE_LEVELS = {"recall", "comprehension", "application", "analysis", "evaluation"}
 DIFFICULTIES = {"beginner", "intermediate", "advanced"}
+
+
+def resolve_course_spec(manifest: dict, target_slug: str | None = None) -> dict:
+    """Resolve the course specification from the manifest or target slug."""
+    slug = target_slug or manifest.get("target", {}).get("slug", "clep-introductory-psychology")
+    if slug in OFFICIAL_COURSE_SPECS:
+        return OFFICIAL_COURSE_SPECS[slug]
+    # Check partial match on slug
+    for k, v in OFFICIAL_COURSE_SPECS.items():
+        if k in slug or slug in k:
+            return v
+    # Fallback to Psychology
+    return OFFICIAL_COURSE_SPECS["clep-introductory-psychology"]
 
 
 def load_yaml(path: Path) -> dict:
@@ -92,12 +125,16 @@ def verify_source_provenance(manifest: dict) -> list[str]:
     return issues
 
 
-def verify_blueprint_coverage(manifest: dict) -> tuple[dict, list[str]]:
-    """Stage B: Verify all 13 College Board domains and their reconciled decimal weights."""
+def verify_blueprint_coverage(manifest: dict, course_spec: dict | None = None) -> tuple[dict, list[str]]:
+    """Stage B: Verify all College Board domains and their reconciled decimal weights."""
+    if course_spec is None:
+        course_spec = resolve_course_spec(manifest)
+
     issues = []
     domains = manifest.get("domains", [])
     domain_map = {}
     total_weight = 0.0
+    expected_domains = list(course_spec["domains"].keys())
 
     for d in domains:
         code = d.get("code")
@@ -120,7 +157,7 @@ def verify_blueprint_coverage(manifest: dict) -> tuple[dict, list[str]]:
         if not objectives:
             issues.append(f"Domain {code} ('{title}') has no objectives.")
 
-    for exp_code in EXPECTED_PSYCH_DOMAINS:
+    for exp_code in expected_domains:
         if exp_code not in domain_map:
             issues.append(f"Missing required College Board domain: {exp_code}")
 
@@ -186,11 +223,14 @@ def verify_lesson_architecture(manifest: dict) -> tuple[int, list[str]]:
 
                     if b_type == "markdown" and len(text) >= 60:
                         has_exposition = True
-                    if b_type in {"example", "callout"} or any(k in text.lower() for k in ["case", "experiment", "study", "scenario", "patient", "vignette"]):
+                    if b_type in {"example", "callout", "formula"} or any(k in text.lower() for k in [
+                        "case", "experiment", "study", "scenario", "patient", "vignette",
+                        "model", "problem", "projectile", "interest", "growth", "decay", "optimization", "geometry"
+                    ]):
                         has_case_scenario = True
-                    if b_type in {"table", "code"} or ("|" in text and "---" in text):
+                    if b_type in {"table", "code", "formula"} or ("|" in text and "---" in text) or "$$" in text or "matrix" in text:
                         has_schema_or_table = True
-                    if b_type == "callout" or any(k in text.lower() for k in ["misconception", "pitfall", "warning", "contrast", "distinction"]):
+                    if b_type == "callout" or any(k in text.lower() for k in ["misconception", "pitfall", "warning", "contrast", "distinction", "common mistake"]):
                         has_misconception_callout = True
 
                 if not has_exposition:
@@ -216,6 +256,8 @@ def verify_lesson_architecture(manifest: dict) -> tuple[int, list[str]]:
                 # Element 10: Authoritative Source Citation
                 if not citation or len(citation) < 8:
                     issues.append(f"Lesson '{title}' missing authoritative source citation (Element 10).")
+
+    return lesson_count, issues
 
     return lesson_count, issues
 
@@ -290,14 +332,24 @@ def verify_psychometric_items(manifest: dict) -> tuple[int, list[str]]:
     return item_count, issues
 
 
-def compute_simulation_quotas(domain_map: dict, total_questions: int = TOTAL_SIMULATION_QUESTIONS) -> dict[str, int]:
-    """Stage E: Largest-remainder quota allocation for a 95-question timed simulation."""
+def compute_simulation_quotas(
+    domain_map: dict,
+    total_questions: int | None = None,
+    course_spec: dict | None = None,
+) -> dict[str, int]:
+    """Stage E: Largest-remainder quota allocation for a timed simulation."""
+    if course_spec is None:
+        course_spec = OFFICIAL_COURSE_SPECS["clep-introductory-psychology"]
+    if total_questions is None:
+        total_questions = course_spec["total_simulation_questions"]
+
+    spec_domains = course_spec["domains"]
     quotas = {}
     remainders = []
     allocated = 0
 
     for code, d in domain_map.items():
-        weight = OFFICIAL_PSYCH_DOMAINS.get(code, {}).get("weight", d.get("weight", 0.0))
+        weight = spec_domains.get(code, {}).get("weight", d.get("weight", 0.0))
         exact = total_questions * weight
         floor_val = math.floor(exact)
         quotas[code] = floor_val
@@ -313,11 +365,21 @@ def compute_simulation_quotas(domain_map: dict, total_questions: int = TOTAL_SIM
     return quotas
 
 
-def verify_simulation_items(manifest: dict, domain_map: dict, require_simulation: bool = False) -> tuple[dict[str, int], list[str]]:
-    """Stage E: Verify assessment items against the 95-question simulation quotas."""
+def verify_simulation_items(
+    manifest: dict,
+    domain_map: dict,
+    require_simulation: bool = False,
+    course_spec: dict | None = None,
+) -> tuple[dict[str, int], list[str]]:
+    """Stage E: Verify assessment items against the simulation quotas."""
+    if course_spec is None:
+        course_spec = resolve_course_spec(manifest)
+
+    total_questions = course_spec["total_simulation_questions"]
+    expected_domains = list(course_spec["domains"].keys())
     issues = []
-    quotas = compute_simulation_quotas(domain_map, total_questions=TOTAL_SIMULATION_QUESTIONS)
-    item_counts: dict[str, int] = {code: 0 for code in EXPECTED_PSYCH_DOMAINS}
+    quotas = compute_simulation_quotas(domain_map, total_questions=total_questions, course_spec=course_spec)
+    item_counts: dict[str, int] = {code: 0 for code in expected_domains}
 
     for d in manifest.get("domains", []):
         code = d.get("code")
@@ -336,10 +398,10 @@ def verify_simulation_items(manifest: dict, domain_map: dict, require_simulation
     total_authored = sum(item_counts.values())
 
     if require_simulation:
-        if total_authored != TOTAL_SIMULATION_QUESTIONS:
-            issues.append(f"Simulation requires exactly {TOTAL_SIMULATION_QUESTIONS} authored questions (got {total_authored}).")
+        if total_authored != total_questions:
+            issues.append(f"Simulation requires exactly {total_questions} authored questions (got {total_authored}).")
 
-        for code in EXPECTED_PSYCH_DOMAINS:
+        for code in expected_domains:
             expected_quota = quotas.get(code, 0)
             actual_count = item_counts.get(code, 0)
             if actual_count != expected_quota:
@@ -410,7 +472,12 @@ def run_pipeline(manifest_path: Path, require_simulation: bool = False, skip_db_
         return False
 
     manifest = load_yaml(manifest_path)
+    course_spec = resolve_course_spec(manifest)
+    total_sim_q = course_spec["total_simulation_questions"]
+    num_domains = len(course_spec["domains"])
     all_issues = []
+
+    print(f"🎯 Target Course: {course_spec['title']} ({course_spec['exam_code']})")
 
     # Stage A: Source Provenance
     print("\n[Stage A] Verifying Source Attribution & Provenance...")
@@ -424,8 +491,8 @@ def run_pipeline(manifest_path: Path, require_simulation: bool = False, skip_db_
         print(f"  ✅ {len(releases)} authoritative source release(s) verified (Blueprint + OpenStax OER).")
 
     # Stage B: Blueprint Coverage & Reconciled Weights
-    print("\n[Stage B] Verifying 13-Domain Blueprint Coverage & Reconciled Weights...")
-    domain_map, blue_issues = verify_blueprint_coverage(manifest)
+    print(f"\n[Stage B] Verifying {num_domains}-Domain Blueprint Coverage & Reconciled Weights...")
+    domain_map, blue_issues = verify_blueprint_coverage(manifest, course_spec=course_spec)
     if blue_issues:
         for err in blue_issues:
             print(f"  ❌ {err}")
@@ -454,22 +521,21 @@ def run_pipeline(manifest_path: Path, require_simulation: bool = False, skip_db_
         print(f"  ✅ {item_count} assessment item(s) compliant with Haladyna empirical standards.")
 
     # Stage E: Full Simulation Quota Allocation & Verification
-    print("\n[Stage E] Computing & Verifying 95-Question Simulation Blueprint Quotas...")
-    quotas = compute_simulation_quotas(domain_map, total_questions=TOTAL_SIMULATION_QUESTIONS)
-    item_counts, sim_issues = verify_simulation_items(manifest, domain_map, require_simulation=require_simulation)
+    print(f"\n[Stage E] Computing & Verifying {total_sim_q}-Question Simulation Blueprint Quotas...")
+    quotas = compute_simulation_quotas(domain_map, total_questions=total_sim_q, course_spec=course_spec)
+    item_counts, sim_issues = verify_simulation_items(manifest, domain_map, require_simulation=require_simulation, course_spec=course_spec)
     if sim_issues:
         for err in sim_issues:
             print(f"  ❌ {err}")
         all_issues.extend(sim_issues)
 
     total_authored = sum(item_counts.values())
-    print(f"  Domain Item Allocations for 90-Minute Official CLEP Simulation ({total_authored}/{TOTAL_SIMULATION_QUESTIONS} authored):")
-    for code in EXPECTED_PSYCH_DOMAINS:
+    print(f"  Domain Item Allocations for 90-Minute Official CLEP Simulation ({total_authored}/{total_sim_q} authored):")
+    for code, spec in course_spec["domains"].items():
         info = domain_map.get(code, {})
-        spec = OFFICIAL_PSYCH_DOMAINS.get(code, {})
         q = quotas.get(code, 0)
         actual = item_counts.get(code, 0)
-        pct = (q / float(TOTAL_SIMULATION_QUESTIONS)) * 100
+        pct = (q / float(total_sim_q)) * 100 if total_sim_q else 0
         status = "✅" if actual >= q else f"⏳ ({actual}/{q})"
         print(f"    - Domain {code:<4} ({info.get('title', '')[:30]:<30}) [{spec.get('official_range', ''):<6}]: Quota {q:>2} ({pct:>4.1f}%) | Authored: {actual:>2} {status}")
 
