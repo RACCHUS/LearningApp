@@ -78,12 +78,12 @@ void main() {
       expect(ddl01, contains('COMMIT;'));
       expect(ddl01, contains('20241228000000_legacy_base_tables.sql'));
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
-      expect(ddl01, contains('20261107120000_software_learning_excel_attempt_issuance.sql'));
+      expect(ddl01, contains('20261108010000_software_learning_excel_attempt_issuance.sql'));
       expect(ddl01, contains('101 immutable migrations'));
-      expect(ddl01, contains('20261107150000_software_learning_excel_brokered_upload_seal.sql'));
+      expect(ddl01, contains('20261108040000_software_learning_excel_brokered_upload_seal.sql'));
       expect(ddl01, contains('20261108000000_assessment_item_server_grading.sql'));
-      expect(ddl01, contains('20261107130000_software_learning_excel_private_upload_gate.sql'));
-      expect(ddl01, contains('20261107140000_software_learning_excel_processing_lease.sql'));
+      expect(ddl01, contains('20261108020000_software_learning_excel_private_upload_gate.sql'));
+      expect(ddl01, contains('20261108030000_software_learning_excel_processing_lease.sql'));
     });
 
     test('SelfHostBootstrap.scanAndValidate verifies every migration sequentially', () {
@@ -117,10 +117,10 @@ void main() {
       expect(bundle, contains('20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql'));
       expect(bundle, contains('20261107050000_arch_04_learning_events_strict_rules.sql'));
       expect(bundle, contains('20261107060000_performance_library_search_trigram_indexes.sql'));
-      expect(bundle, contains('20261107120000_software_learning_excel_attempt_issuance.sql'));
-      expect(bundle, contains('20261107130000_software_learning_excel_private_upload_gate.sql'));
-      expect(bundle, contains('20261107140000_software_learning_excel_processing_lease.sql'));
-      expect(bundle, contains('20261107150000_software_learning_excel_brokered_upload_seal.sql'));
+      expect(bundle, contains('20261108010000_software_learning_excel_attempt_issuance.sql'));
+      expect(bundle, contains('20261108020000_software_learning_excel_private_upload_gate.sql'));
+      expect(bundle, contains('20261108030000_software_learning_excel_processing_lease.sql'));
+      expect(bundle, contains('20261108040000_software_learning_excel_brokered_upload_seal.sql'));
       expect(bundle, contains('20261108000000_assessment_item_server_grading.sql'));
     });
   });
