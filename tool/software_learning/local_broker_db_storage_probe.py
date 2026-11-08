@@ -49,6 +49,7 @@ class LocalObjects:
         self._api, self._key = api, key
         self._guard = Lock()
         self.create_calls = 0
+        self.stat_statuses: list[int] = []
         self.entered = Event()
         self.release = Event()
 
@@ -56,6 +57,8 @@ class LocalObjects:
         if bucket != BUCKET:
             raise RuntimeError("Unexpected private bucket")
         status, body = _request(self._api, self._key, "GET", path, info=True)
+        with self._guard:
+            self.stat_statuses.append(status)
         if status == 404:
             return None
         if status != 200:
@@ -168,12 +171,34 @@ def run() -> None:
                 (attempt, owner, session),
             )
         prepared = True
+        # Independently verify the private service-role RPC is eligible
+        # before attributing any rejection to the Storage provider.
+        try:
+            with _connect(database, service=True) as probe_conn:
+                row = probe_conn.execute(
+                    "SELECT software_learning_private.sl_lock_excel_upload(%s,%s,%s)",
+                    (attempt, owner, session),
+                ).fetchone()
+                if row is None or row[0] is None:
+                    raise AssertionError("Synthetic DB broker permit was denied")
+                probe_conn.rollback()
+        except AssertionError:
+            raise
+        except Exception:
+            raise AssertionError("Synthetic DB broker RPC preflight unavailable") from None
 
         competed = Event()
         with ThreadPoolExecutor(max_workers=2) as pool:
             writer = pool.submit(broker, first)
             if not objects.entered.wait(timeout=10):
-                raise AssertionError("First broker did not enter locked Storage write")
+                # Status codes only; never expose private response bodies,
+                # workbook paths, secret keys or session identifiers.
+                finished = writer.done()
+                summary = writer.result(timeout=1).get("status") if finished else "running"
+                raise AssertionError(
+                    "First broker stopped before Storage write; "
+                    f"broker_status={summary}; info_http_statuses={objects.stat_statuses}"
+                )
             rival = pool.submit(broker, second, competed)
             if not competed.wait(timeout=10):
                 raise AssertionError("Competing broker did not attempt row lock")
