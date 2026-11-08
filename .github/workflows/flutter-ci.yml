@@ -178,6 +178,9 @@ jobs:
       - name: Test guarded Excel account workbook erasure
         run: python3 -m unittest discover -s tool/tests -p 'test_account_erasure.py' -v
 
+      - name: Test read-only Excel owner-prefix Storage inventory
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_owner_inventory.py' -v
+
       - name: Verify brokered Excel migration is identical in self-host bundle
         run: python3 -m unittest discover -s tool/tests -p 'test_excel_bundle_integrity.py' -v
 
