@@ -166,21 +166,25 @@ class UploadTests(unittest.TestCase):
         result, _, _, _ = do(repo=repo, store=store)
         self.assertEqual(result["status"], "rejected")
         self.assertFalse(repo.sealed)
-        self.assertIn(("remove", "learningapp-excel-private", PATH), store.calls)
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [x[0] for x in store.calls])
         self.assertEqual(repo.calls[-1], ("abort",))
 
-    def test_seal_failure_compensates_storage_before_rollback(self):
+    def test_seal_failure_keeps_bytes_for_authorized_retention(self):
         repo, store = Repository(seal=True), Storage()
         result, _, _, _ = do(repo=repo, store=store)
         self.assertEqual(result["status"], "rejected")
-        self.assertIsNone(store.blob)
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [x[0] for x in store.calls])
         self.assertEqual(repo.calls[-1], ("abort",))
         self.assertFalse(repo.sealed)
 
-    def test_cleanup_failure_does_not_claim_success(self):
+    def test_broker_has_no_inline_delete_even_with_unavailable_delete_api(self):
         repo, store = Repository(seal=True), Storage(fail_remove=True)
         result, _, _, _ = do(repo=repo, store=store)
         self.assertEqual(result["status"], "rejected")
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [x[0] for x in store.calls])
         self.assertFalse(repo.sealed)
         self.assertEqual(repo.calls[-1], ("abort",))
 
@@ -202,6 +206,53 @@ class UploadTests(unittest.TestCase):
         repo, store = Repository(), Storage(conflict=True)
         do(repo=repo, store=store)
         self.assertNotIn("remove", [x[0] for x in store.calls])
+
+
+    def test_stale_missing_stat_then_create_conflict_preserves_foreign_object(self):
+        class StaleStatStorage(Storage):
+            def __init__(self):
+                super().__init__()
+                self.blob = b"preexisting-object"
+                self.stat_calls = 0
+            def stat(self, bucket, path):
+                self.stat_calls += 1
+                self.calls.append(("stat", bucket, path))
+                return None if self.stat_calls == 1 else "other-revision"
+
+        repo, store = Repository(), StaleStatStorage()
+        result, _, _, _ = do(repo=repo, store=store)
+        self.assertEqual(result["status"], "rejected")
+        self.assertEqual(store.blob, b"preexisting-object")
+        self.assertEqual([x[0] for x in store.calls], ["stat", "create"])
+        self.assertEqual(repo.calls[-1], ("abort",))
+
+    def test_storage_timeout_after_successful_write_preserves_orphan_for_cleanup(self):
+        class TimeoutAfterCommitStorage(Storage):
+            def create_only(self, bucket, path, blob):
+                super().create_only(bucket, path, blob)
+                raise TimeoutError("write persisted, response lost")
+
+        repo, store = Repository(), TimeoutAfterCommitStorage()
+        result, _, _, _ = do(repo=repo, store=store)
+        self.assertEqual(result["status"], "rejected")
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [x[0] for x in store.calls])
+        self.assertFalse(repo.sealed)
+        self.assertEqual(repo.calls[-1], ("abort",))
+
+    def test_lost_db_commit_ack_never_deletes_already_sealed_workbook(self):
+        class CommitAcknowledgementLost(Repository):
+            def seal(self, permit, sha256, version):
+                super().seal(permit, sha256, version)
+                raise TimeoutError("DB commit persisted, response lost")
+
+        repo, store = CommitAcknowledgementLost(), Storage()
+        result, _, _, _ = do(repo=repo, store=store)
+        self.assertEqual(result["status"], "rejected")
+        self.assertTrue(repo.sealed)
+        self.assertEqual(store.blob, BLOB)
+        self.assertNotIn("remove", [x[0] for x in store.calls])
+        self.assertEqual(repo.calls[-1], ("abort",))
 
 
 if __name__ == "__main__":

@@ -66,7 +66,7 @@ Before awarding competency, reconcile the shared event model with the existing l
 
 ## Server-brokered upload continuation (source only; not deployed)
 
-The review branch now includes a sealed server-brokered workbook upload prototype. The broker verifies a permanent user session, holds an exclusive owner/session-bound PostgreSQL row lock while uploading one canonical workbook, uses a create-only fixed-MIME Storage REST request, reads the bytes back, and commits the SHA-256 and object revision in the same database transaction. On failure it rejects without awarding any competency and attempts to remove an ambiguous write before rollback.
+The review branch now includes a sealed server-brokered workbook upload prototype. The broker verifies a permanent user session, holds an exclusive owner/session-bound PostgreSQL row lock while uploading one canonical workbook, uses a create-only fixed-MIME Storage REST request, reads the bytes back, and commits the SHA-256 and object revision in the same database transaction. On failure it rejects without awarding any competency. It deliberately does **not** delete an ambiguous object inline: an unversioned Storage DELETE after a stale negative lookup, timeout-after-write or lost database-commit acknowledgement could destroy an existing or legitimately sealed workbook. The attempt record is retained for Storage-first expiry/account-erasure recovery; a rejected upload may require a newly issued attempt.
 
 The append-only migration 20261107150000_software_learning_excel_brokered_upload_seal.sql disallows direct learner Storage INSERT even if upload_enabled is later set, stores a server-attested SHA-256 / revision / commit timestamp, and requires the exact digest for any processing lease and provisional completion. The associated self-host SQL bundle includes 100 migrations.
 
@@ -78,7 +78,7 @@ Account erasure now has a service-only, revoked-session-gated, bounded, dry-run-
 
 1. Race two uploads to the same attempt and upload against an assessment claim; verify only one committed SHA and no overwrites or late writes.
 2. Revoke the original Auth session during an upload and before a claim; reject replay, other-account IDs, and expired attempts.
-3. Inject Storage POST timeout-after-commit, delete errors, stale metadata, signed-token attempts and retries; detect any orphan object and prevent false erasure success.
+3. Inject Storage POST timeout-after-commit, stale negative object metadata, create-only conflicts, lost DB commit acknowledgements, deletion errors, signed-token attempts and retries. Verify the upload broker never issues an unversioned cleanup DELETE, and expiry/account-erasure recovery handles orphans without falsely reporting success.
 4. Confirm the deployed Storage provider actually honors create-only object semantics, blocks client insert/upsert under restrictive RLS, and cannot resurrect objects after cleanup.
 5. Validate separate private gateways, zero public reachability, no Docker socket in the upload host, secret isolation, resource limits, and redacted logs.
 6. Complete a Storage-prefix inventory for account erasure, activate an audited private retention schedule, and approve the raw-file deletion policy.

@@ -9,8 +9,10 @@ privileged credentials or a Docker socket. Only a separately reviewed upload
 gateway may use it. Direct learner Storage policies must remain DENIED.
 
 A database lock protects concurrent compliant brokers and processing claims.
-Live-provider tests are still mandatory for orphan writes after timeouts,
-signed URLs, storage-object visibility and account deletion races.
+Ambiguous failed writes are never deleted inline: without version-conditional
+Storage deletion, a timeout or lost DB commit acknowledgement could otherwise
+cause a valid sealed workbook to be erased. Expiry/account retention handles
+orphan cleanup separately. Live-provider race tests remain mandatory.
 """
 from __future__ import annotations
 
@@ -50,7 +52,6 @@ class PrivateUploadStorage(Protocol):
     def stat(self, bucket: str, path: str) -> str | None: ...
     def create_only(self, bucket: str, path: str, blob: bytes) -> None: ...
     def download_limited(self, bucket: str, path: str, limit: int) -> bytes: ...
-    def remove(self, bucket: str, path: str) -> None: ...
 
 
 def _uuid(value: object) -> bool:
@@ -121,7 +122,6 @@ def accept_workbook(
     if permit is None:
         return _deny()
 
-    writing_started = False
     sealed = False
     path = f"{identity.owner_id}/{attempt_id}/workbook.xlsx"
     try:
@@ -133,7 +133,6 @@ def accept_workbook(
         if storage.stat(PRIVATE_BUCKET, path) is not None:
             return _deny()
 
-        writing_started = True
         storage.create_only(PRIVATE_BUCKET, path, blob)
         revision = storage.stat(PRIVATE_BUCKET, path)
         if (not isinstance(revision, str) or not 1 <= len(revision) <= 256
@@ -156,14 +155,13 @@ def accept_workbook(
         return _deny()
     finally:
         if not sealed:
-            # A transport timeout may mean Storage committed the object even
-            # if the client saw failure. Compensate before releasing the lock.
-            # A failed compensation is retried by the expiry erasure worker.
-            if writing_started:
-                try:
-                    storage.remove(PRIVATE_BUCKET, path)
-                except Exception:
-                    pass
+            # NEVER perform an unversioned Storage DELETE on this path.
+            # A create-only conflict after a stale stat, timeout-after-write,
+            # or lost DB commit acknowledgement is ambiguous; deletion could
+            # remove another or already-sealed object. Preserve any bytes and
+            # leave the attempt metadata for the separate Storage-first
+            # expiration/account-erasure coordinator. A failed upload may
+            # require a newly issued attempt; no inline retries or overwrites.
             try:
                 repository.abort(permit)
             except Exception:
