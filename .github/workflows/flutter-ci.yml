@@ -336,6 +336,13 @@ jobs:
           export API_URL SERVICE_ROLE_KEY ANON_KEY
           python3 tool/software_learning/local_storage_race_probe.py
 
+      - name: Verify real local DB broker NOWAIT/Storage race and cleanup (synthetic)
+        run: |
+          python3 -m pip install 'psycopg[binary]==3.2.10'
+          eval "$(supabase status -o env)"
+          export API_URL SERVICE_ROLE_KEY ANON_KEY DB_URL
+          python3 tool/software_learning/local_broker_db_storage_probe.py
+
       - name: Rehearse historical backfill in hosted-ledger order
         # Replays production's actual order: reset with only the versions in the
         # hosted ledger snapshot, then apply every never-applied migration out of

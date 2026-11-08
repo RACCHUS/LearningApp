@@ -175,3 +175,23 @@ own, and explicit execution still requires an externally authenticated
 internal service. Method scoping is defense in depth, **not** credential
 IAM isolation. Staging must demonstrate three independently constrained
 identities, private network policy, and audit/retry alarms before activation.
+
+
+### Disposable end-to-end PostgreSQL NOWAIT + Storage broker probe
+
+CI now starts **only local-loopback** Supabase Docker services, inserts
+synthetic Auth session/attempt records, and opens **two independent real
+PostgreSQL connections** against the same Excel attempt. The first broker
+holds `SELECT FOR UPDATE NOWAIT` while paused before its Storage POST.
+The competing broker must reject **without writing**, after which the
+winner's readback SHA and sealed revision are verified. A replay is denied
+and the existing Storage-first erasure coordinator must remove the object
+before database metadata.
+
+The probe validates both DB and API addresses are **loopback**, and neither
+loads nor uses hosted Supabase credentials. It uses a synthetic trusted
+identity instead of the real Auth HTTP gateway, so it does **not** prove
+JWT/session revocation behavior, hosted provider concurrency, broker crash
+recovery, infrastructure network/secret segregation or retention scheduling.
+CI failure blocks merge review. Hosted staged end-to-end races and operational
+review remain release gates.
