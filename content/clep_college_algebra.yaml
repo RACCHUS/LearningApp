@@ -24,6 +24,8 @@ source_releases:
     question_count_approx: 60
     practice_time_limit_minutes: 90
     default_question_count: 60
+    allowed_tools:
+    - calculator
     recommending_body: ACE
     recommended_credits: 3
     credit_disclaimer: The American Council on Education (ACE) recommends 3 semester

@@ -808,6 +808,20 @@ Map<String, dynamic> _prepareManifestPayload({
     releases.add(Map<String, dynamic>.from(singleRelease));
   }
 
+  // Propagate blueprint authority metadata (e.g. allowed_tools, exam_code) to target_version.metadata
+  final versionMetadata = Map<String, dynamic>.from(targetVersion['metadata'] as Map? ?? {});
+  for (final r in releases) {
+    final rMeta = r['metadata'] as Map?;
+    if (rMeta != null && rMeta['role'] == 'blueprint_authority') {
+      rMeta.forEach((key, val) {
+        if (!versionMetadata.containsKey(key)) {
+          versionMetadata[key.toString()] = val;
+        }
+      });
+    }
+  }
+  targetVersion['metadata'] = versionMetadata;
+
   // 3. Collect all declared concepts across manifest (root + domains/objectives)
   final declaredConcepts = <Map<String, dynamic>>[];
   final seenConceptSlugs = <String>{};

@@ -477,14 +477,16 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
             ),
           ),
           const SizedBox(width: 6),
-          // Scientific Calculator Button (for quantitative / algebra simulation)
-          IconButton(
-            key: const Key('exam_calculator_button'),
-            icon: const Icon(Icons.calculate_outlined),
-            tooltip: 'Scientific Calculator',
-            onPressed: () => _showCalculatorSheet(context),
-          ),
-          const SizedBox(width: 4),
+          // Scientific Calculator Button (only when permitted by exam blueprint/tool policy)
+          if (session.blueprint.allowsCalculator) ...[
+            IconButton(
+              key: const Key('exam_calculator_button'),
+              icon: const Icon(Icons.calculate_outlined),
+              tooltip: 'Scientific Calculator',
+              onPressed: () => _showCalculatorSheet(context),
+            ),
+            const SizedBox(width: 4),
+          ],
           // Question Navigator Matrix Button
           IconButton(
             icon: const Icon(Icons.grid_view_rounded),

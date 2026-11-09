@@ -154,7 +154,7 @@ void main() {
       expect(find.textContaining('Estimated Scaled Score'), findsNothing);
     });
 
-    testWidgets('MockExamScreen launches scientific calculator tool from exam AppBar and allows calculations', (tester) async {
+    testWidgets('Negative guard: MockExamScreen does NOT display calculator for non-eligible exams (Security+ SY0-701)', (tester) async {
       tester.view.physicalSize = const Size(1200, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -169,7 +169,69 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 1. Verify calculator action icon in the exam app bar
+      // Calculator tool must be completely absent when not permitted by exam policy
+      expect(find.byKey(const Key('exam_calculator_button')), findsNothing);
+      expect(find.byIcon(Icons.calculate_outlined), findsNothing);
+    });
+
+    testWidgets('Positive policy: MockExamScreen launches scientific calculator tool when permitted (CLEP-ALG)', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const algebraBlueprint = MockExamBlueprint(
+        targetVersionId: 'tv-clep-alg',
+        examCode: 'CLEP-ALG',
+        title: 'CLEP College Algebra Examination',
+        timeLimitMinutes: 90,
+        allowedTools: {'calculator'},
+        domainWeights: [
+          DomainWeightConstraint(
+            domainId: 'dom-alg-1',
+            domainCode: '1.0',
+            domainTitle: 'Algebraic operations',
+            weight: 1.0,
+          ),
+        ],
+      );
+
+      final algebraSession = MockExamSession(
+        id: 'session-clep-alg-1',
+        blueprint: algebraBlueprint,
+        items: [
+          AssessmentItem(
+            id: 'item-alg-1',
+            createdAt: now,
+            updatedAt: now,
+            interactionType: AssessmentInteractionType.singleChoice,
+            prompt: r'Which of the following is equivalent to $(8x^6 y^{-3})^{2/3}$?',
+            responseSpec: const {
+              'options': [
+                r'\frac{4x^4}{y^2}',
+                r'4x^4 y^2',
+                r'\frac{16x^4}{y^2}',
+                r'\frac{4x^9}{y^5}',
+              ],
+            },
+            scoringSpec: const {'correct_index': 0},
+            explanation: 'Apply the power of a product rule.',
+          ),
+        ],
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: MockExamScreen(initialSession: algebraSession),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify calculator action icon in the exam app bar for eligible exam
       final calcButton = find.byKey(const Key('exam_calculator_button'));
       expect(calcButton, findsOneWidget);
 
@@ -183,15 +245,26 @@ void main() {
       expect(find.textContaining('Practice substitute only'), findsOneWidget);
       expect(find.textContaining('Not official TI-30XS software'), findsOneWidget);
 
-      // 4. Close calculator sheet and return to exam question
+      // 4. Perform an arithmetic operation inside the active exam sheet: 5 * 6 = 30
+      await tester.tap(find.widgetWithText(FilledButton, '5'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, '×'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, '6'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, '='));
+      await tester.pumpAndSettle();
+      expect(find.text('30'), findsOneWidget);
+
+      // 5. Close calculator sheet and return to exam question
       final closeButton = find.byKey(const Key('close_calculator_sheet_button'));
       expect(closeButton, findsOneWidget);
       await tester.tap(closeButton);
       await tester.pumpAndSettle();
 
-      // 5. Verify returned to active exam view
+      // 6. Verify returned to active exam view with original question intact
       expect(find.text('Exam Tools · Scientific Calculator'), findsNothing);
-      expect(find.text('Question 1 of 2'), findsOneWidget);
+      expect(find.textContaining(r'(8x^6 y^{-3})^{2/3}'), findsOneWidget);
     });
 
     testWidgets('routes to SecureExamPartPracticeScreen when examPartKey is provided', (tester) async {
@@ -235,6 +308,64 @@ void main() {
         find.text('Sign in with a permanent account for reviewed exam-part practice.'),
         findsOneWidget,
       );
+    });
+
+    test('MockExamBlueprint tool policy: allowsCalculator accurately gates permissions', () {
+      // 1. Explicit allowedTools: {'calculator'} -> true
+      const calcAllowed = MockExamBlueprint(
+        targetVersionId: 'tv-1',
+        examCode: 'CLEP-ALG',
+        title: 'College Algebra',
+        allowedTools: {'calculator'},
+        domainWeights: [],
+      );
+      expect(calcAllowed.allowsCalculator, isTrue);
+
+      // 2. Metadata allowed_tools list -> true
+      const metaAllowed = MockExamBlueprint(
+        targetVersionId: 'tv-2',
+        examCode: 'CLEP-CALC',
+        title: 'Calculus',
+        metadata: {
+          'allowed_tools': ['scientific_calculator'],
+        },
+        domainWeights: [],
+      );
+      expect(metaAllowed.allowsCalculator, isTrue);
+
+      // 3. Metadata calculator_allowed flag -> true
+      const flagAllowed = MockExamBlueprint(
+        targetVersionId: 'tv-3',
+        examCode: 'STAT-101',
+        title: 'Statistics',
+        metadata: {'calculator_allowed': true},
+        domainWeights: [],
+      );
+      expect(flagAllowed.allowsCalculator, isTrue);
+
+      // 4. Default / Security+ / Psychology -> false
+      const secPlus = MockExamBlueprint(
+        targetVersionId: 'tv-4',
+        examCode: 'SY0-701',
+        title: 'CompTIA Security+',
+        domainWeights: [],
+      );
+      expect(secPlus.allowsCalculator, isFalse);
+
+      const psychology = MockExamBlueprint(
+        targetVersionId: 'tv-5',
+        examCode: 'CLEP-PSY',
+        title: 'CLEP Introductory Psychology',
+        domainWeights: [],
+      );
+      expect(psychology.allowsCalculator, isFalse);
+
+      // 5. Serialization round-trip preserves allowedTools
+      final json = calcAllowed.toJson();
+      expect(json['allowed_tools'], equals(['calculator']));
+      final roundTrip = MockExamBlueprint.fromJson(json);
+      expect(roundTrip.allowsCalculator, isTrue);
+      expect(roundTrip.allowedTools, contains('calculator'));
     });
   });
 }

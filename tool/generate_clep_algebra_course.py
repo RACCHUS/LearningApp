@@ -74,6 +74,7 @@ def build_manifest() -> dict:
                     "question_count_approx": 60,
                     "practice_time_limit_minutes": 90,
                     "default_question_count": 60,
+                    "allowed_tools": ["calculator"],
                     "recommending_body": "ACE",
                     "recommended_credits": 3,
                     "credit_disclaimer": "The American Council on Education (ACE) recommends 3 semester hours of college credit for a scaled score of 50. However, credit acceptance policies, minimum score thresholds, and course equivalencies are determined independently by each college or university registrar.",
