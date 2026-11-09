@@ -125,6 +125,9 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     }
 
     state = state!.copyWith(userResponses: updated);
+    if (state!.isProtectedSimulation) {
+      ClepSimulationService.cacheResponses(state!.id, updated);
+    }
   }
 
   void toggleFlag(String itemId) {
@@ -189,6 +192,7 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
         );
         final report = submissionResult.toDiagnosticReport(finishedSession);
         _submitted = true;
+        ClepSimulationService.clearCachedResponses(finishedSession.id);
         return report;
       }
 

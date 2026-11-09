@@ -361,13 +361,15 @@ class TargetDetailScreen extends ConsumerWidget {
                           ),
                         ],
                         const SizedBox(height: DesignTokens.space4),
-                        if (ver.isPublished) ...[
+                        if (ver.isPublished && ver.isSimulationExamEligible) ...[
                           SimulationExamLaunchCard(
                             targetVersion: ver,
                             targetId: target.id,
                             targetTitle: target.title,
                           ),
                           const SizedBox(height: DesignTokens.space3),
+                        ],
+                        if (ver.isPublished) ...[
                           DiagnosticLaunchBanner(
                             targetId: target.id,
                             targetVersionId: ver.id,

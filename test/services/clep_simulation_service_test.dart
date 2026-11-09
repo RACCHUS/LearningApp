@@ -61,6 +61,53 @@ void main() {
         };
       }
 
+      if (rpcName == 'clep_get_active_simulation_attempt') {
+        final versionId = params['p_target_version_id'] as String?;
+        if (versionId == 'active-version') {
+          return {
+            'has_active_attempt': true,
+            'attempt_id': sampleAttemptId,
+            'issued_at': '2026-11-08T14:00:00.000Z',
+            'expires_at': '2026-11-08T15:35:00.000Z',
+            'seconds_remaining': 2400,
+            'total_questions': 60,
+          };
+        }
+        return {'has_active_attempt': false};
+      }
+
+      if (rpcName == 'clep_recover_simulation_exam') {
+        final versionId = params['p_target_version_id'] as String?;
+        return {
+          'attempt_id': sampleAttemptId,
+          'target_version_id': versionId,
+          'total_questions': 60,
+          'time_limit_minutes': 90,
+          'issued_at': '2026-11-08T14:00:00.000Z',
+          'expires_at': '2026-11-08T15:35:00.000Z',
+          'seconds_remaining': 2400,
+          'is_resumed': true,
+          'questions': List.generate(60, (index) {
+            final dCode = index < 15 ? '1.0' : (index < 30 ? '2.0' : (index < 48 ? '3.0' : '4.0'));
+            return {
+              'id': 'alg-sim-item-${index + 1}',
+              'interaction_type': 'single_choice',
+              'prompt': 'Question #${index + 1}: Algebraic Operations & Functions',
+              'domain_code': dCode,
+              'response_spec': {
+                'options': ['Choice A', 'Choice B', 'Choice C', 'Choice D'],
+              },
+              'metadata': {
+                'bank': 'simulation_exam',
+                'item_role': 'clep_simulation_pool',
+                'domain_code': dCode,
+              },
+              'concept_ids': ['concept-${(index % 20) + 1}'],
+            };
+          }),
+        };
+      }
+
       if (rpcName == 'clep_submit_simulation_exam') {
         final attemptId = params['p_attempt_id'] as String?;
         final responses = params['p_responses'] as Map<String, dynamic>?;
@@ -294,6 +341,67 @@ void main() {
           examTitle: 'College Algebra',
         ),
         throwsA(isA<ClepSimulationException>()),
+      );
+    });
+
+    test('recovers active in-progress simulation attempt with remaining time', () async {
+      final service = ClepSimulationService(transport: mockRpcTransport);
+
+      final session = await service.recoverSimulationExam(
+        targetVersionId: algTargetVersionId,
+        examCode: 'CLEP-ALG',
+        examTitle: 'College Algebra',
+        allowedTools: {'calculator'},
+      );
+
+      expect(session.id, equals(sampleAttemptId));
+      expect(session.isProtectedSimulation, isTrue);
+      expect(session.timeLimit.inSeconds, equals(2400));
+      expect(session.blueprint.metadata['is_resumed'], isTrue);
+      expect(session.items.length, equals(60));
+    });
+
+    test('checks active simulation attempt status correctly', () async {
+      final service = ClepSimulationService(transport: mockRpcTransport);
+
+      final active = await service.getActiveSimulationAttempt('active-version');
+      expect(active.hasActiveAttempt, isTrue);
+      expect(active.attemptId, equals(sampleAttemptId));
+      expect(active.secondsRemaining, equals(2400));
+
+      final inactive = await service.getActiveSimulationAttempt('inactive-version');
+      expect(inactive.hasActiveAttempt, isFalse);
+    });
+
+    test('throws ClepSimulationException with MISSING_DOMAIN_CODE when question has no domain_code', () async {
+      Future<dynamic> mockBadDomainTransport(String rpcName, Map<String, dynamic> params) async {
+        return {
+          'attempt_id': 'bad-att-1',
+          'target_version_id': 'v1',
+          'total_questions': 1,
+          'time_limit_minutes': 90,
+          'issued_at': '2026-11-08T14:00:00.000Z',
+          'questions': [
+            {
+              'id': 'bad-q-1',
+              'interaction_type': 'single_choice',
+              'prompt': 'Prompt without domain code',
+              'response_spec': {'options': ['A', 'B']},
+              'metadata': {},
+            }
+          ],
+        };
+      }
+
+      final badService = ClepSimulationService(transport: mockBadDomainTransport);
+      expect(
+        () => badService.issueSimulationExam(
+          targetVersionId: 'v1',
+          examCode: 'CLEP-ALG',
+          examTitle: 'Algebra',
+        ),
+        throwsA(predicate((e) =>
+            e is ClepSimulationException && e.code == 'MISSING_DOMAIN_CODE')),
       );
     });
   });

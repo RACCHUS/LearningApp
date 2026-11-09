@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/learning_target.dart';
+import '../../providers/assessment_engine_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/design_tokens.dart';
 
@@ -11,10 +12,11 @@ import '../../theme/design_tokens.dart';
 ///
 /// Discloses:
 /// - Official blueprint specifications (question count, time limit, domain weighting).
-/// - Tool policies (built-in scientific calculator permitted for College Algebra).
+/// - Tool policies (built-in scientific calculator permitted exclusively when blueprint allows).
 /// - Single-attempt policy to protect question bank security.
-/// - Clear authentication requirements before initiation.
-class SimulationExamLaunchCard extends ConsumerWidget {
+/// - Clear registered account requirement (rejecting anonymous guest accounts).
+/// - Attempt recovery banner and button when an active unexpired attempt is in progress.
+class SimulationExamLaunchCard extends ConsumerStatefulWidget {
   final TargetVersion targetVersion;
   final String targetId;
   final String targetTitle;
@@ -26,31 +28,58 @@ class SimulationExamLaunchCard extends ConsumerWidget {
     required this.targetTitle,
   });
 
-  bool get _isSimulationEligible {
-    final meta = targetVersion.metadata;
-    return meta['exam_code'] != null ||
-        meta['role'] == 'blueprint_authority' ||
-        meta['bank'] == 'simulation_exam';
+  @override
+  ConsumerState<SimulationExamLaunchCard> createState() =>
+      _SimulationExamLaunchCardState();
+}
+
+class _SimulationExamLaunchCardState extends ConsumerState<SimulationExamLaunchCard> {
+  bool _hasActiveAttempt = false;
+  int? _secondsRemaining;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveAttempt();
+  }
+
+  Future<void> _checkActiveAttempt() async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthSuccess || authState.user.isAnonymous) {
+      return;
+    }
+
+    if (!widget.targetVersion.isSimulationExamEligible) {
+      return;
+    }
+
+    try {
+      final res = await ref
+          .read(clepSimulationServiceProvider)
+          .getActiveSimulationAttempt(widget.targetVersion.id);
+      if (mounted) {
+        setState(() {
+          _hasActiveAttempt = res.hasActiveAttempt;
+          _secondsRemaining = res.secondsRemaining;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!_isSimulationEligible) {
+  Widget build(BuildContext context) {
+    if (!widget.targetVersion.isSimulationExamEligible) {
       return const SizedBox.shrink();
     }
 
     final theme = Theme.of(context);
-    final meta = targetVersion.metadata;
+    final meta = widget.targetVersion.metadata;
     final examCode = meta['exam_code'] as String? ?? 'CLEP-ALG';
     final timeLimit = (meta['time_limit_minutes'] as num?)?.toInt() ?? 90;
     final questionCount = (meta['default_question_count'] as num?)?.toInt() ??
         (meta['question_count_approx'] as num?)?.toInt() ??
         60;
-    final allowedTools = (meta['allowed_tools'] as List?)
-            ?.map((e) => e.toString().toLowerCase())
-            .toSet() ??
-        const {'calculator'};
-    final allowsCalculator = allowedTools.contains('calculator');
+    final allowsCalculator = widget.targetVersion.allowsCalculator;
 
     return Card(
       key: const Key('simulation-exam-launch-card'),
@@ -59,7 +88,9 @@ class SimulationExamLaunchCard extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+          color: _hasActiveAttempt
+              ? theme.colorScheme.error.withValues(alpha: 0.5)
+              : theme.colorScheme.primary.withValues(alpha: 0.35),
           width: 1.5,
         ),
       ),
@@ -73,12 +104,16 @@ class SimulationExamLaunchCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    color: _hasActiveAttempt
+                        ? theme.colorScheme.errorContainer
+                        : theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    Icons.assignment_outlined,
-                    color: theme.colorScheme.primary,
+                    _hasActiveAttempt ? Icons.timelapse : Icons.assignment_outlined,
+                    color: _hasActiveAttempt
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.primary,
                     size: 24,
                   ),
                 ),
@@ -90,7 +125,9 @@ class SimulationExamLaunchCard extends ConsumerWidget {
                       Row(
                         children: [
                           Text(
-                            'Official Simulation Exam',
+                            _hasActiveAttempt
+                                ? 'Active Simulation in Progress'
+                                : 'Official Simulation Exam',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -116,7 +153,9 @@ class SimulationExamLaunchCard extends ConsumerWidget {
                         ],
                       ),
                       Text(
-                        'Psychometrically balanced practice under full testing conditions',
+                        _hasActiveAttempt
+                          ? 'You have an ongoing examination attempt with remaining time.'
+                          : 'Psychometrically balanced practice under full testing conditions',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -128,7 +167,7 @@ class SimulationExamLaunchCard extends ConsumerWidget {
             ),
             const SizedBox(height: DesignTokens.space3),
             Text(
-              'Complete 60 questions across all 4 official blueprint domains in 90 minutes. '
+              'Complete $questionCount questions across all official blueprint domains in $timeLimit minutes. '
               'Server-side grading provides diagnostic scores, domain mastery analysis, '
               'and recommended remediation topics upon submission.',
               style: theme.textTheme.bodyMedium,
@@ -146,7 +185,10 @@ class SimulationExamLaunchCard extends ConsumerWidget {
                 _buildInfoChip(
                   context,
                   icon: Icons.timer_outlined,
-                  label: '$timeLimit Minutes',
+                  label: _hasActiveAttempt && _secondsRemaining != null
+                      ? '${(_secondsRemaining! / 60).ceil()} min remaining'
+                      : '$timeLimit Minutes',
+                  highlight: _hasActiveAttempt,
                 ),
                 if (allowsCalculator)
                   _buildInfoChip(
@@ -196,10 +238,16 @@ class SimulationExamLaunchCard extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                key: const Key('start-simulation-exam-button'),
+                key: _hasActiveAttempt
+                    ? const Key('resume-simulation-exam-button')
+                    : const Key('start-simulation-exam-button'),
                 onPressed: () => _handleLaunchSimulation(context, ref),
-                icon: const Icon(Icons.play_circle_filled_outlined),
-                label: Text('Take Official Simulation ($timeLimit min)'),
+                icon: Icon(_hasActiveAttempt
+                    ? Icons.replay_outlined
+                    : Icons.play_circle_filled_outlined),
+                label: Text(_hasActiveAttempt
+                    ? 'Resume Official Simulation (${(_secondsRemaining != null ? (_secondsRemaining! / 60).ceil() : timeLimit)} min remaining)'
+                    : 'Take Official Simulation ($timeLimit min)'),
               ),
             ),
           ],
@@ -255,7 +303,9 @@ class SimulationExamLaunchCard extends ConsumerWidget {
 
   void _handleLaunchSimulation(BuildContext context, WidgetRef ref) {
     final authState = ref.read(authProvider);
-    if (authState is! AuthSuccess) {
+    final isGuestOrAnonymous = authState is! AuthSuccess || authState.user.isAnonymous;
+
+    if (isGuestOrAnonymous) {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
@@ -267,9 +317,10 @@ class SimulationExamLaunchCard extends ConsumerWidget {
             ],
           ),
           content: const Text(
-            'Official timed CLEP simulation exams require an authenticated learner account '
-            'to enforce server-side timing and maintain exam bank security.\n\n'
-            'Please sign in or create an account to begin your 90-minute examination.',
+            'Official timed CLEP simulation exams enforce a single-attempt security policy and '
+            'require a verified, registered learner account (not a guest session) to ensure attempt '
+            'integrity and maintain official scoring records.\n\n'
+            'Please sign in or register with Google to access your official simulation examination.',
           ),
           actions: [
             TextButton(
@@ -282,7 +333,7 @@ class SimulationExamLaunchCard extends ConsumerWidget {
                 Navigator.of(dialogCtx).pop();
                 context.push('/login');
               },
-              child: const Text('Sign In'),
+              child: const Text('Sign In / Register'),
             ),
           ],
         ),
@@ -290,7 +341,7 @@ class SimulationExamLaunchCard extends ConsumerWidget {
       return;
     }
 
-    // Authenticated: navigate to simulation launcher screen
-    context.push('/target/$targetId/simulation/${targetVersion.id}');
+    // Authenticated & Registered: navigate to simulation launcher screen
+    context.push('/target/${widget.targetId}/simulation/${widget.targetVersion.id}');
   }
 }

@@ -93,7 +93,7 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261109150000'));
+      expect(scanResult.migrations.last.version, equals('20261109170000'));
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
@@ -108,6 +108,7 @@ void main() {
       expect(bundle, contains('20261108000000_assessment_item_server_grading.sql'));
       expect(bundle, contains('20261108140000_clep_simulation_bank_and_item_privacy.sql'));
       expect(bundle, contains('20261109150000_clep_simulation_domain_code_projection.sql'));
+      expect(bundle, contains('20261109170000_clep_simulation_attempt_recovery_and_eligibility.sql'));
     });
   });
 }

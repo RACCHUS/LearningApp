@@ -59,6 +59,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _MockAuthNotifier(GuestMode())),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: SimulationExamLaunchCard(
@@ -121,7 +124,96 @@ void main() {
       // Verify authentication dialog pops up
       expect(find.text('Sign In Required'), findsOneWidget);
       expect(find.byKey(const Key('simulation-auth-sign-in-button')), findsOneWidget);
-      expect(find.textContaining('Official timed CLEP simulation exams require an authenticated learner account'), findsOneWidget);
+      expect(find.textContaining('Official timed CLEP simulation exams enforce a single-attempt security policy'), findsOneWidget);
+    });
+
+    testWidgets('SimulationExamLaunchCard detects active attempt and renders resume button with remaining time', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      Future<dynamic> mockTransport(String rpcName, Map<String, dynamic> params) async {
+        if (rpcName == 'clep_get_active_simulation_attempt') {
+          return {
+            'has_active_attempt': true,
+            'attempt_id': 'att-active-42',
+            'seconds_remaining': 3450, // 3450 / 60 = 57.5 -> 58 min
+            'total_questions': 60,
+            'issued_at': now.toIso8601String(),
+            'expires_at': now.add(const Duration(minutes: 57, seconds: 30)).toIso8601String(),
+          };
+        }
+        throw UnimplementedError('Unexpected RPC $rpcName');
+      }
+
+      final mockClepService = ClepSimulationService(transport: mockTransport);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _MockAuthNotifier(AuthSuccess(mockAuthenticatedUser))),
+            clepSimulationServiceProvider.overrideWithValue(mockClepService),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SimulationExamLaunchCard(
+                targetVersion: testCollegeAlgebraVersion,
+                targetId: 'target-clep-alg',
+                targetTitle: 'CLEP College Algebra',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify active attempt indicator and resume button
+      expect(find.text('Active Simulation in Progress'), findsOneWidget);
+      expect(find.byKey(const Key('resume-simulation-exam-button')), findsOneWidget);
+      expect(find.textContaining('Resume Official Simulation (58 min remaining)'), findsOneWidget);
+    });
+
+    testWidgets('SimulationExamLaunchCard renders SizedBox.shrink if target version is not simulation exam eligible', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final nonEligibleVersion = TargetVersion(
+        id: 'tv-generic',
+        targetId: 'target-generic',
+        versionCode: '2026',
+        title: 'Generic Exam',
+        status: TargetVersionStatus.published,
+        metadata: const {
+          'role': 'blueprint_authority',
+          'exam_code': 'GEN-101',
+          // Missing bank: 'simulation_exam'
+        },
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _MockAuthNotifier(AuthSuccess(mockAuthenticatedUser))),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SimulationExamLaunchCard(
+                targetVersion: nonEligibleVersion,
+                targetId: 'target-generic',
+                targetTitle: 'Generic Exam',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('simulation-exam-launch-card')), findsNothing);
     });
 
     testWidgets('TargetSimulationScreen provides full briefing and launches into 60-question MockExamScreen with calculator tool', (tester) async {

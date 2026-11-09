@@ -11,7 +11,7 @@ import '../../theme/design_tokens.dart';
 import '../assessment/mock_exam_screen.dart';
 
 /// Student-facing screen that guides learners through the pre-exam briefing,
-/// authentication verification, server-side issuance, and execution of
+/// authentication verification, server-side issuance, attempt recovery, and execution of
 /// official, full-length timed simulation exams (e.g., CLEP College Algebra).
 class TargetSimulationScreen extends ConsumerStatefulWidget {
   final String targetId;
@@ -34,7 +34,35 @@ class _TargetSimulationScreenState
   bool _isIssuing = false;
   String? _errorMessage;
 
-  Future<void> _startSimulation({
+  bool _hasActiveAttempt = false;
+  int? _secondsRemaining;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveAttempt();
+  }
+
+  Future<void> _checkActiveAttempt() async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthSuccess || authState.user.isAnonymous) {
+      return;
+    }
+
+    try {
+      final res = await ref
+          .read(clepSimulationServiceProvider)
+          .getActiveSimulationAttempt(widget.targetVersionId);
+      if (mounted) {
+        setState(() {
+          _hasActiveAttempt = res.hasActiveAttempt;
+          _secondsRemaining = res.secondsRemaining;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleStartOrResume({
     required String examCode,
     required String examTitle,
     required Set<String> allowedTools,
@@ -45,13 +73,20 @@ class _TargetSimulationScreenState
     });
 
     try {
-      final session =
-          await ref.read(clepSimulationServiceProvider).issueSimulationExam(
-                targetVersionId: widget.targetVersionId,
-                examCode: examCode,
-                examTitle: examTitle,
-                allowedTools: allowedTools,
-              );
+      final clepService = ref.read(clepSimulationServiceProvider);
+      final session = _hasActiveAttempt
+          ? await clepService.recoverSimulationExam(
+              targetVersionId: widget.targetVersionId,
+              examCode: examCode,
+              examTitle: examTitle,
+              allowedTools: allowedTools,
+            )
+          : await clepService.issueSimulationExam(
+              targetVersionId: widget.targetVersionId,
+              examCode: examCode,
+              examTitle: examTitle,
+              allowedTools: allowedTools,
+            );
 
       if (!mounted) return;
       setState(() {
@@ -67,7 +102,7 @@ class _TargetSimulationScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to issue simulation exam: $e';
+        _errorMessage = 'Failed to issue or resume simulation exam: $e';
         _isIssuing = false;
       });
     }
@@ -80,10 +115,11 @@ class _TargetSimulationScreenState
     }
 
     final authState = ref.watch(authProvider);
+    final isGuestOrAnonymous = authState is! AuthSuccess || authState.user.isAnonymous;
     final theme = Theme.of(context);
 
-    // 1. Unauthenticated gate
-    if (authState is! AuthSuccess) {
+    // 1. Unauthenticated or Anonymous Guest Gate
+    if (isGuestOrAnonymous) {
       return Scaffold(
         appBar: AppBar(title: const Text('Simulation Exam')),
         body: Center(
@@ -109,7 +145,9 @@ class _TargetSimulationScreenState
                       ),
                       const SizedBox(height: DesignTokens.space3),
                       Text(
-                        'Authentication Required',
+                        isGuestOrAnonymous
+                            ? 'Registered Account Required'
+                            : 'Authentication Required',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -117,8 +155,9 @@ class _TargetSimulationScreenState
                       ),
                       const SizedBox(height: DesignTokens.space2),
                       Text(
-                        'Official timed CLEP simulation exams require an authenticated learner account '
-                        'to record attempt timing and protect exam security.',
+                        isGuestOrAnonymous
+                            ? 'Official timed CLEP simulation exams enforce single-attempt security and require a verified, registered learner account. Anonymous guest sessions are not eligible to take or hold official attempts.'
+                            : 'Official timed CLEP simulation exams require an authenticated learner account to record attempt timing and protect exam bank confidentiality.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium,
                       ),
@@ -129,7 +168,9 @@ class _TargetSimulationScreenState
                           key: const Key('simulation-auth-sign-in-button'),
                           onPressed: () => context.push('/login'),
                           icon: const Icon(Icons.login),
-                          label: const Text('Sign In to Continue'),
+                          label: Text(isGuestOrAnonymous
+                              ? 'Sign In / Register with Google'
+                              : 'Sign In to Continue'),
                         ),
                       ),
                       const SizedBox(height: DesignTokens.space2),
@@ -153,7 +194,9 @@ class _TargetSimulationScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Official Simulation Exam Briefing'),
+        title: Text(_hasActiveAttempt
+            ? 'Resume Simulation Exam'
+            : 'Official Simulation Exam Briefing'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -168,20 +211,29 @@ class _TargetSimulationScreenState
             error: (err, _) =>
                 Center(child: Text('Failed to load target version: $err')),
             data: (version) {
-              final meta = version?.metadata ?? const {};
+              if (version == null || !version.isSimulationExamEligible) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(DesignTokens.space4),
+                    child: Text(
+                      'This course does not offer an official timed simulation exam.',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                );
+              }
+
+              final meta = version.metadata;
               final examCode = meta['exam_code'] as String? ?? 'CLEP-ALG';
-              final examTitle = version?.title ?? target?.title ?? 'CLEP College Algebra';
+              final examTitle = version.title ?? target?.title ?? 'CLEP College Algebra';
               final timeLimit =
                   (meta['time_limit_minutes'] as num?)?.toInt() ?? 90;
               final questionCount =
                   (meta['default_question_count'] as num?)?.toInt() ??
                       (meta['question_count_approx'] as num?)?.toInt() ??
                       60;
-              final allowedTools = (meta['allowed_tools'] as List?)
-                      ?.map((e) => e.toString().toLowerCase())
-                      .toSet() ??
-                  const {'calculator'};
-              final allowsCalculator = allowedTools.contains('calculator');
+              final allowsCalculator = version.allowsCalculator;
+              final allowedTools = version.allowedExamTools;
 
               return Center(
                 child: SingleChildScrollView(
@@ -193,7 +245,9 @@ class _TargetSimulationScreenState
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                          color: _hasActiveAttempt
+                              ? theme.colorScheme.error.withValues(alpha: 0.5)
+                              : theme.colorScheme.primary.withValues(alpha: 0.35),
                           width: 1.5,
                         ),
                       ),
@@ -207,13 +261,19 @@ class _TargetSimulationScreenState
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
+                                    color: _hasActiveAttempt
+                                        ? theme.colorScheme.errorContainer
+                                        : theme.colorScheme.primaryContainer,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    Icons.school_outlined,
+                                    _hasActiveAttempt
+                                        ? Icons.timelapse
+                                        : Icons.school_outlined,
                                     size: 32,
-                                    color: theme.colorScheme.primary,
+                                    color: _hasActiveAttempt
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.primary,
                                   ),
                                 ),
                                 const SizedBox(width: DesignTokens.space3),
@@ -229,7 +289,9 @@ class _TargetSimulationScreenState
                                         ),
                                       ),
                                       Text(
-                                        'Official Full-Length Timed Simulation ($examCode)',
+                                        _hasActiveAttempt
+                                            ? 'Active Simulation Attempt in Progress'
+                                            : 'Official Full-Length Timed Simulation ($examCode)',
                                         style: theme.textTheme.bodyMedium?.copyWith(
                                           color: theme.colorScheme.onSurfaceVariant,
                                         ),
@@ -240,6 +302,49 @@ class _TargetSimulationScreenState
                               ],
                             ),
                             const Divider(height: DesignTokens.space5),
+                            if (_hasActiveAttempt) ...[
+                              Container(
+                                padding: const EdgeInsets.all(DesignTokens.space3),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.errorContainer.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: theme.colorScheme.error.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.history_toggle_off,
+                                        color: theme.colorScheme.error, size: 24),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'In-Progress Examination Found',
+                                            style: theme.textTheme.labelLarge?.copyWith(
+                                              color: theme.colorScheme.onErrorContainer,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'You have an active attempt currently in progress with '
+                                            '${_secondsRemaining != null ? (_secondsRemaining! / 60).ceil() : timeLimit} minutes remaining. '
+                                            'You can resume your session seamlessly without penalty.',
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onErrorContainer,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: DesignTokens.space4),
+                            ],
                             Text(
                               'Examination Blueprint Specifications',
                               style: theme.textTheme.titleMedium?.copyWith(
@@ -257,7 +362,9 @@ class _TargetSimulationScreenState
                               context,
                               icon: Icons.timer_outlined,
                               title: 'Time Limit',
-                              detail: '$timeLimit continuous minutes (timer cannot be paused)',
+                              detail: _hasActiveAttempt && _secondsRemaining != null
+                                  ? '${(_secondsRemaining! / 60).ceil()} minutes remaining (from original $timeLimit continuous minutes)'
+                                  : '$timeLimit continuous minutes (timer cannot be paused)',
                             ),
                             _buildSpecRow(
                               context,
@@ -354,7 +461,7 @@ class _TargetSimulationScreenState
                                 key: const Key('confirm-start-simulation-button'),
                                 onPressed: _isIssuing
                                     ? null
-                                    : () => _startSimulation(
+                                    : () => _handleStartOrResume(
                                           examCode: examCode,
                                           examTitle: examTitle,
                                           allowedTools: allowedTools,
@@ -368,11 +475,17 @@ class _TargetSimulationScreenState
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Icon(Icons.play_arrow),
+                                    : Icon(_hasActiveAttempt
+                                        ? Icons.replay
+                                        : Icons.play_arrow),
                                 label: Text(
                                   _isIssuing
-                                      ? 'Issuing Secure Exam...'
-                                      : 'Begin $timeLimit-Minute Exam',
+                                      ? (_hasActiveAttempt
+                                          ? 'Resuming Secure Exam...'
+                                          : 'Issuing Secure Exam...')
+                                      : (_hasActiveAttempt
+                                          ? 'Resume In-Progress Exam (${(_secondsRemaining != null ? (_secondsRemaining! / 60).ceil() : timeLimit)} min left)'
+                                          : 'Begin $timeLimit-Minute Exam'),
                                 ),
                               ),
                             ),
