@@ -31,19 +31,32 @@ void main() {
           'time_limit_minutes': 90,
           'issued_at': '2026-11-08T14:00:00.000Z',
           'expires_at': '2026-11-08T15:35:00.000Z',
-          'questions': List.generate(60, (index) => {
-            'id': 'alg-sim-item-${index + 1}',
-            'interaction_type': 'single_choice',
-            'prompt': 'Question #${index + 1}: Algebraic Operations & Functions',
-            'response_spec': {
-              'options': ['Choice A', 'Choice B', 'Choice C', 'Choice D'],
-            },
-            'metadata': {
-              'bank': 'simulation_exam',
-              'item_role': 'clep_simulation_pool',
-              'domain_code': '${(index % 4) + 1}.0',
-            },
-            'concept_ids': ['concept-${(index % 20) + 1}'],
+          'questions': List.generate(60, (index) {
+            String domainCode;
+            if (index < 15) {
+              domainCode = '1.0';
+            } else if (index < 30) {
+              domainCode = '2.0';
+            } else if (index < 48) {
+              domainCode = '3.0';
+            } else {
+              domainCode = '4.0';
+            }
+            return {
+              'id': 'alg-sim-item-${index + 1}',
+              'interaction_type': 'single_choice',
+              'prompt': 'Question #${index + 1}: Algebraic Operations & Functions',
+              'domain_code': domainCode,
+              'response_spec': {
+                'options': ['Choice A', 'Choice B', 'Choice C', 'Choice D'],
+              },
+              'metadata': {
+                'bank': 'simulation_exam',
+                'item_role': 'clep_simulation_pool',
+                'domain_code': domainCode,
+              },
+              'concept_ids': ['concept-${(index % 20) + 1}'],
+            };
           }),
         };
       }
@@ -60,7 +73,7 @@ void main() {
         }
 
         // Return EXACT database contract from clep_submit_simulation_exam:
-        // Uses raw_score, accuracy_percentage, readiness_indicator, results
+        // Uses raw_score, accuracy_percentage, readiness_indicator, results with domain_code
         // OMITTING correct_count, percentage, readiness, answered_count
         return {
           'attempt_id': attemptId,
@@ -72,12 +85,26 @@ void main() {
           'readiness_indicator': 'Competitive Diagnostic Standing',
           'is_calibrated_clep_score': false,
           'scoring_disclaimer': 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating and proprietary form calibration.',
-          'results': responses.entries.map((e) => {
-            'id': e.key,
-            'answered': true,
-            'is_correct': true,
-            'user_answer': e.value,
-            'concept_ids': ['concept-1'],
+          'results': responses.entries.map((e) {
+            final idx = int.tryParse(e.key.replaceAll('alg-sim-item-', '')) ?? 1;
+            String domainCode;
+            if (idx <= 15) {
+              domainCode = '1.0';
+            } else if (idx <= 30) {
+              domainCode = '2.0';
+            } else if (idx <= 48) {
+              domainCode = '3.0';
+            } else {
+              domainCode = '4.0';
+            }
+            return {
+              'id': e.key,
+              'answered': true,
+              'is_correct': true,
+              'user_answer': e.value,
+              'domain_code': domainCode,
+              'concept_ids': ['concept-1'],
+            };
           }).toList(),
         };
       }
@@ -203,7 +230,7 @@ void main() {
         expect(itemRes.containsKey('explanation'), isFalse);
       }
 
-      // 4. Verify conversion into ExamDiagnosticReport
+      // 4. Verify conversion into ExamDiagnosticReport with exact 4-domain psychometric breakdown
       final report = result.toDiagnosticReport(answeredSession);
       expect(report.sessionId, equals(sampleAttemptId));
       expect(report.readinessEstimate.practiceScorePercentage, equals(80.0));
@@ -212,6 +239,32 @@ void main() {
       expect(report.readinessEstimate.unansweredCount, equals(0));
       expect(report.readinessEstimate.readinessHeadline, equals('Competitive Diagnostic Standing'));
       expect(report.domainDiagnostics.length, equals(4));
+
+      // Domain 1.0 (Algebraic operations - 25%): 15 questions
+      expect(report.domainDiagnostics[0].domainCode, equals('1.0'));
+      expect(report.domainDiagnostics[0].totalQuestions, equals(15));
+      expect(report.domainDiagnostics[0].domainWeight, equals(0.25));
+
+      // Domain 2.0 (Equations and inequalities - 25%): 15 questions
+      expect(report.domainDiagnostics[1].domainCode, equals('2.0'));
+      expect(report.domainDiagnostics[1].totalQuestions, equals(15));
+      expect(report.domainDiagnostics[1].domainWeight, equals(0.25));
+
+      // Domain 3.0 (Functions and their properties - 30%): 18 questions
+      expect(report.domainDiagnostics[2].domainCode, equals('3.0'));
+      expect(report.domainDiagnostics[2].totalQuestions, equals(18));
+      expect(report.domainDiagnostics[2].domainWeight, equals(0.30));
+
+      // Domain 4.0 (Number systems and operations - 20%): 12 questions
+      expect(report.domainDiagnostics[3].domainCode, equals('4.0'));
+      expect(report.domainDiagnostics[3].totalQuestions, equals(12));
+      expect(report.domainDiagnostics[3].domainWeight, equals(0.20));
+
+      expect(
+        report.domainDiagnostics.fold<int>(0, (sum, d) => sum + d.totalQuestions),
+        equals(60),
+        reason: 'Sum of domain questions must equal 60 total simulation items',
+      );
 
       // 5. Verify confidentiality in scored items: correctResponse and explanation must remain null
       expect(report.scoredItems.length, equals(60));

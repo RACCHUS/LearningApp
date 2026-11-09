@@ -254,6 +254,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Which expression represents the fully simplified radical form of \sqrt{72x^5
           y^6} where $x > 0$ and $y > 0$?
         interaction_type: single_choice
@@ -278,6 +279,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Evaluate the quotient \frac{4.8 \times 10^8}{1.2 \times 10^{-4}} and
           express the result in proper scientific notation.
         interaction_type: single_choice
@@ -301,6 +303,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       questions:
       - question_text: Which expression is equivalent to $x^{-4}$ for all non-zero
           real numbers $x$?
@@ -492,6 +495,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Which expression represents the complete factorization of $27x^3 -
           64$ over the real numbers?
         interaction_type: single_choice
@@ -517,6 +521,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Factor the four-term polynomial $x^3 + 3x^2 - 4x - 12$ completely
           over the integers.
         interaction_type: single_choice
@@ -542,6 +547,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       questions:
       - question_text: What is the complete factorization of the difference of squares
           $x^2 - 16$ over the real numbers?
@@ -724,6 +730,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Which of the following is equivalent to the complex fraction $\frac{\frac{1}{x}
           - \frac{1}{y}}{\frac{1}{x^2} - \frac{1}{y^2}}$ for all non-zero real numbers
           $x, y$ with $x \neq \pm y$?
@@ -752,6 +759,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Combine and simplify the rational expression $\frac{2}{x - 3} + \frac{5}{x
           + 2}$.
         interaction_type: single_choice
@@ -776,6 +784,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       questions:
       - question_text: What real value of $x$ must be excluded from the domain of
           the rational expression $\frac{3x + 1}{2x - 8}$?
@@ -965,6 +974,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Which inequality expresses the condition that the distance between
           a real number $x$ and $-4$ on the number line is strictly less than $7$?
         interaction_type: single_choice
@@ -989,6 +999,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: For any real number $x < 5$, which expression is equivalent to $\frac{|x
           - 5|}{x - 5}$?
         interaction_type: single_choice
@@ -1013,6 +1024,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       questions:
       - question_text: What is the geometric distance between the coordinates $-5$
           and $3$ on the real number line?
@@ -1203,6 +1215,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Condense the expression $2\ln(x) - \frac{1}{3}\ln(y) + \ln(z)$ into
           a single logarithm with coefficient 1 for positive real numbers $x, y, z$.
         interaction_type: single_choice
@@ -1228,6 +1241,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       - prompt: Evaluate the exact numerical value of the expression $\log_3(81) -
           \log_2\left(\frac{1}{8}\right) + \ln(e^5)$.
         interaction_type: single_choice
@@ -1253,6 +1267,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '1.0'
       questions:
       - question_text: What is the exact numerical value of the logarithm $\log_4(64)$?
         options:
@@ -1462,6 +1477,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: What is the solution set in interval notation for the compound inequality
           $-3 \leq 2x - 7 < 5$?
         interaction_type: single_choice
@@ -1487,6 +1503,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: A rideshare service charges a flat reservation fee of $\$3.50$ plus
           $\$2.25$ per mile traveled. A traveler has a strict maximum budget of $\$26.00$.
           What is the maximum integer number of whole miles the traveler can travel?
@@ -1514,6 +1531,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       questions:
       - question_text: Solve the linear equation $4x - 7 = 13$ for $x$.
         options:
@@ -1709,6 +1727,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: For what real value of $k$ does the quadratic equation $x^2 - 6x +
           k = 0$ have exactly one repeated real solution?
         interaction_type: single_choice
@@ -1734,6 +1753,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: A toy rocket launched from ground level follows the height trajectory
           $h(t) = -16t^2 + 80t$ where $h(t)$ is in feet and $t$ is in seconds. At
           what positive time $t$ will the rocket hit the ground?
@@ -1759,6 +1779,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       questions:
       - question_text: What does a discriminant value of $\Delta = b^2 - 4ac = 0$
           indicate about the solutions of a quadratic equation?
@@ -1950,6 +1971,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: Solve the rational equation $\frac{x}{x - 2} + \frac{1}{x - 4} = \frac{2}{(x
           - 2)(x - 4)}$ for $x$.
         interaction_type: single_choice
@@ -1978,6 +2000,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: Find all real solutions to the absolute value equation $|3x - 5| =
           2x + 10$.
         interaction_type: single_choice
@@ -2003,6 +2026,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       questions:
       - question_text: Why must candidate solutions to radical equations always be
           checked in the original un-squared equation?
@@ -2197,6 +2221,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: For what real value of $k$ will the system of equations $2x - 3y =
           8$ and $4x - 6y = k$ be inconsistent (have no solution)?
         interaction_type: single_choice
@@ -2223,6 +2248,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: Find all points of intersection between the line $y = 2x - 1$ and
           the parabola $y = x^2 - 4$.
         interaction_type: single_choice
@@ -2249,6 +2275,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       questions:
       - question_text: Graphically, what does an inconsistent linear system in two
           variables represent?
@@ -2444,6 +2471,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: Solve the logarithmic equation $\log_2(x) + \log_2(x - 3) = 2$ for
           $x$.
         interaction_type: single_choice
@@ -2471,6 +2499,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       - prompt: An initial sample of $200$ grams of a radioactive isotope decays according
           to the model $A(t) = 200 e^{-0.035t}$, where $t$ is in years. Which expression
           gives the half-life of the isotope in years?
@@ -2497,6 +2526,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '2.0'
       questions:
       - question_text: Solve the exponential equation $2^{x + 1} = 16$ for $x$.
         options:
@@ -2698,6 +2728,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Given the function $f(x) = 2x^2 - 3x + 1$, evaluate the difference
           quotient $\frac{f(x + h) - f(x)}{h}$ for $h \neq 0$.
         interaction_type: single_choice
@@ -2723,6 +2754,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: What is the range of the quadratic function $f(x) = -(x - 3)^2 + 7$?
         interaction_type: single_choice
         response_spec:
@@ -2748,6 +2780,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: Which geometric test verifies whether a curve in the coordinate
           plane represents a function $y = f(x)$?
@@ -2938,6 +2971,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Given $f(x) = x^2 + 1$ and $g(x) = \frac{1}{x - 2}$, what is the algebraic
           formula for $(g \circ f)(x)$?
         interaction_type: single_choice
@@ -2961,6 +2995,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: What is the domain of $(f \circ g)(x)$ where $f(x) = \sqrt{x}$ and
           $g(x) = 2x - 6$?
         interaction_type: single_choice
@@ -2986,6 +3021,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: If $f(x) = x + 3$ and $g(x) = x^2$, what is the value of the
           composite function $(f \circ g)(2)$?
@@ -3179,6 +3215,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: What are all $x$-intercepts and the $y$-intercept of the quadratic
           function $f(x) = x^2 - 6x + 8$?
         interaction_type: single_choice
@@ -3203,6 +3240,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Determine whether the function $g(x) = 2x^3 - 5x$ is even, odd, or
           neither.
         interaction_type: single_choice
@@ -3227,6 +3265,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: What algebraic condition defines an even function $f(x)$ for
           all $x$ in its domain?
@@ -3417,6 +3456,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: If the point $(3, 8)$ lies on the graph of $y = f(x)$, what point
           must lie on the graph of $y = 2f(x - 1) + 3$?
         interaction_type: single_choice
@@ -3443,6 +3483,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Write the equation of the function $g(x)$ resulting from reflecting
           the parent square root function $f(x) = \sqrt{x}$ across the $y$-axis and
           shifting it up $2$ units.
@@ -3469,6 +3510,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: What geometric shift does the transformation $g(x) = f(x -
           5)$ represent relative to $f(x)$?
@@ -3659,6 +3701,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: What domain restriction must be placed on the quadratic function $f(x)
           = (x - 2)^2 + 3$ so that its inverse $f^{-1}(x)$ exists as a function?
         interaction_type: single_choice
@@ -3685,6 +3728,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: If $f(x) = 4x - 7$, which of the following is the inverse function
           $f^{-1}(x)$?
         interaction_type: single_choice
@@ -3708,6 +3752,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: Which geometric test verifies whether a function has an inverse
           that is also a function?
@@ -3899,6 +3944,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Find the horizontal asymptote of the rational function $f(x) = \frac{6x^2
           - 5x + 1}{2x^2 + 7}$.
         interaction_type: single_choice
@@ -3924,6 +3970,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       - prompt: Find the slant (oblique) asymptote of the rational function $f(x)
           = \frac{2x^2 + 5x - 3}{x + 1}$.
         interaction_type: single_choice
@@ -3949,6 +3996,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '3.0'
       questions:
       - question_text: What is the horizontal asymptote of the rational function $f(x)
           = \frac{4x - 1}{2x + 5}$?
@@ -4158,6 +4206,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Which algebraic field property is demonstrated by the equation $3(x
           + 4) = 3x + 12$?
         interaction_type: single_choice
@@ -4181,6 +4230,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: What is the unique prime factorization of the integer $360$?
         interaction_type: single_choice
         response_spec:
@@ -4203,6 +4253,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       questions:
       - question_text: To which subsets of the real number system does the integer
           $-4$ belong?
@@ -4391,6 +4442,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Multiply the complex numbers $(3 - 2i)(4 + 5i)$ and write the result
           in standard form $a + bi$.
         interaction_type: single_choice
@@ -4415,6 +4467,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Divide the complex numbers $\frac{5 + i}{2 - 3i}$ and express the
           quotient in standard form $a + bi$.
         interaction_type: single_choice
@@ -4440,6 +4493,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       questions:
       - question_text: What is the value of $i^2$ by definition of the imaginary unit
           $i$?
@@ -4633,6 +4687,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Calculate the sum of the first 30 terms of the arithmetic series $\sum_{k=1}^{30}
           (3k - 2)$.
         interaction_type: single_choice
@@ -4657,6 +4712,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Evaluate the exact sum of the infinite geometric series $12 + 4 +
           \frac{4}{3} + \frac{4}{9} + \dots$.
         interaction_type: single_choice
@@ -4682,6 +4738,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       questions:
       - question_text: In an arithmetic sequence with initial term $a_1 = 5$ and common
           difference $d = 3$, what is the 4th term $a_4$?
@@ -4872,6 +4929,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: Find the numerical coefficient of the $x^3$ term in the binomial expansion
           of $(2x - 1)^5$.
         interaction_type: single_choice
@@ -4897,6 +4955,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       - prompt: In a regional track meet with 10 competitors, how many different ways
           can the 1st, 2nd, and 3rd place medals be awarded?
         interaction_type: single_choice
@@ -4921,6 +4980,7 @@ domains:
           item_role: summative_simulation
           is_protected: true
           exposure: timed_exam_only
+          domain_code: '4.0'
       questions:
       - question_text: What is the numerical value of $5!$ (five factorial)?
         options:

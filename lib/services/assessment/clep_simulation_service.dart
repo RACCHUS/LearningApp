@@ -119,18 +119,24 @@ class ClepSimulationSubmissionResult {
       }
     }
 
+    final domainConstraints = session.blueprint.domainWeights.isNotEmpty
+        ? session.blueprint.domainWeights
+        : ClepSimulationService.defaultClepDomainWeights(session.blueprint.examCode);
+
     final scoredItems = <ScoredItemResult>[];
     final domainStats = <String, ({int total, int correct, double earned})>{};
-    for (final domain in session.blueprint.domainWeights) {
+    for (final domain in domainConstraints) {
       domainStats[domain.domainCode] = (total: 0, correct: 0, earned: 0.0);
     }
 
     final missedConcepts = <String, int>{};
 
     for (final item in session.items) {
-      final domainCode = session.itemDomainMap[item.id] ?? '1.0';
-      final userAns = session.userResponses[item.id];
       final itemRes = itemResultMap[item.id];
+      final domainCode = itemRes?['domain_code'] as String? ??
+          session.itemDomainMap[item.id] ??
+          '1.0';
+      final userAns = session.userResponses[item.id];
       final isItemCorrect = itemRes?['is_correct'] == true;
       final cids = (itemRes?['concept_ids'] as List?)?.cast<String>() ??
           session.itemConceptMap[item.id] ??
@@ -165,7 +171,7 @@ class ClepSimulationSubmissionResult {
 
     // Domain diagnostics
     final domainDiagnostics = <DomainDiagnostic>[];
-    for (final domain in session.blueprint.domainWeights) {
+    for (final domain in domainConstraints) {
       final stats = domainStats[domain.domainCode] ?? (total: 0, correct: 0, earned: 0.0);
       final domainPct = stats.total > 0 ? (stats.earned / stats.total) * 100.0 : 0.0;
       domainDiagnostics.add(DomainDiagnostic(
@@ -280,12 +286,46 @@ class ClepSimulationService {
     }
   }
 
+  /// Default College Board blueprint domain specifications for CLEP examinations.
+  static List<DomainWeightConstraint> defaultClepDomainWeights(String examCode) {
+    if (examCode == 'CLEP-ALG') {
+      return const [
+        DomainWeightConstraint(
+          domainId: 'clep-alg-domain-1',
+          domainCode: '1.0',
+          domainTitle: 'Algebraic operations',
+          weight: 0.25,
+        ),
+        DomainWeightConstraint(
+          domainId: 'clep-alg-domain-2',
+          domainCode: '2.0',
+          domainTitle: 'Equations and inequalities',
+          weight: 0.25,
+        ),
+        DomainWeightConstraint(
+          domainId: 'clep-alg-domain-3',
+          domainCode: '3.0',
+          domainTitle: 'Functions and their properties',
+          weight: 0.30,
+        ),
+        DomainWeightConstraint(
+          domainId: 'clep-alg-domain-4',
+          domainCode: '4.0',
+          domainTitle: 'Number systems and operations',
+          weight: 0.20,
+        ),
+      ];
+    }
+    return const [];
+  }
+
   /// Issues an authenticated CLEP simulation exam from the database.
   ///
   /// Enforces:
   /// - Server-side authentication and single-attempt constraint.
   /// - Delivery of safe options only; scoring keys and explanations remain permanently server-side.
   /// - Proper exam tool policy mapping (e.g., allowedTools: {'calculator'} for College Algebra).
+  /// - Accurate 4-domain psychometric tagging across all questions.
   Future<MockExamSession> issueSimulationExam({
     required String targetVersionId,
     required String examCode,
@@ -306,19 +346,61 @@ class ClepSimulationService {
     final timeLimitMins = (data['time_limit_minutes'] as num?)?.toInt() ?? 90;
     final issuedAt = DateTime.parse(data['issued_at'] as String? ?? DateTime.now().toIso8601String());
     final questionsRaw = (data['questions'] as List?) ?? [];
+    final domainsRaw = (data['domains'] as List?) ?? [];
+
+    List<DomainWeightConstraint> resolvedDomainWeights = List.of(domainWeights);
+    if (resolvedDomainWeights.isEmpty) {
+      if (domainsRaw.isNotEmpty) {
+        resolvedDomainWeights = domainsRaw.map((d) {
+          final dMap = (d as Map).cast<String, dynamic>();
+          return DomainWeightConstraint(
+            domainId: dMap['id'] as String? ?? '',
+            domainCode: dMap['code'] as String? ?? '1.0',
+            domainTitle: dMap['title'] as String? ?? 'Domain ${dMap['code']}',
+            weight: (dMap['weight'] as num?)?.toDouble() ?? 0.25,
+          );
+        }).toList();
+      } else {
+        resolvedDomainWeights = defaultClepDomainWeights(examCode);
+      }
+    }
 
     final now = DateTime.now();
     final items = <AssessmentItem>[];
     final itemDomainMap = <String, String>{};
     final itemConceptMap = <String, List<String>>{};
 
-    for (final q in questionsRaw) {
+    for (int index = 0; index < questionsRaw.length; index++) {
+      final q = questionsRaw[index];
       if (q is! Map) continue;
       final qMap = q.cast<String, dynamic>();
       final id = qMap['id'] as String;
       final cids = (qMap['concept_ids'] as List?)?.cast<String>() ?? const [];
       final meta = (qMap['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
-      final domainCode = meta['domain_code'] as String? ?? '1.0';
+
+      // Resolve domain code from:
+      // 1. Direct question field
+      // 2. Question metadata
+      // 3. Fallback based on known College Board 60-question blueprint ordering
+      //    (0..14: 1.0, 15..29: 2.0, 30..47: 3.0, 48..59: 4.0)
+      String domainCode = qMap['domain_code'] as String? ??
+          meta['domain_code'] as String? ??
+          '';
+      if (domainCode.isEmpty) {
+        if (examCode == 'CLEP-ALG' && questionsRaw.length == 60) {
+          if (index < 15) {
+            domainCode = '1.0';
+          } else if (index < 30) {
+            domainCode = '2.0';
+          } else if (index < 48) {
+            domainCode = '3.0';
+          } else {
+            domainCode = '4.0';
+          }
+        } else {
+          domainCode = '1.0';
+        }
+      }
 
       itemDomainMap[id] = domainCode;
       itemConceptMap[id] = cids;
@@ -343,7 +425,7 @@ class ClepSimulationService {
       timeLimitMinutes: timeLimitMins,
       defaultQuestionCount: items.length,
       allowedTools: allowedTools,
-      domainWeights: domainWeights,
+      domainWeights: resolvedDomainWeights,
       isProtectedSimulation: true,
       metadata: {
         'is_protected_simulation': true,

@@ -147,13 +147,14 @@ def build_manifest() -> dict:
                 title = l.get("title", "")
                 l["questions"] = FORMATIVE_QUESTIONS_BY_LESSON.get(title, [])
 
-                # Tag all 60 simulation assessment items with explicit bank and protection metadata
+                # Tag all 60 simulation assessment items with explicit bank, protection, and domain metadata
                 for item in l.get("assessment_items", []):
                     item["metadata"] = {
                         "bank": "simulation_exam",
                         "item_role": "summative_simulation",
                         "is_protected": True,
                         "exposure": "timed_exam_only",
+                        "domain_code": d.get("code"),
                     }
 
     return manifest
