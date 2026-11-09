@@ -1,8 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/assessment_engine/exam_diagnostic_report.dart';
 import '../../models/assessment_engine/mock_exam_blueprint.dart';
 import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../models/assessment_item.dart';
+import '../../models/user_concept_state.dart';
 
 /// Exception thrown when a server-side simulation exam operation fails.
 class ClepSimulationException implements Exception {
@@ -16,37 +18,233 @@ class ClepSimulationException implements Exception {
 }
 
 /// Structured diagnostic result returned from confidential server-side exam scoring.
+///
+/// Accurately maps the authoritative database contract returned by `clep_submit_simulation_exam`:
+/// - `raw_score` (integer)
+/// - `accuracy_percentage` (numeric)
+/// - `readiness_indicator` (text)
+/// - `total_questions` (integer)
+/// - `time_spent_seconds` (integer)
+/// - `is_calibrated_clep_score` (boolean)
+/// - `scoring_disclaimer` (text)
+/// - `results` (jsonb array of item outcomes with answered, is_correct, concept_ids)
 class ClepSimulationSubmissionResult {
   final String attemptId;
+  final String targetVersionId;
   final double percentage;
   final String readiness;
   final int correctCount;
   final int totalQuestions;
   final int answeredCount;
   final int timeSpentSeconds;
+  final bool isCalibratedClepScore;
+  final String scoringDisclaimer;
   final List<Map<String, dynamic>> itemResults;
 
   const ClepSimulationSubmissionResult({
     required this.attemptId,
+    this.targetVersionId = '',
     required this.percentage,
     required this.readiness,
     required this.correctCount,
     required this.totalQuestions,
     required this.answeredCount,
     required this.timeSpentSeconds,
+    this.isCalibratedClepScore = false,
+    this.scoringDisclaimer = '',
     required this.itemResults,
   });
 
-  factory ClepSimulationSubmissionResult.fromJson(Map<String, dynamic> json) {
+  /// Accessor aliases matching exact database column / JSON payload naming
+  int get rawScore => correctCount;
+  double get accuracyPercentage => percentage;
+  String get readinessIndicator => readiness;
+
+  factory ClepSimulationSubmissionResult.fromJson(
+    Map<String, dynamic> json, {
+    int? clientAnsweredCount,
+  }) {
+    final rawResults = (json['results'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+
+    // 1. Correct count: map from database contract 'raw_score', fallback to 'correct_count'
+    final correct = (json['raw_score'] as num?)?.toInt() ??
+        (json['correct_count'] as num?)?.toInt() ??
+        0;
+
+    // 2. Percentage: map from database contract 'accuracy_percentage', fallback to 'percentage'
+    final pct = (json['accuracy_percentage'] as num?)?.toDouble() ??
+        (json['percentage'] as num?)?.toDouble() ??
+        0.0;
+
+    // 3. Readiness: map from database contract 'readiness_indicator', fallback to 'readiness'
+    final readinessStr = json['readiness_indicator'] as String? ??
+        json['readiness'] as String? ??
+        'Pending Review';
+
+    // 4. Answered count: database omits answered_count field, so compute from results
+    // where answered == true, or use clientAnsweredCount as fallback.
+    int computedAnsweredCount = (json['answered_count'] as num?)?.toInt() ??
+        rawResults.where((r) => r['answered'] == true).length;
+    if (computedAnsweredCount == 0 && clientAnsweredCount != null && clientAnsweredCount > 0) {
+      computedAnsweredCount = clientAnsweredCount;
+    }
+
     return ClepSimulationSubmissionResult(
       attemptId: json['attempt_id'] as String? ?? '',
-      percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
-      readiness: json['readiness'] as String? ?? 'Pending Review',
-      correctCount: (json['correct_count'] as num?)?.toInt() ?? 0,
+      targetVersionId: json['target_version_id'] as String? ?? '',
+      percentage: pct,
+      readiness: readinessStr,
+      correctCount: correct,
       totalQuestions: (json['total_questions'] as num?)?.toInt() ?? 0,
-      answeredCount: (json['answered_count'] as num?)?.toInt() ?? 0,
+      answeredCount: computedAnsweredCount,
       timeSpentSeconds: (json['time_spent_seconds'] as num?)?.toInt() ?? 0,
-      itemResults: (json['results'] as List?)?.cast<Map<String, dynamic>>() ?? const [],
+      isCalibratedClepScore: json['is_calibrated_clep_score'] == true,
+      scoringDisclaimer: json['scoring_disclaimer'] as String? ?? '',
+      itemResults: rawResults,
+    );
+  }
+
+  /// Converts this server-side submission result into a complete [ExamDiagnosticReport]
+  /// suitable for display in [ExamReportScreen].
+  ///
+  /// Guarantees:
+  /// - Protected answer keys and item explanations remain null in scored items.
+  /// - Accurately populates readiness bands and evidence levels from server scores.
+  ExamDiagnosticReport toDiagnosticReport(MockExamSession session) {
+    final itemResultMap = <String, Map<String, dynamic>>{};
+    for (final res in itemResults) {
+      final id = res['id']?.toString();
+      if (id != null) {
+        itemResultMap[id] = res;
+      }
+    }
+
+    final scoredItems = <ScoredItemResult>[];
+    final domainStats = <String, ({int total, int correct, double earned})>{};
+    for (final domain in session.blueprint.domainWeights) {
+      domainStats[domain.domainCode] = (total: 0, correct: 0, earned: 0.0);
+    }
+
+    final missedConcepts = <String, int>{};
+
+    for (final item in session.items) {
+      final domainCode = session.itemDomainMap[item.id] ?? '1.0';
+      final userAns = session.userResponses[item.id];
+      final itemRes = itemResultMap[item.id];
+      final isItemCorrect = itemRes?['is_correct'] == true;
+      final cids = (itemRes?['concept_ids'] as List?)?.cast<String>() ??
+          session.itemConceptMap[item.id] ??
+          const [];
+
+      scoredItems.add(ScoredItemResult(
+        itemId: item.id,
+        prompt: item.prompt,
+        domainCode: domainCode,
+        userResponse: userAns,
+        correctResponse: null, // Protected: withheld from simulation bank
+        isCorrect: isItemCorrect,
+        isPartial: false,
+        scoreEarned: isItemCorrect ? 1.0 : 0.0,
+        explanation: null, // Protected: explanations withheld from simulation bank
+        conceptIds: cids,
+      ));
+
+      final curr = domainStats[domainCode] ?? (total: 0, correct: 0, earned: 0.0);
+      domainStats[domainCode] = (
+        total: curr.total + 1,
+        correct: curr.correct + (isItemCorrect ? 1 : 0),
+        earned: curr.earned + (isItemCorrect ? 1.0 : 0.0),
+      );
+
+      if (!isItemCorrect) {
+        for (final cid in cids) {
+          missedConcepts[cid] = (missedConcepts[cid] ?? 0) + 1;
+        }
+      }
+    }
+
+    // Domain diagnostics
+    final domainDiagnostics = <DomainDiagnostic>[];
+    for (final domain in session.blueprint.domainWeights) {
+      final stats = domainStats[domain.domainCode] ?? (total: 0, correct: 0, earned: 0.0);
+      final domainPct = stats.total > 0 ? (stats.earned / stats.total) * 100.0 : 0.0;
+      domainDiagnostics.add(DomainDiagnostic(
+        domainId: domain.domainId,
+        domainCode: domain.domainCode,
+        domainTitle: domain.domainTitle,
+        domainWeight: domain.weight,
+        totalQuestions: stats.total,
+        correctQuestions: stats.correct,
+        scoreEarned: stats.earned,
+        percentage: domainPct,
+        evidenceLevel: DomainEvidenceLevel.fromPercentage(domainPct),
+      ));
+    }
+
+    // Readiness estimate
+    TargetReadinessBand band;
+    if (percentage >= 70.0) {
+      band = TargetReadinessBand.strongCoverage;
+    } else if (percentage >= 50.0) {
+      band = TargetReadinessBand.developing;
+    } else {
+      band = TargetReadinessBand.needsReinforcement;
+    }
+
+    final totalQs = totalQuestions > 0 ? totalQuestions : session.totalQuestions;
+    final unans = session.unansweredCount;
+    final incorrect = (totalQs - correctCount - unans).clamp(0, totalQs);
+
+    final readinessEst = AppReadinessEstimate(
+      practiceScorePercentage: percentage,
+      estimatedScaledScore: null, // Equated official score requires College Board form equating
+      readinessBand: band,
+      readinessHeadline: readiness,
+      readinessSummary: scoringDisclaimer.isNotEmpty
+          ? scoringDisclaimer
+          : 'Diagnostic simulation estimate based on server-side evaluation.',
+      totalQuestions: totalQs,
+      correctCount: correctCount,
+      partialCount: 0,
+      incorrectCount: incorrect,
+      unansweredCount: unans,
+      totalScoreEarned: correctCount.toDouble(),
+    );
+
+    // Official facts
+    final facts = OfficialExamFacts(
+      examCode: session.blueprint.examCode,
+      title: session.blueprint.title,
+      publishedPassingScore: session.blueprint.officialPassingScore,
+      scoreScale: session.blueprint.officialScoreScale ??
+          '20-80 (ACE Recommended Passing: 50)',
+      timeLimitMinutes: session.blueprint.timeLimitMinutes,
+      nonAffiliationNotice:
+          'LearningApp is independent of the College Board. Practice simulation results do not represent official scores.',
+    );
+
+    // Remediation recommendations
+    final remediationRecommendations = missedConcepts.entries.map((entry) {
+      return RemediationRecommendation(
+        conceptId: entry.key,
+        conceptName: 'Remediation: ${entry.key}',
+        domainTitle: session.blueprint.title,
+        priority: entry.value > 1 ? 'high' : 'medium',
+        rationale: 'Review concept based on ${entry.value} missed question(s).',
+      );
+    }).toList();
+
+    return ExamDiagnosticReport(
+      sessionId: attemptId.isNotEmpty ? attemptId : session.id,
+      targetVersionId: session.blueprint.targetVersionId,
+      examPartKey: session.blueprint.examPartKey,
+      completedAt: session.completedAt ?? DateTime.now(),
+      durationTaken: Duration(seconds: timeSpentSeconds > 0 ? timeSpentSeconds : session.elapsedSeconds),
+      officialFacts: facts,
+      readinessEstimate: readinessEst,
+      domainDiagnostics: domainDiagnostics,
+      remediationRecommendations: remediationRecommendations,
+      scoredItems: scoredItems,
     );
   }
 }
@@ -111,17 +309,28 @@ class ClepSimulationService {
 
     final now = DateTime.now();
     final items = <AssessmentItem>[];
+    final itemDomainMap = <String, String>{};
+    final itemConceptMap = <String, List<String>>{};
+
     for (final q in questionsRaw) {
       if (q is! Map) continue;
       final qMap = q.cast<String, dynamic>();
+      final id = qMap['id'] as String;
+      final cids = (qMap['concept_ids'] as List?)?.cast<String>() ?? const [];
+      final meta = (qMap['metadata'] as Map?)?.cast<String, dynamic>() ?? const {};
+      final domainCode = meta['domain_code'] as String? ?? '1.0';
+
+      itemDomainMap[id] = domainCode;
+      itemConceptMap[id] = cids;
+
       items.add(AssessmentItem(
-        id: qMap['id'] as String,
+        id: id,
         interactionType: AssessmentInteractionType.singleChoice,
         prompt: qMap['prompt'] as String? ?? '',
         responseSpec: (qMap['response_spec'] as Map?)?.cast<String, dynamic>() ?? const {},
-        scoringSpec: const {}, // Protected! scoring keys are withheld server-side
-        explanation: null, // Protected! explanations are withheld server-side
-        metadata: (qMap['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
+        scoringSpec: const {}, // Protected: scoring keys are withheld server-side
+        explanation: null, // Protected: explanations are withheld server-side
+        metadata: meta,
         createdAt: now,
         updatedAt: now,
       ));
@@ -135,12 +344,21 @@ class ClepSimulationService {
       defaultQuestionCount: items.length,
       allowedTools: allowedTools,
       domainWeights: domainWeights,
+      isProtectedSimulation: true,
+      metadata: {
+        'is_protected_simulation': true,
+        'bank': 'simulation_exam',
+        'exposure': 'timed_exam_only',
+        'attempt_id': attemptId,
+      },
     );
 
     return MockExamSession(
       id: attemptId,
       blueprint: blueprint,
       items: items,
+      itemDomainMap: itemDomainMap,
+      itemConceptMap: itemConceptMap,
       startedAt: issuedAt,
       timeLimit: Duration(minutes: timeLimitMins),
       status: ExamSessionStatus.inProgress,
@@ -172,6 +390,17 @@ class ClepSimulationService {
       throw const ClepSimulationException('Unexpected response payload from clep_submit_simulation_exam');
     }
 
-    return ClepSimulationSubmissionResult.fromJson(raw.cast<String, dynamic>());
+    return ClepSimulationSubmissionResult.fromJson(
+      raw.cast<String, dynamic>(),
+      clientAnsweredCount: responses.length,
+    );
+  }
+
+  /// Helper generating an [ExamDiagnosticReport] directly from a submission result and session.
+  ExamDiagnosticReport createDiagnosticReport({
+    required MockExamSession session,
+    required ClepSimulationSubmissionResult result,
+  }) {
+    return result.toDiagnosticReport(session);
   }
 }

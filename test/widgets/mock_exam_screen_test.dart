@@ -4,9 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_session.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
+import 'package:learning_pwa/providers/assessment_engine_provider.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/screens/assessment/exam_report_screen.dart';
 import 'package:learning_pwa/screens/assessment/mock_exam_screen.dart';
 import 'package:learning_pwa/screens/assessment/secure_exam_part_practice_screen.dart';
+import 'package:learning_pwa/services/assessment/clep_simulation_service.dart';
 
 class _TestAuthController extends StateNotifier<AuthState> implements AuthNotifier {
   _TestAuthController(super.initial);
@@ -366,6 +369,198 @@ void main() {
       final roundTrip = MockExamBlueprint.fromJson(json);
       expect(roundTrip.allowsCalculator, isTrue);
       expect(roundTrip.allowedTools, contains('calculator'));
+    });
+
+    testWidgets('Protected CLEP simulation: prevents empty submission in confirmation dialog', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final protectedItem = AssessmentItem(
+        id: 'clep-sim-item-1',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Protected algebra problem: solve 2x + 6 = 14',
+        responseSpec: {
+          'options': ['x = 4', 'x = 5', 'x = 3', 'x = 10'],
+        },
+        scoringSpec: const {}, // Protected
+        explanation: null, // Protected
+        difficulty: 'beginner',
+        metadata: const {'bank': 'simulation_exam', 'is_protected': true},
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final protectedSession = MockExamSession(
+        id: 'sim-attempt-unanswered',
+        blueprint: const MockExamBlueprint(
+          targetVersionId: 'tv-clep-alg',
+          examCode: 'CLEP-ALG',
+          title: 'CLEP College Algebra',
+          timeLimitMinutes: 90,
+          isProtectedSimulation: true,
+          domainWeights: [
+            DomainWeightConstraint(
+              domainId: 'd1',
+              domainCode: '1.0',
+              domainTitle: 'Algebraic Operations',
+              weight: 1.0,
+            ),
+          ],
+        ),
+        items: [protectedItem],
+        itemDomainMap: {'clep-sim-item-1': '1.0'},
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.inProgress,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: MockExamScreen(initialSession: protectedSession),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Finish Exam without answering
+      await tester.tap(find.text('Finish Exam'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Finish & Submit Practice?'), findsOneWidget);
+      expect(
+        find.text('Protected simulation exams require at least one answered question before submitting.'),
+        findsOneWidget,
+      );
+
+      // Verify that Submit Practice button is disabled
+      final submitButton = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Submit Practice'),
+      );
+      expect(submitButton.onPressed, isNull);
+    });
+
+    testWidgets('Protected CLEP simulation: student answering and submission invokes ClepSimulationService and navigates to ExamReportScreen', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final recordedRpcCalls = <Map<String, dynamic>>[];
+
+      Future<dynamic> mockSimulationTransport(String rpcName, Map<String, dynamic> params) async {
+        recordedRpcCalls.add({'rpc': rpcName, 'params': params});
+
+        if (rpcName == 'clep_submit_simulation_exam') {
+          return {
+            'attempt_id': params['p_attempt_id'],
+            'target_version_id': 'tv-clep-alg',
+            'raw_score': 1,
+            'total_questions': 1,
+            'accuracy_percentage': 100.0,
+            'time_spent_seconds': 120,
+            'readiness_indicator': 'Competitive Diagnostic Standing',
+            'is_calibrated_clep_score': false,
+            'scoring_disclaimer': 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating.',
+            'results': [
+              {
+                'id': 'clep-sim-item-1',
+                'answered': true,
+                'is_correct': true,
+                'user_answer': 0,
+                'concept_ids': ['concept-algebra-1'],
+              },
+            ],
+          };
+        }
+        throw UnimplementedError('Unexpected RPC: $rpcName');
+      }
+
+      final mockClepService = ClepSimulationService(transport: mockSimulationTransport);
+
+      final protectedItem = AssessmentItem(
+        id: 'clep-sim-item-1',
+        interactionType: AssessmentInteractionType.singleChoice,
+        prompt: 'Protected algebra problem: solve 2x + 6 = 14',
+        responseSpec: {
+          'options': ['x = 4', 'x = 5', 'x = 3', 'x = 10'],
+        },
+        scoringSpec: const {}, // Protected
+        explanation: null, // Protected
+        difficulty: 'beginner',
+        metadata: const {'bank': 'simulation_exam', 'is_protected': true},
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final protectedSession = MockExamSession(
+        id: 'sim-attempt-42',
+        blueprint: const MockExamBlueprint(
+          targetVersionId: 'tv-clep-alg',
+          examCode: 'CLEP-ALG',
+          title: 'CLEP College Algebra',
+          timeLimitMinutes: 90,
+          isProtectedSimulation: true,
+          domainWeights: [
+            DomainWeightConstraint(
+              domainId: 'd1',
+              domainCode: '1.0',
+              domainTitle: 'Algebraic Operations',
+              weight: 1.0,
+            ),
+          ],
+        ),
+        items: [protectedItem],
+        itemDomainMap: {'clep-sim-item-1': '1.0'},
+        startedAt: now,
+        timeLimit: const Duration(minutes: 90),
+        status: ExamSessionStatus.inProgress,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            clepSimulationServiceProvider.overrideWithValue(mockClepService),
+          ],
+          child: MaterialApp(
+            home: MockExamScreen(initialSession: protectedSession),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Answer question
+      await tester.tap(find.text('x = 4'));
+      await tester.pumpAndSettle();
+
+      // Finish exam
+      await tester.tap(find.text('Finish Exam'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Finish & Submit Practice?'), findsOneWidget);
+
+      // Submit practice
+      await tester.tap(find.text('Submit Practice'));
+      await tester.pumpAndSettle();
+
+      // 1. Verify ClepSimulationService was called with exact RPC and params
+      expect(recordedRpcCalls.length, equals(1));
+      expect(recordedRpcCalls.first['rpc'], equals('clep_submit_simulation_exam'));
+      expect(recordedRpcCalls.first['params']['p_attempt_id'], equals('sim-attempt-42'));
+      expect(recordedRpcCalls.first['params']['p_responses'], equals({'clep-sim-item-1': 0}));
+
+      // 2. Verify navigation to ExamReportScreen
+      expect(find.byType(ExamReportScreen), findsOneWidget);
+
+      // 3. Verify real backend score mapping displayed
+      expect(find.text('Competitive Diagnostic Standing'), findsOneWidget);
+      expect(find.text('100.0%'), findsOneWidget);
+
+      // 4. Verify answer key privacy: item review tile shows confidential notice instead of answer key
+      expect(find.text('Confidential Question (Answer key protected)'), findsOneWidget);
+      expect(find.textContaining('Correct Answer: 0'), findsNothing);
     });
   });
 }

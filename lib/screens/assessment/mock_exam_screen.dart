@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/assessment_engine/mock_exam_session.dart';
 import '../../providers/assessment_engine_provider.dart';
 import '../../services/assessment/assessment_grading_service.dart';
+import '../../services/assessment/clep_simulation_service.dart';
 import '../../widgets/assessment/assessment_item_renderer.dart';
 import '../../widgets/calculator/scientific_calculator_widget.dart';
 import 'exam_report_screen.dart';
@@ -60,8 +61,10 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
   }
 
   Future<void> _confirmFinishExam(MockExamSession session) async {
+    final total = session.totalQuestions;
     final unanswered = session.unansweredCount;
     final flagged = session.flaggedCount;
+    final isProtectedEmpty = session.isProtectedSimulation && unanswered == total;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -83,7 +86,34 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
                 style: GoogleFonts.inter(fontSize: 14),
               ),
               const SizedBox(height: 16),
-              if (unanswered > 0) ...[
+              if (isProtectedEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFEF4444)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Protected simulation exams require at least one answered question before submitting.',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (unanswered > 0 && !isProtectedEmpty) ...[
                 Row(
                   children: [
                     const Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 18),
@@ -131,7 +161,7 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
+              onPressed: isProtectedEmpty ? null : () => Navigator.of(ctx).pop(true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
@@ -171,6 +201,24 @@ class _MockExamScreenState extends ConsumerState<MockExamScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${error.message} Submit again to retry.')),
+        );
+      }
+    } on ClepSimulationException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${error.message} Submit again to retry.'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit exam: $error. Submit again to retry.'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
         );
       }
     } finally {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_session.dart';
 import 'package:learning_pwa/services/assessment/clep_simulation_service.dart';
 
@@ -40,6 +41,7 @@ void main() {
             'metadata': {
               'bank': 'simulation_exam',
               'item_role': 'clep_simulation_pool',
+              'domain_code': '${(index % 4) + 1}.0',
             },
             'concept_ids': ['concept-${(index % 20) + 1}'],
           }),
@@ -57,15 +59,19 @@ void main() {
           throw Exception('Cannot submit empty responses');
         }
 
-        // Grade confidentially: 48 correct out of 60 = 80.0%
+        // Return EXACT database contract from clep_submit_simulation_exam:
+        // Uses raw_score, accuracy_percentage, readiness_indicator, results
+        // OMITTING correct_count, percentage, readiness, answered_count
         return {
           'attempt_id': attemptId,
+          'target_version_id': algTargetVersionId,
+          'raw_score': 48,
           'total_questions': 60,
-          'answered_count': responses.length,
-          'correct_count': 48,
-          'percentage': 80.0,
-          'readiness': 'Competitive Diagnostic Standing',
+          'accuracy_percentage': 80.0,
           'time_spent_seconds': 4320,
+          'readiness_indicator': 'Competitive Diagnostic Standing',
+          'is_calibrated_clep_score': false,
+          'scoring_disclaimer': 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating and proprietary form calibration.',
           'results': responses.entries.map((e) => {
             'id': e.key,
             'answered': true,
@@ -91,6 +97,12 @@ void main() {
         examCode: 'CLEP-ALG',
         examTitle: 'CLEP College Algebra Examination',
         allowedTools: const {'calculator'},
+        domainWeights: const [
+          DomainWeightConstraint(domainId: 'd1', domainCode: '1.0', domainTitle: 'Algebraic Operations', weight: 0.25),
+          DomainWeightConstraint(domainId: 'd2', domainCode: '2.0', domainTitle: 'Equations and Inequalities', weight: 0.25),
+          DomainWeightConstraint(domainId: 'd3', domainCode: '3.0', domainTitle: 'Functions and Their Properties', weight: 0.30),
+          DomainWeightConstraint(domainId: 'd4', domainCode: '4.0', domainTitle: 'Number Systems and Operations', weight: 0.20),
+        ],
       );
 
       // 1. Verify RPC call parameters
@@ -103,6 +115,7 @@ void main() {
       expect(session.status, equals(ExamSessionStatus.inProgress));
       expect(session.timeLimit, equals(const Duration(minutes: 90)));
       expect(session.items.length, equals(60));
+      expect(session.isProtectedSimulation, isTrue);
 
       // 3. Tool Policy: Calculator MUST be permitted for College Algebra
       expect(session.blueprint.allowsCalculator, isTrue);
@@ -129,17 +142,33 @@ void main() {
 
       expect(session.blueprint.allowsCalculator, isFalse);
       expect(session.blueprint.allowedTools, isEmpty);
+      expect(session.isProtectedSimulation, isTrue);
     });
 
-    test('submits student exam responses and receives confidential diagnostic score without leaked keys', () async {
+    test('submits student exam responses against real database contract and receives diagnostic report without leaked keys', () async {
       final service = ClepSimulationService(transport: mockRpcTransport);
+
+      final session = await service.issueSimulationExam(
+        targetVersionId: algTargetVersionId,
+        examCode: 'CLEP-ALG',
+        examTitle: 'CLEP College Algebra Examination',
+        allowedTools: const {'calculator'},
+        domainWeights: const [
+          DomainWeightConstraint(domainId: 'd1', domainCode: '1.0', domainTitle: 'Algebraic Operations', weight: 0.25),
+          DomainWeightConstraint(domainId: 'd2', domainCode: '2.0', domainTitle: 'Equations and Inequalities', weight: 0.25),
+          DomainWeightConstraint(domainId: 'd3', domainCode: '3.0', domainTitle: 'Functions and Their Properties', weight: 0.30),
+          DomainWeightConstraint(domainId: 'd4', domainCode: '4.0', domainTitle: 'Number Systems and Operations', weight: 0.20),
+        ],
+      );
 
       // Simulate student answering 60 questions
       final responses = <String, dynamic>{};
       for (int i = 1; i <= 60; i++) {
         responses['alg-sim-item-$i'] = i % 4;
       }
+      final answeredSession = session.copyWith(userResponses: responses);
 
+      recordedCalls.clear();
       final result = await service.submitSimulationExam(
         attemptId: sampleAttemptId,
         responses: responses,
@@ -151,14 +180,19 @@ void main() {
       expect(recordedCalls.first['params']['p_attempt_id'], equals(sampleAttemptId));
       expect(recordedCalls.first['params']['p_responses'], equals(responses));
 
-      // 2. Verify score and readiness diagnostics
+      // 2. Verify score and readiness mapped from exact database contract fields
       expect(result.attemptId, equals(sampleAttemptId));
+      expect(result.rawScore, equals(48));
+      expect(result.correctCount, equals(48));
+      expect(result.accuracyPercentage, equals(80.0));
+      expect(result.percentage, equals(80.0));
+      expect(result.readinessIndicator, equals('Competitive Diagnostic Standing'));
+      expect(result.readiness, equals('Competitive Diagnostic Standing'));
       expect(result.totalQuestions, equals(60));
       expect(result.answeredCount, equals(60));
-      expect(result.correctCount, equals(48));
-      expect(result.percentage, equals(80.0));
-      expect(result.readiness, equals('Competitive Diagnostic Standing'));
       expect(result.timeSpentSeconds, equals(4320));
+      expect(result.isCalibratedClepScore, isFalse);
+      expect(result.scoringDisclaimer, contains('Diagnostic score estimate only'));
 
       // 3. Verify item results contain only correctness and user answer, never answer keys
       for (final itemRes in result.itemResults) {
@@ -167,6 +201,23 @@ void main() {
         expect(itemRes.containsKey('scoring_spec'), isFalse);
         expect(itemRes.containsKey('correct_index'), isFalse);
         expect(itemRes.containsKey('explanation'), isFalse);
+      }
+
+      // 4. Verify conversion into ExamDiagnosticReport
+      final report = result.toDiagnosticReport(answeredSession);
+      expect(report.sessionId, equals(sampleAttemptId));
+      expect(report.readinessEstimate.practiceScorePercentage, equals(80.0));
+      expect(report.readinessEstimate.correctCount, equals(48));
+      expect(report.readinessEstimate.totalQuestions, equals(60));
+      expect(report.readinessEstimate.unansweredCount, equals(0));
+      expect(report.readinessEstimate.readinessHeadline, equals('Competitive Diagnostic Standing'));
+      expect(report.domainDiagnostics.length, equals(4));
+
+      // 5. Verify confidentiality in scored items: correctResponse and explanation must remain null
+      expect(report.scoredItems.length, equals(60));
+      for (final scoredItem in report.scoredItems) {
+        expect(scoredItem.correctResponse, isNull, reason: 'Answer keys must never be revealed in simulation reports');
+        expect(scoredItem.explanation, isNull, reason: 'Explanations must never be revealed in simulation reports');
       }
     });
 

@@ -20,6 +20,7 @@ class MockExamBlueprint {
   final Set<AssessmentInteractionType> allowedInteractionTypes;
   final double maxStimulusItemsRatio;
   final Set<String> allowedTools;
+  final bool isProtectedSimulation;
   final Map<String, dynamic> metadata;
 
   const MockExamBlueprint({
@@ -47,10 +48,18 @@ class MockExamBlueprint {
     },
     this.maxStimulusItemsRatio = 0.25,
     this.allowedTools = const {},
+    this.isProtectedSimulation = false,
     this.metadata = const {},
   });
 
   Duration get timeLimit => Duration(minutes: timeLimitMinutes);
+
+  /// Whether this exam is a protected simulation requiring server-side grading.
+  bool get isProtected =>
+      isProtectedSimulation ||
+      metadata['is_protected_simulation'] == true ||
+      metadata['bank'] == 'simulation_exam' ||
+      metadata['is_protected'] == true;
 
   /// Whether this exam blueprint permits the use of a scientific calculator tool.
   bool get allowsCalculator {
@@ -193,6 +202,11 @@ class MockExamBlueprint {
       maxStimulusItemsRatio:
           (json['max_stimulus_items_ratio'] as num?)?.toDouble() ?? 0.25,
       allowedTools: allowedToolsRaw,
+      isProtectedSimulation: json['is_protected_simulation'] as bool? ??
+          (json['metadata'] is Map &&
+              ((json['metadata'] as Map)['is_protected_simulation'] == true ||
+                  (json['metadata'] as Map)['bank'] == 'simulation_exam' ||
+                  (json['metadata'] as Map)['is_protected'] == true)),
       metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
@@ -213,6 +227,7 @@ class MockExamBlueprint {
             allowedInteractionTypes.map((type) => type.toDbString()).toList(),
         'max_stimulus_items_ratio': maxStimulusItemsRatio,
         'allowed_tools': allowedTools.toList(),
+        'is_protected_simulation': isProtected,
         'metadata': metadata,
       };
 }
