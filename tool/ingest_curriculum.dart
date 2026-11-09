@@ -808,7 +808,7 @@ Map<String, dynamic> _prepareManifestPayload({
     releases.add(Map<String, dynamic>.from(singleRelease));
   }
 
-  // Propagate blueprint authority metadata (e.g. allowed_tools, exam_code) to target_version.metadata
+  // Propagate blueprint authority metadata (e.g. allowed_tools, exam_code, bank) to target_version.metadata
   final versionMetadata = Map<String, dynamic>.from(targetVersion['metadata'] as Map? ?? {});
   for (final r in releases) {
     final rMeta = r['metadata'] as Map?;
@@ -820,6 +820,45 @@ Map<String, dynamic> _prepareManifestPayload({
       });
     }
   }
+
+  // Ensure target_versions with simulation exam items declare bank: simulation_exam
+  bool manifestHasSimulationItems = false;
+  void scanItems(dynamic items) {
+    if (items is! List || manifestHasSimulationItems) return;
+    for (final it in items) {
+      if (it is Map) {
+        final meta = it['metadata'] as Map?;
+        if (meta != null && meta['bank'] == 'simulation_exam') {
+          manifestHasSimulationItems = true;
+          return;
+        }
+      }
+    }
+  }
+
+  if (manifest['domains'] is List) {
+    for (final d in manifest['domains'] as List) {
+      if (d is! Map) continue;
+      scanItems(d['assessment_items']);
+      if (d['objectives'] is List) {
+        for (final obj in d['objectives'] as List) {
+          if (obj is! Map) continue;
+          scanItems(obj['assessment_items']);
+          if (obj['lessons'] is List) {
+            for (final l in obj['lessons'] as List) {
+              if (l is! Map) continue;
+              scanItems(l['assessment_items']);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (manifestHasSimulationItems && !versionMetadata.containsKey('bank')) {
+    versionMetadata['bank'] = 'simulation_exam';
+  }
+
   targetVersion['metadata'] = versionMetadata;
 
   // 3. Collect all declared concepts across manifest (root + domains/objectives)

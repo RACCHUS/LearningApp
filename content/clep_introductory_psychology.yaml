@@ -11,6 +11,7 @@ source_releases:
   sha256: b45a6c1e95632b85d38f8cf2e4389ab9213bc54784a621e25e9d3d3a77a94f01
   metadata:
     role: blueprint_authority
+    bank: simulation_exam
     total_domains: 13
     exam_code: CLEP-PSYC
     passing_score: 50

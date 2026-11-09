@@ -130,7 +130,14 @@ The College Board syllabus for CLEP College Algebra specifies four domains with 
 1. **Curriculum Manifest Generation**: Updated `tool/generate_clep_algebra_course.py` to embed `"domain_code": d.get("code")` into each simulation assessment item's metadata. Regenerated `content/clep_college_algebra.yaml`.
 2. **Database Migrations (`supabase/migrations/`)**:
    - `20261109150000_clep_simulation_domain_code_projection.sql`: Projects `domain_code` on each question object and includes top-level `domains` array.
-   - `20261109170000_clep_simulation_attempt_recovery_and_eligibility.sql`: Enforces strict domain validation in `clep_issue_simulation_exam` and `clep_recover_simulation_exam`, throwing SQL state `22023` if any question lacks `domain_code`.
+   - `20261109170000_clep_simulation_attempt_recovery_and_eligibility.sql`: Enforces domain code projection in `clep_issue_simulation_exam` and `clep_recover_simulation_exam`.
+   - `20261109180000_clep_simulation_domain_quota_and_metadata_validation.sql`:
+     - **Pre-Flight 5a (Missing Domain Rejection)**: Validates every simulation item has a non-null, non-empty `domain_code` (via metadata or curriculum hierarchy) *before* inserting into `clep_simulation_attempts`. Throws `22023` if any item lacks a domain code.
+     - **Pre-Flight 5b (Blueprint Domain Conformance)**: Validates all item domain codes match declared domain codes in `curriculum_nodes` for that target version *before* attempt creation. Throws `22023` if mismatched.
+     - **Pre-Flight 5c (CLEP-ALG Four-Domain Quota Enforcement)**: Enforces exactly 60 questions with domain quotas of 15 (1.0), 15 (2.0), 18 (3.0), and 12 (4.0) *before* attempt creation. Throws `22023` if violated.
+     - **Zero Learner Lock-out on Ingestion Failure**: Moving checks 5a–5c ahead of `insert into clep_simulation_attempts` guarantees zero rows are created if psychometric data is corrupt.
+     - **Target-Version Simulation Bank Synchronization**: Trigger `trg_sync_target_version_simulation_bank` on `assessment_items` and backfill in migration automatically maintain `target_versions.metadata.bank = 'simulation_exam'`.
+     - **Ingestion Pipeline Metadata Propagation**: `tool/ingest_curriculum.dart` and course generators propagate `bank: simulation_exam` from blueprint authority and scan manifest assessment items, guaranteeing `TargetVersion.isSimulationExamEligible` evaluates to `true` across all deployment pipelines.
 3. **Flutter Diagnostics**: `ClepSimulationService.toDiagnosticReport` maps results by domain code, creating four distinct `DomainDiagnostic` entries matching the exact 15/15/18/12 question counts.
 
 ---
@@ -205,8 +212,8 @@ A complete, live end-to-end learner journey was driven in Chromium using the Pla
 | Invariant | Status | Verification Note |
 | :--- | :---: | :--- |
 | **OpenStax CC BY 4.0 Attribution** | Preserved | Exclusively OpenStax 1st Edition; zero 2e CC BY-NC-SA content |
-| **Database Migration Immutability** | Enforced | Monotonic timestamp `20261109170000`, 0 modified historic migrations |
-| **pgTAP Security Suite** | 1,399 / 1,399 Passed | 51 test files passing across clean reset |
+| **Database Migration Immutability** | Enforced | Monotonic timestamp `20261109180000`, 0 modified historic migrations |
+| **pgTAP Security Suite** | 1,404 / 1,404 Passed | 51 test files passing across clean reset (44 assertions in simulation security suite) |
 | **Static Linter & Pipeline** | 0 Errors, 0 Warnings | `tool/lint_manifest.dart` and `pytest tool/tests/` passed |
 | **Flutter Static Analysis** | Clean (0 issues) | `dart analyze` reports "No issues found!" |
 | **PR #198 Status** | Open & Unmerged | Held for human faculty mathematical sign-off |

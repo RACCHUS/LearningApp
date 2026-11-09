@@ -12,6 +12,7 @@ source_releases:
     Board.
   metadata:
     role: blueprint_authority
+    bank: simulation_exam
     checksum_status: unverified_remote_document
     checksum_verification_note: Online specification blueprint. No offline cryptographic
       archive artifact pinned; verification based on official College Board domain

@@ -64,6 +64,7 @@ def build_manifest() -> dict:
                 "rights_note": "Referenced under fair use for educational curriculum architecture and objective alignment. CLEP and College Board are registered trademarks of the College Board.",
                 "metadata": {
                     "role": "blueprint_authority",
+                    "bank": "simulation_exam",
                     "checksum_status": "unverified_remote_document",
                     "checksum_verification_note": "Online specification blueprint. No offline cryptographic archive artifact pinned; verification based on official College Board domain percentages and time limits.",
                     "total_domains": 4,
