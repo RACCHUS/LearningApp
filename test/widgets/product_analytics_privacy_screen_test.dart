@@ -83,7 +83,7 @@ void main() {
     expect(cleared, isTrue);
     expect(stub.withdrawalCalls, 1);
     expect(find.textContaining('Consent withdrawn'), findsOneWidget);
-    expect(find.text('Not opted in'), findsOneWidget);
+    expect(stub.value.consented, isFalse);
   });
 
   testWidgets('unavailable backend never becomes guessed opt-out',
