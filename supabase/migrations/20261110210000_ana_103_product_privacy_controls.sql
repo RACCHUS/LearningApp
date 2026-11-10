@@ -232,6 +232,14 @@ DECLARE
   v_approved text;
 BEGIN
   IF NEW.consented THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM auth.users u WHERE u.id=NEW.user_id
+        AND u.is_anonymous IS FALSE
+        AND u.raw_app_meta_data->>'product_analytics_eligible' = 'true'
+    ) THEN
+      RAISE EXCEPTION 'Unreviewed or guest accounts cannot consent'
+        USING ERRCODE='42501';
+    END IF;
     SELECT approved_policy_version INTO v_approved
     FROM analytics.product_release_gate
     WHERE id=1 AND collection_enabled
@@ -268,8 +276,11 @@ BEGIN
   FOR SHARE;
   IF v_approved IS NULL OR NOT EXISTS (
     SELECT 1 FROM analytics.product_consents c
+    JOIN auth.users u ON u.id=c.user_id
     WHERE c.user_id=NEW.user_id AND c.consented
       AND c.policy_version=v_approved
+      AND u.is_anonymous IS FALSE
+      AND u.raw_app_meta_data->>'product_analytics_eligible'='true'
   ) THEN
     RAISE EXCEPTION 'Analytics release or matching consent not active'
       USING ERRCODE='42501';
