@@ -3,6 +3,8 @@ import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
     deferred as moderation_queue;
 import 'package:learning_pwa/screens/governance/cost_observability_screen.dart'
     deferred as cost_observability;
+import 'package:learning_pwa/screens/governance/product_analytics_overview_screen.dart'
+    deferred as product_analytics_overview;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,6 +34,8 @@ import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart'
     deferred as reset_center;
+import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart'
+    deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
@@ -455,6 +459,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MotivationSettingsScreen(),
       ),
       GoRoute(
+        path: '/settings/privacy/analytics',
+        name: 'product-analytics-privacy',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_privacy.loadLibrary,
+          builder: () =>
+              product_analytics_privacy.ProductAnalyticsPrivacyScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/moderation',
         name: 'moderation-queue',
         builder: (context, state) => DeferredLoaderWidget(
@@ -468,6 +481,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: cost_observability.loadLibrary,
           builder: () => cost_observability.CostObservabilityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/analytics',
+        name: 'product-analytics-overview',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_overview.loadLibrary,
+          builder: () =>
+              product_analytics_overview.ProductAnalyticsOverviewScreen(),
         ),
       ),
       GoRoute(
