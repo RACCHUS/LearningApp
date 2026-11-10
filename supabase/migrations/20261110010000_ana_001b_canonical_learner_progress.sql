@@ -270,7 +270,7 @@ BEGIN
           FROM slices
         )
         SELECT pg_catalog.sum(
-          pg_catalog.extract(epoch FROM upper(span)-lower(span)))::integer
+          extract(epoch FROM (upper(span)-lower(span))))::integer
           INTO v_active_seconds
           FROM merged;
 
