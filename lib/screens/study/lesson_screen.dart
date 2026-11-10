@@ -49,6 +49,8 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   bool _isLessonMode = false; // Track lesson mode state
   int _restartCounter = 0; // Track restarts to force rebuild
   bool _nudgeChecked = false; // Anti-cramming nudge shown at most once
+  bool _completionInFlight = false;
+  bool _completionHandled = false;
   
   /// Launch a previously saved study mode without showing the dialog
   void _launchSavedMode(StudyModePreference mode) {
@@ -504,10 +506,25 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     );
   }
 
-  void _onLessonComplete() {
-    // Update study progress
-    ref.read(studyProvider.notifier).markLessonAsCompleted(widget.lessonId);
-    
+  Future<void> _onLessonComplete() async {
+    if (_completionInFlight || _completionHandled) return;
+    _completionInFlight = true;
+    try {
+      // Completion becomes visible only after durable local persistence.
+      await ref.read(studyProvider.notifier).markLessonAsCompleted(widget.lessonId);
+    } catch (error) {
+      _completionInFlight = false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not save lesson completion. Please retry.'),
+        ));
+      }
+      return;
+    }
+    _completionInFlight = false;
+    if (!mounted) return;
+    _completionHandled = true;
+
     // Trigger celebration (confetti + haptic)
     HapticUtils.milestone();
     CelebrationOverlay.trigger(ref, CelebrationType.lessonComplete);
