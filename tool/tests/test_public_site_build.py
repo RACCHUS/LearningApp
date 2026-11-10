@@ -132,8 +132,22 @@ class PublicSiteTests(unittest.TestCase):
     def test_unsafe_source_url_is_rejected_by_renderer(self):
         data = self.approved()
         data["pages"][0]["review"]["sources"] = ["https://user:pass@example.test/path"]
-        with self.assertRaisesRegex(ValueError, "Unsafe public source"):
+        with self.assertRaisesRegex(ValueError, "Unsafe editorial source"):
             site.build(self.manifest(data), self.root / "published", ORIGIN, APP)
+        self.assertFalse((self.root / "published").exists())
+
+    def test_invalid_source_refs_fail_before_writing_any_files(self):
+        for source in ("http://example.test/a", "../secret.md",
+                       "https://example.test/?private=key",
+                       "https://user:secret@example.test/a",
+                       "https://example.test/a\\\\b", 42):
+            data = self.approved()
+            data["pages"][1]["review"]["sources"] = [source]
+            with self.subTest(source=source):
+                with self.assertRaisesRegex(ValueError, "Unsafe editorial source"):
+                    site.build(self.manifest(data), self.root / "not-written",
+                               ORIGIN, APP)
+                self.assertFalse((self.root / "not-written").exists())
 
     def test_manual_emergency_artifact_excludes_all_drafts_and_sitemap(self):
         output = self.root / "emergency"

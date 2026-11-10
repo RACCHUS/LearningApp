@@ -34,6 +34,38 @@ def canonical_origin(value: str) -> str:
     return value.rstrip("/")
 
 
+def valid_editorial_source(source: object) -> bool:
+    """Validate every source reference before generating any output files.
+
+    Sources can be HTTPS evidence links or safe relative repository file
+    references. This is syntax-only validation, NOT editorial verification.
+    """
+    if (not isinstance(source, str) or not source
+            or any(ch.isspace() or ord(ch) < 32 or ch == "\\" for ch in source)):
+        return False
+    if source.startswith("https://"):
+        try:
+            parsed = urlsplit(source)
+            host = parsed.hostname or ""
+            return (
+                parsed.scheme == "https" and bool(host)
+                and parsed.username is None and parsed.password is None
+                and parsed.query == "" and parsed.fragment == ""
+                and parsed.port in (None, 443)
+                and re.fullmatch(r"[a-zA-Z0-9.-]+", host) is not None
+            )
+        except ValueError:
+            return False
+    if "://" in source or source.startswith(("/", ".")):
+        return False
+    parts = source.split("/")
+    return (
+        len(parts) > 0 and all(part not in ("", ".", "..") for part in parts)
+        and re.fullmatch(r"[A-Za-z0-9_./-]+", source) is not None
+        and "." in parts[-1]
+    )
+
+
 def load_manifest(path: Path) -> list[dict]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
@@ -65,6 +97,13 @@ def load_manifest(path: Path) -> list[dict]:
             paragraphs = section.get("paragraphs")
             if not isinstance(paragraphs, list) or not paragraphs or any(not isinstance(p, str) or not p.strip() for p in paragraphs):
                 raise ValueError("Sections require plain text paragraphs")
+        # Validate draft and published source references before ANY output
+        # is written, rather than raising halfway through a static build.
+        review_sources = page.get("review", {}).get("sources", [])
+        if not isinstance(review_sources, list):
+            raise ValueError("Editorial source references must be a list")
+        if any(not valid_editorial_source(src) for src in review_sources):
+            raise ValueError("Unsafe editorial source reference")
         if page["status"] == "published":
             review = page.get("review")
             if not isinstance(review, dict) or review.get("owner_approved") is not True:
