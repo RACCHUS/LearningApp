@@ -105,6 +105,28 @@ def render_page(page: dict, pages: list[dict], origin: str, app_origin: str, pre
         + "</section>"
         for s in page["sections"]
     )
+    # Editorial evidence links are supplied as owner-review source references.
+    # Internal repository filenames are audit evidence, not web links.
+    external_sources = [
+        source for source in page.get("review", {}).get("sources", [])
+        if isinstance(source, str) and source.startswith("https://")
+    ]
+    for source in external_sources:
+        parsed = urlsplit(source)
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username
+                or parsed.password or parsed.fragment or parsed.query
+                or not re.fullmatch(r"[a-zA-Z0-9.-]+", parsed.hostname)):
+            raise ValueError("Unsafe public source reference")
+    if external_sources:
+        sections += (
+            "<section><h2>Original sources and next steps</h2><ul class=\"resource-links\">"
+            + "".join(
+                '<li><a rel="noopener noreferrer" href="' + text(source)
+                + '">' + text(urlsplit(source).hostname or source) + "</a></li>"
+                for source in external_sources
+            )
+            + "</ul></section>"
+        )
     app_link = app_origin + "/#/learn"
     breadcrumbs = [] if is_home else [{
         "@type": "ListItem", "position": 1, "name": "Home", "item": origin + "/"
