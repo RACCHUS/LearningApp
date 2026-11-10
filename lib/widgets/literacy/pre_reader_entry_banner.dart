@@ -14,8 +14,13 @@ class PreReaderEntryBanner extends ConsumerWidget {
   static const String entryInstructions =
       'Want to learn with pictures and spoken instructions? '
       'First tap the big A B C and picture button in this box. '
-      'Next choose Adult or Kids. Then press the green Start button. '
+      'Next choose Adult or Kids. Then press the Start button. '
       'You can use the speaker to hear these steps again.';
+
+  static const String continueInstructions =
+      'You have already chosen your learning path. '
+      'Tap the big picture button to continue learning. '
+      'Tap the speaker to hear these instructions again.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -111,7 +116,9 @@ class PreReaderEntryBanner extends ConsumerWidget {
           OutlinedButton.icon(
             key: const Key('pre-reader-listen-button'),
             onPressed: () =>
-                ref.read(preReaderProvider.notifier).speak(entryInstructions),
+                ref.read(preReaderProvider.notifier).speak(
+                  profile.enabled ? continueInstructions : entryInstructions,
+                ),
             icon: const Icon(Icons.volume_up_rounded, size: 34),
             label: const Text('🔊  HEAR HOW TO START'),
             style: OutlinedButton.styleFrom(
