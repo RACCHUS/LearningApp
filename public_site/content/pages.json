@@ -153,21 +153,55 @@
       "slug": "clep-psychology-study-roadmap",
       "type": "guide",
       "status": "draft",
-      "title": "CLEP Introductory Psychology study roadmap | LearningApp",
-      "description": "Draft exam study planning template requiring official-source review before publication.",
-      "heading": "CLEP Introductory Psychology study roadmap",
-      "summary": "This example template is intentionally not approved for search indexing or production.",
+      "title": "CLEP Introductory Psychology: free study roadmap and exam checklist | LearningApp",
+      "description": "Plan CLEP Introductory Psychology with the official topic outline, free Modern States preparation and an evidence-based readiness checklist.",
+      "heading": "CLEP Introductory Psychology: a practical study roadmap",
+      "summary": "Use the current exam outline to decide what to study, a free course to fill knowledge gaps, and practice to test understanding. Independent editorial draft; not yet approved for publication.",
       "sections": [
         {
-          "heading": "Draft only",
+          "heading": "1. Confirm that the credit would count",
           "paragraphs": [
-            "Before this page can be published, verify the current College Board exam outline, substantive topic coverage, available resources, study-plan evidence and issuer-independent disclaimers."
+            "According to College Board, CLEP Introductory Psychology tests material typically taught in a one-semester undergraduate course. It has approximately 95 questions in 90 minutes; some are unscored pretest questions.",
+            "The ACE credit recommendation is a score of 50 for three semester hours, but institutions may use different thresholds, accept different exams or award different credit. Ask your college how the credit applies to your actual degree before registering."
+          ]
+        },
+        {
+          "heading": "2. Cover every area before prioritizing gaps",
+          "paragraphs": [
+            "The published College Board blueprint covers 13 areas: history, approaches and methods; biological bases of behavior; sensation and perception; states of consciousness; learning; cognition; motivation and emotion; development across the lifespan; personality; psychological disorders and health; treatment; social psychology; and statistics, tests and measurement.",
+            "Begin with a short no-notes recall check across those areas. Spend more time on concepts you cannot apply, explain or contrast with similar concepts; topic percentages in the blueprint are approximate, not guaranteed question counts."
+          ]
+        },
+        {
+          "heading": "3. Choose a genuinely free starting resource",
+          "paragraphs": [
+            "Modern States offers a free, self-paced Introductory Psychology course. Its current course listing describes 13 modules, approximately 7 hours 31 minutes of video and additional assigned reading; actual study time varies.",
+            "The College Board study-resources page points to Modern States and other material. Modern States may offer an exam voucher or scholarship after completing its requirements, but eligibility should be checked directly before relying on free exam registration."
+          ]
+        },
+        {
+          "heading": "4. Check comprehension with original examples",
+          "paragraphs": [
+            "For a weak topic, explain the concept without notes, create an original example, contrast two related theories and use a scenario to choose the better explanation. Then inspect mistakes instead of repeatedly reviewing what you already know.",
+            "College Board offers exam-specific sample question and study-resource links. A LearningApp activity, estimated readiness score or simulation is not an official CLEP score and cannot guarantee a passing result."
+          ]
+        },
+        {
+          "heading": "5. Repeat a practical decision cycle",
+          "paragraphs": [
+            "Confirm credit policy, scan the official topic outline, choose focused resources for weak areas, practice recall and application, and revisit persistent mistakes. Use mixed practice later to check whether you retain concepts across topics.",
+            "Before scheduling, compare the actual exam and testing fees, voucher eligibility, and value of accepted credits against course alternatives. Requirements and provider offerings can change; check official links at registration time."
           ]
         }
       ],
       "review": {
         "owner_approved": false,
-        "sources": [],
+        "sources": [
+          "https://clep.collegeboard.org/clep-exams/introductory-psychology",
+          "https://clep.collegeboard.org/prepare-for-an-exam/study-resources-by-exam/introductory-psychology",
+          "https://upgrade.modernstates.org/course/introductory-psychology/",
+          "https://helpdesk.modernstates.org/support/solutions/articles/151000233533-can-i-start-earning-college-credit-with-clep-"
+        ],
         "reviewed_at": null
       }
     }
