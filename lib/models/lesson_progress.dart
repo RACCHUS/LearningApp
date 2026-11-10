@@ -78,7 +78,9 @@ class UserProgress {
   /// Question counters and unverified historical time are not uploaded.
   Map<String, dynamic>? toServerProgressEvent() {
     if (id.isEmpty || userId.isEmpty || lessonId.isEmpty ||
-        metadata?['sync_completion_event'] == false) return null;
+        metadata?['sync_completion_event'] == false) {
+      return null;
+    }
     final action = lessonCompleted
         ? 'lesson_completed'
         : (metadata?['completion_override'] == true
