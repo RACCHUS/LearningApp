@@ -136,6 +136,23 @@ class LearningApproachSelector extends ConsumerWidget {
             ),
           ],
         ),
+        // Verification maturity is independent from feature availability.
+        // Fast remains usable while its wider effectiveness is being verified.
+        const Padding(
+          padding: EdgeInsets.only(top: DesignTokens.space2),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Tooltip(
+              message: 'Fast prioritization is available, but broad learning-outcome '
+                  'verification is still underway.',
+              child: Text(
+                'Fast · Experimental',
+                key: Key('fast-experimental-disclosure'),
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ),
+        ),
         if (pref.strategy == PersistedLearningStrategy.fast) ...[
           const SizedBox(height: DesignTokens.space2),
           Wrap(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'byok_provider.dart';
+import 'byok_release_gate.dart';
 
 /// Exception thrown during LLM inference or schema validation.
 class LlmException implements Exception {
@@ -25,6 +26,7 @@ abstract class LlmClient {
 
   /// Factory to instantiate the appropriate client from a [ByokConfig].
   factory LlmClient.create(ByokConfig config, {http.Client? httpClient}) {
+    ByokReleaseGate.requireEnabled();
     switch (config.provider) {
       case AiProvider.gemini:
         return GeminiLlmClient(config, httpClient: httpClient);
@@ -51,6 +53,8 @@ class GeminiLlmClient implements LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   }) async {
+    // Direct construction must not bypass the owner safety latch.
+    ByokReleaseGate.requireEnabled();
     final url = Uri.parse(
       '${config.endpoint}/models/${config.model}:generateContent?key=${config.apiKey}',
     );
@@ -120,6 +124,8 @@ class OpenAiCompatibleLlmClient implements LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   }) async {
+    // Direct construction must not bypass the owner safety latch.
+    ByokReleaseGate.requireEnabled();
     final url = Uri.parse('${config.endpoint}/chat/completions');
 
     final headers = {

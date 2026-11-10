@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'byok_release_gate.dart';
 
 /// Supported AI providers for Bring-Your-Own-Key (BYOK) generation (ARCH-4).
 enum AiProvider {
@@ -110,7 +111,8 @@ class ByokConfig {
   );
 }
 
-/// Service for persisting BYOK user configurations securely in local storage.
+/// Legacy browser-local BYOK settings. Stored credentials are not encrypted;
+/// saving is blocked pending remediation. Clear remains available.
 class ByokStorageService {
   static const _prefKey = 'learningapp_byok_config';
   final SharedPreferences? _prefs;
@@ -144,6 +146,8 @@ class ByokStorageService {
   }
 
   Future<void> saveConfig(ByokConfig config) async {
+    // Never persist new raw API keys while BYOK is suspended.
+    ByokReleaseGate.requireEnabled();
     final prefs = await _getPrefs();
     await prefs.setString(_prefKey, jsonEncode(config.toJson()));
   }

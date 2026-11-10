@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:learning_pwa/services/ai/byok_provider.dart';
+import 'package:learning_pwa/services/ai/byok_release_gate.dart';
 import 'package:learning_pwa/services/ai/llm_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,7 +52,7 @@ void main() {
       await storage.clearConfig();
       loaded = await storage.loadConfig();
       expect(loaded.apiKey, isEmpty);
-    });
+    }, skip: !ByokReleaseGate.enabled);
   });
 
   group('LLM Client Structured JSON Handlers', () {
@@ -101,7 +102,7 @@ void main() {
       final map = jsonDecode(response) as Map<String, dynamic>;
       expect(map['result'], equals('success'));
       expect(map['score'], equals(95));
-    });
+    }, skip: !ByokReleaseGate.enabled);
 
     test('OpenAiCompatibleLlmClient sends structured json_schema and extracts content', () async {
       final mockHttp = MockClient((request) async {
@@ -147,7 +148,7 @@ void main() {
       final map = jsonDecode(response) as Map<String, dynamic>;
       expect(map['status'], equals('ok'));
       expect(map['count'], equals(42));
-    });
+    }, skip: !ByokReleaseGate.enabled);
 
     test('MockLlmClient returns valid structured default assessment item', () async {
       final mock = MockLlmClient();
