@@ -93,7 +93,19 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261108140000'));
+      // Compare the scan against the checked-in migration filenames rather than
+      // pinning the latest version, which would reject every additive migration.
+      final expectedVersions = Directory('supabase/migrations')
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.sql'))
+          .map((file) => file.uri.pathSegments.last.split('_').first)
+          .toList()
+        ..sort();
+      expect(
+        scanResult.migrations.map((migration) => migration.version).toList(),
+        orderedEquals(expectedVersions),
+      );
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
