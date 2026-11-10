@@ -13,7 +13,7 @@ This report provides comprehensive mathematical verification, architectural audi
 
 All findings from previous technical and mathematical reviews have been completely resolved and verified:
 1. **Accurate Mathematical Audit Table**:
-   - The 60-question simulation answer key table in this report is generated directly from the curriculum question bank in `content/clep_college_algebra.yaml` and verified against the unit assertion suite in [`tool/tests/test_clep_algebra_math_accuracy.py`](file:///c:/Users/richa/Documents/Code/LearningApp/tool/tests/test_clep_algebra_math_accuracy.py).
+   - The 60-question simulation answer key table in this report is generated directly from the curriculum question bank in `content/clep_college_algebra.yaml` and verified against the unit assertion suite in [`tool/tests/test_clep_algebra_math_accuracy.py`](../../tool/tests/test_clep_algebra_math_accuracy.py).
    - Corrected item #23 rational equation: root $x = -1$ uniquely verified, extraneous root $x = 4$ excluded.
    - Corrected item #8 complex-fraction domain: explicit non-zero and non-opposite domain restriction ($x, y \neq 0$ and $x \neq \pm y$) applied.
 2. **Attempt Recovery & Session Loss Protection**:
@@ -34,7 +34,7 @@ All findings from previous technical and mathematical reviews have been complete
 
 ## Complete 60-Question Protected Simulation Answer-Key & Verification Table
 
-Every question has an independent, reproducible assertion in [`tool/tests/test_clep_algebra_math_accuracy.py`](file:///c:/Users/richa/Documents/Code/LearningApp/tool/tests/test_clep_algebra_math_accuracy.py).
+Every question has an independent, reproducible assertion in [`tool/tests/test_clep_algebra_math_accuracy.py`](../../tool/tests/test_clep_algebra_math_accuracy.py).
 
 | # | Domain | Topic / Problem Description | Key | Declared Answer Option | Cognitive Level | Routine / Non-Routine | Verification Method |
 | :---: | :---: | :--- | :---: | :--- | :---: | :---: | :--- |
@@ -110,7 +110,7 @@ Every question has an independent, reproducible assertion in [`tool/tests/test_c
 
 ## Formative Practice Questions (40 Items Across 20 Lessons)
 
-All 40 formative items are verified structurally (4 options, 10 per position 0–3, non-trivial pedagogical explanations) and mathematically in [`tool/tests/test_clep_algebra_math_accuracy.py`](file:///c:/Users/richa/Documents/Code/LearningApp/tool/tests/test_clep_algebra_math_accuracy.py).
+All 40 formative items are verified structurally (4 options, 10 per position 0–3, non-trivial pedagogical explanations) and mathematically in [`tool/tests/test_clep_algebra_math_accuracy.py`](../../tool/tests/test_clep_algebra_math_accuracy.py).
 
 ---
 
