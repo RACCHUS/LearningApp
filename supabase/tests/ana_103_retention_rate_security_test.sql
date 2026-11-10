@@ -5,11 +5,23 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT plan(9);
 
+-- Only a synthetic, rolled-back fixture may activate the release latch.
+UPDATE analytics.product_release_gate
+ SET approved_policy_version='pgtap-ana103-retention-v1',
+     policy_approved_at=now(), reviewed_by='synthetic-test-owner',
+     collection_enabled=true WHERE id=1;
+
 INSERT INTO auth.users(id,email,is_anonymous,raw_app_meta_data)
 VALUES
 ('a1031000-0000-4000-8000-000000000001','ana103-retain@example.invalid',false,'{}'),
 ('a1031000-0000-4000-8000-000000000002','ana103-bounded@example.invalid',false,'{}')
 ON CONFLICT (id) DO NOTHING;
+
+-- Test fixtures are intentionally opted in for synthetic storage tests.
+INSERT INTO analytics.product_consents(user_id,consented) VALUES
+ ('a1031000-0000-4000-8000-000000000001',true),
+ ('a1031000-0000-4000-8000-000000000002',true)
+ON CONFLICT (user_id) DO UPDATE SET consented=true;
 
 SELECT ok(has_function_privilege('service_role',
  'analytics.purge_expired_product_events()','EXECUTE'),
