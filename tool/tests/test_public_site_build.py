@@ -118,6 +118,23 @@ class PublicSiteTests(unittest.TestCase):
         self.assertIn("&lt;img src=x", page)
         self.assertIn("\\u003c/script\\u003e", page)
 
+    def test_psychology_draft_links_to_verified_sources_in_preview(self):
+        output = self.root / "preview"
+        site.build(self.manifest(self.data), output, ORIGIN, APP, preview=True)
+        page = (output / "clep-psychology-study-roadmap" / "index.html").read_text()
+        self.assertIn("approximately 95 questions", page)
+        self.assertIn("13 areas", page)
+        self.assertIn("Original sources and next steps", page)
+        self.assertIn('href="https://clep.collegeboard.org/clep-exams/introductory-psychology"', page)
+        self.assertIn('rel="noopener noreferrer"', page)
+        self.assertIn('content="noindex,nofollow"', page)
+
+    def test_unsafe_source_url_is_rejected_by_renderer(self):
+        data = self.approved()
+        data["pages"][0]["review"]["sources"] = ["https://user:pass@example.test/path"]
+        with self.assertRaisesRegex(ValueError, "Unsafe public source"):
+            site.build(self.manifest(data), self.root / "published", ORIGIN, APP)
+
     def test_nonempty_output_is_never_replaced(self):
         out = self.root / "occupied"
         out.mkdir()
