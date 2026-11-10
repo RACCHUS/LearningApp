@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
+import 'package:learning_pwa/models/overview_outline.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+import 'package:learning_pwa/providers/target_readiness_provider.dart';
+import 'package:learning_pwa/services/concept_evidence_service.dart';
 import 'package:learning_pwa/services/course_service.dart';
 import 'package:learning_pwa/services/learning_context_service.dart';
 import 'package:learning_pwa/services/learning_context_migration.dart';
@@ -68,8 +71,16 @@ class ContextSnapshotResolver {
   final LearningStrategyPlanner _strategyPlanner;
   final TelFeatureFlags _telFlags;
   final FastPreference Function(String contextId)? _fastPreferenceLookup;
+  final ConceptEvidenceService? _conceptEvidence;
 
   final Future<Set<String>> Function()? _completedLessonIdsFetcher;
+  final Future<List<SnapshotNode>> Function(LearningContext context)?
+      _curriculumNodesFetcher;
+  final Future<Map<String, EvidenceSummary>> Function(
+    LearningContext context,
+    ResolvedScope scope,
+    ScopeCoverageBundle coverage,
+  )? _domainEvidenceFetcher;
 
   const ContextSnapshotResolver({
     required CourseService courses,
@@ -81,7 +92,15 @@ class ContextSnapshotResolver {
     LearningStrategyPlanner strategyPlanner = const LearningStrategyPlanner(),
     TelFeatureFlags telFlags = const TelFeatureFlags(),
     FastPreference Function(String contextId)? fastPreferenceLookup,
+    ConceptEvidenceService? conceptEvidence,
     Future<Set<String>> Function()? completedLessonIdsFetcher,
+    Future<List<SnapshotNode>> Function(LearningContext context)?
+        curriculumNodesFetcher,
+    Future<Map<String, EvidenceSummary>> Function(
+      LearningContext context,
+      ResolvedScope scope,
+      ScopeCoverageBundle coverage,
+    )? domainEvidenceFetcher,
   })  : _courses = courses,
         _studySets = studySets,
         _reviews = reviews,
@@ -91,7 +110,10 @@ class ContextSnapshotResolver {
         _strategyPlanner = strategyPlanner,
         _telFlags = telFlags,
         _fastPreferenceLookup = fastPreferenceLookup,
-        _completedLessonIdsFetcher = completedLessonIdsFetcher;
+        _conceptEvidence = conceptEvidence,
+        _completedLessonIdsFetcher = completedLessonIdsFetcher,
+        _curriculumNodesFetcher = curriculumNodesFetcher,
+        _domainEvidenceFetcher = domainEvidenceFetcher;
 
   Future<Set<String>> _getCompletedLessonIds(LearningContext context) async {
     final fetcher = _completedLessonIdsFetcher;
@@ -100,9 +122,12 @@ class ContextSnapshotResolver {
     }
 
     final completed = <String>{};
-    final effectiveUserId = context.userId.isNotEmpty
-        ? context.userId
-        : Supabase.instance.client.auth.currentUser?.id;
+    String? effectiveUserId = context.userId.isNotEmpty ? context.userId : null;
+    if (effectiveUserId == null) {
+      try {
+        effectiveUserId = Supabase.instance.client.auth.currentUser?.id;
+      } catch (_) {}
+    }
 
     // 1. Check local Hive progress first (instant & offline)
     try {
@@ -116,7 +141,9 @@ class ContextSnapshotResolver {
             }
           } else {
             // Guest mode: only match unowned / guest rows
-            if (p.userId.isEmpty || p.userId == 'anonymous' || p.userId == 'guest') {
+            if (p.userId.isEmpty ||
+                p.userId == 'anonymous' ||
+                p.userId == 'guest') {
               completed.add(p.lessonId);
             }
           }
@@ -131,7 +158,9 @@ class ContextSnapshotResolver {
       if (effectiveUserId != null && isValidUuid(effectiveUserId)) {
         final rows = await Supabase.instance.client
             .from('learner_activity_progress')
-            .select('content_kind,content_id,version_key,reporting_date_utc,completed')
+            .select(
+              'content_kind,content_id,version_key,reporting_date_utc,completed',
+            )
             .eq('user_id', effectiveUserId)
             .order('reporting_date_utc', ascending: false)
             .limit(500);
@@ -152,6 +181,287 @@ class ContextSnapshotResolver {
     }
 
     return completed;
+  }
+
+  Future<List<SnapshotNode>> _resolveCurriculumNodes(
+    LearningContext context,
+  ) async {
+    final fetcher = _curriculumNodesFetcher;
+    if (fetcher != null) {
+      return await fetcher(context);
+    }
+    if (_scopeResolver != null) {
+      try {
+        return await _scopeResolver.resolveCurriculumNodes(context);
+      } catch (e) {
+        debugPrint('⚠️ Could not resolve curriculum nodes: $e');
+      }
+    }
+    return const <SnapshotNode>[];
+  }
+
+  /// Resolves real domain-level learner evidence (`user_concept_state` + FSRS
+  /// review history) for [context], [scope], and [coverage] while enforcing
+  /// `EVIDENCE-01` (FSRS history alone never produces `independentEvidenceAvailable`).
+  Future<Map<String, EvidenceSummary>> _resolveDomainEvidence({
+    required LearningContext context,
+    required ResolvedScope scope,
+    required ScopeCoverageBundle coverage,
+    required List<SnapshotNode> curriculumNodes,
+    required List<ReviewableItem> dueItems,
+  }) async {
+    final customFetcher = _domainEvidenceFetcher;
+    if (customFetcher != null) {
+      return await customFetcher(context, scope, coverage);
+    }
+
+    final domainStats = <String, _DomainEvidenceAccumulator>{};
+    for (final domain in coverage.officialDomains) {
+      domainStats[domain.domainId] = _DomainEvidenceAccumulator(domain.domainId);
+    }
+
+    // 1. Incorporate FSRS / spaced-repetition review items by lesson -> domain mapping
+    //    Per EVIDENCE-01, flashcard/term FSRS review history records hasFsrsSchedulingHistory
+    //    and limitedEvidence unless backed by independent scored concept evidence.
+    for (final item in dueItems) {
+      if (!_belongsToContext(item, context, scope)) continue;
+      if (item.totalReviews <= 0) continue;
+      final lessonId = item.lessonId;
+      if (lessonId == null || lessonId.isEmpty) continue;
+      final record = coverage.recordsByActivityId[lessonId];
+      if (record == null) continue;
+      for (final domainId in record.allDomainIds) {
+        final acc = domainStats[domainId];
+        if (acc == null) continue;
+        final isIndependentItem =
+            item.contentType == ReviewableContentType.question ||
+            item.contentType == ReviewableContentType.multipleChoice ||
+            item.contentType == ReviewableContentType.trueFalse ||
+            item.contentType == ReviewableContentType.fillInBlank ||
+            item.contentType == ReviewableContentType.matching;
+        if (isIndependentItem) {
+          acc.practiceAttemptCount += item.totalReviews;
+        } else {
+          acc.hasFsrsSchedulingHistory = true;
+        }
+      }
+    }
+
+    // 2. Query canonical `user_concept_state` for concepts in the resolved scope
+    String? effectiveUserId = context.userId.isNotEmpty ? context.userId : null;
+    if (effectiveUserId == null) {
+      try {
+        effectiveUserId = Supabase.instance.client.auth.currentUser?.id;
+      } catch (_) {}
+    }
+
+    final activeConcepts = scope.activeConceptIds;
+    if (effectiveUserId != null &&
+        effectiveUserId.isNotEmpty &&
+        activeConcepts.isNotEmpty &&
+        _conceptEvidence != null) {
+      try {
+        final conceptStates = await _conceptEvidence.getUserConceptStates(
+          effectiveUserId,
+          conceptIds: activeConcepts.toList(),
+        );
+
+        if (conceptStates.isNotEmpty) {
+          final conceptDomains = await _resolveConceptDomainMap(
+            conceptIds: conceptStates.keys.toSet(),
+            scope: scope,
+            coverage: coverage,
+            curriculumNodes: curriculumNodes,
+          );
+
+          for (final entry in conceptStates.entries) {
+            final state = entry.value;
+            if (state.evidenceCount <= 0) continue;
+            final domains = conceptDomains[entry.key];
+            if (domains == null || domains.isEmpty) continue;
+
+            for (final domainId in domains) {
+              final acc = domainStats[domainId];
+              if (acc == null) continue;
+              acc.independentAttemptCount += state.evidenceCount;
+              acc.weightedCorrect += state.weightedCorrect;
+              acc.weightedTotal += state.weightedTotal;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Could not resolve domain concept evidence: $e');
+      }
+    }
+
+    final result = <String, EvidenceSummary>{};
+    for (final entry in domainStats.entries) {
+      final summary = entry.value.toSummary();
+      if (summary.statusLabel != EvidenceStatusLabel.notAssessed ||
+          summary.hasFsrsSchedulingHistory ||
+          summary.independentAttemptCount > 0) {
+        result[entry.key] = summary;
+      }
+    }
+    return result;
+  }
+
+  Future<Map<String, Set<String>>> _resolveConceptDomainMap({
+    required Set<String> conceptIds,
+    required ResolvedScope scope,
+    required ScopeCoverageBundle coverage,
+    required List<SnapshotNode> curriculumNodes,
+  }) async {
+    final map = <String, Set<String>>{};
+
+    // First try direct slug/key lookup
+    for (final conceptId in conceptIds) {
+      final direct = _coverageService.resolveDomainForConcept(
+        conceptId,
+        officialDomains: coverage.officialDomains,
+      );
+      if (direct.isNotEmpty) {
+        map.putIfAbsent(conceptId, () => <String>{}).addAll(direct);
+      }
+    }
+
+    final unmapped = conceptIds.where((id) => !map.containsKey(id)).toList();
+    if (unmapped.isEmpty) return map;
+
+    try {
+      final client = Supabase.instance.client;
+
+      // Map via curriculum_node_concepts -> curriculumNodeId -> domainId
+      final cncRes = await client
+          .from('curriculum_node_concepts')
+          .select('concept_id, curriculum_node_id')
+          .inFilter('concept_id', unmapped);
+      for (final row in (cncRes as List)) {
+        final cId = row['concept_id'] as String?;
+        final nId = row['curriculum_node_id'] as String?;
+        if (cId == null || nId == null) continue;
+        final domainId = _coverageService.resolveDomainForNodeId(
+          nId,
+          curriculumNodes: curriculumNodes,
+          officialDomains: coverage.officialDomains,
+        );
+        if (domainId != null) {
+          map.putIfAbsent(cId, () => <String>{}).add(domainId);
+        }
+      }
+
+      // Map via lesson_concepts -> lessonId -> coverage.recordsByActivityId[lessonId]
+      final stillUnmapped =
+          unmapped.where((id) => !map.containsKey(id)).toList();
+      if (stillUnmapped.isNotEmpty) {
+        final lcRes = await client
+            .from('lesson_concepts')
+            .select('concept_id, lesson_id')
+            .inFilter('concept_id', stillUnmapped);
+        for (final row in (lcRes as List)) {
+          final cId = row['concept_id'] as String?;
+          final lId = row['lesson_id'] as String?;
+          if (cId == null || lId == null) continue;
+          final record = coverage.recordsByActivityId[lId];
+          if (record != null && record.allDomainIds.isNotEmpty) {
+            map.putIfAbsent(cId, () => <String>{}).addAll(record.allDomainIds);
+          }
+        }
+      }
+
+      // Map via knowledge_concepts.slug / source_id -> clepPsychConceptDomains
+      final remaining = unmapped.where((id) => !map.containsKey(id)).toList();
+      if (remaining.isNotEmpty) {
+        final kcRes = await client
+            .from('knowledge_concepts')
+            .select('id, slug, source_id')
+            .inFilter('id', remaining);
+        for (final row in (kcRes as List)) {
+          final cId = row['id'] as String?;
+          if (cId == null) continue;
+          final slug = row['slug'] as String?;
+          final sourceId = row['source_id'] as String?;
+          final bySlug = _coverageService.resolveDomainForConcept(
+            slug,
+            officialDomains: coverage.officialDomains,
+          );
+          final bySource = _coverageService.resolveDomainForConcept(
+            sourceId,
+            officialDomains: coverage.officialDomains,
+          );
+          final combined = {...bySlug, ...bySource};
+          if (combined.isNotEmpty) {
+            map.putIfAbsent(cId, () => <String>{}).addAll(combined);
+          }
+        }
+      }
+    } catch (_) {
+      // Offline or test environment without Supabase initialized
+    }
+
+    return map;
+  }
+
+  /// Resolves the deterministic [FastPlanResult] for [context] using real
+  /// curriculum node hierarchy, per-lesson completion state, and domain-level
+  /// learner evidence (`TEL-04A`).
+  Future<FastPlanResult?> resolveFastPlan(
+    LearningContext context, {
+    PersistedLearningStrategy? strategyOverride,
+    Set<String>? completedLessonsOverride,
+    List<ReviewableItem>? dueItemsOverride,
+    ResolvedScope? scopeOverride,
+  }) async {
+    if (context.rootType != ContextRootType.target ||
+        !_telFlags.isFastEnabledForTarget(
+          context.rootId,
+          isExamTarget: true,
+        )) {
+      return null;
+    }
+
+    final resolvedScope =
+        scopeOverride ?? await _scopeResolver?.resolveScope(context);
+    if (resolvedScope == null) return null;
+
+    final completedLessons =
+        completedLessonsOverride ?? await _getCompletedLessonIds(context);
+    final dueItems = dueItemsOverride ?? await _safeDueItems();
+    final curriculumNodes = await _resolveCurriculumNodes(context);
+
+    // Each exam uses its own reviewed blueprint; unreviewed targets get the
+    // generic course-order fallback without official coverage claims.
+    final coverage = _coverageService.buildCoverageForScope(
+      scope: resolvedScope,
+      officialDomains: officialDomainsForTarget(context.rootId),
+      curriculumNodes: curriculumNodes,
+    );
+
+    final domainEvidence = await _resolveDomainEvidence(
+      context: context,
+      scope: resolvedScope,
+      coverage: coverage,
+      curriculumNodes: curriculumNodes,
+      dueItems: dueItems,
+    );
+
+    final fastPref = _fastPreferenceLookup?.call(context.id);
+    final activeStrategy =
+        strategyOverride ??
+        fastPref?.strategy ??
+        PersistedLearningStrategy.standard;
+
+    return _strategyPlanner.plan(
+      scope: resolvedScope,
+      coverage: coverage,
+      asOf: resolvedScope.resolvedAt,
+      activeStrategy: activeStrategy,
+      completedActivityIds: completedLessons,
+      manualSkippedActivityIds:
+          fastPref?.manualSkippedActivityIds ?? const <String>{},
+      domainEvidence: domainEvidence,
+      optionalTotalMinutes: fastPref?.optionalTotalMinutes,
+    );
   }
 
   Future<ContextSnapshot> resolve(LearningContext context) async {
@@ -188,19 +498,14 @@ class ContextSnapshotResolver {
               fastPref?.strategy == PersistedLearningStrategy.fast;
 
           if (useFastPlanner && fastPref != null) {
-            final coverage = _coverageService.buildCoverageForScope(
-              scope: resolvedScope,
+            final fastPlan = await resolveFastPlan(
+              context,
+              strategyOverride: PersistedLearningStrategy.fast,
+              completedLessonsOverride: completedLessons,
+              dueItemsOverride: due,
+              scopeOverride: resolvedScope,
             );
-            final fastPlan = _strategyPlanner.plan(
-              scope: resolvedScope,
-              coverage: coverage,
-              asOf: resolvedScope.resolvedAt,
-              activeStrategy: PersistedLearningStrategy.fast,
-              completedActivityIds: completedLessons,
-              manualSkippedActivityIds: fastPref.manualSkippedActivityIds,
-              optionalTotalMinutes: fastPref.optionalTotalMinutes,
-            );
-            final topCandidate = fastPlan.topRecommendedActivity;
+            final topCandidate = fastPlan?.topRecommendedActivity;
             if (topCandidate != null) {
               final matched = resolvedScope.orderedActivities
                   .where((a) => a.activityId == topCandidate.activityId)
@@ -465,11 +770,59 @@ final contextSnapshotResolverProvider = Provider<ContextSnapshotResolver>((ref) 
     coverageService: ref.watch(contentCoverageServiceProvider),
     strategyPlanner: ref.watch(learningStrategyPlannerProvider),
     telFlags: ref.watch(telFeatureFlagsProvider),
+    conceptEvidence: ref.watch(conceptEvidenceServiceProvider),
     fastPreferenceLookup: (contextId) =>
         strategyState.preferencesByContextId[contextId] ??
         store.getOrDefault(contextId: contextId, userId: userId),
   );
 });
+
+class _DomainEvidenceAccumulator {
+  final String domainId;
+  int independentAttemptCount = 0;
+  int practiceAttemptCount = 0;
+  double weightedCorrect = 0.0;
+  double weightedTotal = 0.0;
+  bool hasFsrsSchedulingHistory = false;
+
+  _DomainEvidenceAccumulator(this.domainId);
+
+  EvidenceSummary toSummary() {
+    if (independentAttemptCount > 0 && weightedTotal > 0) {
+      final score = (weightedCorrect / weightedTotal).clamp(0.0, 1.0);
+      final status = (independentAttemptCount >= 2 || score < 0.75)
+          ? EvidenceStatusLabel.independentEvidenceAvailable
+          : EvidenceStatusLabel.practiceEvidenceAvailable;
+      return EvidenceSummary(
+        subjectKey: domainId,
+        statusLabel: status,
+        independentAttemptCount: independentAttemptCount,
+        independentScore: score,
+        hasFsrsSchedulingHistory: hasFsrsSchedulingHistory,
+      );
+    }
+
+    if (practiceAttemptCount > 0) {
+      return EvidenceSummary(
+        subjectKey: domainId,
+        statusLabel: EvidenceStatusLabel.practiceEvidenceAvailable,
+        independentAttemptCount: 0,
+        hasFsrsSchedulingHistory: hasFsrsSchedulingHistory,
+      );
+    }
+
+    if (hasFsrsSchedulingHistory) {
+      return EvidenceSummary(
+        subjectKey: domainId,
+        statusLabel: EvidenceStatusLabel.limitedEvidence,
+        independentAttemptCount: 0,
+        hasFsrsSchedulingHistory: true,
+      );
+    }
+
+    return EvidenceSummary(subjectKey: domainId);
+  }
+}
 
 /// The single primary action rendered by the Learn screen.
 final nextActionProvider = FutureProvider<NextAction>((ref) async {

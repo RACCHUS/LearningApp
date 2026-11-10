@@ -5,12 +5,15 @@ import '../models/knowledge_concept.dart';
 import '../models/learning_target.dart';
 import '../models/catalog_cluster.dart';
 import '../models/canonical_field.dart';
+import '../utils/uuid_validator.dart';
 
 class LearningTargetService {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _supabaseClient;
 
   LearningTargetService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+      : _supabaseClient = supabase;
+
+  SupabaseClient get _supabase => _supabaseClient ?? Supabase.instance.client;
 
   /// Get published learning targets
   Future<List<LearningTarget>> getTargets({
@@ -97,11 +100,23 @@ class LearningTargetService {
   /// Get single learning target by id or slug
   Future<LearningTarget?> getTarget(String idOrSlug) async {
     try {
-      final res = await _supabase
-          .from('learning_targets')
-          .select('*')
-          .or('id.eq.$idOrSlug,slug.eq.$idOrSlug')
-          .maybeSingle();
+      final trimmed = idOrSlug.trim();
+      if (trimmed.isEmpty) return null;
+
+      final Map<String, dynamic>? res;
+      if (isValidUuid(trimmed)) {
+        res = await _supabase
+            .from('learning_targets')
+            .select('*')
+            .or('id.eq.$trimmed,slug.eq.$trimmed')
+            .maybeSingle();
+      } else {
+        res = await _supabase
+            .from('learning_targets')
+            .select('*')
+            .eq('slug', trimmed)
+            .maybeSingle();
+      }
 
       if (res != null) {
         return LearningTarget.fromJson(res);
@@ -112,7 +127,7 @@ class LearningTargetService {
           .from('v2_migration_map')
           .select('v2_id')
           .eq('legacy_type', 'career_path')
-          .eq('legacy_id', idOrSlug)
+          .eq('legacy_id', trimmed)
           .maybeSingle();
 
       if (mapRes != null && mapRes['v2_id'] != null) {
@@ -130,10 +145,18 @@ class LearningTargetService {
   /// Get latest published target version
   Future<TargetVersion?> getLatestVersion(String targetId) async {
     try {
+      var resolvedTargetId = targetId.trim();
+      if (resolvedTargetId.isEmpty) return null;
+      if (!isValidUuid(resolvedTargetId)) {
+        final target = await getTarget(resolvedTargetId);
+        if (target == null) return null;
+        resolvedTargetId = target.id;
+      }
+
       final res = await _supabase
           .from('target_versions')
           .select('*')
-          .eq('target_id', targetId)
+          .eq('target_id', resolvedTargetId)
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();

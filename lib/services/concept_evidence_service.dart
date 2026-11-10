@@ -13,10 +13,12 @@ import '../models/user_concept_state.dart';
 /// Propagates evidence to all concepts mapped to the content item and updates
 /// the user's analytical projection in `user_concept_state`.
 class ConceptEvidenceService {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _supabaseClient;
 
   ConceptEvidenceService({SupabaseClient? supabase})
-      : _supabase = supabase ?? Supabase.instance.client;
+      : _supabaseClient = supabase;
+
+  SupabaseClient get _supabase => _supabaseClient ?? Supabase.instance.client;
 
   /// Records retrieval evidence asynchronously for an item without blocking SM-2 or UI.
   Future<void> recordEvidence({
