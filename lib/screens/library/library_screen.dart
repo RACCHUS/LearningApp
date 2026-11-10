@@ -22,6 +22,7 @@ import 'package:learning_pwa/widgets/literacy/life_milestones_banner_card.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/widgets/library/create_chooser_sheet.dart';
+import 'package:learning_pwa/widgets/library/quick_overview_entry.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
 /// came to browse and manage.
@@ -760,7 +761,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   leading: Text(t.emoji ?? '🎯', style: const TextStyle(fontSize: 20)),
                   title: Text(t.title),
                   subtitle: Text('${t.disambiguationTag} · ${t.sourceLabel}'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      QuickOverviewEntry(
+                        targetId: t.id,
+                        targetSlug: t.slug,
+                        compact: true,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
                   onTap: () => context.push('/target/${t.id}'),
                 ),
               ),

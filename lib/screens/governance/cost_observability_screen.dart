@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/governance/usage_quota.dart';
 import 'package:learning_pwa/services/governance/cost_observability_service.dart';
 import 'package:learning_pwa/services/supabase_health_service.dart';
@@ -90,6 +91,18 @@ class _CostObservabilityScreenState extends State<CostObservabilityScreen> {
       appBar: AppBar(
         title: const Text('Cost & Observability Console'),
         actions: [
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.tune_outlined),
+              tooltip: 'Feature Control Center',
+              onPressed: () => context.push('/admin/features'),
+            ),
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.insights_outlined),
+              tooltip: 'Product Analytics',
+              onPressed: () => context.push('/admin/analytics'),
+            ),
           if (_isAdmin)
             IconButton(
               icon: const Icon(Icons.refresh),

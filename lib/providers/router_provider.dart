@@ -3,6 +3,10 @@ import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
     deferred as moderation_queue;
 import 'package:learning_pwa/screens/governance/cost_observability_screen.dart'
     deferred as cost_observability;
+import 'package:learning_pwa/screens/governance/product_analytics_overview_screen.dart'
+    deferred as product_analytics_overview;
+import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart'
+    deferred as feature_control_center;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,6 +36,8 @@ import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart'
     deferred as reset_center;
+import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart'
+    deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
@@ -41,6 +47,8 @@ import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
 import 'package:learning_pwa/screens/targets/target_detail_screen.dart';
 import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/screens/targets/target_simulation_screen.dart';
+import 'package:learning_pwa/screens/overview/overview_tour_screen.dart';
+import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
@@ -56,6 +64,7 @@ import 'package:learning_pwa/screens/simulation/simulation_screen.dart'
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
+import 'package:learning_pwa/widgets/site_feature_refresh_observer.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
@@ -110,7 +119,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Persistent three-destination shell: Learn | Library | Progress.
       ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
+        builder: (context, state, child) =>
+            SiteFeatureRefreshObserver(child: AppShell(child: child)),
         routes: [
           GoRoute(
             path: '/learn',
@@ -153,6 +163,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'target-outline',
         builder: (context, state) =>
             TargetOutlineScreen(targetId: state.pathParameters['targetId']!),
+      ),
+      GoRoute(
+        path: '/overview/:targetId',
+        name: 'subject-overview',
+        builder: (context, state) {
+          final rawMinutes = int.tryParse(
+            state.uri.queryParameters['duration'] ?? '',
+          );
+          return OverviewTourScreen(
+            targetSlugOrId: state.pathParameters['targetId']!,
+            initialPreset: OverviewDurationPreset.fromMinutes(rawMinutes),
+          );
+        },
       ),
       GoRoute(
         path: '/target/:targetId/diagnostic/:targetVersionId',
@@ -487,6 +510,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MotivationSettingsScreen(),
       ),
       GoRoute(
+        path: '/settings/privacy/analytics',
+        name: 'product-analytics-privacy',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_privacy.loadLibrary,
+          builder: () =>
+              product_analytics_privacy.ProductAnalyticsPrivacyScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/moderation',
         name: 'moderation-queue',
         builder: (context, state) => DeferredLoaderWidget(
@@ -500,6 +532,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: cost_observability.loadLibrary,
           builder: () => cost_observability.CostObservabilityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/features',
+        name: 'feature-control-center',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: feature_control_center.loadLibrary,
+          builder: () => feature_control_center.FeatureControlCenterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/analytics',
+        name: 'product-analytics-overview',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_overview.loadLibrary,
+          builder: () =>
+              product_analytics_overview.ProductAnalyticsOverviewScreen(),
         ),
       ),
       GoRoute(

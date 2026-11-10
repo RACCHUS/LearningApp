@@ -1,15 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/daily_plan_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/services/course_service.dart';
 import 'package:learning_pwa/services/learning_context_service.dart';
 import 'package:learning_pwa/services/learning_context_migration.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
+import 'package:learning_pwa/services/planning/content_coverage_service.dart';
+import 'package:learning_pwa/services/planning/learning_strategy_planner.dart';
 import 'package:learning_pwa/services/saved_study_set_service.dart';
 import 'package:learning_pwa/services/scope_resolver.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
@@ -59,6 +64,10 @@ class ContextSnapshotResolver {
   final SpacedRepetitionService _reviews;
   final LearningContextService _contexts;
   final ScopeResolver? _scopeResolver;
+  final ContentCoverageService _coverageService;
+  final LearningStrategyPlanner _strategyPlanner;
+  final TelFeatureFlags _telFlags;
+  final FastPreference Function(String contextId)? _fastPreferenceLookup;
 
   final Future<Set<String>> Function()? _completedLessonIdsFetcher;
 
@@ -68,12 +77,20 @@ class ContextSnapshotResolver {
     required SpacedRepetitionService reviews,
     required LearningContextService contexts,
     ScopeResolver? scopeResolver,
+    ContentCoverageService coverageService = const ContentCoverageService(),
+    LearningStrategyPlanner strategyPlanner = const LearningStrategyPlanner(),
+    TelFeatureFlags telFlags = const TelFeatureFlags(),
+    FastPreference Function(String contextId)? fastPreferenceLookup,
     Future<Set<String>> Function()? completedLessonIdsFetcher,
   })  : _courses = courses,
         _studySets = studySets,
         _reviews = reviews,
         _contexts = contexts,
         _scopeResolver = scopeResolver,
+        _coverageService = coverageService,
+        _strategyPlanner = strategyPlanner,
+        _telFlags = telFlags,
+        _fastPreferenceLookup = fastPreferenceLookup,
         _completedLessonIdsFetcher = completedLessonIdsFetcher;
 
   Future<Set<String>> _getCompletedLessonIds(LearningContext context) async {
@@ -152,6 +169,7 @@ class ContextSnapshotResolver {
     }
 
     LearningActivity? next;
+    String? nextActivityRationale;
     LearningActivity? resumeActivity;
     var resumeItemCount = 0;
 
@@ -160,34 +178,78 @@ class ContextSnapshotResolver {
       case ContextRootType.concept:
       case ContextRootType.module:
         if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
-          // Incomplete required official lessons outrank unfinished personal lessons
-          final incompleteOfficial = resolvedScope.orderedActivities.where(
-            (a) =>
-                a.source == ScopedActivitySource.official &&
-                a.isRequired &&
-                !completedLessons.contains(a.activityId),
-          );
+          final fastPref = _fastPreferenceLookup?.call(context.id);
+          final useFastPlanner =
+              context.rootType == ContextRootType.target &&
+              _telFlags.isFastEnabledForTarget(
+                context.rootId,
+                isExamTarget: true,
+              ) &&
+              fastPref?.strategy == PersistedLearningStrategy.fast;
 
-          final candidate = incompleteOfficial.isNotEmpty
-              ? incompleteOfficial.first
-              : resolvedScope.orderedActivities
-                  .where((a) => !completedLessons.contains(a.activityId))
-                  .firstOrNull;
-
-          if (candidate != null) {
-            final index = resolvedScope.orderedActivities
-                .indexWhere((a) => a.activityId == candidate.activityId);
-            next = LessonActivity(
-              lessonId: candidate.activityId,
-              title: candidate.title,
-              courseId: candidate.courseId,
-              courseTitle: candidate.courseTitle,
-              moduleTitle: candidate.moduleTitle,
-              position: index >= 0 ? index + 1 : null,
-              total: resolvedScope.orderedActivities.length,
+          if (useFastPlanner && fastPref != null) {
+            final coverage = _coverageService.buildCoverageForScope(
+              scope: resolvedScope,
             );
+            final fastPlan = _strategyPlanner.plan(
+              scope: resolvedScope,
+              coverage: coverage,
+              asOf: resolvedScope.resolvedAt,
+              activeStrategy: PersistedLearningStrategy.fast,
+              completedActivityIds: completedLessons,
+              manualSkippedActivityIds: fastPref.manualSkippedActivityIds,
+              optionalTotalMinutes: fastPref.optionalTotalMinutes,
+            );
+            final topCandidate = fastPlan.topRecommendedActivity;
+            if (topCandidate != null) {
+              final matched = resolvedScope.orderedActivities
+                  .where((a) => a.activityId == topCandidate.activityId)
+                  .firstOrNull;
+              final index = resolvedScope.orderedActivities.indexWhere(
+                (a) => a.activityId == topCandidate.activityId,
+              );
+              next = LessonActivity(
+                lessonId: topCandidate.activityId,
+                title: topCandidate.title,
+                estimate: Duration(minutes: topCandidate.estimatedMinutes),
+                courseId: matched?.courseId,
+                courseTitle: matched?.courseTitle,
+                moduleTitle: matched?.moduleTitle,
+                position: index >= 0 ? index + 1 : null,
+                total: resolvedScope.orderedActivities.length,
+              );
+              nextActivityRationale = topCandidate.userFacingRationale;
+            }
           } else {
-            next = null;
+            // Standard mode: Incomplete required official lessons outrank unfinished personal lessons
+            final incompleteOfficial = resolvedScope.orderedActivities.where(
+              (a) =>
+                  a.source == ScopedActivitySource.official &&
+                  a.isRequired &&
+                  !completedLessons.contains(a.activityId),
+            );
+
+            final candidate = incompleteOfficial.isNotEmpty
+                ? incompleteOfficial.first
+                : resolvedScope.orderedActivities
+                    .where((a) => !completedLessons.contains(a.activityId))
+                    .firstOrNull;
+
+            if (candidate != null) {
+              final index = resolvedScope.orderedActivities
+                  .indexWhere((a) => a.activityId == candidate.activityId);
+              next = LessonActivity(
+                lessonId: candidate.activityId,
+                title: candidate.title,
+                courseId: candidate.courseId,
+                courseTitle: candidate.courseTitle,
+                moduleTitle: candidate.moduleTitle,
+                position: index >= 0 ? index + 1 : null,
+                total: resolvedScope.orderedActivities.length,
+              );
+            } else {
+              next = null;
+            }
           }
           resumeActivity = _lessonFromPointer(resume);
           resumeItemCount = 0;
@@ -256,6 +318,7 @@ class ContextSnapshotResolver {
       resumeActivity: resumeActivity,
       resumeItemCount: resumeItemCount,
       nextActivity: next,
+      nextActivityRationale: nextActivityRationale,
       dueConceptIds: dueIds,
       strugglingConceptIds: _struggling(scopedDue),
       forwardOffer: next == null ? ForwardOffer.browse : null,
@@ -390,12 +453,21 @@ class ContextSnapshotResolver {
 }
 
 final contextSnapshotResolverProvider = Provider<ContextSnapshotResolver>((ref) {
+  final strategyState = ref.watch(learningStrategyProvider);
+  final store = ref.watch(fastPreferenceStoreProvider);
+  final userId = ref.watch(learnerIdProvider);
   return ContextSnapshotResolver(
     courses: ref.watch(courseServiceProvider),
     studySets: ref.watch(savedStudySetServiceProvider),
     reviews: ref.watch(spacedRepetitionServiceProvider),
     contexts: ref.watch(learningContextServiceProvider),
     scopeResolver: ref.watch(scopeResolverProvider),
+    coverageService: ref.watch(contentCoverageServiceProvider),
+    strategyPlanner: ref.watch(learningStrategyPlannerProvider),
+    telFlags: ref.watch(telFeatureFlagsProvider),
+    fastPreferenceLookup: (contextId) =>
+        strategyState.preferencesByContextId[contextId] ??
+        store.getOrDefault(contextId: contextId, userId: userId),
   );
 });
 

@@ -155,11 +155,13 @@ class PrioritizedReview extends NextAction {
 
 class StartActivity extends NextAction {
   final LearningActivity activity;
-  const StartActivity({required this.activity});
+  final String? customRationale;
+  const StartActivity({required this.activity, this.customRationale});
 
-  // Deliberately silent: "it's next in the course" is not worth a sentence.
+  // Deliberately silent in Standard mode: "it's next in the course" is not worth a sentence.
+  // When Fast mode selects a prioritized activity, surfaces its truthful rationale.
   @override
-  String? get rationale => null;
+  String? get rationale => customRationale;
 }
 
 class ReviewOnly extends NextAction {
@@ -205,6 +207,9 @@ class ContextSnapshot {
   /// Next available activity in this context, already resolved per rootType.
   final LearningActivity? nextActivity;
 
+  /// Optional one-line rationale for [nextActivity] when selected by Fast planner.
+  final String? nextActivityRationale;
+
   /// Concepts due for review inside this context.
   final List<String> dueConceptIds;
 
@@ -229,6 +234,7 @@ class ContextSnapshot {
     this.resumeActivity,
     this.resumeItemCount = 0,
     this.nextActivity,
+    this.nextActivityRationale,
     this.dueConceptIds = const [],
     this.strugglingConceptIds = const [],
     this.forwardOffer,
@@ -333,7 +339,10 @@ class NextActionEngine {
     // 5 — forward progress. Study sets always land here: practice is
     // repeatable, so a studySet context never runs out of material.
     if (next != null) {
-      return StartActivity(activity: next);
+      return StartActivity(
+        activity: next,
+        customRationale: active.nextActivityRationale,
+      );
     }
 
     // 6 — context exhausted. The forward offer appears either way; only its

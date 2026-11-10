@@ -18,6 +18,7 @@ import '../../widgets/targets/diagnostic_launch_banner.dart';
 import '../../widgets/targets/simulation_exam_launch_card.dart';
 import '../../widgets/targets/pathway_preparation_goal_card.dart';
 import '../../widgets/taxonomy/career_crosswalk_sheet.dart';
+import '../../widgets/library/quick_overview_entry.dart';
 import '../governance/version_staging_dashboard_screen.dart';
 
 class TargetDetailScreen extends ConsumerWidget {
@@ -230,6 +231,11 @@ class TargetDetailScreen extends ConsumerWidget {
                       label: const Text('Outline'),
                     ),
                   ],
+                ),
+                const SizedBox(height: DesignTokens.space2),
+                QuickOverviewEntry(
+                  targetId: target.id,
+                  targetSlug: target.slug,
                 ),
                 const SizedBox(height: DesignTokens.space5),
                 const Divider(),
