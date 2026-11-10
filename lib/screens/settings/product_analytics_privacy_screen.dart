@@ -122,6 +122,9 @@ class _ProductAnalyticsPrivacyScreenState
           _error = 'Action could not be confirmed. No additional product '
               'tracking was enabled. Retry when connectivity is restored.';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_error!)),
+        );
       }
     } finally {
       if (mounted && _sameUser) setState(() => _busy = false);
@@ -139,6 +142,9 @@ class _ProductAnalyticsPrivacyScreenState
       _message = 'Consent withdrawn. Server-stored product events were '
           'erased and $cleared queued item(s) cleared on this device.';
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_message!)),
+    );
   });
 
   Future<void> _enroll() async {
@@ -176,6 +182,9 @@ class _ProductAnalyticsPrivacyScreenState
         _message = 'Consent saved. Optional telemetry still depends on '
             'the separately approved release controls.';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_message!)),
+      );
     });
   }
 
@@ -188,6 +197,9 @@ class _ProductAnalyticsPrivacyScreenState
       _message = 'Your product event export was copied to the clipboard. '
           'Save it privately, then clear the clipboard on a shared device.';
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_message!)),
+    );
   });
 
   Future<void> _clearDevice() => _perform(() async {
@@ -197,6 +209,9 @@ class _ProductAnalyticsPrivacyScreenState
       _message = 'Cleared $count queued product event(s) on this device. '
           'Server records were not changed by this local action.';
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_message!)),
+    );
   });
 
   @override
