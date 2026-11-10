@@ -1,0 +1,89 @@
+# Manually run the SAME guarded deployment logic used by the repository.
+# This workflow ONLY runs --dry-run. No --include-all, repairs or live pushes.
+# Configure the protected 'analytics-preflight' GitHub environment with
+# SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD before running.
+name: Analytics guarded Supabase preflight (dry-run only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      acknowledge_read_only:
+        description: 'Run protected Supabase migration dry-run (never deploy)'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guarded-analytics-preflight
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.ref == 'refs/heads/main' && inputs.acknowledge_read_only == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: analytics-preflight
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      EXPECTED_PROJECT_REF: xzvkdwebtbxlrxagtzlv
+    steps:
+      - name: Checkout full audited migration history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate the credentials are supplied without printing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "::error::Missing protected Supabase access token"; exit 1;
+          }
+          test -n "$SUPABASE_DB_PASSWORD" || {
+            echo "::error::Missing protected Supabase database password"; exit 1;
+          }
+
+      - name: Install pinned Flutter and Dart
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Resolve repository dependencies
+        run: flutter pub get
+
+      - name: Install reviewed, pinned Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.67.1
+
+      - name: Link only the approved target project
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$EXPECTED_PROJECT_REF"
+          test "$(cat supabase/.temp/project-ref)" = "$EXPECTED_PROJECT_REF"
+
+      - name: Execute repository guard in DRY RUN mode ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart run tool/guarded_supabase_deploy.dart \
+            --dry-run \
+            --project-ref "$EXPECTED_PROJECT_REF" \
+            --base-ref origin/main \
+            --report-dir build/analytics_preflight_reports
+
+      - name: Upload non-secret, reviewed dry-run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-guarded-dry-run-report
+          path: build/analytics_preflight_reports/
+          retention-days: 7
+          if-no-files-found: ignore
