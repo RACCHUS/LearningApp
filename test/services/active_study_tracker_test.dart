@@ -35,6 +35,17 @@ void main() {
       expect(events.single.end, at(41));
     });
 
+    test('same-timestamp pointer signal and timer tick do not cancel reading', () {
+      final tracker = ActiveStudyTracker()..resume(at(0));
+      tracker.interaction(at(0));
+      tracker.tick(at(10));
+      tracker.interaction(at(10)); // Same timestamp as next scheduled sample.
+      tracker.tick(at(10));
+      tracker.tick(at(20));
+      final events = tracker.pause(at(25));
+      expect(total(events), 25);
+    });
+
     test('idle timeout stops the clock even if lesson is still visible', () {
       final tracker = ActiveStudyTracker()..resume(at(0));
       tracker.interaction(at(0));
