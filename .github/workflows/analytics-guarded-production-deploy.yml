@@ -39,6 +39,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_DEPLOY_CONNECTION: session_pooler
       EXPECTED_PROJECT_REF: xzvkdwebtbxlrxagtzlv
       APPROVED_MAIN_SHA: ${{ inputs.approved_main_sha }}
     steps:
