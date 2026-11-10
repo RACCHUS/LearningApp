@@ -84,3 +84,7 @@ Site generation costs nothing extra. Static hosting can be within a free tier
 but domain renewal and provider quotas can still cost money. No live deployment,
 donation integration, ad account or sitewide feature activation is authorized by
 this commit. A future launch must pass the master plan's release approval gates.
+
+## Existing seed FAQ SEO compatibility correction
+
+The existing Flutter SeoMetadataService previously labeled fixed seed FAQs as QAPage and returned index/follow metadata with unverified app-host /faqs URLs. This milestone changes its structured data to plain WebPage, removes unverified URLs and vote/rich-result claims, and marks those app-host previews noindex until actual crawlable public HTML is released. The legacy Dart method name remains a deprecated compatibility wrapper so existing consumers are not removed.
