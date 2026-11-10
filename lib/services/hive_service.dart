@@ -322,6 +322,22 @@ class HiveService {
     }
   }
 
+  /// Replace an authoritative server projection exactly. Re-downloading a
+  /// cumulative count must never pass through the additive local cache merge,
+  /// or the same measured seconds would be counted more than once.
+  Future<void> cacheRemoteProgress(UserProgress progress) async {
+    _ensureInitialized();
+    if (!progress.isSynced ||
+        progress.metadata?['remote_projection'] != true) {
+      throw ArgumentError('Only acknowledged remote projections can replace cache');
+    }
+    final previous = _progressBoxInstance.get(progress.id);
+    if (previous != null && previous.userId != progress.userId) {
+      throw StateError('Cross-account progress ID collision');
+    }
+    await _progressBoxInstance.put(progress.id, progress);
+  }
+
   // Progress methods
   Future<List<UserProgress>> getProgress() async {
     _ensureInitialized();
