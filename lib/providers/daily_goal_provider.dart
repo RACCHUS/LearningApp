@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/utils/constants.dart';
+import 'package:learning_pwa/services/hive_service.dart';
+import 'package:learning_pwa/services/analytics/local_study_day.dart';
 
 /// Provider for the user's configured daily goal in minutes
 final dailyGoalMinutesProvider = FutureProvider<int>((ref) async {
@@ -9,58 +11,35 @@ final dailyGoalMinutesProvider = FutureProvider<int>((ref) async {
   return prefs.getInt('dailyGoalMinutes') ?? StudyConstants.defaultStudyGoalMinutes;
 });
 
-/// Provider for today's study progress towards the daily goal
+/// Conservative local-day goal display. This currently measures ONLY this
+/// device's confirmed interaction intervals, not synced cross-device totals.
+/// It never presents empty legacy progress or network failures as 0 minutes.
 final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async {
   final goalMinutes = await ref.watch(dailyGoalMinutesProvider.future);
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) {
-    // Guests still have a configurable local goal even without cloud progress.
-    return DailyGoalProgress(
-      studyMinutesToday: 0,
-      goalMinutes: goalMinutes,
-      isStudyTimeAvailable: false,
-    );
-  }
+  final userId = Supabase.instance.client.auth.currentUser?.id ?? 'local-user';
 
   try {
-    // Get today's date range
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final todayEnd = todayStart.add(const Duration(days: 1));
-
-    // Query today's study time from user_progress
-    final response = await Supabase.instance.client
-        .from('user_progress')
-        .select('study_time_seconds')
-        .eq('user_id', userId)
-        .gte('date', todayStart.toIso8601String())
-        .lt('date', todayEnd.toIso8601String());
-
-    // Sum up study time
-    int totalSeconds = 0;
-    for (final record in response) {
-      totalSeconds += (record['study_time_seconds'] as int? ?? 0);
-    }
-
-    // Legacy clients could write zero for an unmeasured session. Without a
-    // positive duration we cannot distinguish no study from missing telemetry.
-    if (totalSeconds <= 0) {
+    final hive = HiveService();
+    await hive.init();
+    final seconds = measuredStudySecondsForLocalDay(
+      progress: await hive.getProgress(),
+      learnerId: userId,
+      localNow: DateTime.now(),
+    );
+    if (seconds == null) {
       return DailyGoalProgress(
         studyMinutesToday: 0,
         goalMinutes: goalMinutes,
         isStudyTimeAvailable: false,
       );
     }
-
-    final studyMinutes = totalSeconds ~/ 60;
-
     return DailyGoalProgress(
-      studyMinutesToday: studyMinutes,
+      studyMinutesToday: seconds ~/ 60,
+      studySecondsToday: seconds,
       goalMinutes: goalMinutes,
     );
-  } catch (e) {
-    // An unreadable source is not evidence of zero minutes. Keep the goal
-    // setting visible but explicitly mark the measurement unavailable.
+  } catch (error) {
+    // Cache unavailable does not mean the learner studied for zero minutes.
     return DailyGoalProgress(
       studyMinutesToday: 0,
       goalMinutes: goalMinutes,
@@ -74,13 +53,17 @@ class DailyGoalProgress {
   final int studyMinutesToday;
   final int goalMinutes;
 
-  /// False when cloud duration is missing or unreadable. Zero is not a
+  /// Measured on this device only; null when no exact interval data exists.
+  final int? studySecondsToday;
+
+  /// False when local duration is missing or unreadable. Zero is not a
   /// trustworthy observation until measured time is available.
   final bool isStudyTimeAvailable;
 
   DailyGoalProgress({
     required this.studyMinutesToday,
     required this.goalMinutes,
+    this.studySecondsToday,
     this.isStudyTimeAvailable = true,
   });
 
@@ -95,11 +78,14 @@ class DailyGoalProgress {
   /// Progress as a value between 0.0 and 1.0
   double get progress {
     if (goalMinutes <= 0) return 0.0;
-    return (studyMinutesToday / goalMinutes).clamp(0.0, 1.0);
+    if (!isStudyTimeAvailable) return 0.0;
+    final seconds = studySecondsToday ?? studyMinutesToday * 60;
+    return (seconds / (goalMinutes * 60)).clamp(0.0, 1.0);
   }
 
   /// Whether the daily goal has been met
-  bool get goalMet => isStudyTimeAvailable && studyMinutesToday >= goalMinutes;
+  bool get goalMet => isStudyTimeAvailable &&
+      (studySecondsToday ?? studyMinutesToday * 60) >= goalMinutes * 60;
 
   /// Remaining minutes to reach goal
   int get remainingMinutes => (goalMinutes - studyMinutesToday).clamp(0, goalMinutes);
@@ -107,6 +93,10 @@ class DailyGoalProgress {
   /// Formatted time string (e.g., "15m" or "1h 30m")
   String get formattedTime {
     if (!isStudyTimeAvailable) return '—';
+    if (studySecondsToday != null &&
+        studySecondsToday! > 0 && studyMinutesToday == 0) {
+      return '<1m';
+    }
     if (studyMinutesToday < 60) {
       return '${studyMinutesToday}m';
     }

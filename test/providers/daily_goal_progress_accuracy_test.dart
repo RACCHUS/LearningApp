@@ -23,6 +23,17 @@ void main() {
       expect(goal.progress, 1);
     });
 
+    test('measured sub-minute activity is not displayed as a false zero', () {
+      final goal = DailyGoalProgress(
+        studyMinutesToday: 0,
+        studySecondsToday: 30,
+        goalMinutes: 1,
+      );
+      expect(goal.formattedTime, '<1m');
+      expect(goal.progress, closeTo(0.5, 0.001));
+      expect(goal.goalMet, isFalse);
+    });
+
     test('empty placeholder is explicitly unavailable', () {
       final goal = DailyGoalProgress.empty();
       expect(goal.isStudyTimeAvailable, isFalse);
