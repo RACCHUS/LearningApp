@@ -30,6 +30,12 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_DEPLOY_CONNECTION: session_pooler
+      # The CLI parses local Google OAuth config for remote DB-only commands.
+      # Sentinels satisfy env() locally; no local Auth service runs and hosted
+      # Google OAuth settings are never changed by these workflows.
+      # Do not replace these with real OAuth credentials or run auth/config push.
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: "ci-db-migration-only"
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: "ci-db-migration-only"
       EXPECTED_PROJECT_REF: xzvkdwebtbxlrxagtzlv
     steps:
       - name: Checkout full audited migration history
@@ -82,7 +88,7 @@ jobs:
 
       - name: Upload non-secret, reviewed dry-run report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: analytics-guarded-dry-run-report
           path: build/analytics_preflight_reports/

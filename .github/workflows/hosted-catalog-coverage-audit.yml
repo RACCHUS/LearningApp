@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload aggregate coverage report
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: hosted-taxonomy-coverage
           path: build/hosted-taxonomy-coverage.json
