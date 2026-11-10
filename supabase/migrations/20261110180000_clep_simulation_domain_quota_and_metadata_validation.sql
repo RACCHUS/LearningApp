@@ -1,4 +1,4 @@
--- Migration: 20261109180000_clep_simulation_domain_quota_and_metadata_validation.sql
+-- Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
 -- Description: Backfill target_versions.metadata.bank for blueprint authorities,
 --              and enforce strict psychometric domain-code presence and four-domain quotas
 --              prior to inserting attempts into clep_simulation_attempts.

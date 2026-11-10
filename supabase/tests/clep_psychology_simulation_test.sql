@@ -84,6 +84,19 @@ insert into auth.users (id, email) values
   ('99887766-5544-3322-1100-998877665544', 'learner_psyc@example.invalid')
 on conflict (id) do nothing;
 
+-- Ensure Psychology target version is staged and published for simulation exam issuance
+update public.target_versions
+set status = 'review_ready'
+where target_id in (
+  select id from public.learning_targets where slug = 'clep-introductory-psychology'
+);
+
+update public.target_versions
+set status = 'published'
+where target_id in (
+  select id from public.learning_targets where slug = 'clep-introductory-psychology'
+);
+
 -- Set user context
 set local role authenticated;
 set local "request.jwt.claim.role" to 'authenticated';

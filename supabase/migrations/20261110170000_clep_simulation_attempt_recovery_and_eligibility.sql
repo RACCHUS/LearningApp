@@ -1,4 +1,4 @@
--- Migration: 20261109170000_clep_simulation_attempt_recovery_and_eligibility.sql
+-- Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
 -- Description: Adds authenticated attempt recovery, active session polling, guest-account rejection,
 --              and strict domain mapping validation (zero silent 1.0 fallbacks).
 

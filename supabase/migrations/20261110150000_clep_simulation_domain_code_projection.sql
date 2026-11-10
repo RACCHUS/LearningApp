@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: 20261109150000_clep_simulation_domain_code_projection.sql
+-- Migration: 20261110150000_clep_simulation_domain_code_projection.sql
 -- Description: Project domain_code and official domains in simulation exam RPCs
 --              to ensure psychometrically accurate four-domain diagnostic reporting.
 -- ============================================================================
