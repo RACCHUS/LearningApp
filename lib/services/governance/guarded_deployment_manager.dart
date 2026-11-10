@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'guarded_database_connection.dart';
+
 /// Signature for executing external processes, allowing dependency injection for unit testing.
 typedef ProcessRunner = ProcessResult Function(
   String executable,
@@ -57,7 +59,7 @@ class GuardedDeploymentManager {
     IOSink? stdoutSink,
     IOSink? stderrSink,
   })  : workingDirectory = workingDirectory ?? Directory.current,
-        processRunner = processRunner ?? Process.runSync,
+        processRunner = processRunner ?? runGuardedDatabaseProcess,
         stdoutSink = stdoutSink ?? stdout,
         stderrSink = stderrSink ?? stderr;
 
@@ -72,6 +74,10 @@ class GuardedDeploymentManager {
 
   /// Verifies that the linked Supabase project reference strictly matches the expected target.
   void verifyProjectRef(String expectedRef) {
+    if (Platform.environment['SUPABASE_DEPLOY_CONNECTION'] == 'session_pooler' &&
+        expectedRef != GuardedDatabaseConnection.projectRef) {
+      throw StateError('Session pooler destination does not match expected project.');
+    }
     final refFile = File('${workingDirectory.path}/supabase/.temp/project-ref');
     if (!refFile.existsSync()) {
       throw StateError(

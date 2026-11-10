@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:learning_pwa/services/governance/guarded_database_connection.dart';
 import 'package:learning_pwa/services/governance/migration_history_validator.dart';
 
 /// CLI Tool: Verify Supabase Migration History Immutability & Upgrade Safety
@@ -653,11 +654,9 @@ String _fetchRemoteMigrationListOutput(String? fileOverridePath) {
     return f.readAsStringSync();
   }
 
-  final result = Process.runSync(
+  final result = runGuardedDatabaseProcess(
     'supabase',
     ['migration', 'list', '--linked'],
-    stdoutEncoding: utf8,
-    stderrEncoding: utf8,
     runInShell: true,
   );
 
