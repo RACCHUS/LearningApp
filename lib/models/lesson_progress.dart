@@ -77,7 +77,8 @@ class UserProgress {
   /// Create a server-side event without leaking local Hive-only fields.
   /// Question counters and unverified historical time are not uploaded.
   Map<String, dynamic>? toServerProgressEvent() {
-    if (id.isEmpty || userId.isEmpty || lessonId.isEmpty) return null;
+    if (id.isEmpty || userId.isEmpty || lessonId.isEmpty ||
+        metadata?['sync_completion_event'] == false) return null;
     final action = lessonCompleted
         ? 'lesson_completed'
         : (metadata?['completion_override'] == true
