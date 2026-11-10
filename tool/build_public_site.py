@@ -34,6 +34,38 @@ def canonical_origin(value: str) -> str:
     return value.rstrip("/")
 
 
+def valid_editorial_source(source: object) -> bool:
+    """Validate every source reference before generating any output files.
+
+    Sources can be HTTPS evidence links or safe relative repository file
+    references. This is syntax-only validation, NOT editorial verification.
+    """
+    if (not isinstance(source, str) or not source
+            or any(ch.isspace() or ord(ch) < 32 or ch == "\\" for ch in source)):
+        return False
+    if source.startswith("https://"):
+        try:
+            parsed = urlsplit(source)
+            host = parsed.hostname or ""
+            return (
+                parsed.scheme == "https" and bool(host)
+                and parsed.username is None and parsed.password is None
+                and parsed.query == "" and parsed.fragment == ""
+                and parsed.port in (None, 443)
+                and re.fullmatch(r"[a-zA-Z0-9.-]+", host) is not None
+            )
+        except ValueError:
+            return False
+    if "://" in source or source.startswith(("/", ".")):
+        return False
+    parts = source.split("/")
+    return (
+        len(parts) > 0 and all(part not in ("", ".", "..") for part in parts)
+        and re.fullmatch(r"[A-Za-z0-9_./-]+", source) is not None
+        and "." in parts[-1]
+    )
+
+
 def load_manifest(path: Path) -> list[dict]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
@@ -65,6 +97,13 @@ def load_manifest(path: Path) -> list[dict]:
             paragraphs = section.get("paragraphs")
             if not isinstance(paragraphs, list) or not paragraphs or any(not isinstance(p, str) or not p.strip() for p in paragraphs):
                 raise ValueError("Sections require plain text paragraphs")
+        # Validate draft and published source references before ANY output
+        # is written, rather than raising halfway through a static build.
+        review_sources = page.get("review", {}).get("sources", [])
+        if not isinstance(review_sources, list):
+            raise ValueError("Editorial source references must be a list")
+        if any(not valid_editorial_source(src) for src in review_sources):
+            raise ValueError("Unsafe editorial source reference")
         if page["status"] == "published":
             review = page.get("review")
             if not isinstance(review, dict) or review.get("owner_approved") is not True:
@@ -105,6 +144,28 @@ def render_page(page: dict, pages: list[dict], origin: str, app_origin: str, pre
         + "</section>"
         for s in page["sections"]
     )
+    # Editorial evidence links are supplied as owner-review source references.
+    # Internal repository filenames are audit evidence, not web links.
+    external_sources = [
+        source for source in page.get("review", {}).get("sources", [])
+        if isinstance(source, str) and source.startswith("https://")
+    ]
+    for source in external_sources:
+        parsed = urlsplit(source)
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username
+                or parsed.password or parsed.fragment or parsed.query
+                or not re.fullmatch(r"[a-zA-Z0-9.-]+", parsed.hostname)):
+            raise ValueError("Unsafe public source reference")
+    if external_sources:
+        sections += (
+            "<section><h2>Original sources and next steps</h2><ul class=\"resource-links\">"
+            + "".join(
+                '<li><a rel="noopener noreferrer" href="' + text(source)
+                + '">' + text(urlsplit(source).hostname or source) + "</a></li>"
+                for source in external_sources
+            )
+            + "</ul></section>"
+        )
     app_link = app_origin + "/#/learn"
     breadcrumbs = [] if is_home else [{
         "@type": "ListItem", "position": 1, "name": "Home", "item": origin + "/"
@@ -211,6 +272,36 @@ def build(manifest: Path, output: Path, origin: str, app_origin: str, preview: b
     return len(selected)
 
 
+def build_emergency(output: Path, origin: str) -> None:
+    """Create a draft-free emergency stand-down artifact for manual host swap.
+
+    This is NOT an instant 503 or a remotely enforced feature flag. The
+    hosting provider must replace the live deployment atomically, invalidate
+    caches, and return appropriate status codes after a separately approved
+    operations runbook and live emergency drill.
+    """
+    canonical_origin(origin)
+    if output.exists() and any(output.iterdir()):
+        raise ValueError("Output directory must be empty (no destructive cleanup)")
+    output.mkdir(parents=True, exist_ok=True)
+    page = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temporarily unavailable | LearningApp</title></head>
+<body><main><h1>Public guides temporarily unavailable</h1>
+<p>The LearningApp public information site is temporarily unavailable.</p>
+<p>No private learning data is stored on this static site.</p>
+</main></body></html>"""
+    (output / "index.html").write_text(page, encoding="utf-8")
+    (output / "404.html").write_text(page, encoding="utf-8")
+    (output / "robots.txt").write_text("User-agent: *\nDisallow: /\n", encoding="utf-8")
+    (output / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n',
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", required=True, help="Approved HTTPS canonical public-site root")
@@ -220,7 +311,15 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--preview", action="store_true",
                         help="Render unapproved drafts with universal noindex and robots disallow")
+    parser.add_argument("--emergency-off", action="store_true",
+                        help="Build an empty, noindex emergency stand-down artifact; deploy manually")
     args = parser.parse_args()
+    if args.emergency_off:
+        if args.preview:
+            parser.error("--preview and --emergency-off cannot be combined")
+        build_emergency(args.out, args.origin)
+        print("Generated a content-free emergency artifact; not deployed.")
+        return 0
     result = build(args.manifest, args.out, args.origin, args.app_origin, args.preview)
     print(f"Generated {result} {'preview' if args.preview else 'published'} pages; no network requests.")
     return 0

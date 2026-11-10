@@ -88,3 +88,13 @@ this commit. A future launch must pass the master plan's release approval gates.
 ## Existing seed FAQ SEO compatibility correction
 
 The existing Flutter SeoMetadataService previously labeled fixed seed FAQs as QAPage and returned index/follow metadata with unverified app-host /faqs URLs. This milestone changes its structured data to plain WebPage, removes unverified URLs and vote/rich-result claims, and marks those app-host previews noindex until actual crawlable public HTML is released. The legacy Dart method name remains a deprecated compatibility wrapper so existing consumers are not removed.
+
+## Emergency stand-down artifact (not an instant remote switch)
+
+A no-content fallback artifact can be generated with:
+
+~~~sh
+python3 tool/build_public_site.py --origin https://YOUR-VERIFIED-PUBLIC-DOMAIN --out build/public-emergency --emergency-off
+~~~
+
+This generates only a noindex maintenance page, empty sitemap, robots disallow, and a noindex 404. It does NOT deploy anything or force a static provider to return HTTP 503/410, clear caches, or change DNS. The selected hosting provider must support a tested atomic rollback/stand-down and cache purge procedure, with independent owner authorization. Learner app routes and protected data remain unaffected. See the host runbook for launch requirements.
