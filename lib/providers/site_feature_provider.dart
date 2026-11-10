@@ -15,3 +15,16 @@ bool isSiteFeatureExperimental(
   String key,
 ) =>
     snapshot?[key]?.maturity != 'verified';
+
+/// Before the one-time migration/runtime bootstrap, preserve an explicitly
+/// reviewed legacy default. AFTER activation, an unreachable or absent flag
+/// must be treated as OFF. Never re-enable a killed feature on RPC failure.
+bool isSiteFeatureEnabled(
+  Map<String, SiteFeatureSetting>? snapshot,
+  String key, {
+  required bool runtimeReady,
+  bool preBootstrapDefault = false,
+}) {
+  if (!runtimeReady) return preBootstrapDefault;
+  return snapshot?[key]?.enabled ?? false;
+}

@@ -1,7 +1,37 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
+import 'package:learning_pwa/providers/site_feature_provider.dart';
 
 void main() {
+  test('Pre-bootstrap Fast survives, but post-bootstrap RPC failure fails OFF', () {
+    expect(
+      isSiteFeatureEnabled(null, 'tel.fast',
+          runtimeReady: false, preBootstrapDefault: true),
+      isTrue,
+    );
+    expect(
+      isSiteFeatureEnabled(null, 'tel.fast',
+          runtimeReady: true, preBootstrapDefault: true),
+      isFalse,
+    );
+    expect(
+      isSiteFeatureEnabled({
+        'tel.fast': const SiteFeatureSetting(
+          enabled: false, maturity: 'experimental', revision: 2,
+        ),
+      }, 'tel.fast', runtimeReady: true, preBootstrapDefault: true),
+      isFalse,
+    );
+    expect(
+      isSiteFeatureEnabled({
+        'tel.fast': const SiteFeatureSetting(
+          enabled: true, maturity: 'experimental', revision: 3,
+        ),
+      }, 'tel.fast', runtimeReady: true),
+      isTrue,
+    );
+  });
+
   test('server snapshot is dormant before reviewed database deployment',
       () async {
     expect(SiteFeatureRuntime.snapshotEnabled, isFalse);

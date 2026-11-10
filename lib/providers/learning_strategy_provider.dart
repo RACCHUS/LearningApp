@@ -10,6 +10,7 @@ import 'learning_context_provider.dart';
 import 'next_action_provider.dart';
 import 'scope_resolver_provider.dart';
 import 'site_feature_provider.dart';
+import '../services/governance/site_feature_service.dart';
 
 /// Exception thrown when a compare-and-set preference mutation fails due to
 /// a stale `expectedRevision` (`TEL-01B`).
@@ -480,9 +481,18 @@ class LearningStrategyNotifier extends StateNotifier<LearningStrategyState> {
 final telFeatureFlagsProvider = Provider<TelFeatureFlags>((ref) {
   final snapshot = ref.watch(siteFeatureSnapshotProvider).valueOrNull;
   return TelFeatureFlags(
-    // Explicitly preserve current availability if the new RPC is not active.
-    fastEnabled: snapshot?['tel.fast']?.enabled ?? true,
-    overviewEnabled: snapshot?['tel.overview']?.enabled ?? true,
+    // Preserve owner-approved Fast/Overview until runtime bootstrap only.
+    // After bootstrap, unavailable snapshots fail closed to Standard/no Tour.
+    fastEnabled: isSiteFeatureEnabled(
+      snapshot, 'tel.fast',
+      runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      preBootstrapDefault: true,
+    ),
+    overviewEnabled: isSiteFeatureEnabled(
+      snapshot, 'tel.overview',
+      runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      preBootstrapDefault: true,
+    ),
   );
 });
 
