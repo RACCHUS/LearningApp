@@ -42,3 +42,9 @@ The registry is a source-of-truth **only for the surfaces actually wired to it**
 - The new session key is scoped to a `ByokStorageService` instance, not written to persistent storage; it is erased by `clearConfig`.
 - Credential-bearing HTTP clients reject custom endpoint URLs. Gemini uses the provider key header rather than query parameters; provider error bodies are not echoed in UI exceptions.
 - These fixes **do not authorize reactivation**: browser CSP, supported provider models, legal/consent language, compatibility and cross-session UX still need review.
+
+## Lifecycle refresh and future-feature CI contract
+
+`SiteFeatureRefreshObserver` wraps only the production router's `AppShell` and leaves the reusable legacy `AppShell` untouched. While `SITE_FEATURE_RPC_READY` is false it registers no lifecycle observer and makes no new feature RPC. Once the reviewed bootstrap is activated, it refreshes cached presentation flags on app resume with a two-minute minimum interval; the owner panel also invalidates its local snapshot after a successful change. Neither behavior substitutes for backend admission checks for remote, privacy or paid operations.
+
+`tool/verify_feature_registry.py` is now a required no-network Flutter CI step with regression tests. Its contract aligns all 18 `SiteFeatureKeys` entries to additive SQL seed keys and rejects risky enabled-by-default entries. It cannot automatically prove that a new application feature is wired to its flag, so `AGENTS.md`, the pull request checklist, code review, explicit server-guard tests and the disabled-state contract remain mandatory.
