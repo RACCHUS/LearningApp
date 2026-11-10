@@ -68,6 +68,68 @@ void main() {
         .toServerProgressEvent(), isNull);
   });
 
+  test('only explicit bounded intervals are serialized as duration events', () {
+    final end = DateTime.utc(2026, 11, 9, 18, 30);
+    final interval = UserProgress(
+      id: 'interval-uuid-key',
+      userId: 'test-learner',
+      lessonId: 'prog_01_variables',
+      studyMode: StudyMode.lesson,
+      date: end,
+      questionsAnswered: 7,
+      correctCount: 7,
+      lessonCompleted: false,
+      studyTimeSeconds: 25,
+      metadata: {
+        'sync_active_interval': true,
+        'interval_start': end.subtract(const Duration(seconds: 25))
+            .toIso8601String(),
+        'interval_end': end.toIso8601String(),
+        'active_time_measured': true,
+      },
+    );
+    final event = interval.toServerProgressEvent()!;
+    expect(event['event_type'], 'active_study_interval');
+    expect(event['interval_start'], '2026-11-09T18:29:35.000Z');
+    expect(event['interval_end'], '2026-11-09T18:30:00.000Z');
+    expect(event['idempotency_key'], 'interval-uuid-key');
+    for (final field in [
+      'study_time_seconds', 'questions_answered', 'user_id', 'metadata',
+    ]) {
+      expect(event.containsKey(field), isFalse);
+    }
+  });
+
+  test('unmeasured or oversized timer snapshots cannot become RPC events', () {
+    final end = DateTime.utc(2026, 11, 9, 18, 30);
+    UserProgress elapsed(int seconds) => UserProgress(
+      id: 'interval-test',
+      userId: 'test-learner',
+      lessonId: 'prog_01_variables',
+      studyMode: StudyMode.lesson,
+      date: end,
+      questionsAnswered: 0,
+      correctCount: 0,
+      lessonCompleted: false,
+      studyTimeSeconds: seconds,
+      metadata: {
+        'sync_active_interval': true,
+        'interval_start':
+            end.subtract(Duration(seconds: seconds)).toIso8601String(),
+        'interval_end': end.toIso8601String(),
+      },
+    );
+    expect(elapsed(0).toServerProgressEvent(), isNull);
+    expect(elapsed(121).toServerProgressEvent(), isNull);
+    expect(elapsed(1).toServerProgressEvent()?['event_type'],
+        'active_study_interval');
+    expect(local(
+      lessonId: 'prog_01_variables',
+      completed: false,
+      metadata: const {'sync_active_interval': true},
+    ).toServerProgressEvent(), isNull);
+  });
+
   test('projection decoder preserves unknown versus measured active seconds', () {
     final missing = userProgressFromProjection({
       'content_kind': 'bundled_asset_lesson',

@@ -33,6 +33,7 @@ import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/unified_lesson_provider.dart';
 import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
 import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
+import 'package:learning_pwa/widgets/analytics/active_lesson_study_capture.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
@@ -444,15 +445,21 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                                 builder: (context, ref, _) {
                                   final unifiedAsync = ref.watch(unifiedLessonProvider(widget.lessonId));
                                   return unifiedAsync.when(
-                                    data: (unified) => RichLessonReader(
-                                      unifiedLesson: unified,
-                                      onCompleted: _onLessonComplete,
+                                    data: (unified) => ActiveLessonStudyCapture(
+                                      lessonId: widget.lessonId,
+                                      child: RichLessonReader(
+                                        unifiedLesson: unified,
+                                        onCompleted: _onLessonComplete,
+                                      ),
                                     ),
                                     loading: () => const Center(child: CircularProgressIndicator()),
-                                    error: (_, __) => LessonContentPager(
-                                      key: ValueKey(_restartCounter),
-                                      contentList: contentList,
-                                      onLessonComplete: _onLessonComplete,
+                                    error: (_, __) => ActiveLessonStudyCapture(
+                                      lessonId: widget.lessonId,
+                                      child: LessonContentPager(
+                                        key: ValueKey(_restartCounter),
+                                        contentList: contentList,
+                                        onLessonComplete: _onLessonComplete,
+                                      ),
                                     ),
                                   );
                                 },
