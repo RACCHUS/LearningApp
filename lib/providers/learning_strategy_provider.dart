@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/fast_plan_result.dart';
 import '../models/learning_context.dart';
 import '../models/learning_strategy.dart';
+import '../models/scope.dart';
 import '../services/next_action_engine.dart';
 import '../services/planning/content_coverage_service.dart';
 import '../services/planning/learning_strategy_planner.dart';

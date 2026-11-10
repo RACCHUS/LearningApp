@@ -37,7 +37,7 @@ void main() {
     test(
       'Progressive depth presets (5m, 15m, 30m) project over the same single authored outline',
       () {
-        final outline = clepPsychologyOverviewOutline;
+        const outline = clepPsychologyOverviewOutline;
 
         final view5 = planner.project(
           outline: outline,

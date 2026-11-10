@@ -621,7 +621,7 @@ const OverviewOutline clepPsychologyOverviewOutline = OverviewOutline(
         'Prejudice (unjustified attitude) vs. Discrimination (unjustified behavior)',
       ],
       commonMisconception:
-          'In Festinger’s cognitive dissonance studies, participants paid a small reward ($1) to praise a boring task changed their private attitude MORE than those paid $20, because $1 provided insufficient external justification.',
+          'In Festinger’s cognitive dissonance studies, participants paid a small reward (\$1) to praise a boring task changed their private attitude MORE than those paid \$20, because \$1 provided insufficient external justification.',
       thirtyMinuteRealWorldApplication:
           'Preventing bystander apathy in emergencies by assigning responsibility to a specific individual rather than appealing to an anonymous crowd.',
       thirtyMinuteConnectionNotes:

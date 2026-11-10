@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/providers/learning_strategy_provider.dart';

@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
-import 'package:learning_pwa/models/overview_outline.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/services/planning/content_coverage_service.dart';

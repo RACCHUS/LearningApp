@@ -484,11 +484,11 @@ class LearningStrategyPlanner {
       final baseReasons =
           reasonCodesByActivity[activityId] ??
           const [FastReasonCodes.breadthCoverage];
-      final effectiveReasons = <String>[
+      final effectiveReasons = <String>{
         ...baseReasons,
         if (optionalTotalMinutes != null && fitsBudget && !isSkipped)
           FastReasonCodes.shortSessionFit,
-      ].toSet().toList();
+      }.toList();
 
       final primaryEvidence = rec.primaryDomainId != null
           ? _resolveDomainEvidenceStatus(rec.primaryDomainId!, domainEvidence)
