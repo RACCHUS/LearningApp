@@ -74,6 +74,41 @@ class UserProgress {
     };
   }
 
+  /// Create a server-side event without leaking local Hive-only fields.
+  /// Question counters and unverified historical time are not uploaded.
+  Map<String, dynamic>? toServerProgressEvent() {
+    if (id.isEmpty || userId.isEmpty || lessonId.isEmpty ||
+        metadata?['sync_completion_event'] == false) {
+      return null;
+    }
+    final action = lessonCompleted
+        ? 'lesson_completed'
+        : (metadata?['completion_override'] == true
+            ? 'lesson_uncompleted'
+            : null);
+    if (action == null) return null;
+    final explicitKind = metadata?['content_kind'];
+    final contentKind = explicitKind == 'legacy_lesson' ||
+            explicitKind == 'bundled_asset_lesson' ||
+            explicitKind == 'curriculum_node_lesson'
+        ? explicitKind as String
+        : (isLegacyProgressLessonId(lessonId)
+            ? 'legacy_lesson'
+            : 'bundled_asset_lesson');
+    final rawVersion = metadata?['version_key'];
+    final version = rawVersion is String && rawVersion.isNotEmpty
+        ? rawVersion
+        : 'unversioned';
+    return <String, dynamic>{
+      'idempotency_key': id,
+      'event_type': action,
+      'content_kind': contentKind,
+      'content_id': lessonId,
+      'version_key': version,
+      'occurred_at': date.toUtc().toIso8601String(),
+    };
+  }
+
   // Helper methods
   double get accuracy => questionsAnswered > 0 ? correctCount / questionsAnswered : 0;
   
@@ -110,4 +145,49 @@ class UserProgress {
       metadata: metadata ?? this.metadata,
     );
   }
+}
+
+/// Exact UUID-shape test for legacy lesson routes.
+bool isLegacyProgressLessonId(String lessonId) {
+  final parts = lessonId.split('-');
+  const expectedLengths = <int>[8, 4, 4, 4, 12];
+  if (parts.length != expectedLengths.length) return false;
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].length != expectedLengths[i] ||
+        RegExp('[^a-fA-F0-9]').hasMatch(parts[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Adapt a server-authoritative daily projection without using local JSON.
+UserProgress userProgressFromProjection(
+  Map<String, dynamic> row, {
+  required String userId,
+  StudyMode studyMode = StudyMode.lesson,
+}) {
+  final lessonId = row['content_id'] as String;
+  final kind = row['content_kind'] as String;
+  final version = row['version_key'] as String;
+  final day = row['reporting_date_utc'] as String;
+  final seconds = row['active_seconds'] as int?;
+  return UserProgress(
+    id: 'remote_${userId}_${kind}_${lessonId}_${version}_$day',
+    userId: userId,
+    lessonId: lessonId,
+    studyMode: studyMode,
+    date: DateTime.parse('${day}T00:00:00Z'),
+    questionsAnswered: 0,
+    correctCount: 0,
+    lessonCompleted: row['completed'] == true,
+    studyTimeSeconds: seconds ?? 0,
+    isSynced: true,
+    metadata: {
+      'content_kind': kind,
+      'version_key': version,
+      'active_time_measured': seconds != null,
+      'remote_projection': true,
+    },
+  );
 }
