@@ -1,5 +1,6 @@
 import 'dart:io';
-import '../../lib/services/governance/guarded_database_connection.dart';
+
+import 'package:learning_pwa/services/governance/guarded_database_connection.dart';
 
 void require(bool value, String message) {
   if (!value) throw StateError(message);
