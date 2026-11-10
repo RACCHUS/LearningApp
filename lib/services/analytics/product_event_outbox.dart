@@ -93,7 +93,7 @@ class ProductEventOutbox {
       } catch (_) {
         throw StateError('Stored product-event record is invalid.');
       }
-      if (envelope['version'] != 1 ||
+      if ((envelope['version'] != 1 && envelope['version'] != 2) ||
           envelope['saved_at'] is! String ||
           envelope['event'] is! Map ||
           utf8.encode(raw).length > maxEventBytes) {
@@ -103,12 +103,23 @@ class ProductEventOutbox {
       if (when == null) {
         throw StateError('Stored product-event timestamp is invalid.');
       }
+      // Legacy v1 entries are readable for deletion but never replayed:
+      // they were not bound to a specific consent period.
+      DateTime? consentChangedAt;
+      if (envelope['version'] == 2) {
+        final rawConsentTime = envelope['consent_changed_at'];
+        if (rawConsentTime is! String ||
+            DateTime.tryParse(rawConsentTime) == null) {
+          throw StateError('Stored product-event consent revision invalid.');
+        }
+        consentChangedAt = DateTime.parse(rawConsentTime).toUtc();
+      }
       final event = ProductEvent.fromJson(
           Map<String, dynamic>.from(envelope['event'] as Map));
       if (key != _eventKey(userId, event.eventId)) {
         throw StateError('Stored product-event account key is inconsistent.');
       }
-      result.add(_PendingEvent(key, event, when.toUtc()));
+      result.add(_PendingEvent(key, event, when.toUtc(), consentChangedAt));
     }
     result.sort((a,b) =>
         a.event.occurredAt.compareTo(b.event.occurredAt));
@@ -129,14 +140,33 @@ class ProductEventOutbox {
     return count;
   }
 
+  // A withdrawal, re-consent or policy update invalidates the old consent
+  // timestamp. Even if the client missed the intervening withdrawal while
+  // offline, old records are erased, not sent under the new consent.
+  Future<int> _discardStaleConsent(SharedPreferences prefs,
+      List<_PendingEvent> rows, String user, DateTime? consentRevision) async {
+    var discarded = 0;
+    for (final row in rows) {
+      if (consentRevision == null || row.consentChangedAt == null ||
+          !row.consentChangedAt!.isAtSameMomentAs(consentRevision)) {
+        _sameUser(user);
+        if (!await prefs.remove(row.key)) {
+          throw StateError('Could not erase event from a prior consent.');
+        }
+        discarded++;
+      }
+    }
+    return discarded;
+  }
+
   /// Explicit opt-in alone cannot start collection: trusted release readiness
   /// must be true too. A full queue fails visibly, never silently evicts data.
   Future<void> enqueue(ProductEvent event) => _locked(() async {
     final user = _user();
     final privacy = await _getPrivacy();
     _sameUser(user);
-    if (!privacy.canCollect) {
-      throw StateError('Product event capture is disabled or not consented.');
+    if (!privacy.canCollect || privacy.changedAt == null) {
+      throw StateError('Product event capture requires current server consent.');
     }
     final now = _now().toUtc();
     if (event.occurredAt.isAfter(now.add(const Duration(minutes: 5))) ||
@@ -147,6 +177,9 @@ class ProductEventOutbox {
     _sameUser(user);
     final rows = await _load(prefs, user);
     await _purgeExpired(prefs, rows);
+    final afterExpiry = await _load(await _reload(), user);
+    await _discardStaleConsent(
+        prefs, afterExpiry, user, privacy.changedAt);
     final after = await _load(await _reload(), user);
     final key = _eventKey(user, event.eventId);
     final existing = after.where((e) => e.key == key);
@@ -161,8 +194,9 @@ class ProductEventOutbox {
       throw StateError('Product event outbox full; collection not accepted.');
     }
     final raw = jsonEncode({
-      'version': 1,
+      'version': 2,
       'saved_at': now.toIso8601String(),
+      'consent_changed_at': privacy.changedAt!.toUtc().toIso8601String(),
       'event': event.toJson(),
     });
     if (utf8.encode(raw).length > maxEventBytes) {
@@ -185,14 +219,18 @@ class ProductEventOutbox {
     final privacy = await _getPrivacy();
     _sameUser(user);
     final pending = await _load(await _reload(),user);
-    if (!privacy.canCollect) {
+    final blocked = !privacy.canCollect || privacy.changedAt == null;
+    final discarded = await _discardStaleConsent(
+        prefs, pending, user, blocked ? null : privacy.changedAt);
+    if (blocked) {
       return OutboxFlushResult(
-        acknowledged: 0, remaining: pending.length,
-        expired: expired, blocked: true);
+        acknowledged: 0, remaining: 0, expired: expired,
+        discardedConsent: discarded, blocked: true);
     }
+    final deliverable = await _load(await _reload(), user);
 
     var acked = 0;
-    for (final item in pending) {
+    for (final item in deliverable) {
       _sameUser(user);
       // A capped network wait avoids holding the queue lock indefinitely.
       // A timed-out RPC may still have succeeded; retry uses the same ID.
@@ -201,8 +239,9 @@ class ProductEventOutbox {
             .timeout(const Duration(seconds: 10));
       } catch (_) {
         return OutboxFlushResult(
-          acknowledged: acked, remaining: pending.length-acked,
-          expired: expired, blocked: false, deliveryFailed: true);
+          acknowledged: acked, remaining: deliverable.length-acked,
+          expired: expired, discardedConsent: discarded,
+          blocked: false, deliveryFailed: true);
       }
       _sameUser(user);
       if (!await prefs.remove(item.key)) {
@@ -211,7 +250,8 @@ class ProductEventOutbox {
       acked++;
     }
     return OutboxFlushResult(
-      acknowledged: acked, remaining: 0, expired: expired, blocked:false);
+      acknowledged: acked, remaining: 0, expired: expired,
+      discardedConsent: discarded, blocked:false);
   });
 
   Future<int> pendingCount() => _locked(() async {
@@ -243,13 +283,16 @@ class _PendingEvent {
   final String key;
   final ProductEvent event;
   final DateTime storedAt;
-  const _PendingEvent(this.key,this.event,this.storedAt);
+  final DateTime? consentChangedAt;
+  const _PendingEvent(this.key,this.event,this.storedAt,
+      this.consentChangedAt);
 }
 
 class OutboxFlushResult {
   final int acknowledged;
   final int remaining;
   final int expired;
+  final int discardedConsent;
   final bool blocked;
   final bool deliveryFailed;
 
@@ -257,6 +300,7 @@ class OutboxFlushResult {
     required this.acknowledged,
     required this.remaining,
     required this.expired,
+    this.discardedConsent = 0,
     required this.blocked,
     this.deliveryFailed = false,
   });
