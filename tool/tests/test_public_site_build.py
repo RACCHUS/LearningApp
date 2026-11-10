@@ -135,6 +135,21 @@ class PublicSiteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsafe public source"):
             site.build(self.manifest(data), self.root / "published", ORIGIN, APP)
 
+    def test_manual_emergency_artifact_excludes_all_drafts_and_sitemap(self):
+        output = self.root / "emergency"
+        site.build_emergency(output, ORIGIN)
+        home = (output / "index.html").read_text()
+        self.assertIn('content="noindex,nofollow"', home)
+        self.assertIn("Public guides temporarily unavailable", home)
+        self.assertNotIn("CLEP Introductory Psychology", home)
+        self.assertNotIn("Learn with a clear path", home)
+        self.assertFalse((output / "clep-psychology-study-roadmap").exists())
+        self.assertEqual((output / "robots.txt").read_text(),
+                         "User-agent: *\nDisallow: /\n")
+        self.assertNotIn("<url>", (output / "sitemap.xml").read_text())
+        with self.assertRaisesRegex(ValueError, "must be empty"):
+            site.build_emergency(output, ORIGIN)
+
     def test_nonempty_output_is_never_replaced(self):
         out = self.root / "occupied"
         out.mkdir()

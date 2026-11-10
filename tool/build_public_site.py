@@ -233,6 +233,36 @@ def build(manifest: Path, output: Path, origin: str, app_origin: str, preview: b
     return len(selected)
 
 
+def build_emergency(output: Path, origin: str) -> None:
+    """Create a draft-free emergency stand-down artifact for manual host swap.
+
+    This is NOT an instant 503 or a remotely enforced feature flag. The
+    hosting provider must replace the live deployment atomically, invalidate
+    caches, and return appropriate status codes after a separately approved
+    operations runbook and live emergency drill.
+    """
+    canonical_origin(origin)
+    if output.exists() and any(output.iterdir()):
+        raise ValueError("Output directory must be empty (no destructive cleanup)")
+    output.mkdir(parents=True, exist_ok=True)
+    page = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temporarily unavailable | LearningApp</title></head>
+<body><main><h1>Public guides temporarily unavailable</h1>
+<p>The LearningApp public information site is temporarily unavailable.</p>
+<p>No private learning data is stored on this static site.</p>
+</main></body></html>"""
+    (output / "index.html").write_text(page, encoding="utf-8")
+    (output / "404.html").write_text(page, encoding="utf-8")
+    (output / "robots.txt").write_text("User-agent: *\nDisallow: /\n", encoding="utf-8")
+    (output / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n',
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", required=True, help="Approved HTTPS canonical public-site root")
@@ -242,7 +272,15 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--preview", action="store_true",
                         help="Render unapproved drafts with universal noindex and robots disallow")
+    parser.add_argument("--emergency-off", action="store_true",
+                        help="Build an empty, noindex emergency stand-down artifact; deploy manually")
     args = parser.parse_args()
+    if args.emergency_off:
+        if args.preview:
+            parser.error("--preview and --emergency-off cannot be combined")
+        build_emergency(args.out, args.origin)
+        print("Generated a content-free emergency artifact; not deployed.")
+        return 0
     result = build(args.manifest, args.out, args.origin, args.app_origin, args.preview)
     print(f"Generated {result} {'preview' if args.preview else 'published'} pages; no network requests.")
     return 0
