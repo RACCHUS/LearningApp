@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS learner_progress_events_lookup_idx
   (user_id, content_kind, content_id, version_key, occurred_at DESC);
 
 ALTER TABLE private.learner_progress_events ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
+-- Do not modify grants on the preexisting private schema: other features use it.
 REVOKE ALL ON TABLE private.learner_progress_events FROM PUBLIC, anon, authenticated;
 GRANT USAGE ON SCHEMA private TO service_role;
 GRANT ALL ON TABLE private.learner_progress_events TO service_role;
@@ -145,8 +145,8 @@ BEGIN
     v_content := v_item->>'content_id';
     v_version := v_item->>'version_key';
     IF coalesce(char_length(v_key),0) NOT BETWEEN 1 AND 150
-       OR v_type NOT IN ('lesson_completed','lesson_uncompleted','active_study_interval')
-       OR v_kind NOT IN ('legacy_lesson','bundled_asset_lesson','curriculum_node_lesson')
+       OR v_type IS NULL OR v_type NOT IN ('lesson_completed','lesson_uncompleted','active_study_interval')
+       OR v_kind IS NULL OR v_kind NOT IN ('legacy_lesson','bundled_asset_lesson','curriculum_node_lesson')
        OR coalesce(char_length(v_content),0) NOT BETWEEN 1 AND 128
        OR coalesce(char_length(v_version),0) NOT BETWEEN 1 AND 128
        OR v_content !~ '^[A-Za-z0-9_-]+$'
