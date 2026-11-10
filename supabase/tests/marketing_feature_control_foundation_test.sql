@@ -4,8 +4,8 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT plan(15);
 
-SELECT has_table('private', 'site_feature_controls');
-SELECT has_table('private', 'site_feature_change_audit');
+SELECT has_table('private', 'site_feature_controls', 'Private feature registry exists');
+SELECT has_table('private', 'site_feature_change_audit', 'Private feature audit exists');
 SELECT is((SELECT enabled FROM private.site_feature_controls WHERE feature_key='tel.fast'),
           true, 'Fast remains enabled after registry installation');
 SELECT is((SELECT enabled FROM private.site_feature_controls WHERE feature_key='ai.byok'),
