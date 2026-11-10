@@ -32,6 +32,7 @@ bool isSimulationPreviewAllowed({required bool requested}) {
 String simulationActivityTitle(String id) => switch (id) {
   'networking-basics' => 'Network troubleshooting practice',
   'atm-withdrawal' => 'ATM withdrawal practice',
+  'excel-budget-total-v1' => 'Excel budget practice',
   _ => 'Interactive practice',
 };
 
@@ -97,10 +98,15 @@ class SimulationActivityRegistry {
     id: 'atm-withdrawal',
     version: '1.0.0',
   );
+  static final excelBudget = SimulationActivityConfig(
+    id: 'excel-budget-total-v1',
+    version: '1.0.0',
+  );
 
   static final activities = <String, SimulationActivityConfig>{
     'networking-basics': networking,
     'atm-withdrawal': atmWithdrawal,
+    'excel-budget-total-v1': excelBudget,
   };
 
   static SimulationActivityConfig? resolve(String id, String version) {

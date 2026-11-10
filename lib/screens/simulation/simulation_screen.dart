@@ -12,6 +12,7 @@ import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/literacy/currency_atm_widget.dart';
 import 'package:learning_pwa/widgets/simulation/network_troubleshooting_simulation.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
+import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
 
 class SimulationScreen extends StatefulWidget {
   final String simulationId;
@@ -153,6 +154,11 @@ class _SimulationScreenState extends State<SimulationScreen> {
                         NetworkTroubleshootingSimulation(
                           session: session,
                           onFinished: _exit,
+                        )
+                      else if (activity.id ==
+                          SimulationActivityRegistry.excelBudget.id)
+                        ExcelUploadCard(
+                          exerciseId: activity.id,
                         )
                       else
                         CurrencyAtmWidget(

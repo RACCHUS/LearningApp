@@ -178,6 +178,35 @@ void main() {
       },
     );
 
+    testWidgets('launches the excel-budget-total-v1 simulation and renders the upload card', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/simulation/excel-budget-total-v1/1.0.0',
+        routes: [
+          GoRoute(
+            path: '/simulation/:simulationId/:version',
+            builder: (context, state) => SimulationScreen(
+              simulationId: state.pathParameters['simulationId']!,
+              version: state.pathParameters['version']!,
+              previewEnabled: true,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Excel budget practice'), findsOneWidget);
+      expect(find.text('Excel Workbook Practice'), findsOneWidget);
+      expect(find.textContaining('UNVERIFIED PRACTICE'), findsOneWidget);
+      expect(find.byKey(const Key('excel-browse-button')), findsOneWidget);
+    });
+
     testWidgets('escape returns from the simulation without scoring', (
       tester,
     ) async {

@@ -123,6 +123,106 @@ jobs:
           python3 tool/catalog_p2l_cosmetologist_pathways.py validate
           python3 -m unittest discover -s tool/tests -p 'test_catalog_p2l_cosmetologist_pathways.py' -v
 
+      - name: Test bounded Excel software-learning checker (no files or credentials)
+        run: python3 -m unittest discover -s tool/tests -p 'test_software_learning_excel_checker.py' -v
+
+      - name: Test bounded XLSX snapshot reader (no uploads, credentials, or network)
+        run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_snapshot.py' -v
+
+      - name: Test provisional XLSX worker envelope (no external services)
+        run: python3 -m unittest discover -s tool/tests -p 'test_xlsx_worker.py' -v
+
+      - name: Test Excel workbook-to-provisional-grade pipeline
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_pilot_pipeline.py' -v
+
+      - name: Test Excel Storage API retention coordinator (default-off)
+        run: python3 -m unittest discover -s tool/tests -p 'test_storage_retention.py' -v
+
+      - name: Test server-only Excel private workbook handoff
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_assessment.py' -v
+
+      - name: Test restricted Supabase private workbook Storage API adapter
+        run: python3 -m unittest discover -s tool/tests -p 'test_supabase_private_storage.py' -v
+
+      - name: Test Supabase server-confirmed Excel processing identity
+        run: python3 -m unittest discover -s tool/tests -p 'test_supabase_auth_gateway.py' -v
+
+      - name: Test private Excel DB lease adapter
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_assessment_db.py' -v
+
+      - name: Test pinned Docker XLSX worker command isolation
+        run: python3 -m unittest discover -s tool/tests -p 'test_container_worker_runner.py' -v
+
+      - name: Test DB-backed Excel retention adapter (service-only)
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_db.py' -v
+
+      - name: Test bounded Excel expiration sweep (dry run by default)
+        run: python3 -m unittest discover -s tool/tests -p 'test_retention_batch.py' -v
+
+      - name: Test private bounded Excel retention job composition (disabled)
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_job.py' -v
+
+      - name: Test isolated Excel retention host GET/DELETE-only capability
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_host.py' -v
+
+      - name: Test read-only Excel retention backlog and alert signal
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_retention_monitor.py' -v
+
+      - name: Test disabled-by-default internal Excel assessment gateway
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_internal.py' -v
+
+      - name: Test trusted-host Excel assessment composition
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_runtime.py' -v
+
+      - name: Test unified provisional software/simulation evidence envelope
+        run: python3 -m unittest discover -s tool/tests -p 'test_shared_evidence.py' -v
+
+      - name: Test sealed server-brokered Excel upload (prototype only)
+        run: python3 -m unittest discover -s tool/tests -p 'test_brokered_upload.py' -v
+
+      - name: Test single-use Excel upload DB transaction lock
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_upload_db.py' -v
+
+      - name: Test isolated no-Docker Excel upload host
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_runtime.py' -v
+
+      - name: Test disabled internal binary Excel upload ingress
+        run: python3 -m unittest discover -s tool/tests -p 'test_hosted_upload_ingress.py' -v
+
+      - name: Test guarded Excel account workbook erasure
+        run: python3 -m unittest discover -s tool/tests -p 'test_account_erasure.py' -v
+
+      - name: Test read-only Excel owner-prefix Storage inventory
+        run: python3 -m unittest discover -s tool/tests -p 'test_private_owner_inventory.py' -v
+
+      - name: Verify brokered Excel migration is identical in self-host bundle
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_bundle_integrity.py' -v
+
+      - name: Test Excel upload-to-provisional-grade integrated lifecycle
+        run: python3 -m unittest discover -s tool/tests -p 'test_excel_broker_to_grade_integration.py' -v
+
+      - name: Build and smoke-test isolated Excel worker container (prototype)
+        run: |
+          docker build -f deploy/software-learning/Dockerfile \
+            -t learningapp-xlsx-worker:ci tool/software_learning
+          mkdir -p build
+          python3 -c "import sys,pathlib; sys.path.insert(0,'tool/tests'); from test_xlsx_snapshot import zip_bytes; pathlib.Path('build/excel-pilot-fixture.xlsx').write_bytes(zip_bytes())"
+          docker run --rm -i --network none --read-only \
+            --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 32 --memory 128m --cpus 0.5 \
+            --ulimit nofile=64:64 --ulimit fsize=10485760:10485760 \
+            learningapp-xlsx-worker:ci budget.xlsx \
+            < build/excel-pilot-fixture.xlsx > build/excel-worker-result.json
+          python3 -c "import json; r=json.load(open('build/excel-worker-result.json')); assert r['status']=='parsed_unverified'; assert r['cells']['C10']['value']=='=SUM(C2:C9)'; assert r['can_award_skill'] is False"
+          if printf 'not a workbook' | docker run --rm -i --network none --read-only \
+            --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 32 --memory 128m --cpus 0.5 \
+            learningapp-xlsx-worker:ci budget.xlsx > build/excel-worker-reject.json; then
+            echo "Worker incorrectly accepted malformed file" >&2
+            exit 1
+          fi
+          python3 -c "import json; r=json.load(open('build/excel-worker-reject.json')); assert r=={'status':'rejected','reason':'unsupported_or_unsafe_workbook'}"
+
       - name: Validate official College Board CLEP exam catalog
         run: |
           python3 tool/catalog_clep_exams.py
@@ -241,6 +341,19 @@ jobs:
           supabase migration up --local --include-all
           # 5. Run pgTAP test suite against incrementally upgraded database
           supabase test db
+
+      - name: Verify local Supabase Storage create-only and cleanup races (synthetic)
+        run: |
+          eval "$(supabase status -o env)"
+          export API_URL SERVICE_ROLE_KEY ANON_KEY
+          python3 tool/software_learning/local_storage_race_probe.py
+
+      - name: Verify real local DB broker NOWAIT/Storage race and cleanup (synthetic)
+        run: |
+          python3 -m pip install 'psycopg[binary]==3.2.10'
+          eval "$(supabase status -o env)"
+          export API_URL SERVICE_ROLE_KEY ANON_KEY DB_URL
+          python3 tool/software_learning/local_broker_db_storage_probe.py
 
       - name: Rehearse historical backfill in hosted-ledger order
         # Replays production's actual order: reset with only the versions in the
