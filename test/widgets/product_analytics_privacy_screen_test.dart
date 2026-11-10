@@ -75,8 +75,8 @@ void main() {
       cleared = true;
       return 2;
     });
-    await tester.ensureVisible(
-      find.text('Withdraw consent and erase server events'));
+    await tester.scrollUntilVisible(
+      find.text('Withdraw consent and erase server events'), 200);
     await tester.tap(
       find.text('Withdraw consent and erase server events'));
     await tester.pumpAndSettle();
@@ -103,8 +103,8 @@ void main() {
       count++;
       return 1;
     });
-    await tester.ensureVisible(
-      find.text('Erase queued events on this device'));
+    await tester.scrollUntilVisible(
+      find.text('Erase queued events on this device'), 200);
     await tester.tap(find.text('Erase queued events on this device'));
     await tester.pumpAndSettle();
     expect(count, 1);
