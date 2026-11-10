@@ -166,10 +166,11 @@ class _FeatureControlCenterScreenState
                       padding: const EdgeInsets.all(16),
                       children: [
                         const Text(
-                          'Disable or restore a feature without deleting '
-                          'its data. Features awaiting reviewed release gates '
-                          'cannot be activated here. Sensitive operations '
-                          'must enforce the switch on the server.',
+                          'These are release controls, not proof of backend enforcement. '
+                          'Entries marked planned are not yet wired; their OFF '
+                          'position must not be mistaken for a live shutdown. '
+                          'When connected, switches preserve user data. '
+                          'Sensitive operations require server-side gates.',
                         ),
                         const SizedBox(height: 12),
                         ..._features.map((feature) => Card(
@@ -184,7 +185,7 @@ class _FeatureControlCenterScreenState
                                   title: Text(feature.label),
                                   subtitle: Text(
                                     '${feature.key} · ${feature.category} · '
-                                    '${feature.releaseReady ? "Release ready" : "Awaiting review"}',
+                                    '${feature.releaseReady ? "Connected after rollout" : "Planned; not yet connected"}',
                                   ),
                                   value: feature.enabled,
                                   onChanged: (_saving ||
