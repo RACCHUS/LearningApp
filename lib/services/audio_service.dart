@@ -441,7 +441,8 @@ class AudioService {
 
     final transcript = _state.currentText ?? _originalNarration;
     _pausedNarration = transcript;
-    _pausedWordStart = _lastWordStart.clamp(0, transcript?.length ?? 0);
+    _pausedWordStart =
+        _lastWordStart.clamp(0, transcript?.length ?? 0).toInt();
 
     try {
       await _flutterTts!.pause();
@@ -466,7 +467,7 @@ class AudioService {
         _pausedNarration ?? _state.currentText ?? _originalNarration;
     if (transcript == null || transcript.trim().isEmpty) return;
     final original = _originalNarration ?? transcript;
-    final offset = _pausedWordStart.clamp(0, transcript.length);
+    final offset = _pausedWordStart.clamp(0, transcript.length).toInt();
     final remaining = transcript.substring(offset).trimLeft();
 
     await _stopPlayback();
