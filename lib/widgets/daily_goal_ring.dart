@@ -35,7 +35,9 @@ class DailyGoalRing extends ConsumerWidget {
   ) {
     // Determine color based on progress
     Color progressColor;
-    if (goal.goalMet) {
+    if (!goal.isStudyTimeAvailable) {
+      progressColor = colorScheme.outline;
+    } else if (goal.goalMet) {
       progressColor = Colors.green;
     } else if (goal.progress >= 0.5) {
       progressColor = Colors.orange;
@@ -44,9 +46,11 @@ class DailyGoalRing extends ConsumerWidget {
     }
 
     return Tooltip(
-      message: goal.goalMet
-          ? 'Daily goal complete! 🎉'
-          : '${goal.formattedTime} / ${goal.goalMinutes}m today',
+      message: !goal.isStudyTimeAvailable
+          ? 'Study time unavailable — daily goal is ${goal.goalMinutes}m'
+          : (goal.goalMet
+              ? 'Daily goal complete! 🎉'
+              : '${goal.formattedTime} / ${goal.goalMinutes}m today'),
       child: InkWell(
         onTap: () => context.push('/progress'),
         borderRadius: BorderRadius.circular(size / 2),
@@ -59,7 +63,10 @@ class DailyGoalRing extends ConsumerWidget {
           circularStrokeCap: CircularStrokeCap.round,
           animation: true,
           animationDuration: 800,
-          center: goal.goalMet
+          center: !goal.isStudyTimeAvailable
+              ? Icon(Icons.help_outline, size: size * 0.45,
+                  color: colorScheme.onSurfaceVariant)
+              : goal.goalMet
               ? Icon(
                   Icons.check,
                   size: size * 0.45,
@@ -122,7 +129,9 @@ class DailyGoalRingLarge extends ConsumerWidget {
     TextTheme textTheme,
   ) {
     Color progressColor;
-    if (goal.goalMet) {
+    if (!goal.isStudyTimeAvailable) {
+      progressColor = colorScheme.outline;
+    } else if (goal.goalMet) {
       progressColor = Colors.green;
     } else if (goal.progress >= 0.5) {
       progressColor = Colors.orange;
@@ -145,7 +154,10 @@ class DailyGoalRingLarge extends ConsumerWidget {
           center: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (goal.goalMet)
+              if (!goal.isStudyTimeAvailable)
+                Icon(Icons.help_outline, size: size * 0.3,
+                    color: colorScheme.onSurfaceVariant)
+              else if (goal.goalMet)
                 Icon(
                   Icons.check_circle,
                   size: size * 0.3,
@@ -171,13 +183,15 @@ class DailyGoalRingLarge extends ConsumerWidget {
         ),
         const SizedBox(height: DesignTokens.space2),
         Text(
-          goal.goalMet ? 'Goal Complete!' : 'Daily Goal',
+          !goal.isStudyTimeAvailable
+              ? 'Study Time Unavailable'
+              : (goal.goalMet ? 'Goal Complete!' : 'Daily Goal'),
           style: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: goal.goalMet ? Colors.green : colorScheme.onSurface,
           ),
         ),
-        if (!goal.goalMet)
+        if (goal.isStudyTimeAvailable && !goal.goalMet)
           Text(
             '${goal.remainingMinutes}m remaining',
             style: textTheme.bodySmall?.copyWith(
