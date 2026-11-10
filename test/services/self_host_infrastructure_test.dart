@@ -93,7 +93,19 @@ void main() {
           .length;
       expect(scanResult.migrations.length, equals(migrationFileCount));
       expect(scanResult.migrations.first.version, equals('20241228000000'));
-      expect(scanResult.migrations.last.version, equals('20261108140000'));
+      // Compare the scan against the checked-in migration filenames rather than
+      // pinning the latest version, which would reject every additive migration.
+      final expectedVersions = Directory('supabase/migrations')
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.sql'))
+          .map((file) => file.uri.pathSegments.last.split('_').first)
+          .toList()
+        ..sort();
+      expect(
+        scanResult.migrations.map((migration) => migration.version).toList(),
+        orderedEquals(expectedVersions),
+      );
 
       final bundle = SelfHostBootstrap.generateBundleSql(scanResult.migrations);
       expect(bundle, contains('BEGIN;'));
@@ -107,6 +119,9 @@ void main() {
       expect(bundle, contains('20261107060000_performance_library_search_trigram_indexes.sql'));
       expect(bundle, contains('20261108000000_assessment_item_server_grading.sql'));
       expect(bundle, contains('20261108140000_clep_simulation_bank_and_item_privacy.sql'));
+      expect(bundle, contains('20261110150000_clep_simulation_domain_code_projection.sql'));
+      expect(bundle, contains('20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql'));
+      expect(bundle, contains('20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql'));
     });
   });
 }

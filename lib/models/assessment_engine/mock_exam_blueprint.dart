@@ -19,6 +19,8 @@ class MockExamBlueprint {
   final Map<String, double> difficultyDistribution;
   final Set<AssessmentInteractionType> allowedInteractionTypes;
   final double maxStimulusItemsRatio;
+  final Set<String> allowedTools;
+  final bool isProtectedSimulation;
   final Map<String, dynamic> metadata;
 
   const MockExamBlueprint({
@@ -45,10 +47,34 @@ class MockExamBlueprint {
       AssessmentInteractionType.matching,
     },
     this.maxStimulusItemsRatio = 0.25,
+    this.allowedTools = const {},
+    this.isProtectedSimulation = false,
     this.metadata = const {},
   });
 
   Duration get timeLimit => Duration(minutes: timeLimitMinutes);
+
+  /// Whether this exam is a protected simulation requiring server-side grading.
+  bool get isProtected =>
+      isProtectedSimulation ||
+      metadata['is_protected_simulation'] == true ||
+      metadata['bank'] == 'simulation_exam' ||
+      metadata['is_protected'] == true;
+
+  /// Whether this exam blueprint permits the use of a scientific calculator tool.
+  bool get allowsCalculator {
+    if (allowedTools.contains('calculator') ||
+        allowedTools.contains('scientific_calculator')) {
+      return true;
+    }
+    final metaTools = metadata['allowed_tools'];
+    if (metaTools is List &&
+        (metaTools.contains('calculator') ||
+            metaTools.contains('scientific_calculator'))) {
+      return true;
+    }
+    return metadata['calculator_allowed'] == true;
+  }
 
   /// Computes target difficulty quotas for a given exam length using the same
   /// largest-remainder allocation used for domain weights.
@@ -152,6 +178,14 @@ class MockExamBlueprint {
             .where((type) => allowedRaw.contains(type.toDbString()))
             .toSet();
 
+    final allowedToolsRaw = (json['allowed_tools'] as List?)
+            ?.map((value) => value.toString())
+            .toSet() ??
+        ((json['metadata'] as Map?)?['allowed_tools'] as List?)
+            ?.map((value) => value.toString())
+            .toSet() ??
+        const <String>{};
+
     return MockExamBlueprint(
       targetVersionId: json['target_version_id'] as String? ?? '',
       examPartKey: json['exam_part_key'] as String?,
@@ -167,6 +201,12 @@ class MockExamBlueprint {
       allowedInteractionTypes: allowedTypes,
       maxStimulusItemsRatio:
           (json['max_stimulus_items_ratio'] as num?)?.toDouble() ?? 0.25,
+      allowedTools: allowedToolsRaw,
+      isProtectedSimulation: json['is_protected_simulation'] as bool? ??
+          (json['metadata'] is Map &&
+              ((json['metadata'] as Map)['is_protected_simulation'] == true ||
+                  (json['metadata'] as Map)['bank'] == 'simulation_exam' ||
+                  (json['metadata'] as Map)['is_protected'] == true)),
       metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},
     );
   }
@@ -186,6 +226,8 @@ class MockExamBlueprint {
         'allowed_interaction_types':
             allowedInteractionTypes.map((type) => type.toDbString()).toList(),
         'max_stimulus_items_ratio': maxStimulusItemsRatio,
+        'allowed_tools': allowedTools.toList(),
+        'is_protected_simulation': isProtected,
         'metadata': metadata,
       };
 }

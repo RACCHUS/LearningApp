@@ -150,6 +150,11 @@ class MockExamGeneratorService {
       }
     }
 
+    final allowedToolsRaw = (versionMeta['allowed_tools'] as List?)
+            ?.map((v) => v.toString())
+            .toSet() ??
+        const <String>{};
+
     return MockExamBlueprint(
       targetVersionId: targetVersionId,
       examPartKey: examPartKey,
@@ -164,6 +169,7 @@ class MockExamGeneratorService {
       difficultyDistribution: difficultyDistribution,
       allowedInteractionTypes: allowedInteractionTypes,
       maxStimulusItemsRatio: maxStimulusItemsRatio,
+      allowedTools: allowedToolsRaw,
       metadata: versionMeta,
     );
   }
