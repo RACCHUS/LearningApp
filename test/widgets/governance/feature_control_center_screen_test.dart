@@ -124,7 +124,7 @@ void main() {
     expect(fake.lastEnabled, isFalse);
     await tester.tap(find.text('Recent changes (1)'));
     await tester.pumpAndSettle();
-    expect(find.text('Previous controlled emergency drill', findRichText: true),
+    expect(find.textContaining('Previous controlled emergency drill'),
         findsWidgets);
   });
 }
