@@ -109,7 +109,7 @@ The following **prototype** components are now committed:
 
 ## 2026-11-07 continuation — authenticated attempt issuance (repository only)
 
-The feature branch has been synchronized with main including the merged simulation PR #187. The new migration `20261110200000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
+The feature branch has been synchronized with main including the merged simulation PR #187. The new migration `20261110190000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
 
 - `public.software_learning_attempts` — RLS owner-only SELECT, immutable-to-clients synthetic attempt metadata with short expiry; clients cannot create, alter, or delete rows directly.
 - `software_learning_private.excel_attempt_inputs` — restricted synthetic per-attempt inputs, inaccessible through public RLS/role grants.

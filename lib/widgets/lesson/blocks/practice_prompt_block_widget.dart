@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
+import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
 
 class PracticePromptBlockWidget extends StatefulWidget {
@@ -289,7 +290,7 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                 ],
               ),
             ),
-            if (isExcelPractice)
+            if (isExcelPractice && isSimulationPreviewAllowed(requested: true))
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: ExcelUploadCard(

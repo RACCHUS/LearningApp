@@ -32,7 +32,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Excel Workbook Practice'), findsOneWidget);
-      expect(find.text('UNVERIFIED PRACTICE'), findsOneWidget);
+      expect(find.textContaining('UNVERIFIED'), findsOneWidget);
       expect(find.textContaining('Time Remaining: 45:00'), findsOneWidget);
       expect(find.textContaining('Attempt: ba430000...'), findsOneWidget);
       expect(
@@ -118,6 +118,8 @@ void main() {
       await tester.pump();
 
       // Tap the Load Synthetic Valid Workbook button
+      await tester.ensureVisible(find.byKey(const Key('excel-load-synthetic-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-load-synthetic-button')));
       await tester.pump();
 
@@ -125,19 +127,62 @@ void main() {
       expect(find.textContaining('practice_budget.xlsx'), findsOneWidget);
 
       // Tap submit
+      await tester.ensureVisible(find.byKey(const Key('excel-submit-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-submit-button')));
       await tester.pump(); // Start uploading
       await tester.pump(const Duration(milliseconds: 350)); // Finish evaluation
       await tester.pump();
 
       expect(find.byKey(const Key('excel-results-container')), findsOneWidget);
-      expect(find.text('PRACTICE EXERCISE PASSED'), findsOneWidget);
+      expect(find.textContaining('PRACTICE EXERCISE PASSED'), findsOneWidget);
       expect(find.text('Worksheet Name'), findsOneWidget);
       expect(find.text('Transaction Inputs'), findsOneWidget);
       expect(find.text('SUM Formula Construction'), findsOneWidget);
       expect(find.text('Calculated Budget Total'), findsOneWidget);
       expect(find.text('TRUST: UNVERIFIED_CHECKER_ONLY'), findsOneWidget);
       expect(find.text('SKILL AWARD: NONE'), findsOneWidget);
+      // Demo evaluation must not trigger simulation completion!
+      expect(completed, isFalse);
+    });
+
+    testWidgets('server upload callback evaluates and triggers completion on verified pass',
+        (tester) async {
+      bool completed = false;
+      await tester.pumpWidget(buildTestWidget(
+        onComplete: () => completed = true,
+        onUpload: (name, bytes, attemptId) async => SoftwareLearningResult(
+          attemptId: attemptId,
+          exerciseId: 'excel-budget-total-v1',
+          overallPassed: true,
+          evidenceTrust: 'unverified_checker_only',
+          canAwardSkill: false,
+          feedback: 'Verified pass from server.',
+          criteria: const [
+            SoftwareLearningCriterion(
+              id: 'c1',
+              title: 'Worksheet Name',
+              description: 'Budget',
+              passed: true,
+            ),
+          ],
+        ),
+      ));
+      await tester.pump();
+
+      await tester.ensureVisible(find.byKey(const Key('excel-load-synthetic-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('excel-load-synthetic-button')));
+      await tester.pump();
+
+      await tester.ensureVisible(find.byKey(const Key('excel-submit-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('excel-submit-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.byKey(const Key('excel-results-container')), findsOneWidget);
       expect(completed, isTrue);
     });
 
@@ -147,10 +192,14 @@ void main() {
       await tester.pump();
 
       // Tap the Missing Formula button
+      await tester.ensureVisible(find.byKey(const Key('excel-load-invalid-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-load-invalid-button')));
       await tester.pump();
 
       // Submit
+      await tester.ensureVisible(find.byKey(const Key('excel-submit-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-submit-button')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 350));
@@ -167,8 +216,13 @@ void main() {
       await tester.pump();
 
       // Submit synthetic file
+      await tester.ensureVisible(find.byKey(const Key('excel-load-synthetic-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-load-synthetic-button')));
       await tester.pump();
+
+      await tester.ensureVisible(find.byKey(const Key('excel-submit-button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('excel-submit-button')));
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();

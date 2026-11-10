@@ -16,17 +16,25 @@ enum SimulationTerminationReason { learnerExit, hostExit, runtimeEnded }
 
 enum SimulationFailureCategory { initialization, runtime, resourceUnavailable }
 
+/// Experimental native simulations are disabled unless the app build
+/// explicitly opts in. This is a compile-time flag, not a remotely switchable
+/// production setting.
 const simulationPreviewEnabled =
-    !kReleaseMode &&
     bool.fromEnvironment('ENABLE_SIMULATION_PREVIEW', defaultValue: false);
 
-/// The single preview gate. Release builds can never launch a simulation,
-/// even when a caller explicitly requests preview.
-/// Release mode is read only from the compile-time [kReleaseMode] constant;
-/// callers cannot supply their own definition of release mode.
+/// The single preview gate. Test/profile code may request a preview without
+/// an explicit build flag, but release builds require the compile-time opt-in.
+/// This prevents a constructor override from bypassing a disabled release.
 bool isSimulationPreviewAllowed({required bool requested}) {
-  return requested && !kReleaseMode;
+  return requested && (!kReleaseMode || simulationPreviewEnabled);
 }
+
+String simulationActivityTitle(String id) => switch (id) {
+  'networking-basics' => 'Network troubleshooting practice',
+  'atm-withdrawal' => 'ATM withdrawal practice',
+  'excel-budget-total-v1' => 'Excel budget practice',
+  _ => 'Interactive practice',
+};
 
 class SimulationCapabilities {
   final bool supportsPauseAndResume;

@@ -13,6 +13,10 @@ import 'package:uuid/uuid.dart';
 /// - 45-minute countdown timer with automatic lockout on expiry
 /// - Drag-and-drop / file selection zone validating .xlsx and <= 10 MiB limits
 /// - Deterministic criterion result display with unverified evidence stamp
+///
+/// When [onUpload] is null, this card operates in prototype demonstration mode,
+/// displaying sample scenarios and rubric checks without claiming container
+/// execution or server-backed verification.
 class ExcelUploadCard extends StatefulWidget {
   final String exerciseId;
   final String? attemptId;
@@ -51,6 +55,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
 
   static const int maxFileBytes = 10 * 1024 * 1024; // 10 MiB
 
+  bool get isDemoMode => widget.onUpload == null;
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +83,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
         setState(() {
           _secondsRemaining = 0;
           _status = SoftwareLearningStatus.expired;
-          _validationError = 'This attempt has expired (45-minute limit exceeded). Start a new attempt to continue.';
+          _validationError =
+              'This attempt has expired (45-minute limit exceeded). Start a new attempt to continue.';
         });
       } else {
         setState(() {
@@ -107,7 +114,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     final lowerName = name.toLowerCase();
     if (!lowerName.endsWith('.xlsx')) {
       setState(() {
-        _validationError = 'Invalid file type: Only Excel (.xlsx) workbooks are accepted.';
+        _validationError =
+            'Invalid file type: Only Excel (.xlsx) workbooks are accepted.';
         _selectedFileName = null;
         _selectedFileBytes = null;
       });
@@ -125,7 +133,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
 
     if (bytes.length > maxFileBytes) {
       setState(() {
-        _validationError = 'File exceeds maximum limit: Workbooks must be 10 MiB or smaller.';
+        _validationError =
+            'File exceeds maximum limit: Workbooks must be 10 MiB or smaller.';
         _selectedFileName = null;
         _selectedFileBytes = null;
       });
@@ -142,7 +151,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
   Future<void> _submitWorkbook() async {
     final bytes = _selectedFileBytes;
     final name = _selectedFileName;
-    if (bytes == null || name == null || _status == SoftwareLearningStatus.expired) {
+    if (bytes == null ||
+        name == null ||
+        _status == SoftwareLearningStatus.expired) {
       return;
     }
 
@@ -170,14 +181,17 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
         _status = SoftwareLearningStatus.completed;
       });
 
-      if (evaluation.overallPassed && widget.onComplete != null) {
+      // Simulation completion is only emitted when backed by an authoritative
+      // evaluation handler, never by client-side demo placeholder evaluation.
+      if (!isDemoMode && evaluation.overallPassed && widget.onComplete != null) {
         widget.onComplete!();
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _status = SoftwareLearningStatus.rejected;
-        _validationError = 'Assessment failed: The workbook could not be verified. Please try again.';
+        _validationError =
+            'Assessment failed: The workbook could not be verified. Please try again.';
       });
     }
   }
@@ -265,8 +279,10 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     _startTimer();
   }
 
-  void _loadSyntheticPracticeFile({bool malformed = false, bool noSum = false}) {
-    // Generate valid synthetic XLSX byte fixture (magic bytes PK\x03\x04 + synthetic payload)
+  void _loadSyntheticPracticeFile({
+    bool malformed = false,
+    bool noSum = false,
+  }) {
     final suffix = malformed
         ? '_malformed.xlsx'
         : (noSum ? '_no_sum.xlsx' : '_budget.xlsx');
@@ -298,19 +314,19 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(context, isDark),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _buildTimerAndStatus(context, isDark),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _buildPrivacyNotice(context, isDark),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               if (_validationError != null) ...[
                 _buildErrorBanner(context),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
               ],
               if (_result != null)
                 _buildResultsView(context, isDark)
@@ -354,7 +370,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Guided practice with your real Microsoft Excel application',
+                isDemoMode
+                    ? 'Rubric demonstration preview (live broker upload disabled)'
+                    : 'Guided practice with your real Microsoft Excel application',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
@@ -375,10 +393,14 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.shield_outlined, size: 14, color: Colors.amber.shade800),
+                Icon(
+                  Icons.shield_outlined,
+                  size: 14,
+                  color: Colors.amber.shade800,
+                ),
                 const SizedBox(width: 4),
                 Text(
-                  'UNVERIFIED PRACTICE',
+                  isDemoMode ? 'UNVERIFIED PRACTICE (DEMO)' : 'UNVERIFIED PRACTICE',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -409,31 +431,25 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
+          Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.timer_outlined, size: 18, color: timerColor),
-                  const SizedBox(width: 6),
-                  Semantics(
-                    label: 'Single-use attempt timer: ${_formatTimer(_secondsRemaining)} remaining',
-                    child: Text(
-                      'Time Remaining: ${_formatTimer(_secondsRemaining)}',
-                      style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: timerColor,
-                      ),
-                    ),
+              Icon(Icons.timer_outlined, size: 18, color: timerColor),
+              const SizedBox(width: 6),
+              Semantics(
+                label:
+                    'Single-use attempt timer: ${_formatTimer(_secondsRemaining)} remaining',
+                child: Text(
+                  'Time Remaining: ${_formatTimer(_secondsRemaining)}',
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: timerColor,
                   ),
-                ],
+                ),
               ),
+              const Spacer(),
               Semantics(
                 label: 'Single-use attempt ID: $_attemptId',
                 child: Text(
@@ -452,10 +468,23 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 6,
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              backgroundColor: isDark
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFFE2E8F0),
               valueColor: AlwaysStoppedAnimation<Color>(timerColor),
             ),
           ),
+          if (isDemoMode) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Local prototype timer simulating the 45-minute window; server-issued attempt tracking is inactive.',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+                color: isDark ? Colors.grey[500] : const Color(0xFF64748B),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -482,7 +511,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Privacy & Verification Gate: Uploaded workbooks are processed ephemeral-only in an isolated container without persistent Storage retention. No verified skill credit or mastery certificate is awarded by practice submissions.',
+              isDemoMode
+                  ? 'Privacy & Verification Gate: Live file upload is disabled in this preview. This interface demonstrates the 4-part grading rubric using sample fixtures. Real workbook evaluation and isolated container execution require the backend brokered upload service.'
+                  : 'Privacy & Verification Gate: Uploaded workbooks are processed ephemeral-only in an isolated container without persistent Storage retention. No verified skill credit or mastery certificate is awarded by practice submissions.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 height: 1.4,
@@ -534,9 +565,11 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
             Text(
-              _status == SoftwareLearningStatus.uploading
-                  ? 'Brokering private upload...'
-                  : 'Analyzing workbook criteria...',
+              isDemoMode
+                  ? 'Simulating rubric evaluation...'
+                  : (_status == SoftwareLearningStatus.uploading
+                      ? 'Brokering private upload...'
+                      : 'Analyzing workbook criteria...'),
               style: GoogleFonts.outfit(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -545,7 +578,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Checking worksheet structure and formula syntax in container sandbox',
+              isDemoMode
+                  ? 'Testing sample workbook structure against deterministic criteria'
+                  : 'Checking worksheet structure and formula syntax in container sandbox',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
@@ -564,7 +599,10 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
       onLeave: (_) => setState(() => _isDragging = false),
       onAcceptWithDetails: (details) {
         setState(() => _isDragging = false);
-        handleFileSelected(details.data, Uint8List.fromList([0x50, 0x4B, 0x03, 0x04]));
+        handleFileSelected(
+          details.data,
+          Uint8List.fromList([0x50, 0x4B, 0x03, 0x04]),
+        );
       },
       builder: (context, candidateData, rejectedData) {
         return Container(
@@ -585,7 +623,7 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
           child: Column(
             children: [
               Icon(
-                Icons.cloud_upload_outlined,
+                isDemoMode ? Icons.science_outlined : Icons.cloud_upload_outlined,
                 size: 44,
                 color: _isDragging
                     ? const Color(0xFF107C41)
@@ -593,7 +631,10 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
               ),
               const SizedBox(height: 12),
               Text(
-                _selectedFileName ?? 'Drop your completed .xlsx workbook here',
+                _selectedFileName ??
+                    (isDemoMode
+                        ? 'Select a demonstration scenario below'
+                        : 'Drop your completed .xlsx workbook here'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(
                   fontSize: 15,
@@ -603,7 +644,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Accepts Microsoft Excel .xlsx files up to 10 MiB',
+                isDemoMode
+                    ? 'Preview the automated 4-criteria rubric using test fixtures'
+                    : 'Accepts Microsoft Excel .xlsx files up to 10 MiB',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
@@ -621,26 +664,41 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                         ? null
                         : () => _loadSyntheticPracticeFile(),
                     icon: const Icon(Icons.file_open_outlined, size: 18),
-                    label: Text(_selectedFileName == null ? 'Select .xlsx file' : 'Change file'),
+                    label: Text(
+                      _selectedFileName == null
+                          ? (isDemoMode
+                              ? 'Load Sample Scenario'
+                              : 'Select .xlsx file')
+                          : 'Change sample scenario',
+                    ),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
-                  if (_selectedFileName != null && _status != SoftwareLearningStatus.expired)
+                  if (_selectedFileName != null &&
+                      _status != SoftwareLearningStatus.expired)
                     FilledButton.icon(
                       key: const Key('excel-submit-button'),
                       onPressed: _submitWorkbook,
                       icon: const Icon(Icons.check_circle_outline, size: 18),
-                      label: const Text('Verify workbook'),
+                      label: Text(
+                        isDemoMode ? 'Run Rubric Check' : 'Verify workbook',
+                      ),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF107C41),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 14),
-              // Synthetic test helpers for accessible practice without local Excel files
+              // Rubric demonstration scenarios
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 8,
@@ -649,14 +707,20 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                   TextButton.icon(
                     key: const Key('excel-load-synthetic-button'),
                     onPressed: () => _loadSyntheticPracticeFile(),
-                    icon: const Icon(Icons.science_outlined, size: 16),
-                    label: const Text('Load Synthetic Valid Workbook', style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text(
+                      'Load Valid Budget Sample',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                   TextButton.icon(
                     key: const Key('excel-load-invalid-button'),
                     onPressed: () => _loadSyntheticPracticeFile(noSum: true),
-                    icon: const Icon(Icons.bug_report_outlined, size: 16),
-                    label: const Text('Load Missing Formula', style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.error_outline, size: 16),
+                    label: const Text(
+                      'Load Missing Formula Sample',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ],
               ),
@@ -672,7 +736,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     if (result == null) return const SizedBox.shrink();
 
     final passed = result.overallPassed;
-    final headerColor = passed ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final headerColor =
+        passed ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
 
     return Container(
       key: const Key('excel-results-container'),
@@ -691,7 +756,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: headerColor.withValues(alpha: isDark ? 0.2 : 0.12),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
@@ -706,7 +772,11 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        passed ? 'PRACTICE EXERCISE PASSED' : 'NEEDS REVISION',
+                        passed
+                            ? (isDemoMode
+                                ? 'PRACTICE EXERCISE PASSED (DEMO)'
+                                : 'PRACTICE EXERCISE PASSED')
+                            : 'NEEDS REVISION',
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -717,8 +787,10 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                       Text(
                         result.feedback,
                         style: GoogleFonts.inter(
-                          fontSize: 12.5,
-                          color: isDark ? Colors.grey[300] : const Color(0xFF334155),
+                          fontSize: 12,
+                          color: isDark
+                              ? Colors.grey[300]
+                              : const Color(0xFF334155),
                         ),
                       ),
                     ],
@@ -730,59 +802,30 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Deterministic Criteria Breakdown:',
+                  'Deterministic Rubric Criteria (4 Parts)',
                   style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.grey[300] : const Color(0xFF475569),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...result.criteria.map((criterion) => _buildCriterionTile(criterion, isDark)),
-                const Divider(height: 24),
+                ...result.criteria.map((c) => _buildCriterionTile(c, isDark)),
+                const SizedBox(height: 16),
+                _buildEvidenceTrustBadge(result, isDark),
+                const SizedBox(height: 16),
                 Wrap(
-                  spacing: 8,
+                  alignment: WrapAlignment.end,
+                  spacing: 10,
                   runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  alignment: WrapAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'TRUST: ${result.evidenceTrust.toUpperCase()}',
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.grey[300] : const Color(0xFF475569),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'SKILL AWARD: NONE',
-                        style: GoogleFonts.robotoMono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber.shade800,
-                        ),
-                      ),
-                    ),
                     OutlinedButton.icon(
                       key: const Key('excel-new-attempt-button'),
                       onPressed: _resetAttempt,
-                      icon: const Icon(Icons.refresh, size: 16),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: const Text('New Attempt'),
                     ),
                   ],
@@ -795,52 +838,157 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     );
   }
 
-  Widget _buildCriterionTile(SoftwareLearningCriterion criterion, bool isDark) {
-    final passed = criterion.passed;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildCriterionTile(SoftwareLearningCriterion c, bool isDark) {
+    final statusColor =
+        c.passed ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            passed ? Icons.check_circle_outline : Icons.cancel_outlined,
-            size: 20,
-            color: passed ? const Color(0xFF10B981) : Colors.red.shade600,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: statusColor, width: 1),
+            ),
+            child: Text(
+              c.passed ? 'PASS' : 'FAIL',
+              style: GoogleFonts.robotoMono(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: statusColor,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      criterion.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      passed ? 'PASS' : 'FAIL',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: passed ? const Color(0xFF10B981) : Colors.red.shade600,
-                      ),
-                    ),
-                  ],
-                ),
                 Text(
-                  criterion.feedback ?? criterion.description,
+                  c.title,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  c.description,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
                     color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                   ),
                 ),
+                if (c.feedback != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    c.feedback!,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      color: c.passed
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                    ),
+                  ),
+                ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvidenceTrustBadge(SoftwareLearningResult r, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'TRUST: ${r.evidenceTrust.toUpperCase()}',
+                  style: GoogleFonts.robotoMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber.shade900,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'SKILL AWARD: NONE',
+                  style: GoogleFonts.robotoMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                ),
+              ),
+              if (isDemoMode)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'MODE: RUBRIC DEMO',
+                    style: GoogleFonts.robotoMono(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isDemoMode
+                ? 'Demo Notice: This result was generated from a sample test scenario. No workbook was uploaded to the server broker or graded by the isolated container.'
+                : 'Safety Notice: This practice result is strictly unverified. No permanent mastery evidence or certified skill record has been written.',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
             ),
           ),
         ],
