@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:learning_pwa/core/hive_type_ids.dart';
+import 'learning_strategy.dart';
 
 enum ScopeRole {
   core,
@@ -51,6 +52,7 @@ class ScopedLearningActivity {
   final ScopeRole role;
   final String title;
   final Duration estimatedDuration;
+  final EstimateQuality estimateQuality;
   final String? courseId;
   final String? courseTitle;
   final String? moduleId;
@@ -67,15 +69,26 @@ class ScopedLearningActivity {
     this.role = ScopeRole.core,
     required this.title,
     this.estimatedDuration = const Duration(minutes: 10),
+    this.estimateQuality = EstimateQuality.defaultEstimate,
     this.courseId,
     this.courseTitle,
     this.moduleId,
     this.moduleTitle,
   });
 
+  int get estimatedMinutes =>
+      estimatedDuration.inMinutes > 0 ? estimatedDuration.inMinutes : 15;
+
   factory ScopedLearningActivity.fromJson(Map<String, dynamic> json) {
     final parsedSource =
         ScopedActivitySource.fromString(json['source'] as String?);
+    final rawMinutes = (json['estimated_minutes'] as num?)?.toInt();
+    final hasValidPositiveMinutes = rawMinutes != null && rawMinutes > 0;
+    final resolvedMinutes = hasValidPositiveMinutes ? rawMinutes : 10;
+    final resolvedQuality = hasValidPositiveMinutes
+        ? EstimateQuality.fromWire(json['estimate_quality'] as String?)
+        : EstimateQuality.defaultEstimate;
+
     return ScopedLearningActivity(
       activityId: json['activity_id'] as String,
       kind: ScopedActivityKind.fromString(json['kind'] as String? ?? 'lesson'),
@@ -87,9 +100,8 @@ class ScopedLearningActivity {
       activityOrder: (json['activity_order'] as num?)?.toInt() ?? 0,
       role: ScopeRole.fromString(json['role'] as String? ?? 'core'),
       title: json['title'] as String? ?? '',
-      estimatedDuration: Duration(
-        minutes: (json['estimated_minutes'] as num?)?.toInt() ?? 10,
-      ),
+      estimatedDuration: Duration(minutes: resolvedMinutes),
+      estimateQuality: resolvedQuality,
       courseId: json['course_id'] as String?,
       courseTitle: json['course_title'] as String?,
       moduleId: json['module_id'] as String?,
@@ -108,6 +120,7 @@ class ScopedLearningActivity {
         'role': role.name,
         'title': title,
         'estimated_minutes': estimatedDuration.inMinutes,
+        'estimate_quality': estimateQuality.wireValue,
         'course_id': courseId,
         'course_title': courseTitle,
         'module_id': moduleId,

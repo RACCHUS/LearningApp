@@ -1,3 +1,5 @@
+import 'learning_strategy.dart';
+
 enum LessonBlockType {
   markdown,
   callout,
@@ -79,6 +81,10 @@ class LessonBlock {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// Typed helper reading `metadata['depth_tier']` (`core` | `support` | `enrichment`).
+  /// Defaults to [DepthTier.core] when absent or unrecognized (`TEL-02B`).
+  DepthTier get depthTier => DepthTier.fromWire(metadata['depth_tier']);
 
   factory LessonBlock.fromJson(Map<String, dynamic> json) {
     return LessonBlock(

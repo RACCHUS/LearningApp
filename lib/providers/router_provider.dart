@@ -41,6 +41,8 @@ import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
 import 'package:learning_pwa/screens/targets/target_detail_screen.dart';
 import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
 import 'package:learning_pwa/screens/targets/target_simulation_screen.dart';
+import 'package:learning_pwa/screens/overview/overview_tour_screen.dart';
+import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
@@ -151,6 +153,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'target-outline',
         builder: (context, state) =>
             TargetOutlineScreen(targetId: state.pathParameters['targetId']!),
+      ),
+      GoRoute(
+        path: '/overview/:targetId',
+        name: 'subject-overview',
+        builder: (context, state) {
+          final rawMinutes = int.tryParse(
+            state.uri.queryParameters['duration'] ?? '',
+          );
+          return OverviewTourScreen(
+            targetSlugOrId: state.pathParameters['targetId']!,
+            initialPreset: OverviewDurationPreset.fromMinutes(rawMinutes),
+          );
+        },
       ),
       GoRoute(
         path: '/target/:targetId/diagnostic/:targetVersionId',

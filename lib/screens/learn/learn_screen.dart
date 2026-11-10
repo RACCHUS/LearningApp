@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/next_action_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
@@ -11,6 +12,7 @@ import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/learn/context_switcher.dart';
 import 'package:learning_pwa/widgets/learn/continue_card.dart';
+import 'package:learning_pwa/widgets/learn/learning_approach_selector.dart';
 import 'package:learning_pwa/widgets/learn/review_prompt.dart';
 import 'package:learning_pwa/widgets/learn/zero_state.dart';
 import 'package:learning_pwa/widgets/literacy/pwa_audio_unlock_banner.dart';
@@ -28,6 +30,9 @@ class LearnScreen extends ConsumerWidget {
     final contextsState = ref.watch(learningContextsProvider);
     final action = ref.watch(nextActionProvider);
     final engine = ref.watch(nextActionEngineProvider);
+    final presentation = ref
+        .watch(resolvedActionPresentationProvider)
+        .valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -39,6 +44,8 @@ class LearnScreen extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(learningContextsProvider.notifier).load();
           ref.invalidate(nextActionProvider);
+          ref.invalidate(activeFastPlanProvider);
+          ref.invalidate(resolvedActionPresentationProvider);
         },
         child: ListView(
           children: [
@@ -51,6 +58,8 @@ class LearnScreen extends ConsumerWidget {
                 ),
                 data: (next) => _LearnBody(
                   action: next,
+                  secondaryFastAction: presentation?.secondaryFastAction,
+                  secondaryFastRationale: presentation?.secondaryFastRationale,
                   showReviewPrompt: engine.showSecondaryReviewPrompt(
                     next,
                     ref.watch(activeDueCountProvider).valueOrNull ?? 0,
@@ -68,11 +77,15 @@ class LearnScreen extends ConsumerWidget {
 
 class _LearnBody extends StatelessWidget {
   final NextAction action;
+  final StartActivity? secondaryFastAction;
+  final String? secondaryFastRationale;
   final bool showReviewPrompt;
   final int dueCount;
 
   const _LearnBody({
     required this.action,
+    this.secondaryFastAction,
+    this.secondaryFastRationale,
     required this.showReviewPrompt,
     required this.dueCount,
   });
@@ -88,7 +101,16 @@ class _LearnBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const LearningApproachSelector(),
+        const SizedBox(height: DesignTokens.space3),
         ContinueCard(action: action),
+        if (secondaryFastAction != null) ...[
+          const SizedBox(height: DesignTokens.space4),
+          SecondaryFastRecommendationCard(
+            secondaryAction: secondaryFastAction!,
+            rationale: secondaryFastRationale,
+          ),
+        ],
         if (showReviewPrompt) ...[
           const SizedBox(height: DesignTokens.space5),
           const Divider(height: 1),
