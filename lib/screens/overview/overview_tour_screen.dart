@@ -505,66 +505,71 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
     final theme = Theme.of(context);
     final selectedIdx = _transientCheckSelections[check.id];
 
-    return Container(
+    return Padding(
       key: Key('overview-transient-check-${check.id}'),
-      margin: const EdgeInsets.only(top: DesignTokens.space2),
-      padding: const EdgeInsets.all(DesignTokens.space3),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.only(top: DesignTokens.space2),
+      child: Material(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Optional quick self-check (not recorded)',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            check.prompt,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: DesignTokens.space2),
-          ...List.generate(check.options.length, (idx) {
-            final isSelected = selectedIdx == idx;
-            return RadioListTile<int>(
-              key: Key('overview-check-${check.id}-option-$idx'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              value: idx,
-              groupValue: selectedIdx,
-              title: Text(check.options[idx], style: theme.textTheme.bodySmall),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() {
-                    _transientCheckSelections[check.id] = val;
-                  });
-                }
-              },
-              selected: isSelected,
-            );
-          }),
-          if (selectedIdx != null) ...[
-            const SizedBox(height: DesignTokens.space2),
-            Text(
-              selectedIdx == check.correctOptionIndex
-                  ? 'Correct — ${check.explanation}'
-                  : 'Not quite — ${check.explanation}',
-              key: Key('overview-check-${check.id}-feedback'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: selectedIdx == check.correctOptionIndex
-                    ? Colors.green.shade800
-                    : theme.colorScheme.error,
+        child: Padding(
+          padding: const EdgeInsets.all(DesignTokens.space3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Optional quick self-check (not recorded)',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
-        ],
+              const SizedBox(height: 4),
+              Text(
+                check.prompt,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: DesignTokens.space2),
+              ...List.generate(check.options.length, (idx) {
+                final isSelected = selectedIdx == idx;
+                return RadioListTile<int>(
+                  key: Key('overview-check-${check.id}-option-$idx'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  value: idx,
+                  groupValue: selectedIdx,
+                  title: Text(
+                    check.options[idx],
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _transientCheckSelections[check.id] = val;
+                      });
+                    }
+                  },
+                  selected: isSelected,
+                );
+              }),
+              if (selectedIdx != null) ...[
+                const SizedBox(height: DesignTokens.space2),
+                Text(
+                  selectedIdx == check.correctOptionIndex
+                      ? 'Correct — ${check.explanation}'
+                      : 'Not quite — ${check.explanation}',
+                  key: Key('overview-check-${check.id}-feedback'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: selectedIdx == check.correctOptionIndex
+                        ? Colors.green.shade800
+                        : theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
