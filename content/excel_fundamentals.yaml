@@ -77,8 +77,18 @@ domains:
                   text: "Use the text instructions or the app's reading assistance. The practice data is synthetic; do not substitute real business records. Independent workbook uploading and verified grading remain disabled until the safe ingestion worker and evidence gates are implemented."
               - sort_order: 4
                 block_type: "practice_prompt"
+                metadata:
+                  practice_type: "excel_workbook_upload"
                 content:
                   prompt: "Open the real Excel application and calculate the total of the eight numeric transaction cells without replacing the formula with a typed number. How would you check that your formula covers every row exactly once?"
+                  exercise_id: "excel-budget-total-v1"
+              - sort_order: 5
+                block_type: "simulation"
+                content:
+                  simulation_id: "excel-budget-total-v1"
+                  simulation_version: "1.0.0"
+                  title: "Interactive Practice: Budget Workbook"
+                  fallback_body: "Use the real Excel application to complete the Budget worksheet total, then upload your workbook using the practice upload card."
             terms:
               - term: "Workbook"
                 definition: "A file that contains one or more spreadsheet worksheets."

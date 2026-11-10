@@ -213,6 +213,7 @@ class PrivateStorageTests(unittest.TestCase):
     def test_upload_and_grade_method_scopes_reject_forbidden_operations(self):
         for scope, operations in (
             (frozenset({"GET", "POST"}), ("remove",)),
+            (frozenset({"GET", "DELETE"}), ("create_only",)),
             (frozenset({"GET"}), ("remove", "create_only")),
         ):
             with self.subTest(scope=scope):
@@ -229,6 +230,33 @@ class PrivateStorageTests(unittest.TestCase):
                         else:
                             store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04safe")
                 self.assertEqual([r.get_method() for r, _ in http.requests], ["GET"])
+
+    def test_cross_service_isolation_denies_unauthorized_operations(self):
+        # Retention service: allowed GET and DELETE only, POST must be denied
+        retention_store = SupabasePrivateWorkbookStore(
+            project_ref=REF, secret_key="sb_secret_test",
+            execute=FakeAPI(), allowed_methods=frozenset({"GET", "DELETE"}),
+        )
+        with self.assertRaises(StorageFailure):
+            retention_store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04test")
+
+        # Upload service: allowed GET and POST only, DELETE must be denied
+        upload_store = SupabasePrivateWorkbookStore(
+            project_ref=REF, secret_key="sb_secret_test",
+            execute=FakeAPI(), allowed_methods=frozenset({"GET", "POST"}),
+        )
+        with self.assertRaises(StorageFailure):
+            upload_store.remove(PRIVATE_BUCKET, PATH)
+
+        # Assessment/Grading service: allowed GET only, both POST and DELETE must be denied
+        grading_store = SupabasePrivateWorkbookStore(
+            project_ref=REF, secret_key="sb_secret_test",
+            execute=FakeAPI(), allowed_methods=frozenset({"GET"}),
+        )
+        with self.assertRaises(StorageFailure):
+            grading_store.create_only(PRIVATE_BUCKET, PATH, b"PK\x03\x04test")
+        with self.assertRaises(StorageFailure):
+            grading_store.remove(PRIVATE_BUCKET, PATH)
 
     def test_invalid_method_scope_rejected_before_network(self):
         for scope in (frozenset(), {"GET"}, frozenset({"PATCH"}),

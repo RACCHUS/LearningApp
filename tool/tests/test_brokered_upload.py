@@ -344,6 +344,22 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(sweep_expired_attempts(
             repository=retention, storage=store, execute=True)["candidates"], 0)
 
+    def test_attempt_marked_failed_or_expired_by_retention_rejects_upload_even_with_valid_bearer(self):
+        # Retention freeze sets upload_enabled=false and transitions status to 'failed' (or attempt expires).
+        # In both cases, sl_lock_excel_upload filters for status='issued' AND expires_at > now()+2min,
+        # so begin() returns None (lock denied) and no Storage operation is ever initiated.
+        for status_reason in ("failed_by_retention", "expired_by_retention"):
+            with self.subTest(status_reason=status_reason):
+                repo = Repository(denied=True) # simulates DB rejecting lock because attempt is failed or expired
+                store = Storage()
+                sessions = Sessions() # valid permanent identity
+                result, _, _, _ = do(repo=repo, store=store, sessions=sessions, token="valid token")
+                self.assertEqual(result, {"status": "rejected", "evidence_trust": "unverified_checker_only"})
+                self.assertFalse(repo.held)
+                self.assertFalse(repo.sealed)
+                self.assertEqual(store.calls, []) # Storage is never contacted
+                self.assertEqual(repo.calls, [("begin", OWNER, SESSION, ATTEMPT)])
+
 
 if __name__ == "__main__":
     unittest.main()

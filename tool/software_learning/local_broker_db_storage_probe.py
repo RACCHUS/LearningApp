@@ -250,6 +250,51 @@ def run() -> None:
         if replay.get("status") != "rejected" or objects.create_calls != 1:
             raise AssertionError("Committed workbook accepted replay")
 
+        # Verify processing lease claims:
+        # Insert expected inputs for the sealed attempt using non-service connection (postgres)
+        with _connect(database, service=False) as conn:
+            conn.execute(
+                "INSERT INTO software_learning_private.excel_attempt_inputs "
+                "(attempt_id, expected_inputs) VALUES (%s, %s)",
+                (attempt, json.dumps({"C2": 100})),
+            )
+            conn.commit()
+            # Wrong session claim must fail (returns NULL)
+            wrong_session = str(uuid4())
+            rejected_claim = conn.execute(
+                "SELECT software_learning_private.sl_claim_excel_processing(%s,%s,%s)",
+                (attempt, owner, wrong_session),
+            ).fetchone()[0]
+            if rejected_claim is not None:
+                raise AssertionError("Invalid session successfully claimed processing lease")
+
+            # Genuine session claim must succeed
+            claim_row = conn.execute(
+                "SELECT software_learning_private.sl_claim_excel_processing(%s,%s,%s)",
+                (attempt, owner, session),
+            ).fetchone()[0]
+            conn.commit()
+            if claim_row is None or "lease_id" not in claim_row:
+                raise AssertionError("Valid session could not claim processing lease")
+
+            # Duplicate claim while processing must fail (lease is exclusive)
+            dup_claim = conn.execute(
+                "SELECT software_learning_private.sl_claim_excel_processing(%s,%s,%s)",
+                (attempt, owner, session),
+            ).fetchone()[0]
+            if dup_claim is not None:
+                raise AssertionError("Duplicate claim granted for already-leased attempt")
+
+            # Complete processing so status becomes 'processed'
+            lease_id = claim_row["lease_id"]
+            completed = conn.execute(
+                "SELECT software_learning_private.sl_complete_excel_processing(%s,%s,%s,%s)",
+                (lease_id, sha256(first).hexdigest(), "pass", "Synthetic completion"),
+            ).fetchone()[0]
+            conn.commit()
+            if not completed:
+                raise AssertionError("Processing completion failed")
+
         retention = _connect(database, service=True)
         try:
             status = erase_owned_attempt(
@@ -269,18 +314,112 @@ def run() -> None:
             ).fetchone()
         if still_present is not None or objects.exists(BUCKET, path):
             raise AssertionError("Synthetic account workbook was not erased")
+
+        # Edge case: Client disconnect mid-readback & terminal attempt freeze recovery
+        attempt2 = str(uuid4())
+        path2 = f"{owner}/{attempt2}/workbook.xlsx"
+        with _connect(database, service=False) as conn:
+            conn.execute(
+                "INSERT INTO public.software_learning_attempts "
+                "(id,owner_id,issued_session_id,issued_at,expires_at) "
+                "VALUES (%s,%s,%s,now(),now()+interval '45 minutes')",
+                (attempt2, owner, session),
+            )
+
+        class DisconnectMidReadbackStorage(LocalObjects):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.release.set()
+                self.download_called = False
+            def download_limited(self, bucket: str, p: str, limit: int) -> bytes:
+                if p == path2:
+                    self.download_called = True
+                    raise ConnectionResetError("Synthetic client disconnect mid-readback")
+                return super().download_limited(bucket, p, limit)
+
+        disconnect_objects = DisconnectMidReadbackStorage(api, key, database)
+        conn2 = _connect(database, service=True)
+        try:
+            disconnect_result = accept_workbook(
+                bearer_token="local-synthetic-bearer",
+                attempt_id=attempt2, blob=first,
+                now=datetime.now(timezone.utc),
+                sessions=gateway,
+                repository=DbApiUploadRepository(conn2),
+                storage=disconnect_objects,
+            )
+        finally:
+            conn2.close()
+
+        if disconnect_result.get("status") != "rejected":
+            raise AssertionError("Disconnect mid-readback was not rejected")
+        if not disconnect_objects.download_called:
+            raise AssertionError("Download was not attempted before disconnect")
+
+        # The Storage object was committed by create_only, but unsealed in DB (upload_sha256 is NULL)
+        with _connect(database, service=False) as conn:
+            row2 = conn.execute(
+                "SELECT upload_sha256, status, upload_enabled "
+                "FROM public.software_learning_attempts WHERE id=%s",
+                (attempt2,),
+            ).fetchone()
+        if row2 is None or row2[0] is not None or row2[1] != "issued" or row2[2] is not False:
+            raise AssertionError("Unsealed attempt after disconnect has wrong DB state")
+
+        # Retention freeze: freeze_upload transitions unsealed attempt to 'failed'
+        retention2 = _connect(database, service=True)
+        try:
+            repo2 = DbApiRetentionRepository(retention2)
+            frozen = repo2.freeze_upload(owner, attempt2)
+            if not frozen:
+                raise AssertionError("Retention freeze_upload failed for attempt2")
+            retention2.commit()
+
+            # Now an upload attempt MUST be rejected by sl_lock_excel_upload because status='failed'
+            reupload_conn = _connect(database, service=True)
+            try:
+                locked = reupload_conn.execute(
+                    "SELECT software_learning_private.sl_lock_excel_upload(%s,%s,%s)",
+                    (attempt2, owner, session),
+                ).fetchone()[0]
+                if locked is not None:
+                    raise AssertionError("Frozen attempt re-admitted for upload lock")
+            finally:
+                reupload_conn.close()
+
+            # Erase orphan attempt and storage
+            status2 = erase_owned_attempt(
+                owner_id=owner, attempt_id=attempt2,
+                repository=repo2, storage=disconnect_objects,
+            )
+            if status2 != "erased":
+                raise AssertionError("Retention erase failed for disconnected attempt")
+        finally:
+            retention2.close()
+
+        with _connect(database, service=False) as conn:
+            still_present2 = conn.execute(
+                "SELECT 1 FROM public.software_learning_attempts WHERE id=%s",
+                (attempt2,),
+            ).fetchone()
+        if still_present2 is not None or disconnect_objects.exists(BUCKET, path2):
+            raise AssertionError("Disconnected synthetic attempt was not cleaned up")
     finally:
         objects.release.set()
         # Never perform production cleanup. Both endpoints are loopback-only.
         if prepared:
-            try:
-                objects.remove(BUCKET, path)
-            except Exception:
-                pass
+            for p in (path, locals().get("path2")):
+                if p:
+                    try:
+                        objects.remove(BUCKET, p)
+                    except Exception:
+                        pass
         with _connect(database, service=False) as conn:
-            conn.execute(
-                "DELETE FROM public.software_learning_attempts WHERE id=%s", (attempt,)
-            )
+            for att in (attempt, locals().get("attempt2")):
+                if att:
+                    conn.execute(
+                        "DELETE FROM public.software_learning_attempts WHERE id=%s", (att,)
+                    )
             conn.execute("DELETE FROM auth.sessions WHERE id=%s", (session,))
             conn.execute("DELETE FROM auth.users WHERE id=%s", (owner,))
     print("Local DB NOWAIT broker, sealed readback, replay and Storage-first cleanup passed")

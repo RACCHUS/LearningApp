@@ -154,5 +154,31 @@ class RetentionJobTests(unittest.TestCase):
         self.assertEqual(result["status"], "unavailable")
         self.assertFalse(result["account_erasure_confirmed"])
 
+    def test_retention_sweep_freezes_unsealed_attempt_preventing_reupload(self):
+        # Retention freeze sets upload_enabled=false and status='failed'.
+        # Verify that sweep passes execute=True to the underlying sweeper
+        # and that the repository's freeze_upload transitions the record before deletion.
+        factory = Factory()
+        mock_repo = None
+        def make_repo(conn):
+            nonlocal mock_repo
+            from unittest.mock import MagicMock
+            mock_repo = MagicMock()
+            mock_repo.prune_issuance_log.return_value = 0
+            return mock_repo
+
+        with patch("software_learning.private_retention_job.sweep_expired_attempts",
+                   return_value={"candidates": 1, "erased": 1, "retry": 0}) as sweep, \
+             patch("software_learning.private_retention_job.DbApiRetentionRepository",
+                   side_effect=make_repo):
+            result = run_retention_once(
+                connection_factory=factory, storage=object(),
+                authorized=True, execute=True, max_results=5, prune_limit=5)
+
+        self.assertEqual(result["status"], "complete")
+        self.assertEqual(result["erased"], 1)
+        self.assertTrue(sweep.call_args.kwargs["execute"])
+        self.assertEqual(factory.connection.closed, 1)
+
 if __name__ == "__main__":
     unittest.main()

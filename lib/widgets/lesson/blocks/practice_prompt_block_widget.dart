@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
+import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
 
 class PracticePromptBlockWidget extends StatefulWidget {
   final LessonBlock block;
@@ -35,6 +36,10 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
     final explanation = widget.block.content['explanation'] as String?;
 
     final options = optionsRaw?.map((o) => o.toString()).toList();
+    final bool isExcelPractice =
+        widget.block.metadata['practice_type'] == 'excel_workbook_upload' ||
+        widget.block.content['exercise_id'] == 'excel-budget-total-v1' ||
+        widget.block.content['activity_type'] == 'excel_budget';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 14.0),
@@ -284,6 +289,13 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                 ],
               ),
             ),
+            if (isExcelPractice)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: ExcelUploadCard(
+                  exerciseId: widget.block.content['exercise_id'] as String? ?? 'excel-budget-total-v1',
+                ),
+              ),
           ],
         ),
       ),
