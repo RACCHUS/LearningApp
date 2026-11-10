@@ -19,10 +19,13 @@ class ProgressSyncService {
       : _supabase = supabaseClient ?? Supabase.instance.client;
 
   Future<void> syncProgress() async {
-    final learnerId = _supabase.auth.currentUser?.id;
-    if (learnerId == null) return;
-
     try {
+      // No auth client is required to establish that the offline queue is empty.
+      // This also keeps test mocks and local-only operation independent of Auth.
+      if ((await _hiveService.getUnsyncedProgress()).isEmpty) return;
+      final learnerId = _supabase.auth.currentUser?.id;
+      if (learnerId == null) return;
+
       // Iterate in bounded batches; never sync another account's Hive records.
       while (true) {
         final pending = (await _hiveService.getUnsyncedProgress())
