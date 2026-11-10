@@ -11,7 +11,7 @@
 - The new user privacy screen at **Settings → Optional Product Analytics Privacy** supports status, withdrawal (with server raw event deletion), local queue erasure and paginated export. It shows genuine unavailability if the migration is not deployed.
 - Export supports arbitrary server-side keyset pages of 100 entries; the in-app copy-to-clipboard helper caps the assembled export at 10,000 events and gives an explicit error instead of exporting a misleading partial file. Large exports can be paged with the RPC by an approved portability process.
 - `ProductEventOutbox` uses persisted account-namespaced immutable keys and exact ACK deletion, not an in-memory-only queue. Maximum 100 pending events; records older than seven days are purged and reported. Queue-full, corrupt storage, missing consent, offline delivery and account switches fail visibly. **There is no automatic emitter using this queue today**; the existing product analytics service still defaults to disabled/no-op.
-- The new server status does **not** indicate `policy_ready` or `collection_active`. Even a previously eligible account cannot turn collection on from the UI until a separate, explicitly reviewed activation change.
+- A **database-level** `analytics.product_release_gate` singleton defaults to `collection_enabled=false`. Both new consent and event-row storage are rejected until a privileged reviewer supplies an approved policy version, review timestamp and reviewer identity and explicitly enables the release. The user's status RPC reflects these trusted values; the user-facing opt-in control stays disabled while either gate is false. A notice-version change automatically revokes existing consent and erases previous-version raw events. No production release settings are changed by this PR.
 - Server-side changes in the additive ANA-103 migration: eligibility downgrade deletes raw events and revokes consent; keyset export, privileged retention health, and a transaction-scoped per-account rate guard.
 
 ## Owner action 1: approve the privacy and eligibility policy (required)
@@ -64,9 +64,9 @@ GitHub Actions is already part of the repository; this design avoids a paid anal
 
 After written policy approval and guarded deployment, use a protected **server-side** Auth administration workflow to set `auth.users.raw_app_meta_data.product_analytics_eligible=true` **only** for independently reviewed, explicitly eligible permanent accounts. Do not use a Flutter/admin browser secret, unreviewed bulk update, mutable user metadata, guessed age, or automatic guest upgrade. Reclassification to guest/ineligible causes the ANA-103 trigger to revoke consent and delete prior raw events.
 
-Activate capture only in a **separate reviewed PR** that:
-- publishes the approved policy version and accurate user notice;
-- makes the server return verified `policy_ready=true` and `collection_active=true` only after all gates; 
+Activate capture only in a **separate reviewed PR and privileged operator change** that:
+- publishes the independently approved policy version and accurate user notice;
+- authorizes a privileged change to `analytics.product_release_gate` only after policy, retention and deployment approval. The row stores `approved_policy_version`, `policy_approved_at`, `reviewed_by`, and `collection_enabled=true`. Never expose direct DML for this table to browser roles; 
 - wires the bounded, ACK-gated outbox to the previously disabled product event sink **only after fresh server consent verification**;
 - includes browser multi-tab/account switch, offline restart, opt-out race and assisted-accessibility integration tests;
 - monitors pipeline errors and actual retention service health;
