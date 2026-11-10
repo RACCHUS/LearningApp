@@ -78,13 +78,14 @@ void main() {
       expect(ddl01, contains('COMMIT;'));
       expect(ddl01, contains('20241228000000_legacy_base_tables.sql'));
       expect(ddl01, contains('20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql'));
-      expect(ddl01, contains('20261110190000_software_learning_excel_attempt_issuance.sql'));
-      expect(ddl01, contains('106 immutable migrations'));
-      expect(ddl01, contains('20261110220000_software_learning_excel_brokered_upload_seal.sql'));
+      expect(ddl01, contains('20261110200000_software_learning_excel_attempt_issuance.sql'));
+      expect(ddl01, contains('107 immutable migrations'));
+      expect(ddl01, contains('20261110230000_software_learning_excel_brokered_upload_seal.sql'));
       expect(ddl01, contains('20261108140000_clep_simulation_bank_and_item_privacy.sql'));
       expect(ddl01, contains('20261108000000_assessment_item_server_grading.sql'));
-      expect(ddl01, contains('20261110200000_software_learning_excel_private_upload_gate.sql'));
-      expect(ddl01, contains('20261110210000_software_learning_excel_processing_lease.sql'));
+      expect(ddl01, contains('20261110210000_software_learning_excel_private_upload_gate.sql'));
+      expect(ddl01, contains('20261110220000_software_learning_excel_processing_lease.sql'));
+      expect(ddl01, contains('20261110190000_ana_001b_canonical_learner_progress.sql'));
     });
 
     test('SelfHostBootstrap.scanAndValidate verifies every migration sequentially', () {
@@ -129,10 +130,11 @@ void main() {
       expect(bundle, contains('20261110150000_clep_simulation_domain_code_projection.sql'));
       expect(bundle, contains('20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql'));
       expect(bundle, contains('20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql'));
-      expect(bundle, contains('20261110190000_software_learning_excel_attempt_issuance.sql'));
-      expect(bundle, contains('20261110200000_software_learning_excel_private_upload_gate.sql'));
-      expect(bundle, contains('20261110210000_software_learning_excel_processing_lease.sql'));
-      expect(bundle, contains('20261110220000_software_learning_excel_brokered_upload_seal.sql'));
+      expect(bundle, contains('20261110190000_ana_001b_canonical_learner_progress.sql'));
+      expect(bundle, contains('20261110200000_software_learning_excel_attempt_issuance.sql'));
+      expect(bundle, contains('20261110210000_software_learning_excel_private_upload_gate.sql'));
+      expect(bundle, contains('20261110220000_software_learning_excel_processing_lease.sql'));
+      expect(bundle, contains('20261110230000_software_learning_excel_brokered_upload_seal.sql'));
     });
   });
 }

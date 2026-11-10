@@ -8,13 +8,13 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-MIGRATION = "20261110220000_software_learning_excel_brokered_upload_seal.sql"
+MIGRATION = "20261110230000_software_learning_excel_brokered_upload_seal.sql"
 BUNDLE = ROOT / "deploy/self-host/init-scripts/01-full-schema.sql"
 SOURCE = ROOT / "supabase/migrations" / MIGRATION
-HEADER = f"-- [106/106] Migration: {MIGRATION}"
+HEADER = f"-- [107/107] Migration: {MIGRATION}"
 INSERT = (
     "INSERT INTO supabase_migrations.schema_migrations "
-    "(version, name) VALUES ('20261110220000', "
+    "(version, name) VALUES ('20261110230000', "
     "'software_learning_excel_brokered_upload_seal')"
 )
 
@@ -25,9 +25,9 @@ class LatestExcelBundleTest(unittest.TestCase):
         bundle = BUNDLE.read_text(encoding="utf-8")
         self.assertEqual(bundle.count(HEADER), 1)
         self.assertEqual(bundle.count(INSERT), 1)
-        self.assertIn("-- [97/106] Migration: 20261108000000_assessment_item_server_grading.sql", bundle)
+        self.assertIn("-- [97/107] Migration: 20261108000000_assessment_item_server_grading.sql", bundle)
         self.assertEqual(bundle.count("20261108000000_assessment_item_server_grading.sql"), 1)
-        self.assertIn("106 immutable migrations", bundle)
+        self.assertIn("107 immutable migrations", bundle)
         at = bundle.index(HEADER)
         begin = bundle.find("\n-- Excel pilot:", at)
         end = bundle.rfind("\n" + INSERT)
