@@ -151,7 +151,9 @@ bool isLegacyProgressLessonId(String lessonId) {
   if (parts.length != expectedLengths.length) return false;
   for (var i = 0; i < parts.length; i++) {
     if (parts[i].length != expectedLengths[i] ||
-        RegExp('[^a-fA-F0-9]').hasMatch(parts[i])) return false;
+        RegExp('[^a-fA-F0-9]').hasMatch(parts[i])) {
+      return false;
+    }
   }
   return true;
 }
@@ -168,7 +170,7 @@ UserProgress userProgressFromProjection(
   final day = row['reporting_date_utc'] as String;
   final seconds = row['active_seconds'] as int?;
   return UserProgress(
-    id: 'remote_${userId}_${kind}_${lessonId}_${version}_${day}',
+    id: 'remote_${userId}_${kind}_${lessonId}_${version}_$day',
     userId: userId,
     lessonId: lessonId,
     studyMode: studyMode,
