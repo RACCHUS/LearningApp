@@ -21,6 +21,12 @@ class AudioService {
   bool _isInitialized = false;
   Future<void>? _initialization;
   int _stopGeneration = 0;
+  // Retain the full narration and most recent word, even if a TTS callback
+  // clears AudioState.currentText during pause or cancellation.
+  String? _originalNarration;
+  String? _pausedNarration;
+  int _lastWordStart = 0;
+  int _pausedWordStart = 0;
 
   /// Completer that resolves when the current speak() call finishes.
   Completer<void>? _speakCompleter;
@@ -90,6 +96,12 @@ class AudioService {
         _updateState(_state.copyWith(
           playbackState: AudioPlaybackState.playing,
         ));
+      });
+
+      // Resuming from the most recent word is possible when the platform
+      // reports word boundaries. No boundary events means start-of-text.
+      _flutterTts!.setProgressHandler((text, start, end, word) {
+        if (_state.isPlaying && start >= 0) _lastWordStart = start;
       });
 
       _flutterTts!.setErrorHandler((msg) {
@@ -359,6 +371,11 @@ class AudioService {
       }
       if (stopGeneration != _stopGeneration) return false;
 
+      _originalNarration = text;
+      _pausedNarration = null;
+      _lastWordStart = 0;
+      _pausedWordStart = 0;
+
       // Create a new completer for this utterance
       _completeSpeaking(); // resolve any dangling completer
       _speakCompleter = Completer<void>();
@@ -418,38 +435,56 @@ class AudioService {
     }
   }
 
+  /// Pause spoken guidance and retain the transcript for resuming.
   Future<void> pause() async {
     if (_flutterTts == null || !_state.isPlaying) return;
-    
+
+    final transcript = _state.currentText ?? _originalNarration;
+    _pausedNarration = transcript;
+    _pausedWordStart = _lastWordStart.clamp(0, transcript?.length ?? 0);
+
     try {
-      await _flutterTts!.stop();
-      _updateState(_state.copyWith(
-        playbackState: AudioPlaybackState.paused,
-      ));
+      await _flutterTts!.pause();
     } catch (e) {
-      if (kDebugMode) {
-        print('TTS pause error: $e');
-      }
+      // Some platforms do not support pause; stop playback while keeping
+      // the transcript and last spoken word for Resume.
+      await _stopPlayback();
+      if (kDebugMode) print('Native TTS pause unavailable: $e');
     }
+    _updateState(_state.copyWith(
+      playbackState: AudioPlaybackState.paused,
+      currentText: transcript,
+    ));
   }
 
+  /// Resume near the last spoken word, or from the beginning if the engine
+  /// cannot report word boundaries.
   Future<void> resume() async {
     if (_flutterTts == null || !_state.isPaused) return;
-    
-    try {
-      // For web TTS, we need to restart speaking from the beginning
-      // since true pause/resume isn't available
-      final result = await _flutterTts!.speak(_state.currentText ?? '');
-      if (result == 1) {
-        _updateState(_state.copyWith(
-          playbackState: AudioPlaybackState.playing,
-        ));
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('TTS resume error: $e');
-      }
+
+    final transcript =
+        _pausedNarration ?? _state.currentText ?? _originalNarration;
+    if (transcript == null || transcript.trim().isEmpty) return;
+    final original = _originalNarration ?? transcript;
+    final offset = _pausedWordStart.clamp(0, transcript.length);
+    final remaining = transcript.substring(offset).trimLeft();
+
+    await _stopPlayback();
+    if (remaining.isEmpty) {
+      await restart();
+      return;
     }
+    await speak(remaining);
+    // Restart still plays the original full message after a resume.
+    _originalNarration = original;
+  }
+
+  /// Replay the full narration from the beginning, at any time.
+  Future<bool> restart() async {
+    final original = _originalNarration;
+    if (original == null || original.trim().isEmpty) return false;
+    await stop();
+    return speak(original);
   }
 
   Future<void> stop() async {
