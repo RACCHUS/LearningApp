@@ -5,6 +5,13 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT plan(30);
 
+-- Tests explicitly emulate a separately approved release. The default gate
+-- stays OFF in production and this synthetic change is rolled back.
+UPDATE analytics.product_release_gate
+ SET approved_policy_version='pgtap-ana103-v1',
+     policy_approved_at=now(), reviewed_by='synthetic-test-owner',
+     collection_enabled=true WHERE id=1;
+
 INSERT INTO auth.users(id,email,is_anonymous,raw_app_meta_data,raw_user_meta_data)
 VALUES
 ('a1030000-0000-4000-8000-000000000001','ana103-unreviewed@example.invalid',false,'{}','{"product_analytics_eligible":true}'),
@@ -58,14 +65,19 @@ SELECT is(public.get_my_product_analytics_privacy_status()->>'eligible','true',
   'Reviewed permanent account is eligible');
 SELECT is(public.get_my_product_analytics_privacy_status()->>'consented','false',
   'Eligibility alone does not imply consent');
-SELECT is(public.get_my_product_analytics_privacy_status()->>'collection_active','false',
-  'Server status does not pretend that client telemetry is enabled');
+SELECT is(public.get_my_product_analytics_privacy_status()->>'collection_active','true',
+  'Synthetic test release is explicitly enabled; production default is off');
 SELECT is((SELECT public.set_product_analytics_consent(true)->>'consented'),
   'true','Explicit opt-in persists on the server');
 SELECT is(public.get_my_product_analytics_privacy_status()->>'consented','true',
   'Status reflects server-stored consent');
 
 RESET ROLE;
+-- Synthetic secondary account must also have an explicit current-policy
+-- consent in order to exercise storage-level authorization.
+INSERT INTO analytics.product_consents(user_id,consented)
+VALUES ('a1030000-0000-4000-8000-000000000004',true)
+ON CONFLICT (user_id) DO UPDATE SET consented=true;
 -- Privileged fixture inserts deliberately bypass RPC; no user data is read.
 -- Events are spaced 10 seconds apart so the 60/minute rate limit is respected.
 INSERT INTO analytics.product_events
