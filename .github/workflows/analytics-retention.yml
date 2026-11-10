@@ -1,0 +1,92 @@
+# Safe, opt-in maintenance for an already deployed ANA-102 event store.
+# It performs only the preexisting retention function, NOT schema migrations.
+# This job is disabled unless the owner explicitly sets the repository
+# variable ANALYTICS_RETENTION_ENABLED=true and adds a protected environment
+# secret ANALYTICS_RETENTION_DATABASE_URL.
+name: Product analytics retention (owner-gated)
+
+on:
+  schedule:
+    - cron: '20 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guarded-supabase-production
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' && github.ref == 'refs/heads/main' && vars.ANALYTICS_RETENTION_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: analytics-retention
+    env:
+      ANALYTICS_RETENTION_DATABASE_URL: ${{ secrets.ANALYTICS_RETENTION_DATABASE_URL }}
+      EXPECTED_SUPABASE_PROJECT: xzvkdwebtbxlrxagtzlv
+    steps:
+      - name: Validate approved connection and credentials are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          uri = os.environ.get("ANALYTICS_RETENTION_DATABASE_URL", "")
+          project = os.environ["EXPECTED_SUPABASE_PROJECT"]
+          if not uri:
+              raise SystemExit("Retention database secret is missing; no SQL executed")
+          parts = urlsplit(uri)
+          host = parts.hostname or ""
+          username = parts.username or ""
+          if parts.scheme not in ("postgresql", "postgres") or (
+                  not (host == project + ".supabase.co" or
+                       host.endswith(".pooler.supabase.com"))):
+              raise SystemExit("Retention target is not the approved Supabase host")
+          if project not in (host + " " + username):
+              raise SystemExit("Retention connection does not identify expected project")
+          if parts.path not in ("", "/postgres"):
+              raise SystemExit("Unexpected retention database name")
+          print("Approved project identity preflight passed; no connection URI printed")
+          PY
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+
+      - name: Purge expired product events and verify no overdue rows remain
+        shell: bash
+        env:
+          PGCONNECT_TIMEOUT: '10'
+          PGSSLMODE: verify-full
+        run: |
+          set -euo pipefail
+          # Do not print the connection string or event counts. Never execute
+          # DDL, migration repair or any table-wide user data export.
+          psql "$ANALYTICS_RETENTION_DATABASE_URL" \
+            --no-psqlrc --set=ON_ERROR_STOP=1 --single-transaction --quiet \
+            --file=- >/dev/null <<'SQL'
+          DO $block$
+          BEGIN
+            IF to_regprocedure('analytics.purge_expired_product_events()')
+                IS NULL THEN
+              RAISE EXCEPTION 'Required, reviewed retention RPC not deployed';
+            END IF;
+            PERFORM analytics.purge_expired_product_events();
+            IF EXISTS (
+              SELECT 1 FROM analytics.product_events
+               WHERE received_at < now() - interval '90 days'
+            ) THEN
+              RAISE EXCEPTION 'Retention verification failed';
+            END IF;
+          END;
+          $block$;
+          SQL
+          echo "Product analytics retention completed and verified (no event data logged)."

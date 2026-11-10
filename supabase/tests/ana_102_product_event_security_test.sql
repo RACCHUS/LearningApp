@@ -4,6 +4,12 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT plan(28);
 
+-- Synthetic, transaction-local policy approval. Production defaults OFF.
+UPDATE analytics.product_release_gate
+ SET approved_policy_version='pgtap-ana102-v1',
+     policy_approved_at=now(), reviewed_by='synthetic-test-owner',
+     collection_enabled=true WHERE id=1;
+
 INSERT INTO auth.users (id,email,is_anonymous,raw_app_meta_data) VALUES
 ('a1020000-0000-4000-8000-000000000001','ana102-admin@example.invalid',false,'{}'),
 ('a1020000-0000-4000-8000-000000000002','ana102-learner@example.invalid',false,'{"product_analytics_eligible":true}'),

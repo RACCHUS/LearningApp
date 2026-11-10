@@ -82,6 +82,46 @@ class ProductEvent {
     }
   }
 
+  /// Restores a durable queue record using the same allowlist as live events.
+  /// Unknown/changed schemas fail closed; no raw client JSON is transmitted.
+  factory ProductEvent.fromJson(Map<String, dynamic> json) {
+    const fields = {
+      'event_id', 'session_id', 'event_name', 'schema_version',
+      'occurred_at_client', 'properties',
+    };
+    if (json.length != fields.length ||
+        json.keys.any((key) => !fields.contains(key)) ||
+        json['schema_version'] != schemaVersion ||
+        json['event_id'] is! String ||
+        json['session_id'] is! String ||
+        json['event_name'] is! String ||
+        json['occurred_at_client'] is! String ||
+        json['properties'] is! Map) {
+      throw const FormatException('Invalid queued analytics event envelope');
+    }
+    final name = json['event_name'] as String;
+    final options = ProductEventKind.values
+        .where((kind) => kind.wireName == name);
+    final time = DateTime.tryParse(json['occurred_at_client'] as String);
+    if (options.length != 1 || time == null) {
+      throw const FormatException('Invalid queued analytics event type or time');
+    }
+    final dimensions = <String, String>{};
+    for (final entry in (json['properties'] as Map).entries) {
+      if (entry.key is! String || entry.value is! String) {
+        throw const FormatException('Invalid queued analytics dimensions');
+      }
+      dimensions[entry.key as String] = entry.value as String;
+    }
+    return ProductEvent(
+      eventId: json['event_id'] as String,
+      sessionId: json['session_id'] as String,
+      kind: options.single,
+      occurredAt: time,
+      dimensions: dimensions,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'event_id': eventId,
         'session_id': sessionId,

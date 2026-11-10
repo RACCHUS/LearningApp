@@ -34,6 +34,8 @@ import 'package:learning_pwa/screens/assessment/assessment_screen.dart';
 import 'package:learning_pwa/screens/assessment/diagnostic_assessment_screen.dart';
 import 'package:learning_pwa/screens/settings/reset_center_screen.dart'
     deferred as reset_center;
+import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart'
+    deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
@@ -440,6 +442,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/motivation',
         name: 'settings-motivation',
         builder: (context, state) => const MotivationSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/privacy/analytics',
+        name: 'product-analytics-privacy',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_privacy.loadLibrary,
+          builder: () =>
+              product_analytics_privacy.ProductAnalyticsPrivacyScreen(),
+        ),
       ),
       GoRoute(
         path: '/moderation',

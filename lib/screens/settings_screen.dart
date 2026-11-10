@@ -372,6 +372,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Optional Product Analytics Privacy'),
+              subtitle: const Text(
+                'Off by default; review consent, export and erasure'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/settings/privacy/analytics'),
+            ),
+
+            ListTile(
               leading: const Icon(Icons.emoji_events_outlined),
               title: const Text('Motivation'),
               subtitle: const Text('XP, levels, streaks and celebrations'),
