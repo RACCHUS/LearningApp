@@ -20,10 +20,10 @@ Source merge is permitted for the disabled foundation after exact-head validatio
 Phase 0 exit, live uploads, publication and verified competency remain blocked.
 The exact committed migration filenames are:
 
-- `20261110200000_software_learning_excel_attempt_issuance.sql`
-- `20261110210000_software_learning_excel_private_upload_gate.sql`
-- `20261110220000_software_learning_excel_processing_lease.sql`
-- `20261110230000_software_learning_excel_brokered_upload_seal.sql`
+- `20261110230000_software_learning_excel_attempt_issuance.sql`
+- `20261111000000_software_learning_excel_private_upload_gate.sql`
+- `20261111010000_software_learning_excel_processing_lease.sql`
+- `20261111020000_software_learning_excel_brokered_upload_seal.sql`
 
 ## Verified repository facts
 
@@ -128,7 +128,7 @@ The following **prototype** components are now committed:
 
 ## 2026-11-07 continuation — authenticated attempt issuance (repository only)
 
-The feature branch has been synchronized with main including the merged simulation PR #187. The migration `20261110200000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
+The feature branch has been synchronized with main including the merged simulation PR #187. The migration `20261110230000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
 
 - `public.software_learning_attempts` — RLS owner-only SELECT, immutable-to-clients synthetic attempt metadata with short expiry; clients cannot create, alter, or delete rows directly.
 - `software_learning_private.excel_attempt_inputs` — restricted synthetic per-attempt inputs, inaccessible through public RLS/role grants.
@@ -145,13 +145,13 @@ Next secure milestones: design the private bucket and immutable owner/attempt up
 
 **Repository-only implementation (never deployed):**
 
-- Migration `20261110210000_software_learning_excel_private_upload_gate.sql` adds a dedicated **private** Storage bucket with a 10 MiB and XLSX MIME admission limit, while `software_learning_attempts.upload_enabled` defaults **false**. Existing attempts remain upload-disabled.
+- Migration `20261111000000_software_learning_excel_private_upload_gate.sql` adds a dedicated **private** Storage bucket with a 10 MiB and XLSX MIME admission limit, while `software_learning_attempts.upload_enabled` defaults **false**. Existing attempts remain upload-disabled.
 - The authenticated Storage `INSERT` RLS check accepts only `<owner_uuid>/<attempt_uuid>/workbook.xlsx` for a server-enabled attempt whose JWT user and **live original Auth session** match. A restrictive policy prevents broad existing INSERT rules from overriding this boundary.
 - Restrictive RLS denies anonymous and authenticated user `SELECT`, `UPDATE`, and `DELETE` in this bucket; future trusted service processing uses the Storage API with narrowly scoped credentials.
 - A database trigger refuses deletion of attempt metadata while its workbook is still present in Storage, preventing silent SQL-only deletion of bytes' references.
 - `supabase/tests/software_learning_storage_gate_test.sql` checks default-deny behavior, private-bucket limits, policy/trigger presence, exact object paths, owner/session isolation, anonymous sessions and expiry.
 - `tool/software_learning/storage_retention.py` and `tool/tests/test_storage_retention.py` implement and test a **host adapter contract**, not a running cleanup service. Its order is freeze upload -> remove bytes **using Storage API** -> verify absence -> delete metadata. Failures preserve a retryable record. All responses are bounded status strings without file data.
-- The generated self-host SQL bundle now includes **95 migrations** and its contents are checked by the self-host tests.
+- The generated self-host SQL bundle now includes **110 migrations** (after the 2026-11-10 Excel renumbering) and its contents are checked by the self-host tests.
 
 **Unresolved before enabling upload:** a deployed service with verified privileged adapters and rate/concurrency limits; protection against in-flight uploads and reusable signed upload tokens; server-held workbook ingest/assessment handoff to the network-disabled container worker; private Storage deletion and retries on account erasure/expiry; scheduled retention of raw files and private issuance log; threat review, cost controls, and a learner-facing privacy notice. Do not set `upload_enabled=true` in production until those checks pass.
 
@@ -159,7 +159,7 @@ Next secure milestones: design the private bucket and immutable owner/attempt up
 
 ## 2026-11-07 continuation — one-time trusted-host processing boundary (source only)
 
-**New migration and backend code:** `20261110220000_software_learning_excel_processing_lease.sql` adds an atomic private service-role processing claim, a unique processing lease, upload closure, checksum-pinned provisional receipt, and final failure transition. It does **not** add a verified evidence writer or permit learners to upload by default. The consolidated self-host bundle at this milestone contained **106 migrations**.
+**New migration and backend code:** `20261111010000_software_learning_excel_processing_lease.sql` adds an atomic private service-role processing claim, a unique processing lease, upload closure, checksum-pinned provisional receipt, and final failure transition. It does **not** add a verified evidence writer or permit learners to upload by default. The consolidated self-host bundle at this milestone contained **106 migrations**.
 
 The supporting Python code and tests define a full *trust contract* between a server-authenticated request, the live session/owner-bound database claim, the exact private Storage path, a digest-pinned no-network Docker parser, and server-only deterministic feedback. `DbApiAttemptRepository` uses parameterized SQL and rolls back a malformed lease response; `DockerXlsxWorker` uses a fixed subprocess argument vector with memory/CPU/PID/time limits. Attempt replay, cross-account access, forged trust, worker timeout and changing Storage revision all fail closed in the unit contract.
 

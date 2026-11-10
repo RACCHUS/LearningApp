@@ -21,6 +21,29 @@ selected this merge boundary during follow-up review. Exact-head green CI and
 review are required before removing draft status. No merge or deployment is
 authorized by completing this checklist.
 
+### Owner-approved one-time migration renumbering (2026-11-10)
+
+`main` merged `20261110200000_ana_102…`, `20261110210000_ana_103…` and
+`20261110220000_marketing_feature_control_foundation.sql`, colliding with this
+branch's unmerged Excel migrations. The owner approved a one-time rename of
+the four **unmerged, never-applied** Excel files to versions strictly after
+main's newest migration, preserving SQL content (byte-identical) and order:
+
+| Previous (unmerged) | Renumbered | Migration |
+|---|---|---|
+| 20261110200000 | 20261110230000 | attempt issuance |
+| 20261110210000 | 20261111000000 | private upload gate |
+| 20261110220000 | 20261111010000 | processing lease |
+| 20261110230000 | 20261111020000 | brokered upload seal |
+
+Evidence the previous versions were never applied: the only guarded
+deployment record (2026-11-07, commit `df059a2`) ends at `20261108000000`;
+both guarded deploy workflows on `main` have no runs; deploys diff against
+`origin/main`, which never contained these files. No aliases, repair,
+check bypass, merged-migration edits or production changes were made. The
+self-host bundle was regenerated (110 migrations) and its tests derive counts
+from the migration directory.
+
 | Task | Implemented source and evidence | Remaining acceptance / dependency |
 |---|---|---|
 | 1: audit | Dated audit, locked 3-tab navigation, existing 0-100 skill scale, provisional shared envelope | Deployed ledger compatibility, approved skill mapping, worker costs/topology, privacy and Phase 0 owner sign-off |
@@ -72,6 +95,12 @@ Every row of the root plan's section 13 remains accounted for:
 - The previous head `b1ff11f` passed all GitHub checks; a new follow-up head
   must independently pass CI before being marked ready. Local validation
   does not replace the clean/incremental database and isolated-worker CI jobs.
+- After the renumbering and sync with `main`:
+  `dart run tool/verify_migration_history.dart --base-ref origin/main` passed
+  (4 pending, append-only); `python -m unittest discover -s tool/tests`
+  passed **362 tests**; `flutter test test/services/governance
+  test/services/self_host_infrastructure_test.dart test/services/software_learning
+  test/widgets/software_learning` passed **129 tests**.
 
 ## Global Constraints
 

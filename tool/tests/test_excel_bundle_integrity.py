@@ -8,13 +8,15 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-MIGRATION = "20261110230000_software_learning_excel_brokered_upload_seal.sql"
+MIGRATION = "20261111020000_software_learning_excel_brokered_upload_seal.sql"
 BUNDLE = ROOT / "deploy/self-host/init-scripts/01-full-schema.sql"
 SOURCE = ROOT / "supabase/migrations" / MIGRATION
-HEADER = f"-- [107/107] Migration: {MIGRATION}"
+MIGRATIONS = sorted(p.name for p in (ROOT / "supabase/migrations").glob("*.sql"))
+TOTAL = len(MIGRATIONS)
+HEADER = f"-- [{MIGRATIONS.index(MIGRATION) + 1}/{TOTAL}] Migration: {MIGRATION}"
 INSERT = (
     "INSERT INTO supabase_migrations.schema_migrations "
-    "(version, name) VALUES ('20261110230000', "
+    "(version, name) VALUES ('20261111020000', "
     "'software_learning_excel_brokered_upload_seal')"
 )
 
@@ -25,9 +27,12 @@ class LatestExcelBundleTest(unittest.TestCase):
         bundle = BUNDLE.read_text(encoding="utf-8")
         self.assertEqual(bundle.count(HEADER), 1)
         self.assertEqual(bundle.count(INSERT), 1)
-        self.assertIn("-- [97/107] Migration: 20261108000000_assessment_item_server_grading.sql", bundle)
+        grading = "20261108000000_assessment_item_server_grading.sql"
+        self.assertIn(
+            f"-- [{MIGRATIONS.index(grading) + 1}/{TOTAL}] Migration: {grading}", bundle
+        )
         self.assertEqual(bundle.count("20261108000000_assessment_item_server_grading.sql"), 1)
-        self.assertIn("107 immutable migrations", bundle)
+        self.assertIn(f"{TOTAL} immutable migrations", bundle)
         at = bundle.index(HEADER)
         begin = bundle.find("\n-- Excel pilot:", at)
         end = bundle.rfind("\n" + INSERT)
