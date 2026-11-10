@@ -109,24 +109,29 @@ class ContextSnapshotResolver {
       debugPrint('⚠️ Could not load local completed lessons: $e');
     }
 
-    // 2. Supplement with remote Supabase user_progress if signed in
+    // 2. Use the latest canonical completion state, including reversals.
     try {
       if (effectiveUserId != null && isValidUuid(effectiveUserId)) {
-        final res = await Supabase.instance.client
-            .from('user_progress')
-            .select('lesson_id')
+        final rows = await Supabase.instance.client
+            .from('learner_activity_progress')
+            .select('content_kind,content_id,version_key,reporting_date_utc,completed')
             .eq('user_id', effectiveUserId)
-            .eq('lesson_completed', true);
+            .order('reporting_date_utc', ascending: false)
+            .limit(500);
 
-        for (final row in (res as List)) {
-          final id = row['lesson_id'] as String?;
-          if (id != null && id.isNotEmpty) {
-            completed.add(id);
-          }
+        final seen = <String>{};
+        for (final row in rows) {
+          final id = row['content_id'] as String?;
+          final kind = row['content_kind'] as String?;
+          final version = row['version_key'] as String?;
+          if (id == null || kind == null || version == null) continue;
+          final key = '${kind}_${id}_$version';
+          if (!seen.add(key)) continue;
+          if (row['completed'] == true) completed.add(id);
         }
       }
-    } catch (e) {
-      debugPrint('⚠️ Could not query remote completed lessons: $e');
+    } catch (error) {
+      debugPrint('Remote completion state unavailable: $error');
     }
 
     return completed;

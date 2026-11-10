@@ -1,4 +1,3 @@
-
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +5,11 @@ import 'package:learning_pwa/core/errors/app_exceptions.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
 import 'package:learning_pwa/core/network_retry.dart';
 
+/// Synchronizes local, immutable completion actions through the validated RPC.
+///
+/// Do not upload UserProgress.toJson(): it contains Hive-only fields and an
+/// identifier that is not a server UUID. Active study time and question
+/// counters stay local until a measured, validated server event exists.
 class ProgressSyncService {
   final _logger = AppLogger('ProgressSyncService');
   final HiveService _hiveService;
@@ -16,60 +20,69 @@ class ProgressSyncService {
 
   Future<void> syncProgress() async {
     try {
-      // Get unsynced progress from local storage
-      final unsyncedProgress = await _hiveService.getUnsyncedProgress();
+      // No auth client is required to establish that the offline queue is empty.
+      // This also keeps test mocks and local-only operation independent of Auth.
+      if ((await _hiveService.getUnsyncedProgress()).isEmpty) return;
+      final learnerId = _supabase.auth.currentUser?.id;
+      if (learnerId == null) return;
 
-      if (unsyncedProgress.isEmpty) {
-        _logger.debug('No progress to sync');
-        return;
-      }
+      // Iterate in bounded batches; never sync another account's Hive records.
+      while (true) {
+        final pending = (await _hiveService.getUnsyncedProgress())
+            .where((progress) =>
+                progress.userId == learnerId &&
+                progress.toServerProgressEvent() != null)
+            .take(25)
+            .toList();
+        if (pending.isEmpty) return;
 
-      _logger.info('Syncing ${unsyncedProgress.length} progress records');
+        final events = pending
+            .map((progress) => progress.toServerProgressEvent()!)
+            .toList();
+        final response = await retryWithBackoff<dynamic>(
+          () => _supabase.rpc('record_learner_progress', params: {
+            'p_events': events,
+          }),
+          label: 'Progress event sync',
+        );
+        if (response is! Map) {
+          throw StateError('Progress RPC returned an invalid envelope');
+        }
+        final result = Map<String, dynamic>.from(response);
+        final rawResults = result['results'];
+        if (result['status'] != 'success' ||
+            rawResults is! List ||
+            rawResults.length != pending.length ||
+            result['processed_count'] != pending.length) {
+          throw StateError('Progress RPC did not acknowledge the complete batch');
+        }
 
-      // Upload to Supabase
-      final progressData = unsyncedProgress.map((p) => p.toJson()).toList();
-      final progressIds = unsyncedProgress.map((p) => p.id).toList();
-      
-      // CRITICAL: Only mark as synced AFTER successful server write
-      // This prevents data loss if upsert fails
-      try {
-        await retryWithBackoff(
-          () => _supabase.from('user_progress').upsert(progressData),
-          label: 'Progress sync upsert',
-        );
-        
-        // SUCCESS: Now safe to mark as synced locally
-        await _hiveService.markProgressAsSynced(progressIds);
-        
-        _logger.info('Successfully synced ${unsyncedProgress.length} progress records');
-      } catch (serverError, stackTrace) {
-        // Server write failed - DO NOT mark as synced
-        _logger.error(
-          'Server sync failed - progress remains queued for retry',
-          error: serverError,
-          stackTrace: stackTrace,
-          metadata: {'recordCount': unsyncedProgress.length},
-        );
-        
-        throw SyncException(
-          'Failed to sync ${unsyncedProgress.length} progress records',
-          'user_progress',
-          originalError: serverError,
-          stackTrace: stackTrace,
-        );
+        for (var i = 0; i < pending.length; i++) {
+          if (rawResults[i] is! Map) {
+            throw StateError('Progress RPC returned an invalid event ACK');
+          }
+          final ack = Map<String, dynamic>.from(rawResults[i] as Map);
+          if (ack['idempotency_key'] != pending[i].id ||
+              (ack['status'] != 'accepted' &&
+                  ack['status'] != 'duplicate_noop')) {
+            throw StateError('Progress event rejected; retaining offline queue');
+          }
+        }
+
+        // Account switches must not mark the previous learner's queue synced.
+        if (_supabase.auth.currentUser?.id != learnerId) {
+          throw StateError('Account switched during progress synchronization');
+        }
+        await _hiveService
+            .markProgressAsSynced(pending.map((p) => p.id).toList());
+        _logger.info('Acknowledged ${pending.length} learner progress events');
       }
     } catch (e, stackTrace) {
-      if (e is SyncException) rethrow;
-      
-      _logger.error(
-        'Progress sync failed',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      
+      _logger.error('Progress sync failed; local events remain retryable',
+          error: e, stackTrace: stackTrace);
       throw SyncException(
-        'Progress sync operation failed',
-        'user_progress',
+        'Progress events could not be synchronized',
+        'learner_activity_progress',
         originalError: e,
         stackTrace: stackTrace,
       );
@@ -77,44 +90,43 @@ class ProgressSyncService {
   }
 
   UserProgress mergeProgress(UserProgress existing, UserProgress newProgress) {
-    // Keep the most recent progress based on date
-    if (newProgress.date.isAfter(existing.date)) {
-      return newProgress;
-    }
-    return existing;
+    return newProgress.date.isAfter(existing.date) ? newProgress : existing;
   }
 
   Future<void> downloadProgress(String userId) async {
-    try {
-      _logger.info('Downloading progress for user', metadata: {'userId': userId});
-      
-      final response = await _supabase
-          .from('user_progress')
-          .select()
-          .eq('user_id', userId);
-
-      final progressList = (response as List).map((data) => 
-        UserProgress.fromJson(data)).toList();
-
-      _logger.info('Downloaded ${progressList.length} progress records');
-
-      // Save to local storage
-      for (final progress in progressList) {
-        await _hiveService.cacheProgress(progress);
-      }
-      
-      _logger.info('Successfully cached ${progressList.length} progress records locally');
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to download progress',
-        error: e,
-        stackTrace: stackTrace,
-        metadata: {'userId': userId},
-      );
-      
+    if (_supabase.auth.currentUser?.id != userId) {
       throw SyncException(
-        'Failed to download progress for user',
-        'user_progress',
+        'Cannot download another account\'s progress',
+        'learner_activity_progress',
+      );
+    }
+    try {
+      // Projection rows have a different contract from local UserProgress JSON.
+      final response = await _supabase
+          .from('learner_activity_progress')
+          .select('content_kind,content_id,version_key,reporting_date_utc,completed,active_seconds')
+          .eq('user_id', userId)
+          .order('reporting_date_utc', ascending: false);
+
+      for (final data in response) {
+        if (_supabase.auth.currentUser?.id != userId) {
+          throw StateError('Account switched during progress download');
+        }
+        final progress = userProgressFromProjection(
+          Map<String, dynamic>.from(data),
+          userId: userId,
+        );
+        // Replacement is essential. The normal cacheProgress() merges by
+        // summing seconds, and redownloading a projection would double count.
+        await _hiveService.cacheRemoteProgress(progress);
+      }
+      _logger.info('Downloaded learner progress projection successfully');
+    } catch (e, stackTrace) {
+      _logger.error('Failed to download learner progress',
+          error: e, stackTrace: stackTrace);
+      throw SyncException(
+        'Failed to download learner progress',
+        'learner_activity_progress',
         originalError: e,
         stackTrace: stackTrace,
       );

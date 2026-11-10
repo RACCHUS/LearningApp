@@ -266,7 +266,8 @@ void main() {
         expect(unsyncedItems.first.id, 'unsynced');
       });
 
-      test('progress sync status can be updated', () async {
+      test('progress sync status updates without inflating accumulated fields',
+          () async {
         final progress = UserProgress(
           id: 'to-sync',
           userId: 'user-1',
@@ -281,29 +282,13 @@ void main() {
         );
         await service.cacheProgress(progress);
 
-        // Update sync status by caching with zeros for additive fields
-        final syncedProgress = UserProgress(
-          id: 'to-sync',
-          userId: 'user-1',
-          lessonId: 'lesson-1',
-          studyMode: StudyMode.flashcard,
-          date: progress.date,
-          questionsAnswered: 0, // Zero so it doesn't add
-          correctCount: 0, // Zero so it doesn't add
-          lessonCompleted: false,
-          studyTimeSeconds: 0, // Zero so it doesn't add
-          isSynced: true,
-        );
-        await service.cacheProgress(syncedProgress);
+        final synced = progress.copyWith(isSynced: true);
+        await service.cacheProgress(synced);
+        await service.cacheProgress(synced); // Duplicate retry.
 
-        final allProgress = await service.getProgress();
-        final retrieved = allProgress.firstWhere((p) => p.id == 'to-sync');
-        
-        // With AND logic, isSynced becomes: false && true = false
-        // This test verifies the current merge behavior
-        expect(retrieved.isSynced, isFalse);
-        
-        // Verify additive fields weren't changed
+        final retrieved =
+            (await service.getProgress()).firstWhere((p) => p.id == 'to-sync');
+        expect(retrieved.isSynced, isTrue);
         expect(retrieved.questionsAnswered, 5);
         expect(retrieved.correctCount, 4);
         expect(retrieved.studyTimeSeconds, 120);

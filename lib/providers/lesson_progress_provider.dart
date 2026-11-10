@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/services/progress_sync_service.dart';
+import 'package:uuid/uuid.dart';
 import '../models/lesson_progress.dart' as progress_model;
 import '../screens/progress/progress_dashboard_screen.dart';
 import '../services/hive_service.dart';
 import 'next_action_provider.dart';
+import 'available_lessons_provider.dart';
 
 /// Highest SM-2 repetition level treated as fully mastered.
 const int kMaxMasteryLevel = 6;
@@ -53,97 +57,93 @@ final lessonLastStudiedProvider =
     FutureProvider.family<DateTime?, String>((ref, lessonId) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return null;
-
-  try {
-    final response = await Supabase.instance.client
-        .from('user_progress')
-        .select('date')
-        .eq('user_id', userId)
-        .eq('lesson_id', lessonId)
-        .order('date', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return DateTime.parse(response['date'] as String);
-  } catch (e) {
-    return null;
-  }
+  final kind = progress_model.isLegacyProgressLessonId(lessonId)
+      ? 'legacy_lesson'
+      : 'bundled_asset_lesson';
+  final response = await Supabase.instance.client
+      .from('learner_activity_progress')
+      .select('reporting_date_utc')
+      .eq('user_id', userId)
+      .eq('content_kind', kind)
+      .eq('content_id', lessonId)
+      .order('reporting_date_utc', ascending: false)
+      .limit(1)
+      .maybeSingle();
+  if (response == null) return null;
+  return DateTime.parse('${response['reporting_date_utc']}T00:00:00Z');
 });
 
 /// Provider for individual lesson progress (0.0 to 1.0)
 /// 
 /// Fetches from Supabase user_progress table
-final lessonProgressProvider = FutureProvider.family<double, String>((ref, lessonId) async {
+final lessonProgressProvider =
+    FutureProvider.family<double, String>((ref, lessonId) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return 0.0;
-
-  try {
-    // Fetch from Supabase
-    final response = await Supabase.instance.client
-        .from('user_progress')
-        .select('lesson_completed, questions_answered')
-        .eq('user_id', userId)
-        .eq('lesson_id', lessonId)
-        .order('date', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (response != null) {
-      final completed = response['lesson_completed'] == true;
-      final questionsAnswered = response['questions_answered'] ?? 0;
-      
-      if (completed) return 1.0;
-      if (questionsAnswered > 0) return 0.5; // Started
-    }
-
-    return 0.0;
-  } catch (e) {
-    // Silently fail - progress indicator is non-critical
-    return 0.0;
-  }
+  final kind = progress_model.isLegacyProgressLessonId(lessonId)
+      ? 'legacy_lesson'
+      : 'bundled_asset_lesson';
+  // Network/auth failures surface as AsyncError, not a fabricated 0%.
+  final response = await Supabase.instance.client
+      .from('learner_activity_progress')
+      .select('completed,active_seconds')
+      .eq('user_id', userId)
+      .eq('content_kind', kind)
+      .eq('content_id', lessonId)
+      .order('reporting_date_utc', ascending: false)
+      .limit(1)
+      .maybeSingle();
+  if (response == null) return 0.0; // No recorded activity.
+  if (response['completed'] == true) return 1.0;
+  final seconds = response['active_seconds'] as int?;
+  return seconds != null && seconds > 0 ? 0.5 : 0.0;
 });
 
 /// Provider for the most recent incomplete lesson (for "Continue Learning" feature)
-final continueLearningSuggestionProvider = FutureProvider<ContinueLearningSuggestion?>((ref) async {
+final continueLearningSuggestionProvider =
+    FutureProvider<ContinueLearningSuggestion?>((ref) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return null;
 
-  try {
-    final response = await Supabase.instance.client
-        .from('user_progress')
-        .select('lesson_id, last_position, questions_answered, date')
-        .eq('user_id', userId)
-        .eq('lesson_completed', false)
-        .not('last_position', 'is', null)
-        .order('date', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (response != null) {
-      // Get lesson details
-      final lessonId = response['lesson_id'] as String;
-      final lessonResponse = await Supabase.instance.client
+  // Resume position is stored locally, not in the canonical daily projection.
+  // The old Supabase query referenced a last_position column that never existed.
+  final hive = ref.read(hiveServiceProvider);
+  await hive.init();
+  final local = await hive.getProgress();
+  final candidates = local
+      .where((p) => p.userId == userId &&
+          !p.lessonCompleted && p.lastPosition != null)
+      .toList()
+    ..sort((a, b) => b.date.compareTo(a.date));
+  if (candidates.isEmpty) return null;
+  final lessons = await ref.read(assetLessonsProvider.future);
+  for (final p in candidates) {
+    String? title;
+    if (progress_model.isLegacyProgressLessonId(p.lessonId)) {
+      final lessonRow = await Supabase.instance.client
           .from('lessons')
           .select('title')
-          .eq('id', lessonId)
+          .eq('id', p.lessonId)
           .maybeSingle();
-
-      if (lessonResponse != null) {
-        return ContinueLearningSuggestion(
-          lessonId: lessonId,
-          lessonTitle: lessonResponse['title'] as String,
-          lastPosition: response['last_position'] as int?,
-          questionsAnswered: response['questions_answered'] as int? ?? 0,
-          lastStudiedAt: DateTime.parse(response['date'] as String),
-        );
+      title = lessonRow?['title'] as String?;
+    } else {
+      for (final asset in lessons) {
+        if (asset.id == p.lessonId) {
+          title = asset.title;
+          break;
+        }
       }
     }
-
-    return null;
-  } catch (e) {
-    return null;
+    if (title == null) continue;
+    return ContinueLearningSuggestion(
+      lessonId: p.lessonId,
+      lessonTitle: title,
+      lastPosition: p.lastPosition,
+      questionsAnswered: p.questionsAnswered,
+      lastStudiedAt: p.date,
+    );
   }
+  return null;
 });
 
 /// Data class for continue learning suggestion
@@ -184,46 +184,42 @@ Future<void> toggleLessonCompletion(
   final newCompleted = !currentCompleted;
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
+  final hive = HiveService();
+  await hive.init();
+  final progress = progress_model.UserProgress(
+    id: const Uuid().v4(),
+    userId: userId ?? 'local',
+    lessonId: lessonId,
+    studyMode: progress_model.StudyMode.lesson,
+    date: DateTime.now(),
+    questionsAnswered: 0, // Manual completion is not an exam response.
+    correctCount: 0,
+    lessonCompleted: newCompleted,
+    studyTimeSeconds: 0,
+    isSynced: false,
+    metadata: {
+      'completion_override': !newCompleted,
+      'active_time_measured': false,
+    },
+  );
 
-  final now = DateTime.now();
+  // Fail before updating the UI if the local completion cannot be saved.
+  await hive.cacheProgress(progress);
   if (userId != null) {
-    try {
-      await supabase.from('user_progress').upsert({
-        'user_id': userId,
-        'lesson_id': lessonId,
-        'date': now.toIso8601String().split('T')[0],
-        'lesson_completed': newCompleted,
-        'questions_answered': newCompleted ? 1 : 0,
-        'correct_count': newCompleted ? 1 : 0,
-        'study_time_minutes': 0,
-        'is_synced': true,
-      });
-    } catch (e) {
-      debugPrint('⚠️ Failed to sync lesson progress to Supabase: $e');
-    }
+    unawaited(_syncManualCompletion(hive, supabase));
   }
-
-  try {
-    final hive = HiveService();
-    await hive.init();
-    final progress = progress_model.UserProgress(
-      id: '${userId ?? "local"}_${lessonId}_${now.millisecondsSinceEpoch}',
-      userId: userId ?? 'local',
-      lessonId: lessonId,
-      studyMode: progress_model.StudyMode.lesson,
-      date: now,
-      questionsAnswered: newCompleted ? 1 : 0,
-      correctCount: newCompleted ? 1 : 0,
-      lessonCompleted: newCompleted,
-      studyTimeSeconds: 0,
-      isSynced: false,
-    );
-    await hive.cacheProgress(progress);
-  } catch (e) {
-    debugPrint('⚠️ Failed to cache lesson progress in Hive: $e');
-  }
-
   ref.invalidate(lessonProgressProvider(lessonId));
   ref.invalidate(nextActionProvider);
   ref.invalidate(dashboardProgressProvider);
+}
+
+Future<void> _syncManualCompletion(
+  HiveService hive,
+  SupabaseClient supabase,
+) async {
+  try {
+    await ProgressSyncService(hive, supabase).syncProgress();
+  } catch (error) {
+    debugPrint('Manual completion saved locally; sync pending: $error');
+  }
 }
