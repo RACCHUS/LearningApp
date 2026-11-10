@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/analytics/product_analytics_privacy_service.dart';
 import 'package:learning_pwa/services/analytics/product_analytics_service.dart';
@@ -30,9 +32,9 @@ void main() {
         dimensions: const {'surface': 'learn'},
       );
 
-  const allowed = ProductAnalyticsPrivacyStatus(
+  final allowed = ProductAnalyticsPrivacyStatus(
     eligible: true, consented: true, isAnonymous: false,
-    policyReady: true, collectionActive: true);
+    policyReady: true, collectionActive: true, changedAt: anchor);
   const blocked = ProductAnalyticsPrivacyStatus(
     eligible: true, consented: false, isAnonymous: false,
     policyReady: true, collectionActive: true);
@@ -101,11 +103,60 @@ void main() {
     final queue = create();
     await queue.enqueue(event(5));
     privacy = blocked;
-    expect((await queue.flush()).blocked, isTrue);
-    expect(await queue.pendingCount(), 1);
-    await expectLater(queue.enqueue(event(6)), throwsStateError);
-    expect(await queue.clearCurrentAccount(), 1);
+    final result = await queue.flush();
+    expect(result.blocked, isTrue);
+    expect(result.discardedConsent, 1);
     expect(await queue.pendingCount(), 0);
+    await expectLater(queue.enqueue(event(6)), throwsStateError);
+    expect(await queue.clearCurrentAccount(), 0);
+    expect(sink.sent, isEmpty);
+  });
+
+  test('offline withdrawal followed by re-consent cannot replay old events',
+      () async {
+    final queue = create();
+    await queue.enqueue(event(11));
+    // This client never observes the withdrawal: the next server status is
+    // already opted back in. A changed consent timestamp still invalidates it.
+    privacy = ProductAnalyticsPrivacyStatus(
+      eligible: true, consented: true, isAnonymous: false,
+      policyReady: true, collectionActive: true,
+      changedAt: anchor.add(const Duration(seconds: 1)),
+    );
+    final result = await queue.flush();
+    expect(result.discardedConsent, 1);
+    expect(result.acknowledged, 0);
+    expect(await queue.pendingCount(), 0);
+    expect(sink.sent, isEmpty);
+    await queue.enqueue(event(12));
+    expect((await queue.flush()).acknowledged, 1);
+    expect(sink.sent, [eventId(12)]);
+  });
+
+  test('legacy unversioned-consent records are discarded, never delivered',
+      () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('learningapp.product_events.v1.user-a.${eventId(13)}',
+        jsonEncode({
+          'version': 1,
+          'saved_at': anchor.toIso8601String(),
+          'event': event(13).toJson(),
+        }));
+    final queue = create();
+    expect(await queue.pendingCount(), 1);
+    final result = await queue.flush();
+    expect(result.discardedConsent, 1);
+    expect(result.acknowledged, 0);
+    expect(sink.sent, isEmpty);
+  });
+
+  test('a missing consent revision cannot authorize offline capture',
+      () async {
+    privacy = const ProductAnalyticsPrivacyStatus(
+      eligible: true, consented: true, isAnonymous: false,
+      policyReady: true, collectionActive: true,
+    );
+    await expectLater(create().enqueue(event(14)), throwsStateError);
   });
 
   test('expiry is accounted for and not transmitted to server', () async {
