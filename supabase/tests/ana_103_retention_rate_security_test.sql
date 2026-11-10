@@ -13,8 +13,8 @@ UPDATE analytics.product_release_gate
 
 INSERT INTO auth.users(id,email,is_anonymous,raw_app_meta_data)
 VALUES
-('a1031000-0000-4000-8000-000000000001','ana103-retain@example.invalid',false,'{}'),
-('a1031000-0000-4000-8000-000000000002','ana103-bounded@example.invalid',false,'{}')
+('a1031000-0000-4000-8000-000000000001','ana103-retain@example.invalid',false,'{"product_analytics_eligible":true}'),
+('a1031000-0000-4000-8000-000000000002','ana103-bounded@example.invalid',false,'{"product_analytics_eligible":true}')
 ON CONFLICT (id) DO NOTHING;
 
 -- Test fixtures are intentionally opted in for synthetic storage tests.
