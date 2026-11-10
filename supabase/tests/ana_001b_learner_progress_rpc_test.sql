@@ -83,10 +83,10 @@ CREATE TEMP TABLE ana001b_replay AS
 SELECT is((SELECT payload->'results'->0->>'status'
   FROM ana001b_replay),'duplicate_noop',
  'Identical retry returns duplicate_noop');
-SELECT is((SELECT count(*)::integer FROM private.learner_progress_events
+SELECT is((SELECT count(*)::integer FROM public.learner_activity_progress
   WHERE user_id='ab100000-0000-4000-8000-000000000001'
-    AND idempotency_key='ana001b-completion-1'),
- 1,'No duplicate event ledger insert on replay');
+    AND content_id='prog_01_variables'),
+ 1,'No duplicate progress projection row on replay');
 
 CREATE TEMP TABLE ana001b_mismatch AS
  SELECT public.record_learner_progress(ARRAY[
