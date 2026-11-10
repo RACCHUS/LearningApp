@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/reminder.dart';
@@ -6,6 +8,8 @@ import 'package:learning_pwa/models/lesson_progress.dart' as progress_model;
 import 'package:learning_pwa/services/notification_service.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
+import 'package:learning_pwa/services/progress_sync_service.dart';
+import 'package:uuid/uuid.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/errors/app_exceptions.dart';
@@ -203,9 +207,9 @@ class StudyNotifier extends StateNotifier<StudyState> {
       final userId = _supabase.auth.currentUser?.id;
 
       // Cache locally first (most important - user's device)
-      if (userId != null) {
+      {
         try {
-          await _cacheProgressLocally(userId, lessonId, durationMinutes);
+          await _cacheProgressLocally(userId ?? 'local', lessonId, durationMinutes);
           localCacheSuccess = true;
           _logger.info('Progress cached locally');
         } catch (cacheError, stackTrace) {
@@ -229,37 +233,10 @@ class StudyNotifier extends StateNotifier<StudyState> {
         }
       }
 
-      // Sync with backend if user is authenticated
+      // Never block completion on remote network availability. The queued
+      // local completion is retried and only ACKed by the validated RPC.
       if (userId != null && localCacheSuccess) {
-        try {
-          // Create or update progress record in Supabase
-          final progressData = {
-            'user_id': userId,
-            'lesson_id': lessonId,
-            'study_mode':
-                state.currentMode?.toString().split('.').last ?? 'lesson',
-            'lesson_completed': true,
-            'cards_studied': state.cardsStudied,
-            'correct_count': state.correctAnswers,
-            'incorrect_count': state.incorrectAnswers,
-            'study_time_seconds':
-                durationMinutes != null ? durationMinutes * 60 : 0,
-            'date': DateTime.now().toIso8601String(),
-            'is_synced': true,
-          };
-
-          await _supabase.from('user_progress').upsert(progressData);
-
-          _logger.info('Lesson completion synced to backend');
-        } catch (syncError, stackTrace) {
-          // Sync error is acceptable since we have local cache
-          _logger.warn(
-            'Backend sync failed but local cache successful',
-            error: syncError,
-            stackTrace: stackTrace,
-          );
-          // Progress will sync later - this is OK
-        }
+        unawaited(_syncProgressAfterLocalCache());
       }
 
       // Schedule next study session reminder if this was a significant study session
@@ -331,7 +308,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
       }
 
       final progress = progress_model.UserProgress(
-        id: '${userId}_${lessonId}_${DateTime.now().millisecondsSinceEpoch}',
+        id: const Uuid().v4(),
         userId: userId,
         lessonId: lessonId,
         studyMode: progressStudyMode,
@@ -341,12 +318,24 @@ class StudyNotifier extends StateNotifier<StudyState> {
         lessonCompleted: true,
         studyTimeSeconds: durationMinutes != null ? durationMinutes * 60 : 0,
         isSynced: false, // Mark as not synced for later upload
+        metadata: {'active_time_measured': durationMinutes != null},
       );
 
       await hiveService.cacheProgress(progress);
       debugPrint('📦 Progress cached locally for later sync');
     } catch (e) {
       debugPrint('⚠️ Failed to cache progress locally: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _syncProgressAfterLocalCache() async {
+    try {
+      final hive = HiveService();
+      await hive.init();
+      await ProgressSyncService(hive, _supabase).syncProgress();
+    } catch (e) {
+      _logger.warn('Progress saved locally; sync remains pending', error: e);
     }
   }
 
