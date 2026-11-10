@@ -3,6 +3,8 @@ import 'package:learning_pwa/screens/governance/moderation_queue_screen.dart'
     deferred as moderation_queue;
 import 'package:learning_pwa/screens/governance/cost_observability_screen.dart'
     deferred as cost_observability;
+import 'package:learning_pwa/screens/governance/product_analytics_overview_screen.dart'
+    deferred as product_analytics_overview;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -453,6 +455,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: cost_observability.loadLibrary,
           builder: () => cost_observability.CostObservabilityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/analytics',
+        name: 'product-analytics-overview',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: product_analytics_overview.loadLibrary,
+          builder: () =>
+              product_analytics_overview.ProductAnalyticsOverviewScreen(),
         ),
       ),
       GoRoute(
