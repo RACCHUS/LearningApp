@@ -18,6 +18,7 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
     return DailyGoalProgress(
       studyMinutesToday: 0,
       goalMinutes: goalMinutes,
+      isStudyTimeAvailable: false,
     );
   }
 
@@ -41,6 +42,16 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
       totalSeconds += (record['study_time_seconds'] as int? ?? 0);
     }
 
+    // Legacy clients could write zero for an unmeasured session. Without a
+    // positive duration we cannot distinguish no study from missing telemetry.
+    if (totalSeconds <= 0) {
+      return DailyGoalProgress(
+        studyMinutesToday: 0,
+        goalMinutes: goalMinutes,
+        isStudyTimeAvailable: false,
+      );
+    }
+
     final studyMinutes = totalSeconds ~/ 60;
 
     return DailyGoalProgress(
@@ -48,10 +59,12 @@ final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async 
       goalMinutes: goalMinutes,
     );
   } catch (e) {
-    // Daily-goal rendering is non-critical; preserve configured goal on fallback.
+    // An unreadable source is not evidence of zero minutes. Keep the goal
+    // setting visible but explicitly mark the measurement unavailable.
     return DailyGoalProgress(
       studyMinutesToday: 0,
       goalMinutes: goalMinutes,
+      isStudyTimeAvailable: false,
     );
   }
 });
@@ -61,15 +74,21 @@ class DailyGoalProgress {
   final int studyMinutesToday;
   final int goalMinutes;
 
+  /// False when cloud duration is missing or unreadable. Zero is not a
+  /// trustworthy observation until measured time is available.
+  final bool isStudyTimeAvailable;
+
   DailyGoalProgress({
     required this.studyMinutesToday,
     required this.goalMinutes,
+    this.isStudyTimeAvailable = true,
   });
 
   factory DailyGoalProgress.empty() {
     return DailyGoalProgress(
       studyMinutesToday: 0,
       goalMinutes: StudyConstants.defaultStudyGoalMinutes,
+      isStudyTimeAvailable: false,
     );
   }
 
@@ -80,13 +99,14 @@ class DailyGoalProgress {
   }
 
   /// Whether the daily goal has been met
-  bool get goalMet => studyMinutesToday >= goalMinutes;
+  bool get goalMet => isStudyTimeAvailable && studyMinutesToday >= goalMinutes;
 
   /// Remaining minutes to reach goal
   int get remainingMinutes => (goalMinutes - studyMinutesToday).clamp(0, goalMinutes);
 
   /// Formatted time string (e.g., "15m" or "1h 30m")
   String get formattedTime {
+    if (!isStudyTimeAvailable) return '—';
     if (studyMinutesToday < 60) {
       return '${studyMinutesToday}m';
     }

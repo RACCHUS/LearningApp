@@ -10,8 +10,10 @@ from unittest.mock import MagicMock, patch
 from tool.clep_content_pipeline import (
     EXPECTED_PSYCH_DOMAINS,
     MANIFEST_PATH,
+    OFFICIAL_COURSE_SPECS,
     compute_simulation_quotas,
     load_yaml,
+    resolve_course_spec,
     run_pipeline,
     run_stage_f_database_ingestion,
     verify_blueprint_coverage,
@@ -164,6 +166,34 @@ class TestClepContentPipeline(unittest.TestCase):
         issues = run_stage_f_database_ingestion(MANIFEST_PATH)
         self.assertGreaterEqual(len(issues), 1)
         self.assertTrue(any("failed with exit code 1" in i for i in issues))
+
+    def test_algebra_course_spec_resolution_and_quotas(self):
+        """College Algebra specification must resolve 4 domains and 60 simulation questions (15, 15, 18, 12)."""
+        algebra_manifest = {
+            "target": {"slug": "clep-college-algebra", "version_code": "2026"},
+            "domains": [
+                {"code": "1.0", "title": "Algebraic operations", "weight": 0.25, "objectives": [{"code": "1.1"}]},
+                {"code": "2.0", "title": "Equations and inequalities", "weight": 0.25, "objectives": [{"code": "2.1"}]},
+                {"code": "3.0", "title": "Functions and their properties", "weight": 0.30, "objectives": [{"code": "3.1"}]},
+                {"code": "4.0", "title": "Number systems and operations", "weight": 0.20, "objectives": [{"code": "4.1"}]},
+            ]
+        }
+        spec = resolve_course_spec(algebra_manifest)
+        self.assertEqual(spec["title"], "College Algebra")
+        self.assertEqual(spec["exam_code"], "CLEP-ALG")
+        self.assertEqual(spec["total_simulation_questions"], 60)
+        self.assertEqual(len(spec["domains"]), 4)
+
+        domain_map, issues = verify_blueprint_coverage(algebra_manifest, course_spec=spec)
+        self.assertEqual(issues, [])
+        self.assertEqual(len(domain_map), 4)
+
+        quotas = compute_simulation_quotas(domain_map, total_questions=60, course_spec=spec)
+        self.assertEqual(sum(quotas.values()), 60)
+        self.assertEqual(quotas["1.0"], 15)  # 25% of 60
+        self.assertEqual(quotas["2.0"], 15)  # 25% of 60
+        self.assertEqual(quotas["3.0"], 18)  # 30% of 60
+        self.assertEqual(quotas["4.0"], 12)  # 20% of 60
 
 
 if __name__ == "__main__":

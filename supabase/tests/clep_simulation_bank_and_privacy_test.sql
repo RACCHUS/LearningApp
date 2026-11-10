@@ -8,12 +8,14 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pg_temp;
 
-select plan(39);
+select plan(44);
 
 -- Setup synthetic test users in auth.users (under initial postgres session role)
 insert into auth.users (id, email) values
   ('11223344-5566-4777-8888-999900001111', 'learner_privacy@example.invalid'),
-  ('22334455-6677-4888-9999-000011112222', 'learner_other@example.invalid')
+  ('22334455-6677-4888-9999-000011112222', 'learner_other@example.invalid'),
+  ('33445566-7788-4999-0000-111122223333', 'learner_nodomain@example.invalid'),
+  ('44556677-8899-4000-1111-222233334444', 'learner_badquota@example.invalid')
 on conflict (id) do nothing;
 
 -- ----------------------------------------------------------------------------
@@ -113,6 +115,7 @@ select lives_ok(
                     "metadata": {
                       "bank": "simulation_exam",
                       "item_role": "summative_simulation",
+                      "domain_code": "1.0",
                       "is_protected": true,
                       "exposure": "timed_exam_only"
                     }
@@ -127,6 +130,7 @@ select lives_ok(
                     "metadata": {
                       "bank": "simulation_exam",
                       "item_role": "summative_simulation",
+                      "domain_code": "1.0",
                       "is_protected": true,
                       "exposure": "timed_exam_only"
                     }
@@ -156,6 +160,13 @@ grant all on table _fixture_ids to public, authenticated, service_role, anon;
 select ok(
   exists (select 1 from public.target_versions where version_code = '2026-PRIV'),
   'Target version 2026-PRIV was ingested'
+);
+
+-- Verify TargetVersion metadata has bank = simulation_exam
+select is(
+  (select metadata->>'bank' from public.target_versions where version_code = '2026-PRIV'),
+  'simulation_exam',
+  'TargetVersion metadata automatically populates bank = simulation_exam for simulation courses'
 );
 
 -- Verify metadata is persisted on assessment_items
@@ -692,6 +703,123 @@ select throws_ok(
   '42501',
   null,
   'Cannot submit expired attempt (deadline enforcement)'
+);
+
+-- ----------------------------------------------------------------------------
+-- 11. Strict Pre-Issuance Psychometric Domain & Quota Validation
+-- ----------------------------------------------------------------------------
+-- Setup a target version with an item lacking a domain code
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+-- Create synthetic target version for domain validation testing
+insert into public.learning_targets (id, title, slug, target_type, status, is_public)
+values ('dd000000-0000-0000-0000-000000000001', 'Invalid Domain Target', 'invalid-domain-target', 'certification', 'published', true)
+on conflict (id) do nothing;
+
+insert into public.target_versions (id, target_id, version_code, title, status, metadata)
+values (
+  'dd000000-0000-0000-0000-000000000002',
+  'dd000000-0000-0000-0000-000000000001',
+  '2026-NODOM',
+  '2026 No Domain Version',
+  'published',
+  '{"role": "blueprint_authority", "bank": "simulation_exam", "exam_code": "TEST-NODOM"}'::jsonb
+)
+on conflict (id) do nothing;
+
+-- Insert simulation item with NO concept mapping and NO domain_code metadata
+insert into public.assessment_items (
+  id, origin_target_version_id, interaction_type, prompt, response_spec, scoring_spec, metadata
+) values (
+  'dd000000-0000-0000-0000-000000000003',
+  'dd000000-0000-0000-0000-000000000002',
+  'single_choice',
+  'Orphan item with no domain mapping',
+  '{"options": ["A", "B"]}'::jsonb,
+  '{"correct_index": 0}'::jsonb,
+  '{"bank": "simulation_exam", "item_role": "summative_simulation", "is_protected": true}'::jsonb
+)
+on conflict (id) do nothing;
+
+-- Authenticate as User 3
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '33445566-7788-4999-0000-111122223333';
+
+-- Calling clep_issue_simulation_exam throws 22023 because item lacks domain_code
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam('dd000000-0000-0000-0000-000000000002'::uuid) $$,
+  '22023',
+  null,
+  'Simulation item lacking domain_code throws 22023 prior to attempt creation'
+);
+
+-- Crucial: verify NO attempt was created in clep_simulation_attempts for User 3
+select is(
+  (select count(*) from public.clep_simulation_attempts where user_id = '33445566-7788-4999-0000-111122223333'::uuid),
+  0::bigint,
+  'Pre-issuance domain validation failure aborts attempt insertion (zero attempts recorded)'
+);
+
+-- Setup a CLEP-ALG target version that violates four-domain quotas
+reset role;
+set local role service_role;
+set local "request.jwt.claim.role" to 'service_role';
+
+insert into public.learning_targets (id, title, slug, target_type, status, is_public)
+values ('dd000000-0000-0000-0000-000000000010', 'Bad Quota Algebra Target', 'bad-quota-algebra-target', 'certification', 'published', true)
+on conflict (id) do nothing;
+
+insert into public.target_versions (id, target_id, version_code, title, status, metadata)
+values (
+  'dd000000-0000-0000-0000-000000000020',
+  'dd000000-0000-0000-0000-000000000010',
+  '2026-BADQUOTA',
+  '2026 Bad Quota Algebra Version',
+  'published',
+  '{"role": "blueprint_authority", "bank": "simulation_exam", "exam_code": "CLEP-ALG", "total_domains": 4}'::jsonb
+)
+on conflict (id) do nothing;
+
+-- Add domains 1.0, 2.0, 3.0, 4.0
+insert into public.curriculum_nodes (id, target_version_id, code, title, node_type, sort_order)
+values
+  ('dd000000-0000-0000-0000-000000000021', 'dd000000-0000-0000-0000-000000000020', '1.0', 'Operations', 'domain', 1),
+  ('dd000000-0000-0000-0000-000000000022', 'dd000000-0000-0000-0000-000000000020', '2.0', 'Equations', 'domain', 2),
+  ('dd000000-0000-0000-0000-000000000023', 'dd000000-0000-0000-0000-000000000020', '3.0', 'Functions', 'domain', 3),
+  ('dd000000-0000-0000-0000-000000000024', 'dd000000-0000-0000-0000-000000000020', '4.0', 'Number Systems', 'domain', 4)
+on conflict (id) do nothing;
+
+-- Add only 2 items (violating 60 question and 15/15/18/12 quota)
+insert into public.assessment_items (
+  id, origin_target_version_id, interaction_type, prompt, response_spec, scoring_spec, metadata
+) values
+  ('dd000000-0000-0000-0000-000000000031', 'dd000000-0000-0000-0000-000000000020', 'single_choice', 'Q1', '{"options": ["A"]}'::jsonb, '{"correct_index": 0}'::jsonb, '{"bank": "simulation_exam", "item_role": "summative_simulation", "domain_code": "1.0", "is_protected": true}'::jsonb),
+  ('dd000000-0000-0000-0000-000000000032', 'dd000000-0000-0000-0000-000000000020', 'single_choice', 'Q2', '{"options": ["B"]}'::jsonb, '{"correct_index": 0}'::jsonb, '{"bank": "simulation_exam", "item_role": "summative_simulation", "domain_code": "2.0", "is_protected": true}'::jsonb)
+on conflict (id) do nothing;
+
+-- Authenticate as User 4
+reset role;
+set local role authenticated;
+set local "request.jwt.claim.role" to 'authenticated';
+set local "request.jwt.claim.sub" to '44556677-8899-4000-1111-222233334444';
+
+-- Calling clep_issue_simulation_exam throws 22023 because CLEP-ALG four-domain quota is violated
+select throws_ok(
+  $$ select public.clep_issue_simulation_exam('dd000000-0000-0000-0000-000000000020'::uuid) $$,
+  '22023',
+  null,
+  'CLEP-ALG four-domain quota violation throws 22023 prior to attempt creation'
+);
+
+-- Crucial: verify NO attempt was created in clep_simulation_attempts for User 4
+select is(
+  (select count(*) from public.clep_simulation_attempts where user_id = '44556677-8899-4000-1111-222233334444'::uuid),
+  0::bigint,
+  'Four-domain quota violation aborts attempt insertion before consuming attempt'
 );
 
 rollback;

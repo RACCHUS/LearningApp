@@ -646,14 +646,24 @@ class _ExamReportScreenState extends State<ExamReportScreen> {
                   ),
                   const SizedBox(height: 4),
                 ],
-                Text(
-                  'Correct Answer: ${item.correctResponse}',
-                  style: GoogleFonts.inter(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF10B981),
+                if (item.correctResponse != null)
+                  Text(
+                    'Correct Answer: ${item.correctResponse}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF10B981),
+                    ),
+                  )
+                else
+                  Text(
+                    'Confidential Question (Answer key protected)',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontStyle: FontStyle.italic,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
                   ),
-                ),
               ],
             ),
           ),

@@ -349,6 +349,29 @@ class TargetVersion {
   bool get isRetired => status == TargetVersionStatus.retired;
   bool get isEditable => isDraft;
 
+  /// Whether this target version provides an authoritative timed simulation exam.
+  bool get isSimulationExamEligible {
+    if (!isPublished) return false;
+    final bank = metadata['bank'] as String?;
+    final role = metadata['role'] as String?;
+    final examCode = metadata['exam_code'] as String?;
+    // Explicit simulation eligibility: must be a blueprint authority with a simulation bank
+    return bank == 'simulation_exam' &&
+        role == 'blueprint_authority' &&
+        examCode != null &&
+        examCode.isNotEmpty;
+  }
+
+  /// Explicit set of allowed examination tools. Defaults strictly to empty (no tools).
+  Set<String> get allowedExamTools {
+    final toolsList = metadata['allowed_tools'] as List?;
+    if (toolsList == null) return const <String>{};
+    return toolsList.map((e) => e.toString().toLowerCase().trim()).toSet();
+  }
+
+  /// Whether a built-in scientific calculator is explicitly permitted for this examination.
+  bool get allowsCalculator => allowedExamTools.contains('calculator');
+
   factory TargetVersion.fromJson(Map<String, dynamic> json) {
     return TargetVersion(
       id: json['id'] as String,

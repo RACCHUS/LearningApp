@@ -54,6 +54,7 @@ class MockExamSession {
 
   bool get isTimeExpired => elapsedSeconds >= timeLimit.inSeconds;
   bool get isCompleted => status.isFinished;
+  bool get isProtectedSimulation => blueprint.isProtected;
 
   double get progressRatio => totalQuestions > 0 ? (answeredCount / totalQuestions).clamp(0.0, 1.0) : 0.0;
 
