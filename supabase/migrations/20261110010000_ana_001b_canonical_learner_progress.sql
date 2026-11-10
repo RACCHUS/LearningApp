@@ -240,9 +240,21 @@ BEGIN
       v_status := 'accepted';
       v_accepted := v_accepted+1;
 
+      -- Recompute the affected event days AND any later existing day rows.
+      -- A late completion/reversal must not leave later projections stale.
       FOR v_day IN
-        SELECT d::date
-          FROM pg_catalog.generate_series(v_day_from,v_day_to,interval '1 day') AS d
+        SELECT affected.day FROM (
+          SELECT d::date AS day
+          FROM pg_catalog.generate_series(v_day_from::timestamp,
+            v_day_to::timestamp, interval '1 day') AS d
+          UNION
+          SELECT p.reporting_date_utc
+          FROM public.learner_activity_progress AS p
+          WHERE p.user_id=v_user AND p.content_kind=v_kind
+            AND p.content_id=v_content AND p.version_key=v_version
+            AND p.reporting_date_utc >= v_day_from
+        ) AS affected
+        ORDER BY affected.day
       LOOP
         v_begin := (v_day::timestamp AT TIME ZONE 'UTC');
         v_finish := ((v_day + 1)::timestamp AT TIME ZONE 'UTC');
@@ -252,14 +264,14 @@ BEGIN
          WHERE e.user_id=v_user AND e.content_kind=v_kind
            AND e.content_id=v_content AND e.version_key=v_version
            AND e.event_type IN ('lesson_completed','lesson_uncompleted')
-           AND e.occurred_at>=v_begin AND e.occurred_at<v_finish
+           AND e.occurred_at < v_finish
          ORDER BY e.occurred_at DESC,e.received_at DESC,e.id DESC
          LIMIT 1;
 
         WITH slices AS (
           SELECT pg_catalog.tstzrange(
-            pg_catalog.greatest(e.interval_start,v_begin),
-            pg_catalog.least(e.interval_end,v_finish),'[)') AS span
+            greatest(e.interval_start,v_begin),
+            least(e.interval_end,v_finish),'[)') AS span
           FROM private.learner_progress_events AS e
           WHERE e.user_id=v_user AND e.content_kind=v_kind
             AND e.content_id=v_content AND e.version_key=v_version
