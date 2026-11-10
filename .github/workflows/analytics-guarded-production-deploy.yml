@@ -1,0 +1,103 @@
+# MANUAL OWNER-APPROVED ONLY: invokes the repository's single guarded path.
+# The action cannot run for PRs or scheduled events. Approval must match the
+# exact audited main commit, project ref, and production environment reviewers.
+name: Guarded Supabase production migration deploy (owner-approved)
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_main_sha:
+        description: 'Exact reviewed main commit SHA from successful dry-run'
+        required: true
+        type: string
+      confirm_project_ref:
+        description: 'Type approved Supabase project ref xzvkdwebtbxlrxagtzlv'
+        required: true
+        type: string
+      approve_all_pending:
+        description: 'I reviewed every pending migration and approve deploying ALL of them'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guarded-supabase-production
+  cancel-in-progress: false
+
+jobs:
+  guarded_deploy:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.approve_all_pending == true &&
+      inputs.confirm_project_ref == 'xzvkdwebtbxlrxagtzlv' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: supabase-production-deployment
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      EXPECTED_PROJECT_REF: xzvkdwebtbxlrxagtzlv
+      APPROVED_MAIN_SHA: ${{ inputs.approved_main_sha }}
+    steps:
+      - name: Checkout approved main commit and full version history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Require exact reviewed commit and protected credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "::error::Missing protected Supabase access token"; exit 1;
+          }
+          test -n "$SUPABASE_DB_PASSWORD" || {
+            echo "::error::Missing protected Supabase database password"; exit 1;
+          }
+          test "$APPROVED_MAIN_SHA" = "$(git rev-parse HEAD)" || {
+            echo "::error::Main moved since the approved dry-run. Stop and rerun guarded preflight."; exit 1;
+          }
+          test "$(git symbolic-ref --short HEAD 2>/dev/null || echo HEAD)" = "HEAD" || true
+
+      - name: Set up pinned Flutter and Dart
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Resolve reviewed repository dependencies
+        run: flutter pub get
+
+      - name: Set up pinned Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.67.1
+
+      - name: Verify linked destination
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$EXPECTED_PROJECT_REF"
+          test "$(cat supabase/.temp/project-ref)" = "$EXPECTED_PROJECT_REF"
+
+      - name: Run ONLY the repository's guarded deployment entrypoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart run tool/guarded_supabase_deploy.dart \
+            --project-ref "$EXPECTED_PROJECT_REF" \
+            --base-ref origin/main \
+            --report-dir build/analytics_production_deployment_reports
+
+      - name: Preserve non-secret preflight/postflight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guarded-supabase-production-audit
+          path: build/analytics_production_deployment_reports/
+          retention-days: 30
+          if-no-files-found: ignore
