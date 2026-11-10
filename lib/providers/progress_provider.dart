@@ -117,7 +117,11 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       final elapsedSeconds = studyTimeSeconds ?? 0;
       
       // Merge metadata
-      final updatedMetadata = {...?progress.metadata, ...?metadata};
+      final updatedMetadata = {
+        ...?progress.metadata,
+        ...?metadata,
+        'sync_completion_event': false,
+      };
       
       final newProgress = progress.copyWith(
         id: const Uuid().v4(),
@@ -150,6 +154,7 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
         ...?progress.metadata,
         ...?metadata,
         'completed_at': DateTime.now().toIso8601String(),
+        'sync_completion_event': true,
       };
       
       final newProgress = progress.copyWith(
@@ -213,6 +218,9 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       final progress = currentState.progress;
       final newProgress = progress.copyWith(
         studyTimeSeconds: progress.studyTimeSeconds + duration.inSeconds,
+        isSynced: false,
+        id: const Uuid().v4(),
+        metadata: {...?progress.metadata, 'sync_completion_event': false},
       );
       state = ProgressLoaded(newProgress);
       // Debounce the save operation to prevent too many writes
