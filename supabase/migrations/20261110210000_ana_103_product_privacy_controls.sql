@@ -236,7 +236,8 @@ BEGIN
     FROM analytics.product_release_gate
     WHERE id=1 AND collection_enabled
       AND policy_approved_at IS NOT NULL
-      AND reviewed_by IS NOT NULL;
+      AND reviewed_by IS NOT NULL
+    FOR SHARE;
     IF v_approved IS NULL THEN
       RAISE EXCEPTION 'Analytics release policy not approved'
         USING ERRCODE='42501';
@@ -263,7 +264,8 @@ BEGIN
   SELECT approved_policy_version INTO v_approved
   FROM analytics.product_release_gate
   WHERE id=1 AND collection_enabled
-    AND policy_approved_at IS NOT NULL AND reviewed_by IS NOT NULL;
+    AND policy_approved_at IS NOT NULL AND reviewed_by IS NOT NULL
+  FOR SHARE;
   IF v_approved IS NULL OR NOT EXISTS (
     SELECT 1 FROM analytics.product_consents c
     WHERE c.user_id=NEW.user_id AND c.consented
