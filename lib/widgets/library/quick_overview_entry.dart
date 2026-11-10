@@ -41,7 +41,14 @@ class QuickOverviewEntry extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final routeParam = targetSlug?.isNotEmpty == true ? targetSlug! : targetId;
+    final route = (targetSlug != null &&
+            targetSlug!.isNotEmpty &&
+            targetSlug != targetId)
+        ? Uri(
+            path: '/overview/$targetId',
+            queryParameters: {'slug': targetSlug!},
+          ).toString()
+        : '/overview/$targetId';
 
     if (compact) {
       return Semantics(
@@ -49,21 +56,21 @@ class QuickOverviewEntry extends ConsumerWidget {
         label: 'Quick overview for ${outline.title}',
         child: TextButton.icon(
           key: Key('quick-overview-entry-$targetId'),
-          onPressed: () => context.push('/overview/$routeParam'),
+          onPressed: () => context.push(route),
           icon: const Icon(Icons.explore_outlined, size: 18),
           label: Wrap(
-          spacing: 6,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            const Text('Quick overview'),
-            if (experimental)
-              const Text(
-                'Experimental',
-                key: Key('overview-experimental-disclosure'),
-                style: TextStyle(fontSize: 11),
-              ),
-          ],
-        ),
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text('Quick overview'),
+              if (experimental)
+                const Text(
+                  'Experimental',
+                  key: Key('overview-experimental-disclosure'),
+                  style: TextStyle(fontSize: 11),
+                ),
+            ],
+          ),
         ),
       );
     }
@@ -73,7 +80,7 @@ class QuickOverviewEntry extends ConsumerWidget {
       label: 'Quick overview for ${outline.title}: get oriented in minutes',
       child: OutlinedButton.icon(
         key: Key('quick-overview-entry-$targetId'),
-        onPressed: () => context.push('/overview/$routeParam'),
+        onPressed: () => context.push(route),
         icon: const Icon(Icons.explore_outlined),
         label: Wrap(
           spacing: 6,

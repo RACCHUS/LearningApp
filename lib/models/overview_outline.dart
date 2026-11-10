@@ -269,6 +269,40 @@ const List<OfficialDomainBlueprint> clepPsychologyOfficialDomains = [
   ),
 ];
 
+/// Target IDs and slugs whose reviewed official blueprint is
+/// [clepPsychologyOfficialDomains].
+const Set<String> clepPsychologyTargetKeys = {
+  'clep-introductory-psychology',
+  'clep_introductory_psychology',
+  'a0000000-0000-0000-0000-000000000001',
+  '00000000-0000-4000-8000-000000000101',
+};
+
+/// Returns the reviewed official blueprint for [targetIdOrSlug].
+///
+/// Targets without a reviewed blueprint get an empty list: Fast then falls
+/// back to the course order and must not claim official domain coverage.
+List<OfficialDomainBlueprint> officialDomainsForTarget(String? targetIdOrSlug) {
+  final normalized = targetIdOrSlug?.trim().toLowerCase();
+  if (normalized != null && clepPsychologyTargetKeys.contains(normalized)) {
+    return clepPsychologyOfficialDomains;
+  }
+  return const <OfficialDomainBlueprint>[];
+}
+
+/// Whether [domains] is the reviewed CLEP Introductory Psychology blueprint.
+bool isClepPsychologyBlueprint(List<OfficialDomainBlueprint> domains) {
+  if (identical(domains, clepPsychologyOfficialDomains)) return true;
+  if (domains.length != clepPsychologyOfficialDomains.length) return false;
+  for (var i = 0; i < domains.length; i++) {
+    if (domains[i].domainId != clepPsychologyOfficialDomains[i].domainId ||
+        domains[i].title != clepPsychologyOfficialDomains[i].title) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Reviewed CLEP Introductory Psychology 7-family Overview outline (`TEL-02A`).
 const OverviewOutline clepPsychologyOverviewOutline = OverviewOutline(
   id: 'overview-clep-introductory-psychology-v1',

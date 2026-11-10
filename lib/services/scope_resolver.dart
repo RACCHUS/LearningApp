@@ -99,6 +99,91 @@ class ScopeResolver {
     }
   }
 
+  /// Returns cached curriculum nodes for [contextId] if available in Hive.
+  List<SnapshotNode> getCachedCurriculumNodes(String contextId) {
+    return _snapshotBox?.get(contextId)?.nodes ?? const <SnapshotNode>[];
+  }
+
+  /// Resolves curriculum nodes (`SnapshotNode`) for [context], returning the
+  /// cached snapshot if present or querying `curriculum_nodes` for target contexts
+  /// when the fast `resolve_scope` RPC bypassed `_resolveTargetScope`.
+  Future<List<SnapshotNode>> resolveCurriculumNodes(
+    LearningContext context,
+  ) async {
+    final cached = _snapshotBox?.get(context.id);
+    if (cached != null && cached.nodes.isNotEmpty) {
+      return cached.nodes;
+    }
+
+    if (context.rootType != ContextRootType.target) {
+      return const <SnapshotNode>[];
+    }
+
+    final client = _supabase;
+    final isFakeClient =
+        client != null && client.runtimeType.toString().contains('Fake');
+    if (client == null || (!isFakeClient && !isValidUuid(context.rootId))) {
+      return const <SnapshotNode>[];
+    }
+
+    try {
+      String? versionId = context.targetVersionId;
+      if (versionId == null || versionId.isEmpty) {
+        final verRes = await client
+            .from('target_versions')
+            .select('id')
+            .eq('target_id', context.rootId)
+            .eq('status', 'published')
+            .order('created_at', ascending: false)
+            .limit(1);
+        if ((verRes as List).isNotEmpty) {
+          versionId = verRes.first['id'] as String?;
+        }
+      }
+      if (versionId == null || versionId.isEmpty) {
+        return const <SnapshotNode>[];
+      }
+
+      final nodesRes = await client
+          .from('curriculum_nodes')
+          .select('*')
+          .eq('target_version_id', versionId)
+          .order('sort_order');
+
+      final nodesList = (nodesRes as List).cast<Map<String, dynamic>>();
+      final snapshotNodes = nodesList
+          .map(
+            (n) => SnapshotNode(
+              id: n['id'] as String,
+              parentId: n['parent_id'] as String?,
+              title: n['title'] as String? ?? '',
+              code: n['code'] as String?,
+              nodeType: n['node_type'] as String? ?? 'domain',
+              sortOrder: (n['sort_order'] as num?)?.toInt() ?? 0,
+            ),
+          )
+          .toList();
+
+      if (_snapshotBox != null && snapshotNodes.isNotEmpty) {
+        await _snapshotBox.put(
+          context.id,
+          ContextCurriculumSnapshot(
+            contextId: context.id,
+            targetVersionId: versionId,
+            nodes: snapshotNodes,
+            activeFocusId: context.activeFocusId,
+            snapshotAt: DateTime.now(),
+          ),
+        );
+      }
+
+      return snapshotNodes;
+    } catch (e) {
+      debugPrint('⚠️ Could not resolve curriculum nodes for ${context.id}: $e');
+      return const <SnapshotNode>[];
+    }
+  }
+
   void _revalidateInBackground(LearningContext context, String configHash) {
     _resolveOnline(context, configHash: configHash)
         .then((fresh) async {

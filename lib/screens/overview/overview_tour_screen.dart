@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/learning_context.dart';
 import '../../models/learning_strategy.dart';
+import '../../models/learning_target.dart';
 import '../../models/overview_outline.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_strategy_provider.dart';
+import '../../providers/learning_target_provider.dart';
 import '../../services/planning/overview_planner.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/uuid_validator.dart';
 import '../../widgets/help/help_action.dart';
 
 /// Read-only Subject Overview Tour screen (`TEL-03`).
@@ -20,11 +23,13 @@ import '../../widgets/help/help_action.dart';
 ///   widget state and never count as mastery or diagnostic evidence.
 class OverviewTourScreen extends ConsumerStatefulWidget {
   final String targetSlugOrId;
+  final String? targetSlug;
   final OverviewDurationPreset initialPreset;
 
   const OverviewTourScreen({
     super.key,
     required this.targetSlugOrId,
+    this.targetSlug,
     this.initialPreset = OverviewDurationPreset.fifteenMinutes,
   });
 
@@ -34,6 +39,7 @@ class OverviewTourScreen extends ConsumerStatefulWidget {
 
 class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
   late OverviewDurationPreset _selectedPreset;
+  String? _targetResolutionError;
 
   /// Strictly transient, in-memory-only selections for optional 30-minute
   /// self-check items. Cleared on dispose and never persisted.
@@ -51,10 +57,32 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
     final flags = ref.watch(telFeatureFlagsProvider);
     final planner = ref.watch(overviewPlannerProvider);
 
-    final isAllowed = flags.isOverviewEnabledForTarget(widget.targetSlugOrId);
-    final outline = isAllowed
-        ? planner.findOutlineForTarget(widget.targetSlugOrId)
+    var isAllowed =
+        flags.isOverviewEnabledForTarget(widget.targetSlugOrId) ||
+        flags.isOverviewEnabledForTarget(widget.targetSlug);
+    var outline = isAllowed
+        ? (planner.findOutlineForTarget(widget.targetSlugOrId) ??
+              planner.findOutlineForTarget(widget.targetSlug))
         : null;
+
+    LearningTarget? resolvedTarget;
+    if (outline == null && isValidUuid(widget.targetSlugOrId)) {
+      resolvedTarget = ref
+          .watch(targetDetailProvider(widget.targetSlugOrId))
+          .valueOrNull;
+      if (resolvedTarget != null) {
+        isAllowed =
+            isAllowed ||
+            flags.isOverviewEnabledForTarget(resolvedTarget.id) ||
+            flags.isOverviewEnabledForTarget(resolvedTarget.slug);
+        if (isAllowed) {
+          outline =
+              planner.findOutlineForTarget(resolvedTarget.slug) ??
+              planner.findOutlineForTarget(resolvedTarget.id) ??
+              planner.findOutlineForTarget(resolvedTarget.title);
+        }
+      }
+    }
 
     if (outline == null) {
       return Scaffold(
@@ -88,15 +116,36 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
       );
     }
 
-    final planView = planner.project(outline: outline, preset: _selectedPreset);
-    final canTryFast = flags.isFastEnabledForTarget(
-      outline.targetId,
-      isExamTarget: true,
+    final resolvedOutline = outline;
+    final target = resolvedTarget;
+    final planView = planner.project(
+      outline: resolvedOutline,
+      preset: _selectedPreset,
     );
+    final canTryFast =
+        flags.isFastEnabledForTarget(
+          resolvedOutline.targetId,
+          isExamTarget: true,
+        ) ||
+        flags.isFastEnabledForTarget(
+          resolvedOutline.targetSlug,
+          isExamTarget: true,
+        ) ||
+        flags.isFastEnabledForTarget(
+          widget.targetSlugOrId,
+          isExamTarget: true,
+        ) ||
+        flags.isFastEnabledForTarget(
+          widget.targetSlug,
+          isExamTarget: true,
+        ) ||
+        (target != null &&
+            (flags.isFastEnabledForTarget(target.id, isExamTarget: true) ||
+                flags.isFastEnabledForTarget(target.slug, isExamTarget: true)));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${outline.title} · Overview'),
+        title: Text('${resolvedOutline.title} · Overview'),
         actions: const [HelpAction()],
       ),
       body: ListView(
@@ -185,13 +234,16 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
 
           // Premise & central questions
           Text(
-            outline.title,
+            resolvedOutline.title,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: DesignTokens.space2),
-          Text(outline.plainLanguagePremise, style: theme.textTheme.bodyLarge),
+          Text(
+            resolvedOutline.plainLanguagePremise,
+            style: theme.textTheme.bodyLarge,
+          ),
           const SizedBox(height: DesignTokens.space4),
           Text(
             'Central questions in this subject',
@@ -200,7 +252,7 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
             ),
           ),
           const SizedBox(height: DesignTokens.space2),
-          ...outline.centralQuestions.map(
+          ...resolvedOutline.centralQuestions.map(
             (q) => Padding(
               padding: const EdgeInsets.only(bottom: DesignTokens.space2),
               child: Row(
@@ -229,7 +281,7 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
           const SizedBox(height: DesignTokens.space4),
 
           // Official 13-domain published weight table
-          _buildOfficialBlueprintSection(context, outline),
+          _buildOfficialBlueprintSection(context, resolvedOutline),
 
           const SizedBox(height: DesignTokens.space4),
 
@@ -246,29 +298,63 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
             ),
           ),
           const SizedBox(height: DesignTokens.space2),
+          if (_targetResolutionError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: DesignTokens.space3),
+              child: Card(
+                key: const Key('overview-target-resolution-error-banner'),
+                elevation: 0,
+                color: theme.colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(DesignTokens.space3),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: theme.colorScheme.onErrorContainer,
+                      ),
+                      const SizedBox(width: DesignTokens.space2),
+                      Expanded(
+                        child: Text(
+                          _targetResolutionError!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Wrap(
             spacing: DesignTokens.space3,
             runSpacing: DesignTokens.space2,
             children: [
               FilledButton.icon(
                 key: const Key('overview-start-standard-button'),
-                onPressed: () =>
-                    _startGoalWithStrategy(outline, PersistedLearningStrategy.standard),
+                onPressed: () => _startGoalWithStrategy(
+                  resolvedOutline,
+                  target,
+                  PersistedLearningStrategy.standard,
+                ),
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Start learning'),
               ),
               if (canTryFast)
                 FilledButton.tonalIcon(
                   key: const Key('overview-try-fast-button'),
-                  onPressed: () =>
-                      _startGoalWithStrategy(outline, PersistedLearningStrategy.fast),
+                  onPressed: () => _startGoalWithStrategy(
+                    resolvedOutline,
+                    target,
+                    PersistedLearningStrategy.fast,
+                  ),
                   icon: const Icon(Icons.bolt),
                   label: const Text('Try Fast (prioritize key areas)'),
                 ),
               OutlinedButton.icon(
                 key: const Key('overview-full-outline-button'),
-                onPressed: () =>
-                    context.push('/target/${outline.targetId}/outline'),
+                onPressed: () => _openFullOutline(resolvedOutline, target),
                 icon: const Icon(Icons.list_alt),
                 label: const Text('Full outline'),
               ),
@@ -280,17 +366,122 @@ class _OverviewTourScreenState extends ConsumerState<OverviewTourScreen> {
     );
   }
 
+  /// Resolves a verified canonical target UUID, returning `null` if only an
+  /// unresolved slug is available so goal creation never persists a non-UUID
+  /// `rootId`.
+  Future<String?> _resolveCanonicalTargetId(
+    OverviewOutline outline,
+    LearningTarget? resolvedTarget,
+  ) async {
+    if (resolvedTarget != null && isValidUuid(resolvedTarget.id.trim())) {
+      return resolvedTarget.id.trim();
+    }
+    final passedId = widget.targetSlugOrId.trim();
+    if (isValidUuid(passedId)) {
+      return passedId;
+    }
+
+    try {
+      final lookupKey =
+          (widget.targetSlug != null && widget.targetSlug!.trim().isNotEmpty)
+              ? widget.targetSlug!.trim()
+              : (passedId.isNotEmpty ? passedId : outline.targetSlug);
+      final target = await ref
+          .read(learningTargetServiceProvider)
+          .getTarget(lookupKey);
+      if (target != null && isValidUuid(target.id.trim())) {
+        return target.id.trim();
+      }
+    } catch (_) {
+      // Offline or test environment without Supabase initialized
+    }
+
+    final contextsState = ref.read(learningContextsProvider);
+    final normalizedTitle = outline.title.trim().toLowerCase();
+    for (final ctx in [
+      ...contextsState.contexts,
+      ...contextsState.archivedContexts,
+    ]) {
+      if (ctx.rootType == ContextRootType.target &&
+          isValidUuid(ctx.rootId.trim()) &&
+          ctx.label.trim().toLowerCase() == normalizedTitle) {
+        return ctx.rootId.trim();
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _openFullOutline(
+    OverviewOutline outline,
+    LearningTarget? resolvedTarget,
+  ) async {
+    final canonicalTargetId = await _resolveCanonicalTargetId(
+      outline,
+      resolvedTarget,
+    );
+    if (canonicalTargetId == null || !isValidUuid(canonicalTargetId)) {
+      if (mounted) {
+        setState(() {
+          _targetResolutionError =
+              'Could not verify the canonical goal identity right now. Please try again when connected or browse from the Library.';
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      if (_targetResolutionError != null) {
+        setState(() {
+          _targetResolutionError = null;
+        });
+      }
+      context.push('/target/$canonicalTargetId/outline');
+    }
+  }
+
   Future<void> _startGoalWithStrategy(
     OverviewOutline outline,
+    LearningTarget? resolvedTarget,
     PersistedLearningStrategy strategy,
   ) async {
     final userId = ref.read(learnerIdProvider);
+    final canonicalTargetId = await _resolveCanonicalTargetId(
+      outline,
+      resolvedTarget,
+    );
+    if (canonicalTargetId == null || !isValidUuid(canonicalTargetId)) {
+      if (mounted) {
+        setState(() {
+          _targetResolutionError =
+              'Could not verify the canonical goal identity right now. Please try again when connected or start from the Library.';
+        });
+      }
+      return;
+    }
+
+    if (mounted && _targetResolutionError != null) {
+      setState(() {
+        _targetResolutionError = null;
+      });
+    }
+
+    String? targetVersionId;
+    try {
+      final latestVersion = await ref
+          .read(learningTargetServiceProvider)
+          .getLatestVersion(canonicalTargetId);
+      targetVersionId = latestVersion?.id;
+    } catch (_) {
+      // Offline or test environment without Supabase initialized
+    }
+
     await ref.read(learningContextsProvider.notifier).createOrSwitch(
       userId: userId,
-      label: outline.title,
+      label: resolvedTarget?.title ?? outline.title,
       rootType: ContextRootType.target,
-      rootId: outline.targetId,
-      emoji: '🧠',
+      rootId: canonicalTargetId,
+      targetVersionId: targetVersionId,
+      emoji: resolvedTarget?.emoji ?? '🧠',
     );
 
     final activeContext = ref.read(learningContextsProvider).active;

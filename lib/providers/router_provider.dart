@@ -173,6 +173,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
           return OverviewTourScreen(
             targetSlugOrId: state.pathParameters['targetId']!,
+            targetSlug: state.uri.queryParameters['slug'],
             initialPreset: OverviewDurationPreset.fromMinutes(rawMinutes),
           );
         },

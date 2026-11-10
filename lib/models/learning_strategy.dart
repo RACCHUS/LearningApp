@@ -249,11 +249,13 @@ class TelFeatureFlags {
       'clep-introductory-psychology',
       'clep_introductory_psychology',
       'a0000000-0000-0000-0000-000000000001',
+      '00000000-0000-4000-8000-000000000101',
     },
     this.fastEligibleTargetSlugs = const {
       'clep-introductory-psychology',
       'clep_introductory_psychology',
       'a0000000-0000-0000-0000-000000000001',
+      '00000000-0000-4000-8000-000000000101',
     },
   });
 
