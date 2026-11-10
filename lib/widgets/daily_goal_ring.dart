@@ -50,7 +50,7 @@ class DailyGoalRing extends ConsumerWidget {
           ? 'Study time unavailable — daily goal is ${goal.goalMinutes}m'
           : (goal.goalMet
               ? 'Daily goal complete! 🎉'
-              : '${goal.formattedTime} / ${goal.goalMinutes}m today'),
+              : '${goal.formattedTime} / ${goal.goalMinutes}m today on this device'),
       child: InkWell(
         onTap: () => context.push('/progress'),
         borderRadius: BorderRadius.circular(size / 2),
@@ -73,7 +73,10 @@ class DailyGoalRing extends ConsumerWidget {
                   color: Colors.green,
                 )
               : Text(
-                  goal.studyMinutesToday.toString(),
+                  goal.studySecondsToday != null &&
+                          goal.studySecondsToday! < 60
+                      ? '<1'
+                      : goal.studyMinutesToday.toString(),
                   style: TextStyle(
                     fontSize: size * 0.32,
                     fontWeight: FontWeight.bold,
@@ -185,7 +188,7 @@ class DailyGoalRingLarge extends ConsumerWidget {
         Text(
           !goal.isStudyTimeAvailable
               ? 'Study Time Unavailable'
-              : (goal.goalMet ? 'Goal Complete!' : 'Daily Goal'),
+              : (goal.goalMet ? 'Goal Complete!' : 'Daily Goal (this device)'),
           style: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: goal.goalMet ? Colors.green : colorScheme.onSurface,
