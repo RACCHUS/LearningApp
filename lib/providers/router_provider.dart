@@ -62,11 +62,13 @@ import 'package:learning_pwa/screens/literacy/life_domains_screen.dart';
 import 'package:learning_pwa/screens/simulation/simulation_screen.dart'
     deferred as simulation_screen;
 import 'package:learning_pwa/models/learning_context.dart';
+import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
 import 'package:learning_pwa/widgets/site_feature_refresh_observer.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
+import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
 
 /// Builds the deferred simulation route. [loader] is injectable so the
 /// load-failure return path can be tested end to end.
@@ -309,6 +311,51 @@ final routerProvider = Provider<GoRouter>((ref) {
           simulationId: state.pathParameters['simulationId']!,
           version: state.pathParameters['version']!,
         ),
+      ),
+
+      GoRoute(
+        path: '/software-practice/:exerciseId',
+        name: 'software-practice',
+        builder: (context, state) {
+          if (!isSimulationPreviewAllowed(requested: true)) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Interactive Practice Unavailable'),
+                actions: const [HelpAction()],
+              ),
+              body: const SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'Software practice is an experimental preview feature and is disabled in this build.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          final exerciseId =
+              state.pathParameters['exerciseId'] ?? 'excel-budget-total-v1';
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Excel Guided Practice'),
+              actions: const [HelpAction()],
+            ),
+            body: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 840),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: ExcelUploadCard(exerciseId: exerciseId),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
 
       // Create lesson route
