@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/simulation/simulation_session.dart';
-import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
 
 class NetworkTroubleshootingSimulation extends ConsumerStatefulWidget {
   final SimulationSession session;
+  final VoidCallback onFinished;
 
-  const NetworkTroubleshootingSimulation({super.key, required this.session});
+  const NetworkTroubleshootingSimulation({
+    super.key,
+    required this.session,
+    required this.onFinished,
+  });
 
   @override
   ConsumerState<NetworkTroubleshootingSimulation> createState() =>
@@ -21,6 +25,7 @@ class _NetworkTroubleshootingSimulationState
   String? _selectedReason;
   bool _showHints = false;
   bool _showExplanation = false;
+  bool _speakGuidance = true;
 
   bool get _hasCompleteResponse =>
       _selectedLink != null &&
@@ -35,6 +40,26 @@ class _NetworkTroubleshootingSimulationState
         Text(
           'Practice mode. This activity does not assess or certify networking skill.',
           style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Speak hints and explanations'),
+          subtitle: const Text(
+            'Turn off to avoid overlapping screen reader audio.',
+          ),
+          value: _speakGuidance,
+          onChanged: (enabled) {
+            setState(() => _speakGuidance = enabled);
+            if (!enabled) ref.read(preReaderAudioServiceProvider).stop();
+          },
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => ref.read(preReaderAudioServiceProvider).stop(),
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: const Text('Stop narration'),
+          ),
         ),
         const SizedBox(height: 16),
         const _NetworkDiagram(),
@@ -88,12 +113,10 @@ class _NetworkTroubleshootingSimulationState
             onPressed: () {
               setState(() => _showHints = !_showHints);
               if (!_showHints) return;
-              ref
-                  .read(preReaderAudioServiceProvider)
-                  .speak(
-                    'Hint: Follow the connection from the router to the '
-                    'laptop. A screen or password cannot repair a loose cable.',
-                  );
+              _readGuidance(
+                'Hint: Follow the connection from the router to the '
+                'laptop. A screen or password cannot repair a loose cable.',
+              );
             },
             icon: const Icon(Icons.lightbulb_outline),
             label: Text(_showHints ? 'Hide hint' : 'Get a hint'),
@@ -101,6 +124,7 @@ class _NetworkTroubleshootingSimulationState
         ),
         if (_showHints)
           Semantics(
+            container: true,
             liveRegion: true,
             child: Text(
               'Follow the connection from the router to the laptop. '
@@ -111,13 +135,11 @@ class _NetworkTroubleshootingSimulationState
           onPressed: _hasCompleteResponse
               ? () {
                   setState(() => _showExplanation = true);
-                  ref
-                      .read(preReaderAudioServiceProvider)
-                      .speak(
-                        'The Ethernet link between the router and laptop is '
-                        'disconnected. Reseat the cable, then check whether '
-                        'the laptop reconnects.',
-                      );
+                  _readGuidance(
+                    'The Ethernet link between the router and laptop is '
+                    'disconnected. Reseat the cable, then check whether '
+                    'the laptop reconnects.',
+                  );
                 }
               : null,
           child: const Text('Review the scenario'),
@@ -127,6 +149,7 @@ class _NetworkTroubleshootingSimulationState
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Semantics(
+                container: true,
                 liveRegion: true,
                 child: Text(
                   'The router is online, but the Ethernet link to the laptop '
@@ -143,7 +166,7 @@ class _NetworkTroubleshootingSimulationState
           onPressed: _showExplanation
               ? () {
                   if (widget.session.complete()) {
-                    leaveSimulation(context);
+                    widget.onFinished();
                   }
                 }
               : null,
@@ -151,6 +174,10 @@ class _NetworkTroubleshootingSimulationState
         ),
       ],
     );
+  }
+
+  void _readGuidance(String text) {
+    if (_speakGuidance) ref.read(preReaderAudioServiceProvider).speak(text);
   }
 
   Widget _buildChoiceGroup({
@@ -318,6 +345,7 @@ class _NetworkNode extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: '$label network device',
+      excludeSemantics: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [Icon(icon, size: 32), Text(label)],

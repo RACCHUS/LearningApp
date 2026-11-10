@@ -13,11 +13,13 @@ enum CurrencyActivitySection { coinsAndBills, atmSimulator, verifyChange }
 class CurrencyAtmWidget extends ConsumerStatefulWidget {
   final VoidCallback? onAtmCompleted;
   final CurrencyActivitySection initialSection;
+  final bool showNarrationControls;
 
   const CurrencyAtmWidget({
     super.key,
     this.onAtmCompleted,
     this.initialSection = CurrencyActivitySection.coinsAndBills,
+    this.showNarrationControls = false,
   });
 
   @override
@@ -33,12 +35,15 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
   String _enteredPin = '';
   int? _selectedAtmAmount;
   bool _atmCompleted = false;
+  bool _automaticNarrationEnabled = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _announceCurrentActivity();
+      if (mounted && _automaticNarrationEnabled) {
+        _announceCurrentActivity();
+      }
     });
   }
 
@@ -50,7 +55,22 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
       _selectedAtmAmount = null;
       _atmCompleted = false;
     });
-    _announceCurrentActivity();
+    if (_automaticNarrationEnabled) {
+      _announceCurrentActivity();
+    }
+  }
+
+  void _setAutomaticNarration(bool enabled) {
+    setState(() => _automaticNarrationEnabled = enabled);
+    if (!enabled) {
+      ref.read(preReaderAudioServiceProvider).stop();
+    }
+  }
+
+  void _speakAutomatically(String text) {
+    if (_automaticNarrationEnabled) {
+      ref.read(preReaderAudioServiceProvider).speak(text);
+    }
   }
 
   void _announceCurrentActivity() {
@@ -74,11 +94,9 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
       _activeDenomIndex = index;
     });
     final item = officialCurrencyCatalog[index];
-    ref
-        .read(preReaderAudioServiceProvider)
-        .speak(
-          '${item.name}. ${item.spokenDescription} Tip: ${item.practicalTip}',
-        );
+    _speakAutomatically(
+      '${item.name}. ${item.spokenDescription} Tip: ${item.practicalTip}',
+    );
   }
 
   void _pressPinDigit(String digit) {
@@ -86,7 +104,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
       setState(() {
         _enteredPin += digit;
       });
-      ref.read(preReaderAudioServiceProvider).speak('Digit entered.');
+      _speakAutomatically('Digit entered.');
     }
   }
 
@@ -103,19 +121,17 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
         _atmStepIndex++;
       });
       final nextStep = officialAtmSteps[_atmStepIndex];
-      ref
-          .read(preReaderAudioServiceProvider)
-          .speak('${nextStep.actionTitle}. ${nextStep.spokenGuidance}');
+      _speakAutomatically(
+        '${nextStep.actionTitle}. ${nextStep.spokenGuidance}',
+      );
     } else {
       setState(() {
         _atmCompleted = true;
       });
       // Completed withdrawal
-      ref
-          .read(preReaderAudioServiceProvider)
-          .speak(
-            'Withdrawal complete! You safely took your cash and your debit card.',
-          );
+      _speakAutomatically(
+        'Withdrawal complete! You safely took your cash and your debit card.',
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('ATM cash withdrawal simulated successfully!'),
@@ -133,32 +149,65 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Section Selector Chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildSectionChip(
-                label: '💵 Coins & Paper Bills',
-                section: CurrencyActivitySection.coinsAndBills,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(width: DesignTokens.space2),
-              _buildSectionChip(
-                label: '🏧 ATM Cash Simulator',
-                section: CurrencyActivitySection.atmSimulator,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(width: DesignTokens.space2),
-              _buildSectionChip(
-                label: '🧾 Verify Change Practice',
-                section: CurrencyActivitySection.verifyChange,
-                colorScheme: colorScheme,
-              ),
-            ],
+        Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: 'Currency activity',
+          child: RadioGroup<CurrencyActivitySection>(
+            groupValue: _section,
+            onChanged: (section) {
+              if (section != null) _switchSection(section);
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth < 240
+                    ? constraints.maxWidth
+                    : 240.0;
+                return Wrap(
+                  spacing: DesignTokens.space2,
+                  runSpacing: DesignTokens.space2,
+                  children: [
+                    _buildSectionChoice(
+                      label: '💵 Coins & Paper Bills',
+                      section: CurrencyActivitySection.coinsAndBills,
+                      width: width,
+                    ),
+                    _buildSectionChoice(
+                      label: '🏧 ATM Cash Simulator',
+                      section: CurrencyActivitySection.atmSimulator,
+                      width: width,
+                    ),
+                    _buildSectionChoice(
+                      label: '🧾 Verify Change Practice',
+                      section: CurrencyActivitySection.verifyChange,
+                      width: width,
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: DesignTokens.space3),
+        if (widget.showNarrationControls) ...[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Automatic narration'),
+            subtitle: const Text(
+              'Turn off to avoid overlapping screen reader audio.',
+            ),
+            value: _automaticNarrationEnabled,
+            onChanged: _setAutomaticNarration,
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: () => ref.read(preReaderAudioServiceProvider).stop(),
+              icon: const Icon(Icons.stop_circle_outlined),
+              label: const Text('Stop narration'),
+            ),
+          ),
+        ],
 
         // Section Content
         switch (_section) {
@@ -179,61 +228,62 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
         const SizedBox(height: DesignTokens.space4),
 
         // 18 U.S.C. § 504 Statutory Compliance Card
-        Container(
-          padding: const EdgeInsets.all(DesignTokens.space3),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.account_balance_outlined, size: 16),
-                  const SizedBox(width: DesignTokens.space2),
-                  Text(
-                    '18 U.S.C. § 504 Currency Compliance',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+        Semantics(
+          container: true,
+          child: Container(
+            padding: const EdgeInsets.all(DesignTokens.space3),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.account_balance_outlined, size: 16),
+                    const SizedBox(width: DesignTokens.space2),
+                    Expanded(
+                      child: Text(
+                        '18 U.S.C. § 504 Currency Compliance',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: DesignTokens.space1),
-              Text(
-                'Digital illustrations of US currency conform to 18 U.S.C. § 504 and 31 CFR Part 411: '
-                'rendered as one-sided educational vector representations.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 11,
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: DesignTokens.space1),
+                Text(
+                  'Digital illustrations of US currency conform to 18 U.S.C. § 504 and 31 CFR Part 411: '
+                  'rendered as one-sided educational vector representations.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSectionChip({
+  Widget _buildSectionChoice({
     required String label,
     required CurrencyActivitySection section,
-    required ColorScheme colorScheme,
+    required double width,
   }) {
-    final isSelected = _section == section;
-    return ChoiceChip(
-      selected: isSelected,
-      label: Text(
-        label,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-        ),
+    return SizedBox(
+      width: width,
+      child: RadioListTile<CurrencyActivitySection>(
+        value: section,
+        dense: true,
+        contentPadding: EdgeInsets.zero,
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
-      selectedColor: colorScheme.primary,
-      onSelected: (_) => _switchSection(section),
     );
   }
 
@@ -243,37 +293,41 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Horizontal list of all coins and bills
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: officialCurrencyCatalog.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final item = entry.value;
-              final isSelected = idx == _activeDenomIndex;
-
-              return Padding(
-                padding: const EdgeInsets.only(right: DesignTokens.space2),
-                child: FilterChip(
-                  selected: isSelected,
-                  avatar: Text(
-                    item.visualEmoji,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  label: Text(
-                    item.displayValue,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface,
-                    ),
-                  ),
-                  selectedColor: colorScheme.primary,
-                  onSelected: (_) => _selectDenomination(idx),
-                ),
-              );
-            }).toList(),
+        Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: 'Currency denomination',
+          child: RadioGroup<int>(
+            groupValue: _activeDenomIndex,
+            onChanged: (index) {
+              if (index != null) _selectDenomination(index);
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth < 136
+                    ? constraints.maxWidth
+                    : 136.0;
+                return Wrap(
+                  spacing: DesignTokens.space2,
+                  runSpacing: DesignTokens.space2,
+                  children: [
+                    for (final entry in officialCurrencyCatalog.asMap().entries)
+                      SizedBox(
+                        width: width,
+                        child: RadioListTile<int>(
+                          value: entry.key,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            '${entry.value.visualEmoji} ${entry.value.displayValue}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: DesignTokens.space3),
@@ -297,7 +351,7 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                   activeItem.displayValue,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -383,17 +437,28 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
             // Step header
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  child: Text('${step.stepNumber}'),
+                ExcludeSemantics(
+                  child: CircleAvatar(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    child: Text('${step.stepNumber}'),
+                  ),
                 ),
                 const SizedBox(width: DesignTokens.space2),
                 Expanded(
-                  child: Text(
-                    step.actionTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  child: Semantics(
+                    container: true,
+                    liveRegion: true,
+                    label:
+                        'Step ${step.stepNumber} of ${officialAtmSteps.length}. '
+                        '${step.actionTitle}. ${step.instruction}',
+                    child: ExcludeSemantics(
+                      child: Text(
+                        step.actionTitle,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -419,35 +484,53 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
               ),
               child: Column(
                 children: [
-                  Text(step.iconEmoji, style: const TextStyle(fontSize: 48)),
-                  const SizedBox(height: DesignTokens.space2),
-                  Text(
-                    step.instruction,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  ExcludeSemantics(
+                    child: Text(
+                      step.iconEmoji,
+                      style: const TextStyle(fontSize: 48),
                     ),
-                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: DesignTokens.space2),
+                  ExcludeSemantics(
+                    child: Text(
+                      step.instruction,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   const SizedBox(height: DesignTokens.space3),
 
                   // PIN Pad interactive simulation on step 2
                   if (step.stepNumber == 2) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(4, (index) {
-                        final filled = index < _enteredPin.length;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 6),
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: filled ? Colors.amber : Colors.white24,
-                          ),
-                        );
-                      }),
+                    ExcludeSemantics(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(4, (index) {
+                          final filled = index < _enteredPin.length;
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 6),
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: filled ? Colors.amber : Colors.white24,
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: DesignTokens.space2),
+                    Semantics(
+                      container: true,
+                      liveRegion: true,
+                      child: Text(
+                        '${_enteredPin.length} of 4 practice PIN digits entered',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                     const SizedBox(height: DesignTokens.space3),
 
@@ -500,33 +583,48 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
 
                   // Cash amount selection on step 4
                   if (step.stepNumber == 4) ...[
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [20, 40, 60, 100].map((amount) {
-                        final isSel = _selectedAtmAmount == amount;
-                        return ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isSel
-                                ? Colors.green
-                                : Colors.blueGrey.shade800,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _selectedAtmAmount = amount;
-                            });
-                            ref
-                                .read(preReaderAudioServiceProvider)
-                                .speak('Selected $amount dollars.');
-                          },
-                          child: Text(
-                            '\$$amount',
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                        );
-                      }).toList(),
+                    Semantics(
+                      container: true,
+                      explicitChildNodes: true,
+                      label: 'Withdrawal amount',
+                      child: RadioGroup<int>(
+                        groupValue: _selectedAtmAmount,
+                        onChanged: (amount) {
+                          if (amount != null) {
+                            setState(() => _selectedAtmAmount = amount);
+                            _speakAutomatically('Selected $amount dollars.');
+                          }
+                        },
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            for (final amount in [20, 40, 60, 100])
+                              SizedBox(
+                                width: 112,
+                                child: Material(
+                                  type: MaterialType.transparency,
+                                  child: RadioListTile<int>(
+                                    value: amount,
+                                    dense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    fillColor: const WidgetStatePropertyAll(
+                                      Colors.white,
+                                    ),
+                                    title: Text(
+                                      '\$$amount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -535,26 +633,31 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
             const SizedBox(height: DesignTokens.space3),
 
             // Security tip
-            Container(
-              padding: const EdgeInsets.all(DesignTokens.space2),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lock_outline, size: 16),
-                  const SizedBox(width: DesignTokens.space1),
-                  Expanded(
-                    child: Text(
-                      'Security: ${step.securityTip}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+            Semantics(
+              container: true,
+              child: Container(
+                padding: const EdgeInsets.all(DesignTokens.space2),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_outline, size: 16),
+                    const SizedBox(width: DesignTokens.space1),
+                    Expanded(
+                      child: Text(
+                        'Security: ${step.securityTip}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: DesignTokens.space4),
@@ -620,30 +723,30 @@ class _CurrencyAtmWidgetState extends ConsumerState<CurrencyAtmWidget> {
                 ),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Text(
+                  const Text(
                     'Item Cost: \$14.00',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'You Pay: \$20.00 bill (💵)',
                     style: TextStyle(fontSize: 16),
                   ),
-                  SizedBox(height: 8),
-                  Divider(),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  const SizedBox(height: 8),
                   Text(
                     'Your Correct Change: \$6.00',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'One \$5 bill + One \$1 bill',
                     style: TextStyle(fontSize: 14),
                   ),
