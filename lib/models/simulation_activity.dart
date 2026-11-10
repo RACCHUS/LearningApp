@@ -28,6 +28,12 @@ bool isSimulationPreviewAllowed({required bool requested}) {
   return requested && !kReleaseMode;
 }
 
+String simulationActivityTitle(String id) => switch (id) {
+  'networking-basics' => 'Network troubleshooting practice',
+  'atm-withdrawal' => 'ATM withdrawal practice',
+  _ => 'Interactive practice',
+};
+
 class SimulationCapabilities {
   final bool supportsPauseAndResume;
 

@@ -8,14 +8,19 @@ class HelpAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helpLabel = AppLocalizations.of(context)?.actionHelp ?? 'Help';
-    return Semantics(
-      button: true,
-      label: helpLabel,
-      child: IconButton(
-        key: const Key('help-action'),
-        tooltip: helpLabel,
-        onPressed: () => showHelpCenter(context),
-        icon: const Icon(Icons.help_outline),
+    return Tooltip(
+      message: helpLabel,
+      excludeFromSemantics: true,
+      child: MergeSemantics(
+        child: Semantics(
+          button: true,
+          label: helpLabel,
+          child: IconButton(
+            key: const Key('help-action'),
+            onPressed: () => showHelpCenter(context),
+            icon: const Icon(Icons.help_outline),
+          ),
+        ),
       ),
     );
   }

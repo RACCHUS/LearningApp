@@ -11,9 +11,10 @@ import 'package:learning_pwa/services/audio_service.dart';
 /// - Spoken UI announcements
 class PreReaderAudioService {
   final AudioService _audioService;
+  int _speechRequest = 0;
 
   PreReaderAudioService({AudioService? audioService})
-      : _audioService = audioService ?? AudioService();
+    : _audioService = audioService ?? AudioService();
 
   /// Speaks [text] aloud with parameters appropriate for the learner's [track].
   Future<void> speak(
@@ -21,20 +22,23 @@ class PreReaderAudioService {
     PreReaderTrack track = PreReaderTrack.adult,
     double? customRate,
   }) async {
+    final request = ++_speechRequest;
     try {
+      await _audioService.stop();
+      if (request != _speechRequest) return;
+
       // Ensure audio service is initialized
       await _audioService.initialize();
+      if (request != _speechRequest) return;
 
       // Configure pitch and speed based on track
       final pitch = track == PreReaderTrack.youth ? 1.15 : 1.0;
       final speed = customRate ?? (track == PreReaderTrack.youth ? 0.9 : 0.85);
 
       await _audioService.updateSettings(
-        _audioService.currentSettings.copyWith(
-          pitch: pitch,
-          speechRate: speed,
-        ),
+        _audioService.currentSettings.copyWith(pitch: pitch, speechRate: speed),
       );
+      if (request != _speechRequest) return;
 
       // Speak immediately, preempting any previous utterance
       await _audioService.speak(text, interrupt: true);
@@ -96,6 +100,7 @@ class PreReaderAudioService {
 
   /// Cancels any ongoing speech.
   Future<void> stop() async {
+    _speechRequest++;
     try {
       await _audioService.stop();
     } catch (e) {

@@ -1,17 +1,18 @@
 # Simulation framework: Phase 0 design note
 
-- **Status:** Owner authorized implementation on a review branch; review is
-  still required before merge, feature enablement, or deployment.
-- **Repository baseline:** `34b97d8` on `main`, November 7, 2026. Discovery
-  began at `7472eec`; subsequent updates added catalog content and did not
-  change the simulation or evidence paths reviewed here.
+- **Status:** The gated preview and initial accessibility fixes were merged
+  in PRs #187 and #189. Further accessibility changes are under review;
+  simulation preview remains disabled by default and in release builds.
+  Human accessibility review and the other enablement gates remain open.
+- **Initial repository baseline:** `34b97d8` on `main`, November 7, 2026.
+  Discovery began at `7472eec`; subsequent updates added catalog content and
+  did not change the simulation or evidence paths reviewed here.
 - **Proposal:** [Simulation and virtual learning framework, v0.11](SIMULATION_VIRTUAL_LEARNING_FRAMEWORK.md).
 
-The owner asked for the proposal to be implemented on the feature branch
-before review. Work therefore proceeds against its documented conservative
-defaults; this does not approve a merge, production enablement, or deployment.
-The note records findings and open verification limits rather than implying
-that a live database or production host was inspected.
+The original design and evidence-boundary analysis below use the initial
+baseline; later implementation and verification results are recorded near the
+end of this note. This note does not approve production enablement or
+deployment.
 
 ## Conclusions for the seven stop-condition areas
 
@@ -20,10 +21,10 @@ that a live database or production host was inspected.
 | Existing simulator | Start with the existing [currency and ATM widget](../../lib/widgets/literacy/currency_atm_widget.dart). It already has a discrete withdrawal-completion action and is mounted in [life domains](../../lib/screens/literacy/life_domains_screen.dart). A completion callback can be added without changing its existing callers. It does not need a new engine or navigation destination. |
 | Completion telemetry | Use **memory only**, for every learner, in the first prototype. Do not send simulation events through `record_events`, the outbox, analytics, or a new RPC. Authenticated server persistence remains a separate, reviewed change. |
 | Activity contract | Start with immutable activity identity and capabilities, a small lifecycle, and typed completion-only events. No score, learner identity, credentials, raw input, or arbitrary event metadata is part of this prototype. |
-| Lesson integration | The opt-in native slice now adds a `simulation` lesson block and a deferred full-screen route, with Help, explicit exit, Escape, load-failure return, and lesson-content fallback. Launch remains disabled by default and requires a registered ID/version. The route and block still need owner review and a reviewed amendment to [the locked UI baseline](../../UI_ARCHITECTURE_LOCKED.md) before enablement. |
+| Lesson integration | The opt-in native slice now adds a `simulation` lesson block and a deferred full-screen route, with Help, explicit exit, Escape, load-failure return, and lesson-content fallback. Launch remains disabled by default and requires a registered ID/version. Enablement still requires owner approval and a reviewed amendment to [the locked UI baseline](../../UI_ARCHITECTURE_LOCKED.md). |
 | Evidence architecture | The current client writers and the `arch_04` server projection are not equivalent. A real authenticated database check and a user-facing regression investigation remain open; simulation evidence must not depend on either path. |
 | Attempt handling | The prototype has an ephemeral local session, **not** a server attempt. Any future persisted attempt must be server-issued, version-pinned, owner-bound, and idempotent. |
-| Native networking PoC | A native networking practice now presents the router topology, structured diagnosis/repair/reason choices, hints, narration, and explanatory review without a score. Focused widget tests cover the interaction; screen-reader, keyboard-only, reduced-motion, contrast, and WCAG 2.2 AA validation remain outstanding. |
+| Native networking PoC | A native networking practice now presents the router topology, structured diagnosis/repair/reason choices, hints, narration, and explanatory review without a score. Targeted keyboard, contrast, and automated accessibility checks have been performed; human screen-reader and complete WCAG 2.2 AA review remain outstanding. |
 
 ## Evidence boundary investigation
 
@@ -265,14 +266,13 @@ cannot establish causal effectiveness.
   direct link opened in a new tab cannot strand the learner. Four direct-link
   tests start on the simulation route and verify each path reaches `/learn`;
   the simulation suite is now 26 tests.
-  Widget tests run in debug mode, so release behavior is verified by the gate
-  unit test plus the compile-time `kReleaseMode` constant, not by launching a
-  release build end to end.
+  At that stage, widget tests ran in debug mode, so release behavior had only
+  been verified by the gate unit test and the compile-time `kReleaseMode`
+  constant. Subsequent browser results are recorded below.
 - `flutter analyze` passed with no issues using the same temporary `.env`.
 - `flutter build web --release --dart-define=ENABLE_SIMULATION_PREVIEW=true`
   compiled successfully (existing `flutter_tts` WebAssembly dry-run warnings
-  only). This confirms the gated code compiles for release; it was not served
-  or exercised in a browser.
+  only). That initial build was not served or exercised in a browser.
 - After merging `origin/main` (`126c4e1`), the full `flutter test` suite passed
   (2,261 passed, 1 skipped), and `dart run tool/verify_migration_history.dart --base-ref origin/main`
   verified append-only, monotonic history. The self-host test's latest-version
@@ -280,19 +280,19 @@ cannot establish causal effectiveness.
 - `dart run tool/self_host_bootstrap.dart --generate-bundle deploy/self-host/init-scripts/01-full-schema.sql`
   regenerated the bundle against the combined history: 93 migrations, with
   `20261107060000_performance_library_search_trigram_indexes` followed by
-  `20261107100000_simulation_lesson_blocks`. It was not deployed. The
-  migration also requires the backward-compatible `body` fallback.
+  `20261107100000_simulation_lesson_blocks`. The bundle was not deployed at
+  that stage. The migration also requires the backward-compatible `body`
+  fallback.
 - [The pgTAP suite](../../supabase/tests/simulation_lesson_blocks_test.sql)
   now inserts real rows. It accepts a simulation block with a body; rejects a
   missing, empty, or whitespace-only body and an unknown block type
   (`23514`); and accepts all eight existing block types without a simulation
   body. It runs in a rolled-back transaction.
-- Hot restart was attempted, but no running Flutter app was connected to this
-  workspace.
-- pgTAP could **not** run locally because the Docker engine was unavailable. It
-  must pass in the PR's `verify-database` CI job, which runs `supabase test db`
-  against both incremental and clean local databases. No hosted or production
-  database was started, deployed, or modified.
+- The initial hot-restart attempt had no connected Flutter app.
+- During initial branch validation, pgTAP could **not** run locally because
+  the Docker engine was unavailable. PR #187's database CI subsequently
+  passed. Its `verify-database` job runs `supabase test db` against both
+  incremental and clean local databases.
 - Feature-enablement gates (not merge gates for preview-disabled code): a
   release browser must refuse both block and direct-route launches even with
   `ENABLE_SIMULATION_PREVIEW=true`, and WCAG 2.2 AA review plus the equivalent
@@ -300,13 +300,13 @@ cannot establish causal effectiveness.
 
 ### Feature-enablement gate results (post-merge of PR #187)
 
-- **Release browser: passed.** A `--release` web build with
+- **Release browser, direct links: passed.** A `--release` web build with
   `ENABLE_SIMULATION_PREVIEW=true` was served locally and opened in Chrome via
   Playwright. Direct links to `/#/simulation/networking-basics/1.0.0` and
   `/#/simulation/atm-withdrawal/1.0.0` showed only the "unavailable" fallback
   with Help, "Return to lesson" reached `/#/learn`, and the console had no
-  errors. The in-lesson launch button could not be exercised because no
-  authored lesson contains a simulation block yet.
+  errors. This run did not exercise an in-lesson launch; the draft lesson
+  added later was tested separately in profile builds.
 - **Accessibility (automated and keyboard review, using a `--profile` build
   with preview enabled):**
   - Network practice: the Tab order is logical, the whole activity can be
@@ -327,13 +327,121 @@ cannot establish causal effectiveness.
   - Still outstanding: a manual screen-reader pass (NVDA/JAWS on Windows,
     VoiceOver on macOS/iOS, TalkBack on Android). Simulations must not be
     described as WCAG 2.2 AA approved until that pass is done.
+- **Accessibility review continuation (2026-11-08): incomplete; not a
+  conformance approval.** The following are targeted observations of the
+  opt-in preview, not a complete audit of every applicable WCAG 2.2 A and AA
+  success criterion:
+  - The currency section, denomination and ATM withdrawal amount selectors
+    expose labelled radio groups with checked state and arrow-key navigation
+    (1.3.1, 2.1.1, 4.1.2). Step instructions, security tips, and non-sensitive
+    PIN digit counts are separate semantics; step and PIN progress use live
+    regions (1.3.1, 4.1.3). The networking diagram avoids duplicate node
+    labels, and its hint and explanation have separate live regions.
+  - The Help action no longer exposes nested duplicate button roles, while
+    retaining its localized name and activation. Currency values and the
+    change amount use theme-aware text; tests check at least 4.5:1 contrast
+    against their default light and dark backgrounds (1.4.3, 4.1.2).
+  - Both activities offer controls to mute or stop automatic narration. In the
+    ATM preview, the stop control remains available when the learner changes
+    to either of the other currency sections.
+    Regression tests cover stopping while audio initialization, settings, or
+    voice setup is pending, as well as a newer request replacing an older
+    one (1.4.2). Exiting or replacing a simulation route stops its narration
+    before the destination starts its own; returning to a covered simulation
+    rearms that cleanup. Explicit step guidance remains available.
+  - Simulation titles wrap instead of truncating at narrow widths and enlarged
+    text; the disabled fallback can scroll. A route-aware browser title
+    identifies the current simulation and restores the normal title on exit
+    (1.4.4, 1.4.10, 2.4.2).
+  - Playwright exercised the networking diagnosis, hint, review and finish,
+    and the ATM PIN, amount, completion and Escape paths in Chrome at 320 CSS
+    pixels. It observed labelled radios, checked state, isolated step and
+    security text, a non-sensitive PIN count, and arrow-key changes to the
+    amount selection. Widget tests also exercise both activities at 200%
+    text scaling. These observations do not substitute for visual or
+    assistive-technology review on every supported platform.
+  - On the final profile app, an isolated Android 16 emulator with Chrome 133
+    and TalkBack 16.0.0.738667889 exposed one Help button, the selected ATM
+    section as a checked radio, the first step, and a checked narration
+    switch. Automated Tab and Space changed the switch to unchecked. Injected
+    taps on the practice keypad exposed counts from zero through four
+    without exposing the combined practice PIN in the accessibility tree. On
+    an earlier preview, TalkBack's speech-output overlay showed "Checked. In
+    group, option 2 of 3" and the first step instruction. These are
+    automated observations, not a human listening or gesture review.
+  - In one Android emulator run, automated Tab presses remained on "Hear step
+    guidance" when the next ATM action was completely below the viewport.
+    Page Down exposed the action, and a subsequent Tab reached it. Repeated
+    keyboard-only and mixed-input runs on the final app scrolled to that
+    action automatically, as did a minimal Flutter fixture and desktop
+    Chrome at 320×650. The transient discrepancy needs human and
+    cross-device investigation before enablement; its cause is unknown.
+  - NVDA was exercised with automation on an earlier preview. A later attempt
+    was stopped before sending keys because the review window was not the
+    operating system's foreground window. There is no final-candidate human
+    NVDA or JAWS sign-off, and macOS/iOS VoiceOver was not available.
+  - The final candidate passed the full Flutter suite (2,331 tests, one
+    skipped); 235 focused tests also passed, and `flutter analyze --no-pub`
+    reported no issues.
+    Profile and release web builds, including isolated lesson-block fixtures,
+    compiled with `ENABLE_SIMULATION_PREVIEW=true`. In Chrome, the final
+    release build refused direct links for both activities; the release
+    fixture also refused in-lesson launches and explicit block and screen
+    preview overrides. The builds emitted the existing Cupertino icon-font
+    warning. These automated results are not a substitute for the human
+    review below.
+  - A debug-mode hot reload of the final app completed with no observed runtime
+    errors. Hot restart returned success but logged a Flutter `!isDisposed`
+    assertion. The same assertion was reproduced when restarting a minimal
+    `MaterialApp` with the same Flutter SDK and headless Chrome; its root
+    cause has not been established, and the hot-restart check is not clean.
+
+  **Human review required before enabling:** Run an isolated `--profile`
+  preview with `ENABLE_SIMULATION_PREVIEW=true`, for example
+  `flutter run -d chrome --profile --dart-define=ENABLE_SIMULATION_PREVIEW=true`,
+  using local test configuration, and open
+  `/#/simulation/networking-basics/1.0.0` and
+  `/#/simulation/atm-withdrawal/1.0.0`. For the in-lesson launch, use the
+  draft lesson in an isolated local stack; do not publish it. Separately
+  verify the release build remains unavailable even with the flag set.
+
+  An accessibility reviewer must use the actual in-lesson launch as well as
+  direct links, disabled/unknown routes and deferred-load failure. On Windows,
+  use NVDA or JAWS with a supported browser; on macOS and iOS, use VoiceOver
+  with Safari; and on Android, use TalkBack with Chrome. For each, navigate
+  and complete both activities using the screen reader's normal keyboard, rotor or touch
+  gestures; verify names, roles, groups, checked states, focus order and
+  visibility, step/PIN/hint/review announcements, narration controls, Help,
+  exit and return to the lesson. Check that the entered practice PIN is not
+  announced as a combined value, that keypad button names remain available,
+  and that automatic audio does not prevent operation.
+
+  Review all applicable [WCAG 2.2 level A and AA success
+  criteria](https://www.w3.org/TR/WCAG22/), including contrast and non-text
+  contrast, 200% text, reflow, text spacing, orientation, focus visibility and
+  obscuration, keyboard and pointer operation, target size, timing, media,
+  language, errors, consistent Help and status messages. Record any criterion
+  judged not applicable with its rationale. Test the equivalent lesson
+  activity and its fallback with the same assistive technologies. Record the
+  reviewer, date, exact commit/build, device, OS, browser and screen-reader
+  versions, steps, findings and retest results. Do not mark the gate complete
+  until the human review and all outstanding findings have passed.
+
+  | Required human review | Status |
+  | --- | --- |
+  | Windows with NVDA or JAWS | Not performed |
+  | macOS with VoiceOver | Not performed |
+  | iOS with VoiceOver | Not performed |
+  | Android with TalkBack | Not performed |
+  | Applicable WCAG 2.2 A/AA criteria and equivalent lesson activity | Not completed |
+
 - **Equivalent learning alternative: approved for draft inclusion (PR #195).**
   `content/drafts/networking_basics_simulation.yaml` pairs the
   `networking-basics@1.0.0` block with a `body` fallback and three practice
   questions covering the same objective (find the broken link, choose the
   physical fix first, explain why). The option lengths are balanced and the
   correct positions rotate across all three choices. It was ingested into an
-  isolated local stack and tested with Playwright on release web builds:
+  isolated local stack and tested with Playwright on profile web builds:
   - Preview off: the fallback and practice questions render and the
     simulation does not launch. Preview on: the in-lesson launch opens the
     simulation and returns to the lesson.
@@ -345,5 +453,7 @@ cannot establish causal effectiveness.
   - This is a draft only, not a published lesson. It must remain outside
     production curriculum ingestion until the manual accessibility gate is
     complete and the lesson is separately approved for publication.
-  - Each further lesson that adds a simulation must show the same
-    equivalence before that simulation is enabled.
+  - There is currently no drafted lesson using `atm-withdrawal`, so its
+    in-lesson path and equivalent alternative remain unverified. Each further
+    lesson that adds a simulation must show the same equivalence before that
+    simulation is enabled.
