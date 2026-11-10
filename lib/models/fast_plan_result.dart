@@ -376,6 +376,10 @@ class FastPlanResult {
   }
 
   bool get hasUnknownDurations => remainingUnknownTimeCount > 0;
+
+  /// False when the target has no reviewed official blueprint; the plan then
+  /// follows course order and must not present official domain coverage.
+  bool get usesOfficialBlueprint => domainCoverage.isNotEmpty;
 }
 
 /// Presentation wrapper combining the canonical primary [NextAction] with an

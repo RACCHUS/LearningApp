@@ -347,7 +347,9 @@ class ContentCoverageService {
     final normalized = conceptIdOrSlug.trim().toLowerCase();
     final matched = conceptDomainOverrides[conceptIdOrSlug] ??
         conceptDomainOverrides[normalized] ??
-        clepPsychConceptDomains[normalized];
+        (isClepPsychologyBlueprint(officialDomains)
+            ? clepPsychConceptDomains[normalized]
+            : null);
     if (matched != null && validDomains.contains(matched)) {
       return {matched};
     }
@@ -377,6 +379,10 @@ class ContentCoverageService {
     final nodeById = {
       for (final node in curriculumNodes) node.id: node,
     };
+    // Psychology lesson slug/title mappings must never leak into other exams.
+    final slugOrTitleDomains = isClepPsychologyBlueprint(officialDomains)
+        ? _clepPsychSlugOrTitleDomains
+        : const <String, List<String>>{};
 
     final recordsByActivityId = <String, CoverageRecord>{};
     final unmappedActivityIds = <String>[];
@@ -404,18 +410,18 @@ class ContentCoverageService {
         }
       }
 
-      // 3. Canonical slug/title lookup for CLEP Psychology (also enriches multi-domain interdisciplinary lessons)
+      // 3. Canonical slug/title lookup (CLEP Psychology blueprint only; also enriches multi-domain interdisciplinary lessons)
       final normalizedId = activity.activityId.trim().toLowerCase();
       final normalizedTitle = activity.title.trim().toLowerCase();
-      if (_clepPsychSlugOrTitleDomains.containsKey(normalizedId)) {
+      if (slugOrTitleDomains.containsKey(normalizedId)) {
         candidateDomains.addAll(
-          _clepPsychSlugOrTitleDomains[normalizedId]!.where(
+          slugOrTitleDomains[normalizedId]!.where(
             domainById.containsKey,
           ),
         );
-      } else if (_clepPsychSlugOrTitleDomains.containsKey(normalizedTitle)) {
+      } else if (slugOrTitleDomains.containsKey(normalizedTitle)) {
         candidateDomains.addAll(
-          _clepPsychSlugOrTitleDomains[normalizedTitle]!.where(
+          slugOrTitleDomains[normalizedTitle]!.where(
             domainById.containsKey,
           ),
         );
@@ -430,7 +436,7 @@ class ContentCoverageService {
           }
         }
         if (candidateDomains.isEmpty) {
-          for (final entry in _clepPsychSlugOrTitleDomains.entries) {
+          for (final entry in slugOrTitleDomains.entries) {
             if (normalizedTitle.contains(entry.key) ||
                 normalizedId.contains(entry.key)) {
               candidateDomains.addAll(

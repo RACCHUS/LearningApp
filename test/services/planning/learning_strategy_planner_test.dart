@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
+import 'package:learning_pwa/models/overview_outline.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:learning_pwa/services/planning/content_coverage_service.dart';
@@ -57,6 +58,73 @@ void main() {
       ],
     );
   }
+
+  group('TEL-04A Fast blueprint selection per exam target', () {
+    test('officialDomainsForTarget returns the psychology blueprint only for the psychology target', () {
+      for (final key in clepPsychologyTargetKeys) {
+        expect(officialDomainsForTarget(key), same(clepPsychologyOfficialDomains));
+      }
+      expect(
+        officialDomainsForTarget(' CLEP-Introductory-Psychology '),
+        same(clepPsychologyOfficialDomains),
+      );
+      expect(officialDomainsForTarget('clep-college-algebra'), isEmpty);
+      expect(officialDomainsForTarget('b0000000-0000-0000-0000-000000000002'), isEmpty);
+      expect(officialDomainsForTarget(null), isEmpty);
+    });
+
+    test(
+      'non-psychology targets get no psychology domain mappings and an honest generic Fast plan',
+      () {
+        final scope = buildFullClepScope();
+        final coverage = coverageService.buildCoverageForScope(
+          scope: scope,
+          officialDomains: officialDomainsForTarget('clep-college-algebra'),
+        );
+
+        expect(coverage.officialDomains, isEmpty);
+        expect(
+          coverage.unmappedActivityIds.toSet(),
+          scope.orderedActivities.map((a) => a.activityId).toSet(),
+        );
+        for (final record in coverage.recordsByActivityId.values) {
+          expect(record.primaryDomainId, isNull);
+        }
+        expect(
+          coverageService.resolveDomainForConcept(
+            'classical_conditioning',
+            officialDomains: const <OfficialDomainBlueprint>[],
+          ),
+          isEmpty,
+        );
+
+        final result = planner.plan(
+          scope: scope,
+          coverage: coverage,
+          asOf: fixedAsOf,
+        );
+        expect(result.domainCoverage, isEmpty);
+        expect(result.usesOfficialBlueprint, isFalse);
+        expect(result.fullOrderedCandidates, hasLength(scope.orderedActivities.length));
+      },
+    );
+
+    test('psychology target keeps its official blueprint coverage', () {
+      final scope = buildFullClepScope();
+      final coverage = coverageService.buildCoverageForScope(
+        scope: scope,
+        officialDomains: officialDomainsForTarget('clep-introductory-psychology'),
+      );
+      expect(coverage.unmappedActivityIds, isEmpty);
+      final result = planner.plan(
+        scope: scope,
+        coverage: coverage,
+        asOf: fixedAsOf,
+      );
+      expect(result.usesOfficialBlueprint, isTrue);
+      expect(result.domainCoverage, hasLength(13));
+    });
+  });
 
   group('TEL-04 Golden Fixtures (fast_v1_1)', () {
     test(

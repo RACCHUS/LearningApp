@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
+import 'package:learning_pwa/models/overview_outline.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/daily_plan_provider.dart';
@@ -428,8 +429,11 @@ class ContextSnapshotResolver {
     final dueItems = dueItemsOverride ?? await _safeDueItems();
     final curriculumNodes = await _resolveCurriculumNodes(context);
 
+    // Each exam uses its own reviewed blueprint; unreviewed targets get the
+    // generic course-order fallback without official coverage claims.
     final coverage = _coverageService.buildCoverageForScope(
       scope: resolvedScope,
+      officialDomains: officialDomainsForTarget(context.rootId),
       curriculumNodes: curriculumNodes,
     );
 

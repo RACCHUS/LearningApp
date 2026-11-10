@@ -371,36 +371,53 @@ class FastPlanCoverageSheet extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: DesignTokens.space3),
-          Text(
-            'Official Blueprint Domains (${livePlan.domainCoverage.length})',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: DesignTokens.space2),
-          ...livePlan.domainCoverage.map(
-            (d) => ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                '${d.domainId} · ${d.title} (${d.publishedWeightRangeLabel})',
+          if (!livePlan.usesOfficialBlueprint)
+            Card(
+              key: const Key('fast-plan-generic-blueprint-disclosure'),
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.space3),
+                child: Text(
+                  'No reviewed official exam blueprint is available for this '
+                  'target yet. Fast follows the course order and does not '
+                  'measure official topic coverage or weighting.',
+                  style: theme.textTheme.bodySmall,
+                ),
               ),
-              subtitle: Text(
-                d.isCoverageMissing
-                    ? 'Coverage gap: no mapped lesson in current scope'
-                    : d.isManuallySkippedByLearner
-                        ? 'Skipped by learner preference (unassessed)'
-                        : d.evidenceStatus.userFacingLabel,
+            )
+          else ...[
+            Text(
+              'Official Blueprint Domains (${livePlan.domainCoverage.length})',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              trailing: d.hasCompletedActivity
-                  ? const Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.green,
-                      size: 18,
-                    )
-                  : null,
             ),
-          ),
+            const SizedBox(height: DesignTokens.space2),
+            ...livePlan.domainCoverage.map(
+              (d) => ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  '${d.domainId} · ${d.title} (${d.publishedWeightRangeLabel})',
+                ),
+                subtitle: Text(
+                  d.isCoverageMissing
+                      ? 'Coverage gap: no mapped lesson in current scope'
+                      : d.isManuallySkippedByLearner
+                          ? 'Skipped by learner preference (unassessed)'
+                          : d.evidenceStatus.userFacingLabel,
+                ),
+                trailing: d.hasCompletedActivity
+                    ? const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green,
+                        size: 18,
+                      )
+                    : null,
+              ),
+            ),
+          ],
           if (livePlan.fullOrderedCandidates.isNotEmpty) ...[
             const SizedBox(height: DesignTokens.space3),
             Text(

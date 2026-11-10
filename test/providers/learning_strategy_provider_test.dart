@@ -476,6 +476,107 @@ void main() {
       },
     );
 
+    test(
+      'TEL-04A: first Fast preference set offline is replayed on online startup even when the server has no preferences yet',
+      () async {
+        final offlineStore = FastPreferenceStore();
+        offlineStore.enqueueOfflineMutation(
+          PendingFastPreferenceMutation(
+            mutationId: 'mut-first-offline',
+            contextId: 'ctx-first',
+            userId: 'user-first',
+            expectedRevision: 0,
+            strategy: PersistedLearningStrategy.fast,
+            optionalTotalMinutes: 30,
+            queuedAt: DateTime.utc(2026, 11, 11, 9),
+          ),
+        );
+        await offlineStore.flushPersistence();
+
+        final uploaded = <PendingFastPreferenceMutation>[];
+        final onlineStore = FastPreferenceStore(
+          remoteFetchCallback: (_) async => const <String, FastPreference>{},
+          remoteCasCallback: (mutation) async {
+            uploaded.add(mutation);
+            return FastPreferenceRemoteCasResult(
+              conflicted: false,
+              authoritativePreference: FastPreference(
+                contextId: mutation.contextId,
+                userId: mutation.userId,
+                strategy: mutation.strategy,
+                revision: mutation.expectedRevision + 1,
+                updatedAtServer: mutation.queuedAt,
+                lastMutationId: mutation.mutationId,
+                optionalTotalMinutes: mutation.optionalTotalMinutes,
+              ),
+            );
+          },
+        );
+        final notifier = LearningStrategyNotifier(
+          store: onlineStore,
+          activeUserId: 'user-first',
+        );
+        await notifier.ensureHydrated();
+        await notifier.flushRemoteSync();
+
+        expect(uploaded.map((m) => m.mutationId), ['mut-first-offline']);
+        expect(onlineStore.pendingOfflineMutations, isEmpty);
+        final pref = notifier.preferenceForContext('ctx-first');
+        expect(pref.strategy, PersistedLearningStrategy.fast);
+        expect(pref.revision, 1);
+      },
+    );
+
+    test(
+      'TEL-04A: replayOfflineQueue retries a queued mutation after reconnecting',
+      () async {
+        var online = false;
+        final uploaded = <String>[];
+        final store = FastPreferenceStore(
+          remoteCasCallback: (mutation) async {
+            if (!online) throw Exception('offline');
+            uploaded.add(mutation.mutationId);
+            return FastPreferenceRemoteCasResult(
+              conflicted: false,
+              authoritativePreference: FastPreference(
+                contextId: mutation.contextId,
+                userId: mutation.userId,
+                strategy: mutation.strategy,
+                revision: mutation.expectedRevision + 1,
+                updatedAtServer: mutation.queuedAt,
+                lastMutationId: mutation.mutationId,
+              ),
+            );
+          },
+        );
+        final notifier = LearningStrategyNotifier(
+          store: store,
+          activeUserId: 'user-reconnect',
+        );
+        store.enqueueOfflineMutation(
+          PendingFastPreferenceMutation(
+            mutationId: 'mut-reconnect',
+            contextId: 'ctx-reconnect',
+            userId: 'user-reconnect',
+            expectedRevision: 0,
+            strategy: PersistedLearningStrategy.fast,
+            queuedAt: DateTime.utc(2026, 11, 11, 10),
+          ),
+        );
+
+        notifier.replayOfflineQueue();
+        await notifier.flushRemoteSync();
+        expect(uploaded, isEmpty);
+        expect(store.pendingOfflineMutations, hasLength(1));
+
+        online = true;
+        notifier.replayOfflineQueue();
+        await notifier.flushRemoteSync();
+        expect(uploaded, ['mut-reconnect']);
+        expect(store.pendingOfflineMutations, isEmpty);
+      },
+    );
+
     testWidgets(
       'TEL-04A: FastPlanCoverageSheet exposes optional time-budget chips and per-activity manual-skip toggles with truthful manual_skip disclosure',
       (tester) async {
@@ -586,6 +687,87 @@ void main() {
             'Skipped by learner preference (topic remains unassessed)',
           ),
           findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('fast-plan-generic-blueprint-disclosure')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'TEL-04A: FastPlanCoverageSheet discloses the generic fallback and claims no official domains for targets without a reviewed blueprint',
+      (tester) async {
+        final activeCtx = LearningContext(
+          id: 'ctx-algebra',
+          userId: 'user-ui',
+          label: 'CLEP College Algebra',
+          rootType: ContextRootType.target,
+          rootId: 'clep-college-algebra',
+          lastActiveAt: DateTime.utc(2026, 11, 10),
+        );
+        final genericPlan = FastPlanResult(
+          contextId: activeCtx.id,
+          asOf: DateTime.utc(2026, 11, 10),
+          activeStrategy: PersistedLearningStrategy.fast,
+          fullOrderedCandidates: const [
+            RecommendedActivity(
+              activityId: 'lesson-linear-equations',
+              title: 'Linear Equations',
+              rank: 1,
+              actionClass: FastCandidateActionClass.recommended,
+              primaryDomainId: null,
+              primaryDomainWeight: 0,
+              depthTier: DepthTier.core,
+              canonicalOrderIndex: 0,
+              estimatedMinutes: 15,
+              estimateQuality: EstimateQuality.authored,
+              reasonCodes: ['UNASSESSED_DOMAIN'],
+              userFacingRationale: 'Study the most relevant material first',
+              evidenceStatus: EvidenceStatusLabel.notAssessed,
+            ),
+          ],
+          provisionalBudgetSchedule: const [],
+          domainCoverage: const [],
+          unmappedActivityIds: const ['lesson-linear-equations'],
+          budgetFeasibility: BudgetFeasibilityStatus.noBudgetSpecified,
+          knownDurationSubtotalMinutes: 15,
+          remainingUnknownTimeCount: 0,
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              fastPreferenceStoreProvider.overrideWithValue(
+                FastPreferenceStore(),
+              ),
+              learnerIdProvider.overrideWithValue('user-ui'),
+              learningContextsProvider.overrideWith(
+                (_) => _TestContextsNotifier(
+                  LearningContextsState(
+                    contexts: [activeCtx],
+                    activeId: activeCtx.id,
+                  ),
+                ),
+              ),
+              activeFastPlanProvider.overrideWith((_) async => genericPlan),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(
+                body: FastPlanCoverageSheet(contextId: 'ctx-algebra'),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('fast-plan-generic-blueprint-disclosure')),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Official Blueprint Domains'),
+          findsNothing,
         );
       },
     );

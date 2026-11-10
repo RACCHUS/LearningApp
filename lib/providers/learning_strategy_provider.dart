@@ -9,6 +9,7 @@ import '../services/learning_context_sync_service.dart';
 import '../services/planning/content_coverage_service.dart';
 import '../services/planning/learning_strategy_planner.dart';
 import '../services/planning/overview_planner.dart';
+import 'connectivity_provider.dart';
 import 'learning_context_provider.dart';
 import 'next_action_provider.dart';
 import 'site_feature_provider.dart';
@@ -153,6 +154,10 @@ class FastPreferenceStore {
        _remoteFetchCallback = remoteFetchCallback;
 
   bool get isHydrated => _isHydrated;
+
+  /// Whether queued mutations for [userId] can be sent to the server.
+  bool canSyncRemotely(String? userId) =>
+      _remoteCasCallback != null && _isRemoteEligibleUser(userId);
 
   void setRemoteCasCallback(FastPreferenceRemoteCasCallback? callback) {
     _remoteCasCallback = callback;
@@ -707,8 +712,13 @@ class LearningStrategyNotifier extends StateNotifier<LearningStrategyState> {
     }
     _syncFromStore();
     final fetched = await _store.fetchFromRemoteForUser(_activeUserId);
-    if (fetched.isNotEmpty && mounted) {
+    if (!mounted) return;
+    if (fetched.isNotEmpty) {
       reconcileRemotePreferences(fetched);
+    } else {
+      // Replay queued offline mutations even when the server has no
+      // preferences yet (e.g. the first Fast preference was set offline).
+      replayOfflineQueue();
     }
   }
 
@@ -796,6 +806,18 @@ class LearningStrategyNotifier extends StateNotifier<LearningStrategyState> {
       fallbackUserId: _activeUserId,
     );
     _syncFromStore();
+    _flushOfflineQueue();
+  }
+
+  /// Replays queued offline mutations through remote CAS (startup and
+  /// reconnection). No-op when remote sync is unavailable so the queue is
+  /// kept; failed sends are re-queued.
+  void replayOfflineQueue() {
+    if (!_store.canSyncRemotely(_activeUserId)) return;
+    _flushOfflineQueue();
+  }
+
+  void _flushOfflineQueue() {
     if (_store.pendingOfflineMutations.isNotEmpty) {
       final prev = _remoteSyncFuture;
       _remoteSyncFuture = (prev ?? Future.value()).then((_) async {
@@ -1107,6 +1129,12 @@ final learningStrategyProvider =
         ref.onDispose(() {
           contextsNotifier.removeRekeyListener(onRekeyed);
           contextsNotifier.removeRemoteFastPreferencesListener(onRemoteSynced);
+        });
+      } catch (_) {}
+
+      try {
+        ref.listen<bool>(connectivityProvider, (previous, isOnline) {
+          if (isOnline && previous == false) notifier.replayOfflineQueue();
         });
       } catch (_) {}
 

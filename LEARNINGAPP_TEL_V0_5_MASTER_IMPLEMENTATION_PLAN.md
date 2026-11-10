@@ -331,6 +331,8 @@ Design a private one-row-per-context preference with:
 
 **TEL-01B exit:** local switching, reconnect replay, duplicate requests, simultaneous devices, server rejection, context ID re-key, remote delete and old-install restore are tested. Do not infer safety solely from a new `updatedAt` field.
 
+**TEL-04A implementation note:** queued offline mutations replay on startup even when the server returns no preferences (e.g. a first Fast preference set offline) and again on connectivity regain; replay is skipped (queue retained) when remote sync is unavailable. The preference migration was renumbered from `20261110230000` to `20261111030000` before any deployment to avoid colliding with the merged Excel attempt-issuance migration; the old version was never applied (no guarded deploy runs).
+
 ### 6.4 Time estimates and depth metadata
 
 - Audit the versioned resolver RPC, `ScopedLearningActivity`, `ResolvedScope` serialization and Hive adapter/cache. Introduce `estimateQuality` as an additive contract: `authored` when reviewed metadata specifies a plausible positive value, `default` for fallback 10/15-minute constants, `measured` only with trusted methodology and sufficient observations.
@@ -344,6 +346,8 @@ Design a private one-row-per-context preference with:
 `ContentCoverageService` must join **eligible** scope activities → curriculum nodes → approved objective/domain/concept mappings → reviewed lesson resources and authorized, purpose-specific counts. An activity ID alone does not supply its concept coverage. Return ambiguous and missing mappings explicitly; no optimistic inference from a title.
 
 Assessment privacy is a hard boundary: the client must not query protected item text, correct answers, item-level secure metadata, or raw scoring keys. If the plan needs a count by domain, use a **reviewed manifest aggregate** or a server-authorized, limited summary endpoint; count outputs must be non-reconstructive and comply with existing RLS/EXM policy. Do not treat protected 95 simulation items as normal practice capacity.
+
+**Per-target blueprint (TEL-04A):** Fast resolves the blueprint from the context's target (`officialDomainsForTarget`). Only CLEP Introductory Psychology has a reviewed blueprint; its lesson/concept mappings apply only to that blueprint. Other exam targets (Fast remains available to them) get a generic course-order plan with no official domain coverage, weighting or gap claims, and the Fast sheet discloses this.
 
 ### 6.6 Resource bridge (TEL-05, not an initial dependency)
 
