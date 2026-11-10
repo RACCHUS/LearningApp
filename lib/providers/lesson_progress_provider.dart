@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/services/progress_sync_service.dart';
+import 'package:uuid/uuid.dart';
 import '../models/lesson_progress.dart' as progress_model;
 import '../screens/progress/progress_dashboard_screen.dart';
 import '../services/hive_service.dart';
@@ -184,46 +187,42 @@ Future<void> toggleLessonCompletion(
   final newCompleted = !currentCompleted;
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
+  final hive = HiveService();
+  await hive.init();
+  final progress = progress_model.UserProgress(
+    id: const Uuid().v4(),
+    userId: userId ?? 'local',
+    lessonId: lessonId,
+    studyMode: progress_model.StudyMode.lesson,
+    date: DateTime.now(),
+    questionsAnswered: 0, // Manual completion is not an exam response.
+    correctCount: 0,
+    lessonCompleted: newCompleted,
+    studyTimeSeconds: 0,
+    isSynced: false,
+    metadata: {
+      'completion_override': !newCompleted,
+      'active_time_measured': false,
+    },
+  );
 
-  final now = DateTime.now();
+  // Fail before updating the UI if the local completion cannot be saved.
+  await hive.cacheProgress(progress);
   if (userId != null) {
-    try {
-      await supabase.from('user_progress').upsert({
-        'user_id': userId,
-        'lesson_id': lessonId,
-        'date': now.toIso8601String().split('T')[0],
-        'lesson_completed': newCompleted,
-        'questions_answered': newCompleted ? 1 : 0,
-        'correct_count': newCompleted ? 1 : 0,
-        'study_time_minutes': 0,
-        'is_synced': true,
-      });
-    } catch (e) {
-      debugPrint('⚠️ Failed to sync lesson progress to Supabase: $e');
-    }
+    unawaited(_syncManualCompletion(hive, supabase));
   }
-
-  try {
-    final hive = HiveService();
-    await hive.init();
-    final progress = progress_model.UserProgress(
-      id: '${userId ?? "local"}_${lessonId}_${now.millisecondsSinceEpoch}',
-      userId: userId ?? 'local',
-      lessonId: lessonId,
-      studyMode: progress_model.StudyMode.lesson,
-      date: now,
-      questionsAnswered: newCompleted ? 1 : 0,
-      correctCount: newCompleted ? 1 : 0,
-      lessonCompleted: newCompleted,
-      studyTimeSeconds: 0,
-      isSynced: false,
-    );
-    await hive.cacheProgress(progress);
-  } catch (e) {
-    debugPrint('⚠️ Failed to cache lesson progress in Hive: $e');
-  }
-
   ref.invalidate(lessonProgressProvider(lessonId));
   ref.invalidate(nextActionProvider);
   ref.invalidate(dashboardProgressProvider);
+}
+
+Future<void> _syncManualCompletion(
+  HiveService hive,
+  SupabaseClient supabase,
+) async {
+  try {
+    await ProgressSyncService(hive, supabase).syncProgress();
+  } catch (error) {
+    debugPrint('Manual completion saved locally; sync pending: $error');
+  }
 }
