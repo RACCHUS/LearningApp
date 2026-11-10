@@ -112,28 +112,9 @@ class ProgressSyncService {
         if (_supabase.auth.currentUser?.id != userId) {
           throw StateError('Account switched during progress download');
         }
-        final contentId = data['content_id'] as String;
-        final date = data['reporting_date_utc'] as String;
-        final kind = data['content_kind'] as String;
-        final version = data['version_key'] as String;
-        final seconds = data['active_seconds'] as int?;
-        final progress = UserProgress(
-          id: 'remote_${userId}_${kind}_${contentId}_${version}_${date}',
+        final progress = userProgressFromProjection(
+          Map<String, dynamic>.from(data),
           userId: userId,
-          lessonId: contentId,
-          studyMode: StudyMode.lesson,
-          date: DateTime.parse('${date}T00:00:00Z'),
-          questionsAnswered: 0,
-          correctCount: 0,
-          lessonCompleted: data['completed'] == true,
-          studyTimeSeconds: seconds ?? 0,
-          isSynced: true,
-          metadata: {
-            'content_kind': kind,
-            'version_key': version,
-            'active_time_measured': seconds != null,
-            'remote_projection': true,
-          },
         );
         // Replacement is essential. The normal cacheProgress() merges by
         // summing seconds, and redownloading a projection would double count.
