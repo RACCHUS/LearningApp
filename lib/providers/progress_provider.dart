@@ -120,6 +120,9 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       final updatedMetadata = {...?progress.metadata, ...?metadata};
       
       final newProgress = progress.copyWith(
+        id: const Uuid().v4(),
+        isSynced: false,
+        date: DateTime.now(),
         questionsAnswered: progress.questionsAnswered + 1,
         correctCount: isCorrect ? progress.correctCount + 1 : progress.correctCount,
         studyTimeSeconds: progress.studyTimeSeconds + elapsedSeconds,
@@ -150,6 +153,9 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
       };
       
       final newProgress = progress.copyWith(
+        id: const Uuid().v4(),
+        isSynced: false,
+        date: DateTime.now(),
         lessonCompleted: true,
         studyTimeSeconds: progress.studyTimeSeconds + elapsedSeconds,
         metadata: updatedMetadata,
@@ -242,17 +248,25 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   void _debouncedSave(UserProgress progress) {
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(seconds: 5), () {
-      _upsertProgress(progress);
+      unawaited(_persistQuietly(progress));
     });
   }
   
+  Future<void> _persistQuietly(UserProgress progress) async {
+    try {
+      await _upsertProgress(progress);
+    } catch (error) {
+      debugPrint('Local progress save failed: $error');
+    }
+  }
+
   @override
   void dispose() {
     _saveTimer?.cancel();
     _periodicSyncTimer?.cancel();
     // Save any pending changes before disposing
     if (state is ProgressLoaded) {
-      _upsertProgress((state as ProgressLoaded).progress);
+      unawaited(_persistQuietly((state as ProgressLoaded).progress));
     }
     super.dispose();
   }
