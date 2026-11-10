@@ -33,6 +33,11 @@ class ActiveLessonStudyCapture extends ConsumerStatefulWidget {
 class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapture>
     with WidgetsBindingObserver {
   final ActiveStudyTracker _tracker = ActiveStudyTracker();
+  // Stopwatch is monotonic: NTP/device wall-clock adjustments cannot
+  // manufacture elapsed study time between observations.
+  final Stopwatch _monotonicClock = Stopwatch()..start();
+  final DateTime _clockAnchor = DateTime.now().toUtc();
+  DateTime get _now => _clockAnchor.add(_monotonicClock.elapsed);
   final HiveService _hive = HiveService();
   final SupabaseClient _supabase = Supabase.instance.client;
   Future<void> _saveQueue = Future<void>.value();
@@ -49,7 +54,7 @@ class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapt
     _learnerId = _supabase.auth.currentUser?.id ?? 'local-user';
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _appVisible = lifecycle == null || lifecycle == AppLifecycleState.resumed;
-    if (_appVisible) _tracker.resume(DateTime.now());
+    if (_appVisible) _tracker.resume(_now);
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_handleKey);
     _ticker = Timer.periodic(const Duration(seconds: 10), (_) => _onTick());
@@ -92,7 +97,7 @@ class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapt
       _stop(widget.lessonId);
     } else if (!_tracker.isForeground) {
       // Visibility alone earns nothing until a fresh input event arrives.
-      _tracker.resume(DateTime.now());
+      _tracker.resume(_now);
     }
   }
 
@@ -100,7 +105,7 @@ class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapt
     if (!mounted) return;
     _reconcile();
     if (_tracker.isForeground) {
-      _enqueue(_tracker.tick(DateTime.now()), widget.lessonId, _learnerId);
+      _enqueue(_tracker.tick(_now), widget.lessonId, _learnerId);
     }
   }
 
@@ -108,14 +113,14 @@ class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapt
     if (!mounted) return;
     _reconcile();
     if (_tracker.isForeground) {
-      _enqueue(_tracker.interaction(DateTime.now()),
+      _enqueue(_tracker.interaction(_now),
           widget.lessonId, _learnerId);
     }
   }
 
   void _stop(String lessonId) {
     if (!_tracker.isForeground) return;
-    _enqueue(_tracker.pause(DateTime.now()), lessonId, _learnerId);
+    _enqueue(_tracker.pause(_now), lessonId, _learnerId);
   }
 
   @override
