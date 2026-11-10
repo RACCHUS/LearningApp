@@ -2,8 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
 void main() {
-  test('server snapshot is dormant before reviewed database deployment', () {
+  test('server snapshot is dormant before reviewed database deployment',
+      () async {
     expect(SiteFeatureRuntime.snapshotEnabled, isFalse);
+    final snapshot = await SiteFeatureService().loadPublicSnapshot();
+    expect(snapshot, isEmpty);
   });
 
   test('untrusted or missing metadata cannot enable a feature', () {

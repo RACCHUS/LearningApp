@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
@@ -55,8 +56,10 @@ class _FakeFeatureService extends SiteFeatureService {
 void main() {
   testWidgets('Non-admin cannot view feature controls', (tester) async {
     final fake = _FakeFeatureService()..allowed = false;
-    await tester.pumpWidget(MaterialApp(
-      home: FeatureControlCenterScreen(service: fake),
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        home: FeatureControlCenterScreen(service: fake),
+      ),
     ));
     await tester.pumpAndSettle();
     expect(find.text('Administrator access required.'), findsOneWidget);
@@ -72,8 +75,10 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final fake = _FakeFeatureService();
-    await tester.pumpWidget(MaterialApp(
-      home: FeatureControlCenterScreen(service: fake),
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        home: FeatureControlCenterScreen(service: fake),
+      ),
     ));
     await tester.pumpAndSettle();
     expect(find.text('Fast learning approach'), findsOneWidget);

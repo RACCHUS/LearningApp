@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
 /// Owner-facing release controls. All mutations are verified by database RPCs.
 /// This route is deferred and never added to learner navigation.
-class FeatureControlCenterScreen extends StatefulWidget {
+class FeatureControlCenterScreen extends ConsumerStatefulWidget {
   final SiteFeatureService? service;
   const FeatureControlCenterScreen({super.key, this.service});
 
   @override
-  State<FeatureControlCenterScreen> createState() =>
+  ConsumerState<FeatureControlCenterScreen> createState() =>
       _FeatureControlCenterScreenState();
 }
 
 class _FeatureControlCenterScreenState
-    extends State<FeatureControlCenterScreen> {
+    extends ConsumerState<FeatureControlCenterScreen> {
   late final SiteFeatureService _service;
   List<AdminSiteFeature> _features = const [];
   bool _loading = true;
@@ -118,6 +120,8 @@ class _FeatureControlCenterScreenState
         reason: recordedReason,
       );
       if (!mounted) return;
+      // Apply the operator change to this browser immediately.
+      ref.invalidate(siteFeatureSnapshotProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Feature change recorded.')),
       );

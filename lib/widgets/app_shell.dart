@@ -1,21 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/site_feature_provider.dart';
+import 'package:learning_pwa/services/governance/site_feature_service.dart';
 import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// The three persistent destinations remain Learn, Library, and Progress.
 /// The desktop/tablet rail can collapse to icons; expanded search navigates
 /// directly into Library search rather than adding another destination.
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   final Widget child;
 
   const AppShell({super.key, required this.child});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
+  DateTime? _lastFeatureRefreshAt;
+
+  @override
+  void initState() {
+    super.initState();
+    if (SiteFeatureRuntime.snapshotEnabled) {
+      WidgetsBinding.instance.addObserver(this);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!SiteFeatureRuntime.snapshotEnabled ||
+        state != AppLifecycleState.resumed ||
+        !mounted) {
+      return;
+    }
+    // No periodic polling: refresh only when a learner returns to the app,
+    // at most once per two minutes. Backend gates remain authoritative even
+    // if a tab has a stale read-only visibility snapshot.
+    final now = DateTime.now();
+    if (_lastFeatureRefreshAt != null &&
+        now.difference(_lastFeatureRefreshAt!) < const Duration(minutes: 2)) {
+      return;
+    }
+    _lastFeatureRefreshAt = now;
+    ref.invalidate(siteFeatureSnapshotProvider);
+  }
   static const _routes = ['/learn', '/library', '/progress'];
 
   List<_Destination> _destinations(BuildContext context) {
@@ -33,6 +65,9 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    if (SiteFeatureRuntime.snapshotEnabled) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
