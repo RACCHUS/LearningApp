@@ -194,24 +194,7 @@ CREATE TABLE analytics.product_release_gate (
   changed_at timestamptz NOT NULL DEFAULT now(),
   CHECK (NOT collection_enabled OR
     (approved_policy_version IS NOT NULL AND
-     approved_policy_version ~ '^[a-zA-Z0-9_.:-]{1,80}
--- Does not create a scheduler or authorize collection.
-CREATE FUNCTION analytics.product_retention_health()
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = ''
-AS $$
-  SELECT jsonb_build_object(
-    'as_of',now(),
-    'raw_events',count(*),
-    'expired_events',count(*) FILTER
-      (WHERE received_at < now()-interval '90 days'),
-    'oldest_received_at',min(received_at)
-  ) FROM analytics.product_events;
-$$;
-REVOKE ALL ON FUNCTION analytics.product_retention_health()
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION analytics.product_retention_health()
-  TO service_role;
-
+     approved_policy_version ~ '^[a-zA-Z0-9_.:-]{1,80}$'
      AND policy_approved_at IS NOT NULL
      AND reviewed_by IS NOT NULL AND length(reviewed_by) >= 3))
 );
@@ -227,7 +210,7 @@ ALTER TABLE analytics.product_consents
 
 CREATE FUNCTION analytics.check_product_consent_release()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
-AS $
+AS $$
 DECLARE
   v_approved text;
 BEGIN
@@ -256,7 +239,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION analytics.check_product_consent_release()
   FROM PUBLIC,anon,authenticated;
 CREATE TRIGGER trg_check_product_consent_release
@@ -265,7 +248,7 @@ CREATE TRIGGER trg_check_product_consent_release
 
 CREATE FUNCTION analytics.check_product_event_release()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
-AS $
+AS $$
 DECLARE
   v_approved text;
 BEGIN
@@ -287,7 +270,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION analytics.check_product_event_release()
   FROM PUBLIC,anon,authenticated;
 CREATE TRIGGER trg_check_product_event_release
@@ -298,7 +281,7 @@ CREATE TRIGGER trg_check_product_event_release
 -- be gathered again under the newly approved notice before any new event.
 CREATE FUNCTION analytics.invalidate_old_product_policy()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
-AS $
+AS $$
 BEGIN
   IF NEW.approved_policy_version IS DISTINCT FROM
       OLD.approved_policy_version THEN
@@ -311,7 +294,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION analytics.invalidate_old_product_policy()
   FROM PUBLIC,anon,authenticated;
 CREATE TRIGGER trg_invalidate_old_product_policy
