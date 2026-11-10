@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/phonics_item.dart';
 import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
@@ -65,7 +66,9 @@ class _FoundationalLiteracyScreenState
       _activeSection = widget.initialSection!;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _announceCurrentActivity();
+      if (mounted && ref.read(preReaderProvider).autoSpeakScreens) {
+        _announceCurrentActivity();
+      }
     });
   }
 
@@ -126,7 +129,9 @@ class _FoundationalLiteracyScreenState
     setState(() {
       _activeSection = section;
     });
-    _announceCurrentActivity();
+    if (ref.read(preReaderProvider).autoSpeakScreens) {
+      _announceCurrentActivity();
+    }
   }
 
   @override
@@ -156,6 +161,12 @@ class _FoundationalLiteracyScreenState
           ],
         ),
         actions: [
+          IconButton(
+            key: const Key('literacy-home'),
+            tooltip: 'Return to Learn home',
+            icon: const Icon(Icons.home_rounded, size: 28),
+            onPressed: () => context.go('/learn'),
+          ),
           IconButton(
             key: const Key('literacy-caseworker-btn'),
             tooltip: 'Caseworker & Tutor Setup',
@@ -191,60 +202,51 @@ class _FoundationalLiteracyScreenState
             padding: const EdgeInsets.all(DesignTokens.space4),
             children: [
               // Top Category Navigation Bar
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space1),
-                child: Row(
-                  children: [
+              Wrap(
+                spacing: DesignTokens.space2,
+                runSpacing: DesignTokens.space2,
+                children: [
                     _buildHubNavChip(
                       label: '🔤 Letters (A-Z)',
                       section: LiteracyHubSection.letters,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '🧩 Word Blending',
                       section: LiteracyHubSection.blending,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '🛑 Survival Signs',
                       section: LiteracyHubSection.survival,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '📝 My Name & Info',
                       section: LiteracyHubSection.personalId,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '📖 Stories',
                       section: LiteracyHubSection.stories,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '🎯 Placement Check',
                       section: LiteracyHubSection.diagnostic,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '🌟 Life Topics',
                       section: LiteracyHubSection.topics,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildHubNavChip(
                       label: '🚀 Field Pilot & Gain',
                       section: LiteracyHubSection.pilot,
                       colorScheme: colorScheme,
                     ),
-                  ],
-                ),
+                ],
               ),
               const SizedBox(height: DesignTokens.space4),
 
@@ -322,11 +324,16 @@ class _FoundationalLiteracyScreenState
                     onCompleted: () {
                       if (_activeItemIndex <
                           foundationalPhonicsCatalog.length - 1) {
+                        final completedIndex = _activeItemIndex;
                         Future.delayed(const Duration(seconds: 2), () {
-                          if (mounted) {
-                            setState(() {
-                              _activeItemIndex++;
-                            });
+                          // Never jump the learner to a different letter after
+                          // they have switched activity or made another choice.
+                          if (!mounted ||
+                              _activeSection != LiteracyHubSection.letters ||
+                              _activeLetterSubTab != 0 ||
+                              _activeItemIndex != completedIndex) return;
+                          setState(() => _activeItemIndex++);
+                          if (ref.read(preReaderProvider).autoSpeakScreens) {
                             _announceCurrentActivity();
                           }
                         });
