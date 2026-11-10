@@ -40,6 +40,7 @@ import 'package:learning_pwa/screens/library/library_screen.dart';
 import 'package:learning_pwa/screens/courses/course_outline_screen.dart';
 import 'package:learning_pwa/screens/targets/target_detail_screen.dart';
 import 'package:learning_pwa/screens/targets/target_outline_screen.dart';
+import 'package:learning_pwa/screens/targets/target_simulation_screen.dart';
 import 'package:learning_pwa/screens/concepts/concept_detail_screen.dart';
 import 'package:learning_pwa/screens/learn/start_learning_screen.dart';
 import 'package:learning_pwa/screens/review_screen.dart';
@@ -155,6 +156,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/target/:targetId/diagnostic/:targetVersionId',
         name: 'target-diagnostic',
         builder: (context, state) => DiagnosticAssessmentScreen(
+          targetId: state.pathParameters['targetId']!,
+          targetVersionId: state.pathParameters['targetVersionId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/target/:targetId/simulation/:targetVersionId',
+        name: 'target-simulation',
+        builder: (context, state) => TargetSimulationScreen(
           targetId: state.pathParameters['targetId']!,
           targetVersionId: state.pathParameters['targetVersionId']!,
         ),

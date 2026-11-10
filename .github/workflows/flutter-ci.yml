@@ -226,7 +226,8 @@ jobs:
       - name: Validate CLEP content production pipeline and psychometric integrity
         run: |
           python3 -m pip install 'PyYAML>=6.0'
-          python3 tool/clep_content_pipeline.py --require-simulation
+          python3 tool/clep_content_pipeline.py --manifest content/clep_introductory_psychology.yaml --require-simulation
+          python3 tool/clep_content_pipeline.py --manifest content/clep_college_algebra.yaml --require-simulation
           python3 -m unittest discover -s tool/tests -p 'test_clep_content_pipeline.py' -v
 
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials

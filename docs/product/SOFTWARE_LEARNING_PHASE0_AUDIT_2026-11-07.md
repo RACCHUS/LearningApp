@@ -109,7 +109,7 @@ The following **prototype** components are now committed:
 
 ## 2026-11-07 continuation — authenticated attempt issuance (repository only)
 
-The feature branch has been synchronized with main including the merged simulation PR #187. The new migration `20261108150000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
+The feature branch has been synchronized with main including the merged simulation PR #187. The new migration `20261110190000_software_learning_excel_attempt_issuance.sql` provides a deliberately limited, non-deployed backend foundation:
 
 - `public.software_learning_attempts` — RLS owner-only SELECT, immutable-to-clients synthetic attempt metadata with short expiry; clients cannot create, alter, or delete rows directly.
 - `software_learning_private.excel_attempt_inputs` — restricted synthetic per-attempt inputs, inaccessible through public RLS/role grants.
@@ -126,7 +126,7 @@ Next secure milestones: design the private bucket and immutable owner/attempt up
 
 **Repository-only implementation (never deployed):**
 
-- Migration `20261108160000_software_learning_excel_private_upload_gate.sql` adds a dedicated **private** Storage bucket with a 10 MiB and XLSX MIME admission limit, while `software_learning_attempts.upload_enabled` defaults **false**. Existing attempts remain upload-disabled.
+- Migration `20261110200000_software_learning_excel_private_upload_gate.sql` adds a dedicated **private** Storage bucket with a 10 MiB and XLSX MIME admission limit, while `software_learning_attempts.upload_enabled` defaults **false**. Existing attempts remain upload-disabled.
 - The authenticated Storage `INSERT` RLS check accepts only `<owner_uuid>/<attempt_uuid>/workbook.xlsx` for a server-enabled attempt whose JWT user and **live original Auth session** match. A restrictive policy prevents broad existing INSERT rules from overriding this boundary.
 - Restrictive RLS denies anonymous and authenticated user `SELECT`, `UPDATE`, and `DELETE` in this bucket; future trusted service processing uses the Storage API with narrowly scoped credentials.
 - A database trigger refuses deletion of attempt metadata while its workbook is still present in Storage, preventing silent SQL-only deletion of bytes' references.
@@ -140,7 +140,7 @@ Next secure milestones: design the private bucket and immutable owner/attempt up
 
 ## 2026-11-07 continuation — one-time trusted-host processing boundary (source only)
 
-**New migration and backend code:** `20261108170000_software_learning_excel_processing_lease.sql` adds an atomic private service-role processing claim, a unique processing lease, upload closure, checksum-pinned provisional receipt, and final failure transition. It does **not** add a verified evidence writer or permit learners to upload by default. The consolidated self-host bundle now contains **96 migrations**.
+**New migration and backend code:** `20261110210000_software_learning_excel_processing_lease.sql` adds an atomic private service-role processing claim, a unique processing lease, upload closure, checksum-pinned provisional receipt, and final failure transition. It does **not** add a verified evidence writer or permit learners to upload by default. The consolidated self-host bundle now contains **106 migrations**.
 
 The supporting Python code and tests define a full *trust contract* between a server-authenticated request, the live session/owner-bound database claim, the exact private Storage path, a digest-pinned no-network Docker parser, and server-only deterministic feedback. `DbApiAttemptRepository` uses parameterized SQL and rolls back a malformed lease response; `DockerXlsxWorker` uses a fixed subprocess argument vector with memory/CPU/PID/time limits. Attempt replay, cross-account access, forged trust, worker timeout and changing Storage revision all fail closed in the unit contract.
 

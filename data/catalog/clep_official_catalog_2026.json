@@ -211,8 +211,43 @@
         "recommending_body": "ACE"
       },
       "special_requirements": "Embedded scientific calculator available throughout exam",
-      "status": "planned",
-      "last_verified_on": "2026-11-07"
+      "status": "sourced",
+      "pilot_priority": 2,
+      "domains": [
+        {
+          "code": "1.0",
+          "title": "Algebraic operations",
+          "official_percentage_range": "25%",
+          "weight_min": 0.24,
+          "weight_max": 0.26,
+          "weight_nominal": 0.25
+        },
+        {
+          "code": "2.0",
+          "title": "Equations and inequalities",
+          "official_percentage_range": "25%",
+          "weight_min": 0.24,
+          "weight_max": 0.26,
+          "weight_nominal": 0.25
+        },
+        {
+          "code": "3.0",
+          "title": "Functions and their properties",
+          "official_percentage_range": "30%",
+          "weight_min": 0.29,
+          "weight_max": 0.31,
+          "weight_nominal": 0.30
+        },
+        {
+          "code": "4.0",
+          "title": "Number systems and operations",
+          "official_percentage_range": "20%",
+          "weight_min": 0.19,
+          "weight_max": 0.21,
+          "weight_nominal": 0.20
+        }
+      ],
+      "last_verified_on": "2026-11-08"
     },
     {
       "source_namespace": "college_board",
