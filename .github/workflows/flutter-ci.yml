@@ -46,6 +46,9 @@ jobs:
           flutter pub get
           (cd packages/learning_core && dart pub get)
 
+      - name: Validate feature registry contract (no external service)
+        run: python3 tool/verify_feature_registry.py
+
       - name: Analyze
         run: flutter analyze
 
