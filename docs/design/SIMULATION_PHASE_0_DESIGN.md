@@ -1,9 +1,10 @@
 # Simulation framework: Phase 0 design note
 
-- **Status:** The gated preview and initial accessibility fixes were merged
-  in PRs #187 and #189. Further accessibility changes are under review;
-  simulation preview remains disabled by default and in release builds.
-  Human accessibility review and the other enablement gates remain open.
+- **Status:** The gated preview and accessibility improvements were merged
+  in PRs #187, #189, and #199. The owner subsequently authorized an **experimental,
+  explicitly opted-in release preview**. The default build remains disabled;
+  this is not a WCAG 2.2 AA approval or a general-availability release.
+  Human accessibility review and lesson publication gates remain open.
 - **Initial repository baseline:** `34b97d8` on `main`, November 7, 2026.
   Discovery began at `7472eec`; subsequent updates added catalog content and
   did not change the simulation or evidence paths reviewed here.
@@ -11,8 +12,9 @@
 
 The original design and evidence-boundary analysis below use the initial
 baseline; later implementation and verification results are recorded near the
-end of this note. This note does not approve production enablement or
-deployment.
+end of this note. Owner-authorized experimental release builds require a
+separate explicit build flag and deployment; this note does not approve general
+availability, certify accessibility, or authorize publishing unfinished lessons.
 
 ## Conclusions for the seven stop-condition areas
 
@@ -90,11 +92,13 @@ that work; do not create a second simulation-specific mastery system.
 Simulation launch requires a registered ID/version and an explicitly enabled
 `ENABLE_SIMULATION_PREVIEW` flag. That flag is off by default. Every launch
 boundary — the lesson block's launch button, the simulation screen, and
-`SimulationSession` — calls `isSimulationPreviewAllowed`, which returns false
-when `kReleaseMode` is true, regardless of any explicit `previewEnabled` or
-`enabled` constructor override. Debug-mode tests may pass those overrides. The
-flag is not an approval to expose the preview route: the owner, accessibility,
-fallback, and privacy gates below still apply.
+`SimulationSession` — calls `isSimulationPreviewAllowed`. In release builds,
+it rejects all launches unless the build was compiled with
+`--dart-define=ENABLE_SIMULATION_PREVIEW=true`; callers cannot bypass a
+disabled release through a `previewEnabled` or `enabled` override. In
+debug/profile, test-only overrides remain possible. The owner authorized
+experimenting with the preview before the human accessibility audit finishes;
+**the unfinished audits and lesson publication gates are not waived**.
 
 The `atm-withdrawal` activity opens `CurrencyAtmWidget` with
 `initialSection: CurrencyActivitySection.atmSimulator`; other callers keep the
@@ -293,10 +297,13 @@ cannot establish causal effectiveness.
   the Docker engine was unavailable. PR #187's database CI subsequently
   passed. Its `verify-database` job runs `supabase test db` against both
   incremental and clean local databases.
-- Feature-enablement gates (not merge gates for preview-disabled code): a
-  release browser must refuse both block and direct-route launches even with
-  `ENABLE_SIMULATION_PREVIEW=true`, and WCAG 2.2 AA review plus the equivalent
-  learning alternative must be verified.
+- Feature-enablement history: before the experimental release opt-in, a
+  release browser refused both block and direct-route launches even with the
+  flag true. After the owner-authorized change, release builds must refuse
+  launches when the flag is absent/false, and allow only registered T0 preview
+  activities when the flag is explicitly true. WCAG 2.2 AA human review and
+  equivalent lesson alternatives remain required before general availability
+  and any curriculum publication.
 
 ### Feature-enablement gate results (post-merge of PR #187)
 
@@ -396,14 +403,16 @@ cannot establish causal effectiveness.
     `MaterialApp` with the same Flutter SDK and headless Chrome; its root
     cause has not been established, and the hot-restart check is not clean.
 
-  **Human review required before enabling:** Run an isolated `--profile`
+  **Human review required before general availability (experimental opt-in may
+  proceed at the owner's direction):** Run an isolated `--profile`
   preview with `ENABLE_SIMULATION_PREVIEW=true`, for example
   `flutter run -d chrome --profile --dart-define=ENABLE_SIMULATION_PREVIEW=true`,
   using local test configuration, and open
   `/#/simulation/networking-basics/1.0.0` and
   `/#/simulation/atm-withdrawal/1.0.0`. For the in-lesson launch, use the
   draft lesson in an isolated local stack; do not publish it. Separately
-  verify the release build remains unavailable even with the flag set.
+  verify that release builds are unavailable without the flag and that an
+  explicitly opted-in release build enables only the registered T0 activities.
 
   An accessibility reviewer must use the actual in-lesson launch as well as
   direct links, disabled/unknown routes and deferred-load failure. On Windows,
@@ -454,6 +463,42 @@ cannot establish causal effectiveness.
     production curriculum ingestion until the manual accessibility gate is
     complete and the lesson is separately approved for publication.
   - There is currently no drafted lesson using `atm-withdrawal`, so its
-    in-lesson path and equivalent alternative remain unverified. Each further
-    lesson that adds a simulation must show the same equivalence before that
-    simulation is enabled.
+    in-lesson path and equivalent alternative remain unverified. Each published
+    lesson that adds a simulation must show equivalent learning before its
+    in-lesson launch is exposed to learners.
+
+## Owner-authorized experimental release preview (November 2026)
+
+The owner authorized enabling the *experimental* T0 networking and ATM routes
+while manual WCAG 2.2 A/AA review remains incomplete. This is a review preview,
+not an accessible certified learning feature, mastery assessment, or released
+curriculum. No scoring, credential, simulated PIN, attempt identity, analytics,
+outbox, or persistence is added by this flag. The networking lesson is still in
+`content/drafts/`; the ATM equivalent lesson remains uncreated. **Do not
+publish or ingest either draft as part of this preview enablement.**
+
+The switch is **compile-time**, not a Firebase Console or in-app runtime switch.
+A rollback, a rebuilt client, or a new hosting release is required to turn it
+off for everyone. The normal release build intentionally keeps the preview off.
+
+```bash
+# Enabled preview build, for explicit owner-approved experimental deployment:
+flutter build web --release --dart-define=ENABLE_SIMULATION_PREVIEW=true
+
+# Disable preview for the next build (default if the define is omitted):
+flutter build web --release --dart-define=ENABLE_SIMULATION_PREVIEW=false
+
+# Only after verifying environment credentials and the intended Firebase project:
+firebase deploy --only hosting
+```
+
+To check an opted-in web build, navigate directly to
+`/#/simulation/networking-basics/1.0.0` or
+`/#/simulation/atm-withdrawal/1.0.0`. An opt-out build must show the unavailable
+fallback for both. Rebuild and redeploy using `false` (or roll back the Hosting
+release) to disable it. Only a deployed new web bundle affects live users.
+
+Before general release: complete human NVDA/JAWS, VoiceOver and TalkBack runs,
+investigate the intermittent off-screen ATM focus observation, verify the
+non-simulation equivalents for each published activity, and document
+owner-approved production rollout and user-facing experimental labeling.
