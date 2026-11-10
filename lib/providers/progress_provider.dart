@@ -6,6 +6,7 @@ import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 final userProgressProvider =
     StateNotifierProvider<ProgressNotifier, ProgressState>((ref) {
@@ -15,15 +16,16 @@ final userProgressProvider =
 
 final progressHistoryProvider = FutureProvider<List<UserProgress>>((ref) async {
   final supabase = Supabase.instance.client;
-  final userId = supabase.auth.currentUser!.id;
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return const <UserProgress>[];
   final response = await supabase
-      .from('user_progress')
-      .select()
+      .from('learner_activity_progress')
+      .select('content_kind,content_id,version_key,reporting_date_utc,completed,active_seconds')
       .eq('user_id', userId)
-      .order('date', ascending: false)
-      .limit(30); // Fetch last 30 days
-
-  return (response as List).map((e) => UserProgress.fromJson(e)).toList();
+      .order('reporting_date_utc', ascending: false)
+      .limit(30);
+  return response.map((data) =>
+      userProgressFromProjection(data, userId: userId)).toList();
 });
 
 class ProgressNotifier extends StateNotifier<ProgressState> {
@@ -34,15 +36,23 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
   
   ProgressNotifier(this._hiveService) : super(ProgressInitial()) {
     _syncService = ProgressSyncService(_hiveService);
-    _init();
+    unawaited(_init());
   }
-  
+
   Future<void> _init() async {
-    // Initial sync if online
-    await _syncService.syncProgress();
-    
-    // Schedule periodic sync
-    _periodicSyncTimer = Timer.periodic(const Duration(minutes: 5), (_) => _syncService.syncProgress());
+    await _syncQuietly();
+    _periodicSyncTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => unawaited(_syncQuietly()),
+    );
+  }
+
+  Future<void> _syncQuietly() async {
+    try {
+      await _syncService.syncProgress();
+    } catch (error) {
+      debugPrint('Learner progress still queued for retry: $error');
+    }
   }
 
   Future<void> startLesson({
@@ -51,22 +61,29 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
     required StudyMode studyMode,
     String? contentId,
   }) async {
-    final date = DateTime.now().toIso8601String().split('T')[0];
+    final kind = isLegacyProgressLessonId(lessonId)
+        ? 'legacy_lesson'
+        : 'bundled_asset_lesson';
     final response = await _supabase
-        .from('user_progress')
-        .select()
+        .from('learner_activity_progress')
+        .select('content_kind,content_id,version_key,reporting_date_utc,completed,active_seconds')
         .eq('user_id', userId)
-        .eq('lesson_id', lessonId)
-        .eq('study_mode', studyMode.toString().split('.').last)
-        .eq('date', date)
+        .eq('content_kind', kind)
+        .eq('content_id', lessonId)
+        .order('reporting_date_utc', ascending: false)
+        .limit(1)
         .maybeSingle();
 
     if (response != null) {
-      state = ProgressLoaded(UserProgress.fromJson(response));
+      state = ProgressLoaded(userProgressFromProjection(
+        response,
+        userId: userId,
+        studyMode: studyMode,
+      ));
     } else {
       state = ProgressLoaded(
         UserProgress(
-          id: '',
+          id: const Uuid().v4(),
           userId: userId,
           lessonId: lessonId,
           contentId: contentId,
@@ -78,6 +95,9 @@ class ProgressNotifier extends StateNotifier<ProgressState> {
           studyTimeSeconds: 0,
           metadata: {
             'started_at': DateTime.now().toIso8601String(),
+            'content_kind': kind,
+            'version_key': 'unversioned',
+            'active_time_measured': false,
           },
         ),
       );
