@@ -155,3 +155,34 @@ bool isLegacyProgressLessonId(String lessonId) {
   }
   return true;
 }
+
+/// Adapt a server-authoritative daily projection without using local JSON.
+UserProgress userProgressFromProjection(
+  Map<String, dynamic> row, {
+  required String userId,
+  StudyMode studyMode = StudyMode.lesson,
+}) {
+  final lessonId = row['content_id'] as String;
+  final kind = row['content_kind'] as String;
+  final version = row['version_key'] as String;
+  final day = row['reporting_date_utc'] as String;
+  final seconds = row['active_seconds'] as int?;
+  return UserProgress(
+    id: 'remote_${userId}_${kind}_${lessonId}_${version}_${day}',
+    userId: userId,
+    lessonId: lessonId,
+    studyMode: studyMode,
+    date: DateTime.parse('${day}T00:00:00Z'),
+    questionsAnswered: 0,
+    correctCount: 0,
+    lessonCompleted: row['completed'] == true,
+    studyTimeSeconds: seconds ?? 0,
+    isSynced: true,
+    metadata: {
+      'content_kind': kind,
+      'version_key': version,
+      'active_time_measured': seconds != null,
+      'remote_projection': true,
+    },
+  );
+}
