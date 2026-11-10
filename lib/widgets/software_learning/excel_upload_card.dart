@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/software_learning_attempt.dart';
+import 'package:learning_pwa/services/software_learning/demo_workbook_reader.dart';
 import 'package:uuid/uuid.dart';
 
 /// Evaluator that synthesizes and inspects genuine OOXML (.xlsx) archives
@@ -17,14 +18,14 @@ class SoftwareLearningWorkbookEvaluator {
 
   /// Default synthetic transactions for monthly budget: (row -> amount)
   static const Map<int, double> defaultTransactions = {
-    2: 1250.0,
-    3: 350.0,
-    4: 120.0,
-    5: 85.0,
-    6: 160.0,
-    7: 90.0,
-    8: 200.0,
-    9: 145.0,
+    2: 20.0,
+    3: 30.0,
+    4: 40.0,
+    5: 50.0,
+    6: 60.0,
+    7: 70.0,
+    8: 80.0,
+    9: 90.0,
   };
 
   static double get defaultSum =>
@@ -44,8 +45,16 @@ class SoftwareLearningWorkbookEvaluator {
     bool corruptZip = false,
   }) {
     if (corruptZip) {
-      return Uint8List.fromList(
-          [0x50, 0x4B, 0x03, 0x04, 0xFF, 0xFF, 0x00, 0x00]);
+      return Uint8List.fromList([
+        0x50,
+        0x4B,
+        0x03,
+        0x04,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+      ]);
     }
 
     final tx = transactions ?? defaultTransactions;
@@ -59,19 +68,22 @@ class SoftwareLearningWorkbookEvaluator {
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
 </Types>''';
 
-    const rootRelsXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    const rootRelsXml =
+        '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>''';
 
-    final workbookXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    final workbookXml =
+        '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
     <sheet name="$sheetName" sheetId="1" r:id="rId1"/>
   </sheets>
 </workbook>''';
 
-    const bookRelsXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    const bookRelsXml =
+        '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
 </Relationships>''';
@@ -86,12 +98,14 @@ class SoftwareLearningWorkbookEvaluator {
 
     if (formula != null && formula.isNotEmpty) {
       rowsBuffer.write(
-          '<row r="10"><c r="C10"><f>$formula</f><v>$total</v></c></row>');
+        '<row r="10"><c r="C10"><f>$formula</f><v>$total</v></c></row>',
+      );
     } else {
       rowsBuffer.write('<row r="10"><c r="C10"><v>$total</v></c></row>');
     }
 
-    final sheetXml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    final sheetXml =
+        '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <sheetData>
     $rowsBuffer
@@ -116,40 +130,35 @@ class SoftwareLearningWorkbookEvaluator {
 
   /// Parses the OOXML (.xlsx) archive and evaluates the 4 deterministic criteria:
   /// 1. Worksheet Name: Sheet is named "Budget" (case-insensitive)
-  /// 2. Transaction Inputs: Exactly 8 numeric values in C2:C9
+  /// 2. Transaction Inputs: Original fixed demo values in C2:C9
   /// 3. SUM Formula Construction: C10 contains =SUM(C2:C9) or equivalent addition
-  /// 4. Calculated Budget Total: C10 computed value matches sum of transactions
+  /// 4. Calculated Budget Total: C10 has a finite matching numeric cache
   static SoftwareLearningResult evaluateWorkbook({
     required String attemptId,
     required String exerciseId,
     required String fileName,
     required Uint8List bytes,
   }) {
-    Archive? archive;
-    bool isZip = false;
+    Map<String, ({String? formula, double? value})>? cells;
+    String? rejection;
     try {
-      if (bytes.length >= 4 &&
-          bytes[0] == 0x50 &&
-          bytes[1] == 0x4B &&
-          bytes[2] == 0x03 &&
-          bytes[3] == 0x04) {
-        archive = ZipDecoder().decodeBytes(bytes);
-        isZip = true;
-      }
-    } catch (_) {
-      archive = null;
-      isZip = false;
+      cells = DemoWorkbookReader.read(bytes, fileName);
+    } on FormatException catch (error) {
+      rejection = error.message;
+    } on RangeError {
+      rejection = 'Truncated ZIP data.';
+    } on StateError {
+      rejection = 'Missing or ambiguous worksheet structure.';
     }
 
-    if (!isZip || archive == null) {
+    if (cells == null) {
       return SoftwareLearningResult(
         attemptId: attemptId,
         exerciseId: exerciseId,
         overallPassed: false,
         evidenceTrust: 'unverified_checker_only',
         canAwardSkill: false,
-        feedback:
-            'Corrupt or unreadable Excel archive. File must be a valid .xlsx workbook.',
+        feedback: 'Corrupt or unreadable Excel archive. $rejection',
         criteria: const [
           SoftwareLearningCriterion(
             id: 'sheet_name',
@@ -184,83 +193,18 @@ class SoftwareLearningWorkbookEvaluator {
       );
     }
 
-    // Locate sheet name from xl/workbook.xml
-    String? foundSheetName;
-    final workbookFile = archive.findFile('xl/workbook.xml');
-    if (workbookFile != null) {
-      final xml =
-          utf8.decode(workbookFile.content as List<int>, allowMalformed: true);
-      final sheetMatch =
-          RegExp(r'<sheet[^>]*name="([^"]+)"', caseSensitive: false)
-              .firstMatch(xml);
-      if (sheetMatch != null) {
-        foundSheetName = sheetMatch.group(1);
-      }
-    }
-
-    // Locate worksheet XML
-    ArchiveFile? sheetFile = archive.findFile('xl/worksheets/sheet1.xml');
-    if (sheetFile == null) {
-      for (final f in archive.files) {
-        if (f.name.startsWith('xl/worksheets/') && f.name.endsWith('.xml')) {
-          sheetFile = f;
-          break;
-        }
-      }
-    }
-
-    final sheetPassed = foundSheetName != null &&
-        foundSheetName.trim().toLowerCase() ==
-            expectedSheetName.toLowerCase();
-
-    final numericCells = <String, double>{};
-    String? c10Formula;
-    double? c10Value;
-
-    if (sheetFile != null) {
-      final sheetXml =
-          utf8.decode(sheetFile.content as List<int>, allowMalformed: true);
-
-      final cellMatches = RegExp(
-        r'<c\s+r="([A-Z0-9]+)"[^>]*>(.*?)</c>',
-        caseSensitive: false,
-        dotAll: true,
-      ).allMatches(sheetXml);
-
-      for (final cm in cellMatches) {
-        final ref = cm.group(1)!.toUpperCase();
-        final body = cm.group(2)!;
-        final fMatch =
-            RegExp(r'<f>([^<]+)</f>', caseSensitive: false).firstMatch(body);
-        final vMatch =
-            RegExp(r'<v>([^<]+)</v>', caseSensitive: false).firstMatch(body);
-
-        if (ref == 'C10') {
-          if (fMatch != null) {
-            c10Formula = fMatch.group(1)!.trim();
-          }
-          if (vMatch != null) {
-            c10Value = double.tryParse(vMatch.group(1)!.trim());
-          }
-        } else if (vMatch != null) {
-          final val = double.tryParse(vMatch.group(1)!.trim());
-          if (val != null) {
-            numericCells[ref] = val;
-          }
-        }
-      }
-    }
+    final c10Formula = cells['C10']?.formula;
+    final c10Value = cells['C10']?.value;
 
     // Check transaction inputs C2:C9
     int foundTransactions = 0;
-    double expectedSum = 0.0;
     for (int r = sourceStartRow; r <= sourceEndRow; r++) {
-      final ref = 'C$r';
-      if (numericCells.containsKey(ref)) {
+      final cell = cells['C$r'];
+      if (cell?.formula == null && cell?.value == defaultTransactions[r]) {
         foundTransactions++;
-        expectedSum += numericCells[ref]!;
       }
     }
+    final expectedSum = defaultSum;
     final dataPassed = foundTransactions == expectedTransactionCount;
 
     // Check formula syntax for C10
@@ -274,8 +218,10 @@ class SoftwareLearningWorkbookEvaluator {
       final isSumRange = RegExp(r'^SUM\(\$?C\$?2:\$?C\$?9\)$').hasMatch(norm);
       bool isDirectAddition = false;
       if (norm.contains('+')) {
-        final parts =
-            norm.split('+').map((s) => s.replaceAll(r'$', '')).toList();
+        final parts = norm
+            .split('+')
+            .map((s) => s.replaceAll(r'$', ''))
+            .toList();
         final expectedParts = List.generate(8, (i) => 'C${i + 2}');
         if (parts.length == 8 &&
             parts.toSet().length == 8 &&
@@ -291,12 +237,10 @@ class SoftwareLearningWorkbookEvaluator {
     if (dataPassed && formulaPassed) {
       if (c10Value != null) {
         totalPassed = (c10Value - expectedSum).abs() < 0.01;
-      } else {
-        totalPassed = true;
       }
     }
 
-    final allPassed = sheetPassed && dataPassed && formulaPassed && totalPassed;
+    final allPassed = dataPassed && formulaPassed && totalPassed;
 
     return SoftwareLearningResult(
       attemptId: attemptId,
@@ -312,10 +256,8 @@ class SoftwareLearningWorkbookEvaluator {
           id: 'sheet_name',
           title: 'Worksheet Name',
           description: 'Worksheet is named "Budget" (case-insensitive)',
-          passed: sheetPassed,
-          feedback: sheetPassed
-              ? 'Found sheet "$foundSheetName"'
-              : 'Missing or incorrectly named worksheet. Expected "Budget" (found "${foundSheetName ?? 'none'}").',
+          passed: true,
+          feedback: 'Resolved the Budget worksheet through its relationship.',
         ),
         SoftwareLearningCriterion(
           id: 'inputs_intact',
@@ -325,7 +267,7 @@ class SoftwareLearningWorkbookEvaluator {
           passed: dataPassed,
           feedback: dataPassed
               ? 'All 8 synthetic transactions verified in C2:C9'
-              : 'Found $foundTransactions of $expectedTransactionCount required numeric transactions in C2:C9.',
+              : 'Found $foundTransactions of $expectedTransactionCount unchanged numeric transactions in C2:C9.',
         ),
         SoftwareLearningCriterion(
           id: 'formula_syntax',
@@ -335,8 +277,8 @@ class SoftwareLearningWorkbookEvaluator {
           feedback: formulaPassed
               ? 'Formula verified: ${c10Formula != null ? (c10Formula.startsWith('=') ? c10Formula : "=$c10Formula") : "=SUM(C2:C9)"}'
               : (c10Formula != null
-                  ? 'Cell C10 contains "$c10Formula", which does not sum range C2:C9.'
-                  : 'Cell C10 does not contain a formula.'),
+                    ? 'Cell C10 contains "$c10Formula", which does not sum range C2:C9.'
+                    : 'Cell C10 does not contain a formula.'),
         ),
         SoftwareLearningCriterion(
           id: 'total_calculation',
@@ -345,7 +287,7 @@ class SoftwareLearningWorkbookEvaluator {
           passed: totalPassed,
           feedback: totalPassed
               ? 'Calculated total (${c10Value?.toStringAsFixed(2) ?? expectedSum.toStringAsFixed(2)}) matches transaction sum'
-              : 'Total does not match transaction sum.',
+              : 'Total is missing, nonnumeric, or does not match the original transaction sum. Recalculate and save the workbook.',
         ),
       ],
     );
@@ -368,13 +310,16 @@ class ExcelUploadCard extends StatefulWidget {
   final String exerciseId;
   final String? attemptId;
   final Duration initialDuration;
+  /// Reserved for a future trusted receipt path; never invoked by this preview.
   final VoidCallback? onComplete;
   final VoidCallback? onFileSelect;
+  /// Test/prototype injection, not proof of an approved live upload service.
   final Future<SoftwareLearningResult> Function(
     String fileName,
     Uint8List bytes,
     String attemptId,
-  )? onUpload;
+  )?
+  onUpload;
 
   const ExcelUploadCard({
     super.key,
@@ -549,16 +494,22 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
         return;
       }
 
+      if (evaluation.attemptId != submittedAttemptId ||
+          evaluation.exerciseId != widget.exerciseId ||
+          evaluation.evidenceTrust != 'unverified_checker_only' ||
+          evaluation.canAwardSkill) {
+        throw const FormatException(
+          'Unsupported assessment identity or trust.',
+        );
+      }
+
       setState(() {
         _result = evaluation;
         _status = SoftwareLearningStatus.completed;
       });
 
-      // Simulation completion is only emitted when backed by an authoritative
-      // evaluation handler, never by client-side demo placeholder evaluation.
-      if (!isDemoMode && evaluation.overallPassed && widget.onComplete != null) {
-        widget.onComplete!();
-      }
+      // Callback presence and client result fields cannot establish trust.
+      // Completion stays disabled until the shared server receipt gate exists.
     } catch (e) {
       if (!mounted ||
           _attemptId != submittedAttemptId ||
@@ -588,10 +539,7 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     _startTimer();
   }
 
-  void loadSyntheticPracticeFile({
-    bool malformed = false,
-    bool noSum = false,
-  }) {
+  void loadSyntheticPracticeFile({bool malformed = false, bool noSum = false}) {
     if (malformed) {
       final bytes = SoftwareLearningWorkbookEvaluator.createSampleWorkbookBytes(
         corruptZip: true,
@@ -603,7 +551,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
       );
       handleFileSelected('practice_no_sum.xlsx', bytes);
     } else {
-      final bytes = SoftwareLearningWorkbookEvaluator.createSampleWorkbookBytes();
+      final bytes =
+          SoftwareLearningWorkbookEvaluator.createSampleWorkbookBytes();
       handleFileSelected('practice_budget.xlsx', bytes);
     }
   }
@@ -732,8 +681,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
 
   Widget _buildTimerAndStatus(BuildContext context, bool isDark) {
     final isLowTime = _secondsRemaining < 300; // < 5 minutes
-    final timerColor =
-        isLowTime ? Colors.red.shade600 : const Color(0xFF2563EB);
+    final timerColor = isLowTime
+        ? Colors.red.shade600
+        : const Color(0xFF2563EB);
     final progress = _secondsRemaining / widget.initialDuration.inSeconds;
 
     return Container(
@@ -828,12 +778,13 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             child: Text(
               isDemoMode
                   ? 'Privacy & Verification Gate: Live file upload is disabled in this preview. This interface demonstrates the 4-part grading rubric using genuine OOXML fixtures. Real workbook evaluation and isolated container execution require the backend brokered upload service.'
-                  : 'Privacy & Verification Gate: Workbooks submitted for practice are stored in an encrypted private Storage bucket with restricted service access and an automated 24-hour retention purge policy. No public URLs, direct client access, or permanent mastery certificates are issued.',
+                  : 'Privacy & Verification Gate: Live uploads are not approved for release. Deletion within 24 hours after attempt expiry is a proposed target, not an active or verified purge service. Do not submit learner workbooks until hosting, deletion verification, and privacy approval are complete. No workbook content is sent to AI and no skill award is issued.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 height: 1.4,
-                color:
-                    isDark ? const Color(0xFFBAE6FD) : const Color(0xFF0369A1),
+                color: isDark
+                    ? const Color(0xFFBAE6FD)
+                    : const Color(0xFF0369A1),
               ),
             ),
           ),
@@ -884,8 +835,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
               isDemoMode
                   ? 'Simulating rubric evaluation...'
                   : (_status == SoftwareLearningStatus.uploading
-                      ? 'Brokering private upload...'
-                      : 'Analyzing workbook criteria...'),
+                        ? 'Brokering private upload...'
+                        : 'Analyzing workbook criteria...'),
               style: GoogleFonts.outfit(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -973,11 +924,11 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                 label: Text(
                   _selectedFileName == null
                       ? (isDemoMode
-                          ? 'Load Sample Scenario'
-                          : 'Select .xlsx file')
+                            ? 'Load Sample Scenario'
+                            : 'Select .xlsx file')
                       : (isDemoMode
-                          ? 'Change sample scenario'
-                          : 'Change selected file'),
+                            ? 'Change sample scenario'
+                            : 'Change selected file'),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -1053,8 +1004,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
     if (result == null) return const SizedBox.shrink();
 
     final passed = result.overallPassed;
-    final headerColor =
-        passed ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final headerColor = passed
+        ? const Color(0xFF10B981)
+        : const Color(0xFFF59E0B);
 
     return Container(
       key: const Key('excel-results-container'),
@@ -1073,8 +1025,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: headerColor.withValues(alpha: isDark ? 0.2 : 0.12),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
             ),
             child: Row(
               children: [
@@ -1091,8 +1044,8 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                       Text(
                         passed
                             ? (isDemoMode
-                                ? 'PRACTICE EXERCISE PASSED (DEMO)'
-                                : 'PRACTICE EXERCISE PASSED')
+                                  ? 'PRACTICE EXERCISE PASSED (DEMO)'
+                                  : 'PRACTICE EXERCISE PASSED')
                             : 'NEEDS REVISION',
                         style: GoogleFonts.outfit(
                           fontSize: 16,
@@ -1156,8 +1109,9 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
   }
 
   Widget _buildCriterionTile(SoftwareLearningCriterion c, bool isDark) {
-    final statusColor =
-        c.passed ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final statusColor = c.passed
+        ? const Color(0xFF10B981)
+        : const Color(0xFFEF4444);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1247,8 +1201,7 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
             runSpacing: 4,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
@@ -1263,8 +1216,7 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.grey.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -1280,8 +1232,10 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
               ),
               if (isDemoMode)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -1301,7 +1255,7 @@ class ExcelUploadCardState extends State<ExcelUploadCard> {
           Text(
             isDemoMode
                 ? 'Demo Notice: This result was generated from a sample test scenario. No workbook was uploaded to the server broker or graded by the isolated container.'
-                : 'Safety Notice: This practice result is strictly unverified. Workbooks are purged under the 24-hour retention policy. No permanent mastery evidence or certified skill record has been written.',
+                : 'Safety Notice: This practice result is strictly unverified. The proposed deletion target is within 24 hours after attempt expiry; scheduled deletion is not deployed or verified. No permanent mastery evidence or certified skill record has been written.',
             style: GoogleFonts.inter(
               fontSize: 11,
               fontStyle: FontStyle.italic,

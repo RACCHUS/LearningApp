@@ -6,6 +6,30 @@
 **Status:** Proposed design — **not approved for implementation until Phase 0 audit exits**  
 **Scope of this revision:** Document-level review only. The GitHub repository, live database, `record_events` corrective PR, and architecture lock have **not** been verified as part of this revision.
 
+### Implementation status and PR #188 merge boundary (2026-11-10)
+
+This v1.2 specification remains the full product target, **not a statement that
+the MVP is finished**. [PR #188](https://github.com/RACCHUS/LearningApp/pull/188)
+is a disabled foundation increment. Merging its reviewed source does not approve
+Phase 0 exit, publish the course, deploy migrations, enable uploads, or authorize
+skill awards. This narrows the earlier draft-only constraint for source merge
+review only; all launch gates below remain mandatory.
+
+The [implementation checklist](docs/superpowers/plans/2026-11-07-excel-software-learning.md)
+accounts for all eight tasks and distinguishes tested source from operational
+acceptance. The [release gates](docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md)
+are authoritative for hosting, retention, privacy and activation blockers.
+The [Phase 0 audit](docs/product/SOFTWARE_LEARNING_PHASE0_AUDIT_2026-11-07.md)
+records source findings, not production verification.
+
+| Phase | Current disposition |
+|---|---|
+| 0: audit and approval | Repository audit and default-off design implemented; owner, privacy, cost, hosting, deployed ledger and skill-mapping approvals remain open |
+| 1: usable Excel slice | Draft course, bounded isolated worker, provisional backend and opt-in sample rubric UI implemented in source; real picker, protected learner workflow, staging and deletion operations not released |
+| 2: trusted evidence | Shared provisional envelope tested; no trusted ledger projection, verified skill award or completed MVP |
+| 3: course expansion | Deferred until Phase 2 exit; no other software course promised |
+| 4+: integrations | Aspirational and out of scope |
+
 ## 1. Executive decision
 
 LearningApp will **teach people to use existing software**; it will **not recreate Word, Excel, PowerPoint, VS Code, QuickBooks, AutoCAD, or other applications**. Learners should practice in the real application wherever feasible. LearningApp supplies instruction, practice tasks, starter materials, feedback, and **trustworthy assessment of the work produced**.

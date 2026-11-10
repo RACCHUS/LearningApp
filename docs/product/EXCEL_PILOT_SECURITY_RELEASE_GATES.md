@@ -12,7 +12,27 @@
 - Bounded DB cleanup and dry-run-first expiry sweep; candidate cleanup after attempt expiry. Processing claims are reclaimed only after both attempt expiry and claim time are older than 30 minutes.
 - Shared, nonpersistent evidence-envelope adapter for file assessment and simulation preview. The current Flutter simulation does not emit it; it remains in-memory only.
 
-**Not implemented:** live hosted private gateway/worker broker, learner upload flow, signed-upload immunity tested against the live Storage provider, no-late-write object immutability guarantee, scheduled cleanup, completed account-erasure orchestration, trusted skill awards.
+**Not operationally verified or deployed:** hosted private gateway/worker broker, learner upload flow, signed-upload immunity tested against the live Storage provider, no-late-write object immutability guarantee, scheduled cleanup, end-to-end account erasure, trusted skill awards. Source-only broker, erasure and retention collaborators are described below; they do not establish these operational guarantees.
+
+## Source merge versus release approval
+
+[PR #188](https://github.com/RACCHUS/LearningApp/pull/188) may be reviewed for
+merge as a **disabled foundation**, subject to exact-head CI and code review.
+This is not approval of the [full plan](../../SOFTWARE_LEARNING_PLAN.md).
+The [task-by-task checklist](../superpowers/plans/2026-11-07-excel-software-learning.md)
+tracks every implementation and launch obligation. Keep ingress and upload
+eligibility off, course publication gated, and all results unverified after merge.
+Do not mark operational checkboxes complete based on unit tests.
+
+The Flutter preview resolves the Budget sheet through workbook relationships,
+requires unchanged fixed demo inputs and a finite matching cached total, and
+rejects malformed or ambiguously typed cells. Its limits are 20 ZIP entries,
+64 KiB per XML part, 256 KiB expanded total, 100:1 expansion ratio and a 16 KiB
+central directory; inflation is bounded while bytes are written, even if size
+metadata lies. Unsupported ZIP/XML features fail closed. These narrower preview
+limits are not a promise of general Excel compatibility. Real uploads must use
+the separate isolated worker and server-issued inputs, never this browser rubric.
+A callback or claimed trust field cannot trigger activity completion or awards.
 
 ## Proposed retention policy (approval required)
 
@@ -63,7 +83,10 @@ Before awarding competency, reconcile the shared event model with the existing l
 - [ ] Clean/incremental Supabase migrations, complete Flutter/Python checks, hostile-file tests, costs and governance reviewed.
 - [ ] Owner confirms protected rollout and deployment plan.
 
-**Until release gates pass:** leave upload eligibility off, PR #188 draft, and all file/simulation competency claims unverified.
+**Until release gates pass:** leave upload eligibility off and all file/simulation
+competency claims unverified. Draft status may be removed for the explicitly
+disabled foundation only after exact-head checks pass; production rollout still
+requires every applicable gate and owner approval above.
 
 ## Server-brokered upload continuation (source only; not deployed)
 

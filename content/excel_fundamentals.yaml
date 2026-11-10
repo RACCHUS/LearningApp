@@ -88,7 +88,7 @@ domains:
                   simulation_id: "excel-budget-total-v1"
                   simulation_version: "1.0.0"
                   title: "Interactive Practice: Budget Workbook"
-                  fallback_body: "Use the real Excel application to complete the Budget worksheet total, then upload your workbook using the practice upload card."
+                  fallback_body: "Use the real Excel application to complete the Budget worksheet total. The optional preview demonstrates sample rubric checks only; learner file uploads and verified skill awards remain disabled."
             terms:
               - term: "Workbook"
                 definition: "A file that contains one or more spreadsheet worksheets."
