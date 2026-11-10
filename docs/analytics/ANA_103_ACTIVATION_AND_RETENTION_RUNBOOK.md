@@ -49,6 +49,19 @@ Review its non-secret audit artifact and entire pending migration set. The hoste
 
 **Live deployment is a separate explicit owner decision.** When reviewed, use only the repository's guarded deployment command in a credentialed owner environment. No workflow in this PR can push live migrations.
 
+## Owner action 2B: manually approved guarded production deployment (after the dry-run)
+
+A new **Guarded Supabase production migration deploy (owner-approved)** workflow can complete the entire guarded deployment from GitHub Actions, so no separate desktop or locally configured Supabase CLI is needed. **Do not trigger it merely because its code was merged.**
+
+1. Review the latest successful **Analytics guarded Supabase preflight (dry-run only)** artifact, its exact `main` commit and **the complete list of pending migrations**, including CLEP, lesson progress and both ANA-102/103 changes. If the dry run is blocked or the review identifies issues, do not deploy.
+2. Create the protected repository **Environment `supabase-production-deployment`** and configure required human reviewers. Add secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` scoped to that environment. They must never be committed or pasted into chat.
+3. Open **Actions → Guarded Supabase production migration deploy (owner-approved)** on `main`. Enter the **exact reviewed 40-character `main` SHA** from the successful preflight, type project ref `xzvkdwebtbxlrxagtzlv`, and select the explicit **approve ALL pending migrations** checkbox. An environment reviewer must approve the job.
+4. The action rejects any commit SHA mismatch, validates the linked project, runs the same pinned tool `dart run tool/guarded_supabase_deploy.dart` with preflight, dry-run, serialization and postflight parity checks, and retains an audit artifact. It does **not** bypass history validation or apply a direct SQL patch. Review the audit result and hosted migration ledger after completion.
+
+The production deployment applies **ALL** previously unapplied migrations approved in the dry-run—not solely the analytics migration. If an historical migration needs an owner-approved exception not supported by this guarded action, it fails closed: stop and document that version explicitly rather than edit the workflow to bypass checks.
+
+This owner action can be completed in GitHub's UI after code merge. **The repository contributor has not created the environment, configured credentials, approved the migration set or triggered a live deployment.**
+
 ## Owner action 3: enable reviewed retention maintenance
 
 The repository has a disabled-by-default GitHub workflow **Product analytics retention (owner-gated)**. It invokes *only* the previously deployed `analytics.purge_expired_product_events()` routine and verifies no expired raw records remain.
