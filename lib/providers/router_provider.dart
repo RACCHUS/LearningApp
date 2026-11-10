@@ -5,6 +5,8 @@ import 'package:learning_pwa/screens/governance/cost_observability_screen.dart'
     deferred as cost_observability;
 import 'package:learning_pwa/screens/governance/product_analytics_overview_screen.dart'
     deferred as product_analytics_overview;
+import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart'
+    deferred as feature_control_center;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -481,6 +483,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: cost_observability.loadLibrary,
           builder: () => cost_observability.CostObservabilityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/features',
+        name: 'feature-control-center',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: feature_control_center.loadLibrary,
+          builder: () => feature_control_center.FeatureControlCenterScreen(),
         ),
       ),
       GoRoute(

@@ -9,6 +9,7 @@ import '../services/planning/overview_planner.dart';
 import 'learning_context_provider.dart';
 import 'next_action_provider.dart';
 import 'scope_resolver_provider.dart';
+import 'site_feature_provider.dart';
 
 /// Exception thrown when a compare-and-set preference mutation fails due to
 /// a stale `expectedRevision` (`TEL-01B`).
@@ -476,9 +477,14 @@ class LearningStrategyNotifier extends StateNotifier<LearningStrategyState> {
 }
 
 /// Feature flags provider for TEL Overview and Fast rollout (`§6`).
-final telFeatureFlagsProvider = StateProvider<TelFeatureFlags>(
-  (ref) => const TelFeatureFlags(),
-);
+final telFeatureFlagsProvider = Provider<TelFeatureFlags>((ref) {
+  final snapshot = ref.watch(siteFeatureSnapshotProvider).valueOrNull;
+  return TelFeatureFlags(
+    // Explicitly preserve current availability if the new RPC is not active.
+    fastEnabled: snapshot?['tel.fast']?.enabled ?? true,
+    overviewEnabled: snapshot?['tel.overview']?.enabled ?? true,
+  );
+});
 
 /// Dedicated store for per-context [FastPreference] records (`TEL-01B`).
 final fastPreferenceStoreProvider = Provider<FastPreferenceStore>((ref) {
