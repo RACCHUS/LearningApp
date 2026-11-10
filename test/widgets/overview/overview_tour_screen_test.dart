@@ -36,6 +36,13 @@ void main() {
     testWidgets(
       'Opening OverviewTourScreen, switching 5/15/30 presets, and answering transient self-check performs zero context or progress writes',
       (tester) async {
+        tester.view.physicalSize = const Size(1200, 1800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
         final spyNotifier = _SpyContextsNotifier();
 
         await tester.pumpWidget(
@@ -54,13 +61,13 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Read-only disclosure banner and 7 topic families are visible
+        // Read-only disclosure banner and first topic family are visible
         expect(
           find.byKey(const Key('overview-readonly-disclosure-banner')),
           findsOneWidget,
         );
         expect(find.text('Foundations and method'), findsOneWidget);
-        expect(find.text('People together'), findsOneWidget);
+        expect(find.text('Essential vocabulary'), findsWidgets);
 
         // Zero contexts created on open
         expect(spyNotifier.state.contexts, isEmpty);
@@ -78,7 +85,12 @@ void main() {
         final checkFinder = find.byKey(
           const Key('overview-transient-check-ov-check-1'),
         );
-        await tester.ensureVisible(checkFinder);
+        await tester.scrollUntilVisible(
+          checkFinder,
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
         expect(checkFinder, findsOneWidget);
 
         // Tap an option in the transient self-check
@@ -93,6 +105,14 @@ void main() {
           find.byKey(const Key('overview-check-ov-check-1-feedback')),
           findsOneWidget,
         );
+
+        // Scroll down to verify the 7th family ('People together') and provenance card
+        await tester.scrollUntilVisible(
+          find.text('People together'),
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('People together'), findsOneWidget);
 
         // Still zero context or persistence writes!
         expect(spyNotifier.state.contexts, isEmpty);
