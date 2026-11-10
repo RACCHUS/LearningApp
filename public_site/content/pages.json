@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "notes": "Editorial content is DRAFT until the owner explicitly approves exact wording, sources and target domain. The public builder refuses to produce an indexable site without an approved published home.",
+  "pages": [
+    {
+      "slug": "",
+      "type": "home",
+      "status": "draft",
+      "title": "LearningApp | Learn with a clear path",
+      "description": "Discover LearningApp's goal-oriented learning tools, practical study activities and progress views.",
+      "heading": "Learn with a clear path",
+      "summary": "Find relevant learning material, practice what matters, and use evidence to decide what to study next.",
+      "sections": [
+        {
+          "heading": "Start with the goal",
+          "paragraphs": [
+            "LearningApp organizes learning around goals and accessible material. Explore a target or topic in the app's Library rather than searching through disconnected links."
+          ]
+        },
+        {
+          "heading": "Study and check your understanding",
+          "paragraphs": [
+            "The app includes Learn, Library and Progress areas. Availability and verification status vary by capability and target. Features that are still being evaluated should be treated as experimental."
+          ]
+        },
+        {
+          "heading": "Keep the learning experience focused",
+          "paragraphs": [
+            "LearningApp's plan separates free study experiences from optional fundraising and commercial content. Public guides are intended to help people choose their next learning step without interrupting study sessions."
+          ]
+        }
+      ],
+      "review": {
+        "owner_approved": false,
+        "sources": [
+          "README.md",
+          "UI_ARCHITECTURE_LOCKED.md"
+        ],
+        "reviewed_at": null
+      }
+    },
+    {
+      "slug": "how-it-works",
+      "type": "guide",
+      "status": "draft",
+      "title": "How LearningApp works | Learn, Library and Progress",
+      "description": "Understand LearningApp's three main areas and what Fast experimental learning prioritization means.",
+      "heading": "How LearningApp works",
+      "summary": "LearningApp separates discovering content, doing activities and reviewing progress.",
+      "sections": [
+        {
+          "heading": "Library: find a direction",
+          "paragraphs": [
+            "Browse goals, courses, subjects and study resources. LearningApp's long-term roadmap includes evaluating external content and suggesting ways to fill learning gaps; not every proposed capability is available today."
+          ]
+        },
+        {
+          "heading": "Learn: choose an approach",
+          "paragraphs": [
+            "Use the regular learning flow to follow planned activities. For supported exam targets, Fast prioritization is available, but its broader learning-outcome effectiveness is still experimental."
+          ]
+        },
+        {
+          "heading": "Progress: inspect what happened",
+          "paragraphs": [
+            "Use available progress and review views to check activity history. A practice result is not the same as an official exam score or a guaranteed outcome."
+          ]
+        }
+      ],
+      "review": {
+        "owner_approved": false,
+        "sources": [
+          "UI_ARCHITECTURE_LOCKED.md",
+          "LEARNINGAPP_TEL_V0_5_MASTER_IMPLEMENTATION_PLAN.md"
+        ],
+        "reviewed_at": null
+      }
+    },
+    {
+      "slug": "review-standards",
+      "type": "standards",
+      "status": "draft",
+      "title": "Learning resource review standards | LearningApp",
+      "description": "Learn how LearningApp intends to evaluate official sources, dated requirements and educational material.",
+      "heading": "How we evaluate learning resources",
+      "summary": "Trustworthy guidance needs attributable sources, explicit uncertainty and clear publication controls.",
+      "sections": [
+        {
+          "heading": "Evidence and provenance",
+          "paragraphs": [
+            "A source should identify what it establishes, when it was checked and what it does not establish. Official exam, licensing and professional requirements should be checked with the issuing body."
+          ]
+        },
+        {
+          "heading": "Separate verified results from exploration",
+          "paragraphs": [
+            "Experimental activity design and unverified assessment claims must be disclosed. A practice estimate is not a promise of exam success or verified mastery."
+          ]
+        },
+        {
+          "heading": "Respect drafts and protected content",
+          "paragraphs": [
+            "Unreviewed materials, learner records and protected answer banks are not eligible for the public-site export. Static public content must undergo an explicit editorial approval step before publication."
+          ]
+        }
+      ],
+      "review": {
+        "owner_approved": false,
+        "sources": [
+          "LEARNINGAPP_MARKETING_ADVERTISING_FINANCIAL_SUSTAINABILITY_MASTER_PLAN.md",
+          "ARCHITECTURE_REVIEW.md"
+        ],
+        "reviewed_at": null
+      }
+    },
+    {
+      "slug": "about",
+      "type": "about",
+      "status": "draft",
+      "title": "About LearningApp | Independent learning platform",
+      "description": "What LearningApp is working to improve in discovering, practicing and checking learning.",
+      "heading": "About LearningApp",
+      "summary": "LearningApp is building a practical layer between learning goals, existing content and evidence of understanding.",
+      "sections": [
+        {
+          "heading": "Use what already exists",
+          "paragraphs": [
+            "The platform's direction emphasizes discovering useful external learning resources and filling gaps where practice, diagnosis or structure are missing. This describes the roadmap, not a claim that every integration is released."
+          ]
+        },
+        {
+          "heading": "Protect the learner experience",
+          "paragraphs": [
+            "Core study, assessment and progress flows should not be interrupted by advertising. Voluntary support and partnerships are separate from the quality or ranking of educational resources."
+          ]
+        },
+        {
+          "heading": "Independent and evolving",
+          "paragraphs": [
+            "LearningApp is not an exam issuer and does not grant professional licenses or college credit. Features may be marked experimental while their readiness and effectiveness are evaluated."
+          ]
+        }
+      ],
+      "review": {
+        "owner_approved": false,
+        "sources": [
+          "LEARNINGAPP_MARKETING_ADVERTISING_FINANCIAL_SUSTAINABILITY_MASTER_PLAN.md"
+        ],
+        "reviewed_at": null
+      }
+    },
+    {
+      "slug": "clep-psychology-study-roadmap",
+      "type": "guide",
+      "status": "draft",
+      "title": "CLEP Introductory Psychology study roadmap | LearningApp",
+      "description": "Draft exam study planning template requiring official-source review before publication.",
+      "heading": "CLEP Introductory Psychology study roadmap",
+      "summary": "This example template is intentionally not approved for search indexing or production.",
+      "sections": [
+        {
+          "heading": "Draft only",
+          "paragraphs": [
+            "Before this page can be published, verify the current College Board exam outline, substantive topic coverage, available resources, study-plan evidence and issuer-independent disclaimers."
+          ]
+        }
+      ],
+      "review": {
+        "owner_approved": false,
+        "sources": [],
+        "reviewed_at": null
+      }
+    }
+  ]
+}

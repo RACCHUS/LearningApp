@@ -5,7 +5,7 @@ import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/services/community/seo_metadata_service.dart';
 
 void main() {
-  group('SeoMetadataService (ECO-01, Priority 5 Discovery Boundary)', () {
+  group('SeoMetadataService: no ineligible QAPage or phantom URLs', () {
     final now = DateTime.utc(2026, 10, 31);
 
     final publishedSeedQuestion = CommunityQuestion(
@@ -43,28 +43,36 @@ void main() {
       updatedAt: now,
     );
 
-    test('generates compliant Schema.org QAPage JSON-LD for published seed FAQs', () {
+    test('curated content uses ordinary WebPage, not QAPage or fabricated ranking', () {
+      final jsonLd = SeoMetadataService.generateEditorialWebPageJsonLd(
+        question: publishedSeedQuestion,
+        answers: [publishedAnswer],
+      );
+      final parsed = jsonDecode(jsonLd) as Map<String, dynamic>;
+      expect(parsed['@context'], equals('https://schema.org'));
+      expect(parsed['@type'], equals('WebPage'));
+      expect(parsed['name'], equals('What are CVC words in phonics?'));
+      expect(parsed['text'], equals('CVC words have short vowel sounds between consonants.'));
+      expect(parsed.containsKey('mainEntity'), false);
+      expect(parsed.containsKey('acceptedAnswer'), false);
+      expect(parsed.containsKey('upvoteCount'), false);
+      expect(parsed.containsKey('url'), false);
+      expect(jsonLd, isNot(contains('QAPage')));
+      expect(jsonLd, isNot(contains('FAQPage')));
+    });
+
+    test('legacy method remains callable but no longer claims QAPage eligibility', () {
+      // ignore: deprecated_member_use_from_same_package
       final jsonLd = SeoMetadataService.generateQaPageJsonLd(
         question: publishedSeedQuestion,
         answers: [publishedAnswer],
       );
-
-      final parsed = jsonDecode(jsonLd) as Map<String, dynamic>;
-      expect(parsed['@context'], equals('https://schema.org'));
-      expect(parsed['@type'], equals('QAPage'));
-
-      final mainEntity = parsed['mainEntity'] as Map<String, dynamic>;
-      expect(mainEntity['@type'], equals('Question'));
-      expect(mainEntity['name'], equals('What are CVC words in phonics?'));
-
-      final accepted = mainEntity['acceptedAnswer'] as Map<String, dynamic>;
-      expect(accepted['@type'], equals('Answer'));
-      expect(accepted['text'], equals('CVC words have short vowel sounds between consonants.'));
+      expect((jsonDecode(jsonLd) as Map<String, dynamic>)['@type'], 'WebPage');
     });
 
-    test('strictly forbids generating public JSON-LD for private learner drafts', () {
+    test('private learner drafts never get public editorial JSON-LD', () {
       expect(
-        () => SeoMetadataService.generateQaPageJsonLd(
+        () => SeoMetadataService.generateEditorialWebPageJsonLd(
           question: privateDraftQuestion,
           answers: [],
         ),
@@ -72,19 +80,20 @@ void main() {
       );
     });
 
-    test('generates OpenGraph tags for published seed FAQ with index/follow', () {
-      final tags = SeoMetadataService.generateOpenGraphTags(question: publishedSeedQuestion);
-
-      expect(tags['og:title'], equals('What are CVC words in phonics?'));
-      expect(tags['robots'], equals('index, follow'));
-      expect(tags['og:url'], equals('https://app.learningapp.io/faqs/seed-faq-001'));
+    test('published seed entries stay noindex until a real public route is verified', () {
+      final tags = SeoMetadataService.generateOpenGraphTags(
+          question: publishedSeedQuestion);
+      expect(tags['og:title'], 'What are CVC words in phonics?');
+      expect(tags['robots'], 'noindex, follow');
+      expect(tags.containsKey('og:url'), false);
     });
 
-    test('shields private learner draft from search indexing via noindex robots tag', () {
-      final tags = SeoMetadataService.generateOpenGraphTags(question: privateDraftQuestion);
-
-      expect(tags['robots'], equals('noindex, nofollow'));
+    test('private drafts have no social preview details', () {
+      final tags = SeoMetadataService.generateOpenGraphTags(
+          question: privateDraftQuestion);
+      expect(tags['robots'], 'noindex, nofollow');
       expect(tags['og:title'], isNull);
+      expect(tags.containsKey('og:url'), false);
     });
   });
 }

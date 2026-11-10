@@ -51,6 +51,14 @@ jobs:
           python3 tool/verify_feature_registry.py
           python3 -m unittest discover -s tool/tests -p 'test_verify_feature_registry.py' -v
 
+      - name: Validate zero-cost public SEO preview and editorial gates
+        run: |
+          python3 -m unittest discover -s tool/tests -p 'test_public_site_build.py' -v
+          python3 tool/build_public_site.py --origin https://www.example.test --app-origin https://app.example.test --preview --out build/public-seo-ci
+          test -f build/public-seo-ci/404.html
+          test -f build/public-seo-ci/sitemap.xml
+          test -f build/public-seo-ci/how-it-works/index.html
+
       - name: Analyze
         run: flutter analyze
 
