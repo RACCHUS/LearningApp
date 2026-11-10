@@ -24,9 +24,15 @@ void main() {
       );
     });
 
-    test('preview gate is bound to the compile-time release constant', () {
+    test('preview gate requires explicit opt-in for release builds', () {
       expect(isSimulationPreviewAllowed(requested: false), isFalse);
-      expect(isSimulationPreviewAllowed(requested: true), !kReleaseMode);
+      expect(
+        isSimulationPreviewAllowed(requested: true),
+        !kReleaseMode || simulationPreviewEnabled,
+      );
+      if (kReleaseMode && !simulationPreviewEnabled) {
+        expect(isSimulationPreviewAllowed(requested: true), isFalse);
+      }
     });
 
     test('rejects a disabled preview without emitting an event', () {
