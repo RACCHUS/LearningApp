@@ -60,7 +60,6 @@ jobs:
           test "$APPROVED_MAIN_SHA" = "$(git rev-parse HEAD)" || {
             echo "::error::Main moved since the approved dry-run. Stop and rerun guarded preflight."; exit 1;
           }
-          test "$(git symbolic-ref --short HEAD 2>/dev/null || echo HEAD)" = "HEAD" || true
 
       - name: Set up pinned Flutter and Dart
         uses: subosito/flutter-action@v2
