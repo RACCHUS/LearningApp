@@ -1,0 +1,131 @@
+# Excel pilot curriculum draft. Reviewed content; NOT a published target.
+# No Excel application is recreated inside LearningApp.
+source_release:
+  id: "microsoft-excel-support-2026-11"
+  publisher: "Microsoft Support"
+  title: "Basic tasks in Excel and SUM function"
+  version: "online-reference-2026-11"
+  source_url: "https://support.microsoft.com/en-us/excel/basic-tasks-in-excel"
+  retrieved_at: "2026-11-07T00:00:00Z"
+  license: "Proprietary documentation — reference link only"
+  license_name: "Microsoft Support"
+  rights_note: "Lessons are independently authored; no Microsoft screenshots, trademarks as branding, or manuals are redistributed."
+target:
+  slug: "software-excel-fundamentals"
+  title: "Microsoft Excel Fundamentals"
+  version_code: "EXCEL-PILOT-1"
+  version_title: "Spreadsheet Basics and Budget Totals"
+  version_description: "Draft guided practice in the real Microsoft Excel application, not a software replica or professional credential."
+domains:
+  - code: "SPREADSHEET-1"
+    title: "Spreadsheet Data and Formulas"
+    description: "Use cell references and sum a range of synthetic business transactions."
+    weight: 1.0
+    sort_order: 1
+    importance: "core"
+    source_release_id: "microsoft-excel-support-2026-11"
+    citation: "Microsoft Support — Basic tasks in Excel; SUM function"
+    objectives:
+      - code: "SPREADSHEET-1.1"
+        title: "Create a budget total from referenced cells"
+        description: "Enter numeric data in a worksheet and write a formula that sums the specified rows."
+        importance: "core"
+        sort_order: 1
+        source_release_id: "microsoft-excel-support-2026-11"
+        citation: "Microsoft Support — Basic tasks in Excel; SUM function"
+        concepts:
+          - slug: "spreadsheet-cell-reference"
+            name: "Spreadsheet Cell References"
+            emoji: "📍"
+            short_definition: "A coordinate that identifies a cell by its column and row."
+            description: "Cell addresses such as C2 refer to values in a spreadsheet independently of the application used."
+            source_release_id: "microsoft-excel-support-2026-11"
+            citation: "Microsoft Support — Basic tasks in Excel"
+            prerequisites: []
+          - slug: "spreadsheet-range-summation"
+            name: "Spreadsheet Range Summation"
+            emoji: "➕"
+            short_definition: "Adding the numeric values across a specified cell range."
+            description: "A range expression identifies contiguous cells; a sum formula combines their numeric values."
+            source_release_id: "microsoft-excel-support-2026-11"
+            citation: "Microsoft Support — SUM function"
+            prerequisites: ["spreadsheet-cell-reference"]
+        lessons:
+          - title: "Budget Totals in Excel"
+            description: "Use the real Excel application to organize eight sample transactions and calculate their total."
+            emoji: "📊"
+            tags: ["spreadsheet", "excel", "guided-practice", "budget", "software-learning"]
+            source_release_id: "microsoft-excel-support-2026-11"
+            citation: "Microsoft Support — Basic tasks in Excel; SUM function"
+            concept_slugs:
+              - "spreadsheet-cell-reference"
+              - "spreadsheet-range-summation"
+            blocks:
+              - sort_order: 1
+                block_type: "markdown"
+                content:
+                  text: "In a spreadsheet, column letters and row numbers identify cells. A formula begins with = and can reference values stored elsewhere. Follow these instructions while working in the real Microsoft Excel application. No simulation or connected account is required."
+              - sort_order: 2
+                block_type: "markdown"
+                content:
+                  text: "Download the synthetic data file excel_budget_transactions.csv from this course's starter materials. Open it in Excel; save a new workbook in .xlsx format. Rename the worksheet Budget. Column C contains eight transaction amounts in C2 through C9. In C10, write a formula that totals the eight values. Keep the original numeric inputs unchanged."
+              - sort_order: 3
+                block_type: "callout"
+                content:
+                  variant: "info"
+                  title: "Accessibility and privacy"
+                  text: "Use the text instructions or the app's reading assistance. The practice data is synthetic; do not substitute real business records. Independent workbook uploading and verified grading remain disabled until the safe ingestion worker and evidence gates are implemented."
+              - sort_order: 4
+                block_type: "practice_prompt"
+                metadata:
+                  practice_type: "excel_workbook_upload"
+                content:
+                  prompt: "Open the real Excel application and calculate the total of the eight numeric transaction cells without replacing the formula with a typed number. How would you check that your formula covers every row exactly once?"
+                  exercise_id: "excel-budget-total-v1"
+              - sort_order: 5
+                block_type: "simulation"
+                content:
+                  simulation_id: "excel-budget-total-v1"
+                  simulation_version: "1.0.0"
+                  title: "Interactive Practice: Budget Workbook"
+                  fallback_body: "Use the real Excel application to complete the Budget worksheet total. The optional preview demonstrates sample rubric checks only; learner file uploads and verified skill awards remain disabled."
+            terms:
+              - term: "Workbook"
+                definition: "A file that contains one or more spreadsheet worksheets."
+                example: "An .xlsx file can contain a Budget worksheet."
+              - term: "Cell reference"
+                definition: "A column-and-row address used to refer to a particular spreadsheet cell."
+                example: "C2 refers to a cell in the third column and second row."
+              - term: "Range"
+                definition: "A group of worksheet cells designated by their addresses."
+                example: "C2:C9 identifies eight cells in column C."
+            concepts:
+              - concept_text: "Formulas refer to cells instead of repeating typed values, so calculations can update when the underlying numbers change."
+                example_text: "A business budget total can reference the eight transaction rows instead of manually typing the total."
+                key_points:
+                  - "Cell references work across many spreadsheet applications."
+                  - "A range identifies which rows a calculation should include."
+                  - "A verified result needs both the correct data and the correct formula."
+            questions:
+              - question_text: "What does the spreadsheet address C2 identify?"
+                options:
+                  - "Column C, row 2"
+                  - "Row C, column 2"
+                  - "The second worksheet"
+                  - "A formula with two inputs"
+                correct_answer: 0
+                type: "mcq"
+                explanation: "The letter represents the column and the number represents the row."
+                concept_slugs: ["spreadsheet-cell-reference"]
+                citation: "Microsoft Support — Basic tasks in Excel"
+              - question_text: "Why is a formula that references transaction cells preferable to typing a fixed total?"
+                options:
+                  - "It changes the data automatically without permission"
+                  - "It recalculates from the referenced values when they change"
+                  - "It prevents anyone from editing the worksheet"
+                  - "It converts the workbook into a different file type"
+                correct_answer: 1
+                type: "mcq"
+                explanation: "A formula recomputes from its cell references; a typed total is not connected to its inputs."
+                concept_slugs: ["spreadsheet-range-summation"]
+                citation: "Microsoft Support — SUM function"

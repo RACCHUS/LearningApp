@@ -1,13 +1,13 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
--- Automatically compiled from 97 immutable migrations
--- Generated: 2026-11-07T22:34:53.718100Z
+-- Automatically compiled from 110 immutable migrations
+-- Generated: 2026-11-10T17:37:37.682220Z
 -- ====================================================================
 
 BEGIN;
 
 -- --------------------------------------------------------------------
--- [1/97] Migration: 20241228000000_legacy_base_tables.sql
+-- [1/110] Migration: 20241228000000_legacy_base_tables.sql
 -- --------------------------------------------------------------------
 -- Bootstrap the legacy public tables that predate supabase/migrations.
 -- Existing installations already have these tables, so this migration is
@@ -104,7 +104,7 @@ create table if not exists public.offline_content (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20241228000000', 'legacy_base_tables') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [2/97] Migration: 20250101000001_create_review_items.sql
+-- [2/110] Migration: 20250101000001_create_review_items.sql
 -- --------------------------------------------------------------------
 -- Spaced Repetition Review Items Table
 -- Stores user's review queue with SM-2 algorithm data
@@ -182,7 +182,7 @@ COMMENT ON TABLE review_items IS 'Stores spaced repetition review items for user
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20250101000001', 'create_review_items') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [3/97] Migration: 20250101000002_create_user_xp.sql
+-- [3/110] Migration: 20250101000002_create_user_xp.sql
 -- --------------------------------------------------------------------
 -- User XP and Level System Tables
 -- Tracks XP earned and provides level progression
@@ -282,7 +282,7 @@ COMMENT ON FUNCTION increment_user_xp IS 'Safely increment user XP with upsert';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20250101000002', 'create_user_xp') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [4/97] Migration: 20251228045018_courses_and_study_sets.sql
+-- [4/110] Migration: 20251228045018_courses_and_study_sets.sql
 -- --------------------------------------------------------------------
 -- Migration: courses_and_study_sets
 -- Purpose: Add tables for courses, study sets, and their progress tracking
@@ -515,7 +515,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20251228045018', 'courses_and_study_sets') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [5/97] Migration: 20260528000000_secure_rls_with_anonymous_guests.sql
+-- [5/110] Migration: 20260528000000_secure_rls_with_anonymous_guests.sql
 -- --------------------------------------------------------------------
 -- Re-secure the public schema.
 --
@@ -803,7 +803,7 @@ DELETE FROM public.users WHERE id = '00000000-0000-0000-0000-000000000000';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260528000000', 'secure_rls_with_anonymous_guests') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [6/97] Migration: 20260909000000_learning_contexts.sql
+-- [6/110] Migration: 20260909000000_learning_contexts.sql
 -- --------------------------------------------------------------------
 -- Learning contexts and resume pointers.
 --
@@ -899,7 +899,7 @@ create trigger resume_pointers_touch
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260909000000', 'learning_contexts') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [7/97] Migration: 20260925000000_v2_migration_map.sql
+-- [7/110] Migration: 20260925000000_v2_migration_map.sql
 -- --------------------------------------------------------------------
 -- Migration mapping table for Learning Architecture v2.
 -- Preserves idempotent mappings between legacy v1 string IDs (e.g. career_paths, courses, lessons)
@@ -929,7 +929,7 @@ create policy "v2_migration_map_read"
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000000', 'v2_migration_map') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [8/97] Migration: 20260925000001_v2_additive_schema.sql
+-- [8/110] Migration: 20260925000001_v2_additive_schema.sql
 -- --------------------------------------------------------------------
 -- Learning Architecture v2 — Phase 1: Additive Schema & DDL
 -- Ordered execution:
@@ -1662,7 +1662,7 @@ create policy "user_concept_state_owner" on public.user_concept_state
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000001', 'v2_additive_schema') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [9/97] Migration: 20260925000002_v2_data_migration.sql
+-- [9/110] Migration: 20260925000002_v2_data_migration.sql
 -- --------------------------------------------------------------------
 -- Learning Architecture v2 — Phase 2: Additive Data Migration
 -- Safe, idempotent backfill from legacy tables into v2 structures:
@@ -1964,7 +1964,7 @@ end $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000002', 'v2_data_migration') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [10/97] Migration: 20260928000000_v2_sample_data.sql
+-- [10/110] Migration: 20260928000000_v2_sample_data.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Learning Architecture v2 — Sample Target & Knowledge Graph Seed
@@ -2140,7 +2140,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260928000000', 'v2_sample_data') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [11/97] Migration: 20260929000000_canonical_taxonomy_v2.sql
+-- [11/110] Migration: 20260929000000_canonical_taxonomy_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Canonical Taxonomy Architecture v2.4 Consolidated Schema Migration
@@ -2580,7 +2580,7 @@ create policy "concept_fields_read_inherited" on public.concept_fields for selec
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000000', 'canonical_taxonomy_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [12/97] Migration: 20260929000001_seed_catalog_clusters_and_fields.sql
+-- [12/110] Migration: 20260929000001_seed_catalog_clusters_and_fields.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Seed Migration: 12 Presentation Catalog Clusters, Source Releases & Primary Fields
@@ -2674,7 +2674,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000001', 'seed_catalog_clusters_and_fields') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [13/97] Migration: 20260929000002_seed_canonical_taxonomy_full.sql
+-- [13/110] Migration: 20260929000002_seed_canonical_taxonomy_full.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000002_seed_canonical_taxonomy_full.sql
@@ -3072,7 +3072,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000002', 'seed_canonical_taxonomy_full') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [14/97] Migration: 20260929000003_v2_stabilization_and_hardening.sql
+-- [14/110] Migration: 20260929000003_v2_stabilization_and_hardening.sql
 -- --------------------------------------------------------------------
 -- Migration: 20260929000003_v2_stabilization_and_hardening.sql
 -- Description:
@@ -3217,7 +3217,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000003', 'v2_stabilization_and_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [15/97] Migration: 20260929000004_v2_stabilization_fix.sql
+-- [15/110] Migration: 20260929000004_v2_stabilization_fix.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000004_v2_stabilization_fix.sql
@@ -3526,7 +3526,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000004', 'v2_stabilization_fix') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [16/97] Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
+-- [16/110] Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
@@ -3724,7 +3724,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000005', 'v2_immutability_and_curriculum_seed') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [17/97] Migration: 20260929000006_v2_system_targets_rls_hardening.sql
+-- [17/110] Migration: 20260929000006_v2_system_targets_rls_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000006_v2_system_targets_rls_hardening.sql
@@ -3802,7 +3802,7 @@ create policy "nodes_write" on public.curriculum_nodes
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000006', 'v2_system_targets_rls_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [18/97] Migration: 20261001000000_lesson_visibility.sql
+-- [18/110] Migration: 20261001000000_lesson_visibility.sql
 -- --------------------------------------------------------------------
 -- Existing lessons were readable to everyone. Preserve that state explicitly,
 -- then make future user-created lessons private by default.
@@ -3882,7 +3882,7 @@ create policy node_lessons_lesson_visible on public.curriculum_node_lessons
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261001000000', 'lesson_visibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [19/97] Migration: 20261001000001_user_curriculum_resources.sql
+-- [19/110] Migration: 20261001000001_user_curriculum_resources.sql
 -- --------------------------------------------------------------------
 -- User-owned supplements to exact published curriculum nodes. This table
 -- never changes curriculum_node_lessons or official requirement counts.
@@ -3971,7 +3971,7 @@ create policy user_curriculum_resources_owner_delete
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261001000001', 'user_curriculum_resources') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [20/97] Migration: 20261002000000_retired_version_immutability.sql
+-- [20/110] Migration: 20261002000000_retired_version_immutability.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261002000000_retired_version_immutability.sql
@@ -4136,7 +4136,7 @@ create policy "node_concepts_owner_write" on public.curriculum_node_concepts
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261002000000', 'retired_version_immutability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [21/97] Migration: 20261003000000_content_provenance.sql
+-- [21/110] Migration: 20261003000000_content_provenance.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261003000000_content_provenance.sql
@@ -4223,7 +4223,7 @@ create policy "content_source_mappings_service_write" on public.content_source_m
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261003000000', 'content_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [22/97] Migration: 20261004000000_content_primitives_v2.sql
+-- [22/110] Migration: 20261004000000_content_primitives_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261004000000_content_primitives_v2.sql
@@ -4641,7 +4641,7 @@ alter table public.content_source_mappings
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261004000000', 'content_primitives_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [23/97] Migration: 20261005000000_content_hardening.sql
+-- [23/110] Migration: 20261005000000_content_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261005000000_content_hardening.sql
@@ -5064,7 +5064,7 @@ grant execute on function public.resolve_canonical_concept(text, text, uuid) to 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261005000000', 'content_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [24/97] Migration: 20261006000000_import_ownership_and_staging.sql
+-- [24/110] Migration: 20261006000000_import_ownership_and_staging.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000000_import_ownership_and_staging.sql
@@ -6381,7 +6381,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000000', 'import_ownership_and_staging') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [25/97] Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
+-- [25/110] Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
@@ -7281,7 +7281,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000001', 'rpc_provenance_and_clean_fix') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [26/97] Migration: 20261006000002_update_ingest_curriculum_manifest.sql
+-- [26/110] Migration: 20261006000002_update_ingest_curriculum_manifest.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000002_update_ingest_curriculum_manifest.sql
@@ -8181,7 +8181,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000002', 'update_ingest_curriculum_manifest') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [27/97] Migration: 20261006000003_phase_c5_final_hardening.sql
+-- [27/110] Migration: 20261006000003_phase_c5_final_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000003_phase_c5_final_hardening.sql
@@ -10057,7 +10057,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000003', 'phase_c5_final_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [28/97] Migration: 20261007000000_phase_f_taxonomy_crosswalk.sql
+-- [28/110] Migration: 20261007000000_phase_f_taxonomy_crosswalk.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase F: Full Taxonomy & Crosswalk Expansion Migration
@@ -10369,7 +10369,7 @@ grant execute on function public.get_cross_target_shared_concepts(uuid, uuid) to
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261007000000', 'phase_f_taxonomy_crosswalk') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [29/97] Migration: 20261008000000_phase_g_version_governance.sql
+-- [29/110] Migration: 20261008000000_phase_g_version_governance.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261008000000_phase_g_version_governance.sql
@@ -11113,7 +11113,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000000', 'phase_g_version_governance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [30/97] Migration: 20261008000001_phase_g_security_hardening.sql
+-- [30/110] Migration: 20261008000001_phase_g_security_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase G.5: Version Governance Security & Integrity Hardening
@@ -11949,7 +11949,7 @@ grant execute on function public.retire_target_version(uuid)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000001', 'phase_g_security_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [31/97] Migration: 20261008000002_phase_f1_production_taxonomy_hardening.sql
+-- [31/110] Migration: 20261008000002_phase_f1_production_taxonomy_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase F.1: Production Taxonomy Ingestion Hardening
@@ -13168,7 +13168,7 @@ grant execute on function public.publish_target_version(uuid, boolean) to authen
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000002', 'phase_f1_production_taxonomy_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [32/97] Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
+-- [32/110] Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
@@ -14701,7 +14701,7 @@ create policy "content_source_artifacts_service_write"
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000000', 'manifest_concept_mappings_and_target_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [33/97] Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
+-- [33/110] Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
@@ -16225,7 +16225,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000001', 'harden_cross_version_mappings_and_target_version_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [34/97] Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
+-- [34/110] Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
@@ -16663,7 +16663,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000002', 'harden_mapping_rls_migration_rpc_and_retired_visibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [35/97] Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
+-- [35/110] Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
@@ -17204,7 +17204,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000003', 'control_learning_context_target_version_and_migration_auth') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [36/97] Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
+-- [36/110] Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
@@ -17665,7 +17665,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000004', 'restore_rpc_contracts_and_close_enrollment_oracle') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [37/97] Migration: 20261009000005_learning_target_catalog_provenance.sql
+-- [37/110] Migration: 20261009000005_learning_target_catalog_provenance.sql
 -- --------------------------------------------------------------------
 -- Catalog source integrity. This migration is append-only.
 -- A public entry is either an official platform record or a reviewed community record.
@@ -17789,7 +17789,7 @@ comment on column public.learning_targets.review_status is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000005', 'learning_target_catalog_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [38/97] Migration: 20261012000000_catalog_candidate_intake.sql
+-- [38/110] Migration: 20261012000000_catalog_candidate_intake.sql
 -- --------------------------------------------------------------------
 -- Phase P0: private credential/license/exam/program candidate intake.
 -- Candidate names and issuer links are NOT approved catalog destinations.
@@ -17883,7 +17883,7 @@ grant select, insert, update, delete on table public.catalog_intake_demand_signa
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000000', 'catalog_candidate_intake') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [39/97] Migration: 20261012000001_catalog_official_demand_observations.sql
+-- [39/110] Migration: 20261012000001_catalog_official_demand_observations.sql
 -- --------------------------------------------------------------------
 -- P1 official numerical evidence: private, versioned CIP/SOC observations.
 -- NEVER interpret a CIP-SOC mapping as proof of a license, exam or
@@ -17956,7 +17956,7 @@ grant select, insert, update on table public.catalog_official_demand_imports to 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000001', 'catalog_official_demand_observations') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [40/97] Migration: 20261012000002_catalog_bls_reporting_code_members.sql
+-- [40/110] Migration: 20261012000002_catalog_bls_reporting_code_members.sql
 -- --------------------------------------------------------------------
 -- BLS publication/combined reporting codes are not detailed SOC 2018 codes.
 -- These associations state membership ONLY. Job openings for the combined
@@ -18057,7 +18057,7 @@ comment on view public.v_catalog_bls_observation_coverage is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000002', 'catalog_bls_reporting_code_members') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [41/97] Migration: 20261012000003_catalog_reviewed_destinations.sql
+-- [41/110] Migration: 20261012000003_catalog_reviewed_destinations.sql
 -- --------------------------------------------------------------------
 -- P2: public directory of source-reviewed issuer names and links only.
 -- NOT a certification issuance database, course catalog or requirements audit.
@@ -18169,7 +18169,7 @@ for each row execute function public.retire_destination_after_intake_review_chan
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000003', 'catalog_reviewed_destinations') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [42/97] Migration: 20261012000004_catalog_destination_resources_goal_links.sql
+-- [42/110] Migration: 20261012000004_catalog_destination_resources_goal_links.sql
 -- --------------------------------------------------------------------
 -- Phase P2b: user-owned draft links and approved off-site preparation links.
 -- The Learning App does NOT issue any third-party credential.
@@ -18258,7 +18258,7 @@ create policy destination_resource_published_parent
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000004', 'catalog_destination_resources_goal_links') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [43/97] Migration: 20261012000005_professional_license_goals_and_regulator_links.sql
+-- [43/110] Migration: 20261012000005_professional_license_goals_and_regulator_links.sql
 -- --------------------------------------------------------------------
 -- P2c: distinguish a professional license from its licensure examination.
 -- Existing goals are untouched; professional-license drafts require jurisdiction.
@@ -18353,7 +18353,7 @@ alter table public.catalog_destination_resources
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000005', 'professional_license_goals_and_regulator_links') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [44/97] Migration: 20261012000006_catalog_license_pathway_versions.sql
+-- [44/110] Migration: 20261012000006_catalog_license_pathway_versions.sql
 -- --------------------------------------------------------------------
 -- P2e: carefully reviewed, versioned regulator-sourced *selected* licensing steps.
 -- This does not change the original issuer directory's requirements_status:
@@ -18566,7 +18566,7 @@ using (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000006', 'catalog_license_pathway_versions') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [45/97] Migration: 20261015000000_cip_internal_field_bootstrap.sql
+-- [45/110] Migration: 20261015000000_cip_internal_field_bootstrap.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- CIP 2020 internal field bootstrap (CANONICAL_TAXONOMY_ARCHITECTURE.md §3.2,
@@ -18983,7 +18983,7 @@ analyze public.field_external_classifications;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261015000000', 'cip_internal_field_bootstrap') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [46/97] Migration: 20261015010000_native_literacy_life_skills_fields.sql
+-- [46/110] Migration: 20261015010000_native_literacy_life_skills_fields.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- LearningApp-authored literacy and practical-life field taxonomy.
@@ -19283,7 +19283,7 @@ on conflict (concept_id, field_id) do nothing;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261015010000', 'native_literacy_life_skills_fields') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [47/97] Migration: 20261016000000_word_learning_w1_foundation.sql
+-- [47/110] Migration: 20261016000000_word_learning_w1_foundation.sql
 -- --------------------------------------------------------------------
 -- Word Learning W1: private word lists and skill-aware review.
 -- Additive only; do not apply to hosted Supabase without explicit authorization.
@@ -19362,7 +19362,7 @@ alter table public.review_items
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016000000', 'word_learning_w1_foundation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [48/97] Migration: 20261016010000_word_learning_guest_import.sql
+-- [48/110] Migration: 20261016010000_word_learning_guest_import.sql
 -- --------------------------------------------------------------------
 -- W1 guest transfer: stable import provenance enables retry-safe list import.
 -- The imported list stays owned by the current signed-in user; data from another
@@ -19377,7 +19377,7 @@ create unique index if not exists word_lists_import_origin_unique
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016010000', 'word_learning_guest_import') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [49/97] Migration: 20261016020000_word_learning_optional_meaning.sql
+-- [49/110] Migration: 20261016020000_word_learning_optional_meaning.sql
 -- --------------------------------------------------------------------
 -- W1: Optional learner-authored gloss; not a canonical dictionary sense.
 -- Do not infer meaning mastery or vocabulary evidence from this private note.
@@ -19388,7 +19388,7 @@ alter table public.word_list_entries
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016020000', 'word_learning_optional_meaning') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [50/97] Migration: 20261017000000_moderation_trust_and_safety.sql
+-- [50/110] Migration: 20261017000000_moderation_trust_and_safety.sql
 -- --------------------------------------------------------------------
 -- ECO-00B: Trust, Safety, Legal & Moderation Architecture Foundation
 -- Migration Version: 20261017000000
@@ -19782,7 +19782,7 @@ grant execute on function public.submit_moderation_report(text, uuid, text, text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261017000000', 'moderation_trust_and_safety') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [51/97] Migration: 20261019000000_moderation_roles_least_privilege.sql
+-- [51/110] Migration: 20261019000000_moderation_roles_least_privilege.sql
 -- --------------------------------------------------------------------
 -- ECO-00B: Moderation Roles Least Privilege & View Security
 -- Migration Version: 20261019000000
@@ -19815,7 +19815,7 @@ on conflict (user_id) do update set role = 'admin';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261019000000', 'moderation_roles_least_privilege') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [52/97] Migration: 20261021000000_cost_and_observability_quotas.sql
+-- [52/110] Migration: 20261021000000_cost_and_observability_quotas.sql
 -- --------------------------------------------------------------------
 -- ECO-00C: Cost Quotas, Rate Limiting & Observability Architecture
 -- Migration Version: 20261021000000
@@ -20081,7 +20081,7 @@ grant execute on function public.get_system_usage_telemetry(int) to authenticate
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261021000000', 'cost_and_observability_quotas') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [53/97] Migration: 20261022000000_usage_quotas_hardening_and_stt.sql
+-- [53/110] Migration: 20261022000000_usage_quotas_hardening_and_stt.sql
 -- --------------------------------------------------------------------
 -- ECO-00C Hardening: Usage Quotas & Event Table Protection, STT Metering, and Abuse Prevention
 -- Migration Version: 20261022000000
@@ -20351,7 +20351,7 @@ grant execute on function public.get_system_usage_telemetry(int) to authenticate
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261022000000', 'usage_quotas_hardening_and_stt') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [54/97] Migration: 20261023000000_quota_provider_length_guard.sql
+-- [54/110] Migration: 20261023000000_quota_provider_length_guard.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 54: Quota Usage-Event Hardening (Provider String Bounding)
@@ -20543,7 +20543,7 @@ grant execute on function public.check_and_record_usage(text, int, text, jsonb) 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261023000000', 'quota_provider_length_guard') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [55/97] Migration: 20261024000000_eco_01_community_qa.sql
+-- [55/110] Migration: 20261024000000_eco_01_community_qa.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 55: ECO-01 Community Q&A Baseline & Moderation Integration
@@ -21046,7 +21046,7 @@ create policy community_votes_select_policy on public.community_votes
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261024000000', 'eco_01_community_qa') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [56/97] Migration: 20261025000000_eco_01_community_hardening.sql
+-- [56/110] Migration: 20261025000000_eco_01_community_hardening.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 56: ECO-01 Community Q&A Access-Control & Counter Hardening
@@ -21506,7 +21506,7 @@ grant execute on function public.submit_moderation_report(text, uuid, text, text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261025000000', 'eco_01_community_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [57/97] Migration: 20261026000000_eco_01_insert_hardening.sql
+-- [57/110] Migration: 20261026000000_eco_01_insert_hardening.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 57: ECO-01 Community Q&A INSERT Integrity & Trigger ACL Hardening
@@ -21688,7 +21688,7 @@ revoke all on function public.prevent_community_answer_tampering() from public, 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261026000000', 'eco_01_insert_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [58/97] Migration: 20261027000000_eco_02_moderator_review_workflow.sql
+-- [58/110] Migration: 20261027000000_eco_02_moderator_review_workflow.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 58: ECO-02 Pilot FAQ Seeding & Review Workflow
@@ -22137,7 +22137,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261027000000', 'eco_02_moderator_review_workflow') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [59/97] Migration: 20261028000000_eco_02_hardening.sql
+-- [59/110] Migration: 20261028000000_eco_02_hardening.sql
 -- --------------------------------------------------------------------
 -- ECO-02 Hardening & Integrity Fixes
 -- Migration Version: 20261028000000
@@ -22639,7 +22639,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261028000000', 'eco_02_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [60/97] Migration: 20261029000000_eco_02_ugc_gate_and_seed_stability.sql
+-- [60/110] Migration: 20261029000000_eco_02_ugc_gate_and_seed_stability.sql
 -- --------------------------------------------------------------------
 -- ECO-02 Hardening & Integrity Fixes (Follow-up)
 -- Migration Version: 20261029000000
@@ -23328,7 +23328,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261029000000', 'eco_02_ugc_gate_and_seed_stability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [61/97] Migration: 20261030000000_harden_seed_pilot_matching.sql
+-- [61/110] Migration: 20261030000000_harden_seed_pilot_matching.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 61: ECO-02 Hardening — Seed Pilot FAQ Matching Integrity
@@ -23561,7 +23561,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261030000000', 'harden_seed_pilot_matching') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [62/97] Migration: 20261031000000_eco_02_author_feedback_and_internal_notes.sql
+-- [62/110] Migration: 20261031000000_eco_02_author_feedback_and_internal_notes.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 62: ECO-02 Author Review Feedback, Context & Internal Notes Separation
@@ -23827,7 +23827,7 @@ grant execute on function public.fetch_my_submission_feedback(uuid) to authentic
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261031000000', 'eco_02_author_feedback_and_internal_notes') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [63/97] Migration: 20261101000000_eco_04_educator_profiles.sql
+-- [63/110] Migration: 20261101000000_eco_04_educator_profiles.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 63: ECO-04 Educator Profiles, Subject Associations & Verification Claims
@@ -24815,7 +24815,7 @@ grant execute on function public.fetch_my_credential_feedback(uuid) to authentic
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101000000', 'eco_04_educator_profiles') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [64/97] Migration: 20261101010000_exm_01_reference_manifest_revisions.sql
+-- [64/110] Migration: 20261101010000_exm_01_reference_manifest_revisions.sql
 -- --------------------------------------------------------------------
 -- EXM-01: independently revisioned, source-reviewed examination reference lists.
 -- Does not modify target_versions, curriculum nodes, books, or hosted learner data.
@@ -25088,7 +25088,7 @@ using (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101010000', 'exm_01_reference_manifest_revisions') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [65/97] Migration: 20261101020000_exm_02a_item_reference_validity.sql
+-- [65/110] Migration: 20261101020000_exm_02a_item_reference_validity.sql
 -- --------------------------------------------------------------------
 -- EXM-02A foundation: source/edition-specific validity for canonical assessment items.
 -- Private editorial record. No learner-facing answer locations or review notes are exposed.
@@ -25370,7 +25370,7 @@ grant select,insert,update,delete on public.assessment_item_reference_validity
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101020000', 'exm_02a_item_reference_validity') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [66/97] Migration: 20261101030000_exm_02b_durable_drill_events.sql
+-- [66/110] Migration: 20261101030000_exm_02b_durable_drill_events.sql
 -- --------------------------------------------------------------------
 -- EXM-02B foundation: durable, owner-isolated, UNGRADED drill step events.
 -- Version-pinned attempts without exposing approved answer keys or inventing
@@ -25536,7 +25536,7 @@ create policy exm_drill_permanent_owner_delete
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101030000', 'exm_02b_durable_drill_events') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [67/97] Migration: 20261101040000_exm_02b_private_scoring.sql
+-- [67/110] Migration: 20261101040000_exm_02b_private_scoring.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: server-private, independently reviewed R1-R4 scoring keys.
 -- No live items or keys are seeded. This file is a LOCAL migration only until
@@ -25874,7 +25874,7 @@ grant execute on function public.score_exam_reference_drill_step(uuid,text)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101040000', 'exm_02b_private_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [68/97] Migration: 20261101050000_exm_02b_reviewed_practice_delivery.sql
+-- [68/110] Migration: 20261101050000_exm_02b_reviewed_practice_delivery.sql
 -- --------------------------------------------------------------------
 -- EXM-02B — safe learner-delivery projection of independently reviewed
 -- ORIGINAL practice prompts. No real regulator questions or references seeded.
@@ -26133,7 +26133,7 @@ grant execute on function public.get_exam_reference_drill_practice(uuid,text,dat
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101050000', 'exm_02b_reviewed_practice_delivery') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [69/97] Migration: 20261101060000_exm_02b_progress_export_page.sql
+-- [69/110] Migration: 20261101060000_exm_02b_progress_export_page.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: durable version-scoped Progress and owner-only data export page.
 -- The invoker's ordinary SELECT grants + RLS on BOTH underlying tables are
@@ -26224,7 +26224,7 @@ comment on function public.exam_reference_drill_progress_page(
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101060000', 'exm_02b_progress_export_page') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [70/97] Migration: 20261101070000_exm_02b_context_progress.sql
+-- [70/110] Migration: 20261101070000_exm_02b_context_progress.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: cross-edition *presentation* of owner-read-only graded evidence
 -- inside the existing Progress Current Context view.
@@ -26325,7 +26325,7 @@ comment on function public.exam_reference_drill_context_progress(uuid) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101070000', 'exm_02b_context_progress') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [71/97] Migration: 20261101080000_exm_02b_account_practice_export.sql
+-- [71/110] Migration: 20261101080000_exm_02b_account_practice_export.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: one-statement, owner-only account-wide R1–R4 evidence export.
 -- This covers saved reference-practice events across ALL original and retired
@@ -26434,7 +26434,7 @@ comment on function public.exam_reference_drill_account_export(integer) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101080000', 'exm_02b_account_practice_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [72/97] Migration: 20261101090000_exm_02b_owner_practice_erasure.sql
+-- [72/110] Migration: 20261101090000_exm_02b_owner_practice_erasure.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: opt-in owner-only preview and erasure of SAVED reference
 -- practice events across current and retired manifest editions.
@@ -26577,7 +26577,7 @@ comment on function public.exam_reference_drill_erase_owned(integer,text,text) i
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101090000', 'exm_02b_owner_practice_erasure') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [73/97] Migration: 20261101100000_exm_02b_batched_practice_erasure.sql
+-- [73/110] Migration: 20261101100000_exm_02b_batched_practice_erasure.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: explicitly approved bounded erasure for large saved histories.
 -- No automatic retention, background job, UPDATE privilege or scheduler.
@@ -26730,7 +26730,7 @@ comment on function public.exam_reference_drill_erase_batch(integer,integer,text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101100000', 'exm_02b_batched_practice_erasure') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [74/97] Migration: 20261101110000_exm_02b_verified_large_export.sql
+-- [74/110] Migration: 20261101110000_exm_02b_verified_large_export.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: verified bounded multi-request export for >5,000 saved events.
 -- Existing single-statement export stays untouched. No answer keys, client
@@ -26873,7 +26873,7 @@ comment on function public.exam_reference_drill_export_page(integer,timestamptz,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101110000', 'exm_02b_verified_large_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [75/97] Migration: 20261101120000_exm_03_private_part_attempt_foundation.sql
+-- [75/110] Migration: 20261101120000_exm_03_private_part_attempt_foundation.sql
 -- --------------------------------------------------------------------
 -- EXM-03 — scoped educational practice-attempt foundation.
 -- This table is private, append-only, opt-in at a future application gate.
@@ -26921,7 +26921,7 @@ comment on table public.exam_part_practice_attempts is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101120000', 'exm_03_private_part_attempt_foundation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [76/97] Migration: 20261101130000_exm_03_assigned_practice_scoring.sql
+-- [76/110] Migration: 20261101130000_exm_03_assigned_practice_scoring.sql
 -- --------------------------------------------------------------------
 -- EXM-03: Backend-only canonical recording for assigned practice sets.
 -- Deliberately NOT a public RPC; production consumer/portability release gate
@@ -27357,7 +27357,7 @@ comment on function public.exm03_erase_part_attempts(uuid,text) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101130000', 'exm_03_assigned_practice_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [77/97] Migration: 20261101140000_exm_03_authenticated_assignment_issuer.sql
+-- [77/110] Migration: 20261101140000_exm_03_authenticated_assignment_issuer.sql
 -- --------------------------------------------------------------------
 -- EXM-03: Authenticated, server-assigned educational practice questions.
 -- Only the database chooses reviewed canonical items; clients specify solely
@@ -27612,7 +27612,7 @@ comment on function public.exm03_issue_assigned_practice(uuid,text) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101140000', 'exm_03_authenticated_assignment_issuer') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [78/97] Migration: 20261101150000_exm_03_authenticated_submit_protected_items.sql
+-- [78/110] Migration: 20261101150000_exm_03_authenticated_submit_protected_items.sql
 -- --------------------------------------------------------------------
 -- EXM-03: secure the browser-to-canonical-scorer boundary and prevent
 -- protected independently approved exam answer keys leaking through legacy
@@ -27806,7 +27806,7 @@ comment on function public.exm03_safe_visible_choices(jsonb) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101150000', 'exm_03_authenticated_submit_protected_items') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [79/97] Migration: 20261101160000_exm_03_account_practice_portability.sql
+-- [79/110] Migration: 20261101160000_exm_03_account_practice_portability.sql
 -- --------------------------------------------------------------------
 -- EXM-03: account-wide educational practice portability for bounded histories.
 -- Never grants direct access to private assignments, scoring rubrics or responses.
@@ -28082,7 +28082,7 @@ comment on function public.exm03_erase_account_practice(integer,integer,integer,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101160000', 'exm_03_account_practice_portability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [80/97] Migration: 20261101170000_exm_03_verified_large_combined_export.sql
+-- [80/110] Migration: 20261101170000_exm_03_verified_large_combined_export.sql
 -- --------------------------------------------------------------------
 -- EXM-03: verified 50k per-store inventory and private keyset page for
 -- issued assignments.  This forward migration does not change prior files.
@@ -28220,7 +28220,7 @@ comment on function public.exm03_account_part_export_page(integer,timestamptz,uu
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101170000', 'exm_03_verified_large_combined_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [81/97] Migration: 20261101180000_exm_03_release_hardening_and_date_eligibility.sql
+-- [81/110] Migration: 20261101180000_exm_03_release_hardening_and_date_eligibility.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 81: EXM-03 Release Hardening, Date-Specific Eligibility & RLS Defenses
@@ -28911,7 +28911,7 @@ $export$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101180000', 'exm_03_release_hardening_and_date_eligibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [82/97] Migration: 20261101190000_eco_05_fix_user_xp_security.sql
+-- [82/110] Migration: 20261101190000_eco_05_fix_user_xp_security.sql
 -- --------------------------------------------------------------------
 -- Migration 82: Secure User XP Progression & Definer Hardening
 -- Closes FIX-2: Prohibits direct client tampering with user_xp balances and xp_events.
@@ -29244,7 +29244,7 @@ WHERE event_type IN ('questionCorrect', 'lessonComplete', 'courseComplete', 'rev
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101190000', 'eco_05_fix_user_xp_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [83/97] Migration: 20261101195000_reconcile_user_progress_study_time_seconds.sql
+-- [83/110] Migration: 20261101195000_reconcile_user_progress_study_time_seconds.sql
 -- --------------------------------------------------------------------
 -- Reconcile hosted drift: production's public.user_progress predates the
 -- 20241228000000 baseline (created with IF NOT EXISTS) and never received
@@ -29269,7 +29269,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101195000', 'reconcile_user_progress_study_time_seconds') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [84/97] Migration: 20261101200000_eco_06_port_legacy_skills_and_missing_schema.sql
+-- [84/110] Migration: 20261101200000_eco_06_port_legacy_skills_and_missing_schema.sql
 -- --------------------------------------------------------------------
 -- Migration 83: Port Legacy Skills Taxonomy, Career Paths, and Missing Schema
 -- Closes FIX-3: Brings legacy database/ tables, views, and RPCs into the canonical migration chain with hardened RLS.
@@ -29939,7 +29939,7 @@ TO service_role;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101200000', 'eco_06_port_legacy_skills_and_missing_schema') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [85/97] Migration: 20261102140000_arch_01_learning_events_fsrs_and_server_scoring.sql
+-- [85/110] Migration: 20261102140000_arch_01_learning_events_fsrs_and_server_scoring.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 1: Learning Events, FSRS Projections & Server-Side Scoring
@@ -30742,7 +30742,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_te
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261102140000', 'arch_01_learning_events_fsrs_and_server_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [86/97] Migration: 20261106000000_arch_02_item_analytics_and_readiness_v2.sql
+-- [86/110] Migration: 20261106000000_arch_02_item_analytics_and_readiness_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 1 Deliverable: Item Analytics & Readiness v2
@@ -31297,7 +31297,7 @@ GRANT EXECUTE ON FUNCTION public.get_target_readiness_v2(UUID, TIMESTAMPTZ) TO a
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106000000', 'arch_02_item_analytics_and_readiness_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [87/97] Migration: 20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql
+-- [87/110] Migration: 20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 2 Deliverable: Versioned API Schema & Fast Scope Resolver
@@ -31716,7 +31716,7 @@ GRANT EXECUTE ON FUNCTION public.search_catalog(TEXT, TEXT, INTEGER) TO anon, au
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106010000', 'arch_03_versioned_api_schema_and_scope_resolver') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [88/97] Migration: 20261106020000_harden_field_relations_view_privileges.sql
+-- [88/110] Migration: 20261106020000_harden_field_relations_view_privileges.sql
 -- --------------------------------------------------------------------
 -- Harden the public taxonomy relation view without removing its intended read API.
 -- The hosted project already has security_invoker=true from 20261019000000.
@@ -31736,7 +31736,7 @@ grant select on table public.v_field_relations_bidirectional
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106020000', 'harden_field_relations_view_privileges') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [89/97] Migration: 20261106030000_catalog_pathway_evidence_provenance.sql
+-- [89/110] Migration: 20261106030000_catalog_pathway_evidence_provenance.sql
 -- --------------------------------------------------------------------
 -- P2e evidence provenance. Existing published revisions remain immutable.
 alter table public.catalog_license_pathway_versions
@@ -31791,7 +31791,7 @@ for each row execute function public.guard_catalog_license_pathway_evidence();
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106030000', 'catalog_pathway_evidence_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [90/97] Migration: 20261107025537_short_answer_grading_persistence.sql
+-- [90/110] Migration: 20261107025537_short_answer_grading_persistence.sql
 -- --------------------------------------------------------------------
 -- Additive short-answer grading persistence. Deploy manually after merge.
 alter table public.questions
@@ -32567,7 +32567,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107025537', 'short_answer_grading_persistence') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [91/97] Migration: 20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql
+-- [91/110] Migration: 20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql
 -- --------------------------------------------------------------------
 create or replace function public.ingest_curriculum_manifest(
   payload jsonb
@@ -33963,7 +33963,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107041341', 'restore_manifest_ingestion_with_short_answer_grading') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [92/97] Migration: 20261107045000_temporary_digest_resolution_for_backfill.sql
+-- [92/110] Migration: 20261107045000_temporary_digest_resolution_for_backfill.sql
 -- --------------------------------------------------------------------
 -- Hosted deploys run as the CLI's temporary login role (cli_login_postgres),
 -- whose search_path lacks the extensions schema, so the unqualified top-level
@@ -33986,7 +33986,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107045000', 'temporary_digest_resolution_for_backfill') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [93/97] Migration: 20261107050000_arch_04_learning_events_strict_rules.sql
+-- [93/110] Migration: 20261107050000_arch_04_learning_events_strict_rules.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 4: Strict Learning Events Rules, Constraints & Projections
@@ -34744,7 +34744,7 @@ GRANT EXECUTE ON FUNCTION public.record_events(JSONB[]) TO authenticated;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107050000', 'arch_04_learning_events_strict_rules') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [94/97] Migration: 20261107060000_performance_library_search_trigram_indexes.sql
+-- [94/110] Migration: 20261107060000_performance_library_search_trigram_indexes.sql
 -- --------------------------------------------------------------------
 -- Improve substring searches used by the Library without changing query semantics.
 -- pg_trgm supports ILIKE '%term%' where a conventional B-tree cannot.
@@ -34762,7 +34762,7 @@ create index if not exists courses_title_trgm_idx
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107060000', 'performance_library_search_trigram_indexes') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [95/97] Migration: 20261107100000_simulation_lesson_blocks.sql
+-- [95/110] Migration: 20261107100000_simulation_lesson_blocks.sql
 -- --------------------------------------------------------------------
 -- Add the simulation lesson block as an append-only schema change.
 -- Unknown block types still need a populated body for older-client fallback.
@@ -34799,7 +34799,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107100000', 'simulation_lesson_blocks') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [96/97] Migration: 20261107110000_drop_temporary_digest_resolution.sql
+-- [96/110] Migration: 20261107110000_drop_temporary_digest_resolution.sql
 -- --------------------------------------------------------------------
 -- Remove the temporary digest pass-through from 20261107045000 (only if it is
 -- that shim, identified by its marker comment) so pgcrypto's
@@ -34822,7 +34822,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107110000', 'drop_temporary_digest_resolution') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [97/97] Migration: 20261108000000_assessment_item_server_grading.sql
+-- [97/110] Migration: 20261108000000_assessment_item_server_grading.sql
 -- --------------------------------------------------------------------
 -- Server-side grading for assessment items (follow-up to FIX-12).
 --
@@ -35073,6 +35073,5272 @@ GRANT EXECUTE ON FUNCTION public.grade_assessment_items(JSONB)
   TO anon, authenticated, service_role;
 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108000000', 'assessment_item_server_grading') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [98/110] Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
+-- --------------------------------------------------------------------
+-- Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
+-- Description: Enforce database-level question-bank separation, metadata persistence in ingest_curriculum_manifest,
+--              restrictive RLS privacy for simulation items, and secure CLEP simulation issuance and server-side grading RPCs.
+
+-- 1. Helper function for simulation item identification
+create or replace function public.is_protected_simulation_item(p_metadata jsonb)
+returns boolean language sql immutable
+as $$
+  select coalesce((p_metadata->>'is_protected')::boolean, false) = true
+      or coalesce(p_metadata->>'bank', '') = 'simulation_exam'
+      or coalesce(p_metadata->>'exposure', '') = 'timed_exam_only';
+$$;
+
+revoke all on function public.is_protected_simulation_item(jsonb) from public, anon;
+grant execute on function public.is_protected_simulation_item(jsonb) to authenticated, anon, service_role;
+
+-- 2. Restrictive RLS policy protecting simulation items from direct learner reads
+drop policy if exists assessment_items_no_direct_read_of_simulation_items on public.assessment_items;
+create policy assessment_items_no_direct_read_of_simulation_items
+  on public.assessment_items
+  as restrictive for select to anon, authenticated
+  using (not public.is_protected_simulation_item(metadata));
+
+comment on policy assessment_items_no_direct_read_of_simulation_items on public.assessment_items is
+  'Enforces database-level question-bank separation. Directly blocks anon and authenticated roles from reading protected simulation items and their scoring keys.';
+
+-- 3. Updated ingest_curriculum_manifest RPC preserving item metadata
+create or replace function public.ingest_curriculum_manifest(
+  payload jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_field_id uuid;
+  v_field_slug text;
+  v_target_id uuid;
+  v_target_slug text;
+  v_version_id uuid;
+  v_version_code text;
+  v_version_status text;
+
+  -- Counters
+  v_concepts_count int := 0;
+  v_stimuli_count int := 0;
+  v_domains_count int := 0;
+  v_objectives_count int := 0;
+  v_lessons_count int := 0;
+  v_blocks_count int := 0;
+  v_items_count int := 0;
+  v_flashcards_count int := 0;
+  v_questions_count int := 0;
+  v_mappings_count int := 0;
+
+  -- Lookup Maps
+  v_stimuli_map jsonb := '{}'::jsonb;         -- stimulus_key -> uuid
+  v_concepts_map jsonb := '{}'::jsonb;        -- slug -> uuid
+  v_source_releases_map jsonb := '{}'::jsonb; -- source_id or index -> uuid
+  v_default_rel_id uuid := null;
+
+  -- Concept processing variables
+  v_concept jsonb;
+  v_concept_id uuid;
+  v_concept_slug text;
+  v_concept_name text;
+  v_explicit_canon text;
+  v_matched_id uuid;
+  v_matched_is_ambig boolean;
+  v_concept_rel_id uuid;
+
+  -- Content processing variables
+  v_stim jsonb;
+  v_stim_key text;
+  v_stim_id uuid;
+  v_domain jsonb;
+  v_domain_id uuid;
+  v_obj jsonb;
+  v_obj_id uuid;
+  v_lesson jsonb;
+  v_lesson_id uuid;
+  v_block jsonb;
+  v_block_id uuid;
+  v_item jsonb;
+  v_item_id uuid;
+  v_fc jsonb;
+  v_fc_id uuid;
+  v_term jsonb;
+  v_question jsonb;
+  v_mapping jsonb;
+  v_source_rel jsonb;
+  v_source_rel_idx int := 0;
+  v_rel_id uuid;
+  v_source_artifact jsonb;
+  v_mapping_id uuid;
+  v_source_mapping jsonb;
+  v_from_concept_id uuid;
+  v_to_concept_id uuid;
+
+  v_entity_rel_id uuid;
+  v_lesson_rel_id uuid;
+  v_obj_rel_id uuid;
+  v_raw_concept_ref text;
+  v_resolved_cid uuid;
+
+  -- Concept mapping resolution variables
+  v_from_version_code text;
+  v_from_concept_slug text;
+  v_to_concept_slug text;
+  v_mapping_type text;
+  v_from_tv_id uuid;
+  v_to_tv_id uuid;
+  v_transfer_weight numeric;
+  v_concept_mappings_count int := 0;
+begin
+
+  -- 1. Security Check: Service-role only
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     and auth.role() <> 'service_role' then
+    raise exception 'Unauthorized: ingest_curriculum_manifest requires service_role privilege';
+  end if;
+
+  -- 2. Extract / Upsert Field
+  v_field_slug := payload->'field'->>'slug';
+  if v_field_slug is not null and v_field_slug <> '' then
+    select id into v_field_id from public.fields where slug = v_field_slug;
+    if v_field_id is null then
+      insert into public.fields (slug, name, description, field_kind)
+      values (
+        v_field_slug,
+        coalesce(payload->'field'->>'name', v_field_slug),
+        payload->'field'->>'description',
+        'native_field'
+      )
+      returning id into v_field_id;
+    end if;
+  end if;
+
+  -- 3. Extract / Upsert LearningTarget
+  v_target_slug := payload->'target'->>'slug';
+  if v_target_slug is null or v_target_slug = '' then
+    raise exception 'Missing target.slug in manifest payload';
+  end if;
+
+  select id into v_target_id from public.learning_targets where slug = v_target_slug;
+  if v_target_id is null then
+    insert into public.learning_targets (
+      slug, title, target_type, description, field_id, status, is_public
+    ) values (
+      v_target_slug,
+      coalesce(payload->'target'->>'title', v_target_slug),
+      coalesce(payload->'target'->>'target_type', coalesce(payload->'target'->>'target_kind', 'certification')),
+      payload->'target'->>'description',
+      v_field_id,
+      'published',
+      true
+    )
+    returning id into v_target_id;
+  end if;
+
+  -- 4. Extract / Upsert TargetVersion
+  v_version_code := payload->'target_version'->>'version_code';
+  if v_version_code is null or v_version_code = '' then
+    raise exception 'Missing target_version.version_code in manifest payload';
+  end if;
+
+  select id, status into v_version_id, v_version_status
+  from public.target_versions
+  where target_id = v_target_id and version_code = v_version_code;
+
+  if v_version_id is null then
+    insert into public.target_versions (
+      target_id, version_code, title, description, valid_from, status, metadata
+    ) values (
+      v_target_id,
+      v_version_code,
+      coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', v_version_code),
+      coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description'),
+      case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+           then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
+           else null end,
+      'draft',
+      coalesce(payload->'target_version'->'metadata', '{}'::jsonb)
+    )
+    returning id, status into v_version_id, v_version_status;
+  else
+    if v_version_status <> 'draft' then
+      raise exception 'Cannot ingest into TargetVersion "%" with status "%". Only draft versions may be replaced.', v_version_code, v_version_status;
+    end if;
+
+    update public.target_versions
+    set title = coalesce(payload->'target_version'->>'title', payload->'target'->>'version_title', title),
+        description = coalesce(payload->'target_version'->>'description', payload->'target'->>'version_description', description),
+        valid_from = case when coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from') is not null
+                          then (coalesce(payload->'target_version'->>'valid_from', payload->'target'->>'valid_from'))::date
+                          else valid_from end,
+        metadata = coalesce(payload->'target_version'->'metadata', metadata),
+        updated_at = now()
+    where id = v_version_id;
+  end if;
+
+  -- 5. Atomically Clean Previous Draft Content for this TargetVersion
+  perform public.clean_draft_target_version(v_version_id);
+
+  -- 6. Ingest Source Releases
+  if jsonb_typeof(coalesce(payload->'source_releases', payload->'sources')) = 'array' then
+    for v_source_rel in select * from jsonb_array_elements(coalesce(payload->'source_releases', payload->'sources'))
+    loop
+      insert into public.content_source_releases (
+        publisher, title, version, source_url, license, retrieved_at, sha256, metadata
+      ) values (
+        coalesce(v_source_rel->>'publisher', 'Authoritative Source'),
+        coalesce(v_source_rel->>'title', 'Official Blueprint'),
+        coalesce(v_source_rel->>'version', 'v1'),
+        v_source_rel->>'source_url',
+        coalesce(v_source_rel->>'license', v_source_rel->>'license_name'),
+        case when v_source_rel->>'retrieved_at' is not null
+             then (v_source_rel->>'retrieved_at')::timestamptz
+             else now() end,
+        v_source_rel->>'sha256',
+        coalesce(v_source_rel->'metadata', '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
+          'system', v_source_rel->>'system',
+          'rights_note', v_source_rel->>'rights_note'
+        ))
+      )
+      on conflict (publisher, title, version) do update
+      set source_url = excluded.source_url,
+          license = excluded.license,
+          retrieved_at = excluded.retrieved_at,
+          sha256 = excluded.sha256,
+          metadata = excluded.metadata
+      returning id into v_rel_id;
+
+      v_source_rel_idx := v_source_rel_idx + 1;
+      if v_default_rel_id is null then
+        v_default_rel_id := v_rel_id;
+      end if;
+
+      if v_source_rel ? 'id' then
+        v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'id', v_rel_id::text);
+      end if;
+      if v_source_rel ? 'source_id' then
+        v_source_releases_map := v_source_releases_map || jsonb_build_object(v_source_rel->>'source_id', v_rel_id::text);
+      end if;
+      v_source_releases_map := v_source_releases_map || jsonb_build_object(
+        coalesce(v_source_rel->>'publisher', '') || '/' || coalesce(v_source_rel->>'version', ''), v_rel_id::text
+      );
+      v_source_releases_map := v_source_releases_map || jsonb_build_object(
+        (v_source_rel_idx - 1)::text, v_rel_id::text
+      );
+
+      -- Link root target_version to this source release
+      insert into public.content_source_mappings (
+        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+      ) values (
+        v_rel_id,
+        'target_version',
+        v_version_id,
+        'official_blueprint',
+        coalesce(payload->'target_version'->>'citation', 'Root Blueprint'),
+        'Root target version mapping to authoritative source release',
+        '{}'::jsonb
+      )
+      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+      set citation_location = excluded.citation_location,
+          notes = excluded.notes,
+          metadata = excluded.metadata
+      returning id into v_mapping_id;
+
+      v_mappings_count := v_mappings_count + 1;
+      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+      values (v_version_id, 'content_source_mapping', v_mapping_id)
+      on conflict do nothing;
+
+      -- Source Artifacts
+      if jsonb_typeof(v_source_rel->'artifacts') = 'array' then
+        for v_source_artifact in select * from jsonb_array_elements(v_source_rel->'artifacts')
+        loop
+          insert into public.content_source_artifacts (
+            source_release_id, artifact_name, source_url, sha256, file_size_bytes, retrieved_at, metadata
+          ) values (
+            v_rel_id,
+            coalesce(v_source_artifact->>'artifact_name', 'blueprint.pdf'),
+            v_source_artifact->>'source_url',
+            v_source_artifact->>'sha256',
+            case when v_source_artifact->>'file_size_bytes' is not null
+                 then (v_source_artifact->>'file_size_bytes')::bigint
+                 else null end,
+            case when v_source_artifact->>'retrieved_at' is not null
+                 then (v_source_artifact->>'retrieved_at')::timestamptz
+                 else now() end,
+            coalesce(v_source_artifact->'metadata', '{}'::jsonb)
+          )
+          on conflict (source_release_id, artifact_name) do update
+          set source_url = excluded.source_url,
+              sha256 = excluded.sha256,
+              file_size_bytes = excluded.file_size_bytes,
+              retrieved_at = excluded.retrieved_at,
+              metadata = excluded.metadata;
+        end loop;
+      end if;
+    end loop;
+  end if;
+
+  -- 7. Fully Transactional Canonical Concepts Resolution & Ingestion (Option A)
+  if jsonb_typeof(payload->'concepts') = 'array' then
+    for v_concept in select * from jsonb_array_elements(payload->'concepts')
+    loop
+      v_concept_slug := v_concept->>'slug';
+      v_concept_name := coalesce(v_concept->>'name', v_concept_slug);
+      v_explicit_canon := v_concept->>'canonical_concept';
+      v_concept_id := null;
+
+      if v_explicit_canon is not null and trim(v_explicit_canon) <> '' then
+        select id into v_concept_id
+        from public.knowledge_concepts
+        where slug = trim(v_explicit_canon);
+
+        if v_concept_id is null then
+          raise exception 'Explicit canonical_concept "%" declared for concept "%" (%) does not exist in knowledge_concepts. Overrides must fail closed.', v_explicit_canon, v_concept_name, v_concept_slug;
+        end if;
+
+        if v_field_id is not null then
+          insert into public.concept_fields (concept_id, field_id, relationship)
+          values (v_concept_id, v_field_id, 'core_concept')
+          on conflict (concept_id, field_id) do nothing;
+        end if;
+      else
+        -- Ambiguity-safe resolution RPC
+        select r.id, r.is_ambiguous into v_matched_id, v_matched_is_ambig
+        from public.resolve_canonical_concept(v_concept_slug, v_concept_name, v_field_id) r
+        limit 1;
+
+        if v_matched_is_ambig then
+          raise exception 'Ambiguous canonical concept match for "%" (%). Multiple concepts share this name across fields and target field does not disambiguate. Declare "canonical_concept: <existing-slug>" explicitly in the manifest to resolve the ambiguity, or make the concept name specific.', v_concept_name, v_concept_slug;
+        end if;
+
+        if v_matched_id is not null then
+          v_concept_id := v_matched_id;
+          if v_field_id is not null then
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
+            on conflict (concept_id, field_id) do nothing;
+          end if;
+        else
+          -- Insert new canonical knowledge concept
+          insert into public.knowledge_concepts (
+            field_id, slug, name, short_definition, description, emoji, aliases, status
+          ) values (
+            v_field_id,
+            v_concept_slug,
+            v_concept_name,
+            v_concept->>'short_definition',
+            v_concept->>'description',
+            coalesce(v_concept->>'emoji', '💡'),
+            case when jsonb_typeof(v_concept->'aliases') = 'array'
+                 then array(select jsonb_array_elements_text(v_concept->'aliases'))
+                 else array[]::text[] end,
+            'active'
+          )
+          returning id into v_concept_id;
+
+          if v_field_id is not null then
+            insert into public.concept_fields (concept_id, field_id, relationship)
+            values (v_concept_id, v_field_id, 'core_concept')
+            on conflict (concept_id, field_id) do nothing;
+          end if;
+        end if;
+      end if;
+
+      v_concepts_count := v_concepts_count + 1;
+      v_concepts_map := v_concepts_map || jsonb_build_object(v_concept_slug, v_concept_id::text);
+
+      -- Canonical Concept Provenance Mapping
+      if v_default_rel_id is not null then
+        v_concept_rel_id := null;
+        if v_concept ? 'source_release_id' and v_source_releases_map ? (v_concept->>'source_release_id') then
+          v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_release_id'))::uuid;
+        elsif v_concept ? 'source_id' and v_source_releases_map ? (v_concept->>'source_id') then
+          v_concept_rel_id := (v_source_releases_map->>(v_concept->>'source_id'))::uuid;
+        else
+          v_concept_rel_id := v_default_rel_id;
+        end if;
+
+        if v_concept_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_concept_rel_id,
+            'knowledge_concept',
+            v_concept_id,
+            coalesce(v_concept->>'relationship', 'official_blueprint'),
+            coalesce(v_concept->>'citation', coalesce(v_concept->>'citation_location', 'Concept ' || v_concept_slug)),
+            coalesce(v_concept->>'notes', coalesce(v_concept->>'citation_notes', 'Authoritative concept definition from blueprint')),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata;
+
+          v_mappings_count := v_mappings_count + 1;
+        end if;
+      end if;
+    end loop;
+  end if;
+
+  -- 8. Ingest Shared Stimuli (root-level & objective-level)
+  if jsonb_typeof(payload->'stimuli') = 'array' then
+    for v_stim in select * from jsonb_array_elements(payload->'stimuli')
+    loop
+      v_stim_key := v_stim->>'stimulus_key';
+      insert into public.assessment_stimuli (
+        title, body, stimulus_type, metadata, origin_target_version_id
+      ) values (
+        coalesce(v_stim->>'title', 'Exhibit'),
+        coalesce(v_stim->>'body', coalesce(v_stim->>'body_markdown', '')),
+        coalesce(v_stim->>'stimulus_type', 'scenario'),
+        jsonb_build_object(
+          'media_url', v_stim->>'media_url',
+          'credit', v_stim->>'credit',
+          'attribution', v_stim->>'attribution'
+        ),
+        v_version_id
+      )
+      returning id into v_stim_id;
+
+      v_stimuli_count := v_stimuli_count + 1;
+      v_stimuli_map := v_stimuli_map || jsonb_build_object(v_stim_key, v_stim_id::text);
+
+      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id, manifest_key)
+      values (v_version_id, 'assessment_stimulus', v_stim_id, v_stim_key);
+
+      -- Stimulus Source Mapping
+      if v_default_rel_id is not null then
+        v_entity_rel_id := null;
+        if v_stim ? 'source_release_id' and v_source_releases_map ? (v_stim->>'source_release_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_release_id'))::uuid;
+        elsif v_stim ? 'source_id' and v_source_releases_map ? (v_stim->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_stim->>'source_id'))::uuid;
+        else
+          v_entity_rel_id := v_default_rel_id;
+        end if;
+
+        if v_entity_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_entity_rel_id,
+            'assessment_stimulus',
+            v_stim_id,
+            'official_blueprint',
+            coalesce(v_stim->>'citation', coalesce(v_stim->>'citation_location', 'Official Blueprint Stimulus')),
+            coalesce(v_stim->>'notes', 'Assessment stimulus mapping'),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata
+          returning id into v_mapping_id;
+
+          v_mappings_count := v_mappings_count + 1;
+          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+          values (v_version_id, 'content_source_mapping', v_mapping_id)
+          on conflict do nothing;
+        end if;
+      end if;
+    end loop;
+  end if;
+
+  -- 9. Ingest Standalone Target-level Flashcards
+  if jsonb_typeof(payload->'flashcards') = 'array' then
+    for v_fc in select * from jsonb_array_elements(payload->'flashcards')
+    loop
+      insert into public.flashcards (
+        front, back, explanation, origin_target_version_id
+      ) values (
+        v_fc->>'front',
+        v_fc->>'back',
+        v_fc->>'explanation',
+        v_version_id
+      )
+      returning id into v_fc_id;
+
+      v_flashcards_count := v_flashcards_count + 1;
+      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+      values (v_version_id, 'flashcard', v_fc_id);
+
+      -- Link concepts by UUID or slug lookup
+      if jsonb_typeof(v_fc->'concept_ids') = 'array' then
+        for v_concept_id in select (jsonb_array_elements_text(v_fc->'concept_ids'))::uuid
+        loop
+          insert into public.flashcard_concepts (flashcard_id, concept_id)
+          values (v_fc_id, v_concept_id)
+          on conflict do nothing;
+        end loop;
+      end if;
+
+      if jsonb_typeof(v_fc->'concept_slugs') = 'array' then
+        for v_raw_concept_ref in select jsonb_array_elements_text(v_fc->'concept_slugs')
+        loop
+          if v_concepts_map ? v_raw_concept_ref then
+            v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+            insert into public.flashcard_concepts (flashcard_id, concept_id)
+            values (v_fc_id, v_resolved_cid)
+            on conflict do nothing;
+          end if;
+        end loop;
+      end if;
+
+      -- Flashcard Provenance Mapping
+      if v_default_rel_id is not null then
+        v_entity_rel_id := null;
+        if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+        elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
+        else
+          v_entity_rel_id := v_default_rel_id;
+        end if;
+
+        if v_entity_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_entity_rel_id,
+            'flashcard',
+            v_fc_id,
+            'derived_from',
+            coalesce(v_fc->>'citation', coalesce(v_fc->>'citation_location', coalesce(v_fc->>'front', 'Flashcard'))),
+            coalesce(v_fc->>'notes', 'Flashcard derived from authoritative blueprint'),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata
+          returning id into v_mapping_id;
+
+          v_mappings_count := v_mappings_count + 1;
+          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+          values (v_version_id, 'content_source_mapping', v_mapping_id)
+          on conflict do nothing;
+        end if;
+      end if;
+    end loop;
+  end if;
+
+  -- 10. Ingest Domains, Objectives, Lessons, Blocks, Assessment Items
+  if jsonb_typeof(payload->'domains') = 'array' then
+    for v_domain in select * from jsonb_array_elements(payload->'domains')
+    loop
+      insert into public.curriculum_nodes (
+        target_version_id, node_type, code, title, description, sort_order, weight, metadata
+      ) values (
+        v_version_id,
+        'domain',
+        v_domain->>'code',
+        coalesce(v_domain->>'title', 'Domain'),
+        v_domain->>'description',
+        coalesce((v_domain->>'sort_order')::int, 0),
+        case when v_domain->>'weight_percentage' is not null
+             then (v_domain->>'weight_percentage')::numeric
+             when v_domain->>'weight' is not null
+             then (v_domain->>'weight')::numeric
+             else null end,
+        coalesce(v_domain->'metadata', '{}'::jsonb)
+      )
+      returning id into v_domain_id;
+
+      v_domains_count := v_domains_count + 1;
+      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+      values (v_version_id, 'curriculum_node', v_domain_id);
+
+      -- Domain Source Mapping
+      if v_default_rel_id is not null then
+        v_entity_rel_id := null;
+        if v_domain ? 'source_release_id' and v_source_releases_map ? (v_domain->>'source_release_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid;
+        elsif v_domain ? 'source_id' and v_source_releases_map ? (v_domain->>'source_id') then
+          v_entity_rel_id := (v_source_releases_map->>(v_domain->>'source_id'))::uuid;
+        else
+          v_entity_rel_id := v_default_rel_id;
+        end if;
+
+        if v_entity_rel_id is not null then
+          insert into public.content_source_mappings (
+            source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+          ) values (
+            v_entity_rel_id,
+            'curriculum_node',
+            v_domain_id,
+            'official_blueprint',
+            coalesce(v_domain->>'citation', coalesce(v_domain->>'citation_location', 'Domain ' || coalesce(v_domain->>'code', ''))),
+            coalesce(v_domain->>'notes', 'Curriculum domain node citation'),
+            '{}'::jsonb
+          )
+          on conflict (source_release_id, entity_type, entity_id, relationship) do update
+          set citation_location = excluded.citation_location,
+              notes = excluded.notes,
+              metadata = excluded.metadata
+          returning id into v_mapping_id;
+
+          v_mappings_count := v_mappings_count + 1;
+          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+          values (v_version_id, 'content_source_mapping', v_mapping_id)
+          on conflict do nothing;
+        end if;
+      end if;
+
+      -- Objectives
+      if jsonb_typeof(v_domain->'objectives') = 'array' then
+        for v_obj in select * from jsonb_array_elements(v_domain->'objectives')
+        loop
+          insert into public.curriculum_nodes (
+            target_version_id, parent_id, node_type, code, title, description, sort_order, metadata
+          ) values (
+            v_version_id,
+            v_domain_id,
+            'objective',
+            v_obj->>'code',
+            coalesce(v_obj->>'title', 'Objective'),
+            v_obj->>'description',
+            coalesce((v_obj->>'sort_order')::int, 0),
+            jsonb_build_object('bloom_level', coalesce(v_obj->>'bloom_level', 'understand'))
+          )
+          returning id into v_obj_id;
+
+          v_objectives_count := v_objectives_count + 1;
+          insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+          values (v_version_id, 'curriculum_node', v_obj_id);
+
+          -- Objective Source Mapping
+          if v_default_rel_id is not null then
+            v_entity_rel_id := null;
+            if v_obj ? 'source_release_id' and v_source_releases_map ? (v_obj->>'source_release_id') then
+              v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid;
+            elsif v_obj ? 'source_id' and v_source_releases_map ? (v_obj->>'source_id') then
+              v_entity_rel_id := (v_source_releases_map->>(v_obj->>'source_id'))::uuid;
+            else
+              v_entity_rel_id := coalesce(
+                (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                v_default_rel_id
+              );
+            end if;
+
+            v_obj_rel_id := v_entity_rel_id;
+
+            if v_entity_rel_id is not null then
+              insert into public.content_source_mappings (
+                source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+              ) values (
+                v_entity_rel_id,
+                'curriculum_node',
+                v_obj_id,
+                'official_blueprint',
+                coalesce(v_obj->>'citation', coalesce(v_obj->>'citation_location', 'Objective ' || coalesce(v_obj->>'code', ''))),
+                coalesce(v_obj->>'notes', 'Curriculum objective node citation'),
+                '{}'::jsonb
+              )
+              on conflict (source_release_id, entity_type, entity_id, relationship) do update
+              set citation_location = excluded.citation_location,
+                  notes = excluded.notes,
+                  metadata = excluded.metadata
+              returning id into v_mapping_id;
+
+              v_mappings_count := v_mappings_count + 1;
+              insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+              values (v_version_id, 'content_source_mapping', v_mapping_id)
+              on conflict do nothing;
+            end if;
+          end if;
+
+          -- Link objective concepts by UUID or slug
+          if jsonb_typeof(v_obj->'concept_ids') = 'array' then
+            for v_concept_id in select (jsonb_array_elements_text(v_obj->'concept_ids'))::uuid
+            loop
+              insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+              values (v_obj_id, v_concept_id)
+              on conflict do nothing;
+            end loop;
+          end if;
+
+          if jsonb_typeof(v_obj->'concept_slugs') = 'array' then
+            for v_raw_concept_ref in select jsonb_array_elements_text(v_obj->'concept_slugs')
+            loop
+              if v_concepts_map ? v_raw_concept_ref then
+                v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                insert into public.curriculum_node_concepts (curriculum_node_id, concept_id)
+                values (v_obj_id, v_resolved_cid)
+                on conflict do nothing;
+              end if;
+            end loop;
+          end if;
+
+          -- Objective Flashcards
+          if jsonb_typeof(v_obj->'flashcards') = 'array' then
+            for v_fc in select * from jsonb_array_elements(v_obj->'flashcards')
+            loop
+              insert into public.flashcards (
+                front, back, explanation, origin_target_version_id
+              ) values (
+                v_fc->>'front',
+                v_fc->>'back',
+                v_fc->>'explanation',
+                v_version_id
+              )
+              returning id into v_fc_id;
+
+              v_flashcards_count := v_flashcards_count + 1;
+              insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+              values (v_version_id, 'flashcard', v_fc_id);
+
+              if jsonb_typeof(v_fc->'concept_ids') = 'array' then
+                for v_concept_id in select (jsonb_array_elements_text(v_fc->'concept_ids'))::uuid
+                loop
+                  insert into public.flashcard_concepts (flashcard_id, concept_id)
+                  values (v_fc_id, v_concept_id)
+                  on conflict do nothing;
+                end loop;
+              end if;
+
+              if jsonb_typeof(v_fc->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_fc->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.flashcard_concepts (flashcard_id, concept_id)
+                    values (v_fc_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
+                end loop;
+              end if;
+
+              -- Objective Flashcard Provenance Mapping
+              if v_default_rel_id is not null then
+                v_entity_rel_id := null;
+                if v_fc ? 'source_release_id' and v_source_releases_map ? (v_fc->>'source_release_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_release_id'))::uuid;
+                elsif v_fc ? 'source_id' and v_source_releases_map ? (v_fc->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_fc->>'source_id'))::uuid;
+                else
+                  v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
+                end if;
+
+                if v_entity_rel_id is not null then
+                  insert into public.content_source_mappings (
+                    source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                  ) values (
+                    v_entity_rel_id,
+                    'flashcard',
+                    v_fc_id,
+                    'derived_from',
+                    coalesce(v_fc->>'citation', coalesce(v_fc->>'citation_location', coalesce(v_fc->>'front', 'Objective Flashcard'))),
+                    coalesce(v_fc->>'notes', 'Flashcard derived from authoritative objective blueprint'),
+                    '{}'::jsonb
+                  )
+                  on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                  set citation_location = excluded.citation_location,
+                      notes = excluded.notes,
+                      metadata = excluded.metadata
+                  returning id into v_mapping_id;
+
+                  v_mappings_count := v_mappings_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'content_source_mapping', v_mapping_id)
+                  on conflict do nothing;
+                end if;
+              end if;
+            end loop;
+          end if;
+
+          -- Objective Assessment Items
+          if jsonb_typeof(v_obj->'assessment_items') = 'array' then
+            for v_item in select * from jsonb_array_elements(v_obj->'assessment_items')
+            loop
+              v_stim_key := v_item->>'stimulus_key';
+              v_stim_id := null;
+              if v_stim_key is not null and v_stimuli_map ? v_stim_key then
+                v_stim_id := (v_stimuli_map->>v_stim_key)::uuid;
+              end if;
+
+              insert into public.assessment_items (
+                stimulus_id, prompt, interaction_type, response_spec, scoring_spec, explanation, origin_target_version_id, metadata
+              ) values (
+                v_stim_id,
+                v_item->>'prompt',
+                coalesce(v_item->>'interaction_type', 'single_choice'),
+                coalesce(v_item->'response_spec', '{}'::jsonb),
+                coalesce(v_item->'scoring_spec', '{}'::jsonb),
+                v_item->>'explanation',
+                v_version_id,
+                coalesce(v_item->'metadata', '{}'::jsonb)
+              )
+              returning id into v_item_id;
+
+              v_items_count := v_items_count + 1;
+              insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+              values (v_version_id, 'assessment_item', v_item_id);
+
+              if jsonb_typeof(v_item->'concept_ids') = 'array' then
+                for v_concept_id in select (jsonb_array_elements_text(v_item->'concept_ids'))::uuid
+                loop
+                  insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                  values (v_item_id, v_concept_id)
+                  on conflict do nothing;
+                end loop;
+              end if;
+
+              if jsonb_typeof(v_item->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_item->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                    values (v_item_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
+                end loop;
+              end if;
+
+              -- Objective Assessment Item Provenance Mapping
+              if v_default_rel_id is not null then
+                v_entity_rel_id := null;
+                if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
+                else
+                  v_entity_rel_id := coalesce(v_obj_rel_id, v_default_rel_id);
+                end if;
+
+                if v_entity_rel_id is not null then
+                  insert into public.content_source_mappings (
+                    source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                  ) values (
+                    v_entity_rel_id,
+                    'assessment_item',
+                    v_item_id,
+                    'derived_from',
+                    coalesce(v_item->>'citation', coalesce(v_item->>'citation_location', substring(coalesce(v_item->>'prompt', 'Assessment Item') from 1 for 100))),
+                    coalesce(v_item->>'notes', 'Assessment item derived from authoritative blueprint'),
+                    '{}'::jsonb
+                  )
+                  on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                  set citation_location = excluded.citation_location,
+                      notes = excluded.notes,
+                      metadata = excluded.metadata
+                  returning id into v_mapping_id;
+
+                  v_mappings_count := v_mappings_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'content_source_mapping', v_mapping_id)
+                  on conflict do nothing;
+                end if;
+              end if;
+            end loop;
+          end if;
+
+          -- Lessons
+          if jsonb_typeof(v_obj->'lessons') = 'array' then
+            for v_lesson in select * from jsonb_array_elements(v_obj->'lessons')
+            loop
+              insert into public.lessons (
+                title, description, visibility, origin_target_version_id
+              ) values (
+                v_lesson->>'title',
+                coalesce(v_lesson->>'description', v_lesson->>'summary'),
+                'public',
+                v_version_id
+              )
+              returning id into v_lesson_id;
+
+              v_lessons_count := v_lessons_count + 1;
+              insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+              values (v_version_id, 'lesson', v_lesson_id);
+
+              -- Lesson Source Mapping
+              if v_default_rel_id is not null then
+                v_entity_rel_id := null;
+                if v_lesson ? 'source_release_id' and v_source_releases_map ? (v_lesson->>'source_release_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_release_id'))::uuid;
+                elsif v_lesson ? 'source_id' and v_source_releases_map ? (v_lesson->>'source_id') then
+                  v_entity_rel_id := (v_source_releases_map->>(v_lesson->>'source_id'))::uuid;
+                else
+                  v_entity_rel_id := coalesce(
+                    (v_source_releases_map->>(v_obj->>'source_release_id'))::uuid,
+                    (v_source_releases_map->>(v_obj->>'source_id'))::uuid,
+                    coalesce(
+                      (v_source_releases_map->>(v_domain->>'source_release_id'))::uuid,
+                      (v_source_releases_map->>(v_domain->>'source_id'))::uuid,
+                      v_default_rel_id
+                    )
+                  );
+                end if;
+
+                v_lesson_rel_id := v_entity_rel_id;
+
+                if v_entity_rel_id is not null then
+                  insert into public.content_source_mappings (
+                    source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                  ) values (
+                    v_entity_rel_id,
+                    'lesson',
+                    v_lesson_id,
+                    'derived_from',
+                    coalesce(v_lesson->>'citation', coalesce(v_lesson->>'citation_location', coalesce(v_lesson->>'title', 'Lesson'))),
+                    coalesce(v_lesson->>'notes', 'Lesson derived from authoritative source'),
+                    '{}'::jsonb
+                  )
+                  on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                  set citation_location = excluded.citation_location,
+                      notes = excluded.notes,
+                      metadata = excluded.metadata
+                  returning id into v_mapping_id;
+
+                  v_mappings_count := v_mappings_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'content_source_mapping', v_mapping_id)
+                  on conflict do nothing;
+                end if;
+              end if;
+
+              -- Bind lesson to objective
+              insert into public.curriculum_node_lessons (curriculum_node_id, lesson_id, sort_order)
+              values (v_obj_id, v_lesson_id, coalesce((v_lesson->>'order_index')::int, 0))
+              on conflict do nothing;
+
+              -- Scoped lesson concept linking
+              if jsonb_typeof(v_lesson->'concept_ids') = 'array' then
+                for v_concept_id in select (jsonb_array_elements_text(v_lesson->'concept_ids'))::uuid
+                loop
+                  insert into public.lesson_concepts (lesson_id, concept_id)
+                  values (v_lesson_id, v_concept_id)
+                  on conflict do nothing;
+                end loop;
+              end if;
+
+              if jsonb_typeof(v_lesson->'concept_slugs') = 'array' then
+                for v_raw_concept_ref in select jsonb_array_elements_text(v_lesson->'concept_slugs')
+                loop
+                  if v_concepts_map ? v_raw_concept_ref then
+                    v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                    insert into public.lesson_concepts (lesson_id, concept_id)
+                    values (v_lesson_id, v_resolved_cid)
+                    on conflict do nothing;
+                  end if;
+                end loop;
+              end if;
+
+              -- Lesson Blocks
+              if jsonb_typeof(v_lesson->'blocks') = 'array' then
+                for v_block in select * from jsonb_array_elements(v_lesson->'blocks')
+                loop
+                  insert into public.lesson_blocks (
+                    lesson_id, block_type, content, sort_order
+                  ) values (
+                    v_lesson_id,
+                    coalesce(v_block->>'block_type', 'markdown'),
+                    coalesce(v_block->'content', '{}'::jsonb),
+                    coalesce((v_block->>'sort_order')::int, 0)
+                  )
+                  returning id into v_block_id;
+
+                  v_blocks_count := v_blocks_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'lesson_block', v_block_id);
+
+                  -- Lesson Block Provenance Mapping
+                  if v_default_rel_id is not null then
+                    v_entity_rel_id := null;
+                    if v_block ? 'source_release_id' and v_source_releases_map ? (v_block->>'source_release_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_release_id'))::uuid;
+                    elsif v_block ? 'source_id' and v_source_releases_map ? (v_block->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_block->>'source_id'))::uuid;
+                    else
+                      v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
+                    end if;
+
+                    if v_entity_rel_id is not null then
+                      insert into public.content_source_mappings (
+                        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                      ) values (
+                        v_entity_rel_id,
+                        'lesson_block',
+                        v_block_id,
+                        'derived_from',
+                        coalesce(v_block->>'citation', coalesce(v_block->>'citation_location', coalesce(v_lesson->>'title', 'Lesson Block'))),
+                        coalesce(v_block->>'notes', 'Lesson content block citation'),
+                        '{}'::jsonb
+                      )
+                      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                      set citation_location = excluded.citation_location,
+                          notes = excluded.notes,
+                          metadata = excluded.metadata
+                      returning id into v_mapping_id;
+
+                      v_mappings_count := v_mappings_count + 1;
+                      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                      values (v_version_id, 'content_source_mapping', v_mapping_id)
+                      on conflict do nothing;
+                    end if;
+                  end if;
+                end loop;
+              end if;
+
+              -- Lesson Terms
+              if jsonb_typeof(v_lesson->'terms') = 'array' then
+                for v_term in select * from jsonb_array_elements(v_lesson->'terms')
+                loop
+                  insert into public.terms (lesson_id, term, definition)
+                  values (v_lesson_id, v_term->>'term', v_term->>'definition');
+                end loop;
+              end if;
+
+              -- Lesson Questions
+              if jsonb_typeof(v_lesson->'questions') = 'array' then
+                for v_question in select * from jsonb_array_elements(v_lesson->'questions')
+                loop
+                  insert into public.questions (
+                    lesson_id, question_text, options, correct_answer, type, explanation,
+                    accepted_answers, grading_method, numeric_tolerance
+                  ) values (
+                    v_lesson_id,
+                    coalesce(v_question->>'question_text', v_question->>'question'),
+                    coalesce(v_question->'options', '[]'::jsonb),
+                    coalesce((coalesce(v_question->>'correct_answer', v_question->>'correct_index'))::int, 0),
+                    coalesce(v_question->>'type', 'mcq'),
+                    v_question->>'explanation',
+                    array(select jsonb_array_elements_text(coalesce(v_question->'accepted_answers', '[]'::jsonb))),
+                    coalesce(v_question->>'grading_method', 'normalized_text'),
+                    case when v_question->>'numeric_tolerance' is not null
+                      then (v_question->>'numeric_tolerance')::numeric
+                      else null end
+                  );
+                  v_questions_count := v_questions_count + 1;
+                end loop;
+              end if;
+
+              -- Lesson Assessment Items
+              if jsonb_typeof(v_lesson->'assessment_items') = 'array' then
+                for v_item in select * from jsonb_array_elements(v_lesson->'assessment_items')
+                loop
+                  v_stim_key := v_item->>'stimulus_key';
+                  v_stim_id := null;
+                  if v_stim_key is not null and v_stimuli_map ? v_stim_key then
+                    v_stim_id := (v_stimuli_map->>v_stim_key)::uuid;
+                  end if;
+
+                  insert into public.assessment_items (
+                    lesson_id, stimulus_id, prompt, interaction_type, response_spec, scoring_spec, explanation, origin_target_version_id, metadata
+                  ) values (
+                    v_lesson_id,
+                    v_stim_id,
+                    v_item->>'prompt',
+                    coalesce(v_item->>'interaction_type', 'single_choice'),
+                    coalesce(v_item->'response_spec', '{}'::jsonb),
+                    coalesce(v_item->'scoring_spec', '{}'::jsonb),
+                    v_item->>'explanation',
+                    v_version_id,
+                    coalesce(v_item->'metadata', '{}'::jsonb)
+                  )
+                  returning id into v_item_id;
+
+                  v_items_count := v_items_count + 1;
+                  insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                  values (v_version_id, 'assessment_item', v_item_id);
+
+                  if jsonb_typeof(v_item->'concept_ids') = 'array' then
+                    for v_concept_id in select (jsonb_array_elements_text(v_item->'concept_ids'))::uuid
+                    loop
+                      insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                      values (v_item_id, v_concept_id)
+                      on conflict do nothing;
+                    end loop;
+                  end if;
+
+                  if jsonb_typeof(v_item->'concept_slugs') = 'array' then
+                    for v_raw_concept_ref in select jsonb_array_elements_text(v_item->'concept_slugs')
+                    loop
+                      if v_concepts_map ? v_raw_concept_ref then
+                        v_resolved_cid := (v_concepts_map->>v_raw_concept_ref)::uuid;
+                        insert into public.assessment_item_concepts (assessment_item_id, concept_id)
+                        values (v_item_id, v_resolved_cid)
+                        on conflict do nothing;
+                      end if;
+                    end loop;
+                  end if;
+
+                  -- Lesson Assessment Item Provenance Mapping
+                  if v_default_rel_id is not null then
+                    v_entity_rel_id := null;
+                    if v_item ? 'source_release_id' and v_source_releases_map ? (v_item->>'source_release_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_release_id'))::uuid;
+                    elsif v_item ? 'source_id' and v_source_releases_map ? (v_item->>'source_id') then
+                      v_entity_rel_id := (v_source_releases_map->>(v_item->>'source_id'))::uuid;
+                    else
+                      v_entity_rel_id := coalesce(v_lesson_rel_id, v_default_rel_id);
+                    end if;
+
+                    if v_entity_rel_id is not null then
+                      insert into public.content_source_mappings (
+                        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+                      ) values (
+                        v_entity_rel_id,
+                        'assessment_item',
+                        v_item_id,
+                        'derived_from',
+                        coalesce(v_item->>'citation', coalesce(v_item->>'citation_location', substring(coalesce(v_item->>'prompt', 'Lesson Assessment Item') from 1 for 100))),
+                        coalesce(v_item->>'notes', 'Lesson assessment item derived from authoritative blueprint'),
+                        '{}'::jsonb
+                      )
+                      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+                      set citation_location = excluded.citation_location,
+                          notes = excluded.notes,
+                          metadata = excluded.metadata
+                      returning id into v_mapping_id;
+
+                      v_mappings_count := v_mappings_count + 1;
+                      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+                      values (v_version_id, 'content_source_mapping', v_mapping_id)
+                      on conflict do nothing;
+                    end if;
+                  end if;
+                end loop;
+              end if;
+
+            end loop;
+          end if; -- lessons
+
+        end loop;
+      end if; -- objectives
+
+    end loop;
+  end if; -- domains
+
+  -- 11. Ingest Explicit Custom Source Mappings
+  if jsonb_typeof(payload->'source_mappings') = 'array' then
+    for v_source_mapping in select * from jsonb_array_elements(payload->'source_mappings')
+    loop
+      insert into public.content_source_mappings (
+        source_release_id, entity_type, entity_id, relationship, citation_location, notes, metadata
+      ) values (
+        (v_source_mapping->>'source_release_id')::uuid,
+        v_source_mapping->>'entity_type',
+        (v_source_mapping->>'entity_id')::uuid,
+        coalesce(v_source_mapping->>'relationship', 'derived_from'),
+        coalesce(v_source_mapping->>'citation_location', v_source_mapping->>'section_reference'),
+        coalesce(v_source_mapping->>'notes', v_source_mapping->>'citation_text'),
+        coalesce(v_source_mapping->'metadata', '{}'::jsonb)
+      )
+      on conflict (source_release_id, entity_type, entity_id, relationship) do update
+      set citation_location = excluded.citation_location,
+          notes = excluded.notes,
+          metadata = excluded.metadata
+      returning id into v_mapping_id;
+
+      v_mappings_count := v_mappings_count + 1;
+      insert into public.content_import_artifacts (target_version_id, entity_type, entity_id)
+      values (v_version_id, 'content_source_mapping', v_mapping_id)
+      on conflict do nothing;
+    end loop;
+  end if;
+
+  -- 12. Ingest Concept Version Mappings
+  if jsonb_typeof(coalesce(payload->'concept_mappings', payload->'target_version_concept_mappings')) = 'array' then
+    for v_mapping in select * from jsonb_array_elements(coalesce(payload->'concept_mappings', payload->'target_version_concept_mappings'))
+    loop
+      -- Check if standard manifest format (from_version_code, from_concept_slug, etc.)
+      if v_mapping ? 'from_version_code' or v_mapping ? 'from_concept_slug' then
+        v_from_version_code := v_mapping->>'from_version_code';
+        v_from_concept_slug := v_mapping->>'from_concept_slug';
+        v_to_concept_slug := v_mapping->>'to_concept_slug';
+        v_mapping_type := coalesce(v_mapping->>'mapping_type', 'unchanged');
+
+        if v_mapping_type = 'equivalent' then
+          v_mapping_type := 'unchanged';
+        end if;
+
+        if v_mapping_type not in ('unchanged', 'renamed', 'expanded', 'narrowed', 'replaced', 'removed') then
+          raise exception 'Invalid mapping_type "%" for concept mapping. Must be one of unchanged, renamed, expanded, narrowed, replaced, removed.', v_mapping_type;
+        end if;
+
+        -- Resolve source version ID
+        select id into v_from_tv_id
+        from public.target_versions
+        where target_id = v_target_id and version_code = v_from_version_code
+        limit 1;
+
+        if v_from_tv_id is null then
+          raise exception 'Target version with version_code "%" not found for target "%".', v_from_version_code, v_target_id;
+        end if;
+
+        -- Resolve source concept ID
+        v_from_concept_id := null;
+        if v_concepts_map ? v_from_concept_slug then
+          v_from_concept_id := (v_concepts_map->>v_from_concept_slug)::uuid;
+        else
+          select id into v_from_concept_id
+          from public.knowledge_concepts
+          where slug = v_from_concept_slug
+          limit 1;
+        end if;
+
+        if v_from_concept_id is null then
+          raise exception 'Source concept with slug "%" not found for concept mapping.', v_from_concept_slug;
+        end if;
+
+        -- Validate source concept is attached to source version through curriculum_node_concepts
+        if not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_from_tv_id
+            and cnc.concept_id = v_from_concept_id
+        ) then
+          raise exception 'Source concept "%" (id: %) is not associated with source target version "%" (version_code: %).',
+            v_from_concept_slug, v_from_concept_id, v_from_tv_id, v_from_version_code;
+        end if;
+
+        -- Validate destination concept and mapping invariant
+        v_to_concept_id := null;
+        if v_mapping_type = 'removed' then
+          if v_to_concept_slug is not null and trim(v_to_concept_slug) <> '' then
+            raise exception 'Removed concept mapping for source concept "%" cannot specify a destination concept (got "%").',
+              v_from_concept_slug, v_to_concept_slug;
+          end if;
+
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null and (v_mapping->>'transfer_weight')::numeric <> 0.0 then
+            raise exception 'Removed concept mapping for source concept "%" must have transfer_weight = 0 (got %).',
+              v_from_concept_slug, (v_mapping->>'transfer_weight')::numeric;
+          end if;
+          v_transfer_weight := 0.0;
+        else
+          if v_to_concept_slug is null or trim(v_to_concept_slug) = '' then
+            raise exception 'Destination concept slug must be specified for mapping_type "%".', v_mapping_type;
+          end if;
+
+          if v_concepts_map ? v_to_concept_slug then
+            v_to_concept_id := (v_concepts_map->>v_to_concept_slug)::uuid;
+          else
+            select id into v_to_concept_id
+            from public.knowledge_concepts
+            where slug = v_to_concept_slug
+            limit 1;
+          end if;
+
+          if v_to_concept_id is null then
+            raise exception 'Destination concept with slug "%" not found for concept mapping.', v_to_concept_slug;
+          end if;
+
+          -- Validate destination concept is attached to destination version through curriculum_node_concepts
+          if not exists (
+            select 1
+            from public.curriculum_node_concepts cnc
+            join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+            where cn.target_version_id = v_version_id
+              and cnc.concept_id = v_to_concept_id
+          ) then
+            raise exception 'Destination concept "%" (id: %) is not associated with destination target version "%".',
+              v_to_concept_slug, v_to_concept_id, v_version_id;
+          end if;
+
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+            v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+          else
+            v_transfer_weight := 1.0;
+          end if;
+
+          if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
+            raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+          end if;
+        end if;
+
+        insert into public.target_version_concept_mappings (
+          from_target_version_id, from_concept_id, to_target_version_id, to_concept_id,
+          mapping_type, transfer_weight, metadata
+        ) values (
+          v_from_tv_id,
+          v_from_concept_id,
+          v_version_id,
+          v_to_concept_id,
+          v_mapping_type,
+          v_transfer_weight,
+          coalesce(v_mapping->'metadata', '{}'::jsonb)
+        )
+        on conflict (
+          from_target_version_id,
+          from_concept_id,
+          to_target_version_id,
+          coalesce(to_concept_id, '00000000-0000-0000-0000-000000000000'::uuid)
+        ) do update
+        set mapping_type = excluded.mapping_type,
+            transfer_weight = excluded.transfer_weight,
+            metadata = excluded.metadata;
+
+        v_concept_mappings_count := v_concept_mappings_count + 1;
+
+      else
+        -- Backwards compatibility with raw UUID payload
+        v_from_concept_id := (v_mapping->>'from_concept_id')::uuid;
+        v_to_concept_id := case when v_mapping->>'to_concept_id' is not null and trim(v_mapping->>'to_concept_id') <> ''
+                                then (v_mapping->>'to_concept_id')::uuid
+                                else null end;
+        v_mapping_type := coalesce(v_mapping->>'mapping_type', 'unchanged');
+        if v_mapping_type = 'equivalent' then
+          v_mapping_type := 'unchanged';
+        end if;
+
+        if v_mapping_type not in ('unchanged', 'renamed', 'expanded', 'narrowed', 'replaced', 'removed') then
+          raise exception 'Invalid mapping_type "%" for concept mapping.', v_mapping_type;
+        end if;
+
+        v_from_tv_id := coalesce((v_mapping->>'from_target_version_id')::uuid, v_version_id);
+        v_to_tv_id := coalesce((v_mapping->>'to_target_version_id')::uuid, v_version_id);
+
+        if v_mapping_type = 'removed' then
+          if v_to_concept_id is not null then
+            raise exception 'Removed concept mapping for source concept id % cannot specify a destination concept.', v_from_concept_id;
+          end if;
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null and (v_mapping->>'transfer_weight')::numeric <> 0.0 then
+            raise exception 'Removed concept mapping for source concept id % must have transfer_weight = 0 (got %).',
+              v_from_concept_id, (v_mapping->>'transfer_weight')::numeric;
+          end if;
+          v_transfer_weight := 0.0;
+        else
+          if v_to_concept_id is null then
+            raise exception 'Destination concept id must be specified for mapping_type "%".', v_mapping_type;
+          end if;
+
+          if v_mapping ? 'transfer_weight' and v_mapping->>'transfer_weight' is not null then
+            v_transfer_weight := (v_mapping->>'transfer_weight')::numeric;
+          else
+            v_transfer_weight := 1.0;
+          end if;
+
+          if v_transfer_weight < 0.0 or v_transfer_weight > 1.0 then
+            raise exception 'Concept mapping transfer_weight % must be between 0.0 and 1.0.', v_transfer_weight;
+          end if;
+        end if;
+
+        -- Validate source concept attached to from_target_version
+        if not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_from_tv_id
+            and cnc.concept_id = v_from_concept_id
+        ) then
+          raise exception 'Source concept id % is not associated with source target version %.',
+            v_from_concept_id, v_from_tv_id;
+        end if;
+
+        -- Validate destination concept attached to to_target_version if present
+        if v_to_concept_id is not null and not exists (
+          select 1
+          from public.curriculum_node_concepts cnc
+          join public.curriculum_nodes cn on cn.id = cnc.curriculum_node_id
+          where cn.target_version_id = v_to_tv_id
+            and cnc.concept_id = v_to_concept_id
+        ) then
+          raise exception 'Destination concept id % is not associated with destination target version %.',
+            v_to_concept_id, v_to_tv_id;
+        end if;
+
+        insert into public.target_version_concept_mappings (
+          from_target_version_id, from_concept_id, to_target_version_id, to_concept_id,
+          mapping_type, transfer_weight, metadata,
+          confidence, rationale
+        ) values (
+          v_from_tv_id,
+          v_from_concept_id,
+          v_to_tv_id,
+          v_to_concept_id,
+          v_mapping_type,
+          v_transfer_weight,
+          coalesce(v_mapping->'metadata', '{}'::jsonb),
+          case when v_mapping->>'confidence' is not null then (v_mapping->>'confidence')::numeric else null end,
+          v_mapping->>'rationale'
+        )
+        on conflict (
+          from_target_version_id,
+          from_concept_id,
+          to_target_version_id,
+          coalesce(to_concept_id, '00000000-0000-0000-0000-000000000000'::uuid)
+        ) do update
+        set mapping_type = excluded.mapping_type,
+            transfer_weight = excluded.transfer_weight,
+            metadata = excluded.metadata,
+            confidence = excluded.confidence,
+            rationale = excluded.rationale;
+
+        v_concept_mappings_count := v_concept_mappings_count + 1;
+      end if;
+    end loop;
+  end if;
+  -- 13. Return Ingestion Summary
+  return jsonb_build_object(
+    'target_version_id', v_version_id,
+    'concepts_count', v_concepts_count,
+    'domains_count', v_domains_count,
+    'objectives_count', v_objectives_count,
+    'lessons_count', v_lessons_count,
+    'blocks_count', v_blocks_count,
+    'assessment_items_count', v_items_count,
+    'flashcards_count', v_flashcards_count,
+    'stimuli_count', v_stimuli_count,
+    'questions_count', v_questions_count,
+    'mappings_count', v_mappings_count,
+    'concept_mappings_count', v_concept_mappings_count
+  );
+end;
+$$;
+
+revoke all on function public.ingest_curriculum_manifest(jsonb) from public, anon, authenticated;
+grant execute on function public.ingest_curriculum_manifest(jsonb) to service_role;
+
+
+-- ============================================================================
+-- 4. CLEP Simulation Exam Attempt Tracking & Attempt Lifecycle (EXM Security)
+-- ============================================================================
+
+create table if not exists public.clep_simulation_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  target_id uuid not null references public.learning_targets(id),
+  target_version_id uuid not null references public.target_versions(id),
+  status text not null default 'in_progress' check (status in ('in_progress', 'completed', 'expired', 'abandoned')),
+  issued_item_ids uuid[] not null,
+  total_questions integer not null check (total_questions > 0),
+  issued_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  submitted_at timestamptz,
+  time_spent_seconds integer check (time_spent_seconds is null or time_spent_seconds >= 0),
+  raw_score integer check (raw_score is null or (raw_score >= 0 and raw_score <= total_questions)),
+  accuracy_percentage numeric(5,2) check (accuracy_percentage is null or (accuracy_percentage >= 0 and accuracy_percentage <= 100)),
+  response_sha256 text,
+  responses jsonb,
+  results jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint clep_attempt_valid_expiry check (expires_at > issued_at)
+);
+
+create index if not exists clep_sim_attempts_user_idx
+  on public.clep_simulation_attempts(user_id, issued_at desc);
+
+create index if not exists clep_sim_attempts_version_idx
+  on public.clep_simulation_attempts(target_version_id);
+
+create unique index if not exists clep_sim_attempts_user_version_uidx
+  on public.clep_simulation_attempts(user_id, target_version_id);
+
+alter table public.clep_simulation_attempts enable row level security;
+revoke all on public.clep_simulation_attempts from public, anon, authenticated;
+grant select on public.clep_simulation_attempts to authenticated;
+grant all on public.clep_simulation_attempts to service_role;
+
+drop policy if exists clep_simulation_attempts_select_owner on public.clep_simulation_attempts;
+create policy clep_simulation_attempts_select_owner
+  on public.clep_simulation_attempts for select to authenticated
+  using (user_id = (select auth.uid()));
+
+comment on table public.clep_simulation_attempts is
+  'Server-recorded CLEP simulation exam attempts. Enforces single-attempt per learner per exam version, single-use attempt lifecycle, server-calculated elapsed time, and owner-only read isolation.';
+
+
+-- ============================================================================
+-- 5. Secure Simulation Exam Issuance RPC (Authenticated Learner Only)
+-- ============================================================================
+create or replace function public.clep_issue_simulation_exam(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_target_id uuid;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_item_ids uuid[];
+  v_count integer;
+  v_issued_at timestamptz;
+  v_expires_at timestamptz;
+  v_attempt_id uuid;
+  v_questions jsonb;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to issue simulation exam' using errcode = '42501';
+  end if;
+
+  -- 2. Verify target version is published and public
+  select v.target_id, v.status, t.status, t.is_public
+  into v_target_id, v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
+  end if;
+
+  -- 3. Enforce single simulation attempt per learner per exam version (anti-harvesting guard)
+  if exists (
+    select 1
+    from public.clep_simulation_attempts
+    where user_id = v_user_id
+      and target_version_id = p_target_version_id
+  ) then
+    raise exception 'Simulation attempt already exists for this exam version: only one official simulation attempt is permitted per learner' using errcode = '23505';
+  end if;
+
+  -- 4. Gather protected simulation item IDs
+  select array_agg(i.id order by i.created_at, i.id), count(i.id)
+  into v_item_ids, v_count
+  from public.assessment_items i
+  where i.origin_target_version_id = p_target_version_id
+    and public.is_protected_simulation_item(i.metadata);
+
+  if v_count = 0 or v_item_ids is null then
+    raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- 5. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  v_issued_at := clock_timestamp();
+  v_expires_at := v_issued_at + interval '95 minutes';
+
+  -- 6. Record attempt in database
+  insert into public.clep_simulation_attempts (
+    user_id,
+    target_id,
+    target_version_id,
+    status,
+    issued_item_ids,
+    total_questions,
+    issued_at,
+    expires_at
+  ) values (
+    v_user_id,
+    v_target_id,
+    p_target_version_id,
+    'in_progress',
+    v_item_ids,
+    v_count,
+    v_issued_at,
+    v_expires_at
+  )
+  returning id into v_attempt_id;
+
+  -- 7. Project ONLY safe question fields (ZERO scoring keys or explanations leaked)
+  select jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'interaction_type', i.interaction_type,
+      'prompt', i.prompt,
+      'response_spec', jsonb_build_object('options', i.response_spec->'options'),
+      'metadata', jsonb_build_object(
+        'bank', i.metadata->>'bank',
+        'item_role', i.metadata->>'item_role'
+      ),
+      'concept_ids', coalesce(
+        (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = i.id),
+        '[]'::jsonb
+      )
+    )
+    order by i.created_at, i.id
+  )
+  into v_questions
+  from public.assessment_items i
+  where i.id = any(v_item_ids);
+
+  return jsonb_build_object(
+    'attempt_id', v_attempt_id,
+    'target_version_id', p_target_version_id,
+    'total_questions', v_count,
+    'time_limit_minutes', 90,
+    'issued_at', v_issued_at,
+    'expires_at', v_expires_at,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon;
+grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
+comment on function public.clep_issue_simulation_exam(uuid) is
+  'Issues authorized 90-minute CLEP simulation exam questions bound to a server-recorded attempt. Enforces single attempt per learner per published target version to prevent answer harvesting. Returns safe options only; scoring keys and explanations remain server-side.';
+
+
+-- ============================================================================
+-- 6. Secure Simulation Exam Submission & Server-Side Scoring RPC
+-- ============================================================================
+create or replace function public.clep_submit_simulation_exam(
+  p_attempt_id uuid,
+  p_responses jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  a public.clep_simulation_attempts%rowtype;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_answered_count integer;
+  v_key text;
+  v_item_uuid uuid;
+  v_item record;
+  v_user_answer integer;
+  v_correct_answer integer;
+  v_is_correct boolean;
+  v_correct_count integer := 0;
+  v_percentage numeric;
+  v_results jsonb := '[]'::jsonb;
+  v_readiness text;
+  v_time_spent_seconds integer;
+  v_response_hash text;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to submit simulation exam' using errcode = '42501';
+  end if;
+
+  -- 2. Input validation
+  if p_attempt_id is null or p_responses is null or jsonb_typeof(p_responses) <> 'object' then
+    raise exception 'Valid attempt_id and response object required' using errcode = '22023';
+  end if;
+
+  -- 3. Lock attempt row and verify ownership
+  select * into a
+  from public.clep_simulation_attempts
+  where id = p_attempt_id
+  for update;
+
+  if not found then
+    raise exception 'Simulation attempt not found: %', p_attempt_id using errcode = 'P0002';
+  end if;
+
+  if a.user_id <> v_user_id then
+    raise exception 'Unauthorized: caller does not own this simulation attempt' using errcode = '42501';
+  end if;
+
+  -- 4. Replay protection: attempt must be in_progress
+  if a.status <> 'in_progress' then
+    raise exception 'Simulation attempt has already been submitted or closed (status: %)', a.status using errcode = '23505';
+  end if;
+
+  -- 5. Server-enforced deadline check
+  if clock_timestamp() > a.expires_at then
+    update public.clep_simulation_attempts
+    set status = 'expired', updated_at = clock_timestamp()
+    where id = a.id;
+    raise exception 'Simulation attempt has expired (deadline: %)', a.expires_at using errcode = '42501';
+  end if;
+
+  -- 6. Target version must still be published and public
+  select v.status, t.status, t.is_public
+  into v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = a.target_version_id;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Target version is no longer published' using errcode = '42501';
+  end if;
+
+  -- 7. Reject empty response object (cannot scrape answers without answering)
+  select count(*) into v_answered_count
+  from jsonb_object_keys(p_responses);
+
+  if v_answered_count = 0 then
+    raise exception 'Cannot submit empty responses: at least one answered question is required' using errcode = '22023';
+  end if;
+
+  -- 8. Validate that all submitted keys are valid UUIDs and belong to the issued items
+  for v_key in select jsonb_object_keys(p_responses)
+  loop
+    begin
+      v_item_uuid := v_key::uuid;
+    exception when others then
+      raise exception 'Invalid question ID format in responses: %', v_key using errcode = '22023';
+    end;
+
+    if not (v_item_uuid = any(a.issued_item_ids)) then
+      raise exception 'Submitted question does not belong to this exam attempt: %', v_key using errcode = '22023';
+    end if;
+  end loop;
+
+  -- 9. Server-calculated elapsed time (does not trust client-reported time)
+  v_time_spent_seconds := round(extract(epoch from (clock_timestamp() - a.issued_at)))::integer;
+  if v_time_spent_seconds < 0 then
+    v_time_spent_seconds := 0;
+  end if;
+
+  -- 10. Grade answers and apply selective review policy
+  for v_item in
+    select
+      i.id,
+      i.prompt,
+      i.response_spec,
+      i.scoring_spec,
+      i.explanation
+    from public.assessment_items i
+    where i.id = any(a.issued_item_ids)
+    order by i.created_at, i.id
+  loop
+    v_correct_answer := (v_item.scoring_spec->>'correct_index')::integer;
+
+    if p_responses ? (v_item.id::text) then
+      v_user_answer := (p_responses->>(v_item.id::text))::integer;
+      v_is_correct := (v_user_answer = v_correct_answer);
+      if v_is_correct then
+        v_correct_count := v_correct_count + 1;
+      end if;
+
+      -- Confidential bank policy: post-simulation feedback returns score, correctness,
+      -- user's selected choice, and concept remediation references.
+      -- Protected answer keys and item explanations remain permanently server-side
+      -- and are NEVER returned to the client or persisted in attempt results.
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', true,
+        'is_correct', v_is_correct,
+        'user_answer', v_user_answer,
+        'concept_ids', coalesce(
+          (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = v_item.id),
+          '[]'::jsonb
+        )
+      );
+    else
+      -- Unanswered question: marked unattempted, not correct
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', false,
+        'is_correct', false,
+        'user_answer', null,
+        'concept_ids', coalesce(
+          (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = v_item.id),
+          '[]'::jsonb
+        )
+      );
+    end if;
+  end loop;
+
+  v_percentage := round((v_correct_count::numeric / a.total_questions::numeric) * 100, 1);
+
+  if v_percentage >= 70.0 then
+    v_readiness := 'Competitive Diagnostic Standing';
+  elsif v_percentage >= 50.0 then
+    v_readiness := 'Approaching Foundation';
+  else
+    v_readiness := 'Needs Reinforcement';
+  end if;
+
+  v_response_hash := encode(sha256(convert_to(p_responses::text, 'UTF8')), 'hex');
+
+  -- 11. Atomic state transition: mark attempt completed with grading results
+  update public.clep_simulation_attempts
+  set status = 'completed',
+      submitted_at = clock_timestamp(),
+      time_spent_seconds = v_time_spent_seconds,
+      raw_score = v_correct_count,
+      accuracy_percentage = v_percentage,
+      response_sha256 = v_response_hash,
+      responses = p_responses,
+      results = v_results,
+      updated_at = clock_timestamp()
+  where id = a.id;
+
+  return jsonb_build_object(
+    'attempt_id', a.id,
+    'target_version_id', a.target_version_id,
+    'raw_score', v_correct_count,
+    'total_questions', a.total_questions,
+    'accuracy_percentage', v_percentage,
+    'time_spent_seconds', v_time_spent_seconds,
+    'readiness_indicator', v_readiness,
+    'is_calibrated_clep_score', false,
+    'scoring_disclaimer', 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating and proprietary form calibration.',
+    'results', v_results
+  );
+end;
+$$;
+
+revoke all on function public.clep_submit_simulation_exam(uuid, jsonb) from public, anon;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to authenticated;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to service_role;
+comment on function public.clep_submit_simulation_exam(uuid, jsonb) is
+  'Evaluates submitted simulation exam answers on the server against canonical scoring keys. Requires an active, authenticated attempt; enforces deadlines and single submission.';
+
+
+-- ============================================================================
+-- 7. Harden Formative Server Grading Against Simulation Item Leakage
+-- ============================================================================
+-- Extends grade_assessment_items to ensure protected simulation items can NEVER
+-- be graded or revealed through the general formative grading RPC.
+create or replace function public.grade_assessment_items(p_responses jsonb)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_entry jsonb;
+  v_item_id uuid;
+  v_response jsonb;
+  v_item public.assessment_items%rowtype;
+  v_spec jsonb;
+  v_correct_num numeric;
+  v_user_num numeric;
+  v_correct_set integer[];
+  v_user_set integer[];
+  v_mode text;
+  v_items text[];
+  v_order integer[];
+  v_expected text[];
+  v_user_order text[];
+  v_pairs jsonb;
+  v_user_pairs jsonb;
+  v_matched integer;
+  v_total integer;
+  v_hit integer;
+  v_miss integer;
+  v_score numeric;
+  v_is_correct boolean;
+  v_is_partial boolean;
+  v_supported boolean;
+  v_results jsonb := '[]'::jsonb;
+begin
+  if p_responses is null or jsonb_typeof(p_responses) <> 'array' then
+    raise exception 'p_responses must be a JSON array' using errcode = '22023';
+  end if;
+  if jsonb_array_length(p_responses) > 250 then
+    raise exception 'At most 250 responses can be graded per call'
+      using errcode = '54000';
+  end if;
+
+  for v_entry in select value from jsonb_array_elements(p_responses)
+  loop
+    v_item_id := null;
+    begin
+      v_item_id := (v_entry->>'item_id')::uuid;
+    exception when invalid_text_representation then
+      v_item_id := null;
+    end;
+    v_response := v_entry->'response';
+
+    if v_item_id is null then
+      continue;
+    end if;
+
+    -- A response is required: keys are never revealed for unanswered items.
+    if v_response is null or jsonb_typeof(v_response) = 'null' then
+      v_results := v_results || jsonb_build_array(jsonb_build_object(
+        'item_id', v_item_id, 'error', 'response_required'));
+      continue;
+    end if;
+
+    select ai.* into v_item
+    from public.assessment_items ai
+    where ai.id = v_item_id
+      and not public.exm03_has_protected_binding(ai.id)
+      and not public.is_protected_simulation_item(ai.metadata)
+      and (
+        (v_uid is not null and ai.user_id = v_uid)
+        or (ai.lesson_id is not null and public.is_lesson_visible(ai.lesson_id))
+        or (ai.origin_target_version_id is not null and exists (
+          select 1
+          from public.target_versions tv
+          join public.learning_targets lt on lt.id = tv.target_id
+          where tv.id = ai.origin_target_version_id
+            and (
+              (tv.status = 'published' and lt.status = 'published' and lt.is_public = true)
+              or (v_uid is not null and lt.created_by = v_uid)
+              or (tv.status = 'review_ready' and public.is_target_reviewer(lt.id))
+            )
+        ))
+      );
+
+    if not found then
+      v_results := v_results || jsonb_build_array(jsonb_build_object(
+        'item_id', v_item_id, 'error', 'not_available'));
+      continue;
+    end if;
+
+    v_spec := coalesce(v_item.scoring_spec, '{}'::jsonb);
+    v_is_correct := false;
+    v_is_partial := false;
+    v_score := 0;
+    v_supported := true;
+
+    case v_item.interaction_type
+      when 'single_choice' then
+        v_correct_num := case
+          when jsonb_typeof(v_spec->'correct_index') = 'number' then (v_spec->>'correct_index')::numeric
+          when jsonb_typeof(v_spec->'correct_answer') = 'number' then (v_spec->>'correct_answer')::numeric
+        end;
+        v_user_num := case
+          when jsonb_typeof(v_response) = 'number' then (v_response#>>'{}')::numeric
+          when jsonb_typeof(v_response) = 'string' and (v_response#>>'{}') ~ '^\s*-?\d+\s*$'
+            then trim(v_response#>>'{}')::numeric
+        end;
+        v_is_correct := v_correct_num is not null and v_user_num is not null
+          and trunc(v_user_num) = trunc(v_correct_num);
+        v_score := case when v_is_correct then 1 else 0 end;
+
+      when 'multi_select' then
+        select coalesce(array_agg(distinct trunc(e::text::numeric)::integer), '{}')
+          into v_correct_set
+        from jsonb_array_elements(
+          case when jsonb_typeof(v_spec->'correct_indices') = 'array'
+            then v_spec->'correct_indices' else '[]'::jsonb end) e
+        where jsonb_typeof(e) = 'number';
+
+        select coalesce(array_agg(distinct trunc(e::text::numeric)::integer), '{}')
+          into v_user_set
+        from jsonb_array_elements(
+          case when jsonb_typeof(v_response) = 'array'
+            then v_response else jsonb_build_array(v_response) end) e
+        where jsonb_typeof(e) = 'number';
+
+        v_mode := coalesce(v_spec->>'scoring_method', v_spec->>'mode', 'all_or_nothing');
+        v_total := coalesce(array_length(v_correct_set, 1), 0);
+
+        if v_mode = 'partial_credit' and v_total > 0 then
+          select count(*) filter (where u = any (v_correct_set)),
+                 count(*) filter (where not (u = any (v_correct_set)))
+            into v_hit, v_miss
+          from unnest(v_user_set) u;
+          v_score := greatest(0, least(1, (v_hit - v_miss)::numeric / v_total));
+          v_is_correct := v_score >= 0.999;
+          v_is_partial := v_score > 0 and not v_is_correct;
+        else
+          v_is_correct := v_total > 0
+            and coalesce(array_length(v_user_set, 1), 0) = v_total
+            and v_user_set <@ v_correct_set;
+          v_score := case when v_is_correct then 1 else 0 end;
+        end if;
+
+      when 'ordered_response' then
+        select coalesce(array_agg(
+                 case when jsonb_typeof(e) = 'string' then e#>>'{}' else e::text end
+                 order by ord), '{}')
+          into v_items
+        from jsonb_array_elements(
+          case when jsonb_typeof(v_item.response_spec->'items') = 'array'
+            then v_item.response_spec->'items' else '[]'::jsonb end)
+          with ordinality as t(e, ord);
+
+        select coalesce(array_agg(trunc(e::text::numeric)::integer order by ord), '{}')
+          into v_order
+        from jsonb_array_elements(
+          case when jsonb_typeof(v_spec->'correct_order') = 'array'
+            then v_spec->'correct_order' else '[]'::jsonb end)
+          with ordinality as t(e, ord)
+        where jsonb_typeof(e) = 'number';
+
+        v_total := coalesce(array_length(v_items, 1), 0);
+        if v_total > 0
+           and coalesce(array_length(v_order, 1), 0) = v_total
+           and not exists (select 1 from unnest(v_order) i where i < 0 or i >= v_total) then
+          select array_agg(v_items[i + 1] order by ord) into v_expected
+          from unnest(v_order) with ordinality as t(i, ord);
+
+          select coalesce(array_agg(
+                   case when jsonb_typeof(e) = 'string' then e#>>'{}' else e::text end
+                   order by ord), '{}')
+            into v_user_order
+          from jsonb_array_elements(
+            case when jsonb_typeof(v_response) = 'array' then v_response else '[]'::jsonb end)
+            with ordinality as t(e, ord);
+
+          v_is_correct := v_user_order = v_expected;
+        end if;
+        v_score := case when v_is_correct then 1 else 0 end;
+
+      when 'matching' then
+        v_pairs := case when jsonb_typeof(v_spec->'correct_pairs') = 'object'
+          then v_spec->'correct_pairs' else '{}'::jsonb end;
+        v_user_pairs := case when jsonb_typeof(v_response) = 'object'
+          then v_response else '{}'::jsonb end;
+
+        select count(*) into v_total from jsonb_object_keys(v_pairs);
+        if v_total > 0 then
+          select count(*) into v_matched
+          from jsonb_each(v_pairs) c
+          where exists (
+            select 1 from jsonb_each(v_user_pairs) u
+            where trim(u.key) = trim(c.key)
+              and trim(case when jsonb_typeof(u.value) = 'string' then u.value#>>'{}' else u.value::text end)
+                = trim(case when jsonb_typeof(c.value) = 'string' then c.value#>>'{}' else c.value::text end)
+          );
+          v_score := v_matched::numeric / v_total;
+          v_is_correct := v_score >= 0.999;
+          v_is_partial := v_score > 0 and not v_is_correct;
+        end if;
+
+      else
+        v_supported := false;
+    end case;
+
+    if not v_supported then
+      v_results := v_results || jsonb_build_array(jsonb_build_object(
+        'item_id', v_item_id, 'error', 'unsupported_interaction_type',
+        'is_correct', false, 'is_partial', false, 'score', 0));
+      continue;
+    end if;
+
+    v_results := v_results || jsonb_build_array(jsonb_build_object(
+      'item_id', v_item_id,
+      'is_correct', v_is_correct,
+      'is_partial', v_is_partial,
+      'score', round(v_score, 4),
+      'scoring_spec', v_spec,
+      'explanation', v_item.explanation
+    ));
+  end loop;
+
+  return v_results;
+end;
+$$;
+
+comment on function public.grade_assessment_items(jsonb) is
+  'Grades [{item_id, response}] for visible, non-protected assessment items and returns the grade with scoring_spec and explanation only for answered items. Strictly blocks protected simulation items.';
+
+revoke all on function public.grade_assessment_items(jsonb) from public;
+grant execute on function public.grade_assessment_items(jsonb) to anon, authenticated, service_role;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108140000', 'clep_simulation_bank_and_item_privacy') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [99/110] Migration: 20261110000000_ana_008_learning_events_rpc_only.sql
+-- --------------------------------------------------------------------
+-- ANA-008: Learning evidence must be written only through validated server RPCs.
+-- This additive, data-preserving migration removes public client DML on
+-- learning_events. The approved record_events(jsonb[]) SECURITY DEFINER RPC
+-- is deliberately unchanged: it retains authenticated EXECUTE and the table
+-- owner/service role can still write authoritative evidence.
+--
+-- RLS alone was insufficient: learning_events_insert_own allowed a client
+-- to create arbitrary evidence records for their own user_id, bypassing the
+-- validation, idempotency and scoring rules in public.record_events.
+
+REVOKE ALL PRIVILEGES ON TABLE public.learning_events
+  FROM PUBLIC, anon, authenticated;
+
+-- Preserve the existing owner-scoped SELECT RLS policy. Anonymous guests
+-- sign in as authenticated; they retain owner-only reads of existing evidence.
+GRANT SELECT ON TABLE public.learning_events TO authenticated;
+
+-- No client INSERT policy should survive an accidental future grant.
+DROP POLICY IF EXISTS learning_events_insert_own ON public.learning_events;
+
+-- Keep the trusted administrative path functional without exposing DML
+-- to browser roles. This is not a grant to authenticated/anon.
+GRANT ALL PRIVILEGES ON TABLE public.learning_events TO service_role;
+
+-- public.record_events(jsonb[]) remains SECURITY DEFINER (with its existing
+-- fixed search_path) and is executable by authenticated. Its privileges and
+-- definition are intentionally not changed by this migration.
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110000000', 'ana_008_learning_events_rpc_only') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [100/110] Migration: 20261110150000_clep_simulation_domain_code_projection.sql
+-- --------------------------------------------------------------------
+-- ============================================================================
+-- Migration: 20261110150000_clep_simulation_domain_code_projection.sql
+-- Description: Project domain_code and official domains in simulation exam RPCs
+--              to ensure psychometrically accurate four-domain diagnostic reporting.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 1. Replace clep_issue_simulation_exam to include domain_code and domains list
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_issue_simulation_exam(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_target_id uuid;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_item_ids uuid[];
+  v_count integer;
+  v_issued_at timestamptz;
+  v_expires_at timestamptz;
+  v_attempt_id uuid;
+  v_questions jsonb;
+  v_domains jsonb;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to issue simulation exam' using errcode = '42501';
+  end if;
+
+  -- 2. Verify target version is published and public
+  select v.target_id, v.status, t.status, t.is_public
+  into v_target_id, v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
+  end if;
+
+  -- 3. Enforce single simulation attempt per learner per exam version (anti-harvesting guard)
+  if exists (
+    select 1
+    from public.clep_simulation_attempts
+    where user_id = v_user_id
+      and target_version_id = p_target_version_id
+  ) then
+    raise exception 'Simulation attempt already exists for this exam version: only one official simulation attempt is permitted per learner' using errcode = '23505';
+  end if;
+
+  -- 4. Gather protected simulation item IDs
+  select array_agg(i.id order by i.created_at, i.id), count(i.id)
+  into v_item_ids, v_count
+  from public.assessment_items i
+  where i.origin_target_version_id = p_target_version_id
+    and public.is_protected_simulation_item(i.metadata);
+
+  if v_count = 0 or v_item_ids is null then
+    raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- 5. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  v_issued_at := clock_timestamp();
+  v_expires_at := v_issued_at + interval '95 minutes';
+
+  -- 6. Record attempt in database
+  insert into public.clep_simulation_attempts (
+    user_id,
+    target_id,
+    target_version_id,
+    status,
+    issued_item_ids,
+    total_questions,
+    issued_at,
+    expires_at
+  ) values (
+    v_user_id,
+    v_target_id,
+    p_target_version_id,
+    'in_progress',
+    v_item_ids,
+    v_count,
+    v_issued_at,
+    v_expires_at
+  )
+  returning id into v_attempt_id;
+
+  -- 7. Gather official blueprint domains
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'id', d.id,
+        'code', coalesce(d.code, '1.0'),
+        'title', d.title,
+        'weight', coalesce(d.weight, 0.25)
+      )
+      order by d.sort_order, d.code
+    ),
+    '[]'::jsonb
+  )
+  into v_domains
+  from public.curriculum_nodes d
+  where d.target_version_id = p_target_version_id
+    and d.node_type = 'domain';
+
+  -- 8. Project ONLY safe question fields with domain_code (ZERO scoring keys or explanations leaked)
+  select jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'interaction_type', i.interaction_type,
+      'prompt', i.prompt,
+      'response_spec', jsonb_build_object('options', i.response_spec->'options'),
+      'domain_code', coalesce(
+        i.metadata->>'domain_code',
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          join public.curriculum_nodes c on c.id = aic.concept_id
+          join public.curriculum_nodes obj on obj.id = c.parent_id
+          join public.curriculum_nodes dom on dom.id = obj.parent_id
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        ),
+        '1.0'
+      ),
+      'metadata', jsonb_build_object(
+        'bank', i.metadata->>'bank',
+        'item_role', i.metadata->>'item_role',
+        'domain_code', coalesce(
+          i.metadata->>'domain_code',
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+            limit 1
+          ),
+          '1.0'
+        )
+      ),
+      'concept_ids', coalesce(
+        (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = i.id),
+        '[]'::jsonb
+      )
+    )
+    order by i.created_at, i.id
+  )
+  into v_questions
+  from public.assessment_items i
+  where i.id = any(v_item_ids);
+
+  return jsonb_build_object(
+    'attempt_id', v_attempt_id,
+    'target_version_id', p_target_version_id,
+    'total_questions', v_count,
+    'time_limit_minutes', 90,
+    'issued_at', v_issued_at,
+    'expires_at', v_expires_at,
+    'domains', v_domains,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon;
+grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
+comment on function public.clep_issue_simulation_exam(uuid) is
+  'Issues a single-attempt, authenticated CLEP simulation exam with sanitized options and psychometric domain_code annotations. Answer keys and item explanations are withheld.';
+
+-- ----------------------------------------------------------------------------
+-- 2. Replace clep_submit_simulation_exam preserving all security guards and adding domain_code
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_submit_simulation_exam(
+  p_attempt_id uuid,
+  p_responses jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  a public.clep_simulation_attempts%rowtype;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_answered_count integer;
+  v_key text;
+  v_item_uuid uuid;
+  v_item record;
+  v_user_answer integer;
+  v_correct_answer integer;
+  v_is_correct boolean;
+  v_correct_count integer := 0;
+  v_percentage numeric;
+  v_results jsonb := '[]'::jsonb;
+  v_readiness text;
+  v_time_spent_seconds integer;
+  v_response_hash text;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to submit simulation exam' using errcode = '42501';
+  end if;
+
+  -- 2. Input validation
+  if p_attempt_id is null or p_responses is null or jsonb_typeof(p_responses) <> 'object' then
+    raise exception 'Valid attempt_id and response object required' using errcode = '22023';
+  end if;
+
+  -- 3. Lock attempt row and verify ownership
+  select * into a
+  from public.clep_simulation_attempts
+  where id = p_attempt_id
+  for update;
+
+  if not found then
+    raise exception 'Simulation attempt not found: %', p_attempt_id using errcode = 'P0002';
+  end if;
+
+  if a.user_id <> v_user_id then
+    raise exception 'Unauthorized: caller does not own this simulation attempt' using errcode = '42501';
+  end if;
+
+  -- 4. Replay protection: attempt must be in_progress
+  if a.status <> 'in_progress' then
+    raise exception 'Simulation attempt has already been submitted or closed (status: %)', a.status using errcode = '23505';
+  end if;
+
+  -- 5. Server-enforced deadline check
+  if clock_timestamp() > a.expires_at then
+    update public.clep_simulation_attempts
+    set status = 'expired', updated_at = clock_timestamp()
+    where id = a.id;
+    raise exception 'Simulation attempt has expired (deadline: %)', a.expires_at using errcode = '42501';
+  end if;
+
+  -- 6. Target version must still be published and public
+  select v.status, t.status, t.is_public
+  into v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = a.target_version_id;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Target version is no longer published' using errcode = '42501';
+  end if;
+
+  -- 7. Reject empty response object (cannot scrape answers without answering)
+  select count(*) into v_answered_count
+  from jsonb_object_keys(p_responses);
+
+  if v_answered_count = 0 then
+    raise exception 'Cannot submit empty responses: at least one answered question is required' using errcode = '22023';
+  end if;
+
+  -- 8. Validate that all submitted keys are valid UUIDs and belong to the issued items
+  for v_key in select jsonb_object_keys(p_responses)
+  loop
+    begin
+      v_item_uuid := v_key::uuid;
+    exception when others then
+      raise exception 'Invalid question ID format in responses: %', v_key using errcode = '22023';
+    end;
+
+    if not (v_item_uuid = any(a.issued_item_ids)) then
+      raise exception 'Submitted question does not belong to this exam attempt: %', v_key using errcode = '22023';
+    end if;
+  end loop;
+
+  -- 9. Server-calculated elapsed time (does not trust client-reported time)
+  v_time_spent_seconds := round(extract(epoch from (clock_timestamp() - a.issued_at)))::integer;
+  if v_time_spent_seconds < 0 then
+    v_time_spent_seconds := 0;
+  end if;
+
+  -- 10. Grade answers and apply selective review policy with domain_code annotations
+  for v_item in
+    select
+      i.id,
+      i.prompt,
+      i.response_spec,
+      i.scoring_spec,
+      i.explanation,
+      i.metadata
+    from public.assessment_items i
+    where i.id = any(a.issued_item_ids)
+    order by i.created_at, i.id
+  loop
+    v_correct_answer := (v_item.scoring_spec->>'correct_index')::integer;
+
+    if p_responses ? (v_item.id::text) then
+      v_user_answer := (p_responses->>(v_item.id::text))::integer;
+      v_is_correct := (v_user_answer = v_correct_answer);
+      if v_is_correct then
+        v_correct_count := v_correct_count + 1;
+      end if;
+
+      -- Confidential bank policy: post-simulation feedback returns score, correctness,
+      -- user's selected choice, and concept remediation references.
+      -- Protected answer keys and item explanations remain permanently server-side
+      -- and are NEVER returned to the client or persisted in attempt results.
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', true,
+        'is_correct', v_is_correct,
+        'user_answer', v_user_answer,
+        'domain_code', coalesce(
+          v_item.metadata->>'domain_code',
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = v_item.id and dom.node_type = 'domain'
+            limit 1
+          ),
+          '1.0'
+        ),
+        'concept_ids', coalesce(
+          (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = v_item.id),
+          '[]'::jsonb
+        )
+      );
+    else
+      -- Unanswered question: marked unattempted, not correct
+      v_results := v_results || jsonb_build_object(
+        'id', v_item.id,
+        'answered', false,
+        'is_correct', false,
+        'user_answer', null,
+        'domain_code', coalesce(
+          v_item.metadata->>'domain_code',
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = v_item.id and dom.node_type = 'domain'
+            limit 1
+          ),
+          '1.0'
+        ),
+        'concept_ids', coalesce(
+          (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = v_item.id),
+          '[]'::jsonb
+        )
+      );
+    end if;
+  end loop;
+
+  v_percentage := round((v_correct_count::numeric / a.total_questions::numeric) * 100, 1);
+
+  if v_percentage >= 70.0 then
+    v_readiness := 'Competitive Diagnostic Standing';
+  elsif v_percentage >= 50.0 then
+    v_readiness := 'Approaching Foundation';
+  else
+    v_readiness := 'Needs Reinforcement';
+  end if;
+
+  v_response_hash := encode(sha256(convert_to(p_responses::text, 'UTF8')), 'hex');
+
+  -- 11. Atomic state transition: mark attempt completed with grading results
+  update public.clep_simulation_attempts
+  set status = 'completed',
+      submitted_at = clock_timestamp(),
+      time_spent_seconds = v_time_spent_seconds,
+      raw_score = v_correct_count,
+      accuracy_percentage = v_percentage,
+      response_sha256 = v_response_hash,
+      responses = p_responses,
+      results = v_results,
+      updated_at = clock_timestamp()
+  where id = a.id;
+
+  return jsonb_build_object(
+    'attempt_id', a.id,
+    'target_version_id', a.target_version_id,
+    'raw_score', v_correct_count,
+    'total_questions', a.total_questions,
+    'accuracy_percentage', v_percentage,
+    'time_spent_seconds', v_time_spent_seconds,
+    'readiness_indicator', v_readiness,
+    'is_calibrated_clep_score', false,
+    'scoring_disclaimer', 'Diagnostic score estimate only. Official College Board scaled scores require statistical equating and proprietary form calibration.',
+    'results', v_results
+  );
+end;
+$$;
+
+revoke all on function public.clep_submit_simulation_exam(uuid, jsonb) from public, anon;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to authenticated;
+grant execute on function public.clep_submit_simulation_exam(uuid, jsonb) to service_role;
+comment on function public.clep_submit_simulation_exam(uuid, jsonb) is
+  'Grades simulation exam attempts server-side. Returns accuracy percentage, raw score, readiness indicator, and item correctness annotated with domain_code without exposing correct answer keys.';
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110150000', 'clep_simulation_domain_code_projection') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [101/110] Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
+-- --------------------------------------------------------------------
+-- Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
+-- Description: Adds authenticated attempt recovery, active session polling, guest-account rejection,
+--              and strict domain mapping validation (zero silent 1.0 fallbacks).
+
+-- ----------------------------------------------------------------------------
+-- 1. Function: clep_get_active_simulation_attempt
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_get_active_simulation_attempt(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_attempt record;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    return jsonb_build_object('has_active_attempt', false, 'reason', 'unauthenticated');
+  end if;
+
+  select id, issued_at, expires_at, status, total_questions
+  into v_attempt
+  from public.clep_simulation_attempts
+  where user_id = v_user_id
+    and target_version_id = p_target_version_id
+    and status = 'in_progress'
+    and expires_at > clock_timestamp();
+
+  if not found then
+    return jsonb_build_object('has_active_attempt', false);
+  end if;
+
+  return jsonb_build_object(
+    'has_active_attempt', true,
+    'attempt_id', v_attempt.id,
+    'issued_at', v_attempt.issued_at,
+    'expires_at', v_attempt.expires_at,
+    'seconds_remaining', greatest(0, extract(epoch from (v_attempt.expires_at - clock_timestamp()))::integer),
+    'total_questions', v_attempt.total_questions
+  );
+end;
+$$;
+
+revoke all on function public.clep_get_active_simulation_attempt(uuid) from public, anon;
+grant execute on function public.clep_get_active_simulation_attempt(uuid) to authenticated;
+grant execute on function public.clep_get_active_simulation_attempt(uuid) to service_role;
+comment on function public.clep_get_active_simulation_attempt(uuid) is
+  'Checks if the authenticated learner has an active unexpired in-progress simulation attempt for an exam version.';
+
+-- ----------------------------------------------------------------------------
+-- 2. Function: clep_recover_simulation_exam
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_recover_simulation_exam(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_attempt record;
+  v_questions jsonb;
+  v_domains jsonb;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to recover simulation exam' using errcode = '42501';
+  end if;
+
+  -- 2. Guest/Anonymous accounts cannot recover or hold official attempts
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) is true then
+    raise exception 'Official simulation exams require a verified, registered learner account: guest/anonymous accounts are not permitted' using errcode = '42501';
+  end if;
+
+  -- 3. Find active in-progress attempt
+  select id, issued_at, expires_at, issued_item_ids, total_questions
+  into v_attempt
+  from public.clep_simulation_attempts
+  where user_id = v_user_id
+    and target_version_id = p_target_version_id
+    and status = 'in_progress'
+    and expires_at > clock_timestamp();
+
+  if not found then
+    raise exception 'No active in-progress simulation attempt found to recover for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- 4. Gather official blueprint domains
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'id', d.id,
+        'code', d.code,
+        'title', d.title,
+        'weight', coalesce(d.weight, 0.25)
+      )
+      order by d.sort_order, d.code
+    ),
+    '[]'::jsonb
+  )
+  into v_domains
+  from public.curriculum_nodes d
+  where d.target_version_id = p_target_version_id
+    and d.node_type = 'domain';
+
+  -- 5. Project safe questions for the issued item IDs (ZERO keys or explanations leaked)
+  select jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'interaction_type', i.interaction_type,
+      'prompt', i.prompt,
+      'response_spec', jsonb_build_object('options', i.response_spec->'options'),
+      'domain_code', coalesce(
+        nullif(i.metadata->>'domain_code', ''),
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          join public.curriculum_nodes c on c.id = aic.concept_id
+          join public.curriculum_nodes obj on obj.id = c.parent_id
+          join public.curriculum_nodes dom on dom.id = obj.parent_id
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        )
+      ),
+      'metadata', jsonb_build_object(
+        'bank', i.metadata->>'bank',
+        'item_role', i.metadata->>'item_role',
+        'domain_code', coalesce(
+          nullif(i.metadata->>'domain_code', ''),
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+            limit 1
+          )
+        )
+      ),
+      'concept_ids', coalesce(
+        (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = i.id),
+        '[]'::jsonb
+      )
+    )
+    order by i.created_at, i.id
+  )
+  into v_questions
+  from public.assessment_items i
+  where i.id = any(v_attempt.issued_item_ids);
+
+  return jsonb_build_object(
+    'attempt_id', v_attempt.id,
+    'target_version_id', p_target_version_id,
+    'total_questions', v_attempt.total_questions,
+    'time_limit_minutes', 90,
+    'issued_at', v_attempt.issued_at,
+    'expires_at', v_attempt.expires_at,
+    'seconds_remaining', greatest(0, extract(epoch from (v_attempt.expires_at - clock_timestamp()))::integer),
+    'is_resumed', true,
+    'domains', v_domains,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.clep_recover_simulation_exam(uuid) from public, anon;
+grant execute on function public.clep_recover_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_recover_simulation_exam(uuid) to service_role;
+comment on function public.clep_recover_simulation_exam(uuid) is
+  'Allows an authenticated learner to resume an active, unexpired in-progress simulation attempt if connection was lost.';
+
+-- ----------------------------------------------------------------------------
+-- 3. Function: clep_issue_simulation_exam (Updated with guest guard and strict domain projection)
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_issue_simulation_exam(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_target_id uuid;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_item_ids uuid[];
+  v_count integer;
+  v_issued_at timestamptz;
+  v_expires_at timestamptz;
+  v_attempt_id uuid;
+  v_questions jsonb;
+  v_domains jsonb;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to issue simulation exam' using errcode = '42501';
+  end if;
+
+  -- 1b. Reject anonymous / guest accounts to prevent bypassing single-attempt restrictions
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) is true then
+    raise exception 'Official simulation exams require a verified, registered learner account: guest/anonymous accounts are not permitted' using errcode = '42501';
+  end if;
+
+  -- 2. Verify target version is published and public
+  select v.target_id, v.status, t.status, t.is_public
+  into v_target_id, v_version_status, v_target_status, v_is_public
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
+  end if;
+
+  -- 3. Enforce single simulation attempt per learner per exam version (anti-harvesting guard)
+  if exists (
+    select 1
+    from public.clep_simulation_attempts
+    where user_id = v_user_id
+      and target_version_id = p_target_version_id
+  ) then
+    raise exception 'Simulation attempt already exists for this exam version: only one official simulation attempt is permitted per learner' using errcode = '23505';
+  end if;
+
+  -- 4. Gather protected simulation item IDs
+  select array_agg(i.id order by i.created_at, i.id), count(i.id)
+  into v_item_ids, v_count
+  from public.assessment_items i
+  where i.origin_target_version_id = p_target_version_id
+    and public.is_protected_simulation_item(i.metadata);
+
+  if v_count = 0 or v_item_ids is null then
+    raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- 5. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  v_issued_at := clock_timestamp();
+  v_expires_at := v_issued_at + interval '95 minutes';
+
+  -- 6. Record attempt in database
+  insert into public.clep_simulation_attempts (
+    user_id,
+    target_id,
+    target_version_id,
+    status,
+    issued_item_ids,
+    total_questions,
+    issued_at,
+    expires_at
+  ) values (
+    v_user_id,
+    v_target_id,
+    p_target_version_id,
+    'in_progress',
+    v_item_ids,
+    v_count,
+    v_issued_at,
+    v_expires_at
+  )
+  returning id into v_attempt_id;
+
+  -- 7. Gather official blueprint domains
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'id', d.id,
+        'code', d.code,
+        'title', d.title,
+        'weight', coalesce(d.weight, 0.25)
+      )
+      order by d.sort_order, d.code
+    ),
+    '[]'::jsonb
+  )
+  into v_domains
+  from public.curriculum_nodes d
+  where d.target_version_id = p_target_version_id
+    and d.node_type = 'domain';
+
+  -- 8. Project ONLY safe question fields with domain_code (ZERO scoring keys or explanations leaked)
+  select jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'interaction_type', i.interaction_type,
+      'prompt', i.prompt,
+      'response_spec', jsonb_build_object('options', i.response_spec->'options'),
+      'domain_code', coalesce(
+        nullif(i.metadata->>'domain_code', ''),
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          join public.curriculum_nodes c on c.id = aic.concept_id
+          join public.curriculum_nodes obj on obj.id = c.parent_id
+          join public.curriculum_nodes dom on dom.id = obj.parent_id
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        )
+      ),
+      'metadata', jsonb_build_object(
+        'bank', i.metadata->>'bank',
+        'item_role', i.metadata->>'item_role',
+        'domain_code', coalesce(
+          nullif(i.metadata->>'domain_code', ''),
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+            limit 1
+          )
+        )
+      ),
+      'concept_ids', coalesce(
+        (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = i.id),
+        '[]'::jsonb
+      )
+    )
+    order by i.created_at, i.id
+  )
+  into v_questions
+  from public.assessment_items i
+  where i.id = any(v_item_ids);
+
+  return jsonb_build_object(
+    'attempt_id', v_attempt_id,
+    'target_version_id', p_target_version_id,
+    'total_questions', v_count,
+    'time_limit_minutes', 90,
+    'issued_at', v_issued_at,
+    'expires_at', v_expires_at,
+    'seconds_remaining', greatest(0, extract(epoch from (v_expires_at - clock_timestamp()))::integer),
+    'is_resumed', false,
+    'domains', v_domains,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon;
+grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
+comment on function public.clep_issue_simulation_exam(uuid) is
+  'Issues a single-attempt, authenticated CLEP simulation exam with sanitized options and psychometric domain_code annotations. Answer keys and item explanations are withheld.';
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110170000', 'clep_simulation_attempt_recovery_and_eligibility') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [102/110] Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
+-- --------------------------------------------------------------------
+-- Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
+-- Description: Backfill target_versions.metadata.bank for blueprint authorities,
+--              and enforce strict psychometric domain-code presence and four-domain quotas
+--              prior to inserting attempts into clep_simulation_attempts.
+
+-- ----------------------------------------------------------------------------
+-- 1. Backfill target_versions.metadata with bank = 'simulation_exam' & Trigger Sync
+-- ----------------------------------------------------------------------------
+update public.target_versions tv
+set metadata = jsonb_set(coalesce(tv.metadata, '{}'::jsonb), '{bank}', '"simulation_exam"')
+where (
+    tv.metadata->>'role' = 'blueprint_authority'
+    or tv.metadata->>'bank' is null
+    or tv.metadata->>'bank' <> 'simulation_exam'
+  )
+  and exists (
+    select 1
+    from public.assessment_items i
+    where i.origin_target_version_id = tv.id
+      and public.is_protected_simulation_item(i.metadata)
+  );
+
+create or replace function public.trg_fn_sync_target_version_simulation_bank()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.metadata->>'bank' = 'simulation_exam' and new.origin_target_version_id is not null then
+    update public.target_versions
+    set metadata = jsonb_set(coalesce(metadata, '{}'::jsonb), '{bank}', '"simulation_exam"')
+    where id = new.origin_target_version_id
+      and (metadata->>'bank' is null or metadata->>'bank' <> 'simulation_exam');
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_target_version_simulation_bank on public.assessment_items;
+create trigger trg_sync_target_version_simulation_bank
+after insert or update on public.assessment_items
+for each row
+execute function public.trg_fn_sync_target_version_simulation_bank();
+
+-- ----------------------------------------------------------------------------
+-- 2. Function: clep_issue_simulation_exam (Strict Pre-Issuance Domain Quotas)
+-- ----------------------------------------------------------------------------
+create or replace function public.clep_issue_simulation_exam(
+  p_target_version_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_catalog, pg_temp
+as $$
+declare
+  v_user_id uuid;
+  v_target_id uuid;
+  v_version_status text;
+  v_target_status text;
+  v_is_public boolean;
+  v_version_meta jsonb;
+  v_exam_code text;
+  v_item_ids uuid[];
+  v_count integer;
+  v_missing_domain_count integer;
+  v_invalid_domain_count integer;
+  v_d1_count integer;
+  v_d2_count integer;
+  v_d3_count integer;
+  v_d4_count integer;
+  v_issued_at timestamptz;
+  v_expires_at timestamptz;
+  v_attempt_id uuid;
+  v_questions jsonb;
+  v_domains jsonb;
+begin
+  -- 1. Authentication check
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Authentication required to issue simulation exam' using errcode = '42501';
+  end if;
+
+  -- 1b. Reject anonymous / guest accounts to prevent bypassing single-attempt restrictions
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) is true then
+    raise exception 'Official simulation exams require a verified, registered learner account: guest/anonymous accounts are not permitted' using errcode = '42501';
+  end if;
+
+  -- 2. Verify target version is published and public
+  select v.target_id, v.status, t.status, t.is_public, v.metadata
+  into v_target_id, v_version_status, v_target_status, v_is_public, v_version_meta
+  from public.target_versions v
+  join public.learning_targets t on t.id = v.target_id
+  where v.id = p_target_version_id;
+
+  if not found then
+    raise exception 'Target version not found: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  if v_version_status <> 'published' or v_target_status <> 'published' or v_is_public is not true then
+    raise exception 'Cannot issue simulation exam for unpublished target version: %', p_target_version_id using errcode = '42501';
+  end if;
+
+  -- 3. Enforce single simulation attempt per learner per exam version (anti-harvesting guard)
+  if exists (
+    select 1
+    from public.clep_simulation_attempts
+    where user_id = v_user_id
+      and target_version_id = p_target_version_id
+  ) then
+    raise exception 'Simulation attempt already exists for this exam version: only one official simulation attempt is permitted per learner' using errcode = '23505';
+  end if;
+
+  -- 4. Gather protected simulation item IDs
+  select array_agg(i.id order by i.created_at, i.id), count(i.id)
+  into v_item_ids, v_count
+  from public.assessment_items i
+  where i.origin_target_version_id = p_target_version_id
+    and public.is_protected_simulation_item(i.metadata);
+
+  if v_count = 0 or v_item_ids is null then
+    raise exception 'No simulation items found for target version: %', p_target_version_id using errcode = 'P0002';
+  end if;
+
+  -- --------------------------------------------------------------------------
+  -- 5. CRITICAL: Strict Psychometric Domain Validation BEFORE Attempt Insertion
+  -- If any item lacks a valid domain code or violates quotas, fail BEFORE inserting
+  -- into clep_simulation_attempts so the learner's one-time attempt is NOT consumed.
+  -- --------------------------------------------------------------------------
+
+  -- 5a. Verify every item has a valid, non-null, non-empty domain_code
+  select count(*)
+  into v_missing_domain_count
+  from (
+    select
+      i.id,
+      coalesce(
+        nullif(i.metadata->>'domain_code', ''),
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          left join public.curriculum_node_concepts cnc on cnc.concept_id = aic.concept_id
+          left join public.curriculum_nodes n on n.id = cnc.curriculum_node_id
+          left join public.curriculum_nodes dom on (
+            (n.node_type = 'domain' and dom.id = n.id) or
+            (n.node_type = 'objective' and dom.id = n.parent_id) or
+            (n.node_type = 'concept' and dom.id = (
+              select parent_id from public.curriculum_nodes where id = n.parent_id
+            ))
+          )
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        )
+      ) as resolved_domain
+    from public.assessment_items i
+    where i.origin_target_version_id = p_target_version_id
+      and public.is_protected_simulation_item(i.metadata)
+  ) item_check
+  where item_check.resolved_domain is null or item_check.resolved_domain = '';
+
+  if v_missing_domain_count > 0 then
+    raise exception 'Simulation items violate psychometric contract: % item(s) lack required domain_code', v_missing_domain_count using errcode = '22023';
+  end if;
+
+  -- 5b. Verify all item domain codes match declared domains for this target version
+  select count(*)
+  into v_invalid_domain_count
+  from (
+    select
+      coalesce(
+        nullif(i.metadata->>'domain_code', ''),
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          left join public.curriculum_node_concepts cnc on cnc.concept_id = aic.concept_id
+          left join public.curriculum_nodes n on n.id = cnc.curriculum_node_id
+          left join public.curriculum_nodes dom on (
+            (n.node_type = 'domain' and dom.id = n.id) or
+            (n.node_type = 'objective' and dom.id = n.parent_id) or
+            (n.node_type = 'concept' and dom.id = (
+              select parent_id from public.curriculum_nodes where id = n.parent_id
+            ))
+          )
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        )
+      ) as resolved_domain
+    from public.assessment_items i
+    where i.origin_target_version_id = p_target_version_id
+      and public.is_protected_simulation_item(i.metadata)
+  ) item_check
+  where item_check.resolved_domain not in (
+    select d.code
+    from public.curriculum_nodes d
+    where d.target_version_id = p_target_version_id
+      and d.node_type = 'domain'
+  );
+
+  if v_invalid_domain_count > 0 then
+    raise exception 'Simulation items contain domain_codes not declared in target_version blueprint: % item(s) invalid', v_invalid_domain_count using errcode = '22023';
+  end if;
+
+  -- 5c. Enforce Four-Domain Quotas for College Algebra (CLEP-ALG)
+  v_exam_code := coalesce(v_version_meta->>'exam_code', '');
+  if v_exam_code = 'CLEP-ALG' then
+    if v_count <> 60 then
+      raise exception 'CLEP College Algebra requires exactly 60 simulation items (found %)', v_count using errcode = '22023';
+    end if;
+
+    select
+      count(*) filter (where resolved_domain = '1.0'),
+      count(*) filter (where resolved_domain = '2.0'),
+      count(*) filter (where resolved_domain = '3.0'),
+      count(*) filter (where resolved_domain = '4.0')
+    into v_d1_count, v_d2_count, v_d3_count, v_d4_count
+    from (
+      select
+        coalesce(
+          nullif(i.metadata->>'domain_code', ''),
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+            limit 1
+          )
+        ) as resolved_domain
+      from public.assessment_items i
+      where i.origin_target_version_id = p_target_version_id
+        and public.is_protected_simulation_item(i.metadata)
+    ) q;
+
+    if v_d1_count <> 15 or v_d2_count <> 15 or v_d3_count <> 18 or v_d4_count <> 12 then
+      raise exception 'CLEP College Algebra item pool violates four-domain quotas: expected 15/15/18/12, got 1.0: %, 2.0: %, 3.0: %, 4.0: %',
+        v_d1_count, v_d2_count, v_d3_count, v_d4_count using errcode = '22023';
+    end if;
+  end if;
+
+  -- 6. Establish server-controlled timestamps (90-min test + 5-min network buffer)
+  v_issued_at := clock_timestamp();
+  v_expires_at := v_issued_at + interval '95 minutes';
+
+  -- 7. Record attempt in database (ONLY after all psychometric validations pass)
+  insert into public.clep_simulation_attempts (
+    user_id,
+    target_id,
+    target_version_id,
+    status,
+    issued_item_ids,
+    total_questions,
+    issued_at,
+    expires_at
+  ) values (
+    v_user_id,
+    v_target_id,
+    p_target_version_id,
+    'in_progress',
+    v_item_ids,
+    v_count,
+    v_issued_at,
+    v_expires_at
+  )
+  returning id into v_attempt_id;
+
+  -- 8. Gather official blueprint domains
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'id', d.id,
+        'code', d.code,
+        'title', d.title,
+        'weight', coalesce(d.weight, 0.25)
+      )
+      order by d.sort_order, d.code
+    ),
+    '[]'::jsonb
+  )
+  into v_domains
+  from public.curriculum_nodes d
+  where d.target_version_id = p_target_version_id
+    and d.node_type = 'domain';
+
+  -- 9. Project ONLY safe question fields with domain_code (ZERO scoring keys or explanations leaked)
+  select jsonb_agg(
+    jsonb_build_object(
+      'id', i.id,
+      'interaction_type', i.interaction_type,
+      'prompt', i.prompt,
+      'response_spec', jsonb_build_object('options', i.response_spec->'options'),
+      'domain_code', coalesce(
+        nullif(i.metadata->>'domain_code', ''),
+        (
+          select dom.code
+          from public.assessment_item_concepts aic
+          left join public.curriculum_node_concepts cnc on cnc.concept_id = aic.concept_id
+          left join public.curriculum_nodes n on n.id = cnc.curriculum_node_id
+          left join public.curriculum_nodes dom on (
+            (n.node_type = 'domain' and dom.id = n.id) or
+            (n.node_type = 'objective' and dom.id = n.parent_id) or
+            (n.node_type = 'concept' and dom.id = (
+              select parent_id from public.curriculum_nodes where id = n.parent_id
+            ))
+          )
+          where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+          limit 1
+        )
+      ),
+      'metadata', jsonb_build_object(
+        'bank', i.metadata->>'bank',
+        'item_role', i.metadata->>'item_role',
+        'domain_code', coalesce(
+          nullif(i.metadata->>'domain_code', ''),
+          (
+            select dom.code
+            from public.assessment_item_concepts aic
+            join public.curriculum_nodes c on c.id = aic.concept_id
+            join public.curriculum_nodes obj on obj.id = c.parent_id
+            join public.curriculum_nodes dom on dom.id = obj.parent_id
+            where aic.assessment_item_id = i.id and dom.node_type = 'domain'
+            limit 1
+          )
+        )
+      ),
+      'concept_ids', coalesce(
+        (select jsonb_agg(c.concept_id) from public.assessment_item_concepts c where c.assessment_item_id = i.id),
+        '[]'::jsonb
+      )
+    )
+    order by i.created_at, i.id
+  )
+  into v_questions
+  from public.assessment_items i
+  where i.id = any(v_item_ids);
+
+  return jsonb_build_object(
+    'attempt_id', v_attempt_id,
+    'target_version_id', p_target_version_id,
+    'total_questions', v_count,
+    'time_limit_minutes', 90,
+    'issued_at', v_issued_at,
+    'expires_at', v_expires_at,
+    'domains', v_domains,
+    'questions', coalesce(v_questions, '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.clep_issue_simulation_exam(uuid) from public, anon;
+grant execute on function public.clep_issue_simulation_exam(uuid) to authenticated;
+grant execute on function public.clep_issue_simulation_exam(uuid) to service_role;
+comment on function public.clep_issue_simulation_exam(uuid) is
+  'Issues a confidential, timed CLEP simulation exam with pre-flight psychometric domain and quota validation.';
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110180000', 'clep_simulation_domain_quota_and_metadata_validation') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [103/110] Migration: 20261110190000_ana_001b_canonical_learner_progress.sql
+-- --------------------------------------------------------------------
+-- ANA-001B: canonical learner progress storage, separate from scored evidence.
+-- Additive only. Never mutate public.learning_events or the legacy user_progress.
+-- Learner identity comes from auth.uid(); no direct client DML is granted.
+-- Source of truth: private append-only events, projected by this vetted RPC.
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE TABLE IF NOT EXISTS private.learner_progress_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  idempotency_key text NOT NULL CHECK (char_length(idempotency_key) BETWEEN 1 AND 150),
+  payload_sha256 text NOT NULL CHECK (payload_sha256 ~ '^[0-9a-f]{64}$'),
+  event_type text NOT NULL CHECK (event_type IN
+    ('lesson_completed', 'lesson_uncompleted', 'active_study_interval')),
+  content_kind text NOT NULL CHECK (content_kind IN
+    ('legacy_lesson', 'bundled_asset_lesson', 'curriculum_node_lesson')),
+  content_id text NOT NULL CHECK (char_length(content_id) BETWEEN 1 AND 128),
+  version_key text NOT NULL CHECK (char_length(version_key) BETWEEN 1 AND 128),
+  occurred_at timestamptz NOT NULL,
+  interval_start timestamptz,
+  interval_end timestamptz,
+  reporting_date_utc date NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT learner_progress_events_user_key UNIQUE (user_id, idempotency_key),
+  CONSTRAINT learner_progress_events_interval_shape CHECK (
+    (event_type = 'active_study_interval'
+      AND interval_start IS NOT NULL AND interval_end IS NOT NULL
+      AND interval_end > interval_start)
+    OR
+    (event_type <> 'active_study_interval'
+      AND interval_start IS NULL AND interval_end IS NULL)
+  )
+);
+
+CREATE INDEX IF NOT EXISTS learner_progress_events_lookup_idx
+  ON private.learner_progress_events
+  (user_id, content_kind, content_id, version_key, occurred_at DESC);
+
+ALTER TABLE private.learner_progress_events ENABLE ROW LEVEL SECURITY;
+-- Do not modify grants on the preexisting private schema: other features use it.
+REVOKE ALL ON TABLE private.learner_progress_events FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA private TO service_role;
+GRANT ALL ON TABLE private.learner_progress_events TO service_role;
+
+-- Daily event projection is intentionally not a score or proof of learning.
+CREATE TABLE IF NOT EXISTS public.learner_activity_progress (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content_kind text NOT NULL CHECK (content_kind IN
+    ('legacy_lesson', 'bundled_asset_lesson', 'curriculum_node_lesson')),
+  content_id text NOT NULL CHECK (char_length(content_id) BETWEEN 1 AND 128),
+  version_key text NOT NULL CHECK (char_length(version_key) BETWEEN 1 AND 128),
+  reporting_date_utc date NOT NULL,
+  completed boolean NOT NULL DEFAULT false,
+  active_seconds integer CHECK (active_seconds IS NULL OR active_seconds BETWEEN 0 AND 86400),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT learner_activity_progress_owner_content_day_key
+    UNIQUE (user_id, content_kind, content_id, version_key, reporting_date_utc)
+);
+
+CREATE INDEX IF NOT EXISTS learner_activity_progress_owner_day_idx
+  ON public.learner_activity_progress (user_id, reporting_date_utc DESC);
+ALTER TABLE public.learner_activity_progress ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.learner_activity_progress FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.learner_activity_progress TO authenticated;
+GRANT ALL ON TABLE public.learner_activity_progress TO service_role;
+DROP POLICY IF EXISTS learner_activity_progress_select_own
+  ON public.learner_activity_progress;
+CREATE POLICY learner_activity_progress_select_own
+  ON public.learner_activity_progress FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid()));
+
+CREATE OR REPLACE FUNCTION public.record_learner_progress(p_events jsonb[])
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid;
+  v_received timestamptz := now();
+  v_item jsonb;
+  v_key text;
+  v_type text;
+  v_kind text;
+  v_content text;
+  v_version text;
+  v_ts timestamptz;
+  v_start timestamptz;
+  v_end timestamptz;
+  v_day date;
+  v_day_from date;
+  v_day_to date;
+  v_begin timestamptz;
+  v_finish timestamptz;
+  v_digest text;
+  v_existing_digest text;
+  v_canonical jsonb;
+  v_id uuid;
+  v_status text;
+  v_completed boolean;
+  v_active_seconds integer;
+  v_results jsonb := '[]'::jsonb;
+  v_accepted integer := 0;
+  v_replayed integer := 0;
+BEGIN
+  v_user := (SELECT auth.uid());
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Authenticated learner required'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_events IS NULL OR coalesce(array_length(p_events, 1), 0) = 0 THEN
+    RETURN jsonb_build_object('status','success','processed_count',0,
+      'accepted_count',0,'replayed_count',0,'results','[]'::jsonb);
+  END IF;
+  IF array_length(p_events, 1) > 25 THEN
+    RAISE EXCEPTION 'Progress batch exceeds 25 events'
+      USING ERRCODE = '22023';
+  END IF;
+
+  -- Serialize per-user projections across tabs and devices. This prevents
+  -- concurrent recomputation from publishing stale duration totals.
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('learner-progress:' || v_user::text, 0));
+
+  FOR v_i IN 1..array_length(p_events, 1) LOOP
+    v_item := p_events[v_i];
+    IF v_item IS NULL OR jsonb_typeof(v_item) <> 'object'
+       OR pg_catalog.octet_length(v_item::text) > 2048 THEN
+      RAISE EXCEPTION 'Malformed or oversized progress event'
+        USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM pg_catalog.jsonb_object_keys(v_item) AS k(name)
+      WHERE k.name <> ALL(ARRAY[
+        'idempotency_key','event_type','content_kind','content_id',
+        'version_key','occurred_at','interval_start','interval_end'
+      ])
+    ) THEN
+      RAISE EXCEPTION 'Unknown progress event field'
+        USING ERRCODE = '22023';
+    END IF;
+    v_key := v_item->>'idempotency_key';
+    v_type := v_item->>'event_type';
+    v_kind := v_item->>'content_kind';
+    v_content := v_item->>'content_id';
+    v_version := v_item->>'version_key';
+    IF coalesce(char_length(v_key),0) NOT BETWEEN 1 AND 150
+       OR v_type IS NULL OR v_type NOT IN ('lesson_completed','lesson_uncompleted','active_study_interval')
+       OR v_kind IS NULL OR v_kind NOT IN ('legacy_lesson','bundled_asset_lesson','curriculum_node_lesson')
+       OR coalesce(char_length(v_content),0) NOT BETWEEN 1 AND 128
+       OR coalesce(char_length(v_version),0) NOT BETWEEN 1 AND 128
+       OR v_content !~ '^[A-Za-z0-9_-]+$'
+       OR v_version !~ '^[A-Za-z0-9_.:-]+$'
+       OR v_item->>'occurred_at' IS NULL THEN
+      RAISE EXCEPTION 'Invalid progress event fields'
+        USING ERRCODE = '22023';
+    END IF;
+    -- Reject UUID-looking IDs that do not correspond to an actual legacy
+    -- lesson, without requiring bundled lessons to exist in public.lessons.
+    IF v_kind='legacy_lesson' THEN
+      IF v_content !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+         OR NOT EXISTS (SELECT 1 FROM public.lessons WHERE id=v_content::uuid) THEN
+        RAISE EXCEPTION 'Unknown legacy lesson id' USING ERRCODE='22023';
+      END IF;
+    END IF;
+    BEGIN
+      v_ts := (v_item->>'occurred_at')::timestamptz;
+      IF v_type='active_study_interval' THEN
+        v_start := (v_item->>'interval_start')::timestamptz;
+        v_end := (v_item->>'interval_end')::timestamptz;
+      ELSE
+        v_start := NULL;
+        v_end := NULL;
+      END IF;
+    EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow
+        OR invalid_text_representation THEN
+      RAISE EXCEPTION 'Invalid progress timestamp' USING ERRCODE='22023';
+    END;
+    IF v_ts IS NULL OR v_ts < v_received - interval '7 days'
+       OR v_ts > v_received + interval '5 minutes' THEN
+      RAISE EXCEPTION 'Progress timestamp outside permitted window'
+        USING ERRCODE='22023';
+    END IF;
+    IF v_type='active_study_interval' THEN
+      IF v_start IS NULL OR v_end IS NULL OR v_end <= v_start
+         OR v_end - v_start > interval '120 seconds'
+         OR v_start < v_received - interval '7 days'
+         OR v_end > v_received + interval '5 minutes'
+         OR v_ts <> v_end THEN
+        RAISE EXCEPTION 'Invalid or unbounded active-study interval'
+          USING ERRCODE='22023';
+      END IF;
+      v_day_from := (v_start AT TIME ZONE 'UTC')::date;
+      v_day_to := ((v_end - interval '1 microsecond')
+        AT TIME ZONE 'UTC')::date;
+    ELSE
+      IF v_item ? 'interval_start' OR v_item ? 'interval_end' THEN
+        RAISE EXCEPTION 'Completion must not claim active seconds'
+          USING ERRCODE='22023';
+      END IF;
+      v_day_from := (v_ts AT TIME ZONE 'UTC')::date;
+      v_day_to := v_day_from;
+    END IF;
+
+    v_canonical := pg_catalog.jsonb_build_object(
+      'event_type',v_type,'content_kind',v_kind,'content_id',v_content,
+      'version_key',v_version,
+      'occurred_at',pg_catalog.to_char(v_ts AT TIME ZONE 'UTC',
+        'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+      'interval_start',CASE WHEN v_start IS NULL THEN NULL ELSE
+        pg_catalog.to_char(v_start AT TIME ZONE 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END,
+      'interval_end',CASE WHEN v_end IS NULL THEN NULL ELSE
+        pg_catalog.to_char(v_end AT TIME ZONE 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END
+    );
+    v_digest := pg_catalog.encode(
+      extensions.digest(pg_catalog.convert_to(v_canonical::text,'UTF8'),'sha256'),'hex');
+
+    v_id := NULL;
+    INSERT INTO private.learner_progress_events
+      (user_id,idempotency_key,payload_sha256,event_type,
+       content_kind,content_id,version_key,occurred_at,
+       interval_start,interval_end,reporting_date_utc)
+    VALUES (v_user,v_key,v_digest,v_type,v_kind,v_content,v_version,
+      v_ts,v_start,v_end,v_day_from)
+    ON CONFLICT (user_id,idempotency_key) DO NOTHING
+    RETURNING id INTO v_id;
+
+    IF v_id IS NULL THEN
+      SELECT e.payload_sha256 INTO v_existing_digest
+        FROM private.learner_progress_events AS e
+       WHERE e.user_id=v_user AND e.idempotency_key=v_key;
+      v_status := CASE WHEN v_existing_digest=v_digest
+        THEN 'duplicate_noop' ELSE 'idempotency_payload_mismatch' END;
+      IF v_status='duplicate_noop' THEN
+        v_replayed := v_replayed+1;
+      END IF;
+    ELSE
+      v_status := 'accepted';
+      v_accepted := v_accepted+1;
+
+      -- Recompute the affected event days AND any later existing day rows.
+      -- A late completion/reversal must not leave later projections stale.
+      FOR v_day IN
+        SELECT affected.day FROM (
+          SELECT d::date AS day
+          FROM pg_catalog.generate_series(v_day_from::timestamp,
+            v_day_to::timestamp, interval '1 day') AS d
+          UNION
+          SELECT p.reporting_date_utc
+          FROM public.learner_activity_progress AS p
+          WHERE p.user_id=v_user AND p.content_kind=v_kind
+            AND p.content_id=v_content AND p.version_key=v_version
+            AND p.reporting_date_utc >= v_day_from
+        ) AS affected
+        ORDER BY affected.day
+      LOOP
+        v_begin := (v_day::timestamp AT TIME ZONE 'UTC');
+        v_finish := ((v_day + 1)::timestamp AT TIME ZONE 'UTC');
+
+        SELECT (e.event_type='lesson_completed') INTO v_completed
+          FROM private.learner_progress_events AS e
+         WHERE e.user_id=v_user AND e.content_kind=v_kind
+           AND e.content_id=v_content AND e.version_key=v_version
+           AND e.event_type IN ('lesson_completed','lesson_uncompleted')
+           AND e.occurred_at < v_finish
+         ORDER BY e.occurred_at DESC,e.received_at DESC,e.id DESC
+         LIMIT 1;
+
+        WITH slices AS (
+          SELECT pg_catalog.tstzrange(
+            greatest(e.interval_start,v_begin),
+            least(e.interval_end,v_finish),'[)') AS span
+          FROM private.learner_progress_events AS e
+          WHERE e.user_id=v_user AND e.content_kind=v_kind
+            AND e.content_id=v_content AND e.version_key=v_version
+            AND e.event_type='active_study_interval'
+            AND e.interval_start < v_finish AND e.interval_end > v_begin
+        ), merged AS (
+          SELECT pg_catalog.unnest(pg_catalog.range_agg(span)) AS span
+          FROM slices
+        )
+        SELECT pg_catalog.sum(
+          extract(epoch FROM (upper(span)-lower(span))))::integer
+          INTO v_active_seconds
+          FROM merged;
+
+        INSERT INTO public.learner_activity_progress
+          (user_id,content_kind,content_id,version_key,
+           reporting_date_utc,completed,active_seconds,updated_at)
+        VALUES (v_user,v_kind,v_content,v_version,v_day,
+          coalesce(v_completed,false),v_active_seconds,v_received)
+        ON CONFLICT (user_id,content_kind,content_id,version_key,
+                     reporting_date_utc) DO UPDATE
+        SET completed=excluded.completed,
+            active_seconds=excluded.active_seconds,
+            updated_at=excluded.updated_at;
+      END LOOP;
+    END IF;
+    v_results := v_results || jsonb_build_array(
+      jsonb_build_object('idempotency_key',v_key,'status',v_status,
+        'event_id',v_id));
+  END LOOP;
+  RETURN jsonb_build_object('status','success',
+    'processed_count',v_accepted+v_replayed,
+    'accepted_count',v_accepted,'replayed_count',v_replayed,
+    'results',v_results);
+END;
+$$;
+
+-- Function creation grants EXECUTE to PUBLIC by default. Close it explicitly.
+REVOKE ALL ON FUNCTION public.record_learner_progress(jsonb[])
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.record_learner_progress(jsonb[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_learner_progress(jsonb[]) TO service_role;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110190000', 'ana_001b_canonical_learner_progress') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [104/110] Migration: 20261110200000_ana_102_private_product_event_ingestion.sql
+-- --------------------------------------------------------------------
+-- ANA-102 / ANA-105: opt-in, privacy-gated product event ingestion.
+-- Feature remains OFF in Flutter. Schema is intentionally NOT Data API exposed.
+-- This migration does not collect events until trusted account eligibility AND
+-- explicit server-stored user consent are present.
+CREATE SCHEMA IF NOT EXISTS analytics;
+REVOKE ALL ON SCHEMA analytics FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA analytics TO service_role;
+
+CREATE TABLE analytics.product_consents (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  consented boolean NOT NULL DEFAULT false,
+  changed_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE analytics.product_consents ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.product_consents FROM PUBLIC, anon, authenticated;
+GRANT ALL ON analytics.product_consents TO service_role;
+
+CREATE TABLE analytics.product_events (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_id uuid NOT NULL,
+  session_id uuid NOT NULL,
+  event_name text NOT NULL,
+  schema_version integer NOT NULL DEFAULT 1 CHECK (schema_version = 1),
+  occurred_at_client timestamptz NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  properties jsonb NOT NULL DEFAULT '{}'::jsonb,
+  payload_sha256 text NOT NULL,
+  PRIMARY KEY (user_id, event_id),
+  CHECK (jsonb_typeof(properties) = 'object'),
+  CHECK (octet_length(properties::text) <= 512),
+  CHECK (event_name IN (
+    'app_session_started', 'surface_viewed', 'goal_selected',
+    'resource_search_submitted', 'resource_opened',
+    'external_resource_clicked', 'lesson_engaged', 'feature_error_observed'))
+);
+CREATE INDEX product_events_received_at_idx
+  ON analytics.product_events (received_at DESC);
+CREATE INDEX product_events_user_received_idx
+  ON analytics.product_events (user_id, received_at DESC);
+ALTER TABLE analytics.product_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.product_events FROM PUBLIC, anon, authenticated;
+GRANT ALL ON analytics.product_events TO service_role;
+
+-- Privileged back-end must explicitly set auth.users.raw_app_meta_data
+-- product_analytics_eligible=true AFTER an independent privacy/age review.
+-- The user-editable raw_user_meta_data and browser flags are NEVER trusted.
+CREATE FUNCTION public.set_product_analytics_consent(p_consent boolean)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_eligible boolean;
+BEGIN
+  IF v_user IS NULL OR p_consent IS NULL THEN
+    RAISE EXCEPTION 'Authenticated user and explicit consent choice required'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_consent THEN
+    SELECT (u.is_anonymous IS FALSE
+            AND u.raw_app_meta_data->>'product_analytics_eligible' = 'true')
+      INTO v_eligible FROM auth.users u WHERE u.id = v_user;
+    IF v_eligible IS DISTINCT FROM true THEN
+      RAISE EXCEPTION 'Product analytics eligibility has not been verified'
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+  INSERT INTO analytics.product_consents(user_id, consented, changed_at)
+    VALUES (v_user, p_consent, now())
+    ON CONFLICT (user_id) DO UPDATE
+      SET consented = excluded.consented, changed_at = excluded.changed_at;
+  IF NOT p_consent THEN
+    -- Opt-out also erases previously captured raw product events for this user.
+    DELETE FROM analytics.product_events WHERE user_id = v_user;
+  END IF;
+  RETURN jsonb_build_object('consented', p_consent, 'changed_at', now());
+END;
+$$;
+REVOKE ALL ON FUNCTION public.set_product_analytics_consent(boolean)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.set_product_analytics_consent(boolean)
+  TO authenticated, service_role;
+
+CREATE FUNCTION public.record_product_events(p_events jsonb[])
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_eligible boolean;
+  v_consent boolean;
+  v_item jsonb;
+  v_props jsonb;
+  v_name text;
+  v_allowed text[];
+  v_id uuid;
+  v_session uuid;
+  v_occurred timestamptz;
+  v_digest text;
+  v_existing text;
+  v_inserted uuid;
+  v_result jsonb := '[]'::jsonb;
+  v_status text;
+  v_count integer := 0;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Authenticated user required' USING ERRCODE = '42501';
+  END IF;
+  SELECT (u.is_anonymous IS FALSE
+          AND u.raw_app_meta_data->>'product_analytics_eligible' = 'true')
+    INTO v_eligible FROM auth.users u WHERE u.id = v_user;
+  IF v_eligible IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'Product analytics account not eligible'
+      USING ERRCODE = '42501';
+  END IF;
+  -- Lock consent row until the transaction finishes. A concurrent withdrawal
+  -- must then delete prior events AFTER this batch, never before it.
+  SELECT consented INTO v_consent
+    FROM analytics.product_consents
+    WHERE user_id = v_user FOR SHARE;
+  IF v_consent IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'Product analytics consent required'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_events IS NULL OR cardinality(p_events) < 1
+     OR cardinality(p_events) > 25 THEN
+    RAISE EXCEPTION 'Product event batch must contain 1 to 25 items'
+      USING ERRCODE = '22023';
+  END IF;
+  IF (SELECT count(*) FROM analytics.product_events
+      WHERE user_id = v_user AND received_at >= now() - interval '1 minute')
+      + cardinality(p_events) > 60 THEN
+    RAISE EXCEPTION 'Product event rate limit exceeded'
+      USING ERRCODE = '22023';
+  END IF;
+  FOREACH v_item IN ARRAY p_events LOOP
+    IF jsonb_typeof(v_item) IS DISTINCT FROM 'object'
+       OR octet_length(v_item::text) > 2048
+       OR (SELECT count(*) FROM jsonb_object_keys(v_item)) <> 6
+       OR EXISTS (
+         SELECT 1 FROM jsonb_object_keys(v_item) AS k(key)
+         WHERE k.key <> ALL(ARRAY[
+           'event_id','session_id','event_name','schema_version',
+           'occurred_at_client','properties'])
+       ) THEN
+      RAISE EXCEPTION 'Invalid product event envelope'
+        USING ERRCODE = '22023';
+    END IF;
+    IF jsonb_typeof(v_item->'event_id') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(v_item->'session_id') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(v_item->'event_name') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(v_item->'occurred_at_client') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(v_item->'schema_version') IS DISTINCT FROM 'number'
+       OR v_item->>'schema_version' <> '1' THEN
+      RAISE EXCEPTION 'Invalid product event field types or version'
+        USING ERRCODE = '22023';
+    END IF;
+    BEGIN
+      v_id := (v_item->>'event_id')::uuid;
+      v_session := (v_item->>'session_id')::uuid;
+      v_occurred := (v_item->>'occurred_at_client')::timestamptz;
+    EXCEPTION WHEN invalid_text_representation OR datetime_field_overflow THEN
+      RAISE EXCEPTION 'Invalid event UUID or timestamp' USING ERRCODE = '22023';
+    END;
+    IF v_occurred < now() - interval '7 days'
+       OR v_occurred > now() + interval '5 minutes' THEN
+      RAISE EXCEPTION 'Event timestamp outside permitted window'
+        USING ERRCODE = '22023';
+    END IF;
+    v_name := v_item->>'event_name';
+    v_allowed := CASE v_name
+      WHEN 'app_session_started' THEN ARRAY['surface']
+      WHEN 'surface_viewed' THEN ARRAY['surface']
+      WHEN 'goal_selected' THEN ARRAY['goal_type']
+      WHEN 'resource_search_submitted' THEN ARRAY['source_type','query_category']
+      WHEN 'resource_opened' THEN ARRAY['resource_id','resource_type','source_tier']
+      WHEN 'external_resource_clicked'
+        THEN ARRAY['resource_id','provider_category','referral_id']
+      WHEN 'lesson_engaged' THEN ARRAY['resource_id','mode']
+      WHEN 'feature_error_observed' THEN ARRAY['error_category','feature']
+      ELSE NULL
+    END;
+    v_props := v_item->'properties';
+    IF v_allowed IS NULL
+       OR jsonb_typeof(v_props) IS DISTINCT FROM 'object'
+       OR octet_length(v_props::text) > 512
+       OR (SELECT count(*) FROM jsonb_object_keys(v_props)) > 5
+       OR EXISTS (
+         SELECT 1 FROM jsonb_each(v_props) AS p(key, value)
+         WHERE p.key <> ALL(v_allowed)
+           OR jsonb_typeof(p.value) IS DISTINCT FROM 'string'
+           OR (v_props->>p.key) !~ '^[a-zA-Z0-9_.:-]{1,64}$'
+       ) THEN
+      RAISE EXCEPTION 'Unapproved or unbounded product event properties'
+        USING ERRCODE = '22023';
+    END IF;
+    v_digest := encode(extensions.digest(v_item::text, 'sha256'), 'hex');
+    v_inserted := NULL;
+    INSERT INTO analytics.product_events(
+      user_id,event_id,session_id,event_name,schema_version,
+      occurred_at_client,properties,payload_sha256)
+    VALUES (v_user,v_id,v_session,v_name,1,v_occurred,v_props,v_digest)
+    ON CONFLICT (user_id,event_id) DO NOTHING
+    RETURNING event_id INTO v_inserted;
+    IF v_inserted IS NOT NULL THEN
+      v_status := 'accepted';
+    ELSE
+      SELECT payload_sha256 INTO v_existing
+        FROM analytics.product_events
+        WHERE user_id = v_user AND event_id = v_id;
+      v_status := CASE WHEN v_existing = v_digest
+        THEN 'duplicate_noop' ELSE 'idempotency_payload_mismatch' END;
+    END IF;
+    v_result := v_result || jsonb_build_array(jsonb_build_object(
+      'event_id',v_id,'status',v_status));
+    v_count := v_count + 1;
+  END LOOP;
+  RETURN jsonb_build_object('status','success',
+    'processed_count',v_count,'results',v_result);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.record_product_events(jsonb[])
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_product_events(jsonb[])
+  TO authenticated, service_role;
+
+-- User portability/erasure: no global raw reads, even for admins. Exports are
+-- explicitly limited to the caller's own events and capped at 100 rows.
+CREATE FUNCTION public.export_my_product_events(p_limit integer DEFAULT 100)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_data jsonb;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Authenticated user required' USING ERRCODE='42501';
+  END IF;
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'Export page limit must be 1 to 100' USING ERRCODE='22023';
+  END IF;
+  SELECT coalesce(jsonb_agg(x.event_row), '[]'::jsonb) INTO v_data
+  FROM (
+    SELECT jsonb_build_object(
+      'event_id',e.event_id,'session_id',e.session_id,
+      'event_name',e.event_name,'occurred_at_client',e.occurred_at_client,
+      'received_at',e.received_at,'properties',e.properties) AS event_row
+    FROM analytics.product_events e WHERE e.user_id = v_user
+    ORDER BY e.received_at DESC LIMIT p_limit
+  ) AS x;
+  RETURN v_data;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.export_my_product_events(integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.export_my_product_events(integer)
+  TO authenticated, service_role;
+
+-- Privacy-first administrative overview. Empty event store != zero DAU.
+-- Small eligible cohorts are suppressed even for administrators.
+CREATE FUNCTION public.get_product_analytics_overview(p_days integer DEFAULT 7)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_active integer;
+  v_events integer;
+  v_sessions integer;
+  v_resource_opens integer;
+  v_external_clicks integer;
+  v_window timestamptz;
+  v_asof timestamptz := now();
+BEGIN
+  IF v_user IS NULL OR NOT coalesce((SELECT public.is_admin()),false)
+     OR NOT EXISTS (
+       SELECT 1 FROM auth.users u WHERE u.id=v_user AND u.is_anonymous IS FALSE
+     ) THEN
+    RAISE EXCEPTION 'Administrator authorization required'
+      USING ERRCODE='42501';
+  END IF;
+  IF p_days IS NULL OR p_days NOT IN (1,7,30) THEN
+    RAISE EXCEPTION 'Unsupported analytics window' USING ERRCODE='22023';
+  END IF;
+  v_window := v_asof - make_interval(days => p_days);
+  SELECT count(DISTINCT user_id)::integer, count(*)::integer,
+         count(*) FILTER (WHERE event_name='app_session_started')::integer,
+         count(*) FILTER (WHERE event_name='resource_opened')::integer,
+         count(*) FILTER (WHERE event_name='external_resource_clicked')::integer
+  INTO v_active,v_events,v_sessions,v_resource_opens,v_external_clicks
+  FROM analytics.product_events WHERE received_at >= v_window;
+  RETURN jsonb_build_object(
+    'status',CASE WHEN v_events=0 THEN 'not_measured'
+                  WHEN v_active < 5 THEN 'small_cohort_suppressed'
+                  ELSE 'measured' END,
+    'window_days',p_days,'as_of',v_asof,'window_start',v_window,
+    'coverage','opted_in_eligible_accounts_only',
+    'unique_active_users',CASE WHEN v_active >= 5 THEN v_active END,
+    'event_count',CASE WHEN v_active >= 5 THEN v_events END,
+    'session_starts',CASE WHEN v_active >= 5 THEN v_sessions END,
+    'resource_opens',CASE WHEN v_active >= 5 THEN v_resource_opens END,
+    'external_clicks',CASE WHEN v_active >= 5 THEN v_external_clicks END);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_product_analytics_overview(integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_product_analytics_overview(integer)
+  TO authenticated, service_role;
+
+-- No pg_cron is assumed installed. Invoke manually under privileged controlled
+-- maintenance until retention scheduling has been separately approved.
+CREATE FUNCTION analytics.purge_expired_product_events()
+RETURNS integer LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
+AS $$
+DECLARE v_deleted integer;
+BEGIN
+  DELETE FROM analytics.product_events
+  WHERE received_at < now() - interval '90 days';
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.purge_expired_product_events()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION analytics.purge_expired_product_events()
+  TO service_role;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110200000', 'ana_102_private_product_event_ingestion') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [105/110] Migration: 20261110210000_ana_103_product_privacy_controls.sql
+-- --------------------------------------------------------------------
+-- ANA-103/105: make product-analytics opt-in observable, revocable,
+-- exportable at scale, and fail closed when trusted eligibility changes.
+-- Additive, no existing table rewrite; automatic client collection remains OFF.
+
+CREATE FUNCTION public.get_my_product_analytics_privacy_status()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_eligible boolean;
+  v_guest boolean;
+  v_consent boolean := false;
+  v_changed timestamptz;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Authenticated account required' USING ERRCODE='42501';
+  END IF;
+
+  SELECT (u.is_anonymous IS FALSE
+          AND u.raw_app_meta_data->>'product_analytics_eligible' = 'true'),
+         u.is_anonymous
+  INTO v_eligible, v_guest
+  FROM auth.users u
+  WHERE u.id=v_user;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Authenticated account unavailable' USING ERRCODE='42501';
+  END IF;
+
+  SELECT c.consented, c.changed_at INTO v_consent, v_changed
+  FROM analytics.product_consents c WHERE c.user_id=v_user;
+
+  RETURN jsonb_build_object(
+    'schema_version',1,
+    'eligible',coalesce(v_eligible,false),
+    'consented',coalesce(v_consent,false) AND coalesce(v_eligible,false),
+    'is_anonymous',coalesce(v_guest,true),
+    'changed_at',v_changed,
+    'policy_ready',coalesce((
+      SELECT g.approved_policy_version IS NOT NULL
+         AND g.policy_approved_at IS NOT NULL
+        FROM analytics.product_release_gate g WHERE g.id=1),false),
+    'policy_version',(
+      SELECT g.approved_policy_version
+        FROM analytics.product_release_gate g WHERE g.id=1),
+    'collection_active',coalesce((
+      SELECT g.collection_enabled
+        FROM analytics.product_release_gate g WHERE g.id=1),false)
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_my_product_analytics_privacy_status()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_my_product_analytics_privacy_status()
+  TO authenticated, service_role;
+
+-- When an account is reclassified as a guest or loses trusted eligibility,
+-- delete all previously accepted raw events AND revoke its stored consent.
+-- Re-reviewing the account later must NOT silently restore consent.
+CREATE FUNCTION analytics.revoke_ineligible_product_analytics()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.is_anonymous IS DISTINCT FROM FALSE OR
+     NEW.raw_app_meta_data->>'product_analytics_eligible' IS DISTINCT FROM 'true'
+  THEN
+    UPDATE analytics.product_consents
+       SET consented=false, changed_at=now()
+     WHERE user_id=NEW.id AND consented=true;
+    DELETE FROM analytics.product_events WHERE user_id=NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.revoke_ineligible_product_analytics()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS trg_revoke_ineligible_product_analytics ON auth.users;
+CREATE TRIGGER trg_revoke_ineligible_product_analytics
+  AFTER UPDATE OF is_anonymous, raw_app_meta_data ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION analytics.revoke_ineligible_product_analytics();
+
+-- A keyset cursor avoids OFFSET pagination gaps and prevents exports from
+-- silently ending after 100 records. User identity never comes from inputs.
+CREATE FUNCTION public.export_my_product_events_page(
+  p_before_received_at timestamptz DEFAULT NULL,
+  p_before_event_id uuid DEFAULT NULL,
+  p_limit integer DEFAULT 100
+)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_user uuid := (SELECT auth.uid());
+  v_record record;
+  v_count integer := 0;
+  v_has_more boolean := false;
+  v_rows jsonb := '[]'::jsonb;
+  v_last_received timestamptz;
+  v_last_id uuid;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Authenticated account required' USING ERRCODE='42501';
+  END IF;
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'Export page size must be 1..100' USING ERRCODE='22023';
+  END IF;
+  IF (p_before_received_at IS NULL) <> (p_before_event_id IS NULL) THEN
+    RAISE EXCEPTION 'Both export cursor fields are required'
+      USING ERRCODE='22023';
+  END IF;
+  FOR v_record IN
+    SELECT event_id, session_id, event_name, schema_version,
+           occurred_at_client, received_at, properties
+      FROM analytics.product_events e
+     WHERE e.user_id=v_user
+       AND (p_before_received_at IS NULL OR
+         (e.received_at,e.event_id) < (p_before_received_at,p_before_event_id))
+     ORDER BY e.received_at DESC, e.event_id DESC
+     LIMIT p_limit+1
+  LOOP
+    IF v_count >= p_limit THEN
+      v_has_more := true;
+      EXIT;
+    END IF;
+    v_rows := v_rows || jsonb_build_array(jsonb_build_object(
+      'event_id',v_record.event_id,
+      'session_id',v_record.session_id,
+      'event_name',v_record.event_name,
+      'schema_version',v_record.schema_version,
+      'occurred_at_client',v_record.occurred_at_client,
+      'received_at',v_record.received_at,
+      'properties',v_record.properties
+    ));
+    v_last_received := v_record.received_at;
+    v_last_id := v_record.event_id;
+    v_count := v_count+1;
+  END LOOP;
+  RETURN jsonb_build_object(
+    'events',v_rows,
+    'has_more',v_has_more,
+    'next_before_received_at',CASE WHEN v_has_more THEN v_last_received END,
+    'next_before_event_id',CASE WHEN v_has_more THEN v_last_id END,
+    'as_of',now()
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION
+  public.export_my_product_events_page(timestamptz,uuid,integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION
+  public.export_my_product_events_page(timestamptz,uuid,integer)
+  TO authenticated, service_role;
+
+-- The prior count+batch check alone could race between concurrent requests.
+-- Serialize writes per learner, then enforce the cap after acquiring the lock.
+CREATE FUNCTION analytics.limit_product_event_insert_rate()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_recent integer;
+BEGIN
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('ana102:' || NEW.user_id::text, 217));
+  SELECT count(*)::integer INTO v_recent
+    FROM analytics.product_events e
+    WHERE e.user_id=NEW.user_id
+      AND e.received_at >= now()-interval '1 minute';
+  IF v_recent >= 60 THEN
+    RAISE EXCEPTION 'Product event rate limit exceeded'
+      USING ERRCODE='22023';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.limit_product_event_insert_rate()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS trg_limit_product_event_insert_rate
+  ON analytics.product_events;
+CREATE TRIGGER trg_limit_product_event_insert_rate
+  BEFORE INSERT ON analytics.product_events
+  FOR EACH ROW EXECUTE FUNCTION analytics.limit_product_event_insert_rate();
+
+
+-- CRITICAL FAIL-CLOSED RELEASE LATCH: user consent and a browser feature
+-- flag are not authorization to capture events. The privacy owner must
+-- explicitly approve a versioned disclosure and release at the DATABASE
+-- before either opt-in or event storage is possible.
+CREATE TABLE analytics.product_release_gate (
+  id integer PRIMARY KEY CHECK (id=1),
+  approved_policy_version text,
+  policy_approved_at timestamptz,
+  collection_enabled boolean NOT NULL DEFAULT false,
+  reviewed_by text,
+  changed_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (NOT collection_enabled OR
+    (approved_policy_version IS NOT NULL AND
+     approved_policy_version ~ '^[a-zA-Z0-9_.:-]{1,80}$'
+     AND policy_approved_at IS NOT NULL
+     AND reviewed_by IS NOT NULL AND length(reviewed_by) >= 3))
+);
+INSERT INTO analytics.product_release_gate(id,collection_enabled)
+  VALUES (1,false) ON CONFLICT(id) DO NOTHING;
+ALTER TABLE analytics.product_release_gate ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.product_release_gate
+  FROM PUBLIC, anon, authenticated;
+GRANT ALL ON analytics.product_release_gate TO service_role;
+
+ALTER TABLE analytics.product_consents
+  ADD COLUMN policy_version text;
+
+CREATE FUNCTION analytics.check_product_consent_release()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $$
+DECLARE
+  v_approved text;
+BEGIN
+  IF NEW.consented THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM auth.users u WHERE u.id=NEW.user_id
+        AND u.is_anonymous IS FALSE
+        AND u.raw_app_meta_data->>'product_analytics_eligible' = 'true'
+    ) THEN
+      RAISE EXCEPTION 'Unreviewed or guest accounts cannot consent'
+        USING ERRCODE='42501';
+    END IF;
+    SELECT approved_policy_version INTO v_approved
+    FROM analytics.product_release_gate
+    WHERE id=1 AND collection_enabled
+      AND policy_approved_at IS NOT NULL
+      AND reviewed_by IS NOT NULL
+    FOR SHARE;
+    IF v_approved IS NULL THEN
+      RAISE EXCEPTION 'Analytics release policy not approved'
+        USING ERRCODE='42501';
+    END IF;
+    NEW.policy_version := v_approved;
+  ELSE
+    NEW.policy_version := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.check_product_consent_release()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_check_product_consent_release
+  BEFORE INSERT OR UPDATE ON analytics.product_consents
+  FOR EACH ROW EXECUTE FUNCTION analytics.check_product_consent_release();
+
+CREATE FUNCTION analytics.check_product_event_release()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $$
+DECLARE
+  v_approved text;
+BEGIN
+  SELECT approved_policy_version INTO v_approved
+  FROM analytics.product_release_gate
+  WHERE id=1 AND collection_enabled
+    AND policy_approved_at IS NOT NULL AND reviewed_by IS NOT NULL
+  FOR SHARE;
+  IF v_approved IS NULL OR NOT EXISTS (
+    SELECT 1 FROM analytics.product_consents c
+    JOIN auth.users u ON u.id=c.user_id
+    WHERE c.user_id=NEW.user_id AND c.consented
+      AND c.policy_version=v_approved
+      AND u.is_anonymous IS FALSE
+      AND u.raw_app_meta_data->>'product_analytics_eligible'='true'
+  ) THEN
+    RAISE EXCEPTION 'Analytics release or matching consent not active'
+      USING ERRCODE='42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.check_product_event_release()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_check_product_event_release
+  BEFORE INSERT ON analytics.product_events
+  FOR EACH ROW EXECUTE FUNCTION analytics.check_product_event_release();
+
+-- A changed privacy notice invalidates prior consent. Explicit consent must
+-- be gathered again under the newly approved notice before any new event.
+CREATE FUNCTION analytics.invalidate_old_product_policy()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $$
+BEGIN
+  IF NEW.approved_policy_version IS DISTINCT FROM
+      OLD.approved_policy_version THEN
+    UPDATE analytics.product_consents
+       SET consented=false, changed_at=now()
+     WHERE consented=true;
+    -- Conservative privacy default: discard raw events collected under the
+    -- previous policy when the release notice changes.
+    DELETE FROM analytics.product_events;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION analytics.invalidate_old_product_policy()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_invalidate_old_product_policy
+  AFTER UPDATE OF approved_policy_version
+  ON analytics.product_release_gate
+  FOR EACH ROW EXECUTE FUNCTION analytics.invalidate_old_product_policy();
+
+-- Retention health is callable only from the privileged operations role.
+-- Does not create a scheduler or authorize collection.
+CREATE FUNCTION analytics.product_retention_health()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = ''
+AS $$
+  SELECT jsonb_build_object(
+    'as_of',now(),
+    'raw_events',count(*),
+    'expired_events',count(*) FILTER
+      (WHERE received_at < now()-interval '90 days'),
+    'oldest_received_at',min(received_at)
+  ) FROM analytics.product_events;
+$$;
+REVOKE ALL ON FUNCTION analytics.product_retention_health()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION analytics.product_retention_health()
+  TO service_role;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110210000', 'ana_103_product_privacy_controls') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [106/110] Migration: 20261110220000_marketing_feature_control_foundation.sql
+-- --------------------------------------------------------------------
+-- FLAG-001..004: trusted, default-dark first-party feature controls.
+-- Additive only. Do not deploy except via the owner-gated guarded migration path.
+-- Existing TEL Fast and Overview remain ON as explicitly directed by owner.
+CREATE SCHEMA IF NOT EXISTS private;
+
+CREATE TABLE private.site_feature_controls (
+  feature_key text PRIMARY KEY
+    CHECK (feature_key ~ '^[a-z][a-z0-9_]*([.][a-z][a-z0-9_]*)+$'),
+  label text NOT NULL,
+  category text NOT NULL,
+  kind text NOT NULL
+    CHECK (kind IN ('release', 'kill_switch', 'operational', 'privacy_gate')),
+  enabled boolean NOT NULL DEFAULT false,
+  maturity text NOT NULL DEFAULT 'experimental'
+    CHECK (maturity IN ('experimental','verified')),
+  release_ready boolean NOT NULL DEFAULT false,
+  revision bigint NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  description text NOT NULL DEFAULT '',
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by uuid REFERENCES auth.users(id) ON DELETE SET NULL
+);
+ALTER TABLE private.site_feature_controls ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE private.site_feature_controls FROM PUBLIC, anon, authenticated;
+
+CREATE TABLE private.site_feature_change_audit (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  feature_key text NOT NULL REFERENCES private.site_feature_controls(feature_key),
+  changed_at timestamptz NOT NULL DEFAULT now(),
+  actor_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  prior_enabled boolean NOT NULL,
+  next_enabled boolean NOT NULL,
+  prior_maturity text NOT NULL,
+  next_maturity text NOT NULL,
+  previous_revision bigint NOT NULL,
+  new_revision bigint NOT NULL,
+  reason text NOT NULL CHECK (length(btrim(reason)) >= 8)
+);
+ALTER TABLE private.site_feature_change_audit ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE private.site_feature_change_audit FROM PUBLIC, anon, authenticated;
+
+-- New capabilities cannot be activated merely because their code has merged.
+-- release_ready requires separate reviewed code/migration approval; the panel
+-- cannot edit it. This also prevents the panel from bypassing dedicated privacy
+-- or BYOK credential remediation gates.
+INSERT INTO private.site_feature_controls
+  (feature_key, label, category, kind, enabled, maturity, release_ready, description)
+VALUES
+ ('tel.fast', 'Fast learning approach', 'Learning', 'release', true, 'experimental', true,
+  'Owner-approved available Fast; learning outcome maturity remains experimental'),
+ ('tel.overview', 'Quick overview', 'Learning', 'release', true, 'experimental', true,
+  'Preserve merged Overview availability and existing target eligibility'),
+ ('ai.byok', 'Bring Your Own Key AI', 'AI', 'release', false, 'experimental', false,
+  'Hard-disabled pending security, privacy, provider, CSP and owner review'),
+ ('ai.managed', 'Platform-funded AI', 'AI', 'operational', false, 'experimental', false,
+  'Zero spend ceiling and explicit funding approval required'),
+ ('ai.external_mcp', 'External AI via MCP', 'AI', 'release', false, 'experimental', false,
+  'Parent of hosted MCP tools; never allow learner data by default'),
+ ('mcp.remote', 'Remote MCP endpoint', 'MCP', 'kill_switch', false, 'experimental', false,
+  'Authenticated endpoint must be verified before enabling'),
+ ('mcp.personal_read', 'MCP personal learner read', 'MCP', 'release', false, 'experimental', false,
+  'Requires token-derived user and revoked OAuth token handling'),
+ ('mcp.write_review', 'MCP write reviews', 'MCP', 'release', false, 'experimental', false,
+  'Requires idempotent write and cross-account negative tests'),
+ ('analytics.product_events', 'Opt-in product analytics', 'Privacy', 'privacy_gate', false, 'experimental', false,
+  'Additional brake; analytics.product_release_gate remains authoritative'),
+ ('support.donations', 'Voluntary support', 'Commerce', 'release', false, 'experimental', false,
+  'Provider approval, verified webhook and reconciliation required'),
+ ('marketing.sponsor_cards', 'Public sponsor placements', 'Commerce', 'release', false, 'experimental', false,
+  'Public pages only with editorial independence and disclosures'),
+ ('marketing.affiliate_links', 'Disclosed affiliate links', 'Commerce', 'release', false, 'experimental', false,
+  'Public pages only with disclosure and ranking independence'),
+ ('marketing.display_ads', 'Public-page display ads', 'Commerce', 'release', false, 'experimental', false,
+  'Never load advertising scripts in Flutter study views'),
+ ('marketing.paid_acquisition', 'Paid acquisition', 'Commerce', 'operational', false, 'experimental', false,
+  'Provider-side campaigns must be paused; server budget starts at zero'),
+ ('seo.dynamic_endpoints', 'SEO dynamic endpoints', 'Discovery', 'operational', false, 'experimental', false,
+  'Static public pages remain accessible independently'),
+ ('ops.nonessential_background_jobs', 'Nonessential jobs', 'Operations', 'kill_switch', false, 'experimental', false,
+  'Disabled until job admission is server-enforced'),
+ ('learning.community_qa', 'Community Q&A rollout', 'Learning', 'release', false, 'experimental', false,
+  'Registry does not replace existing community authorization or content gates'),
+ ('learning.simulations', 'New simulation sessions', 'Learning', 'release', false, 'experimental', false,
+  'Existing simulation behavior stays unchanged until parity and gate review')
+ON CONFLICT (feature_key) DO NOTHING;
+
+-- Server-side admission helper. Future RPC/Edge/MCP entry points MUST invoke
+-- it at each side-effect boundary. No direct exposure to browser roles.
+CREATE OR REPLACE FUNCTION private.site_feature_enabled(p_feature_key text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT coalesce((
+    SELECT c.enabled AND c.release_ready
+    FROM private.site_feature_controls AS c
+    WHERE c.feature_key = p_feature_key
+  ), false);
+$$;
+REVOKE ALL ON FUNCTION private.site_feature_enabled(text) FROM PUBLIC, anon, authenticated;
+
+-- Public read-only snapshot contains no credentials, actors or audit reasons.
+-- The browser never treats a returned "enabled" as backend authorization.
+CREATE OR REPLACE FUNCTION public.get_site_feature_snapshot()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT coalesce(jsonb_object_agg(
+    c.feature_key,
+    jsonb_build_object(
+      'enabled', (c.enabled AND c.release_ready),
+      'maturity', c.maturity,
+      'revision', c.revision
+    )
+  ), '{}'::jsonb)
+  FROM private.site_feature_controls AS c;
+$$;
+REVOKE ALL ON FUNCTION public.get_site_feature_snapshot() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_site_feature_snapshot() TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.admin_list_site_features()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR NOT private.is_admin() THEN
+    RAISE EXCEPTION 'Not authorized to manage feature controls'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN (
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'feature_key', c.feature_key,
+      'label', c.label,
+      'category', c.category,
+      'kind', c.kind,
+      'enabled', c.enabled,
+      'maturity', c.maturity,
+      'release_ready', c.release_ready,
+      'revision', c.revision,
+      'description', c.description,
+      'updated_at', c.updated_at
+    ) ORDER BY c.category, c.label), '[]'::jsonb)
+    FROM private.site_feature_controls c
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_list_site_features() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_list_site_features() TO authenticated, service_role;
+
+-- Optimistic CAS prevents stale operator panels from overwriting one another.
+-- No change to the safety-reviewed release_ready column is permitted here.
+CREATE OR REPLACE FUNCTION public.admin_set_site_feature(
+  p_feature_key text, p_enabled boolean, p_maturity text,
+  p_expected_revision bigint, p_reason text)
+RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE
+  v_before private.site_feature_controls%ROWTYPE;
+  v_next_revision bigint;
+BEGIN
+  IF auth.uid() IS NULL OR NOT private.is_admin() THEN
+    RAISE EXCEPTION 'Not authorized to manage feature controls'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_enabled IS NULL OR p_maturity NOT IN ('experimental', 'verified')
+     OR p_maturity IS NULL OR p_expected_revision IS NULL
+     OR length(btrim(coalesce(p_reason,''))) < 8 THEN
+    RAISE EXCEPTION 'Invalid feature change parameters or audit reason'
+      USING ERRCODE = '22023';
+  END IF;
+
+  SELECT * INTO v_before FROM private.site_feature_controls
+  WHERE feature_key = p_feature_key FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Unknown feature key' USING ERRCODE = '22023';
+  END IF;
+  IF v_before.revision != p_expected_revision THEN
+    RAISE EXCEPTION 'Feature revision has changed; reload and retry'
+      USING ERRCODE = '40001';
+  END IF;
+  IF p_enabled AND NOT v_before.release_ready THEN
+    RAISE EXCEPTION 'Feature activation requires a reviewed release gate'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- Independent safety latches must never be overridden by a generic switch.
+  IF p_enabled AND p_feature_key = 'ai.byok' THEN
+    RAISE EXCEPTION 'BYOK is under owner-mandated remediation'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_enabled AND p_feature_key = 'analytics.product_events' THEN
+    RAISE EXCEPTION 'Analytics has a separate consent/policy release gate'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF v_before.enabled = p_enabled AND v_before.maturity = p_maturity THEN
+    RETURN jsonb_build_object('feature_key', v_before.feature_key,
+      'enabled', v_before.enabled, 'maturity', v_before.maturity,
+      'revision', v_before.revision);
+  END IF;
+
+  v_next_revision := v_before.revision + 1;
+  UPDATE private.site_feature_controls
+  SET enabled = p_enabled, maturity = p_maturity, revision = v_next_revision,
+      updated_at = now(), updated_by = auth.uid()
+  WHERE feature_key = p_feature_key;
+  INSERT INTO private.site_feature_change_audit(
+    feature_key, actor_id, prior_enabled, next_enabled,
+    prior_maturity, next_maturity, previous_revision, new_revision, reason)
+  VALUES (
+    p_feature_key, auth.uid(), v_before.enabled, p_enabled,
+    v_before.maturity, p_maturity, v_before.revision, v_next_revision, btrim(p_reason)
+  );
+
+  RETURN jsonb_build_object('feature_key', p_feature_key,
+    'enabled', p_enabled, 'maturity', p_maturity,
+    'revision', v_next_revision);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_set_site_feature(text,boolean,text,bigint,text)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_set_site_feature(text,boolean,text,bigint,text)
+  TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.admin_recent_site_feature_changes(
+  p_limit integer DEFAULT 30)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR NOT private.is_admin() THEN
+    RAISE EXCEPTION 'Not authorized to view feature control history'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN (
+    SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.changed_at DESC), '[]'::jsonb)
+    FROM (
+      SELECT id, feature_key, changed_at, actor_id,
+             prior_enabled, next_enabled, prior_maturity, next_maturity,
+             previous_revision, new_revision, reason
+      FROM private.site_feature_change_audit
+      ORDER BY changed_at DESC, id DESC
+      LIMIT least(greatest(coalesce(p_limit, 30), 1), 100)
+    ) AS a
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_recent_site_feature_changes(integer)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_recent_site_feature_changes(integer)
+  TO authenticated, service_role;
+
+-- Revoke browser table privileges again in case future inherited grants differ.
+REVOKE ALL ON TABLE private.site_feature_controls,
+  private.site_feature_change_audit FROM PUBLIC, anon, authenticated;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110220000', 'marketing_feature_control_foundation') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [107/110] Migration: 20261110230000_software_learning_excel_attempt_issuance.sql
+-- --------------------------------------------------------------------
+-- Software Learning Excel pilot: authenticated, server-issued synthetic attempts.
+-- DRAFT FOUNDATION ONLY. No workbook upload/storage, grading, learning_events
+-- projection, skill awards or user file handling is enabled by this migration.
+-- Append-only; deploy only after the guarded release process and owner review.
+BEGIN;
+
+CREATE SCHEMA IF NOT EXISTS software_learning_private;
+REVOKE ALL ON SCHEMA software_learning_private FROM PUBLIC, anon, authenticated;
+
+CREATE TABLE public.software_learning_attempts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  issued_session_id uuid NOT NULL,
+  exercise_id text NOT NULL DEFAULT 'excel-budget-total-v1'
+    CHECK (exercise_id = 'excel-budget-total-v1'),
+  checker_version integer NOT NULL DEFAULT 1
+    CHECK (checker_version = 1),
+  issued_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  status text NOT NULL DEFAULT 'issued'
+    CHECK (status = 'issued'),
+  CONSTRAINT sl_excel_limited_expiration_check
+    CHECK (expires_at > issued_at AND
+      expires_at <= issued_at + interval '45 minutes')
+);
+CREATE INDEX sl_attempts_owner_issue_idx
+  ON public.software_learning_attempts (owner_id,issued_at DESC);
+CREATE INDEX sl_attempts_owner_expiry_idx
+  ON public.software_learning_attempts (owner_id,expires_at)
+  WHERE status='issued';
+
+ALTER TABLE public.software_learning_attempts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.software_learning_attempts FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.software_learning_attempts TO authenticated;
+CREATE POLICY sl_attempts_owner_read
+  ON public.software_learning_attempts FOR SELECT TO authenticated
+  USING (owner_id=(SELECT auth.uid()) AND expires_at > now());
+
+CREATE TABLE software_learning_private.excel_attempt_inputs (
+  attempt_id uuid PRIMARY KEY
+    REFERENCES public.software_learning_attempts(id) ON DELETE CASCADE,
+  expected_inputs jsonb NOT NULL CHECK (jsonb_typeof(expected_inputs)='object')
+);
+ALTER TABLE software_learning_private.excel_attempt_inputs ENABLE ROW LEVEL SECURITY;
+
+-- Issuance accounting intentionally survives deleting an individual attempt,
+-- otherwise a learner could evade the 12-in-24h quota by erasing each attempt.
+-- Contains account ID and timestamp only, no workbook data or responses.
+-- Account erasure cascades; periodic age-based pruning is a release gate.
+CREATE TABLE software_learning_private.excel_issuance_log (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  issued_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX sl_excel_issue_log_owner_window_idx
+  ON software_learning_private.excel_issuance_log(owner_id,issued_at DESC);
+ALTER TABLE software_learning_private.excel_issuance_log ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON ALL TABLES IN SCHEMA software_learning_private
+  FROM PUBLIC, anon, authenticated;
+
+-- No user-controlled exercise ID, checker version, score, expected values or
+-- owner ID parameters are accepted. This issuer returns only safe synthetic
+-- transaction amounts; there is no file/assessment upload capability.
+CREATE FUNCTION public.sl_issue_excel_budget_attempt()
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $issue$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+  v_now timestamptz := now();
+  v_id uuid;
+  v_inputs jsonb := '{}'::jsonb;
+  v_quota integer;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RAISE EXCEPTION 'Permanent authenticated session required'
+      USING ERRCODE='42501';
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RAISE EXCEPTION 'Authentication session is no longer active'
+      USING ERRCODE='42501';
+  END IF;
+
+  -- Serialize issuance by account so parallel requests cannot bypass quotas.
+  PERFORM pg_advisory_xact_lock(hashtextextended(v_actor::text, 61732));
+  SELECT count(*)::integer INTO v_quota
+  FROM software_learning_private.excel_issuance_log l
+  WHERE l.owner_id=v_actor AND l.issued_at>v_now-interval '24 hours';
+  IF v_quota >= 12 THEN
+    RAISE EXCEPTION 'Excel practice issuance quota reached'
+      USING ERRCODE='42501';
+  END IF;
+
+  SELECT count(*)::integer INTO v_quota
+  FROM public.software_learning_attempts a
+  WHERE a.owner_id=v_actor AND a.expires_at>v_now AND a.status='issued';
+  IF v_quota >= 2 THEN
+    RAISE EXCEPTION 'Finish or erase an existing Excel attempt first'
+      USING ERRCODE='42501';
+  END IF;
+
+  -- New numeric inputs are generated server-side for each attempt.
+  -- They are synthetic learning data, NOT anti-cheating secrets.
+  FOR v_i IN 2..9 LOOP
+    v_inputs := v_inputs || jsonb_build_object(
+      'C' || v_i, (10+floor(random()*90)::integer)
+    );
+  END LOOP;
+
+  INSERT INTO public.software_learning_attempts
+    (owner_id,issued_session_id,issued_at,expires_at)
+  VALUES (v_actor,v_session,v_now,v_now+interval '45 minutes')
+  RETURNING id INTO v_id;
+  INSERT INTO software_learning_private.excel_attempt_inputs
+    (attempt_id,expected_inputs)
+  VALUES (v_id,v_inputs);
+  INSERT INTO software_learning_private.excel_issuance_log
+    (owner_id,issued_at)
+  VALUES (v_actor,v_now);
+
+  RETURN jsonb_build_object(
+    'attempt_id',v_id,
+    'exercise_id','excel-budget-total-v1',
+    'checker_version',1,
+    'worksheet','Budget',
+    'target_cell','C10',
+    'inputs',v_inputs,
+    'issued_at',v_now,
+    'expires_at',v_now+interval '45 minutes',
+    'status','issued',
+    'upload_enabled',false,
+    'evidence_trust','unverified'
+  );
+END
+$issue$;
+
+REVOKE ALL ON FUNCTION public.sl_issue_excel_budget_attempt()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_issue_excel_budget_attempt()
+  TO authenticated;
+
+-- Owner erasure of the synthetic attempt and its private numeric inputs.
+-- No attempt contents or foreign-attempt existence is disclosed to callers.
+CREATE FUNCTION public.sl_delete_excel_budget_attempt(p_attempt_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $erase$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+  v_deleted uuid;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+       '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RAISE EXCEPTION 'Permanent authenticated session required'
+      USING ERRCODE='42501';
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RAISE EXCEPTION 'Authentication session is no longer active'
+      USING ERRCODE='42501';
+  END IF;
+
+  DELETE FROM public.software_learning_attempts a
+  WHERE a.id=p_attempt_id AND a.owner_id=v_actor
+  RETURNING a.id INTO v_deleted;
+  RETURN v_deleted IS NOT NULL;
+END
+$erase$;
+
+REVOKE ALL ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_delete_excel_budget_attempt(uuid)
+  TO authenticated;
+
+COMMENT ON TABLE public.software_learning_attempts IS
+  'Excel pilot: owner-visible server-issued synthetic attempt metadata; no scoring or file submission enabled.';
+COMMENT ON TABLE software_learning_private.excel_attempt_inputs IS
+  'Server-owned synthetic transaction cells, never directly readable by clients.';
+COMMENT ON FUNCTION public.sl_issue_excel_budget_attempt() IS
+  'Live permanent-session, owner-bound and quota-limited issue of synthetic Excel budget practice; unverified only.';
+COMMENT ON FUNCTION public.sl_delete_excel_budget_attempt(uuid) IS
+  'Live-session owner deletion; atomically cascades to private Excel practice inputs.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110230000', 'software_learning_excel_attempt_issuance') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [108/110] Migration: 20261111000000_software_learning_excel_private_upload_gate.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: private storage bucket with authenticated owner/session/path gate.
+-- No learner-facing file upload or worker processing is released here.
+-- All issued attempts remain upload_enabled=false; only trusted server
+-- orchestration can opt in after the independent retention/security review.
+-- Objects must be deleted using Storage API, never SQL metadata DELETE.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN upload_enabled boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.software_learning_attempts.upload_enabled IS
+  'Server-only release gate; default false, not changeable by learners. An enabled attempt still requires active original Auth session and exact path.';
+
+-- Reserve a NEW bucket ID only: never silently adopt/modify a pre-existing
+-- object bucket that might contain learner files or have public settings.
+DO $reserved_bucket$
+BEGIN
+  IF EXISTS (SELECT 1 FROM storage.buckets b
+             WHERE b.id='learningapp-excel-private') THEN
+    RAISE EXCEPTION 'Excel storage bucket already exists; require manual review'
+      USING ERRCODE='55000';
+  END IF;
+END
+$reserved_bucket$;
+
+INSERT INTO storage.buckets
+  (id,name,public,file_size_limit,allowed_mime_types)
+VALUES (
+  'learningapp-excel-private',
+  'learningapp-excel-private',
+  false,
+  10485760,
+  ARRAY['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']::text[]
+);
+
+-- Safe boolean for Storage RLS: never returns an attempt record or private
+-- expected inputs. PostgREST must verify JWT signature; this method also
+-- verifies permanent-account status, the still-active Auth session and
+-- the one exact canonical workbook path for an explicitly enabled attempt.
+CREATE FUNCTION public.sl_excel_storage_upload_authorized(p_object_name text)
+RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $gate$
+DECLARE
+  v_actor uuid;
+  v_session uuid;
+BEGIN
+  v_actor := (SELECT auth.uid());
+  IF p_object_name IS NULL OR octet_length(p_object_name)>100
+     OR v_actor IS NULL
+     OR (auth.jwt()->>'role') IS DISTINCT FROM 'authenticated'
+     OR (auth.jwt()->>'is_anonymous') IS DISTINCT FROM 'false'
+     OR coalesce(auth.jwt()->>'session_id','') !~
+        '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+  THEN
+    RETURN false;
+  END IF;
+  v_session := (auth.jwt()->>'session_id')::uuid;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=v_session AND s.user_id=v_actor
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.software_learning_attempts a
+    WHERE a.owner_id=v_actor AND a.issued_session_id=v_session
+      AND a.status='issued' AND a.expires_at>now()
+      AND a.upload_enabled IS true
+      AND p_object_name=v_actor::text || '/' || a.id::text || '/workbook.xlsx'
+  );
+END
+$gate$;
+REVOKE ALL ON FUNCTION public.sl_excel_storage_upload_authorized(text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sl_excel_storage_upload_authorized(text)
+  TO authenticated;
+
+-- A restrictive gate is essential: a pre-existing permissive bucket INSERT
+-- policy must not authorize uploads to the reserved Excel bucket.
+CREATE POLICY sl_excel_insert_enforce ON storage.objects
+AS RESTRICTIVE FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id <> 'learningapp-excel-private'
+  OR public.sl_excel_storage_upload_authorized(name)
+);
+
+-- Anonymous DB role is deliberately separate: it cannot execute the gated
+-- authenticated-only helper. This prevents a policy permission error from
+-- affecting unrelated buckets with existing public upload rules.
+CREATE POLICY sl_excel_insert_anon_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO anon
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+-- Explicit client-side direct upload permission only if a trusted operator
+-- later sets the attempt's server-only gate. No signed URL or upsert flows.
+CREATE POLICY sl_excel_insert_owner ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'learningapp-excel-private'
+  AND public.sl_excel_storage_upload_authorized(name)
+);
+
+-- Block all learner reads, overwrites, and deletions for this bucket even
+-- if other RLS policies become more permissive later. A scoped trusted
+-- processor must use the authenticated Storage API for read/delete.
+CREATE POLICY sl_excel_deny_read ON storage.objects
+AS RESTRICTIVE FOR SELECT TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private');
+
+CREATE POLICY sl_excel_deny_update ON storage.objects
+AS RESTRICTIVE FOR UPDATE TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private')
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+CREATE POLICY sl_excel_deny_delete ON storage.objects
+AS RESTRICTIVE FOR DELETE TO anon,authenticated
+USING (bucket_id <> 'learningapp-excel-private');
+
+-- A DB-only deletion must never leave actual bytes in object storage.
+-- Until the Storage-API cleanup orchestration is implemented, refuse
+-- deleting an attempt whose canonical uploaded object still exists.
+CREATE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=pg_catalog
+AS $protect$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM storage.objects o
+    WHERE o.bucket_id='learningapp-excel-private'
+      AND o.name=old.owner_id::text || '/' || old.id::text || '/workbook.xlsx'
+  ) THEN
+    RAISE EXCEPTION
+      'Remove Excel workbook via Storage API before erasing attempt metadata'
+      USING ERRCODE='55000';
+  END IF;
+  RETURN old;
+END
+$protect$;
+REVOKE ALL ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete()
+  FROM PUBLIC, anon, authenticated;
+
+CREATE TRIGGER sl_excel_prevent_orphan_delete
+  BEFORE DELETE ON public.software_learning_attempts
+  FOR EACH ROW
+  EXECUTE FUNCTION software_learning_private.sl_excel_prevent_orphan_delete();
+
+COMMENT ON FUNCTION public.sl_excel_storage_upload_authorized(text) IS
+  'Default-deny permanent-session and owner-bound canonical Excel Storage path check. Never a skill/evidence authority.';
+COMMENT ON FUNCTION software_learning_private.sl_excel_prevent_orphan_delete() IS
+  'Fail-closed protection against SQL-only erasure of workbook metadata while bytes remain in Storage.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111000000', 'software_learning_excel_private_upload_gate') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [109/110] Migration: 20261111010000_software_learning_excel_processing_lease.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: service-only, single-use processing lease and provisional receipt.
+-- No learner-facing upload/grade route. No learning_events or skill awards.
+-- The owner/session-authenticated Storage admission remains default DISABLED.
+-- This append-only migration is source-only pending guarded deployment review.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  DROP CONSTRAINT software_learning_attempts_status_check;
+ALTER TABLE public.software_learning_attempts
+  ADD CONSTRAINT software_learning_attempts_status_check
+  CHECK (status IN ('issued','processing','processed','failed'));
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN processing_lease_id uuid UNIQUE,
+  ADD COLUMN processing_claimed_at timestamptz,
+  ADD COLUMN artifact_sha256 text,
+  ADD COLUMN provisional_status text,
+  ADD COLUMN provisional_feedback text,
+  ADD CONSTRAINT sl_excel_artifact_sha_check
+    CHECK (artifact_sha256 IS NULL OR artifact_sha256 ~ '^[a-f0-9]{64}$'),
+  ADD CONSTRAINT sl_excel_provisional_status_check
+    CHECK (provisional_status IS NULL OR
+           provisional_status IN ('pass','fail','inconclusive')),
+  ADD CONSTRAINT sl_excel_provisional_feedback_check
+    CHECK (provisional_feedback IS NULL OR
+           char_length(provisional_feedback) <= 300);
+
+-- This schema is deliberately absent from the public Data API. Only the
+-- trusted service role is permitted to invoke the state-machine methods.
+GRANT USAGE ON SCHEMA software_learning_private TO service_role;
+
+CREATE FUNCTION software_learning_private.sl_claim_excel_processing(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $claim$
+DECLARE
+  v_now timestamptz := now();
+  v_lease uuid := gen_random_uuid();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+  v_inputs jsonb;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  -- Additional live-session check in the DB; the invoking service MUST
+  -- independently validate bearer JWT and permanence before passing IDs.
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after > v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  -- This UPDATE is atomic and single-use: simultaneous calls cannot both
+  -- claim the same issued attempt. It also disables future upload INSERTs.
+  UPDATE public.software_learning_attempts a
+  SET status='processing',
+      upload_enabled=false,
+      processing_lease_id=v_lease,
+      processing_claimed_at=v_now
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=true
+    AND a.expires_at>v_now
+  RETURNING a.* INTO v_attempt;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT i.expected_inputs INTO v_inputs
+  FROM software_learning_private.excel_attempt_inputs i
+  WHERE i.attempt_id=v_attempt.id;
+  IF v_inputs IS NULL THEN
+    RAISE EXCEPTION 'Server-issued workbook inputs missing'
+      USING ERRCODE='55000';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'lease_id',v_lease,
+    'attempt_id',v_attempt.id,
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'exercise_id',v_attempt.exercise_id,
+    'checker_version',v_attempt.checker_version,
+    'expires_at',v_attempt.expires_at,
+    'expected_inputs',v_inputs,
+    'evidence_trust','unverified_checker_only',
+    'can_award_skill',false
+  );
+END
+$claim$;
+
+CREATE FUNCTION software_learning_private.sl_complete_excel_processing(
+  p_lease_id uuid, p_digest text, p_status text, p_feedback text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $complete$
+DECLARE
+  v_completed uuid;
+BEGIN
+  IF p_lease_id IS NULL OR p_digest IS NULL OR
+     p_digest !~ '^[a-f0-9]{64}$' OR
+     p_status NOT IN ('pass','fail','inconclusive') OR
+     p_status IS NULL OR p_feedback IS NULL OR
+     char_length(p_feedback) > 300
+  THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.software_learning_attempts a
+  SET status='processed',
+      artifact_sha256=p_digest,
+      provisional_status=p_status,
+      provisional_feedback=p_feedback
+  WHERE a.processing_lease_id=p_lease_id
+    AND a.status='processing'
+    AND a.upload_enabled=false
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_completed;
+
+  RETURN v_completed IS NOT NULL;
+END
+$complete$;
+
+CREATE FUNCTION software_learning_private.sl_fail_excel_processing(
+  p_lease_id uuid
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $fail$
+DECLARE
+  v_failed uuid;
+BEGIN
+  IF p_lease_id IS NULL THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='failed', upload_enabled=false
+  WHERE a.processing_lease_id=p_lease_id AND a.status='processing'
+  RETURNING a.id INTO v_failed;
+  RETURN v_failed IS NOT NULL;
+END
+$fail$;
+
+-- Never expose these security-definer functions to any learner role or
+-- anonymous RPC. Only the trusted backend obtains the private expected data.
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_fail_excel_processing(uuid)
+  FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_fail_excel_processing(uuid)
+  TO service_role;
+
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid)
+ IS 'Atomic service-only Excel claim; freezes upload and exposes expected inputs solely to trusted processor.';
+COMMENT ON FUNCTION software_learning_private.sl_complete_excel_processing(uuid,text,text,text)
+ IS 'Provisional result only; never verified learning events or skill award.';
+COMMENT ON FUNCTION software_learning_private.sl_fail_excel_processing(uuid)
+ IS 'Finalizes a failed one-time claim without reopening upload access.';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111010000', 'software_learning_excel_processing_lease') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [110/110] Migration: 20261111020000_software_learning_excel_brokered_upload_seal.sql
+-- --------------------------------------------------------------------
+-- Excel pilot: broker-sealed upload; client Storage inserts stay denied.
+-- Source-only feature; no hosted service or learner upload enabled.
+BEGIN;
+
+ALTER TABLE public.software_learning_attempts
+  ADD COLUMN upload_sha256 text,
+  ADD COLUMN upload_object_version text,
+  ADD COLUMN upload_committed_at timestamptz,
+  ADD CONSTRAINT sl_excel_upload_sha_check
+    CHECK (upload_sha256 IS NULL OR upload_sha256 ~ '^[a-f0-9]{64}$'),
+  ADD CONSTRAINT sl_excel_upload_revision_check
+    CHECK (upload_object_version IS NULL OR
+           (char_length(upload_object_version) BETWEEN 1 AND 256 AND
+            upload_object_version ~ '^[a-zA-Z0-9._:-]+$')),
+  ADD CONSTRAINT sl_excel_upload_attestation_complete_check
+    CHECK (
+      (upload_sha256 IS NULL AND upload_object_version IS NULL
+       AND upload_committed_at IS NULL)
+      OR
+      (upload_sha256 IS NOT NULL AND upload_object_version IS NOT NULL
+       AND upload_committed_at IS NOT NULL)
+    ),
+  ADD CONSTRAINT sl_excel_upload_enabled_requires_seal_check
+    CHECK (NOT upload_enabled OR upload_committed_at IS NOT NULL);
+
+DROP POLICY IF EXISTS sl_excel_insert_owner ON storage.objects;
+DROP POLICY IF EXISTS sl_excel_insert_enforce ON storage.objects;
+CREATE POLICY sl_excel_insert_client_denied ON storage.objects
+AS RESTRICTIVE FOR INSERT TO authenticated
+WITH CHECK (bucket_id <> 'learningapp-excel-private');
+
+-- Server-side broker locks attempt row for entire exclusive transaction;
+-- no service-role privilege to auth.sessions is granted.
+CREATE FUNCTION software_learning_private.sl_lock_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerlock$
+DECLARE
+  v_now timestamptz := now();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+  SELECT a.* INTO v_attempt
+  FROM public.software_learning_attempts a
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
+    AND a.upload_committed_at IS NULL
+    AND a.expires_at>v_now+interval '2 minutes'
+  FOR UPDATE OF a NOWAIT;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  RETURN jsonb_build_object(
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'attempt_id',v_attempt.id,
+    'expires_at',v_attempt.expires_at
+  );
+END
+$brokerlock$;
+
+CREATE FUNCTION software_learning_private.sl_seal_excel_upload(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid,
+  p_digest text, p_version text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $brokerseal$
+DECLARE
+  v_updated uuid;
+BEGIN
+  IF (p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL
+    OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}$'
+    OR p_version IS NULL OR char_length(p_version) NOT BETWEEN 1 AND 256
+    OR p_version !~ '^[a-zA-Z0-9._:-]+$')
+  THEN
+    RETURN false;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>now())
+  ) THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET upload_sha256=p_digest, upload_object_version=p_version,
+      upload_committed_at=now(), upload_enabled=true
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=false
+    AND a.upload_committed_at IS NULL
+    AND a.upload_sha256 IS NULL AND a.upload_object_version IS NULL
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_updated;
+  RETURN v_updated IS NOT NULL;
+END
+$brokerseal$;
+
+-- A sealed workbook, verified against the live session, is required before
+-- any processing claim. Returned hash/revision are immutable trust inputs.
+CREATE OR REPLACE FUNCTION software_learning_private.sl_claim_excel_processing(
+  p_attempt_id uuid, p_owner_id uuid, p_session_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $claim$
+DECLARE
+  v_now timestamptz := now();
+  v_lease uuid := gen_random_uuid();
+  v_attempt public.software_learning_attempts%ROWTYPE;
+  v_inputs jsonb;
+BEGIN
+  IF p_attempt_id IS NULL OR p_owner_id IS NULL OR p_session_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id=p_session_id AND s.user_id=p_owner_id
+      AND (s.not_after IS NULL OR s.not_after>v_now)
+  ) THEN
+    RETURN NULL;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='processing', upload_enabled=false,
+      processing_lease_id=v_lease, processing_claimed_at=v_now
+  WHERE a.id=p_attempt_id AND a.owner_id=p_owner_id
+    AND a.issued_session_id=p_session_id
+    AND a.status='issued' AND a.upload_enabled=true
+    AND a.upload_committed_at IS NOT NULL
+    AND a.upload_sha256 ~ '^[a-f0-9]{64}$'
+    AND a.upload_object_version IS NOT NULL
+    AND a.expires_at>v_now
+  RETURNING a.* INTO v_attempt;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+  SELECT i.expected_inputs INTO v_inputs
+  FROM software_learning_private.excel_attempt_inputs i
+  WHERE i.attempt_id=v_attempt.id;
+  IF v_inputs IS NULL THEN
+    RAISE EXCEPTION 'Server-issued workbook inputs missing'
+      USING ERRCODE='55000';
+  END IF;
+  RETURN jsonb_build_object(
+    'lease_id',v_lease,
+    'attempt_id',v_attempt.id,
+    'owner_id',v_attempt.owner_id,
+    'session_id',v_attempt.issued_session_id,
+    'exercise_id',v_attempt.exercise_id,
+    'checker_version',v_attempt.checker_version,
+    'expires_at',v_attempt.expires_at,
+    'expected_inputs',v_inputs,
+    'expected_sha256',v_attempt.upload_sha256,
+    'object_version',v_attempt.upload_object_version,
+    'evidence_trust','unverified_checker_only',
+    'can_award_skill',false
+  );
+END
+$claim$;
+
+CREATE OR REPLACE FUNCTION software_learning_private.sl_complete_excel_processing(
+  p_lease_id uuid, p_digest text, p_status text, p_feedback text
+)
+RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path=pg_catalog
+AS $complete$
+DECLARE
+  v_completed uuid;
+BEGIN
+  IF p_lease_id IS NULL OR p_digest IS NULL OR
+     p_digest !~ '^[a-f0-9]{64}$' OR
+     p_status NOT IN ('pass','fail','inconclusive') OR
+     p_status IS NULL OR p_feedback IS NULL OR
+     char_length(p_feedback) > 300
+  THEN
+    RETURN false;
+  END IF;
+  UPDATE public.software_learning_attempts a
+  SET status='processed', artifact_sha256=p_digest,
+      provisional_status=p_status, provisional_feedback=p_feedback
+  WHERE a.processing_lease_id=p_lease_id
+    AND a.upload_sha256=p_digest
+    AND a.status='processing' AND a.upload_enabled=false
+    AND a.expires_at>now()
+  RETURNING a.id INTO v_completed;
+  RETURN v_completed IS NOT NULL;
+END
+$complete$;
+
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+  FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION
+  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_lock_excel_upload(uuid,uuid,uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION
+  software_learning_private.sl_seal_excel_upload(uuid,uuid,uuid,text,text)
+  TO service_role;
+
+COMMENT ON COLUMN public.software_learning_attempts.upload_sha256 IS
+  'SHA-256 of authenticated broker readback, not evidence of learner mastery';
+COMMENT ON COLUMN public.software_learning_attempts.upload_object_version IS
+  'Private Storage version pinned by broker, checked again before grading';
+COMMENT ON COLUMN public.software_learning_attempts.upload_committed_at IS
+  'Broker commit timestamp; direct client Storage INSERT remains prohibited';
+COMMENT ON FUNCTION software_learning_private.sl_claim_excel_processing(uuid,uuid,uuid) IS
+  'Atomic private claim for server-brokered SHA-sealed uploads; provisional only';
+COMMIT;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111020000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
 

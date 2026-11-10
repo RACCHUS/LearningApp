@@ -1,0 +1,37 @@
+{
+  "spec_version": 1,
+  "checker_id": "excel-budget-total-v1",
+  "checker_version": 1,
+  "publication_status": "draft",
+  "product_context": "microsoft-excel",
+  "learning_target_slug": "software-excel-fundamentals",
+  "course_manifest": "content/excel_fundamentals.yaml",
+  "artifact": {
+    "worksheet": "Budget",
+    "allowed_extensions": [".xlsx"],
+    "max_bytes": 10485760,
+    "reject_macro_enabled": true,
+    "reject_external_links": true,
+    "reject_unsupported_archives": true
+  },
+  "criterion": {
+    "id": "excel-budget-total-v1",
+    "target_cell": "C10",
+    "source_range": "C2:C9",
+    "operation": "sum",
+    "accepted_equivalences": ["sum_range", "direct_addition_exactly_once"],
+    "numeric_tolerance": 0
+  },
+  "expected_inputs_ref": "server_issued:excel_budget_v1:attempt_data",
+  "feedback_policy": {
+    "reveal_expected_result": false,
+    "reveal_exact_formula_on_failure": false
+  },
+  "evidence_policy": {
+    "default_trust": "unverified_checker_only",
+    "verified_skill_awards_enabled": false,
+    "requires_isolated_parser": true,
+    "requires_authenticated_server_issued_attempt": true,
+    "requires_shared_event_contract": true
+  }
+}
