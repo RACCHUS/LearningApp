@@ -101,7 +101,6 @@ DECLARE
   v_results jsonb := '[]'::jsonb;
   v_accepted integer := 0;
   v_replayed integer := 0;
-  v_i integer;
 BEGIN
   v_user := (SELECT auth.uid());
   IF v_user IS NULL THEN
