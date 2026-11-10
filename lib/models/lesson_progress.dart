@@ -74,12 +74,8 @@ class UserProgress {
     };
   }
 
-  /// Allowlisted server event. Local Hive JSON is deliberately *not* a
-  /// Supabase table payload: it has a synthetic local id and UI-only fields.
-  ///
-  /// Only explicit completion actions currently have a durable server event.
-  /// Question counters and historical aggregate time are local-only until
-  /// separately validated events exist (never fabricate time intervals).
+  /// Create a server-side event without leaking local Hive-only fields.
+  /// Question counters and unverified historical time are not uploaded.
   Map<String, dynamic>? toServerProgressEvent() {
     if (id.isEmpty || userId.isEmpty || lessonId.isEmpty) return null;
     final action = lessonCompleted
@@ -88,58 +84,18 @@ class UserProgress {
             ? 'lesson_uncompleted'
             : null);
     if (action == null) return null;
-
-    const uuidPattern =
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}  double get accuracy => questionsAnswered > 0 ? correctCount / questionsAnswered : 0;
-  
-  Duration get studyDuration => Duration(seconds: studyTimeSeconds);
-  
-  UserProgress copyWith({
-    String? id,
-    String? userId,
-    String? lessonId,
-    String? contentId,
-    StudyMode? studyMode,
-    DateTime? date,
-    int? questionsAnswered,
-    int? correctCount,
-    bool? lessonCompleted,
-    int? studyTimeSeconds,
-    int? lastPosition,
-    bool? isSynced,
-    Map<String, dynamic>? metadata,
-  }) {
-    return UserProgress(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      lessonId: lessonId ?? this.lessonId,
-      contentId: contentId ?? this.contentId,
-      studyMode: studyMode ?? this.studyMode,
-      date: date ?? this.date,
-      questionsAnswered: questionsAnswered ?? this.questionsAnswered,
-      correctCount: correctCount ?? this.correctCount,
-      lessonCompleted: lessonCompleted ?? this.lessonCompleted,
-      studyTimeSeconds: studyTimeSeconds ?? this.studyTimeSeconds,
-      lastPosition: lastPosition ?? this.lastPosition,
-      isSynced: isSynced ?? this.isSynced,
-      metadata: metadata ?? this.metadata,
-    );
-  }
-}
-;
     final explicitKind = metadata?['content_kind'];
     final contentKind = explicitKind == 'legacy_lesson' ||
             explicitKind == 'bundled_asset_lesson' ||
             explicitKind == 'curriculum_node_lesson'
         ? explicitKind as String
-        : (RegExp(uuidPattern).hasMatch(lessonId)
+        : (isLegacyProgressLessonId(lessonId)
             ? 'legacy_lesson'
             : 'bundled_asset_lesson');
     final rawVersion = metadata?['version_key'];
     final version = rawVersion is String && rawVersion.isNotEmpty
         ? rawVersion
         : 'unversioned';
-
     return <String, dynamic>{
       'idempotency_key': id,
       'event_type': action,
@@ -186,4 +142,16 @@ class UserProgress {
       metadata: metadata ?? this.metadata,
     );
   }
+}
+
+/// Exact UUID-shape test for legacy lesson routes.
+bool isLegacyProgressLessonId(String lessonId) {
+  final parts = lessonId.split('-');
+  const expectedLengths = <int>[8, 4, 4, 4, 12];
+  if (parts.length != expectedLengths.length) return false;
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].length != expectedLengths[i] ||
+        RegExp('[^a-fA-F0-9]').hasMatch(parts[i])) return false;
+  }
+  return true;
 }
