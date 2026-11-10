@@ -11,7 +11,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('BYOK Configuration & Storage Tests (ARCH-4)', () {
-    test('ByokConfig serializes and deserializes correctly', () {
+    test('ByokConfig serializes nonsecret preferences only', () {
       const config = ByokConfig(
         provider: AiProvider.openrouter,
         apiKey: 'sk-or-v1-testkey123',
@@ -23,10 +23,11 @@ void main() {
       final restored = ByokConfig.fromJson(json);
 
       expect(restored.provider, equals(AiProvider.openrouter));
-      expect(restored.apiKey, equals('sk-or-v1-testkey123'));
+      expect(json.containsKey('apiKey'), isFalse);
+      expect(restored.apiKey, isEmpty);
       expect(restored.model, equals('anthropic/claude-3.5-sonnet'));
       expect(restored.customEndpoint, equals('https://custom.openrouter.test/v1'));
-      expect(restored.isConfigured, isTrue);
+      expect(restored.isConfigured, isFalse);
     });
 
     test('ByokStorageService saves and retrieves config cleanly', () async {
@@ -48,6 +49,11 @@ void main() {
       expect(loaded.provider, equals(AiProvider.openai));
       expect(loaded.apiKey, equals('sk-test-abc'));
       expect(loaded.model, equals('gpt-4o-mini'));
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString('learningapp_byok_config')!;
+      expect(stored.contains('sk-test-abc'), isFalse);
+      expect(ByokConfig.fromJson(jsonDecode(stored) as Map<String, dynamic>)
+          .apiKey, isEmpty);
 
       await storage.clearConfig();
       loaded = await storage.loadConfig();
@@ -59,7 +65,8 @@ void main() {
     test('GeminiLlmClient sends schema and extracts candidate text', () async {
       final mockHttp = MockClient((request) async {
         expect(request.url.path, contains('/models/gemini-1.5-flash:generateContent'));
-        expect(request.url.queryParameters['key'], equals('test-gemini-key'));
+        expect(request.url.queryParameters.containsKey('key'), isFalse);
+        expect(request.headers['x-goog-api-key'], equals('test-gemini-key'));
 
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['generationConfig']['responseMimeType'], equals('application/json'));

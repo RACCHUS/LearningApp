@@ -61,6 +61,29 @@ void main() {
     );
   });
 
+  test('only exact, HTTPS, first-party provider URLs pass policy', () {
+    expect(ByokEndpointPolicy.isApproved(gemini), isTrue);
+    expect(ByokEndpointPolicy.isApproved(openai), isTrue);
+    expect(
+      ByokEndpointPolicy.isApproved(const ByokConfig(
+        provider: AiProvider.openai,
+        apiKey: 'synthetic',
+        model: 'm',
+        customEndpoint: 'https://attacker.example/v1',
+      )),
+      isFalse,
+    );
+    expect(
+      ByokEndpointPolicy.isApproved(const ByokConfig(
+        provider: AiProvider.gemini,
+        apiKey: 'synthetic',
+        model: 'm',
+        customEndpoint: 'http://127.0.0.1:8000/v1',
+      )),
+      isFalse,
+    );
+  });
+
   test('cannot save keys; existing local keys are preserved until user clears', () async {
     const stored = '{"provider":"openai","apiKey":"existing-synthetic-key","model":"gpt-4o-mini"}';
     SharedPreferences.setMockInitialValues({
@@ -70,6 +93,9 @@ void main() {
     await expectLater(storage.saveConfig(gemini), throwsStateError);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('learningapp_byok_config'), stored);
+    final loaded = await storage.loadConfig();
+    expect(loaded.apiKey, isEmpty,
+        reason: 'Legacy raw keys must never be rehydrated into app state.');
     await storage.clearConfig();
     expect(prefs.getString('learningapp_byok_config'), isNull);
   });

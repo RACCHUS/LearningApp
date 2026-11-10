@@ -49,8 +49,9 @@ enum AiProvider {
   }
 }
 
-/// Configuration model for BYOK API keys and settings.
-/// Strictly stored on the client side; NEVER transmitted to the LearningApp backend.
+/// BYOK provider configuration. The credential is ephemeral session memory;
+/// only nonsecret settings may be serialized. User-supplied credentials are
+/// sent only to the selected approved AI provider, never LearningApp servers.
 class ByokConfig {
   final AiProvider provider;
   final String apiKey;
@@ -83,9 +84,9 @@ class ByokConfig {
     );
   }
 
+  /// Persist/share ONLY nonsecret preferences, never raw user credentials.
   Map<String, dynamic> toJson() => {
         'provider': provider.name,
-        'apiKey': apiKey,
         'model': model,
         if (customEndpoint != null) 'customEndpoint': customEndpoint,
       };
@@ -98,7 +99,9 @@ class ByokConfig {
     );
     return ByokConfig(
       provider: provider,
-      apiKey: json['apiKey'] as String? ?? '',
+      // Ignore legacy browser-stored apiKey from older LearningApp versions.
+      // Retain the original local record until the user explicitly clears it.
+      apiKey: '',
       model: json['model'] as String? ?? provider.defaultModel,
       customEndpoint: json['customEndpoint'] as String?,
     );
@@ -111,11 +114,14 @@ class ByokConfig {
   );
 }
 
-/// Legacy browser-local BYOK settings. Stored credentials are not encrypted;
-/// saving is blocked pending remediation. Clear remains available.
+/// Legacy browser-local BYOK settings. Older installations may still have
+/// plaintext API keys in preferences. Never deserialize or re-use those keys.
+/// New credentials, once approved, live only in this service's memory and
+/// never in SharedPreferences. Clear is always available while BYOK is off.
 class ByokStorageService {
   static const _prefKey = 'learningapp_byok_config';
   final SharedPreferences? _prefs;
+  String _sessionKey = '';
 
   ByokStorageService([this._prefs]);
 
@@ -135,7 +141,7 @@ class ByokStorageService {
         );
       }
       final map = jsonDecode(raw) as Map<String, dynamic>;
-      return ByokConfig.fromJson(map);
+      return ByokConfig.fromJson(map).copyWith(apiKey: _sessionKey);
     } catch (_) {
       return ByokConfig(
         provider: AiProvider.gemini,
@@ -146,13 +152,16 @@ class ByokStorageService {
   }
 
   Future<void> saveConfig(ByokConfig config) async {
-    // Never persist new raw API keys while BYOK is suspended.
+    // The owner-approved OFF latch must be checked before any persistence.
     ByokReleaseGate.requireEnabled();
     final prefs = await _getPrefs();
+    // Store nonsecret settings only; credentials last for exception safety.
     await prefs.setString(_prefKey, jsonEncode(config.toJson()));
+    _sessionKey = config.apiKey;
   }
 
   Future<void> clearConfig() async {
+    _sessionKey = '';
     final prefs = await _getPrefs();
     await prefs.remove(_prefKey);
   }

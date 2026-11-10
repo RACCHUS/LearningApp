@@ -35,3 +35,10 @@ An additive migration `supabase/migrations/20261110220000_marketing_feature_cont
 **Bootstrap is intentionally dark.** `SITE_FEATURE_RPC_READY` defaults to `false`, so ordinary learners make zero calls to the not-yet-deployed RPC. Apply the migration only through `dart run tool/guarded_supabase_deploy.dart` after full owner-approved preflight and backup review; do not apply it because this PR is merged. After deployment, test admin RPC authorization, direct bypass, concurrent edits and default Fast/Overview parity. Then enable `SITE_FEATURE_RPC_READY=true` in a separately reviewed web build. Subsequent ready-feature switches take effect without deployment.
 
 The registry is a source-of-truth **only for the surfaces actually wired to it**. Existing simulations, community, legacy `FeatureFlagsCore`, advertising and MCP remain outside generic controls until feature-specific backend enforcement is complete and tested. Never describe an unwired flag as an operational kill switch.
+
+## Additional BYOK key-hardening changes (still unavailable)
+
+- `ByokConfig.toJson` now emits nonsecret preferences only; `ByokConfig.fromJson` intentionally discards any legacy `apiKey` property. Old browser records are not deleted without user action. Re-entering a key is required after a reviewed future enablement.
+- The new session key is scoped to a `ByokStorageService` instance, not written to persistent storage; it is erased by `clearConfig`.
+- Credential-bearing HTTP clients reject custom endpoint URLs. Gemini uses the provider key header rather than query parameters; provider error bodies are not echoed in UI exceptions.
+- These fixes **do not authorize reactivation**: browser CSP, supported provider models, legal/consent language, compatibility and cross-session UX still need review.
