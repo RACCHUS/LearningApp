@@ -74,19 +74,11 @@ class UserProgress {
     };
   }
 
-  /// Create a server-side event without leaking local Hive-only fields.
-  /// Question counters and unverified historical time are not uploaded.
+  /// Only allowlist real actions for the server-side RPC. Hive snapshot
+  /// counters, synthetic totals and user-provided identity are never uploaded.
   Map<String, dynamic>? toServerProgressEvent() {
-    if (id.isEmpty || userId.isEmpty || lessonId.isEmpty ||
-        metadata?['sync_completion_event'] == false) {
-      return null;
-    }
-    final action = lessonCompleted
-        ? 'lesson_completed'
-        : (metadata?['completion_override'] == true
-            ? 'lesson_uncompleted'
-            : null);
-    if (action == null) return null;
+    if (id.isEmpty || userId.isEmpty || lessonId.isEmpty) return null;
+
     final explicitKind = metadata?['content_kind'];
     final contentKind = explicitKind == 'legacy_lesson' ||
             explicitKind == 'bundled_asset_lesson' ||
@@ -99,12 +91,51 @@ class UserProgress {
     final version = rawVersion is String && rawVersion.isNotEmpty
         ? rawVersion
         : 'unversioned';
-    return <String, dynamic>{
+    final common = <String, dynamic>{
       'idempotency_key': id,
-      'event_type': action,
       'content_kind': contentKind,
       'content_id': lessonId,
       'version_key': version,
+    };
+
+    if (metadata?['sync_active_interval'] == true) {
+      // Separate immutable interval records, measured by an explicit
+      // foreground interaction tracker; never infer intervals from snapshot
+      // studyTimeSeconds or completion timestamps.
+      final rawStart = metadata?['interval_start'];
+      final rawEnd = metadata?['interval_end'];
+      if (rawStart is! String || rawEnd is! String ||
+          !rawStart.endsWith('Z') || !rawEnd.endsWith('Z')) {
+        return null;
+      }
+      final start = DateTime.tryParse(rawStart)?.toUtc();
+      final end = DateTime.tryParse(rawEnd)?.toUtc();
+      if (start == null || end == null) return null;
+      final elapsed = end.difference(start);
+      if (elapsed < const Duration(seconds: 1) ||
+          elapsed > const Duration(seconds: 60) ||
+          date.toUtc().difference(end).abs() > const Duration(seconds: 1)) {
+        return null;
+      }
+      return <String, dynamic>{
+        ...common,
+        'event_type': 'active_study_interval',
+        'occurred_at': end.toIso8601String(),
+        'interval_start': start.toIso8601String(),
+        'interval_end': end.toIso8601String(),
+      };
+    }
+
+    if (metadata?['sync_completion_event'] == false) return null;
+    final action = lessonCompleted
+        ? 'lesson_completed'
+        : (metadata?['completion_override'] == true
+            ? 'lesson_uncompleted'
+            : null);
+    if (action == null) return null;
+    return <String, dynamic>{
+      ...common,
+      'event_type': action,
       'occurred_at': date.toUtc().toIso8601String(),
     };
   }
