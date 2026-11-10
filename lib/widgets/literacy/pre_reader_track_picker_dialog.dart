@@ -29,14 +29,15 @@ class PreReaderTrackPickerDialog extends ConsumerStatefulWidget {
 
 class _PreReaderTrackPickerDialogState
     extends ConsumerState<PreReaderTrackPickerDialog> {
-  PreReaderTrack _selectedTrack = PreReaderTrack.adult;
+  PreReaderTrack? _selectedTrack;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(preReaderProvider.notifier).speak(
-            'Welcome! Tap the briefcase if you are an adult, or tap the backpack for youth learning.',
+            'Choose who is learning. Tap the adult picture or the child picture. Then tap Start.',
           );
     });
   }
@@ -61,8 +62,11 @@ class _PreReaderTrackPickerDialogState
   }
 
   Future<void> _confirmAndStart() async {
+    final selected = _selectedTrack;
+    if (selected == null) return; // Selection must be deliberate.
+    final router = GoRouter.of(context);
     // 1. Enable Pre-Reader mode with chosen track
-    await ref.read(preReaderProvider.notifier).enable(_selectedTrack);
+    await ref.read(preReaderProvider.notifier).enable(selected);
 
     // 2. Ensure a dedicated Foundational Literacy context exists
     try {
@@ -74,7 +78,7 @@ class _PreReaderTrackPickerDialogState
             label: label,
             rootType: ContextRootType.course,
             rootId: 'foundational-literacy',
-            emoji: _selectedTrack == PreReaderTrack.adult ? '💼' : '🎒',
+            emoji: selected == PreReaderTrack.adult ? '💼' : '🎒',
           );
     } catch (_) {
       // In guest / offline mode, proceed smoothly
@@ -82,7 +86,8 @@ class _PreReaderTrackPickerDialogState
 
     if (mounted) {
       Navigator.of(context).pop();
-      context.go('/literacy');
+      // The dialog context is disposed by pop; use the captured router.
+      router.go('/literacy');
     }
   }
 
@@ -145,7 +150,7 @@ class _PreReaderTrackPickerDialogState
                     tooltip: 'Repeat audio instruction',
                     onPressed: () {
                       ref.read(preReaderProvider.notifier).speak(
-                            'Tap the briefcase for adult learning, or the backpack for youth learning.',
+                            'First tap the adult picture or the child picture. Then press Start to begin.',
                           );
                     },
                   ),
@@ -156,10 +161,10 @@ class _PreReaderTrackPickerDialogState
               // Option 1: Adult Track
               _TrackChoiceCard(
                 key: const Key('pre-reader-adult-card'),
-                emoji: '💼',
+                emoji: '🧑‍💼',
                 title: 'Adult Learning',
                 subtitle:
-                    'Practical everyday skills, signs, and money math for work and life.',
+                    '🧑 Adult: signs, money, writing, and daily life.',
                 isSelected: _selectedTrack == PreReaderTrack.adult,
                 onTap: () => _onSelectTrack(PreReaderTrack.adult),
               ),
@@ -168,10 +173,10 @@ class _PreReaderTrackPickerDialogState
               // Option 2: Youth Track
               _TrackChoiceCard(
                 key: const Key('pre-reader-youth-card'),
-                emoji: '🎒',
+                emoji: '🧒',
                 title: 'Youth & Early Learning',
                 subtitle:
-                    'Fun letter sounds, games, animals, and playful drawing.',
+                    '🧒 Kids: sounds, pictures, games, and drawing.',
                 isSelected: _selectedTrack == PreReaderTrack.youth,
                 onTap: () => _onSelectTrack(PreReaderTrack.youth),
               ),
@@ -180,9 +185,9 @@ class _PreReaderTrackPickerDialogState
               // Confirm Button
               FilledButton.icon(
                 key: const Key('pre-reader-start-btn'),
-                onPressed: _confirmAndStart,
+                onPressed: _selectedTrack == null ? null : _confirmAndStart,
                 icon: const Icon(Icons.play_arrow),
-                label: const Text('Start Learning'),
+                label: const Text('▶ Start Learning'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     vertical: DesignTokens.space3,
