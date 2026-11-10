@@ -19,7 +19,7 @@ void main() {
 
       // This assignment must compile without any conversion or duplicate DTO.
       final canonical.UserProgress sameInstance = progress;
-      final canonical.StudyMode sameMode = compatibility.StudyMode.lesson;
+      const canonical.StudyMode sameMode = compatibility.StudyMode.lesson;
       expect(identical(progress, sameInstance), isTrue);
       expect(sameMode, canonical.StudyMode.lesson);
       expect(sameInstance.lessonId, 'prog_01_variables');
