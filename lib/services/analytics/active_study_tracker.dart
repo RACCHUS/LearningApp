@@ -85,7 +85,10 @@ class ActiveStudyTracker {
 
     // The browser may throttle timers or the clock may jump. Do not invent
     // elapsed time to fill a missing observation (even if the tab looks active).
-    if (gap <= Duration.zero || gap > maxTickGap) {
+    // Two notifications may share a timestamp (e.g. a key press followed by
+    // a scheduled tick). This is not clock drift and must not reset activity.
+    if (gap == Duration.zero) return events;
+    if (gap < Duration.zero || gap > maxTickGap) {
       _flush(events);
       // A discontinuity may represent sleep, visibility loss or clock drift.
       // Require fresh learner input before any additional time is credited.
