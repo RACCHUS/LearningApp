@@ -99,9 +99,9 @@ void main() {
         ...tracker.tick(at(5)),
         ...tracker.pause(at(6)),
       ];
-      expect(total(events), 11);
-      expect(events.first.end, at(10));
-      expect(events.last.start, at(5));
+      expect(total(events), 10);
+      expect(events, hasLength(1));
+      expect(events.single.end, at(10));
     });
 
     test('intervals preserve UTC midnight boundary for server union', () {
