@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/models/lesson_progress.dart';
 import 'package:learning_pwa/services/analytics/active_study_tracker.dart';
 import 'package:learning_pwa/services/hive_service.dart';
@@ -14,7 +16,7 @@ import 'package:uuid/uuid.dart';
 ///
 /// Not a page-open timer, and not a claim of mastery. Events are saved locally
 /// before RPC sync. No frame-based writes, direct table DML or scored evidence.
-class ActiveLessonStudyCapture extends StatefulWidget {
+class ActiveLessonStudyCapture extends ConsumerStatefulWidget {
   final String lessonId;
   final Widget child;
 
@@ -25,11 +27,11 @@ class ActiveLessonStudyCapture extends StatefulWidget {
   });
 
   @override
-  State<ActiveLessonStudyCapture> createState() =>
+  ConsumerState<ActiveLessonStudyCapture> createState() =>
       _ActiveLessonStudyCaptureState();
 }
 
-class _ActiveLessonStudyCaptureState extends State<ActiveLessonStudyCapture>
+class _ActiveLessonStudyCaptureState extends ConsumerState<ActiveLessonStudyCapture>
     with WidgetsBindingObserver {
   final ActiveStudyTracker _tracker = ActiveStudyTracker();
   final HiveService _hive = HiveService();
@@ -151,6 +153,7 @@ class _ActiveLessonStudyCaptureState extends State<ActiveLessonStudyCapture>
         );
         await _hive.cacheProgress(record);
       }
+      if (mounted) ref.invalidate(dailyGoalProgressProvider);
     }).catchError((Object error, StackTrace stack) {
       // Do not forge an ACK; a write error means time is unavailable.
       debugPrint('Unable to cache active-study interval: $error');
