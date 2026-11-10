@@ -46,6 +46,11 @@ jobs:
           flutter pub get
           (cd packages/learning_core && dart pub get)
 
+      - name: Validate feature registry contract (no external service)
+        run: |
+          python3 tool/verify_feature_registry.py
+          python3 -m unittest discover -s tool/tests -p 'test_verify_feature_registry.py' -v
+
       - name: Validate zero-cost public SEO preview and editorial gates
         run: |
           python3 -m unittest discover -s tool/tests -p 'test_public_site_build.py' -v

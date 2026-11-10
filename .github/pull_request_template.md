@@ -11,4 +11,13 @@
 - [ ] Contrast is readable for colored chips/badges/status surfaces
 
 ## Notes
-- 
+-
+
+## Feature Control / Capability Preservation (FLAG-010 / FLAG-016)
+- [ ] If this PR adds or exposes a significant capability, register its stable key in `SiteFeatureKeys` and the reviewed database registry; default risky features OFF.
+- [ ] Show the exact UI route and server-side admission/authorization checks. A hidden button is **not** a kill switch; unwired registry rows must be labeled planned.
+- [ ] Include an OFF-path test proving no optional SDK initialization, external requests, paid usage, background jobs, or unauthorized writes; provide a graceful disabled route.
+- [ ] Explain how user data and existing learning paths are preserved when OFF, and document an owner-approved re-enable checklist.
+- [ ] If removing legacy code, document verified replacement parity or explicit owner approval of obsolescence, and test migrations, exports, accessibility, offline and rollback.
+- [ ] If touching BYOK, honor its independent hard-OFF latch until verified fixes and owner sign-off; keep TEL Fast available and flag unverified claims Experimental.
+

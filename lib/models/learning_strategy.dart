@@ -270,13 +270,12 @@ class TelFeatureFlags {
   }
 
   bool isFastEnabledForTarget(String? slugOrId, {bool isExamTarget = true}) {
+    // Owner decision: Fast remains broadly available to exam targets.
+    // The historical fastEligibleTargetSlugs list is retained for backwards
+    // compatibility only; it did not actually restrict other exam targets.
+    // Scoped rollout belongs to the server-backed feature registry.
     if (!fastEnabled || !isExamTarget) return false;
-    if (slugOrId == null || slugOrId.trim().isEmpty) {
-      // Allow generic examTarget contexts when Fast is enabled globally.
-      return true;
-    }
-    final normalized = slugOrId.trim().toLowerCase();
-    return fastEligibleTargetSlugs.contains(normalized) || isExamTarget;
+    return true;
   }
 
   TelFeatureFlags copyWith({

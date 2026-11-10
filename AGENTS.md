@@ -78,3 +78,13 @@ When tasked with debugging UI issues, testing new web features, or verifying res
   - **No Automatic or Silent Repair**: Never run `supabase migration repair` to force a preflight/postflight check to pass or mask a version discrepancy. Any version mismatch requires halting deployment and obtaining owner review with an evidence-backed decision plan.
 - **Client Secrets**: Never place service-role keys or sensitive server credentials into `.env` or client bundles.
 
+---
+
+## Permanent Feature Controls and Legacy Parity (FLAG-010 / FLAG-016)
+
+For any substantial new feature: add a stable key to `lib/models/governance/site_feature_keys.dart` and the reviewed, additive `private.site_feature_controls` seed, default new risky or cost-bearing functionality OFF, and classify its dependencies, owner, safe OFF fallback, privacy/cost impact, and release evidence. CI checks the registry manifest parity using `python3 tool/verify_feature_registry.py`.
+
+A feature is **not controlled** merely because its name appears in the registry. Wire real server gates at the invocation/write/side-effect boundary, test bypass attempts and zero-cost OFF paths, and show unsupported controls as *planned—not yet connected*. Never weaken dedicated privacy/consent gates, grading security, OAuth ownership, or the independently hard-disabled BYOK release latch. Until reviewed, TEL Fast stays available with Experimental labeling, and existing functional capabilities must not be removed merely because they are legacy. Require replacement parity or explicit owner-approved obsolescence before deletion.
+
+Feature registry migrations must use the guarded production path, never ad-hoc SQL. Production and build-time activation require independent owner approval.
+

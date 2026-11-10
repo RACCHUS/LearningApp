@@ -5,6 +5,8 @@ import 'package:learning_pwa/screens/governance/cost_observability_screen.dart'
     deferred as cost_observability;
 import 'package:learning_pwa/screens/governance/product_analytics_overview_screen.dart'
     deferred as product_analytics_overview;
+import 'package:learning_pwa/screens/governance/feature_control_center_screen.dart'
+    deferred as feature_control_center;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,6 +63,7 @@ import 'package:learning_pwa/screens/simulation/simulation_screen.dart'
     deferred as simulation_screen;
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
+import 'package:learning_pwa/widgets/site_feature_refresh_observer.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
@@ -114,7 +117,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Persistent three-destination shell: Learn | Library | Progress.
       ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
+        builder: (context, state, child) =>
+            SiteFeatureRefreshObserver(child: AppShell(child: child)),
         routes: [
           GoRoute(
             path: '/learn',
@@ -481,6 +485,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DeferredLoaderWidget(
           loader: cost_observability.loadLibrary,
           builder: () => cost_observability.CostObservabilityScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/features',
+        name: 'feature-control-center',
+        builder: (context, state) => DeferredLoaderWidget(
+          loader: feature_control_center.loadLibrary,
+          builder: () => feature_control_center.FeatureControlCenterScreen(),
         ),
       ),
       GoRoute(
