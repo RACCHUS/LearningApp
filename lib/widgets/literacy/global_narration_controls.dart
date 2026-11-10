@@ -9,7 +9,12 @@ import 'package:learning_pwa/services/audio_service.dart';
 /// Lives above the router so it survives navigation between screens.
 class GlobalNarrationControls extends StatefulWidget {
   final Widget child;
-  const GlobalNarrationControls({super.key, required this.child});
+  final AudioService? audioService;
+  const GlobalNarrationControls({
+    super.key,
+    required this.child,
+    this.audioService,
+  });
 
   @override
   State<GlobalNarrationControls> createState() =>
@@ -17,7 +22,7 @@ class GlobalNarrationControls extends StatefulWidget {
 }
 
 class _GlobalNarrationControlsState extends State<GlobalNarrationControls> {
-  final AudioService _audio = AudioService();
+  late final AudioService _audio;
   StreamSubscription<AudioState>? _audioEvents;
   AudioState _state = const AudioState();
   bool _hasNarration = false;
@@ -25,6 +30,7 @@ class _GlobalNarrationControlsState extends State<GlobalNarrationControls> {
   @override
   void initState() {
     super.initState();
+    _audio = widget.audioService ?? AudioService();
     _state = _audio.currentState;
     _hasNarration = _state.isPlaying || _state.isPaused || _state.isLoading;
     _audioEvents = _audio.stateStream.listen((next) {
