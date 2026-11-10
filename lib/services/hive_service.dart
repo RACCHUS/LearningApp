@@ -305,16 +305,18 @@ class HiveService {
   // Progress methods
   Future<void> cacheProgress(UserProgress progress) async {
     _ensureInitialized();
+    if (progress.id.isEmpty) {
+      throw ArgumentError('Local progress event ID must be non-empty');
+    }
     try {
+      // A local ID identifies one snapshot/action. Retrying the same write
+      // replaces it exactly; additive merging here inflated seconds and
+      // correctness counters whenever a save was retried.
       final existing = _progressBoxInstance.get(progress.id);
-      
-      // If progress exists, merge with existing data
-      if (existing != null) {
-        final merged = _mergeProgress(existing, progress);
-        await _progressBoxInstance.put(progress.id, merged);
-      } else {
-        await _progressBoxInstance.put(progress.id, progress);
+      if (existing != null && existing.userId != progress.userId) {
+        throw StateError('Cross-account progress ID collision');
       }
+      await _progressBoxInstance.put(progress.id, progress);
     } catch (e, stackTrace) {
       debugPrint('Failed to cache progress for lesson: ${progress.lessonId} - $e');
       debugPrint('Stack trace: $stackTrace');
@@ -421,34 +423,7 @@ class HiveService {
     _isInitialized = false;
   }
   
-  /// Merge two progress objects, keeping the most recent data
-  UserProgress _mergeProgress(UserProgress existing, UserProgress newProgress) {
-    return UserProgress(
-      id: existing.id,
-      userId: existing.userId,
-      lessonId: existing.lessonId,
-      contentId: newProgress.contentId ?? existing.contentId,
-      studyMode: newProgress.studyMode,
-      date: newProgress.date.isAfter(existing.date) ? newProgress.date : existing.date,
-      questionsAnswered: existing.questionsAnswered + newProgress.questionsAnswered,
-      correctCount: existing.correctCount + newProgress.correctCount,
-      lessonCompleted: existing.lessonCompleted || newProgress.lessonCompleted,
-      studyTimeSeconds: existing.studyTimeSeconds + newProgress.studyTimeSeconds,
-      metadata: _mergeMetadata(existing.metadata, newProgress.metadata),
-      isSynced: existing.isSynced && newProgress.isSynced,
-    );
-  }
-  
-  /// Merge metadata from two progress objects
-  Map<String, dynamic>? _mergeMetadata(
-    Map<String, dynamic>? existing,
-    Map<String, dynamic>? newData,
-  ) {
-    if (existing == null) return newData;
-    if (newData == null) return existing;
-    
-    return {...existing, ...newData};
-  }
+
 }
 
 class LessonAdapter extends TypeAdapter<Lesson> {
