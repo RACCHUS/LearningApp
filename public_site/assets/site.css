@@ -24,3 +24,5 @@ footer{padding:2rem 0;background:#f1f5f8;color:#345; font-size:.87rem}
 .preview{padding:.8rem 1rem;border-left:4px solid #b76c10;background:#fff4dd}
 @media(max-width:40rem){.site-header .wrap{align-items:flex-start;flex-direction:column}nav{gap:.55rem}main{padding-top:2rem}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.resource-links{padding-left:1.3rem;max-width:68ch}.resource-links li{padding-block:.25rem;overflow-wrap:anywhere}
