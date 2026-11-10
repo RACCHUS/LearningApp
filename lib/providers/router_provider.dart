@@ -63,6 +63,7 @@ import 'package:learning_pwa/screens/simulation/simulation_screen.dart'
     deferred as simulation_screen;
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/widgets/app_shell.dart';
+import 'package:learning_pwa/widgets/site_feature_refresh_observer.dart';
 import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
@@ -116,7 +117,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Persistent three-destination shell: Learn | Library | Progress.
       ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
+        builder: (context, state, child) =>
+            SiteFeatureRefreshObserver(child: AppShell(child: child)),
         routes: [
           GoRoute(
             path: '/learn',
