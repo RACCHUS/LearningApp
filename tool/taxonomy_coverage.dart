@@ -288,5 +288,21 @@ Future<void> main(List<String> args) async {
     }
     stdout.writeln('Note: counts do not verify career-to-license relationships.');
   }
+  if (strict &&
+      !jsonOutput &&
+      (url.contains('127.0.0.1') || url.contains('localhost')) &&
+      File('tool/verify_fast_preference_concurrency.py').existsSync()) {
+    final concurrencyRes = await Process.run(
+      'python3',
+      ['tool/verify_fast_preference_concurrency.py'],
+    );
+    if (concurrencyRes.stdout.toString().trim().isNotEmpty) {
+      stdout.writeln(concurrencyRes.stdout.toString().trim());
+    }
+    if (concurrencyRes.exitCode != 0) {
+      stderr.writeln(concurrencyRes.stderr);
+      exitCode = 1;
+    }
+  }
   if (strict && (mismatches > 0 || !internalComplete)) exitCode = 1;
 }

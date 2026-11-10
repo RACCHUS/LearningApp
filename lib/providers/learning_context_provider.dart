@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/fast_plan_result.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/services/hive_service.dart';
@@ -98,6 +99,13 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
   final LearningContextSyncService? _sync;
   final NextActionEngine _engine;
   final String _userId;
+  final void Function(String oldContextId, String newContextId)?
+      _onContextRekeyed;
+  final List<void Function(String oldContextId, String newContextId)>
+      _rekeyListeners = [];
+  final List<void Function(Map<String, FastPreference> remotePreferences)>
+      _remoteFastPrefListeners = [];
+  Map<String, FastPreference> _latestRemoteFastPreferences = const {};
 
   static const _kDefaultContext = 'learning.defaultContextId';
 
@@ -105,9 +113,11 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     LearningContextService service,
     this._engine,
     this._userId,
-    LearningContextSyncService? sync,
-  )   : _service = service,
+    LearningContextSyncService? sync, {
+    void Function(String oldContextId, String newContextId)? onContextRekeyed,
+  })  : _service = service,
         _sync = sync,
+        _onContextRekeyed = onContextRekeyed,
         super(const LearningContextsState(isLoading: true)) {
     load();
   }
@@ -118,17 +128,102 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
       : _service = null,
         _sync = null,
         _engine = const NextActionEngine(),
-        _userId = 'test-user';
+        _userId = 'test-user',
+        _onContextRekeyed = null;
+
+  /// Latest remote [FastPreference] snapshot pulled from the server during
+  /// context synchronization. Replayed automatically to late subscribers.
+  Map<String, FastPreference> get latestRemoteFastPreferences =>
+      _latestRemoteFastPreferences;
+
+  void addRekeyListener(
+    void Function(String oldContextId, String newContextId) listener,
+  ) {
+    if (!_rekeyListeners.contains(listener)) {
+      _rekeyListeners.add(listener);
+    }
+  }
+
+  void removeRekeyListener(
+    void Function(String oldContextId, String newContextId) listener,
+  ) {
+    _rekeyListeners.remove(listener);
+  }
+
+  void addRemoteFastPreferencesListener(
+    void Function(Map<String, FastPreference> remotePreferences) listener, {
+    bool replayLatest = true,
+  }) {
+    if (!_remoteFastPrefListeners.contains(listener)) {
+      _remoteFastPrefListeners.add(listener);
+    }
+    if (replayLatest && _latestRemoteFastPreferences.isNotEmpty) {
+      listener(_latestRemoteFastPreferences);
+    }
+  }
+
+  void removeRemoteFastPreferencesListener(
+    void Function(Map<String, FastPreference> remotePreferences) listener,
+  ) {
+    _remoteFastPrefListeners.remove(listener);
+  }
+
+  @visibleForTesting
+  void notifyContextRekeyed(String oldContextId, String newContextId) {
+    _onContextRekeyed?.call(oldContextId, newContextId);
+    for (final listener in List.of(_rekeyListeners)) {
+      listener(oldContextId, newContextId);
+    }
+  }
+
+  @visibleForTesting
+  void notifyRemoteFastPreferencesSynced(
+    Map<String, FastPreference> remotePreferences,
+  ) {
+    if (remotePreferences.isEmpty) return;
+    final merged = Map<String, FastPreference>.from(
+      _latestRemoteFastPreferences,
+    );
+    for (final entry in remotePreferences.entries) {
+      final existing = merged[entry.key];
+      if (existing == null || entry.value.revision >= existing.revision) {
+        merged[entry.key] = entry.value;
+      }
+    }
+    _latestRemoteFastPreferences = Map<String, FastPreference>.unmodifiable(
+      merged,
+    );
+    for (final listener in List.of(_remoteFastPrefListeners)) {
+      listener(_latestRemoteFastPreferences);
+    }
+  }
 
   Future<void> load() async {
     final service = _service;
     if (service == null) return;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await _sync?.sync(_userId);
+      final syncReport = await _sync?.sync(_userId);
+      if (syncReport != null && syncReport.rekeyedContextIds.isNotEmpty) {
+        for (final entry in syncReport.rekeyedContextIds.entries) {
+          notifyContextRekeyed(entry.key, entry.value);
+        }
+      }
       final ordered = _engine.orderForSwitcher(service.all(userId: _userId));
       final archived = service.archived(userId: _userId);
-      final savedId = await _readDefaultContextId();
+      if (syncReport != null && syncReport.remoteFastPreferences.isNotEmpty) {
+        notifyRemoteFastPreferencesSynced(syncReport.remoteFastPreferences);
+      }
+      var savedId = await _readDefaultContextId();
+      if (savedId != null &&
+          syncReport != null &&
+          syncReport.rekeyedContextIds.containsKey(savedId)) {
+        savedId = syncReport.rekeyedContextIds[savedId];
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_kDefaultContext, savedId!);
+        } catch (_) {}
+      }
       final activeId = savedId == ''
           ? ''
           : (ordered.any((c) => c.id == savedId)

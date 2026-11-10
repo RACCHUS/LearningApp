@@ -75,7 +75,11 @@ class OverviewPlanner {
         clepPsychologyOverviewOutline,
     clepPsychologyOverviewOutline.targetSlug.toLowerCase():
         clepPsychologyOverviewOutline,
+    clepPsychologyOverviewOutline.title.toLowerCase():
+        clepPsychologyOverviewOutline,
     'clep_introductory_psychology': clepPsychologyOverviewOutline,
+    'a0000000-0000-0000-0000-000000000001': clepPsychologyOverviewOutline,
+    '00000000-0000-4000-8000-000000000101': clepPsychologyOverviewOutline,
   };
 
   /// Looks up a reviewed [OverviewOutline] by target ID, target slug, or outline ID.

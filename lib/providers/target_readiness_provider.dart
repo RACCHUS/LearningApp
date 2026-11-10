@@ -6,7 +6,7 @@ import '../services/target_readiness_service.dart';
 import 'learning_context_provider.dart';
 
 final conceptEvidenceServiceProvider = Provider<ConceptEvidenceService>((ref) {
-  return ConceptEvidenceService(supabase: Supabase.instance.client);
+  return ConceptEvidenceService();
 });
 
 final targetReadinessServiceProvider = Provider<TargetReadinessService>((ref) {

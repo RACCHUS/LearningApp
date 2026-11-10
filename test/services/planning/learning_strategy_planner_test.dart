@@ -384,6 +384,82 @@ void main() {
           ]),
           throwsA(isA<ProtectedSimulationBankAccessException>()),
         );
+
+        // Actual CLEP Introductory Psychology / College Algebra simulation metadata shape
+        expect(
+          () => coverageService.validateAssessmentItemMetadata(const [
+            {
+              'id': 'clep-sim-item-001',
+              'metadata': {
+                'bank': 'simulation_exam',
+                'item_role': 'summative_simulation',
+                'is_protected': true,
+                'exposure': 'timed_exam_only',
+              },
+            },
+          ]),
+          throwsA(isA<ProtectedSimulationBankAccessException>()),
+        );
+
+        expect(
+          () => coverageService.validateAssessmentItemMetadata(const [
+            {
+              'id': 'clep-scoring-spec-001',
+              'scoring_spec': {'correct_index': 2},
+            },
+          ]),
+          throwsA(isA<ProtectedSimulationBankAccessException>()),
+        );
+      },
+    );
+
+    test(
+      'ROLLOUT-01: TelFeatureFlags enables Overview for canonical CLEP UUIDs/slugs and preserves owner-approved exam-target Fast availability',
+      () {
+        const flags = TelFeatureFlags();
+        expect(
+          flags.isOverviewEnabledForTarget('clep-introductory-psychology'),
+          isTrue,
+        );
+        expect(
+          flags.isOverviewEnabledForTarget(
+            '00000000-0000-4000-8000-000000000101',
+          ),
+          isTrue,
+        );
+        expect(
+          flags.isOverviewEnabledForTarget(
+            'a0000000-0000-0000-0000-000000000001',
+          ),
+          isTrue,
+        );
+        expect(
+          flags.isOverviewEnabledForTarget(
+            '00000000-0000-4000-8000-000000000102',
+          ),
+          isFalse,
+        );
+        expect(
+          flags.isFastEnabledForTarget(
+            '00000000-0000-4000-8000-000000000101',
+            isExamTarget: true,
+          ),
+          isTrue,
+        );
+        expect(
+          flags.isFastEnabledForTarget(
+            '00000000-0000-4000-8000-000000000101',
+            isExamTarget: false,
+          ),
+          isFalse,
+        );
+        expect(
+          TelFeatureFlags.disabled.isFastEnabledForTarget(
+            '00000000-0000-4000-8000-000000000101',
+            isExamTarget: true,
+          ),
+          isFalse,
+        );
       },
     );
   });
@@ -444,5 +520,149 @@ void main() {
       );
       expect(blockEnrichment.depthTier, DepthTier.enrichment);
     });
+  });
+
+  group('TEL-04A Canonical CLEP Curriculum & Objective Node Mapping', () {
+    test(
+      'All 25 canonical CLEP Introductory Psychology lesson titles and objective SnapshotNodes (1.1..13.1) map cleanly to the 13 official domains with zero unmapped activities',
+      () {
+        const canonicalYamlLessons = <(String id, String title, String nodeId, String objectiveCode, String expectedDomain)>[
+          ('uuid-01', '1.1 Psychological Perspectives & History', 'node-obj-1-1', '1.1', '1.0'),
+          ('uuid-02', '1.2 Research Designs & Ethics', 'node-obj-1-2', '1.2', '1.0'),
+          ('uuid-03', '2.1 Neurons & Neurotransmission', 'node-obj-2-1', '2.1', '2.0'),
+          ('uuid-04', '2.2 Brain Structure & Endocrine System', 'node-obj-2-2', '2.2', '2.0'),
+          ('uuid-05', '2.3 Behavioral Genetics', 'node-obj-2-3', '2.3', '2.0'),
+          ('uuid-06', '3.1 Sensory Transduction, Vision & Hearing', 'node-obj-3-1', '3.1', '3.0'),
+          ('uuid-07', '3.2 Perceptual Organization & Attention', 'node-obj-3-2', '3.2', '3.0'),
+          ('uuid-08', '4.1 Sleep, Dreams & Circadian Rhythms', 'node-obj-4-1', '4.1', '4.0'),
+          ('uuid-09', '4.2 Hypnosis & Psychoactive Drugs', 'node-obj-4-2', '4.2', '4.0'),
+          ('uuid-10', '5.1 Classical Conditioning', 'node-obj-5-1', '5.1', '5.0'),
+          ('uuid-11', '5.2 Operant Conditioning', 'node-obj-5-2', '5.2', '5.0'),
+          ('uuid-12', '5.3 Cognitive & Observational Learning', 'node-obj-5-3', '5.3', '5.0'),
+          ('uuid-13', '6.1 Memory Systems, Encoding & Forgetting', 'node-obj-6-1', '6.1', '6.0'),
+          ('uuid-14', '6.2 Thinking, Heuristics & Language', 'node-obj-6-2', '6.2', '6.0'),
+          ('uuid-15', '7.1 Theories of Motivation & Biological Drives', 'node-obj-7-1', '7.1', '7.0'),
+          ('uuid-16', '7.2 Theories of Emotion & Stress', 'node-obj-7-2', '7.2', '7.0'),
+          ('uuid-17', '8.1 Prenatal, Physical & Cognitive Development', 'node-obj-8-1', '8.1', '8.0'),
+          ('uuid-18', '8.2 Social, Moral & Lifespan Development', 'node-obj-8-2', '8.2', '8.0'),
+          ('uuid-19', '9.1 Personality Theories & Trait Assessment', 'node-obj-9-1', '9.1', '9.0'),
+          ('uuid-20', '10.1 Classification, Anxiety, Mood & Dissociative Disorders', 'node-obj-10-1', '10.1', '10.0'),
+          ('uuid-21', '10.2 Schizophrenia, Personality & Neurodevelopmental Disorders', 'node-obj-10-2', '10.2', '10.0'),
+          ('uuid-22', '11.1 Psychotherapy & Biomedical Treatments', 'node-obj-11-1', '11.1', '11.0'),
+          ('uuid-23', '12.1 Attribution, Attitudes & Conformity', 'node-obj-12-1', '12.1', '12.0'),
+          ('uuid-24', '12.2 Group Dynamics, Prejudice, Aggression & Prosocial Behavior', 'node-obj-12-2', '12.2', '12.0'),
+          ('uuid-25', '13.1 Descriptive & Inferential Statistics, Psychometrics & Intelligence', 'node-obj-13-1', '13.1', '13.0'),
+        ];
+
+        final snapshotNodes = <SnapshotNode>[
+          for (var d = 1; d <= 13; d++)
+            SnapshotNode(
+              id: 'node-dom-$d',
+              title: 'Domain $d',
+              code: '$d.0',
+              nodeType: 'domain',
+              sortOrder: d,
+            ),
+          for (var i = 0; i < canonicalYamlLessons.length; i++)
+            SnapshotNode(
+              id: canonicalYamlLessons[i].$3,
+              parentId:
+                  'node-dom-${canonicalYamlLessons[i].$5.split('.').first}',
+              title: canonicalYamlLessons[i].$2,
+              code: canonicalYamlLessons[i].$4,
+              nodeType: 'objective',
+              sortOrder: i,
+            ),
+        ];
+
+        // 1. Verify mapping via objective SnapshotNodes even when titles are generic UUIDs
+        final nodeOnlyScope = ResolvedScope(
+          contextId: 'ctx-clep-nodes',
+          resolvedAt: fixedAsOf,
+          orderedActivities: [
+            for (var i = 0; i < canonicalYamlLessons.length; i++)
+              ScopedLearningActivity(
+                activityId: canonicalYamlLessons[i].$1,
+                kind: ScopedActivityKind.lesson,
+                title: 'Lesson ${i + 1}',
+                curriculumNodeId: canonicalYamlLessons[i].$3,
+                curriculumOrder: i,
+                activityOrder: i,
+              ),
+          ],
+        );
+
+        final nodeCoverage = coverageService.buildCoverageForScope(
+          scope: nodeOnlyScope,
+          curriculumNodes: snapshotNodes,
+        );
+        expect(nodeCoverage.unmappedActivityIds, isEmpty);
+        for (final item in canonicalYamlLessons) {
+          expect(
+            nodeCoverage.recordsByActivityId[item.$1]?.primaryDomainId,
+            item.$5,
+          );
+        }
+
+        // 2. Verify mapping via exact YAML titles even when curriculumNodes are absent
+        final titleOnlyScope = ResolvedScope(
+          contextId: 'ctx-clep-titles',
+          resolvedAt: fixedAsOf,
+          orderedActivities: [
+            for (var i = 0; i < canonicalYamlLessons.length; i++)
+              ScopedLearningActivity(
+                activityId: canonicalYamlLessons[i].$1,
+                kind: ScopedActivityKind.lesson,
+                title: canonicalYamlLessons[i].$2,
+                curriculumOrder: i,
+                activityOrder: i,
+              ),
+          ],
+        );
+
+        final titleCoverage = coverageService.buildCoverageForScope(
+          scope: titleOnlyScope,
+        );
+        expect(titleCoverage.unmappedActivityIds, isEmpty);
+        for (final item in canonicalYamlLessons) {
+          expect(
+            titleCoverage.recordsByActivityId[item.$1]?.primaryDomainId,
+            item.$5,
+          );
+        }
+
+        // 3. Verify Fast plan with completed lessons and domain gap evidence
+        final completedFirst13 = titleCoverage.officialDomains
+            .map(
+              (d) => canonicalYamlLessons
+                  .firstWhere((l) => l.$5 == d.domainId)
+                  .$1,
+            )
+            .toSet();
+
+        final planWithGap = planner.plan(
+          scope: titleOnlyScope,
+          coverage: titleCoverage,
+          asOf: fixedAsOf,
+          completedActivityIds: completedFirst13,
+          domainEvidence: const {
+            // Domain 12.0 has low independent evidence (<0.75) -> independentGapEvidence priority in Pass 2
+            '12.0': EvidenceSummary(
+              subjectKey: '12.0',
+              statusLabel: EvidenceStatusLabel.independentEvidenceAvailable,
+              independentAttemptCount: 3,
+              independentScore: 0.33,
+            ),
+          },
+        );
+
+        expect(planWithGap.topRecommendedActivity, isNotNull);
+        expect(planWithGap.topRecommendedActivity!.primaryDomainId, '12.0');
+        expect(
+          planWithGap.topRecommendedActivity!.reasonCodes,
+          contains(FastReasonCodes.independentGapEvidence),
+        );
+      },
+    );
   });
 }
