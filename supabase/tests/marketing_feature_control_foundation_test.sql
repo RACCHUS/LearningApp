@@ -2,7 +2,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(14);
+SELECT plan(15);
 
 SELECT has_table('private', 'site_feature_controls');
 SELECT has_table('private', 'site_feature_change_audit');
