@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/learning_strategy_provider.dart';
+import '../../providers/site_feature_provider.dart';
 
 /// Read-only entry control that launches `/overview/:targetId` without creating
 /// or switching a [LearningContext] (`TEL-01A`, `TEL-03`).
@@ -20,6 +21,10 @@ class QuickOverviewEntry extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final flags = ref.watch(telFeatureFlagsProvider);
+    final experimental = isSiteFeatureExperimental(
+      ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+      'tel.overview',
+    );
     final planner = ref.watch(overviewPlannerProvider);
 
     final isEnabled =
@@ -46,7 +51,19 @@ class QuickOverviewEntry extends ConsumerWidget {
           key: Key('quick-overview-entry-$targetId'),
           onPressed: () => context.push('/overview/$routeParam'),
           icon: const Icon(Icons.explore_outlined, size: 18),
-          label: const Text('Quick overview'),
+          label: Wrap(
+          spacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text('Quick overview'),
+            if (experimental)
+              const Text(
+                'Experimental',
+                key: Key('overview-experimental-disclosure'),
+                style: TextStyle(fontSize: 11),
+              ),
+          ],
+        ),
         ),
       );
     }
@@ -58,7 +75,19 @@ class QuickOverviewEntry extends ConsumerWidget {
         key: Key('quick-overview-entry-$targetId'),
         onPressed: () => context.push('/overview/$routeParam'),
         icon: const Icon(Icons.explore_outlined),
-        label: const Text('Quick overview'),
+        label: Wrap(
+          spacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text('Quick overview'),
+            if (experimental)
+              const Text(
+                'Experimental',
+                key: Key('overview-experimental-disclosure'),
+                style: TextStyle(fontSize: 11),
+              ),
+          ],
+        ),
       ),
     );
   }
