@@ -36,7 +36,16 @@ BEGIN
     'consented',coalesce(v_consent,false) AND coalesce(v_eligible,false),
     'is_anonymous',coalesce(v_guest,true),
     'changed_at',v_changed,
-    'collection_active',false
+    'policy_ready',coalesce((
+      SELECT g.approved_policy_version IS NOT NULL
+         AND g.policy_approved_at IS NOT NULL
+        FROM analytics.product_release_gate g WHERE g.id=1),false),
+    'policy_version',(
+      SELECT g.approved_policy_version
+        FROM analytics.product_release_gate g WHERE g.id=1),
+    'collection_active',coalesce((
+      SELECT g.collection_enabled
+        FROM analytics.product_release_gate g WHERE g.id=1),false)
   );
 END;
 $$;
@@ -170,6 +179,132 @@ DROP TRIGGER IF EXISTS trg_limit_product_event_insert_rate
 CREATE TRIGGER trg_limit_product_event_insert_rate
   BEFORE INSERT ON analytics.product_events
   FOR EACH ROW EXECUTE FUNCTION analytics.limit_product_event_insert_rate();
+
+
+-- CRITICAL FAIL-CLOSED RELEASE LATCH: user consent and a browser feature
+-- flag are not authorization to capture events. The privacy owner must
+-- explicitly approve a versioned disclosure and release at the DATABASE
+-- before either opt-in or event storage is possible.
+CREATE TABLE analytics.product_release_gate (
+  id integer PRIMARY KEY CHECK (id=1),
+  approved_policy_version text,
+  policy_approved_at timestamptz,
+  collection_enabled boolean NOT NULL DEFAULT false,
+  reviewed_by text,
+  changed_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (NOT collection_enabled OR
+    (approved_policy_version IS NOT NULL AND
+     approved_policy_version ~ '^[a-zA-Z0-9_.:-]{1,80}
+-- Does not create a scheduler or authorize collection.
+CREATE FUNCTION analytics.product_retention_health()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = ''
+AS $$
+  SELECT jsonb_build_object(
+    'as_of',now(),
+    'raw_events',count(*),
+    'expired_events',count(*) FILTER
+      (WHERE received_at < now()-interval '90 days'),
+    'oldest_received_at',min(received_at)
+  ) FROM analytics.product_events;
+$$;
+REVOKE ALL ON FUNCTION analytics.product_retention_health()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION analytics.product_retention_health()
+  TO service_role;
+
+     AND policy_approved_at IS NOT NULL
+     AND reviewed_by IS NOT NULL AND length(reviewed_by) >= 3))
+);
+INSERT INTO analytics.product_release_gate(id,collection_enabled)
+  VALUES (1,false) ON CONFLICT(id) DO NOTHING;
+ALTER TABLE analytics.product_release_gate ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.product_release_gate
+  FROM PUBLIC, anon, authenticated;
+GRANT ALL ON analytics.product_release_gate TO service_role;
+
+ALTER TABLE analytics.product_consents
+  ADD COLUMN policy_version text;
+
+CREATE FUNCTION analytics.check_product_consent_release()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE
+  v_approved text;
+BEGIN
+  IF NEW.consented THEN
+    SELECT approved_policy_version INTO v_approved
+    FROM analytics.product_release_gate
+    WHERE id=1 AND collection_enabled
+      AND policy_approved_at IS NOT NULL
+      AND reviewed_by IS NOT NULL;
+    IF v_approved IS NULL THEN
+      RAISE EXCEPTION 'Analytics release policy not approved'
+        USING ERRCODE='42501';
+    END IF;
+    NEW.policy_version := v_approved;
+  ELSE
+    NEW.policy_version := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION analytics.check_product_consent_release()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_check_product_consent_release
+  BEFORE INSERT OR UPDATE ON analytics.product_consents
+  FOR EACH ROW EXECUTE FUNCTION analytics.check_product_consent_release();
+
+CREATE FUNCTION analytics.check_product_event_release()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE
+  v_approved text;
+BEGIN
+  SELECT approved_policy_version INTO v_approved
+  FROM analytics.product_release_gate
+  WHERE id=1 AND collection_enabled
+    AND policy_approved_at IS NOT NULL AND reviewed_by IS NOT NULL;
+  IF v_approved IS NULL OR NOT EXISTS (
+    SELECT 1 FROM analytics.product_consents c
+    WHERE c.user_id=NEW.user_id AND c.consented
+      AND c.policy_version=v_approved
+  ) THEN
+    RAISE EXCEPTION 'Analytics release or matching consent not active'
+      USING ERRCODE='42501';
+  END IF;
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION analytics.check_product_event_release()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_check_product_event_release
+  BEFORE INSERT ON analytics.product_events
+  FOR EACH ROW EXECUTE FUNCTION analytics.check_product_event_release();
+
+-- A changed privacy notice invalidates prior consent. Explicit consent must
+-- be gathered again under the newly approved notice before any new event.
+CREATE FUNCTION analytics.invalidate_old_product_policy()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+BEGIN
+  IF NEW.approved_policy_version IS DISTINCT FROM
+      OLD.approved_policy_version THEN
+    UPDATE analytics.product_consents
+       SET consented=false, changed_at=now()
+     WHERE consented=true;
+    -- Conservative privacy default: discard raw events collected under the
+    -- previous policy when the release notice changes.
+    DELETE FROM analytics.product_events;
+  END IF;
+  RETURN NEW;
+END;
+$;
+REVOKE ALL ON FUNCTION analytics.invalidate_old_product_policy()
+  FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER trg_invalidate_old_product_policy
+  AFTER UPDATE OF approved_policy_version
+  ON analytics.product_release_gate
+  FOR EACH ROW EXECUTE FUNCTION analytics.invalidate_old_product_policy();
 
 -- Retention health is callable only from the privileged operations role.
 -- Does not create a scheduler or authorize collection.
