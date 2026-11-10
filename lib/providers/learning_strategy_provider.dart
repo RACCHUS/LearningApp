@@ -9,6 +9,8 @@ import '../services/planning/overview_planner.dart';
 import 'learning_context_provider.dart';
 import 'next_action_provider.dart';
 import 'scope_resolver_provider.dart';
+import 'site_feature_provider.dart';
+import '../services/governance/site_feature_service.dart';
 
 /// Exception thrown when a compare-and-set preference mutation fails due to
 /// a stale `expectedRevision` (`TEL-01B`).
@@ -476,9 +478,23 @@ class LearningStrategyNotifier extends StateNotifier<LearningStrategyState> {
 }
 
 /// Feature flags provider for TEL Overview and Fast rollout (`§6`).
-final telFeatureFlagsProvider = StateProvider<TelFeatureFlags>(
-  (ref) => const TelFeatureFlags(),
-);
+final telFeatureFlagsProvider = Provider<TelFeatureFlags>((ref) {
+  final snapshot = ref.watch(siteFeatureSnapshotProvider).valueOrNull;
+  return TelFeatureFlags(
+    // Preserve owner-approved Fast/Overview until runtime bootstrap only.
+    // After bootstrap, unavailable snapshots fail closed to Standard/no Tour.
+    fastEnabled: isSiteFeatureEnabled(
+      snapshot, 'tel.fast',
+      runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      preBootstrapDefault: true,
+    ),
+    overviewEnabled: isSiteFeatureEnabled(
+      snapshot, 'tel.overview',
+      runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+      preBootstrapDefault: true,
+    ),
+  );
+});
 
 /// Dedicated store for per-context [FastPreference] records (`TEL-01B`).
 final fastPreferenceStoreProvider = Provider<FastPreferenceStore>((ref) {

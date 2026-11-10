@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'byok_provider.dart';
+import 'byok_release_gate.dart';
 
 /// Exception thrown during LLM inference or schema validation.
 class LlmException implements Exception {
@@ -15,6 +16,29 @@ class LlmException implements Exception {
       'LlmException($message${statusCode != null ? ', status: $statusCode' : ''})';
 }
 
+/// Explicit allowlist: browser-supplied custom URLs must never receive an
+/// API credential. Local models and delegated OAuth require separate reviewed
+/// transports rather than the credential-bearing BYOK HTTP client.
+abstract final class ByokEndpointPolicy {
+  static bool isApproved(ByokConfig config) {
+    if (config.provider == AiProvider.mock) return true;
+    if (config.customEndpoint != null) return false;
+    final endpoint = Uri.tryParse(config.endpoint);
+    return endpoint != null &&
+        endpoint.scheme == 'https' &&
+        endpoint.userInfo.isEmpty &&
+        endpoint.query.isEmpty &&
+        endpoint.fragment.isEmpty &&
+        config.endpoint == config.provider.defaultEndpoint;
+  }
+
+  static void requireApproved(ByokConfig config) {
+    if (!isApproved(config)) {
+      throw const LlmException('This BYOK provider endpoint is not approved.');
+    }
+  }
+}
+
 /// Abstract contract for LLM inference with structured JSON outputs (ARCH-4).
 abstract class LlmClient {
   Future<String> generateStructuredJson({
@@ -25,6 +49,8 @@ abstract class LlmClient {
 
   /// Factory to instantiate the appropriate client from a [ByokConfig].
   factory LlmClient.create(ByokConfig config, {http.Client? httpClient}) {
+    ByokReleaseGate.requireEnabled();
+    ByokEndpointPolicy.requireApproved(config);
     switch (config.provider) {
       case AiProvider.gemini:
         return GeminiLlmClient(config, httpClient: httpClient);
@@ -51,8 +77,14 @@ class GeminiLlmClient implements LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   }) async {
+    // Direct construction must not bypass the owner safety latch.
+    ByokReleaseGate.requireEnabled();
+    ByokEndpointPolicy.requireApproved(config);
+    if (config.apiKey.trim().isEmpty) {
+      throw const LlmException('No BYOK credential supplied.');
+    }
     final url = Uri.parse(
-      '${config.endpoint}/models/${config.model}:generateContent?key=${config.apiKey}',
+      '${config.endpoint}/models/${Uri.encodeComponent(config.model)}:generateContent',
     );
 
     final payload = {
@@ -79,7 +111,10 @@ class GeminiLlmClient implements LlmClient {
 
     final response = await _client.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': config.apiKey,
+      },
       body: jsonEncode(payload),
     );
 
@@ -99,7 +134,7 @@ class GeminiLlmClient implements LlmClient {
       throw const LlmException('Empty response received from Gemini API');
     } else {
       throw LlmException(
-        'Gemini API request failed: ${response.body}',
+        'Gemini provider request failed; check provider credentials and status.',
         statusCode: response.statusCode,
       );
     }
@@ -120,6 +155,12 @@ class OpenAiCompatibleLlmClient implements LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   }) async {
+    // Direct construction must not bypass the owner safety latch.
+    ByokReleaseGate.requireEnabled();
+    ByokEndpointPolicy.requireApproved(config);
+    if (config.apiKey.trim().isEmpty) {
+      throw const LlmException('No BYOK credential supplied.');
+    }
     final url = Uri.parse('${config.endpoint}/chat/completions');
 
     final headers = {
@@ -186,7 +227,7 @@ class OpenAiCompatibleLlmClient implements LlmClient {
       throw const LlmException('Empty choices in OpenAI-compatible response');
     } else {
       throw LlmException(
-        'OpenAI API request failed: ${response.body}',
+        'AI provider request failed; check provider credentials and status.',
         statusCode: response.statusCode,
       );
     }

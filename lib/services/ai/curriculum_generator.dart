@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'byok_provider.dart';
+import 'byok_release_gate.dart';
 import 'generated_content_models.dart';
 import 'item_evaluator.dart';
 import 'llm_client.dart';
@@ -37,6 +38,7 @@ Your task is to generate high-quality assessment items and lessons following the
     String bloomLevel = 'understand',
     String difficulty = 'intermediate',
   }) async {
+    ByokReleaseGate.requireEnabled();
     final prompt = '''
 Generate one rigorous multiple-choice assessment question for the following topic:
 TOPIC: $topic
@@ -77,6 +79,7 @@ TARGET SPECIFICATIONS:
     required String sourceExcerpt,
     int itemCount = 3,
   }) async {
+    ByokReleaseGate.requireEnabled();
     final prompt = '''
 Generate a structured, evidence-based lesson module for the following topic with exactly $itemCount assessment items:
 TOPIC: $topic

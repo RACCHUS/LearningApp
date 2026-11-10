@@ -7,6 +7,7 @@ import '../../models/learning_strategy.dart';
 import '../../providers/learning_context_provider.dart';
 import '../../providers/learning_strategy_provider.dart';
 import '../../providers/next_action_provider.dart';
+import '../../providers/site_feature_provider.dart';
 import '../../services/next_action_engine.dart';
 import '../../theme/design_tokens.dart';
 
@@ -18,6 +19,10 @@ class LearningApproachSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final flags = ref.watch(telFeatureFlagsProvider);
+    final fastExperimental = isSiteFeatureExperimental(
+      ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+      'tel.fast',
+    );
     final activeContext = ref.watch(activeLearningContextProvider);
     if (activeContext == null ||
         activeContext.rootType != ContextRootType.target ||
@@ -135,6 +140,24 @@ class LearningApproachSelector extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+        // Verification maturity is independent from feature availability.
+        // Fast remains usable while its wider effectiveness is being verified.
+        if (fastExperimental)
+          const Padding(
+            padding: EdgeInsets.only(top: DesignTokens.space2),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Tooltip(
+              message: 'Fast prioritization is available, but broad learning-outcome '
+                  'verification is still underway.',
+              child: Text(
+                'Fast · Experimental',
+                key: Key('fast-experimental-disclosure'),
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ),
         ),
         if (pref.strategy == PersistedLearningStrategy.fast) ...[
           const SizedBox(height: DesignTokens.space2),

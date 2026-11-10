@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/ai/byok_provider.dart';
+import '../../services/ai/byok_release_gate.dart';
 import '../../services/ai/llm_client.dart';
 
 /// Modal dialog allowing learners to configure their Bring-Your-Own-Key (BYOK) AI provider (ARCH-4).
@@ -43,7 +44,12 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
     _keyController = TextEditingController();
     _modelController = TextEditingController();
     _endpointController = TextEditingController();
-    _loadCurrentConfig();
+    // Do not load an existing secret into UI controllers while suspended.
+    if (ByokReleaseGate.enabled) {
+      _loadCurrentConfig();
+    } else {
+      _isLoading = false;
+    }
   }
 
   Future<void> _loadCurrentConfig() async {
@@ -76,6 +82,7 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
   }
 
   Future<void> _testConnection() async {
+    ByokReleaseGate.requireEnabled();
     setState(() {
       _isTesting = true;
       _testStatus = 'Testing provider connection...';
@@ -125,6 +132,7 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
   }
 
   Future<void> _save() async {
+    ByokReleaseGate.requireEnabled();
     final config = ByokConfig(
       provider: _selectedProvider,
       apiKey: _keyController.text.trim(),
@@ -161,6 +169,27 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ByokReleaseGate.enabled) {
+      return AlertDialog(
+        key: const Key('byok-unavailable-dialog'),
+        title: const Text('AI key integration unavailable'),
+        content: const Text(ByokReleaseGate.unavailableMessage),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await widget.storageService.clearConfig();
+              if (context.mounted) Navigator.of(context).pop();
+            },
+            child: const Text('Clear saved local key'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    }
+
     final theme = Theme.of(context);
 
     return AlertDialog(

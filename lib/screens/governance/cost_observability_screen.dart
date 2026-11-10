@@ -93,6 +93,12 @@ class _CostObservabilityScreenState extends State<CostObservabilityScreen> {
         actions: [
           if (_isAdmin)
             IconButton(
+              icon: const Icon(Icons.tune_outlined),
+              tooltip: 'Feature Control Center',
+              onPressed: () => context.push('/admin/features'),
+            ),
+          if (_isAdmin)
+            IconButton(
               icon: const Icon(Icons.insights_outlined),
               tooltip: 'Product Analytics',
               onPressed: () => context.push('/admin/analytics'),
