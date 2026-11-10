@@ -119,6 +119,9 @@ void main() {
       expect(bundle, contains('20261107060000_performance_library_search_trigram_indexes.sql'));
       expect(bundle, contains('20261108000000_assessment_item_server_grading.sql'));
       expect(bundle, contains('20261108140000_clep_simulation_bank_and_item_privacy.sql'));
+      expect(bundle, contains('20261110150000_clep_simulation_domain_code_projection.sql'));
+      expect(bundle, contains('20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql'));
+      expect(bundle, contains('20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql'));
     });
   });
 }

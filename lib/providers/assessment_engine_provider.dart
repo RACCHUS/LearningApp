@@ -7,6 +7,7 @@ import '../models/assessment_engine/mock_exam_session.dart';
 import '../models/assessment_item.dart';
 import '../services/assessment/adaptive_practice_service.dart';
 import '../services/assessment/assessment_grading_service.dart';
+import '../services/assessment/clep_simulation_service.dart';
 import '../services/assessment/exam_evaluation_service.dart';
 import '../services/assessment/exam_practice_elapsed_clock.dart';
 
@@ -27,6 +28,11 @@ final adaptivePracticeServiceProvider = Provider<AdaptivePracticeService>((ref) 
   return AdaptivePracticeService();
 });
 
+/// Provider for ClepSimulationService
+final clepSimulationServiceProvider = Provider<ClepSimulationService>((ref) {
+  return ClepSimulationService();
+});
+
 /// Fetches the authoritative blueprint for a given target version
 final mockExamBlueprintProvider =
     FutureProvider.family<MockExamBlueprint, String>((ref, targetVersionId) async {
@@ -40,6 +46,7 @@ final mockExamBlueprintProvider =
 class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
   final ExamEvaluationService _evaluationService;
   final AssessmentGradingService _gradingService;
+  final ClepSimulationService? _clepSimulationService;
   final ExamPracticeElapsedClock _clock;
   Timer? _timer;
   bool _submitted = false;
@@ -49,8 +56,10 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     this._evaluationService, {
     ExamPracticeElapsedClock? clock,
     AssessmentGradingService? gradingService,
+    ClepSimulationService? clepSimulationService,
   })  : _clock = clock ?? StopwatchExamPracticeElapsedClock(),
         _gradingService = gradingService ?? AssessmentGradingService(),
+        _clepSimulationService = clepSimulationService,
         super(null);
 
   void _cancelTicker() {
@@ -116,6 +125,9 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     }
 
     state = state!.copyWith(userResponses: updated);
+    if (state!.isProtectedSimulation) {
+      ClepSimulationService.cacheResponses(state!.id, updated);
+    }
   }
 
   void toggleFlag(String itemId) {
@@ -172,6 +184,18 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     state = finishedSession;
     _submitting = true;
     try {
+      if (finishedSession.isProtectedSimulation) {
+        final clepService = _clepSimulationService ?? ClepSimulationService();
+        final submissionResult = await clepService.submitSimulationExam(
+          attemptId: finishedSession.id,
+          responses: finishedSession.userResponses,
+        );
+        final report = submissionResult.toDiagnosticReport(finishedSession);
+        _submitted = true;
+        ClepSimulationService.clearCachedResponses(finishedSession.id);
+        return report;
+      }
+
       final gradedItems = await _gradingService.revealScoring(
         finishedSession.items,
         finishedSession.userResponses,
@@ -198,7 +222,11 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
 final examSessionProvider =
     StateNotifierProvider<ExamSessionNotifier, MockExamSession?>((ref) {
   final evaluationService = ref.watch(examEvaluationServiceProvider);
-  return ExamSessionNotifier(evaluationService);
+  final clepSimulationService = ref.watch(clepSimulationServiceProvider);
+  return ExamSessionNotifier(
+    evaluationService,
+    clepSimulationService: clepSimulationService,
+  );
 });
 
 /// State controller for an active CAT-style adaptive practice session
