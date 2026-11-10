@@ -18,6 +18,7 @@ class _FeatureControlCenterScreenState
     extends ConsumerState<FeatureControlCenterScreen> {
   late final SiteFeatureService _service;
   List<AdminSiteFeature> _features = const [];
+  List<AdminFeatureChange> _history = const [];
   bool _loading = true;
   bool _saving = false;
   bool _isAdmin = false;
@@ -43,15 +44,18 @@ class _FeatureControlCenterScreenState
         setState(() {
           _isAdmin = false;
           _features = const [];
+          _history = const [];
           _loading = false;
         });
         return;
       }
       final features = await _service.listAdminFeatures();
+      final history = await _service.listRecentChanges();
       if (!mounted) return;
       setState(() {
         _isAdmin = true;
         _features = features;
+        _history = history;
         _loading = false;
       });
     } catch (_) {
@@ -240,6 +244,38 @@ class _FeatureControlCenterScreenState
                             ),
                           ),
                         )),
+                        const SizedBox(height: 12),
+                        Card(
+                          child: ExpansionTile(
+                            key: const Key('feature-audit-history'),
+                            title: Text('Recent changes (${_history.length})'),
+                            subtitle: const Text(
+                              'Admin-only audit trail with the original reason',
+                            ),
+                            children: _history.isEmpty
+                                ? const [
+                                    Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Text('No feature changes recorded.'),
+                                    ),
+                                  ]
+                                : _history
+                                    .map((change) => ListTile(
+                                          title: Text(
+                                            '${change.key} · '
+                                            '${change.nextEnabled ? "On" : "Off"} '
+                                            '· revision ${change.newRevision}',
+                                          ),
+                                          subtitle: Text(
+                                            '${change.reason}\n'
+                                            '${change.changedAt?.toLocal().toString() ?? "Time unavailable"}'
+                                            ' · Actor: ${change.actorId ?? "System"}',
+                                          ),
+                                          isThreeLine: true,
+                                        ))
+                                    .toList(),
+                          ),
+                        ),
                       ],
                     ),
     );

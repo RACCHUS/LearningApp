@@ -8,6 +8,18 @@ class _FakeFeatureService extends SiteFeatureService {
   bool allowed = true;
   int writes = 0;
   bool lastEnabled = true;
+  List<AdminFeatureChange> history = const [
+    AdminFeatureChange(
+      key: 'tel.fast',
+      reason: 'Previous controlled emergency drill',
+      priorEnabled: true,
+      nextEnabled: false,
+      priorMaturity: 'experimental',
+      nextMaturity: 'experimental',
+      newRevision: 1,
+      actorId: 'synthetic-admin',
+    ),
+  ];
   List<AdminSiteFeature> rows = const [
     AdminSiteFeature(
       key: 'tel.fast',
@@ -38,6 +50,10 @@ class _FakeFeatureService extends SiteFeatureService {
 
   @override
   Future<List<AdminSiteFeature>> listAdminFeatures() async => rows;
+
+  @override
+  Future<List<AdminFeatureChange>> listRecentChanges({int limit = 20}) async =>
+      history;
 
   @override
   Future<void> updateFeature({
@@ -83,6 +99,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Fast learning approach'), findsOneWidget);
     expect(find.text('Bring Your Own Key AI'), findsOneWidget);
+    expect(find.byKey(const Key('feature-audit-history')), findsOneWidget);
 
     final switches = tester.widgetList<SwitchListTile>(
       find.byType(SwitchListTile),
@@ -105,5 +122,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(fake.writes, 1);
     expect(fake.lastEnabled, isFalse);
+    await tester.tap(find.text('Recent changes (1)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Previous controlled emergency drill', findRichText: true),
+        findsWidgets);
   });
 }

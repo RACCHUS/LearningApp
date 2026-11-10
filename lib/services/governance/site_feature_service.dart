@@ -68,6 +68,46 @@ class AdminSiteFeature {
       );
 }
 
+/// Private operator-only audit row. Public snapshots never contain reasons
+/// or actor identifiers.
+class AdminFeatureChange {
+  final String key;
+  final String reason;
+  final bool priorEnabled;
+  final bool nextEnabled;
+  final String priorMaturity;
+  final String nextMaturity;
+  final int newRevision;
+  final String? actorId;
+  final DateTime? changedAt;
+
+  const AdminFeatureChange({
+    required this.key,
+    required this.reason,
+    required this.priorEnabled,
+    required this.nextEnabled,
+    required this.priorMaturity,
+    required this.nextMaturity,
+    required this.newRevision,
+    this.actorId,
+    this.changedAt,
+  });
+
+  factory AdminFeatureChange.fromJson(Map<String, dynamic> data) {
+    return AdminFeatureChange(
+      key: data['feature_key'] as String? ?? '',
+      reason: data['reason'] as String? ?? '',
+      priorEnabled: data['prior_enabled'] == true,
+      nextEnabled: data['next_enabled'] == true,
+      priorMaturity: data['prior_maturity'] as String? ?? 'experimental',
+      nextMaturity: data['next_maturity'] as String? ?? 'experimental',
+      newRevision: (data['new_revision'] as num?)?.toInt() ?? 0,
+      actorId: data['actor_id'] as String?,
+      changedAt: DateTime.tryParse(data['changed_at']?.toString() ?? ''),
+    );
+  }
+}
+
 /// RPC client for the private first-party control plane.
 /// Authorization, CAS revision and audit are always enforced by the database.
 class SiteFeatureService {
@@ -117,6 +157,20 @@ class SiteFeatureService {
         .whereType<Map>()
         .map((entry) =>
             AdminSiteFeature.fromJson(Map<String, dynamic>.from(entry)))
+        .toList();
+  }
+
+  /// Audit entries are available only through the authenticated admin RPC.
+  /// This call is never used by learner-facing code.
+  Future<List<AdminFeatureChange>> listRecentChanges({int limit = 20}) async {
+    if (!await isAdmin()) throw StateError('Administrator access required.');
+    final raw = await _client.rpc('admin_recent_site_feature_changes',
+        params: {'p_limit': limit.clamp(1, 100)});
+    if (raw is! List) throw StateError('Feature audit is unavailable.');
+    return raw
+        .whereType<Map>()
+        .map((entry) =>
+            AdminFeatureChange.fromJson(Map<String, dynamic>.from(entry)))
         .toList();
   }
 

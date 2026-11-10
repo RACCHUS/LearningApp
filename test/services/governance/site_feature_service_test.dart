@@ -25,6 +25,24 @@ void main() {
     expect(ready.revision, 3);
   });
 
+  test('audit model retains reason, caller and separate verification maturity', () {
+    final change = AdminFeatureChange.fromJson({
+      'feature_key': 'tel.fast',
+      'reason': 'Emergency shutdown after smoke test',
+      'actor_id': 'synthetic-test-admin',
+      'prior_enabled': true,
+      'next_enabled': false,
+      'prior_maturity': 'experimental',
+      'next_maturity': 'experimental',
+      'new_revision': 9,
+    });
+    expect(change.key, 'tel.fast');
+    expect(change.reason, contains('Emergency shutdown'));
+    expect(change.actorId, 'synthetic-test-admin');
+    expect(change.nextEnabled, false);
+    expect(change.newRevision, 9);
+  });
+
   test('admin model keeps release readiness distinct from availability', () {
     final result = AdminSiteFeature.fromJson({
       'feature_key': 'ai.byok',
