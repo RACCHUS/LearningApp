@@ -63,15 +63,17 @@ class _HelpTopicViewState extends State<HelpTopicView> {
             label: const Text('All help'),
           ),
         ),
-        const SizedBox(height: DesignTokens.space2),
-        Center(
-          child: Icon(
-            guide.icon,
-            size: 64,
-            color: theme.colorScheme.primary,
-            semanticLabel: topic.title,
+        if (widget.pictureFirst) ...[
+          const SizedBox(height: DesignTokens.space2),
+          Center(
+            child: Icon(
+              guide.icon,
+              size: 64,
+              color: theme.colorScheme.primary,
+              semanticLabel: topic.title,
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: DesignTokens.space2),
         Text(
           topic.title,
@@ -87,6 +89,26 @@ class _HelpTopicViewState extends State<HelpTopicView> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        // Written Help keeps its article and route action above the visual
+        // tutorial so existing readable guidance remains immediately usable.
+        if (!widget.pictureFirst) ...[
+          const SizedBox(height: DesignTokens.space3),
+          Text(topic.body, style: theme.textTheme.bodyLarge),
+        ],
+        if (!widget.pictureFirst &&
+            topic.actionLabel != null &&
+            widget.onAction != null) ...[
+          const SizedBox(height: DesignTokens.space3),
+          SizedBox(
+            height: 56,
+            child: FilledButton.icon(
+              key: Key('help-topic-action-${topic.id}'),
+              onPressed: widget.onAction,
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: Text(topic.actionLabel!),
+            ),
+          ),
+        ],
         const SizedBox(height: DesignTokens.space3),
         SizedBox(
           height: 58,
@@ -97,11 +119,9 @@ class _HelpTopicViewState extends State<HelpTopicView> {
             label: const Text('Hear this help'),
           ),
         ),
-        if (!widget.pictureFirst) ...[
-          const SizedBox(height: DesignTokens.space3),
-          Text(topic.body, style: theme.textTheme.bodyLarge),
-        ],
-        if (topic.actionLabel != null && widget.onAction != null) ...[
+        if (widget.pictureFirst &&
+            topic.actionLabel != null &&
+            widget.onAction != null) ...[
           const SizedBox(height: DesignTokens.space3),
           SizedBox(
             height: 56,
