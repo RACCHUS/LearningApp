@@ -57,7 +57,8 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   final _searchController = TextEditingController();
   String _query = '';
   HelpTopic? _selectedTopic;
-  bool _pictureMode = false;
+  // A new visitor can find illustrated Help without knowing how to read.
+  bool _pictureMode = true;
 
   @override
   void initState() {
@@ -116,7 +117,8 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   bool get _autoSpeakTopic {
     if (!_pictureMode) return false;
     try {
-      return ref.read(preReaderProvider).autoSpeakScreens;
+      final profile = ref.read(preReaderProvider);
+      return profile.enabled && profile.autoSpeakScreens;
     } catch (_) {
       return false;
     }
@@ -222,8 +224,7 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
               ],
             ),
           ),
-        if (!_pictureMode)
-          Padding(
+        Padding(
           padding: const EdgeInsets.fromLTRB(
             DesignTokens.space4,
             DesignTokens.space2,
@@ -233,7 +234,10 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
           child: TextField(
             key: const Key('help-search'),
             controller: _searchController,
-            onChanged: (value) => setState(() => _query = value),
+            onChanged: (value) => setState(() {
+              _query = value;
+              if (value.trim().isNotEmpty) _pictureMode = false;
+            }),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               labelText: 'Search help',
