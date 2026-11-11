@@ -45,7 +45,7 @@ void main() {
         overrides: [
           preReaderAudioServiceProvider.overrideWithValue(speech),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
           home: Scaffold(
             appBar: AppBar(
               actions: [HelpAction()],
@@ -107,9 +107,9 @@ void main() {
   testWidgets('typing a search immediately opens the original written index',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
-          appBar: AppBar(actions: [HelpAction()]),
+          appBar: AppBar(actions: const [HelpAction()]),
         ),
       ),
     );
