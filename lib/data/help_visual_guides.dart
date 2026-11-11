@@ -164,7 +164,7 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
         steps: [
           HelpVisualStep(
             icon: Icons.menu_book_outlined,
-            label: 'Open Library',
+            label: 'Find Library',
             spokenInstruction: 'First, open Library to find something to learn.',
           ),
           HelpVisualStep(
@@ -248,7 +248,7 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
         steps: [
           HelpVisualStep(
             icon: Icons.settings_outlined,
-            label: 'Open Settings',
+            label: 'Find Settings',
             spokenInstruction: 'Open Settings to change app preferences.',
           ),
           HelpVisualStep(
@@ -291,7 +291,7 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
         steps: [
           HelpVisualStep(
             icon: Icons.settings_outlined,
-            label: 'Open Settings',
+            label: 'Find Settings',
             spokenInstruction: 'Open Settings to change the number of cards in a session.',
           ),
           HelpVisualStep(
@@ -407,7 +407,7 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
         steps: [
           HelpVisualStep(
             icon: Icons.settings_outlined,
-            label: 'Open Settings',
+            label: 'Find Settings',
             spokenInstruction: 'Open Settings if you want to set a daily study goal.',
           ),
           HelpVisualStep(
@@ -439,7 +439,7 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
         steps: [
           HelpVisualStep(
             icon: Icons.menu_book_outlined,
-            label: 'Open Library',
+            label: 'Find Library',
             spokenInstruction: 'Open Library to make something of your own.',
           ),
           HelpVisualStep(
