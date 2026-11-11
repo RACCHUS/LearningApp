@@ -99,7 +99,8 @@ void main() {
 
       expect(find.byKey(const Key('pre-reader-entry-card')), findsOneWidget);
       expect(find.text('Start Here: Learn to Read & Write'), findsOneWidget);
-      expect(find.byIcon(Icons.hearing), findsOneWidget);
+      expect(find.byKey(const Key('pre-reader-listen-button')), findsOneWidget);
+      expect(find.byKey(const Key('pre-reader-open-button')), findsOneWidget);
     });
 
     testWidgets('tapping opens PreReaderTrackPickerDialog when disabled',
@@ -116,7 +117,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('pre-reader-entry-card')));
+      await tester.tap(find.byKey(const Key('pre-reader-open-button')));
       await tester.pumpAndSettle();
 
       expect(find.text('Choose Your Learning Path'), findsOneWidget);

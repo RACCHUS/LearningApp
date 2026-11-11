@@ -16,6 +16,7 @@ import 'package:learning_pwa/widgets/learn/learning_approach_selector.dart';
 import 'package:learning_pwa/widgets/learn/review_prompt.dart';
 import 'package:learning_pwa/widgets/learn/zero_state.dart';
 import 'package:learning_pwa/widgets/literacy/pwa_audio_unlock_banner.dart';
+import 'package:learning_pwa/widgets/literacy/pre_reader_entry_banner.dart';
 
 /// Doing, not managing. One primary action, one secondary, and a review prompt
 /// only when there is something to review.
@@ -104,6 +105,8 @@ class _LearnBody extends StatelessWidget {
         const LearningApproachSelector(),
         const SizedBox(height: DesignTokens.space3),
         ContinueCard(action: action),
+        const SizedBox(height: DesignTokens.space5),
+        const PreReaderEntryBanner(),
         if (secondaryFastAction != null) ...[
           const SizedBox(height: DesignTokens.space4),
           SecondaryFastRecommendationCard(

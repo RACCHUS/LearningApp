@@ -173,7 +173,7 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: DesignTokens.space3,
                 mainAxisSpacing: DesignTokens.space3,
-                childAspectRatio: 1.15,
+                childAspectRatio: crossAxisCount == 2 ? 0.86 : 1.1,
               ),
               itemBuilder: (context, index) {
                 final tile = officialPictureTileItems[index];
@@ -228,14 +228,14 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
                 children: [
                   Text(
                     tile.iconEmoji,
-                    style: const TextStyle(fontSize: 32),
+                    style: const TextStyle(fontSize: 44),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.volume_up, size: 18),
+                    icon: const Icon(Icons.volume_up_rounded, size: 27),
                     tooltip: 'Listen to ${tile.title}',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    // A full 48dp touch target is essential for pre-readers.
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     onPressed: () {
                       audio.speak(tile.spokenDescription);
                     },
@@ -245,7 +245,7 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
               const Spacer(),
               Text(
                 tile.title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -258,7 +258,7 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),

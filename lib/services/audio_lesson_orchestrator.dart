@@ -909,7 +909,8 @@ class AudioLessonOrchestrator {
   }
 
   void dispose() {
-    _audioService.dispose();
+    // AudioService is shared across all screens, including non-reader guidance.
+    // Do not dispose its global TTS stream when one lesson session ends.
     _voiceService?.dispose();
     _stateController.close();
     _actionController.close();

@@ -19,6 +19,7 @@ import 'package:learning_pwa/core/errors/global_error_handler.dart';
 import 'package:learning_pwa/core/logging/error_reporting_service.dart';
 import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_route_title.dart';
+import 'package:learning_pwa/widgets/literacy/global_narration_controls.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -197,8 +198,9 @@ class _LearningAppState extends ConsumerState<LearningApp> {
       darkTheme: AppTheme.darkTheme(),
       themeMode: themeMode,
       routerConfig: router,
-      builder: (context, child) =>
-          SimulationRouteTitle(router: router, child: child!),
+      builder: (context, child) => GlobalNarrationControls(
+        child: SimulationRouteTitle(router: router, child: child!),
+      ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
     );

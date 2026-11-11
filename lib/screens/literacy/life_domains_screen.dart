@@ -39,7 +39,9 @@ class _LifeDomainsScreenState extends ConsumerState<LifeDomainsScreen> {
     super.initState();
     _activeCategory = widget.initialCategory;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _announceCategory();
+      if (mounted && ref.read(preReaderProvider).autoSpeakScreens) {
+        _announceCategory();
+      }
     });
   }
 
@@ -47,7 +49,9 @@ class _LifeDomainsScreenState extends ConsumerState<LifeDomainsScreen> {
     setState(() {
       _activeCategory = newCategory;
     });
-    _announceCategory();
+    if (ref.read(preReaderProvider).autoSpeakScreens) {
+      _announceCategory();
+    }
   }
 
   void _announceCategory() {
@@ -90,6 +94,17 @@ class _LifeDomainsScreenState extends ConsumerState<LifeDomainsScreen> {
         ),
         actions: [
           IconButton(
+            key: const Key('domains-home'),
+            tooltip: 'Return to Learn home',
+            icon: const Icon(Icons.home_rounded, size: 28),
+            onPressed: () => context.go('/learn'),
+          ),
+          IconButton(
+            tooltip: 'Hear page instructions',
+            icon: const Icon(Icons.volume_up_rounded, size: 28),
+            onPressed: _announceCategory,
+          ),
+          IconButton(
             tooltip: 'Switch track',
             icon: const Icon(Icons.swap_horiz),
             onPressed: () => PreReaderTrackPickerDialog.show(context),
@@ -113,35 +128,31 @@ class _LifeDomainsScreenState extends ConsumerState<LifeDomainsScreen> {
             padding: const EdgeInsets.all(DesignTokens.space4),
             children: [
               // Domain Category Switcher Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
+              Wrap(
+                spacing: DesignTokens.space2,
+                runSpacing: DesignTokens.space2,
+                children: [
                     _buildCategoryChip(
                       label: '🦺 Workplace Safety (OSHA)',
                       category: LifeDomainCategory.workplaceSafety,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildCategoryChip(
                       label: '🍳 Food Safety (FDA)',
                       category: LifeDomainCategory.foodSafety,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildCategoryChip(
                       label: '💊 Health & First Aid',
                       category: LifeDomainCategory.healthcareFirstAid,
                       colorScheme: colorScheme,
                     ),
-                    const SizedBox(width: DesignTokens.space2),
                     _buildCategoryChip(
                       label: '💵 Cash & ATM Practice',
                       category: LifeDomainCategory.financialAtm,
                       colorScheme: colorScheme,
                     ),
-                  ],
-                ),
+                ],
               ),
               const SizedBox(height: DesignTokens.space4),
 
