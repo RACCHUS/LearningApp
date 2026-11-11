@@ -16,7 +16,7 @@ class SpokenHelpEntry extends StatelessWidget {
         onPressed: () => showHelpCenter(context),
         icon: const Icon(Icons.help_outline_rounded, size: 34),
         label: const Text(
-          '🖼️  🔊  Help with pictures and sound',
+          '🖼️ 🔊 Picture and sound help',
           textAlign: TextAlign.center,
         ),
         style: FilledButton.styleFrom(
