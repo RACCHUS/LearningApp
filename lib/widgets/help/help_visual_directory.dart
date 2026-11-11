@@ -31,7 +31,7 @@ class HelpVisualDirectory extends StatelessWidget {
         maxCrossAxisExtent: 220,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        mainAxisExtent: 196,
+        mainAxisExtent: 216,
       ),
       itemCount: topics.length,
       itemBuilder: (context, index) {
@@ -55,7 +55,7 @@ class HelpVisualDirectory extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(icon, size: 53,
+                            Icon(icon, size: 48,
                                 color: theme.colorScheme.primary),
                             const SizedBox(height: 8),
                             Text(
