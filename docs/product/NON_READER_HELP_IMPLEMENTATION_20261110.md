@@ -19,9 +19,8 @@ setup. Written search remains available.
 2. Keep the existing search field. Typing a nonempty query switches to the
    original text search index. The user can also toggle the displayed index.
 3. Every existing Help topic has a locally available icon, audio narration and
-   visual step tiles. Core tasks have hand-written, ordered spoken instructions;
-   remaining topics use their reviewed Help summaries/bodies as the initial
-   fallbacks. These should be rewritten into visual steps following field testing.
+   visual step tiles. All 15 existing topics have hand-written,
+   ordered spoken guidance; keep revising these steps from observed user behavior.
 4. Each Help article has a large narration button and per-step replay buttons,
    plus its original full text and route action.
 5. Use the pre-reader provider's existing audio service and track-aware speech;
@@ -43,9 +42,9 @@ setup. Written search remains available.
   overlays that point to real controls. The current help route actions only
   navigate; they do not yet highlight controls on the destination screen.
   Never automate permissions, answer submission, or destructive operations.
-- **Review all narrated topics:** Convert general text fallbacks to concise,
-  tested audio instructions. Ensure any feature unavailable or experimental
-  is accurately described.
+- **Review narrated topics with actual learners:** Refine the initial hand-written
+  scripts so every instruction matches its live route and maturity state.
+  Ensure unavailable or experimental features are accurately described.
 - **Optional voice question/video:** Voice questions and short video
   demonstrations are NOT implemented. They must be opt-in, have tap-only
   fallbacks, and must not autoplay or silently require a microphone/network.
