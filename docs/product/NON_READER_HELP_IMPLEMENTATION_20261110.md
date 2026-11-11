@@ -19,7 +19,7 @@ setup. Written search remains available.
 2. Keep the existing search field. Typing a nonempty query switches to the
    original text search index. The user can also toggle the displayed index.
 3. Every existing Help topic has a locally available icon, audio narration and
-   visual step tiles. All 15 existing topics have hand-written,
+   visual step tiles. All 20 Help topics have hand-written,
    ordered spoken guidance; keep revising these steps from observed user behavior.
 4. Each Help article has a large narration button and per-step replay buttons,
    plus its original full text and route action.
@@ -64,7 +64,7 @@ setup. Written search remains available.
 - Picture grid is visible before any typing or literacy-mode selection.
 - Listening to a picture never triggers navigation.
 - Entering a search term still finds original indexed topics.
-- All 15 Help topics have a nonempty spoken explanation and visual fallback.
+- All 20 Help topics have a nonempty spoken explanation and visual fallback.
 - Core task topics present ordered guidance.
 - Every topic can replay full narration or a step independently.
 - Pre-reader auto-speak respects off preference and other users are not
