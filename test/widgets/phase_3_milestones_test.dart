@@ -275,7 +275,15 @@ void main() {
       expect(find.text('🚗 Florida Driver\'s License'), findsOneWidget);
       expect(find.text('🎓 GED® Reading Bridge'), findsOneWidget);
 
-      await tester.drag(find.byType(ListView), const Offset(0, -400));
+      // The new large spoken Help entry can push the footer further down.
+      // Verify the footer remains reachable rather than relying on a fixed
+      // number of pixels of scroll.
+      await tester.scrollUntilVisible(
+        find.text('Foundational Literacy Hub'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 15,
+      );
       await tester.pumpAndSettle();
       expect(find.text('Foundational Literacy Hub'), findsOneWidget);
     });

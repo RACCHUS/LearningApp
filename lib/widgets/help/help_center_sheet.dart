@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/data/help_topics.dart';
+import 'package:learning_pwa/data/help_visual_guides.dart';
 import 'package:learning_pwa/l10n/app_localizations.dart';
 import 'package:learning_pwa/models/help_topic.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/help_search_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/help/help_topic_view.dart';
+import 'package:learning_pwa/widgets/help/help_visual_directory.dart';
 
 Future<void> showHelpCenter(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
@@ -55,6 +57,8 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   final _searchController = TextEditingController();
   String _query = '';
   HelpTopic? _selectedTopic;
+  // A new visitor can find illustrated Help without knowing how to read.
+  bool _pictureMode = true;
 
   @override
   void initState() {
@@ -63,8 +67,9 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
       if (!mounted) return;
       try {
         final profile = ref.read(preReaderProvider);
-        if (profile.enabled && profile.autoSpeakScreens) {
-          _speakHelpPrompt();
+        if (profile.enabled) {
+          setState(() => _pictureMode = true);
+          if (profile.autoSpeakScreens) _speakHelpPrompt();
         }
       } catch (_) {
         // Gracefully ignore missing ProviderScope in isolated tests
@@ -72,12 +77,49 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
     });
   }
 
+  static const _helpIntro =
+      'Need help? Pictures are shown below. '
+      'Tap a picture to open its instructions. '
+      'Tap the speaker below any picture to hear what it means. '
+      'You can also use the search box, or switch to written help.';
+
   void _speakHelpPrompt() {
     try {
-      ref.read(preReaderAudioServiceProvider).speak(
-          'Need help? Tap the ear to hear instructions again, or tap any card to listen.');
+      ref.read(preReaderProvider.notifier).speak(_helpIntro);
     } catch (_) {
-      // Gracefully ignore in offline/isolated environments
+      // A missing speech provider must never prevent reading Help.
+    }
+  }
+
+  void _listenTopic(HelpTopic topic) {
+    try {
+      final guide = helpVisualGuideFor(topic);
+      ref.read(preReaderProvider.notifier).speak(
+        topic.title + '. ' + guide.narration,
+      );
+    } catch (_) {
+      // Pictures and written steps remain usable without speech.
+    }
+  }
+
+  void _listenTopicStep(HelpTopic topic, int index) {
+    final guide = helpVisualGuideFor(topic);
+    if (index < 0 || index >= guide.steps.length) return;
+    try {
+      ref.read(preReaderProvider.notifier).speak(
+        guide.steps[index].spokenInstruction,
+      );
+    } catch (_) {
+      // A missing audio engine must not throw from the Help UI.
+    }
+  }
+
+  bool get _autoSpeakTopic {
+    try {
+      final profile = ref.read(preReaderProvider);
+      return profile.enabled && profile.autoSpeakScreens;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -107,7 +149,12 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
           const Divider(height: 1),
           Expanded(
             child: HelpTopicView(
+              key: Key('help-topic-view-${selected.id}'),
               topic: selected,
+              autoSpeakOnOpen: _autoSpeakTopic,
+              pictureFirst: _pictureMode,
+              onListen: () => _listenTopic(selected),
+              onListenStep: (index) => _listenTopicStep(selected, index),
               onBack: () => setState(() => _selectedTopic = null),
               onAction: selected.actionRoute == null
                   ? null
@@ -129,12 +176,68 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
             DesignTokens.space4,
             DesignTokens.space2,
             DesignTokens.space4,
+            DesignTokens.space2,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: FilledButton.tonalIcon(
+              key: const Key('help-picture-mode-button'),
+              onPressed: () => setState(() => _pictureMode = !_pictureMode),
+              icon: Icon(
+                _pictureMode
+                    ? Icons.article_outlined
+                    : Icons.image_outlined,
+                size: 32,
+              ),
+              label: Text(
+                _pictureMode
+                    ? 'Written Help and Search'
+                    : 'Picture and Spoken Help',
+              ),
+            ),
+          ),
+        ),
+        if (_pictureMode)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DesignTokens.space4,
+              vertical: DesignTokens.space2,
+            ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Tap a picture to get help. Listen using the speaker below it.',
+                  ),
+                ),
+                IconButton(
+                  key: const Key('help-picture-instructions'),
+                  tooltip: 'Hear how picture help works',
+                  onPressed: _speakHelpPrompt,
+                  icon: const Icon(Icons.volume_up_rounded, size: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 56,
+                    minHeight: 56,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            DesignTokens.space4,
+            DesignTokens.space2,
+            DesignTokens.space4,
             DesignTokens.space3,
           ),
           child: TextField(
             key: const Key('help-search'),
             controller: _searchController,
-            onChanged: (value) => setState(() => _query = value),
+            onChanged: (value) => setState(() {
+              _query = value;
+              if (value.trim().isNotEmpty) _pictureMode = false;
+            }),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               labelText: 'Search help',
@@ -156,19 +259,25 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
         ),
         const Divider(height: 1),
         Expanded(
-          child: results.isEmpty
-              ? _NoHelpResults(
-                  onOpenSettings: () => _closeHelpAndPush('/settings'),
+          child: _pictureMode
+              ? HelpVisualDirectory(
+                  topics: helpTopics,
+                  onOpen: _openTopic,
+                  onListen: _listenTopic,
                 )
-              : isSearching
-                  ? _SearchResults(
-                      topics: results,
-                      onOpen: _openTopic,
+              : results.isEmpty
+                  ? _NoHelpResults(
+                      onOpenSettings: () => _closeHelpAndPush('/settings'),
                     )
-                  : _CategoryResults(
-                      topics: results,
-                      onOpen: _openTopic,
-                    ),
+                  : isSearching
+                      ? _SearchResults(
+                          topics: results,
+                          onOpen: _openTopic,
+                        )
+                      : _CategoryResults(
+                          topics: results,
+                          onOpen: _openTopic,
+                        ),
         ),
       ],
     );
@@ -204,8 +313,9 @@ class _HelpHeader extends ConsumerWidget {
             key: const Key('help-audio-guide'),
             tooltip: 'Hear instructions',
             onPressed: () {
-              ref.read(preReaderAudioServiceProvider).speak(
-                  'Need help? Tap the ear to hear instructions again, or tap any card to listen.');
+              ref.read(preReaderProvider.notifier).speak(
+                _HelpCenterSheetState._helpIntro,
+              );
             },
             icon: const Icon(Icons.volume_up),
           ),

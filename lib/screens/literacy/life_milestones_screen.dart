@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/help/spoken_help_entry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/pre_reader_provider.dart';
@@ -128,6 +129,8 @@ class _LifeMilestonesScreenState extends ConsumerState<LifeMilestonesScreen> {
           child: ListView(
             padding: const EdgeInsets.all(DesignTokens.space4),
             children: [
+              const SpokenHelpEntry(),
+              const SizedBox(height: DesignTokens.space3),
               // Milestone Category Switcher Chips
               Wrap(
                 spacing: DesignTokens.space2,

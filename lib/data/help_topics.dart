@@ -2,6 +2,59 @@ import 'package:learning_pwa/models/help_topic.dart';
 
 const helpTopics = <HelpTopic>[
   HelpTopic(
+    id: 'start-with-pictures',
+    category: HelpCategory.gettingStarted,
+    title: 'Start with pictures',
+    summary: 'Begin learning with pictures and spoken instructions.',
+    body:
+        'On Learn home, tap Start with Pictures. Next choose Adult or Kids. Then tap Start. Use the separate speaker button to hear these steps without opening the path.',
+    keywords: ['picture help', 'cannot read', 'spoken learning', 'literacy', 'start', 'adult', 'kids'],
+    actionLabel: 'Open Learn Home',
+    actionRoute: '/learn',
+  ),
+  HelpTopic(
+    id: 'choose-adult-kids',
+    category: HelpCategory.gettingStarted,
+    title: 'Choose Adult or Kids',
+    summary: 'Choose the picture-based track that suits the learner.',
+    body:
+        'First open Start with Pictures from Learn home. In the next screen, tap Adult or Kids. After choosing, tap Start. You can change the track later.',
+    keywords: ['adult', 'youth', 'kids', 'track', 'choose', 'pictures'],
+    actionLabel: 'Open Learn Home',
+    actionRoute: '/learn',
+  ),
+  HelpTopic(
+    id: 'hear-pause-replay',
+    category: HelpCategory.gettingStarted,
+    title: 'Hear, pause, and replay',
+    summary: 'Listen to instructions and control the sound.',
+    body:
+        'Tap the speaker to hear instructions. Use the playback controls to Pause, Resume, Restart, or Stop. Restart repeats the full instruction. If your device cannot resume at the exact word, playback may start again.',
+    keywords: ['listen', 'speaker', 'audio', 'pause', 'resume', 'replay', 'restart', 'stop'],
+  ),
+  HelpTopic(
+    id: 'letters-and-pictures',
+    category: HelpCategory.studying,
+    title: 'Letters and pictures',
+    summary: 'Hear letter sounds, choose matching pictures, and practice writing.',
+    body:
+        'From Start with Pictures, choose your track and enter the literacy hub. Choose Letters. Tap the speaker to hear a sound, then select the matching picture. Finger tracing is a separate activity you can choose.',
+    keywords: ['letters', 'phonics', 'alphabet', 'sounds', 'writing', 'tracing', 'literacy'],
+    actionLabel: 'Open Learn Home',
+    actionRoute: '/learn',
+  ),
+  HelpTopic(
+    id: 'life-skills-pictures',
+    category: HelpCategory.studying,
+    title: 'Learn everyday skills',
+    summary: 'Use pictures to explore safety, money, and important life tasks.',
+    body:
+        'In the picture-learning hub, choose Life Topics. Tap a picture for a topic such as road signs, food safety, medicine labels, or money. Use its speaker to hear guidance; go Home if you want to choose something else.',
+    keywords: ['picture lessons', 'life topics', 'money', 'safety', 'road signs', 'health', 'everyday'],
+    actionLabel: 'Open Learn Home',
+    actionRoute: '/learn',
+  ),
+  HelpTopic(
     id: 'find-learning',
     category: HelpCategory.gettingStarted,
     title: 'Find something to learn',
