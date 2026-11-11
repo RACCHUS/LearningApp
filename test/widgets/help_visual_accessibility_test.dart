@@ -102,14 +102,20 @@ void main() {
     expect(speech.lines.length, 1,
         reason: 'Regular readers should not hear automatic narration.');
 
+    await tester.ensureVisible(find.byKey(const Key('help-topic-listen')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('help-topic-listen')));
     await tester.pumpAndSettle();
     expect(speech.lines.last, contains('Then tap Start'));
 
+    await tester.ensureVisible(find.byKey(const Key('help-topic-step-listen-1')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('help-topic-step-listen-1')));
     await tester.pumpAndSettle();
     expect(speech.lines.last, contains('Next, choose Adult or Kids'));
 
+    await tester.ensureVisible(find.byKey(const Key('help-topic-back')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('help-topic-back')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('help-visual-directory')), findsOneWidget);
