@@ -115,7 +115,6 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   }
 
   bool get _autoSpeakTopic {
-    if (!_pictureMode) return false;
     try {
       final profile = ref.read(preReaderProvider);
       return profile.enabled && profile.autoSpeakScreens;
