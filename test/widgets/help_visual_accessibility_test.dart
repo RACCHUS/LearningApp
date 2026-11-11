@@ -108,13 +108,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(speech.lines.last, contains('Then tap Start'));
 
-    await tester.ensureVisible(find.byKey(const Key('help-topic-step-listen-1')));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('help-topic-step-listen-1')),
+      160,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('help-topic-step-listen-1')));
     await tester.pumpAndSettle();
     expect(speech.lines.last, contains('Next, choose Adult or Kids'));
 
-    await tester.ensureVisible(find.byKey(const Key('help-topic-back')));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('help-topic-back')),
+      -160,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('help-topic-back')));
     await tester.pumpAndSettle();
