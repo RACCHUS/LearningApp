@@ -104,6 +104,54 @@ void main() {
     expect(find.text('LEARN PAGE'), findsOneWidget);
   });
 
+  for (final autoSpeak in <bool>[true, false]) {
+    testWidgets(
+        'pre-reader picture Help auto-speak is ' +
+            (autoSpeak ? 'enabled' : 'disabled'),
+        (tester) async {
+      final speech = _RecordingHelpSpeech();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preReaderAudioServiceProvider.overrideWithValue(speech),
+            preReaderProvider.overrideWith(
+              (ref) => PreReaderNotifier(
+                audioService: speech,
+                initialProfile: PreReaderProfile(
+                  enabled: true,
+                  autoSpeakScreens: autoSpeak,
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: AppBar(actions: const [HelpAction()]),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Help'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('help-visual-directory')), findsOneWidget);
+      expect(
+        speech.lines.any((line) => line.contains('Pictures are shown below')),
+        autoSpeak,
+      );
+
+      await tester.tap(
+          find.byKey(const Key('help-picture-open-find-learning')));
+      await tester.pumpAndSettle();
+
+      expect(
+        speech.lines.any((line) => line.contains('First, open Library')),
+        autoSpeak,
+      );
+    });
+  }
+
   testWidgets('typing a search immediately opens the original written index',
       (tester) async {
     await tester.pumpWidget(
