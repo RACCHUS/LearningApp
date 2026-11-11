@@ -23,13 +23,16 @@ setup. Written search remains available.
    ordered spoken guidance; keep revising these steps from observed user behavior.
 4. Each Help article has a large narration button and per-step replay buttons,
    plus its original full text and route action.
-5. Use the pre-reader provider's existing audio service and track-aware speech;
+5. Expose a large picture-and-audio Help entry above navigation on the
+   foundational literacy, life-skill and life-milestone hubs, without
+   overcrowding their app bars.
+6. Use the pre-reader provider's existing audio service and track-aware speech;
    **do not** add another TTS player. PR #223's global overlay provides
    pause/resume/restart/stop for narration, with platform fallbacks.
-6. Automatically narrate the Help introduction for configured pre-readers
+7. Automatically narrate the Help introduction for configured pre-readers
    only when auto-speak is on; automatically narrate a picture-opened article
    only for these configured pre-readers. Other users can select Listen.
-7. Retain Help's no-login and offline behavior. Do not force permissions,
+8. Retain Help's no-login and offline behavior. Do not force permissions,
    mutate learner progress, or require an external voice API.
 
 ## Follow-on work before claiming full non-reader independence
