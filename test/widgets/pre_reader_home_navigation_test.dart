@@ -6,6 +6,7 @@ import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/pre_reader_audio_service.dart';
 import 'package:learning_pwa/widgets/literacy/pre_reader_entry_banner.dart';
+import 'package:learning_pwa/widgets/learn/zero_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RecordingSpeech extends PreReaderAudioService {
@@ -111,24 +112,15 @@ void main() {
     expect(find.text('Literacy destination'), findsOneWidget);
   });
 
-  testWidgets('regular homepage navigation does not open literacy',
+  testWidgets('actual Learn zero-state explore action opens Library, not literacy',
       (tester) async {
     final router = GoRouter(
       initialLocation: '/learn',
       routes: [
         GoRoute(
           path: '/learn',
-          builder: (context, state) => Scaffold(
-            body: Column(
-              children: [
-                TextButton(
-                  key: const Key('library-action'),
-                  onPressed: () => context.go('/library'),
-                  child: const Text('Explore library'),
-                ),
-                const PreReaderEntryBanner(),
-              ],
-            ),
+          builder: (context, state) => const Scaffold(
+            body: SingleChildScrollView(child: LearnZeroState()),
           ),
         ),
         GoRoute(
@@ -144,7 +136,7 @@ void main() {
       child: MaterialApp.router(routerConfig: router),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('library-action')));
+    await tester.tap(find.byKey(const Key('zero-explore-learning-btn')));
     await tester.pumpAndSettle();
     expect(find.text('Library destination'), findsOneWidget);
   });
