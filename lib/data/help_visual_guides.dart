@@ -25,6 +25,11 @@ class HelpVisualGuide {
 }
 
 IconData helpIconForTopic(HelpTopic topic) => switch (topic.id) {
+      'start-with-pictures' => Icons.image_outlined,
+      'choose-adult-kids' => Icons.people_outline_rounded,
+      'hear-pause-replay' => Icons.volume_up_rounded,
+      'letters-and-pictures' => Icons.abc_rounded,
+      'life-skills-pictures' => Icons.health_and_safety_outlined,
       'find-learning' => Icons.search_rounded,
       'learning-paths' => Icons.route_rounded,
       'study-timer-breaks' => Icons.timer_outlined,
@@ -48,6 +53,111 @@ IconData helpIconForTopic(HelpTopic topic) => switch (topic.id) {
 HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
   final icon = helpIconForTopic(topic);
   switch (topic.id) {
+    case 'start-with-pictures':
+      return const HelpVisualGuide(
+        icon: Icons.image_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.image_outlined,
+            label: 'Tap Start with Pictures',
+            spokenInstruction: 'First, on Learn home, tap the large Start with Pictures button.',
+          ),
+          HelpVisualStep(
+            icon: Icons.people_outline_rounded,
+            label: 'Choose Adult or Kids',
+            spokenInstruction: 'Next, choose Adult or Kids using the picture options.',
+          ),
+          HelpVisualStep(
+            icon: Icons.play_circle_outline,
+            label: 'Tap Start',
+            spokenInstruction: 'Then tap Start to begin learning with pictures and sound.',
+          ),
+        ],
+      );
+    case 'choose-adult-kids':
+      return const HelpVisualGuide(
+        icon: Icons.people_outline_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.image_outlined,
+            label: 'Open picture learning',
+            spokenInstruction: 'First tap Start with Pictures on the Learn home screen.',
+          ),
+          HelpVisualStep(
+            icon: Icons.people_outline_rounded,
+            label: 'Choose your track',
+            spokenInstruction: 'Select the Adult picture or the Kids picture. Nothing starts until you choose.',
+          ),
+          HelpVisualStep(
+            icon: Icons.play_circle_outline,
+            label: 'Start learning',
+            spokenInstruction: 'Tap Start to begin. You can switch between Adult and Kids later.',
+          ),
+        ],
+      );
+    case 'hear-pause-replay':
+      return const HelpVisualGuide(
+        icon: Icons.volume_up_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.volume_up_rounded,
+            label: 'Listen',
+            spokenInstruction: 'Tap a speaker picture to hear an instruction.',
+          ),
+          HelpVisualStep(
+            icon: Icons.pause_circle_outline,
+            label: 'Pause or resume',
+            spokenInstruction: 'Use Pause to stop briefly. Use Resume to hear more.',
+          ),
+          HelpVisualStep(
+            icon: Icons.replay_rounded,
+            label: 'Restart or stop',
+            spokenInstruction: 'Restart repeats the whole instruction. Stop ends it. On some devices Resume also restarts.',
+          ),
+        ],
+      );
+    case 'letters-and-pictures':
+      return const HelpVisualGuide(
+        icon: Icons.abc_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.image_outlined,
+            label: 'Open Letters',
+            spokenInstruction: 'Enter picture learning and choose Letters.',
+          ),
+          HelpVisualStep(
+            icon: Icons.hearing_outlined,
+            label: 'Hear a sound',
+            spokenInstruction: 'Tap the speaker to listen to the letter sound.',
+          ),
+          HelpVisualStep(
+            icon: Icons.touch_app_outlined,
+            label: 'Choose or trace',
+            spokenInstruction: 'Tap the matching picture, or choose the separate finger-tracing activity.',
+          ),
+        ],
+      );
+    case 'life-skills-pictures':
+      return const HelpVisualGuide(
+        icon: Icons.health_and_safety_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.image_outlined,
+            label: 'Open Life Topics',
+            spokenInstruction: 'Inside picture learning, choose Life Topics.',
+          ),
+          HelpVisualStep(
+            icon: Icons.touch_app_outlined,
+            label: 'Choose a picture',
+            spokenInstruction: 'Tap a picture for safety, money, or another everyday topic.',
+          ),
+          HelpVisualStep(
+            icon: Icons.volume_up_rounded,
+            label: 'Listen and practice',
+            spokenInstruction: 'Tap the speaker to hear guidance. Use Home to return when you are done.',
+          ),
+        ],
+      );
     case 'find-learning':
       return const HelpVisualGuide(
         icon: Icons.search_rounded,
