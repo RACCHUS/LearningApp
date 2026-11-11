@@ -331,7 +331,9 @@ class _FoundationalLiteracyScreenState
                           if (!mounted ||
                               _activeSection != LiteracyHubSection.letters ||
                               _activeLetterSubTab != 0 ||
-                              _activeItemIndex != completedIndex) return;
+                              _activeItemIndex != completedIndex) {
+                            return;
+                          }
                           setState(() => _activeItemIndex++);
                           if (ref.read(preReaderProvider).autoSpeakScreens) {
                             _announceCurrentActivity();
