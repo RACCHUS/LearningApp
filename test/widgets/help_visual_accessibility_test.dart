@@ -83,19 +83,19 @@ void main() {
     expect(find.byKey(const Key('help-search')), findsOneWidget);
     expect(speech.lines, isEmpty);
 
-    await tester.tap(find.byKey(const Key('help-picture-listen-find-learning')));
+    await tester.tap(find.byKey(const Key('help-picture-listen-start-with-pictures')));
     await tester.pumpAndSettle();
 
-    expect(speech.lines.last, contains('First, open Library'));
+    expect(speech.lines.last, contains('First, on Learn home'));
     expect(
-      find.byKey(const Key('help-topic-view-find-learning')),
+      find.byKey(const Key('help-topic-view-start-with-pictures')),
       findsNothing,
     );
 
-    await tester.tap(find.byKey(const Key('help-picture-open-find-learning')));
+    await tester.tap(find.byKey(const Key('help-picture-open-start-with-pictures')));
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const Key('help-topic-view-find-learning')),
+      find.byKey(const Key('help-topic-view-start-with-pictures')),
       findsOneWidget,
     );
     expect(find.byKey(const Key('help-topic-listen')), findsOneWidget);
@@ -104,11 +104,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('help-topic-listen')));
     await tester.pumpAndSettle();
-    expect(speech.lines.last, contains('Then select the available'));
+    expect(speech.lines.last, contains('Then tap Start'));
 
     await tester.tap(find.byKey(const Key('help-topic-step-listen-1')));
     await tester.pumpAndSettle();
-    expect(speech.lines.last, contains('Next, choose'));
+    expect(speech.lines.last, contains('Next, choose Adult or Kids'));
 
     await tester.tap(find.byKey(const Key('help-topic-back')));
     await tester.pumpAndSettle();
@@ -161,11 +161,11 @@ void main() {
       );
 
       await tester.tap(
-          find.byKey(const Key('help-picture-open-find-learning')));
+          find.byKey(const Key('help-picture-open-start-with-pictures')));
       await tester.pumpAndSettle();
 
       expect(
-        speech.lines.any((line) => line.contains('First, open Library')),
+        speech.lines.any((line) => line.contains('First, on Learn home')),
         autoSpeak,
       );
     });
