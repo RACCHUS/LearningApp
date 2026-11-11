@@ -7,6 +7,7 @@ import 'package:learning_pwa/models/pre_reader_profile.dart';
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/services/pre_reader_audio_service.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
+import 'package:learning_pwa/widgets/help/spoken_help_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RecordingHelpSpeech extends PreReaderAudioService {
@@ -35,6 +36,24 @@ void main() {
         expect(step.spokenInstruction.trim(), isNotEmpty, reason: topic.id);
       }
     }
+  });
+
+  testWidgets('large literacy Help entry opens pictures without typing',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: EdgeInsets.all(12),
+            child: SpokenHelpEntry(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('spoken-help-entry')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('help-visual-directory')), findsOneWidget);
   });
 
   testWidgets('pictures work before typing and Listen does not navigate',
