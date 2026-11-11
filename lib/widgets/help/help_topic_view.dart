@@ -13,6 +13,7 @@ class HelpTopicView extends StatefulWidget {
   final VoidCallback? onListen;
   final ValueChanged<int>? onListenStep;
   final bool autoSpeakOnOpen;
+  final bool pictureFirst;
 
   const HelpTopicView({
     super.key,
@@ -22,6 +23,7 @@ class HelpTopicView extends StatefulWidget {
     this.onListen,
     this.onListenStep,
     this.autoSpeakOnOpen = false,
+    this.pictureFirst = false,
   });
 
   @override
@@ -95,6 +97,22 @@ class _HelpTopicViewState extends State<HelpTopicView> {
             label: const Text('Hear this help'),
           ),
         ),
+        if (!widget.pictureFirst) ...[
+          const SizedBox(height: DesignTokens.space3),
+          Text(topic.body, style: theme.textTheme.bodyLarge),
+        ],
+        if (topic.actionLabel != null && widget.onAction != null) ...[
+          const SizedBox(height: DesignTokens.space3),
+          SizedBox(
+            height: 56,
+            child: FilledButton.icon(
+              key: Key('help-topic-action-${topic.id}'),
+              onPressed: widget.onAction,
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: Text(topic.actionLabel!),
+            ),
+          ),
+        ],
         const SizedBox(height: DesignTokens.space3),
         ...guide.steps.asMap().entries.map((entry) {
           final index = entry.key;
@@ -141,19 +159,9 @@ class _HelpTopicViewState extends State<HelpTopicView> {
             ),
           );
         }),
-        const SizedBox(height: DesignTokens.space3),
-        Text(topic.body, style: theme.textTheme.bodyLarge),
-        if (topic.actionLabel != null && widget.onAction != null) ...[
-          const SizedBox(height: DesignTokens.space5),
-          SizedBox(
-            height: 56,
-            child: FilledButton.icon(
-              key: Key('help-topic-action-${topic.id}'),
-              onPressed: widget.onAction,
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: Text(topic.actionLabel!),
-            ),
-          ),
+        if (widget.pictureFirst) ...[
+          const SizedBox(height: DesignTokens.space3),
+          Text(topic.body, style: theme.textTheme.bodyLarge),
         ],
       ],
     );
