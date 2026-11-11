@@ -78,10 +78,10 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
   }
 
   static const _helpIntro =
-      'Need help? Tap Picture and Spoken Help to see pictures. '
+      'Need help? Pictures are shown below. '
       'Tap a picture to open its instructions. '
       'Tap the speaker below any picture to hear what it means. '
-      'You can switch back to written help and search at any time.';
+      'You can also use the search box, or switch to written help.';
 
   void _speakHelpPrompt() {
     try {
@@ -266,18 +266,18 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
                   onListen: _listenTopic,
                 )
               : results.isEmpty
-              ? _NoHelpResults(
-                  onOpenSettings: () => _closeHelpAndPush('/settings'),
-                )
-              : isSearching
-                  ? _SearchResults(
-                      topics: results,
-                      onOpen: _openTopic,
+                  ? _NoHelpResults(
+                      onOpenSettings: () => _closeHelpAndPush('/settings'),
                     )
-                  : _CategoryResults(
-                      topics: results,
-                      onOpen: _openTopic,
-                    ),
+                  : isSearching
+                      ? _SearchResults(
+                          topics: results,
+                          onOpen: _openTopic,
+                        )
+                      : _CategoryResults(
+                          topics: results,
+                          onOpen: _openTopic,
+                        ),
         ),
       ],
     );
@@ -314,7 +314,8 @@ class _HelpHeader extends ConsumerWidget {
             tooltip: 'Hear instructions',
             onPressed: () {
               ref.read(preReaderProvider.notifier).speak(
-                  _HelpCenterSheetState._helpIntro);
+                _HelpCenterSheetState._helpIntro,
+              );
             },
             icon: const Icon(Icons.volume_up),
           ),
