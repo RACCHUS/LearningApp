@@ -152,6 +152,7 @@ class _HelpCenterSheetState extends ConsumerState<HelpCenterSheet> {
               key: Key('help-topic-view-${selected.id}'),
               topic: selected,
               autoSpeakOnOpen: _autoSpeakTopic,
+              pictureFirst: _pictureMode,
               onListen: () => _listenTopic(selected),
               onListenStep: (index) => _listenTopicStep(selected, index),
               onBack: () => setState(() => _selectedTopic = null),
