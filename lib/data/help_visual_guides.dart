@@ -153,6 +153,197 @@ HelpVisualGuide helpVisualGuideFor(HelpTopic topic) {
           ),
         ],
       );
+
+    case 'focus-mode':
+      return const HelpVisualGuide(
+        icon: Icons.center_focus_strong_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.menu_book_outlined,
+            label: 'Open a lesson',
+            spokenInstruction: 'First, open something you are studying.',
+          ),
+          HelpVisualStep(
+            icon: Icons.center_focus_strong_rounded,
+            label: 'Choose Focus',
+            spokenInstruction: 'If Focus mode is available, turn it on to hide distractions.',
+          ),
+          HelpVisualStep(
+            icon: Icons.fullscreen_exit_rounded,
+            label: 'Return to normal',
+            spokenInstruction: 'Turn Focus mode off to see the usual controls again.',
+          ),
+        ],
+      );
+    case 'study-batch-size':
+      return const HelpVisualGuide(
+        icon: Icons.view_carousel_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.settings_outlined,
+            label: 'Open Settings',
+            spokenInstruction: 'Open Settings to change the number of cards in a session.',
+          ),
+          HelpVisualStep(
+            icon: Icons.style_outlined,
+            label: 'Choose a number',
+            spokenInstruction: 'Choose fewer cards for a short session, or more cards for a longer one.',
+          ),
+        ],
+      );
+    case 'recall-before-reveal':
+      return const HelpVisualGuide(
+        icon: Icons.psychology_alt_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.psychology_alt_outlined,
+            label: 'Try to remember',
+            spokenInstruction: 'Before you see an answer, try to remember it yourself.',
+          ),
+          HelpVisualStep(
+            icon: Icons.visibility_outlined,
+            label: 'Then reveal',
+            spokenInstruction: 'Reveal the answer and check if you remembered it.',
+          ),
+          HelpVisualStep(
+            icon: Icons.settings_outlined,
+            label: 'Change this option',
+            spokenInstruction: 'You can turn Recall before reveal on or off in Settings.',
+          ),
+        ],
+      );
+    case 'words':
+      return const HelpVisualGuide(
+        icon: Icons.abc_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.menu_book_outlined,
+            label: 'Find Words',
+            spokenInstruction: 'Open Library and find Words.',
+          ),
+          HelpVisualStep(
+            icon: Icons.edit_note_outlined,
+            label: 'Make a word list',
+            spokenInstruction: 'Create a list of words you want to practice.',
+          ),
+          HelpVisualStep(
+            icon: Icons.record_voice_over_outlined,
+            label: 'Practice spelling',
+            spokenInstruction: 'Practice spelling those words and check your answers.',
+          ),
+        ],
+      );
+    case 'flashcards':
+      return const HelpVisualGuide(
+        icon: Icons.style_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.style_outlined,
+            label: 'Open cards',
+            spokenInstruction: 'Open a set of flashcards to practice.',
+          ),
+          HelpVisualStep(
+            icon: Icons.psychology_alt_outlined,
+            label: 'Remember first',
+            spokenInstruction: 'Look at the question and try to remember the answer.',
+          ),
+          HelpVisualStep(
+            icon: Icons.visibility_outlined,
+            label: 'Reveal and review',
+            spokenInstruction: 'Reveal the answer, then keep practicing the ones you need.',
+          ),
+        ],
+      );
+    case 'mock-exams':
+      return const HelpVisualGuide(
+        icon: Icons.assignment_turned_in_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.menu_book_outlined,
+            label: 'Choose an exam',
+            spokenInstruction: 'Open Library and choose the exam you are preparing for.',
+          ),
+          HelpVisualStep(
+            icon: Icons.assignment_outlined,
+            label: 'Find practice',
+            spokenInstruction: 'If a mock exam is available, select it when you are ready.',
+          ),
+          HelpVisualStep(
+            icon: Icons.fact_check_outlined,
+            label: 'Review results',
+            spokenInstruction: 'After practicing, look at the feedback to decide what to study.',
+          ),
+        ],
+      );
+    case 'completion-retention':
+      return const HelpVisualGuide(
+        icon: Icons.insights_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.check_circle_outline,
+            label: 'Completed work',
+            spokenInstruction: 'Completion shows how much learning activity you finished.',
+          ),
+          HelpVisualStep(
+            icon: Icons.psychology_alt_outlined,
+            label: 'What you remember',
+            spokenInstruction: 'Retention shows information about what you have remembered during practice. These are different measures.',
+          ),
+        ],
+      );
+    case 'daily-study-goal':
+      return const HelpVisualGuide(
+        icon: Icons.flag_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.settings_outlined,
+            label: 'Open Settings',
+            spokenInstruction: 'Open Settings if you want to set a daily study goal.',
+          ),
+          HelpVisualStep(
+            icon: Icons.timer_outlined,
+            label: 'Choose your time',
+            spokenInstruction: 'Choose how long you would like to study each day. A goal is optional.',
+          ),
+        ],
+      );
+    case 'motivation':
+      return const HelpVisualGuide(
+        icon: Icons.emoji_events_outlined,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.emoji_events_outlined,
+            label: 'Celebrate practice',
+            spokenInstruction: 'Some learning activities can show points or celebrations.',
+          ),
+          HelpVisualStep(
+            icon: Icons.settings_outlined,
+            label: 'Choose what you like',
+            spokenInstruction: 'Check Settings to change optional motivation features.',
+          ),
+        ],
+      );
+    case 'create-learning-goal':
+      return const HelpVisualGuide(
+        icon: Icons.add_circle_outline_rounded,
+        steps: [
+          HelpVisualStep(
+            icon: Icons.menu_book_outlined,
+            label: 'Open Library',
+            spokenInstruction: 'Open Library to make something of your own.',
+          ),
+          HelpVisualStep(
+            icon: Icons.add_circle_outline_rounded,
+            label: 'Choose Create',
+            spokenInstruction: 'Choose Create, then choose what you want to make.',
+          ),
+          HelpVisualStep(
+            icon: Icons.check_circle_outline,
+            label: 'Save your choice',
+            spokenInstruction: 'Follow the steps shown to finish creating your learning item.',
+          ),
+        ],
+      );
     default:
       return HelpVisualGuide(
         icon: icon,
