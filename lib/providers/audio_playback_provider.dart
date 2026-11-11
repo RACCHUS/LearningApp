@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 import 'package:learning_pwa/services/audio_service.dart';
@@ -16,13 +17,18 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
 
   final AudioService _audioService = AudioService();
   final VoiceInputService _voiceService = VoiceInputService();
+  StreamSubscription<AudioState>? _audioSubscription;
+  StreamSubscription<AudioState>? _voiceSubscription;
 
   Future<void> _initialize() async {
     await _audioService.initialize();
+    if (!mounted) return;
     await _voiceService.initialize();
+    if (!mounted) return;
 
     // Listen to audio service state changes
-    _audioService.stateStream.listen((audioState) {
+    _audioSubscription = _audioService.stateStream.listen((audioState) {
+      if (!mounted) return;
       state = state.copyWith(
         playbackState: audioState.playbackState,
         currentText: audioState.currentText,
@@ -34,7 +40,8 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
     });
 
     // Listen to voice service state changes
-    _voiceService.stateStream.listen((voiceState) {
+    _voiceSubscription = _voiceService.stateStream.listen((voiceState) {
+      if (!mounted) return;
       state = state.copyWith(
         voiceInputState: voiceState.voiceInputState,
         recognizedText: voiceState.recognizedText,
@@ -186,8 +193,10 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
   // Dispose resources
   @override
   void dispose() {
-    _voiceService.dispose();
-    _audioService.dispose();
+    _audioSubscription?.cancel();
+    _voiceSubscription?.cancel();
+    // Both services are process-wide singletons. Never close their streams
+    // when this particular Riverpod listener leaves the widget tree.
     super.dispose();
   }
 }
