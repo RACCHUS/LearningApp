@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/lesson_json_validator.dart';
 import 'package:learning_pwa/widgets/content_quality_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 
 /// Enhanced JSON import widget with live preview, better validation, and improved UX
 class EnhancedJsonImportWidget extends StatefulWidget {
@@ -91,7 +92,9 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       final prefs = await SharedPreferences.getInstance();
       
       // Extract lesson title and timestamp
-      final lesson = lessonData['lesson'] as Map<String, dynamic>? ?? {};
+      final lesson = lessonData['lesson'] is Map<String, dynamic>
+          ? lessonData['lesson'] as Map<String, dynamic>
+          : lessonData;
       final title = lesson['title']?.toString() ?? 'Untitled Lesson';
       final timestamp = DateTime.now().toIso8601String();
       
@@ -150,24 +153,40 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     try {
       final parsed = jsonDecode(jsonText) as Map<String, dynamic>;
       
-      // Enhanced validation with detailed feedback
-      final validationResult = LessonJsonValidator.validate(parsed);
-      
-      if (!validationResult.isValid) {
+      // The importer's own normalize + preflight decides importability, so
+      // a green preview cannot end in an import error (plan v2.6 §14.9).
+      final preview = LessonImportService.preview(parsed);
+      final isEnvelope = parsed['lesson'] is Map;
+      // Quality tips only; they never block import.
+      final tips = isEnvelope
+          ? LessonJsonValidator.validate(parsed).warnings
+          : const <String>[];
+      final notSaved = preview.draft.notSaved.isEmpty
+          ? const <String>[]
+          : [
+              'Not saved (personal lessons cannot store these yet): '
+                  '${preview.draft.notSaved.join(', ')}',
+            ];
+
+      if (!preview.canImport) {
         setState(() {
-          _validationError = _formatValidationErrors(validationResult.errors);
-          _validationWarnings = validationResult.warnings;
-          _validationSuggestions = _generateSuggestions(validationResult.errors);
+          _validationError = _formatValidationErrors(
+            preview.issues.map((i) => i.toString()).toList(),
+          );
+          _validationWarnings = [...notSaved, ...tips];
+          _validationSuggestions = _generateSuggestions(
+            preview.issues.map((i) => i.message).toList(),
+          );
           _parsedJson = null;
           _lessonPreview = null;
         });
       } else {
         setState(() {
           _validationError = null;
-          _validationWarnings = validationResult.warnings;
+          _validationWarnings = [...notSaved, ...tips];
           _validationSuggestions.clear();
           _parsedJson = parsed;
-          _lessonPreview = _generateLessonPreview(parsed);
+          _lessonPreview = _generateLessonPreview(parsed, preview);
         });
       }
     } catch (e) {
@@ -238,22 +257,29 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
     return suggestions;
   }
 
-  Map<String, dynamic> _generateLessonPreview(Map<String, dynamic> json) {
-    final lesson = json['lesson'] as Map<String, dynamic>? ?? {};
-    final content = json['content'] as List? ?? [];
-    
+  Map<String, dynamic> _generateLessonPreview(
+    Map<String, dynamic> json,
+    LessonImportPreview preview,
+  ) {
+    final lesson = json['lesson'] is Map<String, dynamic>
+        ? json['lesson'] as Map<String, dynamic>
+        : json;
+    final total =
+        preview.termCount + preview.conceptCount + preview.questionCount;
+
     return {
       'title': lesson['title'] ?? 'Untitled Lesson',
       'description': lesson['description'] ?? 'No description provided',
       'difficulty': lesson['difficulty_level'] ?? 'beginner',
       'duration': lesson['estimated_duration_minutes'] ?? 30,
       'tags': lesson['tags'] ?? [],
+      // Counts of what will actually be saved after normalization.
       'contentStats': {
-        'total': content.length,
-        'terms': content.where((item) => item['type'] == 'term').length,
-        'concepts': content.where((item) => item['type'] == 'concept').length,
-        'mcqs': content.where((item) => item['type'] == 'mcq').length,
-        'text': content.where((item) => item['type'] == 'text').length,
+        'total': total,
+        'terms': preview.termCount,
+        'concepts': preview.conceptCount,
+        'mcqs': preview.questionCount,
+        'text': 0,
       },
     };
   }

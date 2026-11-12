@@ -7,6 +7,7 @@ import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/services/lesson/lesson_crud_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_content_service.dart';
+import 'package:learning_pwa/services/lesson/lesson_dialect_normalizer.dart';
 import 'package:uuid/uuid.dart';
 
 /// One problem found while validating a lesson import payload.
@@ -76,6 +77,25 @@ class LessonImportIncompleteException implements Exception {
           '($cause)';
 }
 
+/// Result of [LessonImportService.preview]: what would be imported.
+class LessonImportPreview {
+  const LessonImportPreview._(
+    this.draft,
+    this.issues,
+    this.termCount,
+    this.conceptCount,
+    this.questionCount,
+  );
+
+  final NormalizedLessonDraft draft;
+  final List<LessonImportIssue> issues;
+  final int termCount;
+  final int conceptCount;
+  final int questionCount;
+
+  bool get canImport => issues.isEmpty;
+}
+
 /// Validated, ready-to-write content for one lesson.
 class _PreparedLesson {
   final List<Term> terms = [];
@@ -111,7 +131,15 @@ class LessonImportService {
   Future<Lesson> importLessonFromJson(String jsonString, String userId) async {
     debugPrint('🔍 DEBUG: Importing lesson from JSON for user: $userId');
 
-    final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+    final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
+
+    // Every creation route (flat, guided, Builder, Quick Generate) is
+    // normalized to one personal contract before validation (plan §14.9).
+    final draft = LessonDialectNormalizer.normalize(decoded);
+    if (draft.issues.isNotEmpty) {
+      throw LessonImportValidationException(_dialectIssues(draft));
+    }
+    final jsonData = draft.personal;
 
     final title = jsonData['title']?.toString();
     if (title == null || title.trim().isEmpty) {
@@ -144,7 +172,43 @@ class LessonImportService {
   /// Validates every item and returns the issues found (empty when the
   /// payload is safe to import). Exposed for preview UIs and tests.
   List<LessonImportIssue> validatePayload(Map<String, dynamic> jsonData) =>
-      _prepareContent(jsonData, '').issues;
+      preview(jsonData).issues;
+
+  /// The exact normalization + validation the importer runs, without
+  /// writing anything. Preview UIs use this so a green preview cannot end
+  /// in an import error (plan §14.9 repair 5).
+  static LessonImportPreview preview(Map<String, dynamic> raw) {
+    final draft = LessonDialectNormalizer.normalize(raw);
+    if (draft.issues.isNotEmpty) {
+      return LessonImportPreview._(draft, _dialectIssues(draft), 0, 0, 0);
+    }
+    final title = draft.personal['title']?.toString();
+    final prepared = _prepareContent(draft.personal, '');
+    return LessonImportPreview._(
+      draft,
+      [
+        if (title == null || title.trim().isEmpty)
+          const LessonImportIssue(
+            path: 'title',
+            code: 'missing_field',
+            message: 'Lesson title is required.',
+          ),
+        ...prepared.issues,
+      ],
+      prepared.terms.length,
+      prepared.concepts.length,
+      prepared.questions.length,
+    );
+  }
+
+  static List<LessonImportIssue> _dialectIssues(NormalizedLessonDraft draft) =>
+      draft.issues
+          .map((i) => LessonImportIssue(
+                path: i.path.isEmpty ? '(document)' : i.path,
+                code: i.code,
+                message: i.message,
+              ))
+          .toList();
 
   Future<void> _writeContent(String lessonId, _PreparedLesson prepared) async {
     final stages = <String, Future<void> Function()>{
@@ -191,10 +255,11 @@ class LessonImportService {
 
   /// Converts and validates all terms, questions, concepts and generic
   /// content items. Collects every problem instead of stopping at the first.
-  _PreparedLesson _prepareContent(Map<String, dynamic> jsonData, String userId) {
+  static _PreparedLesson _prepareContent(Map<String, dynamic> jsonData, String userId) {
     final prepared = _PreparedLesson();
 
     void listOf(String key, void Function(Map<String, dynamic>, String) each) {
+      // Normalized items carry their original location (e.g. content[3]).
       final raw = jsonData[key];
       if (raw == null) return;
       if (raw is! List) {
@@ -207,7 +272,8 @@ class LessonImportService {
       }
       for (var i = 0; i < raw.length; i++) {
         final item = raw[i];
-        final path = '$key[$i]';
+        final sourcePath = item is Map ? item['_source_path'] : null;
+        final path = sourcePath is String ? sourcePath : '$key[$i]';
         if (item is! Map<String, dynamic>) {
           prepared.issues.add(LessonImportIssue(
             path: path,
@@ -243,7 +309,7 @@ class LessonImportService {
     return prepared;
   }
 
-  void _prepareTerm(Map<String, dynamic> t, String path, String userId,
+  static void _prepareTerm(Map<String, dynamic> t, String path, String userId,
       _PreparedLesson prepared) {
     final term = t['term']?.toString() ?? '';
     final definition = t['definition']?.toString() ?? '';
@@ -264,7 +330,7 @@ class LessonImportService {
     ));
   }
 
-  void _prepareConcept(Map<String, dynamic> c, String path, String userId,
+  static void _prepareConcept(Map<String, dynamic> c, String path, String userId,
       _PreparedLesson prepared) {
     final text = c['concept_text']?.toString() ?? c['title']?.toString() ?? '';
     if (text.trim().isEmpty) {
@@ -284,7 +350,7 @@ class LessonImportService {
     ));
   }
 
-  void _prepareQuestion(Map<String, dynamic> q, String path, String userId,
+  static void _prepareQuestion(Map<String, dynamic> q, String path, String userId,
       _PreparedLesson prepared) {
     void issue(String field, String code, String message) =>
         prepared.issues.add(LessonImportIssue(
@@ -317,8 +383,12 @@ class LessonImportService {
     // An unresolved key flagged by the guided assembler stays unresolved.
     final flagged = q['_answer_error']?.toString();
     if (flagged != null) {
-      issue('correct_answer', flagged,
-          'This question has no clear correct answer. Choose one before importing.');
+      issue(
+          'correct_answer',
+          flagged,
+          q['_answer_error_detail']?.toString() ??
+              'This question has no clear correct answer. Choose one '
+                  'before importing.');
       return;
     }
 

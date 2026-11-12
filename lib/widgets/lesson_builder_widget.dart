@@ -6,9 +6,10 @@ import 'lesson/term_content_form.dart';
 import 'lesson/mcq_content_form.dart';
 import 'lesson/concept_content_form.dart';
 import 'lesson/content_preview_list.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 
 /// Refactored lesson builder widget with extracted components
-/// 
+///
 /// This widget now orchestrates the lesson creation process using
 /// smaller, focused components instead of being a monolithic widget.
 class LessonBuilderWidget extends StatefulWidget {
@@ -18,7 +19,8 @@ class LessonBuilderWidget extends StatefulWidget {
     required String description,
     required List<String> tags,
     required List<Map<String, dynamic>> content,
-  }) onCreateLesson;
+  })
+  onCreateLesson;
 
   const LessonBuilderWidget({
     super.key,
@@ -33,22 +35,22 @@ class LessonBuilderWidget extends StatefulWidget {
 class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Lesson metadata controllers
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagController = TextEditingController();
   final List<String> _tags = [];
-  
+
   // Content management
   late TabController _contentTabController;
   final List<Map<String, dynamic>> _contentItems = [];
-  
+
   // Term content controllers
   final _termController = TextEditingController();
   final _definitionController = TextEditingController();
   final _exampleController = TextEditingController();
-  
+
   // MCQ content controllers
   final _questionController = TextEditingController();
   final List<TextEditingController> _optionControllers = [
@@ -58,8 +60,10 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
     TextEditingController(),
   ];
   final _explanationController = TextEditingController();
-  int _correctAnswer = 0;
-  
+
+  /// Explicitly chosen correct option; never defaulted to option A.
+  int? _correctAnswer;
+
   // Concept content controllers
   final _conceptTitleController = TextEditingController();
   final _conceptDescriptionController = TextEditingController();
@@ -83,21 +87,21 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
     _descriptionController.dispose();
     _tagController.dispose();
     _contentTabController.dispose();
-    
+
     _termController.dispose();
     _definitionController.dispose();
     _exampleController.dispose();
-    
+
     _questionController.dispose();
     for (final controller in _optionControllers) {
       controller.dispose();
     }
     _explanationController.dispose();
-    
+
     _conceptTitleController.dispose();
     _conceptDescriptionController.dispose();
     _conceptKeyPointsController.dispose();
-    
+
     super.dispose();
   }
 
@@ -110,9 +114,9 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
         _tagController.clear();
       });
     } else if (_tags.length >= 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 10 tags allowed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Maximum 10 tags allowed')));
     }
   }
 
@@ -152,19 +156,43 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
 
   void _addQuestionContent() {
     final question = _questionController.text.trim();
-    final options = _optionControllers
+    final rawOptions = _optionControllers
         .map((controller) => controller.text.trim())
-        .where((option) => option.isNotEmpty)
         .toList();
+    // Blank options are dropped, so map the chosen option to its position in
+    // the kept list instead of reusing a now-shifted index.
+    final options = rawOptions.where((option) => option.isNotEmpty).toList();
     final explanation = _explanationController.text.trim();
 
     if (question.isNotEmpty && options.length >= 2) {
+      final selected = _correctAnswer;
+      final correctIndex =
+          selected != null &&
+              AnswerKey.inRange(selected, rawOptions) &&
+              rawOptions[selected].isNotEmpty
+          ? rawOptions.take(selected).where((o) => o.isNotEmpty).length
+          : null;
+      final key = AnswerKey.fromIndex(correctIndex, options);
+      if (!key.isScorable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              selected == null
+                  ? 'Choose the correct answer before adding the question.'
+                  : (correctIndex == null
+                        ? 'The option you marked correct is empty.'
+                        : key.detail ?? 'The correct answer is not valid.'),
+            ),
+          ),
+        );
+        return;
+      }
       final contentItem = {
         'id': const Uuid().v4(),
         'type': 'mcq',
         'question': question,
         'options': options,
-        'correctIndex': _correctAnswer,
+        'correctIndex': key.index,
         if (explanation.isNotEmpty) 'explanation': explanation,
       };
 
@@ -175,7 +203,7 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
           controller.clear();
         }
         _explanationController.clear();
-        _correctAnswer = 0;
+        _correctAnswer = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -193,10 +221,10 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
       // Parse key points (split by newlines and filter out empty lines)
       final keyPoints = keyPointsText.isNotEmpty
           ? keyPointsText
-              .split('\n')
-              .map((point) => point.trim())
-              .where((point) => point.isNotEmpty)
-              .toList()
+                .split('\n')
+                .map((point) => point.trim())
+                .where((point) => point.isNotEmpty)
+                .toList()
           : <String>[];
 
       final contentItem = {
@@ -276,17 +304,17 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
               onAddTag: _addTag,
               onRemoveTag: _removeTag,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Content type selector and forms
             ContentTypeSelector(
               tabController: _contentTabController,
               contentItemsCount: _contentItems.length,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Content forms in tab view
             SizedBox(
               height: 400,
@@ -294,40 +322,55 @@ class _LessonBuilderWidgetState extends State<LessonBuilderWidget>
                 controller: _contentTabController,
                 children: [
                   // Terms form
-                  TermContentForm(
-                    termController: _termController,
-                    definitionController: _definitionController,
-                    exampleController: _exampleController,
-                    onAddTerm: _addTermContent,
+                  // Own Form: these fields are checked by their Add
+                  // button, not by the lesson-level Create (whose
+                  // validation previously failed on cleared fields).
+                  Form(
+                    child: TermContentForm(
+                      termController: _termController,
+                      definitionController: _definitionController,
+                      exampleController: _exampleController,
+                      onAddTerm: _addTermContent,
+                    ),
                   ),
-                  
+
                   // MCQ form
-                  McqContentForm(
-                    questionController: _questionController,
-                    optionControllers: _optionControllers,
-                    explanationController: _explanationController,
-                    correctAnswer: _correctAnswer,
-                    onCorrectAnswerChanged: (value) {
-                      setState(() {
-                        _correctAnswer = value;
-                      });
-                    },
-                    onAddQuestion: _addQuestionContent,
+                  // Own Form: these fields are checked by their Add
+                  // button, not by the lesson-level Create (whose
+                  // validation previously failed on cleared fields).
+                  Form(
+                    child: McqContentForm(
+                      questionController: _questionController,
+                      optionControllers: _optionControllers,
+                      explanationController: _explanationController,
+                      correctAnswer: _correctAnswer,
+                      onCorrectAnswerChanged: (value) {
+                        setState(() {
+                          _correctAnswer = value;
+                        });
+                      },
+                      onAddQuestion: _addQuestionContent,
+                    ),
                   ),
-                  
+
                   // Concept form
-                  ConceptContentForm(
-                    titleController: _conceptTitleController,
-                    descriptionController: _conceptDescriptionController,
-                    keyPointsController: _conceptKeyPointsController,
-                    onAddConcept: _addConceptContent,
+                  // Own Form: these fields are checked by their Add
+                  // button, not by the lesson-level Create (whose
+                  // validation previously failed on cleared fields).
+                  Form(
+                    child: ConceptContentForm(
+                      titleController: _conceptTitleController,
+                      descriptionController: _conceptDescriptionController,
+                      keyPointsController: _conceptKeyPointsController,
+                      onAddConcept: _addConceptContent,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Content preview and create lesson
             ContentPreviewList(
               contentItems: _contentItems,
