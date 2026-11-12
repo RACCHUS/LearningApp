@@ -57,6 +57,11 @@ jobs:
       - name: Test the test log-noise guard
         run: python3 -m unittest discover -s tool/tests -p 'test_check_test_log_noise.py' -v
 
+      - name: Check critical mutation seeds still apply (full run is weekly)
+        run: |
+          python3 tool/ci/mutation_seeds.py --check
+          python3 -m unittest discover -s tool/tests -p 'test_mutation_seeds.py' -v
+
       - name: Validate feature registry contract (no external service)
         run: |
           python3 tool/verify_feature_registry.py

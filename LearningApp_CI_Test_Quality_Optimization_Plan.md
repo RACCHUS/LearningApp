@@ -506,6 +506,21 @@ Use isolated, deliberately defective *temporary test copies* or mutation tooling
 
 **Initial acceptance:** Every hand-selected, supported critical mutation in this seed set should be detected by one or more required tests. Then measure a broader mutation score, triage equivalent mutants, and set a defensible target from the baseline; do **not** invent a global threshold now.
 
+**Implementation status (PR-4b, 2026-11-12).** `tool/ci/mutation_seeds.py` runs the client-side seeds: baseline must pass, the edit must match exactly once, the targeted tests must fail, and the file is restored byte for byte (it refuses files with uncommitted changes). Every PR runs `--check` plus 12 runner unit tests; the full run is `.github/workflows/mutation-seeds.yml` (manual dispatch and weekly, not a required check).
+
+| Seed | Plan item | First run |
+|---|---|---|
+| `answer-key-missing-becomes-option-a` | missing MCQ key → 0 | killed |
+| `byok-latch-enabled` | disabled BYOK making calls | killed |
+| `lesson-import-swallows-partial-failure` | import swallowing partial DB failure | killed |
+| `absent-feature-flag-treated-as-on` | kill switch re-enabled on registry failure | killed |
+| `contribution-ignores-kill-switch` | kill switch ignored by one entry route | **survived** → widget tests injected the gate's value; added real-gate provider tests; now killed |
+| `client-score-trusted-over-server` | client score accepted instead of server result | killed |
+| `wrong-exam-blueprint` | incorrect target blueprint for an exam | killed |
+| `algebra-shipped-answer-key-wrong` | wrong algebra option in shipped YAML | killed |
+
+Not yet seeded (need the database job): unauthorized reads of another learner's attempts and protected `correct_index`/explanation in a simulation response. These are covered by pgTAP today; SQL-level seeds are a follow-up.
+
 ---
 
 ## 8. Workstream D — Runtime instrumentation before optimization

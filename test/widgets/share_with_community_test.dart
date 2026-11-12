@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/governance/site_feature_keys.dart';
 import 'package:learning_pwa/providers/lesson_contribution_provider.dart';
+import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/community/lesson_contribution_service.dart';
+import 'package:learning_pwa/services/governance/site_feature_service.dart';
 import 'package:learning_pwa/widgets/community/share_with_community_action.dart';
 
 class FakeContributionService extends LessonContributionService {
@@ -172,6 +175,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.withdrawn, ['c9']);
     expect(find.text('Version 2: Withdrawn.'), findsOneWidget);
+  });
+
+  // The widget tests above inject the gate's value; these read the real
+  // provider (plan PR-4b: the "contribution ignores its kill switch"
+  // mutation seed survived without them).
+  group('publicContributionEnabledProvider (real gate)', () {
+    Future<bool> gateWith(Map<String, SiteFeatureSetting> snapshot) async {
+      final container = ProviderContainer(overrides: [
+        siteFeatureSnapshotProvider.overrideWith((ref) async => snapshot),
+      ]);
+      addTearDown(container.dispose);
+      // Let the snapshot future resolve before reading the gate.
+      await container.read(siteFeatureSnapshotProvider.future);
+      return container.read(publicContributionEnabledProvider);
+    }
+
+    const on = SiteFeatureSetting(enabled: true, maturity: 'experimental', revision: 1);
+    const off = SiteFeatureSetting(enabled: false, maturity: 'experimental', revision: 2);
+
+    test('is OFF when the registry has no entry for the feature', () async {
+      expect(await gateWith(const {}), isFalse);
+    });
+
+    test('is OFF when the feature is switched off', () async {
+      expect(await gateWith(const {SiteFeatureKeys.contentPublicContribution: off}), isFalse);
+    });
+
+    test('follows the registry only once the runtime is activated', () async {
+      // Before SITE_FEATURE_RPC_READY the reviewed default (OFF) applies even
+      // if a snapshot claims the feature is on.
+      expect(
+        await gateWith(const {SiteFeatureKeys.contentPublicContribution: on}),
+        SiteFeatureRuntime.snapshotEnabled,
+      );
+    });
   });
 
   test('ContributionStatus parses server rows and RPC results', () {
