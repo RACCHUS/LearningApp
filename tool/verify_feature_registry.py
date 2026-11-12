@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """No-network contract check for the site-wide feature registry (FLAG-010).
 
-Feature keys in the Dart typed catalog must match the additive SQL seed exactly.
+Feature keys in the Dart typed catalog must match the effective, append-only
+SQL seed history exactly: the original foundation seed plus every later
+additive migration that inserts into private.site_feature_controls (master
+plan v2.6 §15.0 "v2.5 append-only registry rule"). A key seeded twice is an
+error because ON CONFLICT DO NOTHING would silently ignore the second row.
 Only explicitly grandfathered, existing TEL capabilities may start enabled.
 This does NOT prove every feature has backend gate coverage; each feature PR
 must separately implement an integration test for the relevant side effect.
@@ -14,7 +18,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DART = ROOT / "lib" / "models" / "governance" / "site_feature_keys.dart"
-SQL = ROOT / "supabase" / "migrations" / "20261110220000_marketing_feature_control_foundation.sql"
+MIGRATIONS = ROOT / "supabase" / "migrations"
+FOUNDATION = "20261110220000_marketing_feature_control_foundation.sql"
+SEED_MARKER = "INSERT INTO private.site_feature_controls"
 SAFE_ON = {"tel.fast", "tel.overview"}
 KEY_RE = re.compile(r"static const String [A-Za-z0-9_]+ = '([^']+)';")
 SEED_RE = re.compile(
@@ -57,8 +63,25 @@ def verify(dart_text: str, sql_text: str) -> list[str]:
     return errors
 
 
+def effective_seed_sql(migrations_dir: Path = MIGRATIONS) -> str:
+    """Concatenates, in version order, every migration that seeds the registry.
+
+    The foundation seed must be present; later additive seeds are appended.
+    """
+    files = sorted(migrations_dir.glob("*.sql"))
+    names = [f.name for f in files]
+    if FOUNDATION not in names:
+        raise FileNotFoundError(f"Missing foundation seed {FOUNDATION}")
+    parts = [
+        f.read_text(encoding="utf-8")
+        for f in files
+        if SEED_MARKER in f.read_text(encoding="utf-8")
+    ]
+    return "\n".join(parts)
+
+
 def main() -> int:
-    errors = verify(DART.read_text(), SQL.read_text())
+    errors = verify(DART.read_text(encoding="utf-8"), effective_seed_sql())
     if errors:
         for error in errors:
             print("Feature registry contract FAIL:", error, file=sys.stderr)

@@ -35,6 +35,7 @@ import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
 import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/analytics/active_lesson_study_capture.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
+import 'package:learning_pwa/widgets/learning_support/learning_help_action.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -332,6 +333,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                       : 'Publish lesson',
                   onPressed: () => _toggleVisibility(lessonData.lesson),
                 ),
+              LearningHelpAction(
+                lessonId: widget.lessonId,
+                lessonTitle: lessonData.lesson.title,
+                tags: lessonData.lesson.tags,
+              ),
               IconButton(
                 key: const Key('lesson_in_context_qa_action'),
                 icon: const Icon(Icons.forum_outlined),

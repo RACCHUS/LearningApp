@@ -23,6 +23,7 @@ abstract final class SiteFeatureKeys {
   static const String opsBackgroundJobs = 'ops.nonessential_background_jobs';
   static const String learningCommunityQa = 'learning.community_qa';
   static const String learningSimulations = 'learning.simulations';
+  static const String learningQuickRescue = 'learning.quick_rescue';
 
   static const Set<String> all = {
     telFast,
@@ -43,5 +44,6 @@ abstract final class SiteFeatureKeys {
     opsBackgroundJobs,
     learningCommunityQa,
     learningSimulations,
+    learningQuickRescue,
   };
 }
