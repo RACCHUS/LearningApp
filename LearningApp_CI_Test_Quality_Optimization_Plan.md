@@ -1,11 +1,11 @@
-# LearningApp — CI Efficiency and Test-Quality Improvement Plan (v4, Argon + Grok + Qwen reviewed)
+# LearningApp — CI Efficiency and Test-Quality Improvement Plan (v4.1, Argon + Grok + Qwen + local re-verification)
 
-**Document status:** Reviewed implementation plan committed as root-level documentation; **no implementation code, CI workflows, or production systems changed**  
-**Reviews incorporated:** Gemini Argon, Grok, and Qwen technical reviews; relevant findings checked against `main` on 2026-11-12; decisions in §0, §0A and §0B.  
+**Document status:** Reviewed implementation plan; **implementation authorized and in progress** (see §0C.3 status tracker). No production systems are touched by any phase.  
+**Reviews incorporated:** Gemini Argon, Grok, and Qwen technical reviews; relevant findings checked against `main` on 2026-11-12; decisions in §0, §0A and §0B; **local checkout re-verification and implementation decisions in §0C**.  
 **Baseline date:** 2026-11-12  
-**Last reviewed GitHub branch:** `main` (read-only repository inspection, 2026-11-12)  
+**Last reviewed GitHub branch:** `main` at `a458b41` (local checkout re-verification, 2026-11-12)  
 **Repository:** [`RACCHUS/LearningApp`](https://github.com/RACCHUS/LearningApp)  
-**Proposed implementation branch:** `chore/ci-test-quality-optimization` (create only when implementation is authorized)  
+**Implementation branch:** `chore/ci-test-quality-optimization`  
 **Scope:** GitHub Actions, Flutter/Dart tests, Python/tooling tests, Supabase/pgTAP tests, integration and browser tests, test observability, branch-check compatibility, and safe CI cost/performance optimizations.  
 **Out of scope:** Production database deployment; changing application behavior solely to make tests green; lowering security/privacy/assessment controls; enabling BYOK or other unreleased features; removing still-needed functionality.
 
@@ -63,7 +63,7 @@ The **second and third** names are in `.github/workflows/flutter-ci.yml`; **the 
 | IDs cannot just be added to both item types | `content/schema/curriculum_manifest.schema.json` defines both `AssessmentItem` and `LegacyQuestion` with `additionalProperties: false`, and neither permits `id` | Explicitly extend **both** definitions and their validation/test contracts |
 | Top-level IDs can be lost during ingestion | `tool/ingest_curriculum.dart` builds an explicit item map without copying `item['id']`; SQL `assessment_items` ingestion copies `metadata`, not a top-level `id`; legacy `questions` ingestion does not persist a source ID | Specify *where* source IDs survive. For simulation items, intentionally map ID into metadata or another approved field; for formative items, decide whether IDs remain manifest-only or need an additive persistence contract, and test the chosen design |
 | CI dependencies for math suite are not pinned | No repo-managed pytest/SymPy test lock/requirements file was identified in the reviewed paths; CI currently installs `PyYAML>=6.0` | Add reproducible, pinned test dependencies; **replace** the floating PyYAML install in the affected CI step rather than relying on the preinstalled image |
-| Database workload is substantial | `verify-database` timeout is 20 minutes; three `supabase test db` invocations occur after distinct migration states; current `supabase/tests` directory contains **67** SQL files | Do not add a second database stack; instrument headroom and protect all three scenario invocations before PR-3 |
+| Database workload is substantial | `verify-database` timeout is 20 minutes; **four** `supabase test db` invocations (incremental upgrade, historical backfill, clean reset, post-ingestion); `supabase/tests` contained **67** SQL files at Grok review time and **68** on 2026-11-12 re-check | Do not add a second database stack; instrument headroom and protect all four invocations before PR-3 |
 | Existing runners and check names | Flutter `3.47.7`, Supabase CLI `2.67.1`; required-looking job names unchanged | PR-1 and PR-2 add steps to existing jobs and do not rename required checks |
 | Repository visibility | GitHub reports `visibility=public` | Standard hosted runner compute is currently free; aggregate runner-seconds and storage still matter, especially if visibility changes |
 
@@ -96,7 +96,7 @@ The historical **2,585 Flutter passes, 4 skips, 1,709 pgTAP assertions, and 66 p
 
 - **PR-1 remains lean:** use `$GITHUB_STEP_SUMMARY` plus pinned-Flutter-supported JSON file reporting, no dashboard, no new runners, no new long-lived metrics database. Measure the real default Flutter test concurrency; absent `--concurrency` does **not** mean concurrency is disabled.
 - **PR-3 stays in the existing Supabase job:** existing Docker stack, synthetic users only, local-only host checks, fail-closed setup/cleanup, explicit budget under the 20-minute job cap. Refactor/replace the skipped legacy script; do not merely remove `skip: true`, because its name prevents ordinary `flutter test` collection and early `return` paths may falsely pass.
-- **Three DB test cycles are intentionally distinct:** incremental upgrade, historical backfill rehearsal, clean-slate reset; preserve each and its pgTAP run until a proven-equivalent refactor exists.
+- **Four DB pgTAP runs are intentionally distinct:** incremental upgrade, historical backfill rehearsal, clean-slate reset, and post-ingestion; preserve each and its pgTAP run until a proven-equivalent refactor exists.
 - **No near-term job sharding:** experiment with existing runner `flutter test --concurrency` **against its actual default**, using measurements at identical commit and cache conditions. Two sequential web builds remain default, since changing output directories alone cannot isolate `.dart_tool` and other shared state.
 - **Branch-check compatibility:** preserve all three current names. If later splitting, the sole fan-in job named `Analyze, test, and build` must use `if: always()` and explicitly reject any missing/failed/skipped/cancelled child. A disposable PR and an authorized branch-protection review are required before merge.
 - **Action SHA pinning is separate:** `actions/checkout@v5`, `subosito/flutter-action@v2`, `actions/cache@v4`, and `supabase/setup-cli@v1` use moving tags. Make a distinct supply-chain upgrade PR rather than conflating pinning with runtime comparisons. Investigate Node 20 deprecation warnings; never suppress them just to get green logs.
@@ -162,6 +162,45 @@ Ensure the requirements file contains exact, reviewed versions rather than broad
 
 - **PR-1:** inventory script exists, scans the repository and current CI commands, writes an honest report of 44 discovered vs. 43 explicitly registered Python tests (snapshot count), flags algebra pytest as *known uncovered*, does not fail solely on that known gap, and does not claim all tests are executing.
 - **PR-2:** the same script's strict mode fails on any unregistered `test_*.py`, no collected cases, or a missing framework/runner mapping; CI includes the actual Algebra `pytest` invocation. Validate the inventory mechanism with a synthetic new test file. No independent, always-green status may conceal an omitted suite.
+
+---
+
+## 0C. Local re-verification and implementation decisions (Claude Code, 2026-11-12)
+
+**Decision:** The v4 plan is sound and remains in force. The re-check below was made against a local checkout of `main` at `a458b41` with the real toolchain, rather than remote inspection only. It corrects four facts and makes one sequencing refinement.
+
+### 0C.1 Verified facts and corrections
+
+| Item | Result on 2026-11-12 | Consequence |
+|---|---|---|
+| Python test inventory | 44 `tool/tests/test_*.py`; every one except `test_clep_algebra_math_accuracy.py` appears in a CI runner command. `tool/tests/` also holds one Dart test (`guarded_connection_test.dart`, run directly by CI) | §0A.1 confirmed. The inventory script must report non-Python test files too, not only `test_*.py` |
+| Algebra suite health | `PYTHONPATH=. python -m pytest tool/tests/test_clep_algebra_math_accuracy.py -q` → **9 passed in ~2 s** (Python 3.13.4, pytest 9.0.2, SymPy 1.14.0, PyYAML 6.0.2) | Activating the suite in CI is low-risk: no latent failure is waiting. These are candidate pins, still to be confirmed on the CI runner's Python |
+| Generator↔YAML parity | `build_manifest()` output equals `yaml.safe_load(content/clep_college_algebra.yaml)`, both directly and after a `safe_dump` round-trip | A parity gate can call `build_manifest()` in-process and compare without writing any file. The generator does not need a `--check` flag that touches the filesystem |
+| `supabase test db` invocations | **Four**, not three: incremental upgrade, historical backfill, clean reset, and post-ingestion | Corrected in §0A.1, §0A.3, A2 and §14 |
+| pgTAP SQL files | **68** files now (67 at Grok review time, 66 in sample run #1261) | Count drifts with feature work; always record the count alongside the run that produced it |
+| Flutter 3.47.7 CLI | `--concurrency` / `-j`, `--total-shards` / `--shard-index`, and `--file-reporter json:<path>` all supported | §0/E1 "verify on pinned Flutter" prerequisite is met. The help text does not print the default concurrency, so PR-5 benchmarks must log the runner's `nproc` |
+| Script location | No `scripts/` directory exists. AGENTS.md puts developer utilities in `tool/` and Python tests in `tool/tests/` | **All `scripts/ci/…` paths in this plan become `tool/ci/…`** (applied throughout). Tests for these scripts live in `tool/tests/` and must themselves be registered in CI |
+
+### 0C.2 Sequencing refinement for PR-2
+
+§0A's full PR-2 (authored IDs → schema → target-aware linter → ingestion mapping → ID-keyed oracles → mutations) is a large cross-layer change. Meanwhile the existing algebra suite, though order-dependent and partly disconnected from YAML (Q-03), **does** assert real selected options against SymPy and passes today. Leaving it unexecuted until the ID work lands gives **zero** protection in the meantime. The §0A risk rule already allows splitting within the correctness phase, so PR-2 is split as follows:
+
+- **PR-2a — activate and guard.** Pinned `requirements-ci-tests.txt`, real pytest step in `Analyze, test, and build`, read-only generator↔YAML semantic parity gate (`tool/ci/check_algebra_manifest_parity.py`), and inventory **strict mode**. **Closes Q-01 and Q-06 only.** The PR description must say plainly that Q-03 stays open and that the suite still reads authoring modules by position.
+- **PR-2b — stable identity.** Authored IDs, optional schema `id`, target-slug-scoped linter enforcement, and the ingestion mapping decision (§0A.2 steps 1–4).
+- **PR-2c — independent oracle.** Committed-YAML fixtures keyed by ID, oracle and distractor checks, prompt-drift protection, and the mutation set (§0A.2 steps 6–9). **Closes Q-03.**
+
+This is not acceptance of a partial fix: each PR closes only the findings it fully proves, and nothing is labeled as covering more than it does.
+
+**Inventory guard mode (refines §0B "report-only"):** PR-1 ships the guard in **ratchet mode**, not pure report-only. Gaps named in its `KNOWN_GAPS` table (today only the algebra suite) are reported as warnings; **any other gap fails immediately**, so a newly added unregistered suite cannot slip in while PR-2a is pending. The guard also fails on stale `KNOWN_GAPS` entries and on unparseable test or workflow files (never "zero tests"). This blocks nothing on current `main`, which has exactly the one known gap. PR-2a removes that entry and switches CI to `--strict`. Collection counts are static (AST for Python, call-site count for Dart scripts) so the guard needs no third-party packages; runtime collection is still proven by the runners themselves.
+
+### 0C.3 Implementation status tracker
+
+| PR | Scope | Status |
+|---|---|---|
+| PR-1 | Ratchet-mode `tool/ci/check_test_inventory.py` + `tool/tests/test_check_test_inventory.py`; `flutter test --file-reporter json:build/reports/flutter-tests.json` summarized into `$GITHUB_STEP_SUMMARY` by `tool/ci/summarize_flutter_test_report.py` (counts, skips, failures, slowest files and tests, runner CPU count; always exits 0) + `tool/tests/test_summarize_flutter_test_report.py`. No job renames, no new runners, no artifacts | Implemented on `chore/ci-test-quality-optimization`; awaiting first CI run |
+| PR-2a | Activate algebra pytest, pins, parity gate, strict inventory | Next |
+| PR-2b / PR-2c | Stable IDs; ID-keyed oracle + mutations | Planned |
+| PR-3 … PR-9 | As in §13 | Planned |
 
 ---
 
@@ -346,7 +385,7 @@ Do not mechanically replace every broad assertion: assess whether the specific e
 
 **Plan**
 
-1. Convert the old skipped test into a genuine **disposable local Supabase** test **inside the existing database job**, which already starts local Supabase. **This job has a 20-minute timeout and three separate pgTAP runs, so instrument headroom before adding any new full-stack work.** Never start a second Supabase Docker stack in the Flutter job. If Flutter/Dart test dependencies are needed, reuse the DB job’s existing Flutter setup rather than layering another SDK installation.
+1. Convert the old skipped test into a genuine **disposable local Supabase** test **inside the existing database job**, which already starts local Supabase. **This job has a 20-minute timeout and four separate pgTAP runs, so instrument headroom before adding any new full-stack work.** Never start a second Supabase Docker stack in the Flutter job. If Flutter/Dart test dependencies are needed, reuse the DB job’s existing Flutter setup rather than layering another SDK installation.
 2. Use a dedicated synthetic learner, no production URLs/keys, and isolated records/table namespace as appropriate.
 3. Create a real lesson through the supported creation/import path, then retrieve it through the supported read path.
 4. Assert complete fidelity: title, user ownership, ordered terms, question text/options/**correct answer key**, explanation, concepts, citations/metadata as applicable, and persisted counts.
@@ -363,7 +402,7 @@ Do not mechanically replace every broad assertion: assess whether the specific e
 
 - Use `unittest` discovery for files genuinely written as `unittest` tests, and `pytest` for pytest-style files.
 - Avoid a single accidental “run all files” command that double-executes or changes test semantics. Maintain a simple manifest/classifier with test framework and expected discovery route, or converge deliberately on pytest (which can run many unittest tests) **after proving compatibility**.
-- Add lightweight `scripts/ci/check_test_inventory.py` in **PR-1 as report-only**: enumerate `tool/tests/test_*.py`, display registered vs. omitted modules in `$GITHUB_STEP_SUMMARY`, and prominently flag the known algebra omission without changing the required check outcome. In **PR-2**, enable **strict mode**: each module must map to a verified runner (`unittest`, `pytest`, or intentional exception), and CI rejects uncollected modules, accidental duplicates, missing runner dependencies, and test files with zero collected cases. Every future test file must run or cause a clear CI failure.
+- Add lightweight `tool/ci/check_test_inventory.py` in **PR-1 as report-only**: enumerate `tool/tests/test_*.py`, display registered vs. omitted modules in `$GITHUB_STEP_SUMMARY`, and prominently flag the known algebra omission without changing the required check outcome. In **PR-2**, enable **strict mode**: each module must map to a verified runner (`unittest`, `pytest`, or intentional exception), and CI rejects uncollected modules, accidental duplicates, missing runner dependencies, and test files with zero collected cases. Every future test file must run or cause a clear CI failure.
 - Keep coverage of isolated Python filesystem/docker interfaces. Require network-disabled default cases where possible.
 
 **Done when:** Adding a supported new test file cannot silently result in a green CI job that never executes it.
@@ -678,7 +717,7 @@ Each phase should be a reviewable PR or small cluster; **do not implement all at
 - Pin baseline SHA and sample runs; collect timings, successful/skipped test inventory, and coverage baseline using existing GitHub logs.
 - Publish a **GitHub Job Summary** (`$GITHUB_STEP_SUMMARY`) and, if supported by the pinned Flutter toolchain, a compact `--file-reporter=json:...` test report. Avoid custom dashboards, databases, or large default artifacts.
 - Document three required check names, with **branch-settings verification blocked by connector 403**, plus environment/secrets dependencies and public-repository billing status.
-- Add lightweight `scripts/ci/check_test_inventory.py` **in report-only mode**, reporting the known omitted suite and other unknowns without failing the baseline PR merely because of already-recorded gaps; fail on unexpected script execution/parsing errors. **Switch it to blocking mode in PR-2**, paired with the missing suite, rather than declaring an uncollected suite acceptable forever. Add no performance-sensitive gating yet and do not interact with production.
+- Add lightweight `tool/ci/check_test_inventory.py` **in report-only mode**, reporting the known omitted suite and other unknowns without failing the baseline PR merely because of already-recorded gaps; fail on unexpected script execution/parsing errors. **Switch it to blocking mode in PR-2**, paired with the missing suite, rather than declaring an uncollected suite acceptable forever. Add no performance-sensitive gating yet and do not interact with production.
 
 **Exit criteria:** Full original pipeline still green; baseline artifacts readable and reproducible; confirmed findings are recorded with test locations.
 
@@ -686,10 +725,12 @@ Each phase should be a reviewable PR or small cluster; **do not implement all at
 
 **PR-2: `test(content): close generator-to-shipped-manifest algebra verification gap`**
 
+> **v4.1:** delivered as PR-2a (activate + parity + strict inventory; closes Q-01/Q-06), PR-2b (stable IDs) and PR-2c (ID-keyed oracle + mutations; closes Q-03). See §0C.2.
+
 - **Mandatory source chain:** author stable IDs in domain/formative source modules → extend `AssessmentItem` and `LegacyQuestion` JSON Schema with **optional** `id` properties → require IDs only for College Algebra by **target slug** in linter → verify Dart mapper behavior → deterministic **read-only `yaml.safe_load` generator↔committed YAML semantic parity gate** → independent math/logic oracle keyed by ID against actual YAML selected options.
 - Verify **60 simulation + 40 formative** item identities; reject missing/duplicate IDs; explicitly document simulation ID preservation in metadata and whether formative IDs are manifest-only or require approved additive DB persistence.
 - Use `PYTHONPATH=. python3 -m pytest tool/tests/test_clep_algebra_math_accuracy.py -q`, with **tested exact** `pytest`, `sympy`, and `PyYAML` pins in root `requirements-ci-tests.txt` and `python3 -m pip check`, **inside the existing Flutter CI job**. Prefer locked/hash-pinned transitive dependencies. No new runner and no floating `PyYAML>=6.0` in the touched step.
-- Enable **strict mode** on the `scripts/ci/check_test_inventory.py` script created in **PR-1**; verify all Python files are mapped to an executable framework collection route, with zero-collected suite detection.
+- Enable **strict mode** on the `tool/ci/check_test_inventory.py` script created in **PR-1**; verify all Python files are mapped to an executable framework collection route, with zero-collected suite detection.
 - Prove controlled mutations of shipped prompt, key, option, domain restriction, ID and YAML-generator parity cause CI failures; record active versus advisory answer-key distribution policies separately.
 - **No acceptance of a partial fix:** Running existing pytest against only Python generator modules does not close Q-01/Q-03. If needed, split the cross-layer change into two reviewable correctness PRs, but maintain a failing/disabled-not-required status until the complete gate is genuinely active.
 
@@ -764,7 +805,7 @@ Each phase should be a reviewable PR or small cluster; **do not implement all at
 - [ ] Missing/ambiguous MCQ answer keys remain unscorable/rejected; no fallback to option A.
 - [ ] Legacy skipped lesson-creation test is replaced by active, deterministic equivalent-or-stronger coverage, or remains explicitly documented as legacy alongside fully active replacement.
 - [ ] Invalid import creates no records; partial failure is accurately surfaced and cleanup outcomes are asserted.
-- [ ] DB job retains its three distinct `supabase test db` cycles and fits within a measured margin below the 20-minute timeout after adding local integration.
+- [ ] DB job retains all four `supabase test db` invocations (incremental, historical backfill, clean reset, post-ingestion) and fits within a measured margin below the 20-minute timeout after adding local integration.
 - [ ] Existing simulation/privacy/RLS/owner/storage/retention tests remain active, with equivalent or higher assurance.
 - [ ] BYOK remains disabled and its disabled-state safety gates are tested.
 - [ ] Feature flag off/on and Fast mode contracts remain accurate.
@@ -878,13 +919,13 @@ Suggested names are illustrative and should be reconciled with repo conventions:
 .github/workflows/flutter-ci.yml                     # Refactor carefully; retain required checks
 .github/workflows/...                                # Optional small reusable workflows
 requirements-ci-tests.txt                            # Tested exact direct pins; lock/hash transitive as feasible
-scripts/ci/check_algebra_manifest_parity.py           # Read-only yaml.safe_load semantic generated-vs-committed comparison
-scripts/ci/algebra_oracles/                       # Independent ID-keyed math/semantic oracle data; only if needed
-scripts/ci/check_test_inventory.py                   # PR-1 report-only; PR-2 strict collected-suite guard
+tool/ci/check_algebra_manifest_parity.py              # Read-only yaml.safe_load semantic generated-vs-committed comparison
+tool/ci/algebra_oracles/                          # Independent ID-keyed math/semantic oracle data; only if needed
+tool/ci/check_test_inventory.py                      # PR-1 report-only; PR-2 strict collected-suite guard
 # Prefer $GITHUB_STEP_SUMMARY first; add a tiny script only if needed
-scripts/ci/check_required_results.py                 # Optional same-name required-job fan-in logic; never duplicate required check
-scripts/ci/check_no_production_targets.py            # Test-only environment safety
-scripts/ci/critical_mutations/                      # Controlled mutation seed fixtures
+tool/ci/check_required_results.py                    # Optional same-name required-job fan-in logic; never duplicate required check
+tool/ci/check_no_production_targets.py               # Test-only environment safety
+tool/ci/critical_mutations/                         # Controlled mutation seed fixtures
 integration_test/ or e2e/                            # Bounded browser smoke (2–3 PR paths)
 .github/.../test-quality-policy.md                    # Critical test/skip/coverage policy
 reports/ci-baseline/                                 # Only if intentionally committed;
@@ -939,7 +980,7 @@ Repository evidence available as of baseline date:
 
 ### Evidence caveat
 
-Repository code and recorded CI logs were inspected remotely; GitHub public-repo metadata and official tooling docs were additionally verified for this revision. For Grok review, the current repository also showed **67 `supabase/tests/*.sql` files**, 44 `test_*.py` files, and the ID-propagation gaps detailed in §0A. This plan **does not claim** a new branch was created, tests independently rerun, coverage/mutation tooling executed, branch protection read successfully, GitHub settings changed, or any CI improvement implemented. Performance and cost-overhead estimates remain hypotheses until benchmarked. All performance improvements remain **hypotheses to benchmark**.
+Repository code and recorded CI logs were inspected remotely; GitHub public-repo metadata and official tooling docs were additionally verified for this revision. For Grok review, the current repository also showed **67 `supabase/tests/*.sql` files**, 44 `test_*.py` files, and the ID-propagation gaps detailed in §0A. **v4.1 addendum:** §0C records a local-checkout re-verification with the pinned Flutter 3.47.7 CLI and a local run of the algebra suite and generator parity; it supersedes the counts above where they differ. The original v4 text that follows describes the v4 review only. This plan **does not claim** a new branch was created, tests independently rerun, coverage/mutation tooling executed, branch protection read successfully, GitHub settings changed, or any CI improvement implemented. Performance and cost-overhead estimates remain hypotheses until benchmarked. All performance improvements remain **hypotheses to benchmark**.
 
 ---
 
