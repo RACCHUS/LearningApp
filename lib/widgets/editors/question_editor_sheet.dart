@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../models/answer_key.dart';
 import '../../models/question.dart';
 
 /// Question types supported
@@ -61,7 +62,10 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
   late final TextEditingController _explanationController;
   late QuestionType _questionType;
   late List<TextEditingController> _optionControllers;
-  late int _correctAnswer;
+  /// Explicitly selected correct option, or null until the author picks one.
+  /// Never defaulted to option A (plan v2.6 §14.8, H.3 rule 4).
+  int? _correctAnswer;
+  String? _answerError;
   final _formKey = GlobalKey<FormState>();
 
   bool get isEditing => widget.question != null;
@@ -75,7 +79,10 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
         TextEditingController(text: widget.question?.explanation ?? '');
     _questionType =
         QuestionType.fromValue(widget.question?.type ?? 'multiple_choice');
-    _correctAnswer = widget.question?.correctAnswer ?? 0;
+    final existing = widget.question;
+    _correctAnswer = existing != null && existing.answerKey.isScorable
+        ? existing.correctAnswer
+        : null;
 
     // Initialize option controllers
     if (widget.question != null && widget.question!.options.isNotEmpty) {
@@ -105,7 +112,10 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
         _optionControllers = [TextEditingController()];
         break;
     }
-    _correctAnswer = 0;
+    // Fill-in-blank's single field *is* the answer; choice types must be
+    // explicitly selected by the author.
+    _correctAnswer = _questionType == QuestionType.fillInBlank ? 0 : null;
+    _answerError = null;
   }
 
   @override
@@ -140,8 +150,17 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
     setState(() {
       _optionControllers[index].dispose();
       _optionControllers.removeAt(index);
-      if (_correctAnswer >= _optionControllers.length) {
-        _correctAnswer = _optionControllers.length - 1;
+      // Keep the same option selected; never silently move "correct" to a
+      // different option. Removing the correct option forces reselection.
+      final current = _correctAnswer;
+      if (current != null) {
+        if (current == index) {
+          _correctAnswer = null;
+          _answerError = 'You removed the correct option. Choose the correct '
+              'answer again.';
+        } else if (current > index) {
+          _correctAnswer = current - 1;
+        }
       }
     });
   }
@@ -150,12 +169,21 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     final options = _optionControllers.map((c) => c.text.trim()).toList();
+    final key = AnswerKey.fromIndex(_correctAnswer, options);
+    if (!key.isScorable) {
+      setState(() {
+        _answerError = _correctAnswer == null
+            ? 'Choose the correct answer before saving.'
+            : (key.detail ?? 'The correct answer is not valid.');
+      });
+      return;
+    }
 
     final question = Question(
       id: widget.question?.id ?? const Uuid().v4(),
       questionText: _questionController.text.trim(),
       options: options,
-      correctAnswer: _correctAnswer,
+      correctAnswer: key.index!,
       type: _questionType.value,
       explanation: _explanationController.text.trim().isEmpty
           ? null
@@ -278,7 +306,10 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
                                   value: index,
                                   groupValue: _correctAnswer,
                                   onChanged: (value) {
-                                    setState(() => _correctAnswer = value!);
+                                    setState(() {
+                                      _correctAnswer = value;
+                                      _answerError = null;
+                                    });
                                   },
                                 ),
                                 Expanded(
@@ -312,6 +343,19 @@ class _QuestionEditorSheetState extends State<QuestionEditorSheet> {
                             ),
                           );
                         }),
+                        if (_answerError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                _answerError!,
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ),
                         if (_questionType == QuestionType.multipleChoice)
                           TextButton.icon(
                             onPressed: _addOption,

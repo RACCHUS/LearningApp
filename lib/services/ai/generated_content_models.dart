@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:learning_pwa/models/answer_key.dart';
 
 /// Represents an AI-generated assessment item with Haladyna guidelines and provenance.
 class GeneratedAssessmentItem {
@@ -23,6 +24,9 @@ class GeneratedAssessmentItem {
     this.expectedSeconds = 60,
     this.haladynaViolations = const [],
   });
+
+  /// Whether [correctIndex] is a real, in-range, unambiguous key.
+  bool get hasValidKey => AnswerKey.fromIndex(correctIndex, options).isScorable;
 
   String get correctAnswer =>
       (correctIndex >= 0 && correctIndex < options.length)
@@ -63,7 +67,10 @@ class GeneratedAssessmentItem {
     return GeneratedAssessmentItem(
       prompt: (json['prompt'] ?? '').toString().trim(),
       options: options,
-      correctIndex: (json['correct_index'] as num?)?.toInt() ?? 0,
+      // Strict integer key; a missing/invalid key is unscorable (-1), never
+      // option 0 (plan v2.6 §14.8). ItemEvaluator fails such items.
+      correctIndex:
+          AnswerKey.fromIndex(json['correct_index'], options).storedIndex,
       explanation: (json['explanation'] ?? '').toString().trim(),
       sourceCitation: (json['source_citation'] ?? '').toString().trim(),
       bloomLevel: (json['bloom_level'] ?? 'understand').toString(),

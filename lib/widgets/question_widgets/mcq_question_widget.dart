@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/question_widgets/unscorable_answer_notice.dart';
 import 'package:learning_pwa/widgets/answer_feedback.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
@@ -126,7 +127,10 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
           selectedIndex: widget.selectedIndex,
           onChanged: widget.onSelectionChanged,
           showCorrect: widget.showCorrect,
-          correctIndex: widget.content.correctAnswer,
+          // Null when the stored key is unscorable: no option is marked.
+          correctIndex: widget.content.hasScorableIndexKey
+              ? widget.content.correctAnswer
+              : null,
           shuffleOptions: widget.shuffleOptions,
           presentationSeed: effectivePresentationSeed,
           avoidOrder: _avoidOrder,
@@ -146,7 +150,14 @@ class _McqQuestionWidgetState extends State<McqQuestionWidget> {
             label: const Text('Try Again'),
           ),
         ],
-        if (widget.showCorrect && widget.selectedIndex != null)
+        if (widget.showCorrect && !widget.content.hasScorableIndexKey)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: UnscorableAnswerNotice(),
+          ),
+        if (widget.showCorrect &&
+            widget.selectedIndex != null &&
+            widget.content.hasScorableIndexKey)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: AnswerFeedbackText(
