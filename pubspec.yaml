@@ -73,6 +73,9 @@ flutter:
     - assets/lexicons/en_us_scowl_roots.txt
     - assets/lexicons/NOTICE.txt
     - assets/lessons/
+    - content/bridges/fraction_decimal.bridge.json
+    - content/bridges/percent_change.bridge.json
+    - content/bridges/spreadsheet_percent_format.bridge.json
     - .env
     
   # To add assets from your dependencies, use the following syntax:
