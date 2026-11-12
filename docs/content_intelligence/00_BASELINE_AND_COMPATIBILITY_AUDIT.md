@@ -113,18 +113,18 @@ PR-0a, PR-0b and the planned PR-A1/A2/A3 are **zero-SQL**. No new table, column 
 
 ---
 
-## Part B — P0-hosted (live state) — **NOT PERFORMED**
+## Part B — P0-hosted (live state) — **partly verified 2026-11-12**
 
-Every item below is **UNKNOWN**. This section must be completed with fresh, authorized evidence before any migration, RLS, permission or hosted-release change related to this program. Do not infer any of it from merged code or from the existence of CI jobs.
+The evidence below comes from read-only checks on 2026-11-12, with owner authorization: the guarded deploy tool, aggregate `SELECT` queries and the GitHub API. Items still marked **UNKNOWN** must be verified before any change that depends on them. Do not infer them from merged code.
 
 | # | Question | Status | How to obtain (authorized operator) |
 |---|---|---|---|
-| B.1 | Which of the 23 versions in A.7 are applied in production; any version mismatch | UNKNOWN | Guarded preflight: `dart run tool/guarded_supabase_deploy.dart` (dry run) or `.\tool\guarded_supabase_deploy.ps1 -DryRun`. **Never `supabase migration repair`.** A mismatch halts work for owner review. |
-| B.2 | Live definition of the curriculum ingest RPC (does it still `coalesce(..., 0)`?) | UNKNOWN | Read-only catalog query by an authorized operator |
-| B.3 | Required status checks / branch rulesets on `main` | UNKNOWN | GitHub repository settings (owner) |
-| B.4 | `private.site_feature_controls` present and seeded; `release_ready` / `enabled` per key; server admission active | UNKNOWN | Read-only query + Feature Control Center |
+| B.1 | Which of the 23 versions in A.7 are applied in production; any version mismatch | **VERIFIED** | Guarded dry run from `main` @ `b748d55`: 111 local and 111 applied, 0 pending, no mismatch. After deploying `20261112010000` and `20261112020000` with the guarded tool, the post-deploy check confirmed **113/113** parity. No `migration repair` was used. |
+| B.2 | Live definition of the curriculum ingest RPC (does it still `coalesce(..., 0)`?) | **FIXED and VERIFIED** | It did. `20261112010000_manifest_answer_key_integrity` (#234) replaced the default with `private.manifest_question_correct_index`. A read-only `pg_get_functiondef` check confirms the live function calls the validator. |
+| B.3 | Required status checks / branch rulesets on `main` | **VERIFIED** | Strict branch protection: PRs must be up to date. The three required checks are "Analyze, test, and build", "Verify clean Supabase migrations and complete official taxonomy ingestion" and "Validate official taxonomy sources". No required reviews. Repository auto-merge was enabled on 2026-11-12 with owner approval. |
+| B.4 | `private.site_feature_controls` present and seeded; `release_ready` / `enabled` per key; server admission active | **PARTLY VERIFIED** | The table is present, and `learning.quick_rescue` is seeded `enabled=false`, `release_ready=false`, `experimental`. The other keys and server admission paths have not been rechecked. |
 | B.5 | Production build sets `SITE_FEATURE_RPC_READY` | UNKNOWN | Release build configuration |
-| B.6 | Count of stored personal `questions` rows with out-of-range / duplicated-key options | UNKNOWN | Read-only aggregate query (no row export) |
+| B.6 | Count of stored personal `questions` rows with out-of-range / duplicated-key options | **VERIFIED: none** | Aggregate counts only, no rows exported. All 43 `questions` rows belong to personal lessons. All 43 have a key inside their option range, none uses key `0`, none is short-answer, and none has duplicate options. Production has 0 curriculum lessons, 0 `assessment_items` and 0 `assessment_questions`. **No stored answer key was fabricated, so no data repair is needed.** |
 | B.7 | Deployed tables/types relevant to the logical entities in plan §12.0 | UNKNOWN | Schema read with authorized access |
 
 ---
@@ -132,3 +132,4 @@ Every item below is **UNKNOWN**. This section must be completed with fresh, auth
 ## Change log
 
 - 2026-11-12 — P0-light completed from repository `main` @ `b748d55`. Part B intentionally left UNKNOWN.
+- 2026-11-12 — Part B: B.1, B.2, B.3 and B.6 verified; B.4 partly verified; B.5 and B.7 still UNKNOWN. The server answer-key default was fixed and deployed (#234), and the quick_rescue registry row was deployed (#233).
