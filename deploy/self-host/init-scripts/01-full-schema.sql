@@ -1,7 +1,7 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
 -- Automatically compiled from 117 immutable migrations
--- Generated: 2026-11-12T17:40:16.224425Z
+-- Generated: 2026-11-12T17:49:24.884839Z
 -- ====================================================================
 
 BEGIN;
@@ -42594,13 +42594,13 @@ begin
     'terms', coalesce((
       select jsonb_agg(jsonb_build_object(
                'term', t.term, 'definition', t.definition, 'example', t.example)
-             order by t.order_index nulls last, t.created_at, t.id)
+             order by t.created_at, t.id)
         from public.terms t where t.lesson_id = p_lesson_id), '[]'::jsonb),
     'concepts', coalesce((
       select jsonb_agg(jsonb_build_object(
                'concept_text', c.concept_text, 'example_text', c.example_text,
                'key_points', to_jsonb(c.key_points))
-             order by c.order_index nulls last, c.created_at, c.id)
+             order by c.created_at, c.id)
         from public.concepts c where c.lesson_id = p_lesson_id), '[]'::jsonb),
     'questions', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -42610,7 +42610,7 @@ begin
                'accepted_answers', to_jsonb(q.accepted_answers),
                'grading_method', q.grading_method,
                'numeric_tolerance', q.numeric_tolerance)
-             order by q.order_index nulls last, q.created_at, q.id)
+             order by q.created_at, q.id)
         from public.questions q where q.lesson_id = p_lesson_id), '[]'::jsonb)
   );
   v_issues := private.contribution_check_snapshot(v_snapshot);
