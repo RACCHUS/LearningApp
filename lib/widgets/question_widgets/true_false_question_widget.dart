@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learning_pwa/widgets/answer_feedback.dart';
+import 'package:learning_pwa/widgets/question_widgets/unscorable_answer_notice.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/primary_button.dart';
 import 'package:learning_pwa/widgets/true_false_selector.dart';
@@ -49,7 +50,8 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget> {
           value: widget.selectedValue,
           onChanged: widget.onSelectionChanged,
           showCorrect: widget.showCorrect,
-          correctValue: widget.content.correctAnswer == 0 ? false : true,
+          // Derived from option labels, never from index position.
+          correctValue: widget.content.trueFalseCorrectValue,
         ),
         const SizedBox(height: 16),
         PrimaryButton(
@@ -58,13 +60,20 @@ class _TrueFalseQuestionWidgetState extends State<TrueFalseQuestionWidget> {
           loading: false,
           icon: null,
         ),
-        if (widget.showCorrect && widget.selectedValue != null)
+        if (widget.showCorrect &&
+            widget.selectedValue != null &&
+            widget.content.trueFalseCorrectValue != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: AnswerFeedbackText(
-              correct:
-                  widget.selectedValue == (widget.content.correctAnswer == 1),
+              correct: widget.selectedValue ==
+                  widget.content.trueFalseCorrectValue,
             ),
+          ),
+        if (widget.showCorrect && widget.content.trueFalseCorrectValue == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: UnscorableAnswerNotice(),
           ),
         if (widget.showCorrect && widget.content.explanation != null)
           Padding(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/base_lesson.dart';
 import 'package:learning_pwa/models/concept.dart';
 import 'package:learning_pwa/models/lesson.dart';
@@ -171,9 +172,13 @@ Lesson _parseAssetLesson(String path, Map<String, dynamic> json) {
           options: q['options'] is List
               ? List<String>.from(q['options'] as List)
               : const <String>[],
-          correctAnswer: q['correct_answer'] is int
-              ? q['correct_answer'] as int
-              : int.tryParse(q['correct_answer']?.toString() ?? '') ?? 0,
+          // Invalid keys become unscorable, never option 0.
+          correctAnswer: AnswerKey.storedIndexOrUnscorable(
+            q['correct_answer'],
+            q['options'] is List
+                ? (q['options'] as List).map((o) => o.toString()).toList()
+                : const <String>[],
+          ),
           type: q['type']?.toString() ?? 'mcq',
           explanation: q['explanation']?.toString(),
           createdBy: userId,

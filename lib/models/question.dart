@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:learning_pwa/core/errors/model_parse_exception.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 
 part 'question.g.dart';
 
@@ -113,6 +114,21 @@ class Question {
         fields: ['options'],
       );
     }
+    // A present answer key must be a real integer (or an exact legacy
+    // decimal-digit string). Never coerce malformed values to option 0.
+    final int parsedCorrectAnswer;
+    if (correctAnswer is int) {
+      parsedCorrectAnswer = correctAnswer;
+    } else if (correctAnswer is String &&
+        RegExp(r'^\s*\d+\s*$').hasMatch(correctAnswer)) {
+      parsedCorrectAnswer = int.parse(correctAnswer.trim());
+    } else {
+      throw const ModelParseException(
+        'Question',
+        'Invalid correct_answer (expected a whole-number option index)',
+        fields: ['correct_answer'],
+      );
+    }
     final createdAt = DateTime.tryParse(createdAtRaw!);
     if (createdAt == null) {
       throw const ModelParseException(
@@ -125,7 +141,7 @@ class Question {
       id: id!,
       questionText: questionText!,
       options: options,
-      correctAnswer: correctAnswer is int ? correctAnswer : int.tryParse(correctAnswer.toString()) ?? 0,
+      correctAnswer: parsedCorrectAnswer,
       type: type!,
       explanation: explanation,
       createdBy: createdBy!,
@@ -149,6 +165,10 @@ class Question {
         'grading_method': gradingMethod,
         'numeric_tolerance': numericTolerance,
       };
+
+  /// Whether this question's MCQ/true-false key can be trusted for scoring.
+  /// Short-answer items are scored from [acceptedAnswers] instead.
+  AnswerKeyResult get answerKey => AnswerKey.fromIndex(correctAnswer, options);
 
   @override
   bool operator ==(Object other) =>
