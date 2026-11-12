@@ -1,7 +1,7 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
 -- Automatically compiled from 112 immutable migrations
--- Generated: 2026-11-12T13:58:41.855212Z
+-- Generated: 2026-11-12T14:16:50.430770Z
 -- ====================================================================
 
 BEGIN;
@@ -40705,7 +40705,7 @@ GRANT EXECUTE ON FUNCTION public.update_context_fast_preferences(
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111030000', 'tel_01b_context_fast_preferences') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [112/112] Migration: 20261112000000_learning_quick_rescue_feature_control.sql
+-- [112/112] Migration: 20261112020000_learning_quick_rescue_feature_control.sql
 -- --------------------------------------------------------------------
 -- PR-B (master plan v2.6 §15.0): register the `learning.quick_rescue` gate.
 --
@@ -40724,7 +40724,7 @@ VALUES
   'Explicit Learning help with bundled no-AI Bridges; return navigation stays available when OFF')
 ON CONFLICT (feature_key) DO NOTHING;
 
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112000000', 'learning_quick_rescue_feature_control') ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112020000', 'learning_quick_rescue_feature_control') ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
 
