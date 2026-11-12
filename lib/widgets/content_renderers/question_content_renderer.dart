@@ -215,11 +215,12 @@ class _QuestionContentRendererState
           presentationSeed: _presentationSeed,
           onSelectionChanged: (index) => setState(() => selectedMcq = index),
           onSubmit: () {
-            final isCorrect = selectedMcq == widget.content.correctAnswer;
-            if (isCorrect) {
-              HapticUtils.success();
-            } else {
-              HapticUtils.error();
+            if (widget.content.hasScorableIndexKey) {
+              if (selectedMcq == widget.content.correctAnswer) {
+                HapticUtils.success();
+              } else {
+                HapticUtils.error();
+              }
             }
             setState(() => showMcqCorrect = true);
           },
@@ -236,13 +237,14 @@ class _QuestionContentRendererState
           showCorrect: showTfCorrect,
           onSelectionChanged: (value) => setState(() => selectedTf = value),
           onSubmit: () {
-            final correctValue =
-                widget.content.correctAnswer == 0; // 0=true, 1=false
-            final isCorrect = selectedTf == correctValue;
-            if (isCorrect) {
-              HapticUtils.success();
-            } else {
-              HapticUtils.error();
+            // Truth value comes from option labels, not index position.
+            final correctValue = widget.content.trueFalseCorrectValue;
+            if (correctValue != null) {
+              if (selectedTf == correctValue) {
+                HapticUtils.success();
+              } else {
+                HapticUtils.error();
+              }
             }
             setState(() => showTfCorrect = true);
           },

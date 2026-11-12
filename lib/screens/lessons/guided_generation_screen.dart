@@ -716,6 +716,11 @@ class _GuidedGenerationScreenState
     final reviewItems = questions
         .where((q) => q['_needs_review'] == true)
         .toList();
+    // Unresolved answer keys block import; quality hints alone do not.
+    final answerErrorItems = questions
+        .where((q) => q['_answer_error'] != null)
+        .toList();
+    final canImport = answerErrorItems.isEmpty;
 
     // Run manifest validation if plan is available
     ManifestValidationResult? validationResult;
@@ -796,9 +801,13 @@ class _GuidedGenerationScreenState
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'The AI\'s answer text didn\'t match any option exactly. '
-                    'These default to the first option — please verify the '
-                    'correct answer after importing.',
+                    answerErrorItems.isEmpty
+                        ? 'These are quality notes. You can import now and '
+                            'improve them later.'
+                        : '${answerErrorItems.length} question(s) have no '
+                            'clear correct answer. LearningApp will not guess '
+                            'one. Fix them in the MCQ step (or copy the JSON '
+                            'and correct "correct_answer"), then import.',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 4),
@@ -836,11 +845,17 @@ class _GuidedGenerationScreenState
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _isImporting ? null : () => _importLesson(prettyJson),
+              onPressed: (_isImporting || !canImport)
+                  ? null
+                  : () => _importLesson(prettyJson),
               icon: _isImporting
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.download),
-              label: Text(_isImporting ? 'Importing…' : 'Import Lesson'),
+              label: Text(_isImporting
+                  ? 'Importing…'
+                  : canImport
+                      ? 'Import Lesson'
+                      : 'Fix answers to import'),
             ),
           ),
           const SizedBox(height: 12),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/session_result.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -329,6 +330,13 @@ class _MissedQuestionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Bounds-check both indices: a corrupt stored key must not crash this
+    // screen or display a guessed "correct" option.
+    final selectedText = AnswerKey.inRange(selectedAnswer, question.options)
+        ? question.options[selectedAnswer]
+        : null;
+    final key = question.answerKey;
+    final correctText = key.isScorable ? question.options[key.index!] : null;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -347,7 +355,7 @@ class _MissedQuestionTile extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Your answer: ${question.options[selectedAnswer]}',
+                    'Your answer: ${selectedText ?? 'not recorded'}',
                     style: TextStyle(color: colorScheme.error),
                   ),
                 ),
@@ -360,7 +368,9 @@ class _MissedQuestionTile extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Correct: ${question.options[question.correctAnswer]}',
+                    correctText != null
+                        ? 'Correct: $correctText'
+                        : 'No correct answer is saved for this question.',
                     style: const TextStyle(color: Colors.green),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
@@ -238,7 +239,13 @@ class ContentLoadingService {
             options: q['options'] is List
                 ? List<String>.from((q['options'] as List).map((o) => o?.toString() ?? ''))
                 : <String>[],
-            correctAnswer: q['correct_answer'] is int ? q['correct_answer'] as int : 0,
+            // Invalid stored keys become unscorable, never option 0.
+            correctAnswer: AnswerKey.storedIndexOrUnscorable(
+              q['correct_answer'],
+              q['options'] is List
+                  ? (q['options'] as List).map((o) => o?.toString() ?? '').toList()
+                  : const <String>[],
+            ),
             questionType: q['type']?.toString(),
             acceptedAnswers: (q['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
             gradingMethod: q['grading_method']?.toString(),

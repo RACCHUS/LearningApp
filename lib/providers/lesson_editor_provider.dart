@@ -7,6 +7,7 @@ import '../models/term.dart';
 import '../models/question.dart';
 import '../models/concept.dart';
 import '../services/lesson_service.dart';
+import '../models/answer_key.dart';
 
 /// State for the lesson editor
 class LessonEditorState {
@@ -215,7 +216,9 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
       id: _uuid.v4(),
       questionText: '',
       options: ['', '', '', ''],
-      correctAnswer: 0,
+      // A placeholder draft has no answer yet; the editor requires an
+      // explicit selection before it can be saved as scorable.
+      correctAnswer: AnswerKey.unscorableIndex,
       type: 'multiple_choice',
       createdBy: _userId ?? 'unknown',
       createdAt: DateTime.now(),

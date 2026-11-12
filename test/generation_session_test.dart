@@ -506,7 +506,9 @@ void main() {
       expect(q['_needs_review'], isNull);
     });
 
-    test('no match flags for review', () {
+    // PR-0a (plan v2.6 §14.8): this test previously asserted the unsafe
+    // behaviour of defaulting an unmatched answer to option 0. Inverted.
+    test('no match is unresolved, never defaulted to option 0', () {
       final session = sessionWithMcq({
         'question': 'Q1',
         'options': ['Apple', 'Banana', 'Cherry'],
@@ -515,9 +517,102 @@ void main() {
 
       final assembled = session.assemble();
       final q = (assembled['questions'] as List).first;
-      expect(q['correct_answer'], 0); // defaults to 0
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'invalid_key');
       expect(q['_needs_review'], isTrue);
       expect(q['_review_reason'], contains('did not match'));
+      expect(session.answerErrorCount, 1);
+    });
+
+    test('blank answer is missing_key, not option 0', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'Banana', 'Cherry'],
+        'correct_answer': '   ',
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'missing_key');
+    });
+
+    test('null / absent answer is missing_key', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'Banana', 'Cherry'],
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'missing_key');
+    });
+
+    test('substring containment no longer matches ("10" vs "100%")', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['100%', '50%', '25%'],
+        'correct_answer': '10',
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'invalid_key');
+    });
+
+    test('answer matching two duplicate options is ambiguous', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'apple ', 'Cherry'],
+        'correct_answer': 'Apple',
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'ambiguous_options');
+    });
+
+    test('exact match on the first option keeps valid index 0', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'Banana', 'Cherry'],
+        'correct_answer': 'Apple',
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], 0);
+      expect(q['_answer_error'], isNull);
+    });
+
+    test('explicit integer index is honoured, including 0', () {
+      for (final i in [0, 2]) {
+        final q = (sessionWithMcq({
+          'question': 'Q1',
+          'options': ['Apple', 'Banana', 'Cherry'],
+          'correct_answer': i,
+          'explanation': 'x',
+        }).assemble()['questions'] as List).first;
+        expect(q['correct_answer'], i);
+        expect(q['_answer_error'], isNull);
+      }
+    });
+
+    test('out-of-range integer index is invalid_key', () {
+      final q = (sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'Banana', 'Cherry'],
+        'correct_answer': 3,
+        'explanation': 'x',
+      }).assemble()['questions'] as List).first;
+      expect(q['correct_answer'], isNull);
+      expect(q['_answer_error'], 'invalid_key');
+    });
+
+    test('missing explanation alone is a quality hint, not an answer error',
+        () {
+      final session = sessionWithMcq({
+        'question': 'Q1',
+        'options': ['Apple', 'Banana', 'Cherry'],
+        'correct_answer': 'Banana',
+      });
+      final q = (session.assemble()['questions'] as List).first;
+      expect(q['_needs_review'], isTrue);
+      expect(q['_answer_error'], isNull);
+      expect(session.answerErrorCount, 0);
     });
 
     test('duplicate options flagged for review', () {

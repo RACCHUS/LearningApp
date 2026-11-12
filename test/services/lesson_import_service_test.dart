@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/services/lesson/lesson_crud_service.dart';
 import 'package:learning_pwa/services/lesson/lesson_content_service.dart';
 import 'package:learning_pwa/models/lesson.dart';
@@ -10,7 +11,15 @@ import 'dart:convert';
 
 // Mock services for testing
 class MockLessonCrudService implements LessonCrudService {
-  final List<Lesson> _lessons = [];
+  final List<Lesson> lessons = [];
+  final List<String> deletedLessonIds = [];
+  bool failDelete = false;
+
+  @override
+  Future<void> deleteLessonFromSupabase(String lessonId) async {
+    if (failDelete) throw StateError('delete failed');
+    deletedLessonIds.add(lessonId);
+  }
   
   @override
   Future<Lesson> addLesson(
@@ -20,7 +29,7 @@ class MockLessonCrudService implements LessonCrudService {
     List<String>? tags,
   }) async {
     final lesson = Lesson(
-      id: 'mock-lesson-${_lessons.length + 1}',
+      id: 'mock-lesson-${lessons.length + 1}',
       title: title,
       description: description,
       tags: tags ?? [],
@@ -31,7 +40,7 @@ class MockLessonCrudService implements LessonCrudService {
       questions: [],
       concepts: [],
     );
-    _lessons.add(lesson);
+    lessons.add(lesson);
     return lesson;
   }
   
@@ -43,6 +52,7 @@ class MockLessonContentService implements LessonContentService {
   final Map<String, List<Term>> addedTerms = {};
   final Map<String, List<Question>> addedQuestions = {};
   final Map<String, List<Concept>> addedConcepts = {};
+  bool failQuestions = false;
 
   @override
   Future<void> addTerms(String lessonId, List<Term> terms) async {
@@ -51,6 +61,7 @@ class MockLessonContentService implements LessonContentService {
 
   @override
   Future<void> addQuestions(String lessonId, List<Question> questions) async {
+    if (failQuestions) throw StateError('network down');
     addedQuestions.putIfAbsent(lessonId, () => []).addAll(questions);
   }
 
@@ -216,7 +227,7 @@ void main() {
             {
               'question': 'What is 2+2?',
               'options': ['2', '3', '4', '5'],
-              'correctAnswer': 2,
+              'correct_answer': 2,
             },
           ],
         });
@@ -234,7 +245,7 @@ void main() {
         final jsonString = jsonEncode({
           'title': 'Lesson with Concepts',
           'concepts': [
-            {'text': 'Concept 1', 'example': 'Example 1'},
+            {'concept_text': 'Concept 1', 'example': 'Example 1'},
           ],
         });
 
@@ -259,11 +270,11 @@ void main() {
             {
               'question': 'Q?',
               'options': ['a', 'b'],
-              'correctAnswer': 0,
+              'correct_answer': 0,
             },
           ],
           'concepts': [
-            {'text': 'Concept'},
+            {'concept_text': 'Concept'},
           ],
         });
 
@@ -282,7 +293,7 @@ void main() {
           'title': 'Generic Content',
           'content': [
             {'type': 'term', 'term': 'T', 'definition': 'D'},
-            {'type': 'mcq', 'question': 'Q', 'options': ['a', 'b'], 'correctAnswer': 0},
+            {'type': 'mcq', 'question': 'Q', 'options': ['a', 'b'], 'correct_answer': 0},
           ],
         });
 
@@ -346,12 +357,12 @@ void main() {
             {
               'question': 'What is x + 5 when x = 3?',
               'options': ['5', '8', '15', '3'],
-              'correctAnswer': 1,
+              'correct_answer': 1,
             },
           ],
           'concepts': [
             {
-              'text': 'Variables are fundamental to algebra',
+              'concept_text': 'Variables are fundamental to algebra',
               'example': 'x = 5',
             },
           ],
@@ -366,6 +377,205 @@ void main() {
         expect(lesson.description, 'Learn advanced mathematics');
         expect(lesson.tags, hasLength(3));
         expect(lesson.userId, 'teacher-1');
+      });
+    });
+
+    // PR-0a (plan v2.6 §14.8, Appendix G.3): whole-payload preflight, no
+    // fabricated answer 0, no silent drops, honest partial writes.
+    group('PR-0a answer integrity and preflight', () {
+      Future<Object?> importError(Map<String, dynamic> payload) async {
+        try {
+          await service.importLessonFromJson(jsonEncode(payload), 'u');
+          return null;
+        } catch (e) {
+          return e;
+        }
+      }
+
+      test('explicit correct_answer 0 imports as 0', () async {
+        final lesson = await service.importLessonFromJson(
+          jsonEncode({
+            'title': 'Zero',
+            'questions': [
+              {'question': 'Q', 'options': ['a', 'b'], 'correct_answer': 0},
+            ],
+          }),
+          'u',
+        );
+        expect(
+          mockContentService.addedQuestions[lesson.id]!.single.correctAnswer,
+          0,
+        );
+      });
+
+      final badKeys = <String, Object?>{
+        'missing': null,
+        'blank string': '',
+        'non-numeric string': 'b',
+        'strict "1" string': '1',
+        'out of range': 2,
+        'negative': -1,
+      };
+      for (final entry in badKeys.entries) {
+        test('rejects ${entry.key} correct_answer and writes nothing',
+            () async {
+          final q = <String, dynamic>{
+            'question': 'Q',
+            'options': ['a', 'b'],
+          };
+          if (entry.value != null) q['correct_answer'] = entry.value;
+          final error = await importError({
+            'title': 'Bad',
+            'questions': [q],
+          });
+          expect(error, isA<LessonImportValidationException>());
+          final issue =
+              (error as LessonImportValidationException).issues.single;
+          expect(issue.path, 'questions[0].correct_answer');
+          expect(mockContentService.addedQuestions, isEmpty);
+          expect(mockCrudService.lessons, isEmpty,
+              reason: 'preflight must run before addLesson');
+        });
+      }
+
+      test('generic content items are validated too, with item paths',
+          () async {
+        final error = await importError({
+          'title': 'Generic',
+          'content': [
+            {'type': 'term', 'term': 'T', 'definition': 'D'},
+            {'type': 'mcq', 'question': 'Q', 'options': ['a', 'b']},
+            {'type': 'mystery'},
+          ],
+        });
+        final issues = (error as LessonImportValidationException).issues;
+        expect(issues.map((i) => i.path),
+            ['content[1].correct_answer', 'content[2].type']);
+        expect(mockContentService.addedTerms, isEmpty);
+      });
+
+      test('mixed valid/invalid batch imports nothing', () async {
+        final error = await importError({
+          'title': 'Mixed',
+          'questions': [
+            {'question': 'ok', 'options': ['a', 'b'], 'correct_answer': 1},
+            {'question': 'bad', 'options': ['a', 'b'], 'correct_answer': 5},
+          ],
+        });
+        expect(error, isA<LessonImportValidationException>());
+        expect(mockContentService.addedQuestions, isEmpty);
+      });
+
+      test('empty terms and concepts are reported, not silently dropped',
+          () async {
+        final error = await importError({
+          'title': 'Drops',
+          'terms': [
+            {'term': 'T', 'definition': ''},
+          ],
+          'concepts': [
+            {'text': 'wrong key'},
+          ],
+        });
+        expect(
+          (error as LessonImportValidationException).issues.map((i) => i.path),
+          ['terms[0]', 'concepts[0]'],
+        );
+      });
+
+      test('guided _answer_error marker blocks import', () async {
+        final error = await importError({
+          'title': 'Guided',
+          'questions': [
+            {
+              'question': 'Q',
+              'options': ['a', 'b'],
+              'correct_answer': null,
+              '_answer_error': 'invalid_key',
+            },
+          ],
+        });
+        expect((error as LessonImportValidationException).issues.single.code,
+            'invalid_key');
+      });
+
+      test('true_false requires one True and one False label', () async {
+        final error = await importError({
+          'title': 'TF',
+          'questions': [
+            {
+              'type': 'true_false',
+              'question': 'Q',
+              'options': ['Yes', 'Maybe'],
+              'correct_answer': 0,
+            },
+          ],
+        });
+        expect((error as LessonImportValidationException).issues.single.code,
+            'unsupported_type');
+      });
+
+      test('short answer without accepted answers is rejected', () async {
+        final error = await importError({
+          'title': 'SA',
+          'questions': [
+            {'type': 'short_answer', 'question': 'Q', 'options': []},
+          ],
+        });
+        expect((error as LessonImportValidationException).issues.single.code,
+            'missing_key');
+      });
+
+      test('short answer stores no fabricated MCQ index', () async {
+        final lesson = await service.importLessonFromJson(
+          jsonEncode({
+            'title': 'SA ok',
+            'questions': [
+              {
+                'type': 'short_answer',
+                'question': '2+2?',
+                'accepted_answers': ['4'],
+              },
+            ],
+          }),
+          'u',
+        );
+        final q = mockContentService.addedQuestions[lesson.id]!.single;
+        expect(q.correctAnswer, AnswerKey.unscorableIndex);
+        expect(q.acceptedAnswers, ['4']);
+      });
+
+      test('write failure after addLesson is reported honestly and cleaned up',
+          () async {
+        mockContentService.failQuestions = true;
+        final error = await importError({
+          'title': 'Partial',
+          'terms': [
+            {'term': 'T', 'definition': 'D'},
+          ],
+          'questions': [
+            {'question': 'Q', 'options': ['a', 'b'], 'correct_answer': 1},
+          ],
+        });
+        expect(error, isA<LessonImportIncompleteException>());
+        final incomplete = error as LessonImportIncompleteException;
+        expect(incomplete.stage, 'questions');
+        expect(incomplete.cleanedUp, isTrue);
+        expect(mockCrudService.deletedLessonIds, [incomplete.lessonId]);
+      });
+
+      test('failed cleanup says a partial lesson may remain', () async {
+        mockContentService.failQuestions = true;
+        mockCrudService.failDelete = true;
+        final error = await importError({
+          'title': 'Partial',
+          'questions': [
+            {'question': 'Q', 'options': ['a', 'b'], 'correct_answer': 1},
+          ],
+        });
+        final incomplete = error as LessonImportIncompleteException;
+        expect(incomplete.cleanedUp, isFalse);
+        expect(incomplete.toString(), contains('partial lesson may remain'));
       });
     });
   });

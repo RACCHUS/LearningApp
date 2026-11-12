@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/content_types.dart';
@@ -183,7 +184,13 @@ final lessonProvider =
             options: e['options'] is List 
                 ? List<String>.from(e['options'].map((o) => o?.toString() ?? ''))
                 : <String>[],
-            correctAnswer: e['correct_answer'] is int ? e['correct_answer'] : 0,
+            // Invalid stored keys become unscorable, never option 0.
+            correctAnswer: AnswerKey.storedIndexOrUnscorable(
+              e['correct_answer'],
+              e['options'] is List
+                  ? (e['options'] as List).map((o) => o?.toString() ?? '').toList()
+                  : const <String>[],
+            ),
             questionType: e['type']?.toString(),
             acceptedAnswers: (e['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),
             gradingMethod: e['grading_method']?.toString(),

@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 
 part 'question_content.g.dart';
@@ -71,7 +72,29 @@ class QuestionContent extends LessonContent {
     return 'mcq';
   }
 
-  factory QuestionContent.fromJson(Map<String, dynamic> json) => 
+  /// Validity of the index key for MCQ / true-false items. Hydrating readers
+  /// store [AnswerKey.unscorableIndex] for invalid keys instead of `0`.
+  AnswerKeyResult get answerKey {
+    final key = AnswerKey.fromIndex(correctAnswer, options);
+    if (!key.isScorable || effectiveQuestionType != 'true_false') return key;
+    return TrueFalseKey.correctValue(options, correctAnswer) == null
+        ? const AnswerKeyResult.rejected(
+            AnswerKeyStatus.unsupportedType,
+            'True/false options must be one "True" and one "False" label.',
+          )
+        : key;
+  }
+
+  /// Whether an index-keyed answer may be scored. Short-answer items are
+  /// graded from accepted answers by `ShortAnswerGrader` instead.
+  bool get hasScorableIndexKey => answerKey.isScorable;
+
+  /// For true/false items: the truth value of the keyed option, derived from
+  /// option labels (never from index position). Null when unscorable.
+  bool? get trueFalseCorrectValue =>
+      TrueFalseKey.correctValue(options, correctAnswer);
+
+  factory QuestionContent.fromJson(Map<String, dynamic> json) =>
     _$QuestionContentFromJson(json);
 
   @override
