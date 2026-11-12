@@ -432,6 +432,20 @@ jobs:
           supabase db reset
           supabase test db
 
+      - name: Verify real lesson import and readback against local Supabase (synthetic)
+        # Production import/read code paths against the clean local stack.
+        # REQUIRE_LOCAL_SUPABASE makes missing configuration a failure; the
+        # test itself refuses non-loopback hosts. .env is copied only because
+        # the Flutter asset bundle lists it; the test never reads it.
+        run: |
+          cp .env.example .env
+          eval "$(supabase status -o env)"
+          LOCAL_SUPABASE_URL="$API_URL" \
+          LOCAL_SUPABASE_ANON_KEY="$ANON_KEY" \
+          LOCAL_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          REQUIRE_LOCAL_SUPABASE=true \
+          flutter test test/integration/lesson_import_local_supabase_test.dart --reporter expanded
+
       - name: Ingest complete official federal taxonomy bundle into clean Supabase
         run: |
           eval $(supabase status -o env)
