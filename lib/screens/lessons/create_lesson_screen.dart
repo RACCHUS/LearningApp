@@ -18,6 +18,7 @@ import 'package:learning_pwa/widgets/lesson/personal_attachment_result.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/providers/available_lessons_provider.dart';
+import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateLessonScreen extends ConsumerStatefulWidget {
@@ -513,6 +514,31 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 ),
               ),
             ),
+
+            // Slot-based generator (PR-C): shown only when its flag is on.
+            if (ref.watch(manualGenerationV2EnabledProvider)) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('manual_v2_entry'),
+                  onPressed: () => context.push(
+                    Uri(
+                      path: '/manual-generation-v2',
+                      queryParameters: {
+                        if (_subjectController.text.trim().isNotEmpty)
+                          'subject': _subjectController.text.trim(),
+                      },
+                    ).toString(),
+                  ),
+                  icon: const Icon(Icons.view_agenda_outlined),
+                  label: const Text('Slot-based generator (experimental)'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+            ],
             
             const SizedBox(height: 16),
             

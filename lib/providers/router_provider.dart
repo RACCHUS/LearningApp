@@ -39,6 +39,7 @@ import 'package:learning_pwa/screens/settings/reset_center_screen.dart'
 import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart'
     deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
+import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
@@ -708,6 +709,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           final assessmentId = state.pathParameters['assessmentId']!;
           return AssessmentScreen(assessmentId: assessmentId);
         },
+      ),
+
+      // Slot-based manual generator (PR-C, ai.manual_generation_v2).
+      GoRoute(
+        path: '/manual-generation-v2',
+        name: 'manual-generation-v2',
+        builder: (context, state) => ManualGenerationV2Screen(
+          initialSubject: state.uri.queryParameters['subject'],
+        ),
       ),
 
       // Guided generation route

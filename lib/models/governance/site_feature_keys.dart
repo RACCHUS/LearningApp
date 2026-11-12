@@ -24,6 +24,7 @@ abstract final class SiteFeatureKeys {
   static const String learningCommunityQa = 'learning.community_qa';
   static const String learningSimulations = 'learning.simulations';
   static const String learningQuickRescue = 'learning.quick_rescue';
+  static const String aiManualGenerationV2 = 'ai.manual_generation_v2';
 
   static const Set<String> all = {
     telFast,
@@ -45,5 +46,6 @@ abstract final class SiteFeatureKeys {
     learningCommunityQa,
     learningSimulations,
     learningQuickRescue,
+    aiManualGenerationV2,
   };
 }
