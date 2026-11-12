@@ -1,3 +1,4 @@
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/question_content.dart';
 
 /// How a short answer is compared with its accepted answers.
@@ -56,15 +57,17 @@ class ShortAnswerGrade {
 class ShortAnswerGrader {
   const ShortAnswerGrader._();
 
-  /// Accepted answers: the declared list, else the legacy keyed option.
+  /// Accepted answers: the declared list, else the legacy keyed option —
+  /// but only when that key is genuinely valid (in range, non-blank and
+  /// unambiguous). A defaulted or invalid index is never consumed, so an
+  /// item with no trustworthy answer cannot be graded correct.
   static List<String> acceptedAnswersFor(QuestionContent q) {
     final declared = (q.acceptedAnswers ?? const <String>[])
         .where((a) => a.trim().isNotEmpty)
         .toList();
     if (declared.isNotEmpty) return declared;
-    if (q.correctAnswer >= 0 && q.correctAnswer < q.options.length) {
-      return [q.options[q.correctAnswer]];
-    }
+    final key = AnswerKey.fromIndex(q.correctAnswer, q.options);
+    if (key.isScorable) return [q.options[key.index!]];
     return const [];
   }
 

@@ -275,6 +275,27 @@ class SupabaseRestClient {
   }
 }
 
+/// Resolves a legacy question's answer key for the intermediate export
+/// without guessing (plan v2.6 §14.8, H.3 rule 7). Missing, non-integer,
+/// conflicting or out-of-range keys stop the export instead of becoming 0.
+/// The privileged ingest RPC keeps its own independent bounds checks.
+int _intermediateCorrectIndex(Map<dynamic, dynamic> q) {
+  final text = q['question_text'] ?? q['question'];
+  final answer = q['correct_answer'];
+  final index = q['correct_index'];
+  if (answer != null && index != null && answer != index) {
+    throw Exception(
+        'Question "$text" has conflicting correct_answer ($answer) and correct_index ($index).');
+  }
+  final raw = answer ?? index;
+  final options = q['options'] is List ? q['options'] as List : const [];
+  if (raw is! int || raw < 0 || raw >= options.length) {
+    throw Exception(
+        'Question "$text" has no valid correct_answer ($raw) for ${options.length} options; refusing to default to 0.');
+  }
+  return raw;
+}
+
 List<dynamic> asList(dynamic body) {
   if (body is List) return body;
   if (body is Map) return [body];
@@ -1059,12 +1080,13 @@ Map<String, dynamic> _prepareManifestPayload({
         final questions = <Map<String, dynamic>>[];
         for (final q in (l['questions'] as List<dynamic>? ?? [])) {
           if (q is! Map) continue;
+          final correctIndex = _intermediateCorrectIndex(q);
           questions.add({
             'question_text': q['question_text'] ?? q['question'],
             'question': q['question_text'] ?? q['question'],
             'options': q['options'] ?? [],
-            'correct_answer': q['correct_answer'] ?? q['correct_index'] ?? 0,
-            'correct_index': q['correct_answer'] ?? q['correct_index'] ?? 0,
+            'correct_answer': correctIndex,
+            'correct_index': correctIndex,
             'explanation': q['explanation'],
           });
         }

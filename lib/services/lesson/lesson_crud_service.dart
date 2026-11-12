@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/term.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -212,8 +213,12 @@ class LessonCrudService {
         .map((q) => Question(
               id: q['id'],
               questionText: q['question_text'],
-              correctAnswer: q['correct_answer'],
-              options: List<String>.from(q['options']),
+              // Invalid stored keys become unscorable, never option 0.
+              correctAnswer: AnswerKey.storedIndexOrUnscorable(
+                q['correct_answer'],
+                List<String>.from(q['options'] ?? const <String>[]),
+              ),
+              options: List<String>.from(q['options'] ?? const <String>[]),
               type: q['type'],
               explanation: q['explanation'],
               acceptedAnswers: (q['accepted_answers'] as List?)?.map((a) => a.toString()).toList(),

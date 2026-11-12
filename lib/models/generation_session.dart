@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:learning_pwa/models/answer_key.dart';
+
 /// Tracks the state of a multi-prompt lesson generation session.
 /// Each phase feeds its output into the next prompt so the AI maintains
 /// continuity in terminology, difficulty progression, and style.
@@ -193,88 +195,85 @@ class GenerationSession {
   }
 
   /// Map MCQ fields: correct_answer (text)→correct_answer (index).
+  ///
+  /// The text answer is converted only by unique normalized exact match
+  /// (plan v2.6 §14.8 / Appendix G.2). An unresolved key is emitted as
+  /// `correct_answer: null` with `_answer_error`, which blocks trusted import
+  /// until repaired — it is never defaulted to option 0. `_needs_review` and
+  /// `_review_reason` remain quality hints and are not scoring proof.
   List<Map<String, dynamic>> _assembleMcqs() {
     final revised = _revisedContentMap();
     return mcqs.map((q) {
       final source = revised[q['question']] ?? q;
       final options = source['options'] is List
-          ? List<String>.from(source['options'])
+          ? (source['options'] as List).map((o) => o?.toString() ?? '').toList()
           : <String>[];
       final questionType = source['type']?.toString() ?? 'mcq';
       final isShortAnswer = questionType == 'short_answer';
-      final correctText = source['correct_answer']?.toString() ?? '';
+      final rawCorrect = source['correct_answer'];
+      final correctText = rawCorrect?.toString() ?? '';
       final acceptedAnswers = (source['accepted_answers'] as List?)
           ?.map((a) => a.toString())
           .where((a) => a.trim().isNotEmpty)
           .toList();
-      final correctIndex = isShortAnswer ? null : _resolveCorrectIndex(correctText, options);
+      final AnswerKeyResult? key = isShortAnswer
+          ? null
+          : (rawCorrect is int
+              ? AnswerKey.fromIndex(rawCorrect, options)
+              : AnswerKey.fromText(rawCorrect, options));
 
       final result = <String, dynamic>{
         'id': source['id'] ?? '',
         'question': source['question'] ?? source['question_text'] ?? '',
         'type': questionType,
         'options': options,
-        'correct_answer': correctIndex ?? 0,
+        'correct_answer': key?.index,
         'explanation': source['explanation'] ?? '',
-        if (isShortAnswer) 'accepted_answers': acceptedAnswers ?? (correctText.isNotEmpty ? [correctText] : []),
+        if (isShortAnswer) 'accepted_answers': acceptedAnswers ?? (correctText.trim().isNotEmpty ? [correctText] : []),
         if (isShortAnswer) 'grading_method': source['grading_method'] ?? 'normalized_text',
         if (isShortAnswer && source['numeric_tolerance'] != null) 'numeric_tolerance': source['numeric_tolerance'],
       };
 
-      if ((!isShortAnswer && correctIndex == null) ||
-          (isShortAnswer && (result['accepted_answers'] as List).isEmpty)) {
+      void addReason(String reason) {
         result['_needs_review'] = true;
+        final currentReason = result['_review_reason'];
         result['_review_reason'] =
-            isShortAnswer ? 'short_answer has no accepted_answers' : 'correct_answer "$correctText" did not match any option';
+            currentReason != null ? '$currentReason; $reason' : reason;
+      }
+
+      if (key != null && !key.isScorable) {
+        result['_answer_error'] = key.status.code;
+        addReason(key.status == AnswerKeyStatus.invalidKey
+            ? 'correct_answer "$correctText" did not match any option'
+            : key.detail ?? key.status.code);
+      }
+      if (isShortAnswer && (result['accepted_answers'] as List).isEmpty) {
+        result['_answer_error'] = AnswerKeyStatus.missingKey.code;
+        addReason('short_answer has no accepted_answers');
       }
 
       // Cross-check: duplicate options
-      final uniqueOptions = options.map((o) => o.trim().toLowerCase()).toSet();
+      final uniqueOptions = options.map(AnswerKey.normalize).toSet();
       if (uniqueOptions.length < options.length) {
-        result['_needs_review'] = true;
-        final currentReason = result['_review_reason'];
-        result['_review_reason'] = currentReason != null
-            ? '$currentReason; duplicate options detected'
-            : 'duplicate options detected';
+        addReason('duplicate options detected');
       }
 
-      // Cross-check: missing explanation
+      // Cross-check: missing explanation (quality hint only)
       if ((result['explanation'] as String).trim().isEmpty) {
-        result['_needs_review'] = true;
-        final currentReason = result['_review_reason'];
-        result['_review_reason'] = currentReason != null
-            ? '$currentReason; missing explanation'
-            : 'missing explanation';
+        addReason('missing explanation');
       }
 
       return result;
     }).toList();
   }
 
-  /// Resolve a text answer to its 0-based index in [options].
-  /// Returns `null` if no match is found (caller should flag for review).
-  static int? _resolveCorrectIndex(String correctText, List<String> options) {
-    // 1. Exact match
-    final exact = options.indexOf(correctText);
-    if (exact >= 0) return exact;
-
-    // 2. Case-insensitive / trimmed match
-    final normalized = correctText.trim().toLowerCase();
-    final ciMatch = options.indexWhere(
-      (o) => o.trim().toLowerCase() == normalized,
-    );
-    if (ciMatch >= 0) return ciMatch;
-
-    // 3. Substring containment (handles minor formatting differences)
-    final containsMatch = options.indexWhere(
-      (o) =>
-          o.trim().toLowerCase().contains(normalized) ||
-          normalized.contains(o.trim().toLowerCase()),
-    );
-    if (containsMatch >= 0) return containsMatch;
-
-    // No match — return null so caller can flag for review
-    return null;
+  /// Number of assembled questions whose answer key is unresolved and must
+  /// be repaired before import (distinct from quality-only review hints).
+  int get answerErrorCount {
+    if (currentPhase != GenerationPhase.complete) return 0;
+    return (assemble()['questions'] as List)
+        .where((q) => q['_answer_error'] != null)
+        .length;
   }
 
   Map<String, Map<String, dynamic>> _revisedContentMap() {

@@ -51,18 +51,47 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
   }
 
   /// Try to load a previously saved session. Returns true if restored.
+  ///
+  /// If the stored V1 session cannot be parsed, its raw bytes are copied to
+  /// [corruptSessionBackupKey] before anything else can overwrite them, so
+  /// the learner's draft is never silently lost (plan v2.6 §14.8).
   Future<bool> tryRestore() async {
+    String? raw;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final json = prefs.getString(_sessionStorageKey);
-      if (json != null && json.isNotEmpty) {
-        state = GenerationSession.fromJsonString(json);
+      raw = prefs.getString(_sessionStorageKey);
+      if (raw != null && raw.isNotEmpty) {
+        state = GenerationSession.fromJsonString(raw);
         return true;
       }
     } catch (e) {
       debugPrint('Failed to restore generation session: $e');
+      if (raw != null && raw.isNotEmpty) {
+        await _preserveCorruptSession(raw);
+      }
     }
     return false;
+  }
+
+  /// SharedPreferences key holding the raw text of an unreadable session.
+  static const corruptSessionBackupKey = '${_sessionStorageKey}_unreadable_raw';
+
+  Future<void> _preserveCorruptSession(String raw) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Keep the first preserved copy; a later failure must not replace it.
+      if (prefs.getString(corruptSessionBackupKey) == null) {
+        await prefs.setString(corruptSessionBackupKey, raw);
+      }
+    } catch (e) {
+      debugPrint('Failed to preserve unreadable generation session: $e');
+    }
+  }
+
+  /// Raw text of a preserved unreadable session, for export/recovery.
+  static Future<String?> readCorruptSessionBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(corruptSessionBackupKey);
   }
 
   /// Check if a saved session exists without loading it.
