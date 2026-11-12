@@ -1,0 +1,143 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-spreadsheet-percent-format",
+  "content_version": "1.0.0",
+  "title": "Showing percentages in Excel",
+  "concept_id": "spreadsheet-percent-format",
+  "primary_objective": {
+    "objective_id": "excel.percent-format.predict-display",
+    "statement": "Predict what a cell shows after Percentage format is applied, and store percent results as decimals."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": ["bridge-fraction-decimal", "bridge-percent-change"],
+  "sources": [
+    {
+      "source_id": "ms-format-percentages",
+      "publisher": "Microsoft Support",
+      "title": "Format numbers as percentages in Excel",
+      "url": "https://support.microsoft.com/en-us/excel/format-numbers-as-percentages-in-excel",
+      "license": "Proprietary documentation — reference link only",
+      "rights_posture": "link_only"
+    },
+    {
+      "source_id": "ms-number-formats",
+      "publisher": "Microsoft Support",
+      "title": "Available number formats in Excel",
+      "url": "https://support.microsoft.com/en-us/office/available-number-formats-in-excel-0afe8f52-97db-41f1-b972-4b46e9f1e8d2",
+      "license": "Proprietary documentation — reference link only",
+      "rights_posture": "link_only"
+    },
+    {
+      "source_id": "openstax-prealgebra-2e-6-2",
+      "publisher": "OpenStax, Rice University",
+      "title": "Prealgebra 2e",
+      "section": "6.2 Solve General Applications of Percent",
+      "url": "https://openstax.org/books/prealgebra-2e/pages/6-2-solve-general-applications-of-percent",
+      "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "sp-teach-1",
+      "text": "In Excel, a number format changes how a value looks, not the value stored in the cell. The Percentage format shows the stored value multiplied by 100, followed by a % sign.",
+      "source_ids": ["ms-number-formats"]
+    },
+    {
+      "block_id": "sp-teach-2",
+      "text": "So a cell that stores 0.25 shows 25%. A cell that already stores 25 shows 2500%. For percent results, keep the value as a decimal, then apply Percentage format. You can apply it with the Percent Style button on the Home tab.",
+      "source_ids": ["ms-format-percentages"]
+    },
+    {
+      "block_id": "sp-teach-3",
+      "text": "A percent-change formula such as =(B2-A2)/A2 gives a decimal, like 0.25. Percentage format then shows it as 25%. The number of decimal places you choose rounds what you see, not the stored value.",
+      "source_ids": ["ms-format-percentages", "openstax-prealgebra-2e-6-2"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "sp-example-1",
+      "text": "A cell stores 0.3. With Percentage format it shows 30%, because 0.3 × 100 = 30.",
+      "source_ids": ["ms-number-formats"],
+      "worked": {
+        "template": "decimal_to_percent",
+        "inputs": { "value": "0.3" },
+        "result": 30
+      }
+    },
+    {
+      "block_id": "sp-example-2",
+      "text": "A2 holds 80 and B2 holds 100. =(B2-A2)/A2 gives (100 − 80) ÷ 80 = 0.25. With Percentage format the cell shows 25%.",
+      "source_ids": ["ms-format-percentages", "openstax-prealgebra-2e-6-2"],
+      "worked": {
+        "template": "percent_change",
+        "inputs": { "original": 80, "new": 100 },
+        "result": 25
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "sp-alt-1",
+      "text": "Think of Percentage format as a pair of glasses. The cell still holds 0.25, but through the glasses you see it × 100 with a % sign: 25%. Take the glasses off (General format) and you see 0.25 again.",
+      "source_ids": ["ms-number-formats"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "sp-check-1",
+      "kind": "choice",
+      "prompt": "A cell stores 0.07. You apply Percentage format with 0 decimal places. What does the cell show?",
+      "template": "decimal_to_percent",
+      "inputs": { "value": "0.07" },
+      "options": [
+        { "option_id": "a", "text": "7%", "value": 7 },
+        { "option_id": "b", "text": "0.07%", "value": "0.07" },
+        { "option_id": "c", "text": "70%", "value": 70 },
+        { "option_id": "d", "text": "700%", "value": 700 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "0.07 × 100 = 7, so the cell shows 7%."
+    },
+    {
+      "item_id": "sp-check-2",
+      "kind": "choice",
+      "prompt": "A cell already stores the number 12. You apply Percentage format with 0 decimal places. What does the cell show?",
+      "template": "decimal_to_percent",
+      "inputs": { "value": 12 },
+      "options": [
+        { "option_id": "a", "text": "12%", "value": 12 },
+        { "option_id": "b", "text": "1200%", "value": 1200 },
+        { "option_id": "c", "text": "0.12%", "value": "0.12" },
+        { "option_id": "d", "text": "120%", "value": 120 }
+      ],
+      "correct_option_id": "b",
+      "feedback": "Percentage format shows the stored value × 100, so 12 appears as 1200%. To show 12%, store 0.12 instead."
+    },
+    {
+      "item_id": "sp-check-3",
+      "kind": "numeric",
+      "prompt": "A2 holds 50 and B2 holds 65. C2 contains =(B2-A2)/A2 with Percentage format and 0 decimal places. What number appears before the % sign?",
+      "template": "percent_change",
+      "inputs": { "original": 50, "new": 65 },
+      "answer": 30,
+      "accepts_percent_sign": true,
+      "feedback": "(65 − 50) ÷ 50 = 0.3. Percentage format shows 0.3 × 100 = 30, so C2 shows 30%."
+    }
+  ],
+  "return_cue": "Back to your spreadsheet: let the formula produce a decimal, then apply Percentage format to show it as a percent.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-12",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (decimal_to_percent, percent_change) in CI.",
+    "notes": "Text is independently written. There are no Microsoft screenshots, excerpts or branding, and sources are linked only. Two claims were confirmed against Microsoft Support on 2026-11-12: Percentage format multiplies by 100, and formatting changes only the display. This is not an Excel simulation or credential. No person has reviewed this content yet."
+  }
+}
