@@ -1,13 +1,13 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
--- Automatically compiled from 116 immutable migrations
--- Generated: 2026-11-12T17:16:31.305911Z
+-- Automatically compiled from 117 immutable migrations
+-- Generated: 2026-11-12T17:49:24.884839Z
 -- ====================================================================
 
 BEGIN;
 
 -- --------------------------------------------------------------------
--- [1/116] Migration: 20241228000000_legacy_base_tables.sql
+-- [1/117] Migration: 20241228000000_legacy_base_tables.sql
 -- --------------------------------------------------------------------
 -- Bootstrap the legacy public tables that predate supabase/migrations.
 -- Existing installations already have these tables, so this migration is
@@ -104,7 +104,7 @@ create table if not exists public.offline_content (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20241228000000', 'legacy_base_tables') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [2/116] Migration: 20250101000001_create_review_items.sql
+-- [2/117] Migration: 20250101000001_create_review_items.sql
 -- --------------------------------------------------------------------
 -- Spaced Repetition Review Items Table
 -- Stores user's review queue with SM-2 algorithm data
@@ -182,7 +182,7 @@ COMMENT ON TABLE review_items IS 'Stores spaced repetition review items for user
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20250101000001', 'create_review_items') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [3/116] Migration: 20250101000002_create_user_xp.sql
+-- [3/117] Migration: 20250101000002_create_user_xp.sql
 -- --------------------------------------------------------------------
 -- User XP and Level System Tables
 -- Tracks XP earned and provides level progression
@@ -282,7 +282,7 @@ COMMENT ON FUNCTION increment_user_xp IS 'Safely increment user XP with upsert';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20250101000002', 'create_user_xp') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [4/116] Migration: 20251228045018_courses_and_study_sets.sql
+-- [4/117] Migration: 20251228045018_courses_and_study_sets.sql
 -- --------------------------------------------------------------------
 -- Migration: courses_and_study_sets
 -- Purpose: Add tables for courses, study sets, and their progress tracking
@@ -515,7 +515,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20251228045018', 'courses_and_study_sets') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [5/116] Migration: 20260528000000_secure_rls_with_anonymous_guests.sql
+-- [5/117] Migration: 20260528000000_secure_rls_with_anonymous_guests.sql
 -- --------------------------------------------------------------------
 -- Re-secure the public schema.
 --
@@ -803,7 +803,7 @@ DELETE FROM public.users WHERE id = '00000000-0000-0000-0000-000000000000';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260528000000', 'secure_rls_with_anonymous_guests') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [6/116] Migration: 20260909000000_learning_contexts.sql
+-- [6/117] Migration: 20260909000000_learning_contexts.sql
 -- --------------------------------------------------------------------
 -- Learning contexts and resume pointers.
 --
@@ -899,7 +899,7 @@ create trigger resume_pointers_touch
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260909000000', 'learning_contexts') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [7/116] Migration: 20260925000000_v2_migration_map.sql
+-- [7/117] Migration: 20260925000000_v2_migration_map.sql
 -- --------------------------------------------------------------------
 -- Migration mapping table for Learning Architecture v2.
 -- Preserves idempotent mappings between legacy v1 string IDs (e.g. career_paths, courses, lessons)
@@ -929,7 +929,7 @@ create policy "v2_migration_map_read"
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000000', 'v2_migration_map') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [8/116] Migration: 20260925000001_v2_additive_schema.sql
+-- [8/117] Migration: 20260925000001_v2_additive_schema.sql
 -- --------------------------------------------------------------------
 -- Learning Architecture v2 — Phase 1: Additive Schema & DDL
 -- Ordered execution:
@@ -1662,7 +1662,7 @@ create policy "user_concept_state_owner" on public.user_concept_state
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000001', 'v2_additive_schema') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [9/116] Migration: 20260925000002_v2_data_migration.sql
+-- [9/117] Migration: 20260925000002_v2_data_migration.sql
 -- --------------------------------------------------------------------
 -- Learning Architecture v2 — Phase 2: Additive Data Migration
 -- Safe, idempotent backfill from legacy tables into v2 structures:
@@ -1964,7 +1964,7 @@ end $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260925000002', 'v2_data_migration') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [10/116] Migration: 20260928000000_v2_sample_data.sql
+-- [10/117] Migration: 20260928000000_v2_sample_data.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Learning Architecture v2 — Sample Target & Knowledge Graph Seed
@@ -2140,7 +2140,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260928000000', 'v2_sample_data') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [11/116] Migration: 20260929000000_canonical_taxonomy_v2.sql
+-- [11/117] Migration: 20260929000000_canonical_taxonomy_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Canonical Taxonomy Architecture v2.4 Consolidated Schema Migration
@@ -2580,7 +2580,7 @@ create policy "concept_fields_read_inherited" on public.concept_fields for selec
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000000', 'canonical_taxonomy_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [12/116] Migration: 20260929000001_seed_catalog_clusters_and_fields.sql
+-- [12/117] Migration: 20260929000001_seed_catalog_clusters_and_fields.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Seed Migration: 12 Presentation Catalog Clusters, Source Releases & Primary Fields
@@ -2674,7 +2674,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000001', 'seed_catalog_clusters_and_fields') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [13/116] Migration: 20260929000002_seed_canonical_taxonomy_full.sql
+-- [13/117] Migration: 20260929000002_seed_canonical_taxonomy_full.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000002_seed_canonical_taxonomy_full.sql
@@ -3072,7 +3072,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000002', 'seed_canonical_taxonomy_full') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [14/116] Migration: 20260929000003_v2_stabilization_and_hardening.sql
+-- [14/117] Migration: 20260929000003_v2_stabilization_and_hardening.sql
 -- --------------------------------------------------------------------
 -- Migration: 20260929000003_v2_stabilization_and_hardening.sql
 -- Description:
@@ -3217,7 +3217,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000003', 'v2_stabilization_and_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [15/116] Migration: 20260929000004_v2_stabilization_fix.sql
+-- [15/117] Migration: 20260929000004_v2_stabilization_fix.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000004_v2_stabilization_fix.sql
@@ -3526,7 +3526,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000004', 'v2_stabilization_fix') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [16/116] Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
+-- [16/117] Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000005_v2_immutability_and_curriculum_seed.sql
@@ -3724,7 +3724,7 @@ END $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000005', 'v2_immutability_and_curriculum_seed') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [17/116] Migration: 20260929000006_v2_system_targets_rls_hardening.sql
+-- [17/117] Migration: 20260929000006_v2_system_targets_rls_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20260929000006_v2_system_targets_rls_hardening.sql
@@ -3802,7 +3802,7 @@ create policy "nodes_write" on public.curriculum_nodes
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20260929000006', 'v2_system_targets_rls_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [18/116] Migration: 20261001000000_lesson_visibility.sql
+-- [18/117] Migration: 20261001000000_lesson_visibility.sql
 -- --------------------------------------------------------------------
 -- Existing lessons were readable to everyone. Preserve that state explicitly,
 -- then make future user-created lessons private by default.
@@ -3882,7 +3882,7 @@ create policy node_lessons_lesson_visible on public.curriculum_node_lessons
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261001000000', 'lesson_visibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [19/116] Migration: 20261001000001_user_curriculum_resources.sql
+-- [19/117] Migration: 20261001000001_user_curriculum_resources.sql
 -- --------------------------------------------------------------------
 -- User-owned supplements to exact published curriculum nodes. This table
 -- never changes curriculum_node_lessons or official requirement counts.
@@ -3971,7 +3971,7 @@ create policy user_curriculum_resources_owner_delete
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261001000001', 'user_curriculum_resources') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [20/116] Migration: 20261002000000_retired_version_immutability.sql
+-- [20/117] Migration: 20261002000000_retired_version_immutability.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261002000000_retired_version_immutability.sql
@@ -4136,7 +4136,7 @@ create policy "node_concepts_owner_write" on public.curriculum_node_concepts
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261002000000', 'retired_version_immutability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [21/116] Migration: 20261003000000_content_provenance.sql
+-- [21/117] Migration: 20261003000000_content_provenance.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261003000000_content_provenance.sql
@@ -4223,7 +4223,7 @@ create policy "content_source_mappings_service_write" on public.content_source_m
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261003000000', 'content_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [22/116] Migration: 20261004000000_content_primitives_v2.sql
+-- [22/117] Migration: 20261004000000_content_primitives_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261004000000_content_primitives_v2.sql
@@ -4641,7 +4641,7 @@ alter table public.content_source_mappings
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261004000000', 'content_primitives_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [23/116] Migration: 20261005000000_content_hardening.sql
+-- [23/117] Migration: 20261005000000_content_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261005000000_content_hardening.sql
@@ -5064,7 +5064,7 @@ grant execute on function public.resolve_canonical_concept(text, text, uuid) to 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261005000000', 'content_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [24/116] Migration: 20261006000000_import_ownership_and_staging.sql
+-- [24/117] Migration: 20261006000000_import_ownership_and_staging.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000000_import_ownership_and_staging.sql
@@ -6381,7 +6381,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000000', 'import_ownership_and_staging') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [25/116] Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
+-- [25/117] Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000001_rpc_provenance_and_clean_fix.sql
@@ -7281,7 +7281,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000001', 'rpc_provenance_and_clean_fix') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [26/116] Migration: 20261006000002_update_ingest_curriculum_manifest.sql
+-- [26/117] Migration: 20261006000002_update_ingest_curriculum_manifest.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000002_update_ingest_curriculum_manifest.sql
@@ -8181,7 +8181,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000002', 'update_ingest_curriculum_manifest') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [27/116] Migration: 20261006000003_phase_c5_final_hardening.sql
+-- [27/117] Migration: 20261006000003_phase_c5_final_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261006000003_phase_c5_final_hardening.sql
@@ -10057,7 +10057,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261006000003', 'phase_c5_final_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [28/116] Migration: 20261007000000_phase_f_taxonomy_crosswalk.sql
+-- [28/117] Migration: 20261007000000_phase_f_taxonomy_crosswalk.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase F: Full Taxonomy & Crosswalk Expansion Migration
@@ -10369,7 +10369,7 @@ grant execute on function public.get_cross_target_shared_concepts(uuid, uuid) to
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261007000000', 'phase_f_taxonomy_crosswalk') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [29/116] Migration: 20261008000000_phase_g_version_governance.sql
+-- [29/117] Migration: 20261008000000_phase_g_version_governance.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261008000000_phase_g_version_governance.sql
@@ -11113,7 +11113,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000000', 'phase_g_version_governance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [30/116] Migration: 20261008000001_phase_g_security_hardening.sql
+-- [30/117] Migration: 20261008000001_phase_g_security_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase G.5: Version Governance Security & Integrity Hardening
@@ -11949,7 +11949,7 @@ grant execute on function public.retire_target_version(uuid)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000001', 'phase_g_security_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [31/116] Migration: 20261008000002_phase_f1_production_taxonomy_hardening.sql
+-- [31/117] Migration: 20261008000002_phase_f1_production_taxonomy_hardening.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Phase F.1: Production Taxonomy Ingestion Hardening
@@ -13168,7 +13168,7 @@ grant execute on function public.publish_target_version(uuid, boolean) to authen
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261008000002', 'phase_f1_production_taxonomy_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [32/116] Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
+-- [32/117] Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000000_manifest_concept_mappings_and_target_security.sql
@@ -14701,7 +14701,7 @@ create policy "content_source_artifacts_service_write"
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000000', 'manifest_concept_mappings_and_target_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [33/116] Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
+-- [33/117] Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000001_harden_cross_version_mappings_and_target_version_security.sql
@@ -16225,7 +16225,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000001', 'harden_cross_version_mappings_and_target_version_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [34/116] Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
+-- [34/117] Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000002_harden_mapping_rls_migration_rpc_and_retired_visibility.sql
@@ -16663,7 +16663,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000002', 'harden_mapping_rls_migration_rpc_and_retired_visibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [35/116] Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
+-- [35/117] Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000003_control_learning_context_target_version_and_migration_auth.sql
@@ -17204,7 +17204,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000003', 'control_learning_context_target_version_and_migration_auth') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [36/116] Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
+-- [36/117] Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261009000004_restore_rpc_contracts_and_close_enrollment_oracle.sql
@@ -17665,7 +17665,7 @@ grant execute on function public.migrate_user_context_target_version(uuid, uuid,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000004', 'restore_rpc_contracts_and_close_enrollment_oracle') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [37/116] Migration: 20261009000005_learning_target_catalog_provenance.sql
+-- [37/117] Migration: 20261009000005_learning_target_catalog_provenance.sql
 -- --------------------------------------------------------------------
 -- Catalog source integrity. This migration is append-only.
 -- A public entry is either an official platform record or a reviewed community record.
@@ -17789,7 +17789,7 @@ comment on column public.learning_targets.review_status is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261009000005', 'learning_target_catalog_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [38/116] Migration: 20261012000000_catalog_candidate_intake.sql
+-- [38/117] Migration: 20261012000000_catalog_candidate_intake.sql
 -- --------------------------------------------------------------------
 -- Phase P0: private credential/license/exam/program candidate intake.
 -- Candidate names and issuer links are NOT approved catalog destinations.
@@ -17883,7 +17883,7 @@ grant select, insert, update, delete on table public.catalog_intake_demand_signa
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000000', 'catalog_candidate_intake') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [39/116] Migration: 20261012000001_catalog_official_demand_observations.sql
+-- [39/117] Migration: 20261012000001_catalog_official_demand_observations.sql
 -- --------------------------------------------------------------------
 -- P1 official numerical evidence: private, versioned CIP/SOC observations.
 -- NEVER interpret a CIP-SOC mapping as proof of a license, exam or
@@ -17956,7 +17956,7 @@ grant select, insert, update on table public.catalog_official_demand_imports to 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000001', 'catalog_official_demand_observations') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [40/116] Migration: 20261012000002_catalog_bls_reporting_code_members.sql
+-- [40/117] Migration: 20261012000002_catalog_bls_reporting_code_members.sql
 -- --------------------------------------------------------------------
 -- BLS publication/combined reporting codes are not detailed SOC 2018 codes.
 -- These associations state membership ONLY. Job openings for the combined
@@ -18057,7 +18057,7 @@ comment on view public.v_catalog_bls_observation_coverage is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000002', 'catalog_bls_reporting_code_members') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [41/116] Migration: 20261012000003_catalog_reviewed_destinations.sql
+-- [41/117] Migration: 20261012000003_catalog_reviewed_destinations.sql
 -- --------------------------------------------------------------------
 -- P2: public directory of source-reviewed issuer names and links only.
 -- NOT a certification issuance database, course catalog or requirements audit.
@@ -18169,7 +18169,7 @@ for each row execute function public.retire_destination_after_intake_review_chan
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000003', 'catalog_reviewed_destinations') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [42/116] Migration: 20261012000004_catalog_destination_resources_goal_links.sql
+-- [42/117] Migration: 20261012000004_catalog_destination_resources_goal_links.sql
 -- --------------------------------------------------------------------
 -- Phase P2b: user-owned draft links and approved off-site preparation links.
 -- The Learning App does NOT issue any third-party credential.
@@ -18258,7 +18258,7 @@ create policy destination_resource_published_parent
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000004', 'catalog_destination_resources_goal_links') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [43/116] Migration: 20261012000005_professional_license_goals_and_regulator_links.sql
+-- [43/117] Migration: 20261012000005_professional_license_goals_and_regulator_links.sql
 -- --------------------------------------------------------------------
 -- P2c: distinguish a professional license from its licensure examination.
 -- Existing goals are untouched; professional-license drafts require jurisdiction.
@@ -18353,7 +18353,7 @@ alter table public.catalog_destination_resources
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000005', 'professional_license_goals_and_regulator_links') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [44/116] Migration: 20261012000006_catalog_license_pathway_versions.sql
+-- [44/117] Migration: 20261012000006_catalog_license_pathway_versions.sql
 -- --------------------------------------------------------------------
 -- P2e: carefully reviewed, versioned regulator-sourced *selected* licensing steps.
 -- This does not change the original issuer directory's requirements_status:
@@ -18566,7 +18566,7 @@ using (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261012000006', 'catalog_license_pathway_versions') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [45/116] Migration: 20261015000000_cip_internal_field_bootstrap.sql
+-- [45/117] Migration: 20261015000000_cip_internal_field_bootstrap.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- CIP 2020 internal field bootstrap (CANONICAL_TAXONOMY_ARCHITECTURE.md §3.2,
@@ -18983,7 +18983,7 @@ analyze public.field_external_classifications;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261015000000', 'cip_internal_field_bootstrap') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [46/116] Migration: 20261015010000_native_literacy_life_skills_fields.sql
+-- [46/117] Migration: 20261015010000_native_literacy_life_skills_fields.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- LearningApp-authored literacy and practical-life field taxonomy.
@@ -19283,7 +19283,7 @@ on conflict (concept_id, field_id) do nothing;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261015010000', 'native_literacy_life_skills_fields') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [47/116] Migration: 20261016000000_word_learning_w1_foundation.sql
+-- [47/117] Migration: 20261016000000_word_learning_w1_foundation.sql
 -- --------------------------------------------------------------------
 -- Word Learning W1: private word lists and skill-aware review.
 -- Additive only; do not apply to hosted Supabase without explicit authorization.
@@ -19362,7 +19362,7 @@ alter table public.review_items
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016000000', 'word_learning_w1_foundation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [48/116] Migration: 20261016010000_word_learning_guest_import.sql
+-- [48/117] Migration: 20261016010000_word_learning_guest_import.sql
 -- --------------------------------------------------------------------
 -- W1 guest transfer: stable import provenance enables retry-safe list import.
 -- The imported list stays owned by the current signed-in user; data from another
@@ -19377,7 +19377,7 @@ create unique index if not exists word_lists_import_origin_unique
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016010000', 'word_learning_guest_import') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [49/116] Migration: 20261016020000_word_learning_optional_meaning.sql
+-- [49/117] Migration: 20261016020000_word_learning_optional_meaning.sql
 -- --------------------------------------------------------------------
 -- W1: Optional learner-authored gloss; not a canonical dictionary sense.
 -- Do not infer meaning mastery or vocabulary evidence from this private note.
@@ -19388,7 +19388,7 @@ alter table public.word_list_entries
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261016020000', 'word_learning_optional_meaning') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [50/116] Migration: 20261017000000_moderation_trust_and_safety.sql
+-- [50/117] Migration: 20261017000000_moderation_trust_and_safety.sql
 -- --------------------------------------------------------------------
 -- ECO-00B: Trust, Safety, Legal & Moderation Architecture Foundation
 -- Migration Version: 20261017000000
@@ -19782,7 +19782,7 @@ grant execute on function public.submit_moderation_report(text, uuid, text, text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261017000000', 'moderation_trust_and_safety') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [51/116] Migration: 20261019000000_moderation_roles_least_privilege.sql
+-- [51/117] Migration: 20261019000000_moderation_roles_least_privilege.sql
 -- --------------------------------------------------------------------
 -- ECO-00B: Moderation Roles Least Privilege & View Security
 -- Migration Version: 20261019000000
@@ -19815,7 +19815,7 @@ on conflict (user_id) do update set role = 'admin';
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261019000000', 'moderation_roles_least_privilege') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [52/116] Migration: 20261021000000_cost_and_observability_quotas.sql
+-- [52/117] Migration: 20261021000000_cost_and_observability_quotas.sql
 -- --------------------------------------------------------------------
 -- ECO-00C: Cost Quotas, Rate Limiting & Observability Architecture
 -- Migration Version: 20261021000000
@@ -20081,7 +20081,7 @@ grant execute on function public.get_system_usage_telemetry(int) to authenticate
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261021000000', 'cost_and_observability_quotas') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [53/116] Migration: 20261022000000_usage_quotas_hardening_and_stt.sql
+-- [53/117] Migration: 20261022000000_usage_quotas_hardening_and_stt.sql
 -- --------------------------------------------------------------------
 -- ECO-00C Hardening: Usage Quotas & Event Table Protection, STT Metering, and Abuse Prevention
 -- Migration Version: 20261022000000
@@ -20351,7 +20351,7 @@ grant execute on function public.get_system_usage_telemetry(int) to authenticate
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261022000000', 'usage_quotas_hardening_and_stt') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [54/116] Migration: 20261023000000_quota_provider_length_guard.sql
+-- [54/117] Migration: 20261023000000_quota_provider_length_guard.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 54: Quota Usage-Event Hardening (Provider String Bounding)
@@ -20543,7 +20543,7 @@ grant execute on function public.check_and_record_usage(text, int, text, jsonb) 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261023000000', 'quota_provider_length_guard') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [55/116] Migration: 20261024000000_eco_01_community_qa.sql
+-- [55/117] Migration: 20261024000000_eco_01_community_qa.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 55: ECO-01 Community Q&A Baseline & Moderation Integration
@@ -21046,7 +21046,7 @@ create policy community_votes_select_policy on public.community_votes
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261024000000', 'eco_01_community_qa') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [56/116] Migration: 20261025000000_eco_01_community_hardening.sql
+-- [56/117] Migration: 20261025000000_eco_01_community_hardening.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 56: ECO-01 Community Q&A Access-Control & Counter Hardening
@@ -21506,7 +21506,7 @@ grant execute on function public.submit_moderation_report(text, uuid, text, text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261025000000', 'eco_01_community_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [57/116] Migration: 20261026000000_eco_01_insert_hardening.sql
+-- [57/117] Migration: 20261026000000_eco_01_insert_hardening.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 57: ECO-01 Community Q&A INSERT Integrity & Trigger ACL Hardening
@@ -21688,7 +21688,7 @@ revoke all on function public.prevent_community_answer_tampering() from public, 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261026000000', 'eco_01_insert_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [58/116] Migration: 20261027000000_eco_02_moderator_review_workflow.sql
+-- [58/117] Migration: 20261027000000_eco_02_moderator_review_workflow.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 58: ECO-02 Pilot FAQ Seeding & Review Workflow
@@ -22137,7 +22137,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261027000000', 'eco_02_moderator_review_workflow') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [59/116] Migration: 20261028000000_eco_02_hardening.sql
+-- [59/117] Migration: 20261028000000_eco_02_hardening.sql
 -- --------------------------------------------------------------------
 -- ECO-02 Hardening & Integrity Fixes
 -- Migration Version: 20261028000000
@@ -22639,7 +22639,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261028000000', 'eco_02_hardening') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [60/116] Migration: 20261029000000_eco_02_ugc_gate_and_seed_stability.sql
+-- [60/117] Migration: 20261029000000_eco_02_ugc_gate_and_seed_stability.sql
 -- --------------------------------------------------------------------
 -- ECO-02 Hardening & Integrity Fixes (Follow-up)
 -- Migration Version: 20261029000000
@@ -23328,7 +23328,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261029000000', 'eco_02_ugc_gate_and_seed_stability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [61/116] Migration: 20261030000000_harden_seed_pilot_matching.sql
+-- [61/117] Migration: 20261030000000_harden_seed_pilot_matching.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 61: ECO-02 Hardening — Seed Pilot FAQ Matching Integrity
@@ -23561,7 +23561,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261030000000', 'harden_seed_pilot_matching') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [62/116] Migration: 20261031000000_eco_02_author_feedback_and_internal_notes.sql
+-- [62/117] Migration: 20261031000000_eco_02_author_feedback_and_internal_notes.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 62: ECO-02 Author Review Feedback, Context & Internal Notes Separation
@@ -23827,7 +23827,7 @@ grant execute on function public.fetch_my_submission_feedback(uuid) to authentic
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261031000000', 'eco_02_author_feedback_and_internal_notes') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [63/116] Migration: 20261101000000_eco_04_educator_profiles.sql
+-- [63/117] Migration: 20261101000000_eco_04_educator_profiles.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 63: ECO-04 Educator Profiles, Subject Associations & Verification Claims
@@ -24815,7 +24815,7 @@ grant execute on function public.fetch_my_credential_feedback(uuid) to authentic
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101000000', 'eco_04_educator_profiles') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [64/116] Migration: 20261101010000_exm_01_reference_manifest_revisions.sql
+-- [64/117] Migration: 20261101010000_exm_01_reference_manifest_revisions.sql
 -- --------------------------------------------------------------------
 -- EXM-01: independently revisioned, source-reviewed examination reference lists.
 -- Does not modify target_versions, curriculum nodes, books, or hosted learner data.
@@ -25088,7 +25088,7 @@ using (
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101010000', 'exm_01_reference_manifest_revisions') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [65/116] Migration: 20261101020000_exm_02a_item_reference_validity.sql
+-- [65/117] Migration: 20261101020000_exm_02a_item_reference_validity.sql
 -- --------------------------------------------------------------------
 -- EXM-02A foundation: source/edition-specific validity for canonical assessment items.
 -- Private editorial record. No learner-facing answer locations or review notes are exposed.
@@ -25370,7 +25370,7 @@ grant select,insert,update,delete on public.assessment_item_reference_validity
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101020000', 'exm_02a_item_reference_validity') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [66/116] Migration: 20261101030000_exm_02b_durable_drill_events.sql
+-- [66/117] Migration: 20261101030000_exm_02b_durable_drill_events.sql
 -- --------------------------------------------------------------------
 -- EXM-02B foundation: durable, owner-isolated, UNGRADED drill step events.
 -- Version-pinned attempts without exposing approved answer keys or inventing
@@ -25536,7 +25536,7 @@ create policy exm_drill_permanent_owner_delete
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101030000', 'exm_02b_durable_drill_events') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [67/116] Migration: 20261101040000_exm_02b_private_scoring.sql
+-- [67/117] Migration: 20261101040000_exm_02b_private_scoring.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: server-private, independently reviewed R1-R4 scoring keys.
 -- No live items or keys are seeded. This file is a LOCAL migration only until
@@ -25874,7 +25874,7 @@ grant execute on function public.score_exam_reference_drill_step(uuid,text)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101040000', 'exm_02b_private_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [68/116] Migration: 20261101050000_exm_02b_reviewed_practice_delivery.sql
+-- [68/117] Migration: 20261101050000_exm_02b_reviewed_practice_delivery.sql
 -- --------------------------------------------------------------------
 -- EXM-02B — safe learner-delivery projection of independently reviewed
 -- ORIGINAL practice prompts. No real regulator questions or references seeded.
@@ -26133,7 +26133,7 @@ grant execute on function public.get_exam_reference_drill_practice(uuid,text,dat
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101050000', 'exm_02b_reviewed_practice_delivery') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [69/116] Migration: 20261101060000_exm_02b_progress_export_page.sql
+-- [69/117] Migration: 20261101060000_exm_02b_progress_export_page.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: durable version-scoped Progress and owner-only data export page.
 -- The invoker's ordinary SELECT grants + RLS on BOTH underlying tables are
@@ -26224,7 +26224,7 @@ comment on function public.exam_reference_drill_progress_page(
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101060000', 'exm_02b_progress_export_page') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [70/116] Migration: 20261101070000_exm_02b_context_progress.sql
+-- [70/117] Migration: 20261101070000_exm_02b_context_progress.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: cross-edition *presentation* of owner-read-only graded evidence
 -- inside the existing Progress Current Context view.
@@ -26325,7 +26325,7 @@ comment on function public.exam_reference_drill_context_progress(uuid) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101070000', 'exm_02b_context_progress') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [71/116] Migration: 20261101080000_exm_02b_account_practice_export.sql
+-- [71/117] Migration: 20261101080000_exm_02b_account_practice_export.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: one-statement, owner-only account-wide R1–R4 evidence export.
 -- This covers saved reference-practice events across ALL original and retired
@@ -26434,7 +26434,7 @@ comment on function public.exam_reference_drill_account_export(integer) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101080000', 'exm_02b_account_practice_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [72/116] Migration: 20261101090000_exm_02b_owner_practice_erasure.sql
+-- [72/117] Migration: 20261101090000_exm_02b_owner_practice_erasure.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: opt-in owner-only preview and erasure of SAVED reference
 -- practice events across current and retired manifest editions.
@@ -26577,7 +26577,7 @@ comment on function public.exam_reference_drill_erase_owned(integer,text,text) i
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101090000', 'exm_02b_owner_practice_erasure') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [73/116] Migration: 20261101100000_exm_02b_batched_practice_erasure.sql
+-- [73/117] Migration: 20261101100000_exm_02b_batched_practice_erasure.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: explicitly approved bounded erasure for large saved histories.
 -- No automatic retention, background job, UPDATE privilege or scheduler.
@@ -26730,7 +26730,7 @@ comment on function public.exam_reference_drill_erase_batch(integer,integer,text
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101100000', 'exm_02b_batched_practice_erasure') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [74/116] Migration: 20261101110000_exm_02b_verified_large_export.sql
+-- [74/117] Migration: 20261101110000_exm_02b_verified_large_export.sql
 -- --------------------------------------------------------------------
 -- EXM-02B: verified bounded multi-request export for >5,000 saved events.
 -- Existing single-statement export stays untouched. No answer keys, client
@@ -26873,7 +26873,7 @@ comment on function public.exam_reference_drill_export_page(integer,timestamptz,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101110000', 'exm_02b_verified_large_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [75/116] Migration: 20261101120000_exm_03_private_part_attempt_foundation.sql
+-- [75/117] Migration: 20261101120000_exm_03_private_part_attempt_foundation.sql
 -- --------------------------------------------------------------------
 -- EXM-03 — scoped educational practice-attempt foundation.
 -- This table is private, append-only, opt-in at a future application gate.
@@ -26921,7 +26921,7 @@ comment on table public.exam_part_practice_attempts is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101120000', 'exm_03_private_part_attempt_foundation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [76/116] Migration: 20261101130000_exm_03_assigned_practice_scoring.sql
+-- [76/117] Migration: 20261101130000_exm_03_assigned_practice_scoring.sql
 -- --------------------------------------------------------------------
 -- EXM-03: Backend-only canonical recording for assigned practice sets.
 -- Deliberately NOT a public RPC; production consumer/portability release gate
@@ -27357,7 +27357,7 @@ comment on function public.exm03_erase_part_attempts(uuid,text) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101130000', 'exm_03_assigned_practice_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [77/116] Migration: 20261101140000_exm_03_authenticated_assignment_issuer.sql
+-- [77/117] Migration: 20261101140000_exm_03_authenticated_assignment_issuer.sql
 -- --------------------------------------------------------------------
 -- EXM-03: Authenticated, server-assigned educational practice questions.
 -- Only the database chooses reviewed canonical items; clients specify solely
@@ -27612,7 +27612,7 @@ comment on function public.exm03_issue_assigned_practice(uuid,text) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101140000', 'exm_03_authenticated_assignment_issuer') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [78/116] Migration: 20261101150000_exm_03_authenticated_submit_protected_items.sql
+-- [78/117] Migration: 20261101150000_exm_03_authenticated_submit_protected_items.sql
 -- --------------------------------------------------------------------
 -- EXM-03: secure the browser-to-canonical-scorer boundary and prevent
 -- protected independently approved exam answer keys leaking through legacy
@@ -27806,7 +27806,7 @@ comment on function public.exm03_safe_visible_choices(jsonb) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101150000', 'exm_03_authenticated_submit_protected_items') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [79/116] Migration: 20261101160000_exm_03_account_practice_portability.sql
+-- [79/117] Migration: 20261101160000_exm_03_account_practice_portability.sql
 -- --------------------------------------------------------------------
 -- EXM-03: account-wide educational practice portability for bounded histories.
 -- Never grants direct access to private assignments, scoring rubrics or responses.
@@ -28082,7 +28082,7 @@ comment on function public.exm03_erase_account_practice(integer,integer,integer,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101160000', 'exm_03_account_practice_portability') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [80/116] Migration: 20261101170000_exm_03_verified_large_combined_export.sql
+-- [80/117] Migration: 20261101170000_exm_03_verified_large_combined_export.sql
 -- --------------------------------------------------------------------
 -- EXM-03: verified 50k per-store inventory and private keyset page for
 -- issued assignments.  This forward migration does not change prior files.
@@ -28220,7 +28220,7 @@ comment on function public.exm03_account_part_export_page(integer,timestamptz,uu
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101170000', 'exm_03_verified_large_combined_export') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [81/116] Migration: 20261101180000_exm_03_release_hardening_and_date_eligibility.sql
+-- [81/117] Migration: 20261101180000_exm_03_release_hardening_and_date_eligibility.sql
 -- --------------------------------------------------------------------
 -- =============================================================================
 -- Migration 81: EXM-03 Release Hardening, Date-Specific Eligibility & RLS Defenses
@@ -28911,7 +28911,7 @@ $export$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101180000', 'exm_03_release_hardening_and_date_eligibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [82/116] Migration: 20261101190000_eco_05_fix_user_xp_security.sql
+-- [82/117] Migration: 20261101190000_eco_05_fix_user_xp_security.sql
 -- --------------------------------------------------------------------
 -- Migration 82: Secure User XP Progression & Definer Hardening
 -- Closes FIX-2: Prohibits direct client tampering with user_xp balances and xp_events.
@@ -29244,7 +29244,7 @@ WHERE event_type IN ('questionCorrect', 'lessonComplete', 'courseComplete', 'rev
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101190000', 'eco_05_fix_user_xp_security') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [83/116] Migration: 20261101195000_reconcile_user_progress_study_time_seconds.sql
+-- [83/117] Migration: 20261101195000_reconcile_user_progress_study_time_seconds.sql
 -- --------------------------------------------------------------------
 -- Reconcile hosted drift: production's public.user_progress predates the
 -- 20241228000000 baseline (created with IF NOT EXISTS) and never received
@@ -29269,7 +29269,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101195000', 'reconcile_user_progress_study_time_seconds') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [84/116] Migration: 20261101200000_eco_06_port_legacy_skills_and_missing_schema.sql
+-- [84/117] Migration: 20261101200000_eco_06_port_legacy_skills_and_missing_schema.sql
 -- --------------------------------------------------------------------
 -- Migration 83: Port Legacy Skills Taxonomy, Career Paths, and Missing Schema
 -- Closes FIX-3: Brings legacy database/ tables, views, and RPCs into the canonical migration chain with hardened RLS.
@@ -29939,7 +29939,7 @@ TO service_role;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261101200000', 'eco_06_port_legacy_skills_and_missing_schema') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [85/116] Migration: 20261102140000_arch_01_learning_events_fsrs_and_server_scoring.sql
+-- [85/117] Migration: 20261102140000_arch_01_learning_events_fsrs_and_server_scoring.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 1: Learning Events, FSRS Projections & Server-Side Scoring
@@ -30742,7 +30742,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_te
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261102140000', 'arch_01_learning_events_fsrs_and_server_scoring') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [86/116] Migration: 20261106000000_arch_02_item_analytics_and_readiness_v2.sql
+-- [86/117] Migration: 20261106000000_arch_02_item_analytics_and_readiness_v2.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 1 Deliverable: Item Analytics & Readiness v2
@@ -31297,7 +31297,7 @@ GRANT EXECUTE ON FUNCTION public.get_target_readiness_v2(UUID, TIMESTAMPTZ) TO a
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106000000', 'arch_02_item_analytics_and_readiness_v2') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [87/116] Migration: 20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql
+-- [87/117] Migration: 20261106010000_arch_03_versioned_api_schema_and_scope_resolver.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 2 Deliverable: Versioned API Schema & Fast Scope Resolver
@@ -31716,7 +31716,7 @@ GRANT EXECUTE ON FUNCTION public.search_catalog(TEXT, TEXT, INTEGER) TO anon, au
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106010000', 'arch_03_versioned_api_schema_and_scope_resolver') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [88/116] Migration: 20261106020000_harden_field_relations_view_privileges.sql
+-- [88/117] Migration: 20261106020000_harden_field_relations_view_privileges.sql
 -- --------------------------------------------------------------------
 -- Harden the public taxonomy relation view without removing its intended read API.
 -- The hosted project already has security_invoker=true from 20261019000000.
@@ -31736,7 +31736,7 @@ grant select on table public.v_field_relations_bidirectional
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106020000', 'harden_field_relations_view_privileges') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [89/116] Migration: 20261106030000_catalog_pathway_evidence_provenance.sql
+-- [89/117] Migration: 20261106030000_catalog_pathway_evidence_provenance.sql
 -- --------------------------------------------------------------------
 -- P2e evidence provenance. Existing published revisions remain immutable.
 alter table public.catalog_license_pathway_versions
@@ -31791,7 +31791,7 @@ for each row execute function public.guard_catalog_license_pathway_evidence();
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261106030000', 'catalog_pathway_evidence_provenance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [90/116] Migration: 20261107025537_short_answer_grading_persistence.sql
+-- [90/117] Migration: 20261107025537_short_answer_grading_persistence.sql
 -- --------------------------------------------------------------------
 -- Additive short-answer grading persistence. Deploy manually after merge.
 alter table public.questions
@@ -32567,7 +32567,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107025537', 'short_answer_grading_persistence') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [91/116] Migration: 20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql
+-- [91/117] Migration: 20261107041341_restore_manifest_ingestion_with_short_answer_grading.sql
 -- --------------------------------------------------------------------
 create or replace function public.ingest_curriculum_manifest(
   payload jsonb
@@ -33963,7 +33963,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107041341', 'restore_manifest_ingestion_with_short_answer_grading') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [92/116] Migration: 20261107045000_temporary_digest_resolution_for_backfill.sql
+-- [92/117] Migration: 20261107045000_temporary_digest_resolution_for_backfill.sql
 -- --------------------------------------------------------------------
 -- Hosted deploys run as the CLI's temporary login role (cli_login_postgres),
 -- whose search_path lacks the extensions schema, so the unqualified top-level
@@ -33986,7 +33986,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107045000', 'temporary_digest_resolution_for_backfill') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [93/116] Migration: 20261107050000_arch_04_learning_events_strict_rules.sql
+-- [93/117] Migration: 20261107050000_arch_04_learning_events_strict_rules.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Architecture Phase 4: Strict Learning Events Rules, Constraints & Projections
@@ -34744,7 +34744,7 @@ GRANT EXECUTE ON FUNCTION public.record_events(JSONB[]) TO authenticated;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107050000', 'arch_04_learning_events_strict_rules') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [94/116] Migration: 20261107060000_performance_library_search_trigram_indexes.sql
+-- [94/117] Migration: 20261107060000_performance_library_search_trigram_indexes.sql
 -- --------------------------------------------------------------------
 -- Improve substring searches used by the Library without changing query semantics.
 -- pg_trgm supports ILIKE '%term%' where a conventional B-tree cannot.
@@ -34762,7 +34762,7 @@ create index if not exists courses_title_trgm_idx
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107060000', 'performance_library_search_trigram_indexes') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [95/116] Migration: 20261107100000_simulation_lesson_blocks.sql
+-- [95/117] Migration: 20261107100000_simulation_lesson_blocks.sql
 -- --------------------------------------------------------------------
 -- Add the simulation lesson block as an append-only schema change.
 -- Unknown block types still need a populated body for older-client fallback.
@@ -34799,7 +34799,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107100000', 'simulation_lesson_blocks') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [96/116] Migration: 20261107110000_drop_temporary_digest_resolution.sql
+-- [96/117] Migration: 20261107110000_drop_temporary_digest_resolution.sql
 -- --------------------------------------------------------------------
 -- Remove the temporary digest pass-through from 20261107045000 (only if it is
 -- that shim, identified by its marker comment) so pgcrypto's
@@ -34822,7 +34822,7 @@ $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261107110000', 'drop_temporary_digest_resolution') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [97/116] Migration: 20261108000000_assessment_item_server_grading.sql
+-- [97/117] Migration: 20261108000000_assessment_item_server_grading.sql
 -- --------------------------------------------------------------------
 -- Server-side grading for assessment items (follow-up to FIX-12).
 --
@@ -35075,7 +35075,7 @@ GRANT EXECUTE ON FUNCTION public.grade_assessment_items(JSONB)
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108000000', 'assessment_item_server_grading') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [98/116] Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
+-- [98/117] Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
 -- --------------------------------------------------------------------
 -- Migration: 20261108140000_clep_simulation_bank_and_item_privacy.sql
 -- Description: Enforce database-level question-bank separation, metadata persistence in ingest_curriculum_manifest,
@@ -37128,7 +37128,7 @@ grant execute on function public.grade_assessment_items(jsonb) to anon, authenti
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261108140000', 'clep_simulation_bank_and_item_privacy') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [99/116] Migration: 20261110000000_ana_008_learning_events_rpc_only.sql
+-- [99/117] Migration: 20261110000000_ana_008_learning_events_rpc_only.sql
 -- --------------------------------------------------------------------
 -- ANA-008: Learning evidence must be written only through validated server RPCs.
 -- This additive, data-preserving migration removes public client DML on
@@ -37161,7 +37161,7 @@ GRANT ALL PRIVILEGES ON TABLE public.learning_events TO service_role;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110000000', 'ana_008_learning_events_rpc_only') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [100/116] Migration: 20261110150000_clep_simulation_domain_code_projection.sql
+-- [100/117] Migration: 20261110150000_clep_simulation_domain_code_projection.sql
 -- --------------------------------------------------------------------
 -- ============================================================================
 -- Migration: 20261110150000_clep_simulation_domain_code_projection.sql
@@ -37582,7 +37582,7 @@ comment on function public.clep_submit_simulation_exam(uuid, jsonb) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110150000', 'clep_simulation_domain_code_projection') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [101/116] Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
+-- [101/117] Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
 -- --------------------------------------------------------------------
 -- Migration: 20261110170000_clep_simulation_attempt_recovery_and_eligibility.sql
 -- Description: Adds authenticated attempt recovery, active session polling, guest-account rejection,
@@ -37949,7 +37949,7 @@ comment on function public.clep_issue_simulation_exam(uuid) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110170000', 'clep_simulation_attempt_recovery_and_eligibility') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [102/116] Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
+-- [102/117] Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
 -- --------------------------------------------------------------------
 -- Migration: 20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql
 -- Description: Backfill target_versions.metadata.bank for blueprint authorities,
@@ -38310,7 +38310,7 @@ comment on function public.clep_issue_simulation_exam(uuid) is
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110180000', 'clep_simulation_domain_quota_and_metadata_validation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [103/116] Migration: 20261110190000_ana_001b_canonical_learner_progress.sql
+-- [103/117] Migration: 20261110190000_ana_001b_canonical_learner_progress.sql
 -- --------------------------------------------------------------------
 -- ANA-001B: canonical learner progress storage, separate from scored evidence.
 -- Additive only. Never mutate public.learning_events or the legacy user_progress.
@@ -38631,7 +38631,7 @@ GRANT EXECUTE ON FUNCTION public.record_learner_progress(jsonb[]) TO service_rol
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110190000', 'ana_001b_canonical_learner_progress') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [104/116] Migration: 20261110200000_ana_102_private_product_event_ingestion.sql
+-- [104/117] Migration: 20261110200000_ana_102_private_product_event_ingestion.sql
 -- --------------------------------------------------------------------
 -- ANA-102 / ANA-105: opt-in, privacy-gated product event ingestion.
 -- Feature remains OFF in Flutter. Schema is intentionally NOT Data API exposed.
@@ -38960,7 +38960,7 @@ GRANT EXECUTE ON FUNCTION analytics.purge_expired_product_events()
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110200000', 'ana_102_private_product_event_ingestion') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [105/116] Migration: 20261110210000_ana_103_product_privacy_controls.sql
+-- [105/117] Migration: 20261110210000_ana_103_product_privacy_controls.sql
 -- --------------------------------------------------------------------
 -- ANA-103/105: make product-analytics opt-in observable, revocable,
 -- exportable at scale, and fail closed when trusted eligibility changes.
@@ -39287,7 +39287,7 @@ GRANT EXECUTE ON FUNCTION analytics.product_retention_health()
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110210000', 'ana_103_product_privacy_controls') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [106/116] Migration: 20261110220000_marketing_feature_control_foundation.sql
+-- [106/117] Migration: 20261110220000_marketing_feature_control_foundation.sql
 -- --------------------------------------------------------------------
 -- FLAG-001..004: trusted, default-dark first-party feature controls.
 -- Additive only. Do not deploy except via the owner-gated guarded migration path.
@@ -39543,7 +39543,7 @@ REVOKE ALL ON TABLE private.site_feature_controls,
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110220000', 'marketing_feature_control_foundation') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [107/116] Migration: 20261110230000_software_learning_excel_attempt_issuance.sql
+-- [107/117] Migration: 20261110230000_software_learning_excel_attempt_issuance.sql
 -- --------------------------------------------------------------------
 -- Software Learning Excel pilot: authenticated, server-issued synthetic attempts.
 -- DRAFT FOUNDATION ONLY. No workbook upload/storage, grading, learning_events
@@ -39756,7 +39756,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261110230000', 'software_learning_excel_attempt_issuance') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [108/116] Migration: 20261111000000_software_learning_excel_private_upload_gate.sql
+-- [108/117] Migration: 20261111000000_software_learning_excel_private_upload_gate.sql
 -- --------------------------------------------------------------------
 -- Excel pilot: private storage bucket with authenticated owner/session/path gate.
 -- No learner-facing file upload or worker processing is released here.
@@ -39917,7 +39917,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111000000', 'software_learning_excel_private_upload_gate') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [109/116] Migration: 20261111010000_software_learning_excel_processing_lease.sql
+-- [109/117] Migration: 20261111010000_software_learning_excel_processing_lease.sql
 -- --------------------------------------------------------------------
 -- Excel pilot: service-only, single-use processing lease and provisional receipt.
 -- No learner-facing upload/grade route. No learning_events or skill awards.
@@ -40105,7 +40105,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111010000', 'software_learning_excel_processing_lease') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [110/116] Migration: 20261111020000_software_learning_excel_brokered_upload_seal.sql
+-- [110/117] Migration: 20261111020000_software_learning_excel_brokered_upload_seal.sql
 -- --------------------------------------------------------------------
 -- Excel pilot: broker-sealed upload; client Storage inserts stay denied.
 -- Source-only feature; no hosted service or learner upload enabled.
@@ -40341,7 +40341,7 @@ COMMIT;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111020000', 'software_learning_excel_brokered_upload_seal') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [111/116] Migration: 20261111030000_tel_01b_context_fast_preferences.sql
+-- [111/117] Migration: 20261111030000_tel_01b_context_fast_preferences.sql
 -- --------------------------------------------------------------------
 -- TEL-01B / TEL-04A: Dedicated per-context Fast preference storage and atomic
 -- compare-and-set RPC.
@@ -40705,7 +40705,7 @@ GRANT EXECUTE ON FUNCTION public.update_context_fast_preferences(
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261111030000', 'tel_01b_context_fast_preferences') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [112/116] Migration: 20261112010000_manifest_answer_key_integrity.sql
+-- [112/117] Migration: 20261112010000_manifest_answer_key_integrity.sql
 -- --------------------------------------------------------------------
 -- Answer-key integrity for curriculum manifest ingestion (master plan v2.6
 -- §14.8, PR-0a follow-up; P0-light audit finding "server-side SQL default").
@@ -42176,7 +42176,7 @@ grant execute on function public.ingest_curriculum_manifest(jsonb) to service_ro
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112010000', 'manifest_answer_key_integrity') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [113/116] Migration: 20261112020000_learning_quick_rescue_feature_control.sql
+-- [113/117] Migration: 20261112020000_learning_quick_rescue_feature_control.sql
 -- --------------------------------------------------------------------
 -- PR-B (master plan v2.6 §15.0): register the `learning.quick_rescue` gate.
 --
@@ -42198,7 +42198,7 @@ ON CONFLICT (feature_key) DO NOTHING;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112020000', 'learning_quick_rescue_feature_control') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [114/116] Migration: 20261112040000_ai_manual_generation_v2_feature_control.sql
+-- [114/117] Migration: 20261112040000_ai_manual_generation_v2_feature_control.sql
 -- --------------------------------------------------------------------
 -- PR-C (master plan v2.6 §15.0): register the `ai.manual_generation_v2` gate.
 --
@@ -42219,7 +42219,7 @@ ON CONFLICT (feature_key) DO NOTHING;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112040000', 'ai_manual_generation_v2_feature_control') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [115/116] Migration: 20261112050000_learning_auto_gap_suggestions_feature_control.sql
+-- [115/117] Migration: 20261112050000_learning_auto_gap_suggestions_feature_control.sql
 -- --------------------------------------------------------------------
 -- PR-D (master plan v2.6 §15.0): register the `learning.auto_gap_suggestions`
 -- gate.
@@ -42240,7 +42240,7 @@ ON CONFLICT (feature_key) DO NOTHING;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112050000', 'learning_auto_gap_suggestions_feature_control') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [116/116] Migration: 20261112060000_content_external_companion_feature_control.sql
+-- [116/117] Migration: 20261112060000_content_external_companion_feature_control.sql
 -- --------------------------------------------------------------------
 -- PR-E (master plan v2.6 §15.0): register the `content.external_companion`
 -- gate.
@@ -42259,6 +42259,584 @@ VALUES
 ON CONFLICT (feature_key) DO NOTHING;
 
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112060000', 'content_external_companion_feature_control') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [117/117] Migration: 20261112070000_content_public_contribution_foundation.sql
+-- --------------------------------------------------------------------
+-- PR-H slice 1 (master plan v2.6 §5.2 AssetPublicationStatus, §8.6, §14,
+-- P5.1, Gate G5): governed public contribution of personal lessons.
+--
+-- * New gate `content.public_contribution`, default OFF and not
+--   release-ready. Every write RPC and the public reader check it on the
+--   server; a client flag is never authorization.
+-- * A contribution is an IMMUTABLE, VERSIONED SNAPSHOT of a lesson the
+--   contributor owns, taken with explicit consent, a recorded licence and a
+--   rights attestation. Submitting never changes the lesson's visibility:
+--   the private lesson stays private (A35).
+-- * Automated deterministic checks run at submission (answer keys in range,
+--   distinct options, short-answer accepted answers, size bounds).
+-- * Moderators approve or reject; only admins publish. Published copies are
+--   labelled `community_unreviewed` and never confer verified mastery (A93).
+-- * Contributors can withdraw; moderators can take down. Every transition is
+--   written to an append-only event log (P5.1 acceptance).
+-- Additive only: no existing table, row, policy or function is changed.
+
+-- ---------------------------------------------------------------------------
+-- 1. Feature gate (default OFF, not release-ready)
+-- ---------------------------------------------------------------------------
+INSERT INTO private.site_feature_controls
+  (feature_key, label, category, kind, enabled, maturity, release_ready, description)
+VALUES
+ ('content.public_contribution', 'Community lesson contributions', 'Content', 'release', false, 'experimental', false,
+  'Consent + licence + checks + moderator review + admin publish; private lessons stay private when OFF')
+ON CONFLICT (feature_key) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- 2. Tables
+-- ---------------------------------------------------------------------------
+create table if not exists public.content_contributions (
+  id uuid primary key default gen_random_uuid(),
+  lesson_id uuid references public.lessons(id) on delete set null,
+  contributor_id uuid references auth.users(id) on delete set null,
+  version integer not null check (version >= 1),
+  status text not null check (status in (
+    'submitted', 'checks_failed', 'ready_for_publication',
+    'rejected', 'published', 'withdrawn', 'superseded')),
+  license text not null check (license in ('CC-BY-4.0', 'CC-BY-SA-4.0', 'CC0-1.0')),
+  rights_attested_at timestamptz not null,
+  ai_assisted boolean not null,
+  trust_tier text not null default 'community_unreviewed'
+    check (trust_tier in ('community_unreviewed')),
+  snapshot jsonb not null,
+  snapshot_sha256 text not null,
+  check_issues jsonb not null default '[]'::jsonb,
+  reviewer_id uuid references auth.users(id) on delete set null,
+  review_note text check (review_note is null or char_length(review_note) <= 1000),
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- At most one open contribution per lesson.
+create unique index if not exists content_contributions_one_open_per_lesson
+  on public.content_contributions (lesson_id)
+  where status in ('submitted', 'checks_failed', 'ready_for_publication');
+
+-- At most one live published version per lesson.
+create unique index if not exists content_contributions_one_published_per_lesson
+  on public.content_contributions (lesson_id)
+  where status = 'published';
+
+create index if not exists content_contributions_status_created
+  on public.content_contributions (status, created_at desc);
+create index if not exists content_contributions_contributor_created
+  on public.content_contributions (contributor_id, created_at desc);
+
+create table if not exists public.content_contribution_events (
+  id uuid primary key default gen_random_uuid(),
+  contribution_id uuid not null references public.content_contributions(id),
+  actor_id uuid references auth.users(id) on delete set null,
+  event text not null check (event in (
+    'submitted', 'checks_failed', 'approved', 'rejected', 'published',
+    'withdrawn', 'taken_down', 'superseded')),
+  from_status text,
+  to_status text not null,
+  note text check (note is null or char_length(note) <= 1000),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists content_contribution_events_contribution
+  on public.content_contribution_events (contribution_id, created_at);
+
+alter table public.content_contributions enable row level security;
+alter table public.content_contribution_events enable row level security;
+
+-- Reads: own contributions, or moderators. All writes go through RPCs.
+create policy content_contributions_select on public.content_contributions
+  for select to authenticated
+  using (contributor_id = auth.uid() or private.is_moderator());
+
+create policy content_contribution_events_select on public.content_contribution_events
+  for select to authenticated
+  using (
+    private.is_moderator()
+    or exists (
+      select 1 from public.content_contributions c
+       where c.id = contribution_id and c.contributor_id = auth.uid()
+    )
+  );
+
+revoke all on table public.content_contributions from public, anon;
+revoke all on table public.content_contribution_events from public, anon;
+revoke insert, update, delete on table public.content_contributions from authenticated;
+revoke insert, update, delete on table public.content_contribution_events from authenticated;
+grant select on table public.content_contributions to authenticated;
+grant select on table public.content_contribution_events to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 3. Private helpers
+-- ---------------------------------------------------------------------------
+
+-- Allowed status transitions (AssetPublicationStatus, plan §5.2).
+create or replace function private.contribution_transition_allowed(
+  p_from text,
+  p_to text
+)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select (p_from, p_to) in (
+    ('submitted', 'ready_for_publication'),
+    ('submitted', 'rejected'),
+    ('submitted', 'withdrawn'),
+    ('checks_failed', 'withdrawn'),
+    ('ready_for_publication', 'published'),
+    ('ready_for_publication', 'rejected'),
+    ('ready_for_publication', 'withdrawn'),
+    ('published', 'withdrawn'),
+    ('published', 'superseded')
+  );
+$$;
+
+revoke all on function private.contribution_transition_allowed(text, text)
+  from public, anon, authenticated;
+
+-- Applies one audited transition. Caller authorization is checked by the
+-- public RPCs before this runs.
+create or replace function private.contribution_apply(
+  p_id uuid,
+  p_to text,
+  p_event text,
+  p_note text
+)
+returns public.content_contributions
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_row public.content_contributions;
+  v_from text;
+begin
+  select * into v_row from public.content_contributions where id = p_id for update;
+  if not found then
+    raise exception 'contribution_not_found' using errcode = 'P0002';
+  end if;
+  v_from := v_row.status;
+  if not private.contribution_transition_allowed(v_row.status, p_to) then
+    raise exception 'invalid_state_transition: % -> %', v_row.status, p_to
+      using errcode = '22000';
+  end if;
+  update public.content_contributions
+     set status = p_to,
+         updated_at = now(),
+         published_at = case when p_to = 'published' then now() else published_at end
+   where id = p_id
+   returning * into v_row;
+  insert into public.content_contribution_events
+    (contribution_id, actor_id, event, from_status, to_status, note)
+  values (p_id, auth.uid(), p_event, v_from, p_to,
+          nullif(btrim(coalesce(p_note, '')), ''));
+  return v_row;
+end;
+$$;
+
+revoke all on function private.contribution_apply(uuid, text, text, text)
+  from public, anon, authenticated;
+
+-- Deterministic checks on a snapshot. Returns a list of issue objects.
+create or replace function private.contribution_check_snapshot(p_snapshot jsonb)
+returns jsonb
+language plpgsql
+immutable
+set search_path = ''
+as $$
+declare
+  v_issues jsonb := '[]'::jsonb;
+  v_q jsonb;
+  v_i integer := 0;
+  v_type text;
+  v_n integer;
+  v_key integer;
+  v_items integer;
+begin
+  if btrim(coalesce(p_snapshot->>'title', '')) = '' then
+    v_issues := v_issues || jsonb_build_object('path', 'title', 'code', 'missing_title');
+  end if;
+  v_items := jsonb_array_length(p_snapshot->'terms')
+           + jsonb_array_length(p_snapshot->'concepts')
+           + jsonb_array_length(p_snapshot->'questions');
+  if v_items = 0 then
+    v_issues := v_issues || jsonb_build_object('path', 'lesson', 'code', 'empty_lesson');
+  end if;
+  if octet_length(p_snapshot::text) > 262144 then
+    v_issues := v_issues || jsonb_build_object('path', 'lesson', 'code', 'too_large');
+  end if;
+
+  for v_q in select * from jsonb_array_elements(p_snapshot->'questions')
+  loop
+    v_type := coalesce(v_q->>'type', 'mcq');
+    if v_type = 'short_answer' then
+      if coalesce(jsonb_array_length(v_q->'accepted_answers'), 0) = 0 then
+        v_issues := v_issues || jsonb_build_object(
+          'path', format('questions[%s]', v_i), 'code', 'missing_accepted_answers');
+      end if;
+    else
+      v_n := case when jsonb_typeof(v_q->'options') = 'array'
+                  then jsonb_array_length(v_q->'options') else 0 end;
+      v_key := (v_q->>'correct_answer')::integer;
+      if v_n < 2 or v_n > 8 then
+        v_issues := v_issues || jsonb_build_object(
+          'path', format('questions[%s]', v_i), 'code', 'option_count');
+      elsif v_key is null or v_key < 0 or v_key >= v_n then
+        v_issues := v_issues || jsonb_build_object(
+          'path', format('questions[%s]', v_i), 'code', 'answer_key_out_of_range');
+      elsif (select count(distinct lower(regexp_replace(btrim(o), '\s+', ' ', 'g')))
+               from jsonb_array_elements_text(v_q->'options') o) <> v_n then
+        v_issues := v_issues || jsonb_build_object(
+          'path', format('questions[%s]', v_i), 'code', 'duplicate_options');
+      end if;
+    end if;
+    v_i := v_i + 1;
+  end loop;
+  return v_issues;
+end;
+$$;
+
+revoke all on function private.contribution_check_snapshot(jsonb)
+  from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 4. Contributor RPCs
+-- ---------------------------------------------------------------------------
+
+-- Submits a versioned snapshot of a lesson the caller owns. Never changes
+-- the lesson itself.
+create or replace function public.submit_lesson_contribution(
+  p_lesson_id uuid,
+  p_license text,
+  p_rights_attested boolean,
+  p_ai_assisted boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_lesson record;
+  v_snapshot jsonb;
+  v_issues jsonb;
+  v_version integer;
+  v_open public.content_contributions;
+  v_row public.content_contributions;
+  v_recent integer;
+begin
+  if v_uid is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if not private.site_feature_enabled('content.public_contribution') then
+    raise exception 'feature_disabled' using errcode = '42501';
+  end if;
+  if p_rights_attested is not true then
+    raise exception 'rights_attestation_required' using errcode = '22023';
+  end if;
+  if p_license is null or p_license not in ('CC-BY-4.0', 'CC-BY-SA-4.0', 'CC0-1.0') then
+    raise exception 'unsupported_license' using errcode = '22023';
+  end if;
+  if p_ai_assisted is null then
+    raise exception 'ai_assisted_required' using errcode = '22023';
+  end if;
+
+  select l.id, l.title, l.description, l.tags, l.user_id, l.origin_target_version_id
+    into v_lesson
+    from public.lessons l
+   where l.id = p_lesson_id
+     for update;
+  if not found or v_lesson.user_id is distinct from v_uid then
+    raise exception 'lesson_not_owned' using errcode = '42501';
+  end if;
+  if v_lesson.origin_target_version_id is not null then
+    raise exception 'curriculum_lessons_not_contributable' using errcode = '42501';
+  end if;
+
+  select count(*) into v_recent
+    from public.content_contributions
+   where contributor_id = v_uid
+     and created_at > now() - interval '24 hours';
+  if v_recent >= 5 then
+    raise exception 'rate_limited' using errcode = '54000';
+  end if;
+
+  select * into v_open
+    from public.content_contributions
+   where lesson_id = p_lesson_id
+     and status in ('submitted', 'checks_failed', 'ready_for_publication')
+     for update;
+  if found then
+    if v_open.status = 'checks_failed' then
+      -- Explicit repair path: the failed attempt is closed, a new version
+      -- is checked from the lesson as it is now.
+      perform private.contribution_apply(
+        v_open.id, 'withdrawn', 'withdrawn', 'replaced by a repaired resubmission');
+    else
+      raise exception 'contribution_already_open' using errcode = '23505';
+    end if;
+  end if;
+
+  v_snapshot := jsonb_build_object(
+    'title', v_lesson.title,
+    'description', v_lesson.description,
+    'tags', to_jsonb(coalesce(v_lesson.tags, '{}'::text[])),
+    'terms', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'term', t.term, 'definition', t.definition, 'example', t.example)
+             order by t.created_at, t.id)
+        from public.terms t where t.lesson_id = p_lesson_id), '[]'::jsonb),
+    'concepts', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'concept_text', c.concept_text, 'example_text', c.example_text,
+               'key_points', to_jsonb(c.key_points))
+             order by c.created_at, c.id)
+        from public.concepts c where c.lesson_id = p_lesson_id), '[]'::jsonb),
+    'questions', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'question_text', q.question_text, 'options', q.options,
+               'correct_answer', q.correct_answer, 'type', q.type,
+               'explanation', q.explanation,
+               'accepted_answers', to_jsonb(q.accepted_answers),
+               'grading_method', q.grading_method,
+               'numeric_tolerance', q.numeric_tolerance)
+             order by q.created_at, q.id)
+        from public.questions q where q.lesson_id = p_lesson_id), '[]'::jsonb)
+  );
+  v_issues := private.contribution_check_snapshot(v_snapshot);
+
+  select coalesce(max(version), 0) + 1 into v_version
+    from public.content_contributions where lesson_id = p_lesson_id;
+
+  insert into public.content_contributions (
+    lesson_id, contributor_id, version, status, license, rights_attested_at,
+    ai_assisted, snapshot, snapshot_sha256, check_issues
+  ) values (
+    p_lesson_id, v_uid, v_version,
+    case when jsonb_array_length(v_issues) = 0 then 'submitted' else 'checks_failed' end,
+    p_license, now(), p_ai_assisted, v_snapshot,
+    encode(extensions.digest(convert_to(v_snapshot::text, 'UTF8'), 'sha256'), 'hex'),
+    v_issues
+  ) returning * into v_row;
+
+  insert into public.content_contribution_events
+    (contribution_id, actor_id, event, from_status, to_status, note)
+  values (v_row.id, v_uid,
+          case when v_row.status = 'submitted' then 'submitted' else 'checks_failed' end,
+          null, v_row.status, null);
+
+  return jsonb_build_object(
+    'id', v_row.id, 'version', v_row.version, 'status', v_row.status,
+    'issues', v_row.check_issues);
+end;
+$$;
+
+revoke all on function public.submit_lesson_contribution(uuid, text, boolean, boolean)
+  from public, anon;
+grant execute on function public.submit_lesson_contribution(uuid, text, boolean, boolean)
+  to authenticated;
+
+-- The contributor withdraws their own contribution at any open or
+-- published stage. Withdrawal is allowed even when the gate is OFF.
+create or replace function public.withdraw_lesson_contribution(
+  p_id uuid,
+  p_note text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.content_contributions
+     where id = p_id and contributor_id = v_uid
+  ) then
+    raise exception 'contribution_not_owned' using errcode = '42501';
+  end if;
+  return (private.contribution_apply(p_id, 'withdrawn', 'withdrawn', p_note)).status;
+end;
+$$;
+
+revoke all on function public.withdraw_lesson_contribution(uuid, text) from public, anon;
+grant execute on function public.withdraw_lesson_contribution(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5. Moderator / admin RPCs
+-- ---------------------------------------------------------------------------
+
+-- Moderator decision on a submitted or ready contribution. A moderator
+-- cannot review their own contribution.
+create or replace function public.review_lesson_contribution(
+  p_id uuid,
+  p_decision text,
+  p_note text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_row public.content_contributions;
+begin
+  if v_uid is null or not private.is_moderator() then
+    raise exception 'moderator_required' using errcode = '42501';
+  end if;
+  if not private.site_feature_enabled('content.public_contribution') then
+    raise exception 'feature_disabled' using errcode = '42501';
+  end if;
+  select * into v_row from public.content_contributions where id = p_id;
+  if not found then
+    raise exception 'contribution_not_found' using errcode = 'P0002';
+  end if;
+  if v_row.contributor_id = v_uid then
+    raise exception 'cannot_review_own_contribution' using errcode = '42501';
+  end if;
+  if p_decision = 'approve' then
+    v_row := private.contribution_apply(p_id, 'ready_for_publication', 'approved', p_note);
+  elsif p_decision = 'reject' then
+    if btrim(coalesce(p_note, '')) = '' then
+      raise exception 'rejection_reason_required' using errcode = '22023';
+    end if;
+    v_row := private.contribution_apply(p_id, 'rejected', 'rejected', p_note);
+  else
+    raise exception 'invalid_decision' using errcode = '22023';
+  end if;
+  update public.content_contributions
+     set reviewer_id = v_uid, review_note = nullif(btrim(coalesce(p_note, '')), '')
+   where id = p_id;
+  return v_row.status;
+end;
+$$;
+
+revoke all on function public.review_lesson_contribution(uuid, text, text) from public, anon;
+grant execute on function public.review_lesson_contribution(uuid, text, text) to authenticated;
+
+-- Admin-only publication of an approved contribution. Any earlier published
+-- version of the same lesson is superseded. The source lesson's own
+-- visibility is not changed.
+create or replace function public.publish_lesson_contribution(p_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_row public.content_contributions;
+  v_prev uuid;
+begin
+  if v_uid is null or not private.is_admin() then
+    raise exception 'admin_required' using errcode = '42501';
+  end if;
+  if not private.site_feature_enabled('content.public_contribution') then
+    raise exception 'feature_disabled' using errcode = '42501';
+  end if;
+  select * into v_row from public.content_contributions where id = p_id for update;
+  if not found then
+    raise exception 'contribution_not_found' using errcode = 'P0002';
+  end if;
+  if v_row.contributor_id = v_uid then
+    raise exception 'cannot_publish_own_contribution' using errcode = '42501';
+  end if;
+  if v_row.status <> 'ready_for_publication' then
+    raise exception 'invalid_state_transition: % -> published', v_row.status
+      using errcode = '22000';
+  end if;
+  select id into v_prev from public.content_contributions
+   where lesson_id = v_row.lesson_id and status = 'published' and id <> p_id;
+  if v_prev is not null then
+    perform private.contribution_apply(v_prev, 'superseded', 'superseded',
+      format('superseded by version %s', v_row.version));
+  end if;
+  return (private.contribution_apply(p_id, 'published', 'published', null)).status;
+end;
+$$;
+
+revoke all on function public.publish_lesson_contribution(uuid) from public, anon;
+grant execute on function public.publish_lesson_contribution(uuid) to authenticated;
+
+-- Moderator takedown of a published contribution, with a mandatory reason.
+-- Allowed even when the gate is OFF, so harmful content can always be removed.
+create or replace function public.takedown_lesson_contribution(
+  p_id uuid,
+  p_reason text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null or not private.is_moderator() then
+    raise exception 'moderator_required' using errcode = '42501';
+  end if;
+  if btrim(coalesce(p_reason, '')) = '' then
+    raise exception 'takedown_reason_required' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1 from public.content_contributions where id = p_id and status = 'published'
+  ) then
+    raise exception 'not_published' using errcode = '22000';
+  end if;
+  return (private.contribution_apply(p_id, 'withdrawn', 'taken_down', p_reason)).status;
+end;
+$$;
+
+revoke all on function public.takedown_lesson_contribution(uuid, text) from public, anon;
+grant execute on function public.takedown_lesson_contribution(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 6. Public reader (gated): published community copies only
+-- ---------------------------------------------------------------------------
+create or replace function public.list_published_contributions(
+  p_limit integer default 50
+)
+returns table (
+  id uuid,
+  version integer,
+  license text,
+  ai_assisted boolean,
+  trust_tier text,
+  title text,
+  snapshot jsonb,
+  published_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select c.id, c.version, c.license, c.ai_assisted, c.trust_tier,
+         c.snapshot->>'title', c.snapshot, c.published_at
+    from public.content_contributions c
+   where c.status = 'published'
+     and private.site_feature_enabled('content.public_contribution')
+   order by c.published_at desc
+   limit least(greatest(coalesce(p_limit, 50), 1), 100);
+$$;
+
+revoke all on function public.list_published_contributions(integer) from public;
+grant execute on function public.list_published_contributions(integer) to anon, authenticated;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261112070000', 'content_public_contribution_foundation') ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
 
