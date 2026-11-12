@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -7,6 +8,7 @@ import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
+import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/next_action_provider.dart';
 import 'package:learning_pwa/services/course_service.dart';
 import 'package:learning_pwa/services/learning_context_service.dart';
@@ -52,6 +54,14 @@ ReviewableItem _createReviewItem({
 class FakeLearningContextService extends Fake implements LearningContextService {
   @override
   ResumePointer? resumeFor(String contextId) => null;
+
+  /// No locally stored contexts.
+  @override
+  LearningContext? byId(String id) => null;
+}
+
+class _EmptyContextsNotifier extends LearningContextsNotifier {
+  _EmptyContextsNotifier() : super.stub(const LearningContextsState());
 }
 
 void main() {
@@ -344,8 +354,18 @@ void main() {
               _createReviewItem(id: 'r2', contentId: 'c2', lessonId: 'l2'),
             ]),
           ),
+          // Real lookups that find nothing, so the "not found" branch runs
+          // (previously an uninitialized Hive service threw and the catch
+          // block produced the empty list by accident).
+          learningContextServiceProvider.overrideWithValue(FakeLearningContextService()),
+          learningContextsProvider.overrideWith((_) => _EmptyContextsNotifier()),
         ],
       );
+      addTearDown(container.dispose);
+      final logs = <String>[];
+      final originalDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) => logs.add(message ?? '');
+      addTearDown(() => debugPrint = originalDebugPrint);
 
       final notifier = container.read(reviewSessionProvider.notifier);
       await notifier.startSession(contextId: 'nonexistent-context');
@@ -353,6 +373,9 @@ void main() {
       final session = container.read(reviewSessionProvider);
       expect(session.items, isEmpty, reason: 'Contextual review MUST fail closed if context is invalid');
       expect(session.isComplete, isTrue);
+      expect(logs, contains(contains('Context nonexistent-context not found; failing closed')));
+      expect(logs.where((l) => l.contains('Error scoping review items')), isEmpty,
+          reason: 'empty result must come from the not-found branch, not an exception');
     });
 
     test('startSession filters to specificConceptIds for Reinforce', () async {

@@ -204,6 +204,24 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 | PR-3 | `test/integration/lesson_import_local_supabase_test.dart`: production `LessonImportService`/`LessonCrudService`/`LessonContentService` with an injected pure-Dart `SupabaseClient` (no platform channels) against the **existing DB job's** local stack, synthetic `@example.test` users via the local admin API, loopback-only guard, `REQUIRE_LOCAL_SUPABASE=true` fail-closed in CI (skipped with reason in the Flutter job). 6 tests: full readback fidelity + service-role row counts; invalid key writes nothing; simulated mid-import failure and a **real** DB rejection (duplicate item id) both clean up in the database; cross-learner RLS read denial. **It exposed a production bug:** `LessonContentService` wrote a `created_by` column that does not exist in the migration-defined `terms`/`questions`/`concepts` tables (PGRST204), so every JSON import with content failed against a migrations-built DB; the app's own read path and `lesson_creation_service` already use `user_id`. Fixed to write `user_id`. Also: `data/samples/sample_lesson_valid.json` (served to agents by the MCP server) was rejected by the importer (free `text` items) while `test_import.dart` printed success; fixed the fixture and replaced the diagnostic with `test/services/lesson_import_sample_fixture_test.dart` (production preview, exact counts, documents that `order` is ignored). Legacy `test_lesson_creation.dart` / `test_import.dart` removed. Closes **Q-02** | Branch `chore/ci-test-quality-pr3` |
 | PR-4 … PR-9 | As in §13 | Planned |
 
+### 0C.4 PR-4 split and PR-4a results (log triage, Q-07; first Q-04 fixes)
+
+PR-4 is split: **PR-4a** fixes test-setup gaps that made passing tests exercise error paths by accident and adds a ratchet against new ones; **PR-4b** adds the C2 mutation seed runner and the assertion upgrades it drives.
+
+Measured on a full local run (JSON reporter): **0 error events**, but ~220 lines of setup-gap messages in passing tests. PR-4a outcome:
+
+| Test | Problem | Fix |
+|---|---|---|
+| `audio_settings_test`, `audio_service_mockito_test`, `pre_reader_literacy_test`, `audio_lesson_provider_test` | `flutter_tts` unmocked (`MissingPluginException` ×117) | `test/test_helpers/platform_channel_fakes.dart`: per-test fake engine that also emits `speak.onComplete` |
+| `connectivity_service_mockito_test` | plugin unmocked; all 5 assertions were `isA<bool>()` | rewritten: faked channel, 14 tests on transport types, stream, degraded / permission / recovery health |
+| `notification_service_mockito_test` | **no assertions**; `initialize` unstubbed | rewritten: 11 tests verifying every scheduled argument, rethrow, cancel; documents that inactive filtering is the caller's job |
+| `v2_stabilization_test` (fail-closed context) | **false green**: empty result came from a `LateInitializationError`, not the not-found branch | real empty context lookups; asserts which branch ran |
+| `scope_resolver_rpc_test` (RPC fallback) | **false green**: fallback crashed on an unstubbed mock; safety net returned the expected empty scope | `FakeSupabaseClient` with seeded nodes/concepts; asserts the cascade's result |
+| `community_qa_service_test` | "offline" simulated by an uninitialized `Supabase.instance` (×34) | injected offline client throwing `SocketException` |
+| `library_create_chooser_test`, `app_initialization_provider_test` | uninitialized Supabase / `shared_preferences` | provider overrides / mock initial values |
+
+`tool/ci/check_test_log_noise.py` (+8 unit tests) now runs after the Flutter suite in **ratchet mode**: setup-gap signatures fail CI unless the file is in `KNOWN_NOISE` with a reason; clean known files fail as stale. Five documented follow-ups remain listed: `audio_lesson_orchestrator_test` (its playback tests only pass because TTS fails instantly; with a working engine they run at real pacing; needs a controllable clock), `overview_tour_screen_test`, `library_v2_test`, and two community widget tests (services reach an uninitialized global client inside the widget tree). Also recorded: `ScopeResolver._resolveOnline` special-cases test fakes by runtime type name (`contains('Fake')`), a production-code smell to remove.
+
 ---
 
 ## 1. Executive decision

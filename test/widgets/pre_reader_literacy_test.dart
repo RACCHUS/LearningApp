@@ -14,6 +14,8 @@ import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dar
 import 'package:learning_pwa/widgets/literacy/pre_reader_track_picker_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test_helpers/platform_channel_fakes.dart';
+
 class _FakePreReaderAudioService implements PreReaderAudioService {
   final List<String> spoken = [];
 
@@ -60,6 +62,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    installFakeTtsChannel();
   });
 
   group('PreReaderProfile & Notifier', () {

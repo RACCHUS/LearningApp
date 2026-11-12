@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
+import 'package:learning_pwa/providers/canonical_taxonomy_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
+import 'package:learning_pwa/services/learning_target_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> settle(WidgetTester tester) async {
@@ -30,6 +33,13 @@ void main() {
           (ref) => LearningContextsNotifier.stub(const LearningContextsState()),
         ),
         activeResolvedScopeProvider.overrideWith((ref) => Future.value(null)),
+        // Healthy, empty catalogs: without these the screen reached an
+        // uninitialized Supabase.instance and rendered its error states.
+        catalogClustersProvider.overrideWith((ref) => Future.value(const [])),
+        assetLessonsProvider.overrideWith((ref) => Future.value(const [])),
+        remoteCatalogLessonsProvider.overrideWith((ref) => Future.value(const [])),
+        offlineCatalogLessonsProvider.overrideWith((ref) => Future.value(const [])),
+        learningTargetServiceProvider.overrideWithValue(_NoTargetsService()),
         targetsListProvider((type: null, types: null, search: search))
             .overrideWith((ref) => Future.value(const <LearningTarget>[])),
         if (search != null) ...[
@@ -136,4 +146,17 @@ class _FakeAuthNotifier extends StateNotifier<AuthState>
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// No targets exist. Any other service call fails loudly (Fake throws).
+class _NoTargetsService extends Fake implements LearningTargetService {
+  @override
+  Future<List<LearningTarget>> getTargets({
+    TargetType? type,
+    List<TargetType>? types,
+    String? fieldId,
+    String? search,
+    int limit = 50,
+  }) async =>
+      const [];
 }

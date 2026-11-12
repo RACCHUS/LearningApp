@@ -5,6 +5,8 @@ import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'test_helpers/platform_channel_fakes.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   
@@ -18,6 +20,8 @@ void main() {
   tearDownAll(() async {
     await Hive.close();
   });
+
+  setUp(installFakeTtsChannel);
 
   group('AudioSettings Model', () {
     test('should have correct default values', () {

@@ -1,9 +1,26 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
+
+import '../../test_helpers/fake_supabase_client.dart';
+
+/// Signed-out client on a device with no network: every data call fails the
+/// way an offline request does (previously these tests used an uninitialized
+/// Supabase.instance, i.e. a misconfigured app, not an offline one).
+class _OfflineSupabaseClient extends FakeSupabaseClient {
+  @override
+  SupabaseQueryBuilder from(String table) => throw const SocketException('offline');
+
+  @override
+  PostgrestFilterBuilder<T> rpc<T>(String fn, {Map<String, dynamic>? params, dynamic get}) =>
+      throw const SocketException('offline');
+}
 
 void main() {
   group('ECO-01 & ECO-02: Community Domain Models', () {
@@ -70,7 +87,7 @@ void main() {
 
   group('ECO-02: Pilot FAQ Seeding & Offline Fallback', () {
     test('returns 36 curated demonstration FAQs across Literacy, Workplace Safety, and Florida Licensure when client is offline', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
       final seeds = await service.fetchSeedFaqs();
 
       expect(seeds.length, 36);
@@ -93,7 +110,7 @@ void main() {
     });
 
     test('filters offline seed FAQs by conceptId across domains', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
 
       final cvcSeeds = await service.fetchSeedFaqs(conceptId: 'literacy.cvc.basics');
       expect(cvcSeeds.length, 1);
@@ -112,13 +129,13 @@ void main() {
     });
 
     test('returns empty list for unknown conceptId during offline fallback instead of unrelated FAQs', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
       final unknownSeeds = await service.fetchSeedFaqs(conceptId: 'unrelated.unknown.concept');
       expect(unknownSeeds, isEmpty);
     });
 
     test('returns verified offline answers for offline seed FAQs', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
 
       final answers = await service.fetchAnswersForQuestion('seed-faq-001');
       expect(answers.length, 1);
@@ -129,7 +146,7 @@ void main() {
     });
 
     test('verifies Florida DBPR regulatory accuracy in offline licensing FAQ answers', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
 
       // 1. Florida Cosmetology CE (seed-faq-013)
       final cosmoAnswers = await service.fetchAnswersForQuestion('seed-faq-013');
@@ -231,7 +248,7 @@ void main() {
     });
 
     test('CommunityQaService handles offline empty fallbacks gracefully', () async {
-      final service = CommunityQaService();
+      final service = CommunityQaService(supabase: _OfflineSupabaseClient());
 
       final reviewQuestions = await service.fetchUnderReviewQuestions();
       expect(reviewQuestions, isEmpty);

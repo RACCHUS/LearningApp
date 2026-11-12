@@ -4,6 +4,8 @@ import 'package:learning_pwa/services/audio_service.dart';
 import 'package:learning_pwa/models/audio_settings.dart';
 import 'package:learning_pwa/models/audio_state.dart';
 
+import '../test_helpers/platform_channel_fakes.dart';
+
 // Note: AudioService uses FlutterTts singleton which is hard to mock directly
 // We'll test the service logic that doesn't require TTS backend
 @GenerateMocks([])
@@ -13,6 +15,7 @@ void main() {
     late AudioService service;
 
     setUp(() {
+      installFakeTtsChannel();
       service = AudioService();
     });
 
