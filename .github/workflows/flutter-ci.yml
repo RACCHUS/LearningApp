@@ -54,6 +54,9 @@ jobs:
       - name: Test Flutter JSON report summarizer (report-only)
         run: python3 -m unittest discover -s tool/tests -p 'test_summarize_flutter_test_report.py' -v
 
+      - name: Test the test log-noise guard
+        run: python3 -m unittest discover -s tool/tests -p 'test_check_test_log_noise.py' -v
+
       - name: Check critical mutation seeds still apply (full run is weekly)
         run: |
           python3 tool/ci/mutation_seeds.py --check
@@ -326,6 +329,11 @@ jobs:
         if: ${{ always() }}
         run: python3 tool/ci/summarize_flutter_test_report.py build/reports/flutter-tests.json --label "Flutter test suite"
 
+      - name: Reject test-setup gaps logged by passing tests (ratchet)
+        # MissingPluginException / MissingStubError / uninitialized Supabase in
+        # a green run means a test exercised an error path by accident.
+        run: python3 tool/ci/check_test_log_noise.py build/reports/flutter-tests.json
+
       - name: EXM 50k synthetic JSON export load probe (no user data)
         run: >-
           flutter test
@@ -428,6 +436,20 @@ jobs:
         run: |
           supabase db reset
           supabase test db
+
+      - name: Verify real lesson import and readback against local Supabase (synthetic)
+        # Production import/read code paths against the clean local stack.
+        # REQUIRE_LOCAL_SUPABASE makes missing configuration a failure; the
+        # test itself refuses non-loopback hosts. .env is copied only because
+        # the Flutter asset bundle lists it; the test never reads it.
+        run: |
+          cp .env.example .env
+          eval "$(supabase status -o env)"
+          LOCAL_SUPABASE_URL="$API_URL" \
+          LOCAL_SUPABASE_ANON_KEY="$ANON_KEY" \
+          LOCAL_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          REQUIRE_LOCAL_SUPABASE=true \
+          flutter test test/integration/lesson_import_local_supabase_test.dart --reporter expanded
 
       - name: Ingest complete official federal taxonomy bundle into clean Supabase
         run: |

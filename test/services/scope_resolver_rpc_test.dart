@@ -4,7 +4,8 @@ import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/services/scope_resolver.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../mocks/supabase_mocks.mocks.dart';
+import '../mocks/supabase_mocks.mocks.dart';
+import '../test_helpers/fake_supabase_client.dart';
 
 class FakeRpcFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   final T _value;
@@ -73,19 +74,31 @@ void main() {
       expect(scope.questionIds, containsAll(['q-01', 'q-02']));
     });
 
-    test('falls back gracefully when resolve_scope RPC throws an error', () async {
-      final client = MockSupabaseClient();
-      when(client.rpc('resolve_scope', params: anyNamed('params')))
-          .thenAnswer((_) => throw const PostgrestException(message: 'Simulated RPC failure'));
+    test('falls back to the client cascade when resolve_scope RPC throws', () async {
+      // Previously the cascade hit an unstubbed mock and crashed, and the
+      // final safety net returned an empty scope, so this test could not tell
+      // a working fallback from a broken one. Now the cascade has data and the
+      // test asserts its result.
+      final client = FakeSupabaseClient()
+        ..rpcHandler = (fn, {params}) {
+          throw const PostgrestException(message: 'Simulated RPC failure');
+        }
+        ..setTableData('curriculum_nodes', [
+          {'id': 'node-a', 'target_version_id': testContext.targetVersionId, 'title': 'Domain A', 'sort_order': 1},
+          {'id': 'node-other', 'target_version_id': 'another-version', 'title': 'Elsewhere', 'sort_order': 1},
+        ])
+        ..setTableData('curriculum_node_concepts', [
+          {'curriculum_node_id': 'node-a', 'concept_id': 'concept-core', 'relevance': 'core'},
+          {'curriculum_node_id': 'node-a', 'concept_id': 'concept-related', 'relevance': 'related'},
+          {'curriculum_node_id': 'node-other', 'concept_id': 'concept-elsewhere', 'relevance': 'core'},
+        ]);
 
-      final resolver = ScopeResolver(supabase: client);
-
-      // Should not throw, should return safe fallback scope
-      final scope = await resolver.resolveScope(testContext);
+      final scope = await ScopeResolver(supabase: client).resolveScope(testContext);
 
       expect(scope.contextId, 'ctx-fast-01');
-      expect(scope.coreConceptIds, isEmpty);
-      expect(scope.curriculumNodeIds, isEmpty);
+      expect(scope.curriculumNodeIds, ['node-a']);
+      expect(scope.coreConceptIds, ['concept-core']);
+      expect(scope.relatedConceptIds, ['concept-related']);
     });
   });
 }
