@@ -8,7 +8,8 @@ class McqContentForm extends StatefulWidget {
   final TextEditingController questionController;
   final List<TextEditingController> optionControllers;
   final TextEditingController explanationController;
-  final int correctAnswer;
+  /// Selected correct option, or null until the author chooses one.
+  final int? correctAnswer;
   final Function(int) onCorrectAnswerChanged;
   final VoidCallback onAddQuestion;
 
@@ -192,7 +193,10 @@ class _McqContentFormState extends State<McqContentForm> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Correct Answer: Option ${String.fromCharCode(65 + widget.correctAnswer)}',
+                  widget.correctAnswer == null
+                      ? 'Choose the correct answer'
+                      : 'Correct Answer: Option '
+                          '${String.fromCharCode(65 + widget.correctAnswer!)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
