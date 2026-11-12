@@ -22,6 +22,17 @@ final quickRescueEnabledProvider = Provider<bool>((ref) {
   );
 });
 
+/// `learning.auto_gap_suggestions` (master plan v2.6 §15.0, PR-D). Default
+/// OFF and fails closed. Independent of `learning.quick_rescue`: turning
+/// it off removes only proactive suggestions, never explicit help or Back.
+final autoGapSuggestionsEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningAutoGapSuggestions,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
 /// The bundled Bridge Library, loaded once from app assets (offline).
 final bridgeLibraryProvider = FutureProvider<BridgeLibrary>((ref) {
   return BridgeLibrary.load(rootBundle);

@@ -6,10 +6,23 @@ import 'package:learning_pwa/services/learning_support/bridge_check_evaluator.da
 /// the Bridge's verified expected value and are never recorded as progress
 /// or mastery (master plan v2.6 §10.9: unreviewed practice is exploratory).
 class BridgeCheckCard extends StatefulWidget {
-  const BridgeCheckCard({super.key, required this.check, required this.index});
+  const BridgeCheckCard({
+    super.key,
+    required this.check,
+    required this.index,
+    this.onFirstAttempt,
+    this.onDispute,
+  });
 
   final BridgeCheck check;
   final int index;
+
+  /// Called once, with the first readable answer's result. Retries are not
+  /// reported: they follow feedback and are not independent evidence.
+  final void Function(String itemId, bool correct)? onFirstAttempt;
+
+  /// Called when the learner says the question seems wrong.
+  final void Function(String itemId)? onDispute;
 
   @override
   State<BridgeCheckCard> createState() => _BridgeCheckCardState();
@@ -22,6 +35,8 @@ class _BridgeCheckCardState extends State<BridgeCheckCard> {
   int? _selected;
   _Result _result = _Result.none;
   bool _showExplanation = false;
+  bool _reported = false;
+  bool _disputed = false;
 
   BridgeCheck get _check => widget.check;
 
@@ -32,6 +47,15 @@ class _BridgeCheckCardState extends State<BridgeCheckCard> {
   }
 
   void _grade() {
+    _gradeOnly();
+    if (!_reported &&
+        (_result == _Result.correct || _result == _Result.wrong)) {
+      _reported = true;
+      widget.onFirstAttempt?.call(_check.itemId, _result == _Result.correct);
+    }
+  }
+
+  void _gradeOnly() {
     setState(() {
       _showExplanation = false;
       if (_check.kind == BridgeCheckKind.choice) {
@@ -156,6 +180,21 @@ class _BridgeCheckCardState extends State<BridgeCheckCard> {
                 onPressed: () => setState(() => _showExplanation = true),
                 child: const Text('Show how it works'),
               ),
+            if (widget.onDispute != null)
+              _disputed
+                  ? Text(
+                      "Thanks. This question won't count toward suggestions.",
+                      key: Key('bridge-check-disputed-$id'),
+                      style: theme.textTheme.bodySmall,
+                    )
+                  : TextButton(
+                      key: Key('bridge-check-dispute-$id'),
+                      onPressed: () {
+                        setState(() => _disputed = true);
+                        widget.onDispute!(_check.itemId);
+                      },
+                      child: const Text('This question seems wrong'),
+                    ),
           ],
         ),
       ),

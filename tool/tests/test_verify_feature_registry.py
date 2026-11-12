@@ -82,6 +82,13 @@ ON CONFLICT (feature_key) DO NOTHING;
                 any("cannot seed enabled" in e for e in verify(dart, effective_seed_sql(d)))
             )
 
+    def test_wrapped_dart_declaration_is_read(self):
+        wrapped = OK_DART.replace(
+            "static const String aiByok = 'ai.byok';",
+            "static const String aiByok =\n      'ai.byok';",
+        )
+        self.assertEqual(verify(wrapped, OK_SQL), [])
+
     def test_missing_foundation_is_an_error(self):
         import tempfile
 

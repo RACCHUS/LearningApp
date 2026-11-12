@@ -4,6 +4,7 @@ import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/models/learning_support/bridge_lesson.dart';
 import 'package:learning_pwa/models/learning_support/return_anchor.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
 import 'package:uuid/uuid.dart';
 
@@ -104,6 +105,32 @@ class BridgeLessonView extends ConsumerStatefulWidget {
 class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
   bool _leaving = false;
 
+  /// First answers on this screen, by item (in memory only, never saved
+  /// as progress).
+  final Map<String, CheckAttempt> _attempts = {};
+
+  /// Prerequisites the learner said are "not the issue" on this screen.
+  final Set<String> _dismissed = {};
+
+  void _recordAttempt(String itemId, bool correct) => setState(
+    () => _attempts.putIfAbsent(
+      itemId,
+      () => CheckAttempt(itemId: itemId, firstAttemptCorrect: correct),
+    ),
+  );
+
+  void _recordDispute(String itemId) => setState(() {
+    final a = _attempts[itemId];
+    _attempts[itemId] = a == null
+        // A disputed item that was never answered still must not count.
+        ? CheckAttempt(
+            itemId: itemId,
+            firstAttemptCorrect: true,
+            disputed: true,
+          )
+        : a.copyWith(disputed: true);
+  });
+
   /// This screen's position in the help trail (1 = opened from the lesson).
   /// Screens underneath keep their own position while covered.
   late final int _depth = ref
@@ -146,6 +173,17 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
     );
     final gateOn = ref.watch(quickRescueEnabledProvider);
     final library = ref.watch(bridgeLibraryProvider).valueOrNull;
+    final suggestionsOn =
+        gateOn && ref.watch(autoGapSuggestionsEnabledProvider);
+    final suggestion = !suggestionsOn || library == null
+        ? null
+        : GapSignalService.propose(
+            bridge: _bridge,
+            attempts: _attempts.values,
+            library: library,
+            dismissed: _dismissed,
+            canOpen: controller.canOpen,
+          );
 
     // Where "Back" goes: the Bridge we came from, or the original lesson.
     final entries = state.stack.entries;
@@ -257,7 +295,60 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
               style: theme.textTheme.bodySmall,
             ),
             for (final (i, c) in _bridge.checks.indexed)
-              BridgeCheckCard(check: c, index: i),
+              BridgeCheckCard(
+                check: c,
+                index: i,
+                onFirstAttempt: _recordAttempt,
+                onDispute: _recordDispute,
+              ),
+            if (suggestion != null)
+              Card(
+                key: const Key('bridge-gap-suggestion'),
+                color: theme.colorScheme.tertiaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          'Suggestion: ${suggestion.reason}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          FilledButton.tonal(
+                            key: const Key('bridge-gap-open'),
+                            onPressed: () => openBridgeFrom(
+                              context,
+                              ref,
+                              supportKey: widget.supportKey,
+                              origin: widget.origin,
+                              bridge: suggestion.prerequisite,
+                              leaving: _bridge,
+                            ),
+                            child: const Text('Open the refresher'),
+                          ),
+                          TextButton(
+                            key: const Key('bridge-gap-not-the-issue'),
+                            onPressed: () => setState(
+                              () => _dismissed.add(
+                                suggestion.prerequisite.bridgeId,
+                              ),
+                            ),
+                            child: const Text('Not the issue'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             if (_bridge.buildsOn.isNotEmpty) ...[
               section('Need a step back?'),
               if (!gateOn)
