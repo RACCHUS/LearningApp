@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/generation_session.dart';
+import '../models/generation_session_codec.dart';
 import '../services/ai_prompt_service.dart';
 import '../services/prompt_context_compressor.dart';
 
@@ -25,56 +26,167 @@ final generationSessionProvider = StateNotifierProvider<
   (ref) => GenerationSessionNotifier(),
 );
 
+/// Why a stored session could not be opened normally.
+enum SessionRecoveryReason {
+  /// The saved bytes are not a readable session (bad JSON, missing or
+  /// wrongly typed required field, invalid date).
+  unreadable,
+
+  /// Saved by a newer app version this build cannot read.
+  newerVersion,
+
+  /// Contradictory or malformed version markers.
+  conflictingVersion,
+
+  /// Saved while a different account was signed in on this device. It is
+  /// neither restored nor exported here.
+  otherAccount,
+}
+
+/// A stored session that is being protected instead of opened.
+@immutable
+class SessionRecoveryInfo {
+  const SessionRecoveryInfo({
+    required this.reason,
+    this.field,
+    this.detail,
+  });
+
+  final SessionRecoveryReason reason;
+
+  /// The field that made the session unreadable, when known.
+  final String? field;
+
+  /// Developer-facing detail (not shown verbatim to learners).
+  final String? detail;
+
+  /// Another account's draft is never exported to the current user.
+  bool get canExport => reason != SessionRecoveryReason.otherAccount;
+}
+
 /// Manages the multi-prompt generation session, producing the right prompt
 /// for each phase and accepting the AI's JSON response to advance the pipeline.
+///
+/// Persistence follows master plan v2.6 §12.5 / Appendix D.4 / G.5: the
+/// legacy key `generation_session_v1` is never overwritten or removed while
+/// it holds a session this build cannot open ("recovery pending"). New work
+/// in that state is saved under [recoveryWorkKey] until the learner
+/// explicitly exports or discards the protected session.
 class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
   GenerationSessionNotifier() : super(null);
 
   static const _uuid = Uuid();
 
+  /// SharedPreferences key holding the raw text of an unreadable session.
+  static const corruptSessionBackupKey = '${_sessionStorageKey}_unreadable_raw';
+
+  /// Where new work is saved while the legacy key is protected.
+  static const recoveryWorkKey = '${_sessionStorageKey}_while_recovering';
+
+  SessionRecoveryInfo? _recovery;
+  String? _ownerScope;
+  Future<void> _writes = Future<void>.value();
+
+  /// Non-null while a stored session is protected instead of opened.
+  SessionRecoveryInfo? get recovery => _recovery;
+
+  /// Account that new sessions are saved for (null for signed-out use).
+  /// Recorded as `owner_scope` so a shared device never restores one
+  /// account's draft for another.
+  set ownerScope(String? value) =>
+      _ownerScope = (value == null || value.isEmpty) ? null : value;
+
+  String get _writeKey =>
+      _recovery == null ? _sessionStorageKey : recoveryWorkKey;
+
   // ---------------------------------------------------------------------------
   // Persistence
   // ---------------------------------------------------------------------------
 
-  /// Save current session to SharedPreferences.
-  Future<void> _persist() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (state == null) {
-        await prefs.remove(_sessionStorageKey);
-      } else {
-        await prefs.setString(_sessionStorageKey, state!.toJsonString());
+  /// Save current session. Writes are serialized so an older snapshot can
+  /// never land after a newer one.
+  Future<void> _persist() {
+    final snapshot = state;
+    final key = _writeKey;
+    final owner = _ownerScope;
+    _writes = _writes.then((_) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (snapshot == null) {
+          await prefs.remove(key);
+        } else {
+          await prefs.setString(
+            key,
+            GenerationSessionCodec.encode(snapshot, ownerScope: owner),
+          );
+        }
+      } catch (e) {
+        debugPrint('Failed to persist generation session: $e');
       }
-    } catch (e) {
-      debugPrint('Failed to persist generation session: $e');
-    }
+    });
+    return _writes;
   }
+
+  /// Completes when all queued saves have finished.
+  Future<void> flushPersistence() => _writes;
 
   /// Try to load a previously saved session. Returns true if restored.
   ///
-  /// If the stored V1 session cannot be parsed, its raw bytes are copied to
-  /// [corruptSessionBackupKey] before anything else can overwrite them, so
-  /// the learner's draft is never silently lost (plan v2.6 §14.8).
-  Future<bool> tryRestore() async {
-    String? raw;
+  /// When the saved session cannot be opened (unreadable, newer version,
+  /// conflicting version, or another account's), its bytes are preserved,
+  /// [recovery] is set, and the legacy key is protected from overwrite. Any
+  /// work saved during an earlier recovery is restored instead.
+  Future<bool> tryRestore({String? ownerScope}) async {
+    this.ownerScope = ownerScope;
+    final SharedPreferences prefs;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      raw = prefs.getString(_sessionStorageKey);
-      if (raw != null && raw.isNotEmpty) {
-        state = GenerationSession.fromJsonString(raw);
-        return true;
-      }
+      prefs = await SharedPreferences.getInstance();
     } catch (e) {
-      debugPrint('Failed to restore generation session: $e');
-      if (raw != null && raw.isNotEmpty) {
-        await _preserveCorruptSession(raw);
+      debugPrint('Failed to open session storage: $e');
+      return false;
+    }
+    final raw = prefs.getString(_sessionStorageKey);
+    if (raw == null || raw.isEmpty) {
+      _recovery = null;
+      return false;
+    }
+
+    final result = GenerationSessionCodec.decode(raw);
+    if (result.isReadable &&
+        (result.ownerScope == null || result.ownerScope == _ownerScope)) {
+      _recovery = null;
+      state = result.session;
+      return true;
+    }
+
+    _recovery = SessionRecoveryInfo(
+      reason: switch (result.kind) {
+        SessionDecodeKind.v1 => SessionRecoveryReason.otherAccount,
+        SessionDecodeKind.unreadable => SessionRecoveryReason.unreadable,
+        SessionDecodeKind.unsupportedVersion =>
+          SessionRecoveryReason.newerVersion,
+        SessionDecodeKind.conflictingVersion =>
+          SessionRecoveryReason.conflictingVersion,
+      },
+      field: result.field,
+      detail: result.reason,
+    );
+    debugPrint('Generation session protected for recovery: $result');
+    if (_recovery!.canExport) await _preserveCorruptSession(raw);
+
+    // Resume work saved during an earlier recovery, if it is ours.
+    final work = prefs.getString(recoveryWorkKey);
+    if (work != null && work.isNotEmpty) {
+      final workResult = GenerationSessionCodec.decode(work);
+      if (workResult.isReadable &&
+          (workResult.ownerScope == null ||
+              workResult.ownerScope == _ownerScope)) {
+        state = workResult.session;
+        return true;
       }
     }
     return false;
   }
-
-  /// SharedPreferences key holding the raw text of an unreadable session.
-  static const corruptSessionBackupKey = '${_sessionStorageKey}_unreadable_raw';
 
   Future<void> _preserveCorruptSession(String raw) async {
     try {
@@ -92,6 +204,39 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
   static Future<String?> readCorruptSessionBackup() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(corruptSessionBackupKey);
+  }
+
+  /// The protected session's original text, byte-for-byte, for the learner
+  /// to copy or save. Null when nothing is protected or it belongs to
+  /// another account.
+  Future<String?> exportProtectedSession() async {
+    final recovery = _recovery;
+    if (recovery == null || !recovery.canExport) return null;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_sessionStorageKey) ??
+        prefs.getString(corruptSessionBackupKey);
+  }
+
+  /// Permanently removes the protected session after the learner confirms.
+  /// Any work saved meanwhile becomes the normal saved session; it is read
+  /// back before the temporary copy is removed.
+  ///
+  /// Returns false (leaving the temporary copy in place) if read-back fails.
+  Future<bool> discardProtectedSession() async {
+    if (_recovery == null) return true;
+    await _writes;
+    final prefs = await SharedPreferences.getInstance();
+    final work = prefs.getString(recoveryWorkKey);
+    if (work != null && work.isNotEmpty) {
+      await prefs.setString(_sessionStorageKey, work);
+      if (prefs.getString(_sessionStorageKey) != work) return false;
+      await prefs.remove(recoveryWorkKey);
+    } else {
+      await prefs.remove(_sessionStorageKey);
+    }
+    await prefs.remove(corruptSessionBackupKey);
+    _recovery = null;
+    return true;
   }
 
   /// Check if a saved session exists without loading it.
