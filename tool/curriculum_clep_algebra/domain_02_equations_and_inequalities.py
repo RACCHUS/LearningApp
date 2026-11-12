@@ -297,7 +297,7 @@ DOMAIN_02 = {
                             "content": {
                                 "type": "key_concept",
                                 "title": "Discriminant Root Diagnostic",
-                                "body": "• $\\Delta > 0$: Two distinct real solutions (graph crosses $x$-axis twice).\n• $\\Delta = 0$: Exactly one repeated real rational solution (parabola vertex touches $x$-axis).\n• $\\Delta < 0$: Two complex conjugate non-real solutions (graph has no $x$-intercepts).",
+                                "body": "• $\\Delta > 0$: Two distinct real solutions (graph crosses $x$-axis twice).\n• $\\Delta = 0$: Exactly one repeated real solution (parabola vertex touches $x$-axis).\n• $\\Delta < 0$: Two complex conjugate non-real solutions (graph has no $x$-intercepts).",
                             },
                         },
                         {

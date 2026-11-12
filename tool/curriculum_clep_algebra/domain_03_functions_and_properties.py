@@ -957,7 +957,7 @@ DOMAIN_03 = {
                             "interaction_type": "single_choice",
                             "response_spec": {
                                 "options": [
-                                    "x \\geq 3",
+                                    "x \\geq -2",
                                     "x \\geq 2",
                                     "x \\leq 3",
                                     "All real numbers x",

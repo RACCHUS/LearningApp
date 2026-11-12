@@ -170,13 +170,13 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
         {
             "id": "alg-fmt-zero-discriminant-meaning",
             "question_text": "What does a discriminant value of $\\Delta = b^2 - 4ac = 0$ indicate about the solutions of a quadratic equation?",
-            "correct_text": "The equation has exactly one repeated real rational solution",
+            "correct_text": "The equation has exactly one repeated real solution",
             "distractors": [
                 "The equation has two distinct irrational real solutions",
                 "The equation has two complex conjugate non-real solutions",
                 "The equation has no mathematical solutions whatsoever",
             ],
-            "explanation": "When Delta = 0, the plus-or-minus radical term becomes 0, leaving x = -b / (2a) as a single repeated real rational root of multiplicity 2.",
+            "explanation": "When Delta = 0, the plus-or-minus radical term becomes 0, leaving x = -b / (2a) as a single repeated real root of multiplicity 2. (It is rational only when a and b are rational.)",
             "concept_slugs": ["alg-discriminant-nature"],
         },
         {

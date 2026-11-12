@@ -1693,7 +1693,7 @@ domains:
           title: Discriminant Root Diagnostic
           body: |-
             • $\Delta > 0$: Two distinct real solutions (graph crosses $x$-axis twice).
-            • $\Delta = 0$: Exactly one repeated real rational solution (parabola vertex touches $x$-axis).
+            • $\Delta = 0$: Exactly one repeated real solution (parabola vertex touches $x$-axis).
             • $\Delta < 0$: Two complex conjugate non-real solutions (graph has no $x$-intercepts).
       - sort_order: 3
         block_type: markdown
@@ -1819,13 +1819,14 @@ domains:
         question_text: What does a discriminant value of $\Delta = b^2 - 4ac = 0$
           indicate about the solutions of a quadratic equation?
         options:
-        - The equation has exactly one repeated real rational solution
+        - The equation has exactly one repeated real solution
         - The equation has two distinct irrational real solutions
         - The equation has two complex conjugate non-real solutions
         - The equation has no mathematical solutions whatsoever
         correct_answer: 0
         explanation: When Delta = 0, the plus-or-minus radical term becomes 0, leaving
-          x = -b / (2a) as a single repeated real rational root of multiplicity 2.
+          x = -b / (2a) as a single repeated real root of multiplicity 2. (It is rational
+          only when a and b are rational.)
         concept_slugs:
         - alg-discriminant-nature
         citation: OpenStax College Algebra 1e, CC BY 4.0
@@ -3780,7 +3781,7 @@ domains:
         interaction_type: single_choice
         response_spec:
           options:
-          - x \geq 3
+          - x \geq -2
           - x \geq 2
           - x \leq 3
           - All real numbers x
