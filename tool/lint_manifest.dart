@@ -193,6 +193,9 @@ class ManifestLinter {
       }
     }
 
+    // 0.9 Stable item identity (plan PR-2b)
+    _checkStableItemIds(manifest);
+
     // 1. Domain Weights Sum
     final domains = manifest['domains'] as List<dynamic>? ?? [];
     double totalWeight = 0.0;
@@ -470,6 +473,80 @@ class ManifestLinter {
           location: 'Concept $slug',
           message: 'Concept is taught in lessons but has no assessment items mapping directly to it.',
         ));
+      }
+    }
+  }
+
+  /// Targets whose every question and assessment item must carry a stable,
+  /// authored `id`. Keyed by the manifest's authoritative `target.slug`, never
+  /// by file name. Other targets may use `id` optionally; when they do, IDs
+  /// must still be well formed and unique within the manifest.
+  static const idRequiredTargets = {'clep-college-algebra'};
+  static final stableIdPattern = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+
+  void _checkStableItemIds(Map<String, dynamic> manifest) {
+    final targetSlug = (manifest['target'] as Map?)?['slug']?.toString();
+    final required = idRequiredTargets.contains(targetSlug);
+    final seen = <String, String>{};
+
+    void checkItem(dynamic item, String location) {
+      if (item is! Map) return;
+      final rawId = item['id'];
+      if (rawId == null) {
+        if (required) {
+          issues.add(LintIssue(
+            level: 'ERROR',
+            rule: 'stable-item-id',
+            location: location,
+            message: 'Target "$targetSlug" requires a stable authored id on every question and assessment item.',
+          ));
+        }
+        return;
+      }
+      final id = rawId is String ? rawId : null;
+      if (id == null || !stableIdPattern.hasMatch(id)) {
+        issues.add(LintIssue(
+          level: 'ERROR',
+          rule: 'stable-item-id',
+          location: location,
+          message: 'Item id "$rawId" must be a lowercase kebab-case string.',
+        ));
+        return;
+      }
+      final previous = seen[id];
+      if (previous != null) {
+        issues.add(LintIssue(
+          level: 'ERROR',
+          rule: 'stable-item-id',
+          location: location,
+          message: 'Duplicate item id "$id" (also used at $previous).',
+        ));
+      } else {
+        seen[id] = location;
+      }
+    }
+
+    void checkList(dynamic list, String location, String label) {
+      if (list is! List) return;
+      for (int i = 0; i < list.length; i++) {
+        checkItem(list[i], '$location -> $label ${i + 1}');
+      }
+    }
+
+    for (final domain in manifest['domains'] as List<dynamic>? ?? const []) {
+      if (domain is! Map) continue;
+      final dLoc = 'Domain ${domain['code'] ?? '?'}';
+      checkList(domain['assessment_items'], dLoc, 'Assessment Item');
+      for (final objective in domain['objectives'] as List<dynamic>? ?? const []) {
+        if (objective is! Map) continue;
+        final oLoc = '$dLoc.${objective['code'] ?? '?'}';
+        checkList(objective['assessment_items'], oLoc, 'Assessment Item');
+        for (final lesson in objective['lessons'] as List<dynamic>? ?? const []) {
+          if (lesson is! Map) continue;
+          final lLoc = '$oLoc -> Lesson "${lesson['title'] ?? 'Untitled'}"';
+          checkList(lesson['questions'], lLoc, 'Question');
+          checkList(lesson['assessment_items'], lLoc, 'Assessment Item');
+        }
       }
     }
   }

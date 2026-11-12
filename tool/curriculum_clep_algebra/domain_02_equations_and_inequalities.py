@@ -145,6 +145,7 @@ DOMAIN_02 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-linear-equation-with-fractions",
                             "prompt": "Solve the linear equation $\\frac{2x - 3}{4} - \\frac{x + 1}{6} = 2$ for $x$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -163,6 +164,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-linear-equations"],
                         },
                         {
+                            "id": "alg-sim-compound-inequality-interval",
                             "prompt": "What is the solution set in interval notation for the compound inequality $-3 \\leq 2x - 7 < 5$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -181,6 +183,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-linear-inequalities"],
                         },
                         {
+                            "id": "alg-sim-rideshare-linear-budget-inequality",
                             "prompt": "A rideshare service charges a flat reservation fee of $\\$3.50$ plus $\\$2.25$ per mile traveled. A traveler has a strict maximum budget of $\\$26.00$. What is the maximum integer number of whole miles the traveler can travel?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -341,6 +344,7 @@ DOMAIN_02 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-quadratic-by-factoring",
                             "prompt": "Find all real solutions to the quadratic equation $2x^2 - 5x - 3 = 0$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -359,6 +363,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-quadratic-methods"],
                         },
                         {
+                            "id": "alg-sim-discriminant-repeated-root-k",
                             "prompt": "For what real value of $k$ does the quadratic equation $x^2 - 6x + k = 0$ have exactly one repeated real solution?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -377,6 +382,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-discriminant-nature"],
                         },
                         {
+                            "id": "alg-sim-projectile-quadratic-model",
                             "prompt": "A toy rocket launched from ground level follows the height trajectory $h(t) = -16t^2 + 80t$ where $h(t)$ is in feet and $t$ is in seconds. At what positive time $t$ will the rocket hit the ground?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -538,6 +544,7 @@ DOMAIN_02 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-radical-equation-extraneous-root",
                             "prompt": "Find all real solutions to the radical equation $\\sqrt{2x + 7} - x = 2$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -556,6 +563,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-radical-equations"],
                         },
                         {
+                            "id": "alg-sim-rational-equation-extraneous-root",
                             "prompt": "Solve the rational equation $\\frac{x}{x - 2} + \\frac{1}{x - 4} = \\frac{2}{(x - 2)(x - 4)}$ for $x$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -574,6 +582,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-rational-equations"],
                         },
                         {
+                            "id": "alg-sim-absolute-value-equation-linear-rhs",
                             "prompt": "Find all real solutions to the absolute value equation $|3x - 5| = 2x + 10$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -733,6 +742,7 @@ DOMAIN_02 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-linear-system-sum-of-solution",
                             "prompt": "Solve the linear system of equations: $3x + 2y = 12$ and $5x - 4y = -2$. What is the value of $x + y$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -751,6 +761,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-linear-systems"],
                         },
                         {
+                            "id": "alg-sim-inconsistent-system-parameter",
                             "prompt": "For what real value of $k$ will the system of equations $2x - 3y = 8$ and $4x - 6y = k$ be inconsistent (have no solution)?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -769,6 +780,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-system-classification"],
                         },
                         {
+                            "id": "alg-sim-line-parabola-intersection",
                             "prompt": "Find all points of intersection between the line $y = 2x - 1$ and the parabola $y = x^2 - 4$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -931,6 +943,7 @@ DOMAIN_02 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-exponential-equation-common-base",
                             "prompt": "Solve the exponential equation $4^{2x - 1} = 8^{x + 2}$ for $x$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -949,6 +962,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-exponential-equations"],
                         },
                         {
+                            "id": "alg-sim-logarithmic-equation-domain-check",
                             "prompt": "Solve the logarithmic equation $\\log_2(x) + \\log_2(x - 3) = 2$ for $x$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -967,6 +981,7 @@ DOMAIN_02 = {
                             "concept_slugs": ["alg-logarithmic-equations"],
                         },
                         {
+                            "id": "alg-sim-radioactive-decay-continuous-model",
                             "prompt": "An initial sample of $200$ grams of a radioactive isotope decays according to the model $A(t) = 200 e^{-0.035t}$, where $t$ is in years. Which expression gives the half-life of the isotope in years?",
                             "interaction_type": "single_choice",
                             "response_spec": {

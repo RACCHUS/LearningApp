@@ -11,6 +11,7 @@ Produces the comprehensive, 10-element compliant curriculum manifest with:
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -220,7 +221,38 @@ def validate_manifest_invariants(manifest: dict):
         print(f"Key position {pos}: {count}/{total_items} ({ratio:.1%})")
         assert ratio <= 0.40, f"Position {pos} frequency {ratio:.1%} exceeds 40% balance threshold"
 
+    validate_stable_ids(manifest)
+
     print(f"✅ Invariants verified: 4 domains, 20 lessons, {len(all_concept_slugs)} concepts, 60 protected simulation items.")
+
+
+STABLE_ID_PATTERN = re.compile(r"^alg-(sim|fmt)-[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def validate_stable_ids(manifest: dict):
+    """Every simulation item and formative question carries an authored, unique ID.
+
+    IDs are authored in tool/curriculum_clep_algebra (never only in the YAML),
+    use the prefix alg-sim- (simulation) or alg-fmt- (formative), and are
+    immutable: change an ID only when an item's meaning is replaced.
+    """
+    seen: dict[str, str] = {}
+    counts = {"sim": 0, "fmt": 0}
+    for d in manifest.get("domains", []):
+        for o in d.get("objectives", []):
+            for l in o.get("lessons", []):
+                for kind, key in (("sim", "assessment_items"), ("fmt", "questions")):
+                    for itm in l.get(key, []):
+                        item_id = itm.get("id")
+                        where = f"lesson {l.get('title')!r} {key}"
+                        assert isinstance(item_id, str) and STABLE_ID_PATTERN.match(item_id), (
+                            f"{where}: missing or malformed id {item_id!r}"
+                        )
+                        assert item_id.startswith(f"alg-{kind}-"), f"{where}: id {item_id!r} must start with alg-{kind}-"
+                        assert item_id not in seen, f"{where}: duplicate id {item_id!r} (also in {seen[item_id]})"
+                        seen[item_id] = where
+                        counts[kind] += 1
+    assert counts == {"sim": 60, "fmt": 40}, f"Expected 60 simulation + 40 formative IDs, got {counts}"
 
 
 def main():

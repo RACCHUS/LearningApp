@@ -296,6 +296,65 @@ int _intermediateCorrectIndex(Map<dynamic, dynamic> q) {
   return raw;
 }
 
+/// Carries an assessment item's authored `id` into its persisted metadata as
+/// `source_item_id` (plan PR-2b). The ingest RPC copies `metadata` verbatim
+/// into `assessment_items.metadata`, so this is where simulation-item identity
+/// survives into the database. The learner-facing `clep_issue_simulation_exam`
+/// projection allowlists other metadata keys only, and RLS hides protected
+/// simulation rows, so the ID stays server-side. IDs describe the skill tested,
+/// never the answer.
+///
+/// Formative lesson `questions` stay manifest-only: the questions table has no
+/// source-id column, and adding one needs a separately reviewed migration.
+Map<String, dynamic> assessmentItemMetadata(Map<dynamic, dynamic> item) {
+  final metadata = Map<String, dynamic>.from(item['metadata'] as Map? ?? const {});
+  final id = item['id'];
+  if (id == null) return metadata;
+  if (id is! String || id.trim().isEmpty) {
+    throw Exception('Assessment item id must be a non-empty string (got "$id").');
+  }
+  final existing = metadata['source_item_id'];
+  if (existing != null && existing != id) {
+    throw Exception('Assessment item id "$id" conflicts with metadata.source_item_id "$existing".');
+  }
+  metadata['source_item_id'] = id;
+  return metadata;
+}
+
+/// Assessment-item ids in document order. Items are maps with both `prompt`
+/// and `interaction_type`. Reads the top-level `id` (manifest) or
+/// `metadata.source_item_id` (RPC payload).
+List<String> collectAssessmentItemIds(dynamic node, {required bool fromMetadata}) {
+  final ids = <String>[];
+  void walk(dynamic n) {
+    if (n is Map) {
+      if (n.containsKey('prompt') && n.containsKey('interaction_type')) {
+        final metadata = n['metadata'];
+        final id = fromMetadata ? (metadata is Map ? metadata['source_item_id'] : null) : n['id'];
+        if (id != null) ids.add(id.toString());
+      }
+      for (final v in n.values) {
+        walk(v);
+      }
+    } else if (n is List) {
+      for (final v in n) {
+        walk(v);
+      }
+    }
+  }
+
+  walk(node);
+  return ids;
+}
+
+/// Test seam for the manifest-to-RPC payload transform (no I/O).
+Map<String, dynamic> prepareManifestPayloadForTesting({
+  required Map<String, dynamic> manifest,
+  required String targetSlug,
+  required String versionCode,
+}) =>
+    _prepareManifestPayload(manifest: manifest, targetSlug: targetSlug, versionCode: versionCode);
+
 List<dynamic> asList(dynamic body) {
   if (body is List) return body;
   if (body is Map) return [body];
@@ -593,6 +652,24 @@ void _executeDryRun(
     for (final issue in linter.issues.where((i) => i.level == 'WARNING')) {
       print('  • $issue');
     }
+  }
+
+  // 1.6 Stable item identity survives the RPC payload transform (plan PR-2b).
+  // Builds the real payload (no I/O) so a mapper that drops ids fails here.
+  final payload = _prepareManifestPayload(
+    manifest: manifest,
+    targetSlug: targetSlug ?? (manifest['target'] as Map?)?['slug']?.toString() ?? 'dry-run',
+    versionCode: versionCode ?? 'dry-run',
+  );
+  final authoredIds = collectAssessmentItemIds(manifest, fromMetadata: false);
+  final carriedIds = collectAssessmentItemIds(payload, fromMetadata: true);
+  if (authoredIds.join('\n') != carriedIds.join('\n')) {
+    throw Exception(
+        'Assessment item ids were not carried into payload metadata.source_item_id '
+        '(${authoredIds.length} authored, ${carriedIds.length} carried) (${filePath ?? "manifest"}).');
+  }
+  if (authoredIds.isNotEmpty) {
+    print('  ✓ ${authoredIds.length} assessment item id(s) carried into metadata.source_item_id');
   }
 
   // 2. Source release(s)
@@ -1028,7 +1105,7 @@ Map<String, dynamic> _prepareManifestPayload({
           'explanation': item['explanation'],
           'difficulty': item['difficulty'] ?? 'intermediate',
           'cognitive_level': item['cognitive_level'],
-          'metadata': item['metadata'] ?? {},
+          'metadata': assessmentItemMetadata(item),
           'concept_ids': cIds,
           'concept_slugs': cSlugs.isNotEmpty ? cSlugs : objConceptSlugs,
           'source_release_id': item['source_release_id'],
@@ -1108,7 +1185,7 @@ Map<String, dynamic> _prepareManifestPayload({
             'explanation': item['explanation'],
             'difficulty': item['difficulty'] ?? 'intermediate',
             'cognitive_level': item['cognitive_level'],
-            'metadata': item['metadata'] ?? {},
+            'metadata': assessmentItemMetadata(item),
             'concept_ids': cIds,
             'concept_slugs': cSlugs.isNotEmpty ? cSlugs : (lConceptSlugs ?? objConceptSlugs),
             'source_release_id': item['source_release_id'],

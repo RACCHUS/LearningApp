@@ -141,6 +141,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-domain-sqrt-over-linear",
                             "prompt": "What is the domain of the function $f(x) = \\frac{\\sqrt{x - 2}}{x - 5}$ expressed in interval notation?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -159,6 +160,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-domain-algebraic"],
                         },
                         {
+                            "id": "alg-sim-difference-quotient-quadratic",
                             "prompt": "Given the function $f(x) = 2x^2 - 3x + 1$, evaluate the difference quotient $\\frac{f(x + h) - f(x)}{h}$ for $h \\neq 0$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -177,6 +179,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-function-definition"],
                         },
                         {
+                            "id": "alg-sim-range-of-downward-parabola",
                             "prompt": "What is the range of the quadratic function $f(x) = -(x - 3)^2 + 7$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -337,6 +340,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-composition-evaluate-at-point",
                             "prompt": "If $f(x) = 2x^2 - 1$ and $g(x) = 3x - 4$, what is the value of $(f \\circ g)(2)$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -355,6 +359,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-function-composition"],
                         },
                         {
+                            "id": "alg-sim-composition-formula-g-of-f",
                             "prompt": "Given $f(x) = x^2 + 1$ and $g(x) = \\frac{1}{x - 2}$, what is the algebraic formula for $(g \\circ f)(x)$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -373,6 +378,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-function-composition"],
                         },
                         {
+                            "id": "alg-sim-composition-domain-sqrt-linear",
                             "prompt": "What is the domain of $(f \\circ g)(x)$ where $f(x) = \\sqrt{x}$ and $g(x) = 2x - 6$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -532,6 +538,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-even-odd-quartic-polynomial",
                             "prompt": "Determine whether the function $f(x) = 3x^4 - 2x^2 + 5$ is even, odd, or neither.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -550,6 +557,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-function-symmetry"],
                         },
                         {
+                            "id": "alg-sim-quadratic-intercepts",
                             "prompt": "What are all $x$-intercepts and the $y$-intercept of the quadratic function $f(x) = x^2 - 6x + 8$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -568,6 +576,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-function-intercepts"],
                         },
                         {
+                            "id": "alg-sim-even-odd-cubic-polynomial",
                             "prompt": "Determine whether the function $g(x) = 2x^3 - 5x$ is even, odd, or neither.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -725,6 +734,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-parent-quadratic-transformation-sequence",
                             "prompt": "Which sequence of geometric transformations transforms the graph of the parent function $f(x) = x^2$ into the graph of $g(x) = -(x + 4)^2 - 5$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -743,6 +753,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-shifts", "alg-reflections"],
                         },
                         {
+                            "id": "alg-sim-point-under-combined-transformation",
                             "prompt": "If the point $(3, 8)$ lies on the graph of $y = f(x)$, what point must lie on the graph of $y = 2f(x - 1) + 3$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -761,6 +772,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-shifts", "alg-stretches-compressions"],
                         },
                         {
+                            "id": "alg-sim-reflect-and-shift-square-root",
                             "prompt": "Write the equation of the function $g(x)$ resulting from reflecting the parent square root function $f(x) = \\sqrt{x}$ across the $y$-axis and shifting it up $2$ units.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -921,6 +933,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-inverse-of-rational-function",
                             "prompt": "Find the inverse function $f^{-1}(x)$ for the one-to-one rational function $f(x) = \\frac{2x + 1}{x - 3}$ for $x \\neq 3$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -939,6 +952,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-inverse-algebraic"],
                         },
                         {
+                            "id": "alg-sim-quadratic-inverse-domain-restriction",
                             "prompt": "What domain restriction must be placed on the quadratic function $f(x) = (x - 2)^2 + 3$ so that its inverse $f^{-1}(x)$ exists as a function?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -957,6 +971,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-one-to-one-functions"],
                         },
                         {
+                            "id": "alg-sim-inverse-of-linear-function",
                             "prompt": "If $f(x) = 4x - 7$, which of the following is the inverse function $f^{-1}(x)$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -1117,6 +1132,7 @@ DOMAIN_03 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-rational-function-asymptotes-and-holes",
                             "prompt": "Identify all vertical asymptotes and holes for the rational function $f(x) = \\frac{x^2 - 4}{x^2 - x - 2}$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -1135,6 +1151,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-vertical-asymptotes"],
                         },
                         {
+                            "id": "alg-sim-horizontal-asymptote-equal-degree",
                             "prompt": "Find the horizontal asymptote of the rational function $f(x) = \\frac{6x^2 - 5x + 1}{2x^2 + 7}$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -1153,6 +1170,7 @@ DOMAIN_03 = {
                             "concept_slugs": ["alg-horizontal-asymptotes"],
                         },
                         {
+                            "id": "alg-sim-slant-asymptote",
                             "prompt": "Find the slant (oblique) asymptote of the rational function $f(x) = \\frac{2x^2 + 5x - 3}{x + 1}$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
