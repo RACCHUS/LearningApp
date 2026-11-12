@@ -1,0 +1,45 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-fraction-decimal-openstax",
+  "bridge_id": "bridge-fraction-decimal",
+  "objective_id": "numeracy.fraction-decimal.convert",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "Prealgebra 2e",
+    "section": "5.3 Decimals and Fractions",
+    "url": "https://openstax.org/books/prealgebra-2e/pages/5-3-decimals-and-fractions",
+    "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-12"
+  },
+  "focus_note": "Read how a fraction is changed into a decimal by dividing. Look at the example where the division never ends, and how it is written or rounded.",
+  "checks": [
+    {
+      "item_id": "fdx-check-1",
+      "kind": "numeric",
+      "prompt": "Write 5/8 as a decimal.",
+      "template": "fraction_to_decimal",
+      "inputs": { "numerator": 5, "denominator": 8 },
+      "answer": "0.625",
+      "feedback": "5 ÷ 8 = 0.625."
+    },
+    {
+      "item_id": "fdx-check-2",
+      "kind": "choice",
+      "prompt": "Which decimal equals 9/20?",
+      "template": "fraction_to_decimal",
+      "inputs": { "numerator": 9, "denominator": 20 },
+      "options": [
+        { "option_id": "a", "text": "0.45", "value": "0.45" },
+        { "option_id": "b", "text": "0.92", "value": "0.92" },
+        { "option_id": "c", "text": "2.22", "value": "2.22" },
+        { "option_id": "d", "text": "0.09", "value": "0.09" }
+      ],
+      "correct_option_id": "a",
+      "feedback": "9 ÷ 20 = 0.45. Dividing 20 by 9 (about 2.22) is a common mix-up."
+    }
+  ],
+  "evidence": { "human_reviewed": false }
+}

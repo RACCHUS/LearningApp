@@ -8,7 +8,9 @@ import 'package:learning_pwa/models/learning_support/support_identifiers.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
+import 'package:learning_pwa/services/learning_support/external_companion_library.dart';
 import 'package:learning_pwa/services/learning_support/support_session_store.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// `learning.quick_rescue` (master plan v2.6 §15.0). Default OFF: before
 /// the registry runtime is bootstrapped it stays off, and afterwards an
@@ -32,6 +34,31 @@ final autoGapSuggestionsEnabledProvider = Provider<bool>((ref) {
     runtimeReady: SiteFeatureRuntime.snapshotEnabled,
   );
 });
+
+/// `content.external_companion` (master plan v2.6 §15.0, PR-E). Default
+/// OFF and fails closed. Only hides companion pointers and their checks;
+/// a Bridge's own source links stay visible.
+final externalCompanionEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.contentExternalCompanion,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+/// Bundled companions, validated against the Bridge Library.
+final externalCompanionLibraryProvider =
+    FutureProvider<ExternalCompanionLibrary>((ref) async {
+      final bridges = await ref.watch(bridgeLibraryProvider.future);
+      return ExternalCompanionLibrary.load(rootBundle, bridges);
+    });
+
+/// Opens an outside https link in the system browser or a new tab. Never
+/// in an embedded view, so no external session is captured (§9.3).
+final externalLinkLauncherProvider = Provider<Future<bool> Function(Uri)>(
+  (ref) =>
+      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+);
 
 /// The bundled Bridge Library, loaded once from app assets (offline).
 final bridgeLibraryProvider = FutureProvider<BridgeLibrary>((ref) {

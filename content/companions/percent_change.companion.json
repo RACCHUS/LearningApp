@@ -1,0 +1,46 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-percent-change-openstax",
+  "bridge_id": "bridge-percent-change",
+  "objective_id": "numeracy.percent-change.compute",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "Prealgebra 2e",
+    "section": "6.2 Solve General Applications of Percent",
+    "url": "https://openstax.org/books/prealgebra-2e/pages/6-2-solve-general-applications-of-percent",
+    "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-12"
+  },
+  "focus_note": "Read the part on percent increase and percent decrease. Notice that both find the amount of change first, then compare it with the original amount, not the new one.",
+  "checks": [
+    {
+      "item_id": "pcx-check-1",
+      "kind": "numeric",
+      "prompt": "A price drops from $80 to $60. What is the percent change? Use a minus sign for a decrease.",
+      "template": "percent_change",
+      "inputs": { "original": 80, "new": 60 },
+      "answer": -25,
+      "accepts_percent_sign": true,
+      "feedback": "The change is 60 − 80 = −20. −20 ÷ 80 = −0.25, which is −25%."
+    },
+    {
+      "item_id": "pcx-check-2",
+      "kind": "choice",
+      "prompt": "A town grows from 200 to 260 people. What is the percent increase?",
+      "template": "percent_change",
+      "inputs": { "original": 200, "new": 260 },
+      "options": [
+        { "option_id": "a", "text": "30%", "value": 30 },
+        { "option_id": "b", "text": "23.1%", "value": "23.1" },
+        { "option_id": "c", "text": "60%", "value": 60 },
+        { "option_id": "d", "text": "130%", "value": 130 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "The change is 60. 60 ÷ 200 = 0.3, so the town grew by 30%. Dividing by 260 gives the wrong 23.1%."
+    }
+  ],
+  "evidence": { "human_reviewed": false }
+}

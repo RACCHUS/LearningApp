@@ -1,0 +1,45 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-spreadsheet-percent-format-ms",
+  "bridge_id": "bridge-spreadsheet-percent-format",
+  "objective_id": "excel.percent-format.predict-display",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "Microsoft Support",
+    "title": "Format numbers as percentages in Excel",
+    "url": "https://support.microsoft.com/en-us/excel/format-numbers-as-percentages-in-excel",
+    "license": "Proprietary documentation — reference link only",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-12"
+  },
+  "focus_note": "Read how to apply Percentage format and choose decimal places, and what happens to numbers that are already in cells when you apply it.",
+  "checks": [
+    {
+      "item_id": "spx-check-1",
+      "kind": "numeric",
+      "prompt": "A cell stores 0.125. You apply Percentage format with 1 decimal place. What number appears before the % sign?",
+      "template": "decimal_to_percent",
+      "inputs": { "value": "0.125" },
+      "answer": "12.5",
+      "accepts_percent_sign": true,
+      "feedback": "0.125 × 100 = 12.5, so the cell shows 12.5%."
+    },
+    {
+      "item_id": "spx-check-2",
+      "kind": "choice",
+      "prompt": "A cell already stores the number 3. You apply Percentage format with 0 decimal places. What does it show?",
+      "template": "decimal_to_percent",
+      "inputs": { "value": 3 },
+      "options": [
+        { "option_id": "a", "text": "3%", "value": 3 },
+        { "option_id": "b", "text": "300%", "value": 300 },
+        { "option_id": "c", "text": "0.03%", "value": "0.03" },
+        { "option_id": "d", "text": "30%", "value": 30 }
+      ],
+      "correct_option_id": "b",
+      "feedback": "Percentage format shows the stored value × 100, so 3 shows as 300%."
+    }
+  ],
+  "evidence": { "human_reviewed": false }
+}
