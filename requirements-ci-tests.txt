@@ -1,6 +1,7 @@
 # Exact pins for CI Python test tooling (plan PR-2a, §0A.2 step 10).
 # Full transitive closure, resolved in a clean venv on 2026-11-12 and checked
-# with `pip check`; the College Algebra suite passed against exactly this set.
+# with `pip check` (local Python 3.13; CI runner Python 3.14 in an isolated
+# venv); the College Algebra suite passed against exactly this set.
 # Upgrade deliberately: change pins in one PR, rerun the suite, record why.
 #
 #   python3 -m pip install -r requirements-ci-tests.txt
