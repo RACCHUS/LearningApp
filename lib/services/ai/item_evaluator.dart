@@ -97,6 +97,19 @@ class ItemEvaluator {
     final violations = <EvaluationViolation>[];
     double score = 100.0;
 
+    // 0. Answer key must be valid; an item without one can never pass.
+    final hasValidKey = item.hasValidKey;
+    if (!hasValidKey) {
+      violations.add(const EvaluationViolation(
+        rule: 'answer_key_invalid',
+        severity: 'critical',
+        message:
+            'Item has no valid correct answer (missing, out-of-range, blank or '
+            'duplicated keyed option).',
+      ));
+      score -= 100.0;
+    }
+
     // 1. Answer Leakage Check (Critical, Haladyna guideline: No test-taking cues)
     final leakViolation = _checkAnswerLeakage(item);
     final hasAnswerLeak = leakViolation != null;
@@ -176,7 +189,8 @@ class ItemEvaluator {
     }
 
     score = score.clamp(0.0, 100.0);
-    final isPassed = !hasAnswerLeak && hasCitation && score >= 70.0;
+    final isPassed =
+        hasValidKey && !hasAnswerLeak && hasCitation && score >= 70.0;
 
     return ItemEvaluationReport(
       isPassed: isPassed,
