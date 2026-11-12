@@ -171,6 +171,13 @@ Map<String, dynamic> _normalizeToDbFormat(
 
     if (json['questions'] is List) {
       for (final q in json['questions']) {
+        final isShortAnswer =
+            q['type'] == 'short_answer' || q['accepted_answers'] != null;
+        // Never invent an answer (plan v2.6 §14.8): a missing key stays null
+        // so _validate rejects it, and conflicting keys are flagged.
+        final answer = q['correct_answer'];
+        final index = q['correctIndex'];
+        final conflict = answer != null && index != null && answer != index;
         content.add({
           'type': q['type'] ?? (q['accepted_answers'] != null ? 'short_answer' : 'mcq'),
           'id': q['id']?.toString() ?? _uuid.v4(),
@@ -178,7 +185,8 @@ Map<String, dynamic> _normalizeToDbFormat(
           'question': q['question'] ?? q['question_text'] ?? '',
           'options':
               q['options'] is List ? List<String>.from(q['options']) : <String>[],
-          'correctIndex': (q['type'] == 'short_answer' || q['accepted_answers'] != null) ? 0 : (q['correct_answer'] ?? q['correctIndex'] ?? 0),
+          if (!isShortAnswer) 'correctIndex': answer ?? index,
+          if (!isShortAnswer && conflict) '_answerConflict': true,
           if (q['accepted_answers'] != null) 'accepted_answers': q['accepted_answers'],
           if (q['grading_method'] != null) 'grading_method': q['grading_method'],
           if (q['numeric_tolerance'] != null) 'numeric_tolerance': q['numeric_tolerance'],
@@ -303,7 +311,12 @@ List<String> _validate(Map<String, dynamic> normalized) {
           issues.add('$label: contains duplicate options');
         }
         final correctIndex = item['correctIndex'];
-        if (correctIndex is! int) {
+        if (item['_answerConflict'] == true) {
+          issues.add(
+              '$label: "correct_answer" and "correctIndex" disagree');
+        } else if (correctIndex == null) {
+          issues.add('$label: missing correct answer ("correctIndex")');
+        } else if (correctIndex is! int) {
           issues.add('$label: "correctIndex" must be an integer');
         } else if (correctIndex < 0 || correctIndex >= options.length) {
           issues.add(
@@ -400,7 +413,11 @@ Future<void> _importLesson(_Config cfg, Map<String, dynamic> normalized) async {
           'lesson_id': lessonId,
           'question_text': raw['question'],
           'options': raw['options'],
-          'correct_answer': raw['correctIndex'] ?? 0,
+          // Validated above for choice items. Short answers are graded from
+          // accepted_answers, so they store the unscorable sentinel (-1)
+          // rather than a fabricated option index 0.
+          'correct_answer':
+              raw['type'] == 'short_answer' ? -1 : raw['correctIndex'] as int,
           'type': raw['type'] ?? 'mcq',
           'accepted_answers': raw['accepted_answers'] ?? [],
           'grading_method': raw['grading_method'] ?? 'normalized_text',
