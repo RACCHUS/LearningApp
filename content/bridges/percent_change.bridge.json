@@ -1,0 +1,118 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-percent-change",
+  "content_version": "1.0.0",
+  "title": "Percent change: how much did it grow or shrink?",
+  "concept_id": "percent-change",
+  "primary_objective": {
+    "objective_id": "numeracy.percent-change.compute",
+    "statement": "Find the percent increase or decrease between an original amount and a new amount."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": ["bridge-fraction-decimal"],
+  "sources": [
+    {
+      "source_id": "openstax-prealgebra-2e-6-2",
+      "publisher": "OpenStax, Rice University",
+      "title": "Prealgebra 2e",
+      "section": "6.2 Solve General Applications of Percent",
+      "url": "https://openstax.org/books/prealgebra-2e/pages/6-2-solve-general-applications-of-percent",
+      "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "pc-teach-1",
+      "text": "Percent change tells you how big a change is compared with where you started. Step 1: find the change. Subtract the original amount from the new amount. Step 2: divide the change by the original amount. Step 3: multiply by 100 to write it as a percent.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"]
+    },
+    {
+      "block_id": "pc-teach-2",
+      "text": "A positive answer is a percent increase. A negative answer is a percent decrease. Always divide by the original (starting) amount, never by the new amount.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "pc-example-1",
+      "text": "A price goes from $40 to $50. The change is 50 − 40 = 10. Divide by the original: 10 ÷ 40 = 0.25. Multiply by 100: 25. The price went up by 25%.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"],
+      "worked": {
+        "template": "percent_change",
+        "inputs": { "original": 40, "new": 50 },
+        "result": 25
+      }
+    },
+    {
+      "block_id": "pc-example-2",
+      "text": "A class shrinks from 30 students to 24. The change is 24 − 30 = −6. Divide by the original: −6 ÷ 30 = −0.2. Multiply by 100: −20. The class got 20% smaller.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"],
+      "worked": {
+        "template": "percent_change",
+        "inputs": { "original": 30, "new": 24 },
+        "result": -20
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "pc-alt-1",
+      "text": "Think of the original amount as 100%. If something grows from 40 to 50, the extra 10 is one quarter of the original 40. One quarter of 100% is 25%, so it grew by 25%.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "pc-check-1",
+      "kind": "numeric",
+      "prompt": "A plant was 20 cm tall. Now it is 23 cm tall. By what percent did its height change?",
+      "template": "percent_change",
+      "inputs": { "original": 20, "new": 23 },
+      "answer": 15,
+      "accepts_percent_sign": true,
+      "feedback": "The change is 3 cm. 3 ÷ 20 = 0.15, and 0.15 × 100 = 15. The height increased by 15%."
+    },
+    {
+      "item_id": "pc-check-2",
+      "kind": "choice",
+      "prompt": "A bike costs $250. On sale it costs $200. What is the percent change in price?",
+      "template": "percent_change",
+      "inputs": { "original": 250, "new": 200 },
+      "options": [
+        { "option_id": "a", "text": "−20% (a 20% decrease)", "value": -20 },
+        { "option_id": "b", "text": "−25% (a 25% decrease)", "value": -25 },
+        { "option_id": "c", "text": "+20% (a 20% increase)", "value": 20 },
+        { "option_id": "d", "text": "−50% (a 50% decrease)", "value": -50 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "The change is 200 − 250 = −50. Divide by the original price: −50 ÷ 250 = −0.2, which is −20%. Dividing by 200 instead gives the wrong answer, −25%."
+    },
+    {
+      "item_id": "pc-check-3",
+      "kind": "numeric",
+      "prompt": "A savings account grew from $30 to $40. What is the percent increase? Round to one decimal place.",
+      "template": "percent_change",
+      "inputs": { "original": 30, "new": 40 },
+      "round_to": 1,
+      "answer": "33.3",
+      "accepts_percent_sign": true,
+      "feedback": "The change is 10. 10 ÷ 30 = 0.3333…, and × 100 that is 33.33…, which rounds to 33.3%."
+    }
+  ],
+  "return_cue": "Back to your lesson: use the same three steps. Find the change, divide by the original, then multiply by 100.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-12",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (percent_change) in CI.",
+    "notes": "Text is independently written. The source is linked only, not excerpted or adapted. The citation URL and section topic were confirmed on 2026-11-12. No person has reviewed this content yet."
+  }
+}
