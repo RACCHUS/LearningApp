@@ -26,7 +26,8 @@ class LessonContentService {
         'term': term.term,
         'definition': term.definition,
         'example': term.example,
-        'created_by': term.createdBy,
+        // Column is user_id (see lesson_crud_service read path).
+        'user_id': term.createdBy,
         'created_at': DateTime.now().toIso8601String(),
       }).toList();
 
@@ -54,7 +55,8 @@ class LessonContentService {
         'accepted_answers': question.acceptedAnswers ?? <String>[],
         'grading_method': question.gradingMethod ?? 'normalized_text',
         'numeric_tolerance': question.numericTolerance,
-        'created_by': question.createdBy,
+        // Column is user_id (see lesson_crud_service read path).
+        'user_id': question.createdBy,
         'created_at': DateTime.now().toIso8601String(),
       }).toList();
 
@@ -76,7 +78,8 @@ class LessonContentService {
         'lesson_id': concept.lessonId,
         'concept_text': concept.conceptText,
         'example_text': concept.exampleText,
-        'created_by': concept.createdBy,
+        // Column is user_id (see lesson_crud_service read path).
+        'user_id': concept.createdBy,
         'created_at': concept.createdAt.toIso8601String(),
       }).toList();
 
