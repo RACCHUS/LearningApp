@@ -197,8 +197,8 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 
 | PR | Scope | Status |
 |---|---|---|
-| PR-1 | Ratchet-mode `tool/ci/check_test_inventory.py` + `tool/tests/test_check_test_inventory.py`; `flutter test --file-reporter json:build/reports/flutter-tests.json` summarized into `$GITHUB_STEP_SUMMARY` by `tool/ci/summarize_flutter_test_report.py` (counts, skips, failures, slowest files and tests, runner CPU count; always exits 0) + `tool/tests/test_summarize_flutter_test_report.py`. No job renames, no new runners, no artifacts | Implemented on `chore/ci-test-quality-optimization`; awaiting first CI run |
-| PR-2a | Activate algebra pytest, pins, parity gate, strict inventory | Next |
+| PR-1 | Ratchet-mode `tool/ci/check_test_inventory.py` + `tool/tests/test_check_test_inventory.py`; `flutter test --file-reporter json:build/reports/flutter-tests.json` summarized into `$GITHUB_STEP_SUMMARY` by `tool/ci/summarize_flutter_test_report.py` (counts, skips, failures, slowest files and tests, runner CPU count; always exits 0) + `tool/tests/test_summarize_flutter_test_report.py`. No job renames, no new runners, no artifacts | PR #241 (`chore/ci-test-quality-optimization`) |
+| PR-2a | `requirements-ci-tests.txt` (full transitive exact pins, `pip check`); `tool/ci/check_algebra_manifest_parity.py` (type-strict, deterministic, read-only, prints paths only) + 14 mutation tests; real `pytest` step for the algebra suite; inventory guard switched to `--strict` with empty `KNOWN_GAPS`. Evidence: wrong key in authoring source → pytest **and** parity fail; wrong key in committed YAML only → pytest passes, **parity fails**. Closes **Q-01, Q-06**; Q-03 open | Stacked on PR-1 (`chore/ci-test-quality-pr2a`) |
 | PR-2b / PR-2c | Stable IDs; ID-keyed oracle + mutations | Planned |
 | PR-3 … PR-9 | As in §13 | Planned |
 

@@ -48,7 +48,7 @@ jobs:
 
       - name: Check every tool/tests suite is executed by CI (inventory guard)
         run: |
-          python3 tool/ci/check_test_inventory.py
+          python3 tool/ci/check_test_inventory.py --strict
           python3 -m unittest discover -s tool/tests -p 'test_check_test_inventory.py' -v
 
       - name: Test Flutter JSON report summarizer (report-only)
@@ -247,12 +247,32 @@ jobs:
           python3 tool/catalog_clep_exams.py
           python3 -m unittest discover -s tool/tests -p 'test_catalog_clep_exams.py' -v
 
+      - name: Install pinned Python test tooling (pytest, SymPy, PyYAML)
+        # Isolated venv: the runner's system Python carries unrelated packages
+        # whose own dependency gaps would make `pip check` fail. The venv holds
+        # exactly requirements-ci-tests.txt, so `pip check` covers only our set.
+        run: |
+          venv="$RUNNER_TEMP/ci-tests-venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" --version
+          "$venv/bin/python" -m pip install --disable-pip-version-check -r requirements-ci-tests.txt
+          "$venv/bin/python" -m pip check
+          "$venv/bin/python" -m pip list --format=freeze --disable-pip-version-check
+          echo "CI_TEST_PYTHON=$venv/bin/python" >> "$GITHUB_ENV"
+
       - name: Validate CLEP content production pipeline and psychometric integrity
         run: |
-          python3 -m pip install 'PyYAML>=6.0'
-          python3 tool/clep_content_pipeline.py --manifest content/clep_introductory_psychology.yaml --require-simulation
-          python3 tool/clep_content_pipeline.py --manifest content/clep_college_algebra.yaml --require-simulation
-          python3 -m unittest discover -s tool/tests -p 'test_clep_content_pipeline.py' -v
+          "$CI_TEST_PYTHON" tool/clep_content_pipeline.py --manifest content/clep_introductory_psychology.yaml --require-simulation
+          "$CI_TEST_PYTHON" tool/clep_content_pipeline.py --manifest content/clep_college_algebra.yaml --require-simulation
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_clep_content_pipeline.py' -v
+
+      - name: Verify College Algebra YAML matches its generator (read-only parity)
+        run: |
+          "$CI_TEST_PYTHON" tool/ci/check_algebra_manifest_parity.py
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_check_algebra_manifest_parity.py' -v
+
+      - name: Verify College Algebra mathematical accuracy (pytest + SymPy)
+        run: PYTHONPATH=. "$CI_TEST_PYTHON" -m pytest tool/tests/test_clep_algebra_math_accuracy.py -v
 
       - name: Test P1 official BLS/IPEDS evidence adapters without network or credentials
         run: |
