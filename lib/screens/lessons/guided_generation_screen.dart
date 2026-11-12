@@ -86,9 +86,16 @@ class _GuidedGenerationScreenState
       return;
     }
 
-    final restored = await ref
-        .read(generationSessionProvider.notifier)
-        .tryRestore();
+    final authState = ref.read(authProvider);
+    final notifier = ref.read(generationSessionProvider.notifier);
+    final restored = await notifier.tryRestore(
+      ownerScope: authState is AuthSuccess ? authState.user.id : null,
+    );
+
+    if (mounted && notifier.recovery != null) {
+      await _showSessionRecoveryDialog(notifier);
+      if (!mounted) return;
+    }
 
     if (mounted) {
       if (restored) {
@@ -127,6 +134,98 @@ class _GuidedGenerationScreenState
         }
       }
       setState(() => _checkingRestore = false);
+    }
+  }
+
+  /// Explains a saved session that could not be opened, and offers to copy
+  /// its original text or discard it. Nothing is deleted without an explicit
+  /// confirmation (plan v2.6 §12.5 / Appendix G.5).
+  Future<void> _showSessionRecoveryDialog(
+      GenerationSessionNotifier notifier) async {
+    final recovery = notifier.recovery!;
+    final message = switch (recovery.reason) {
+      SessionRecoveryReason.unreadable =>
+        'A saved lesson-generation session on this device could not be '
+            'opened. It has been kept safe and was not changed.',
+      SessionRecoveryReason.newerVersion =>
+        'A saved session was made with a newer version of LearningApp. '
+            'Update the app to open it. It has been kept safe.',
+      SessionRecoveryReason.conflictingVersion =>
+        'A saved session has unclear version information, so it was not '
+            'opened. It has been kept safe and was not changed.',
+      SessionRecoveryReason.otherAccount =>
+        'A saved session on this device belongs to a different account, so '
+            'it was not opened here.',
+    };
+    final action = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Saved session kept safe'),
+        content: Text(
+          '$message\n\nAnything new you create now is saved separately.',
+        ),
+        actions: [
+          if (recovery.canExport) ...[
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'discard'),
+              child: const Text('Discard it'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'copy'),
+              child: const Text('Copy saved data'),
+            ),
+          ],
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'keep'),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+
+    if (action == 'copy') {
+      final raw = await notifier.exportProtectedSession();
+      if (raw != null) await Clipboard.setData(ClipboardData(text: raw));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved session copied. Paste it somewhere safe.'),
+          ),
+        );
+      }
+    } else if (action == 'discard') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Discard saved session?'),
+          content: const Text(
+            'This permanently deletes the saved session that could not be '
+            'opened. This cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep it'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Discard'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) {
+        final ok = await notifier.discardProtectedSession();
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not finish discarding. Nothing was lost.'),
+            ),
+          );
+        }
+      }
     }
   }
 
