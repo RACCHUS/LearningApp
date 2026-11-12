@@ -18,7 +18,7 @@ def report(prints, extra_suites=()):
     files = sorted({f for f, _ in prints} | set(extra_suites))
     events = [{"type": "start", "time": 0}]
     for i, f in enumerate(files):
-        events.append({"type": "suite", "suite": {"id": i, "path": f"/x/LearningAppClaude/{f}"}, "time": 1})
+        events.append({"type": "suite", "suite": {"id": i, "path": f"/home/runner/work/LearningApp/LearningApp/{f}"}, "time": 1})
         events.append({"type": "testStart", "test": {"id": 100 + i, "suiteID": i, "name": "t"}, "time": 1})
     for f, message in prints:
         events.append({"type": "print", "testID": 100 + files.index(f), "message": message, "time": 2})
@@ -98,6 +98,16 @@ class LogNoiseTest(unittest.TestCase):
         self.assertEqual(self.run_main(['{"type":"start","time":0}']), 2)
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(noise.main(["/nonexistent/report.json"]), 2)
+
+    def test_paths_are_repo_relative_wherever_the_checkout_lives(self):
+        for absolute in (
+            "/home/runner/work/LearningApp/LearningApp/test/widgets/a_test.dart",
+            r"C:\Users\dev\Code\LearningAppClaude\test\widgets\a_test.dart",
+            "/tmp/other-clone/test/widgets/a_test.dart",
+        ):
+            self.assertEqual(noise.repo_relative(absolute, Path("/nowhere")), "test/widgets/a_test.dart", absolute)
+        root = Path(__file__).resolve().parents[2]
+        self.assertEqual(noise.repo_relative(str(root / "test" / "x_test.dart")), "test/x_test.dart")
 
     def test_every_known_entry_has_a_reason(self):
         for file, reason in noise.KNOWN_NOISE.items():

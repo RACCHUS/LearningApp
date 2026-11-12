@@ -31,6 +31,8 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 SETUP_GAP_PATTERNS: dict[str, re.Pattern[str]] = {
     "missing-plugin": re.compile(r"MissingPluginException"),
     "missing-mock-stub": re.compile(r"MissingStubError"),
@@ -72,7 +74,18 @@ class ReportError(Exception):
     pass
 
 
-def scan(lines, root_marker: str = "LearningAppClaude/") -> tuple[dict[str, Counter], set[str], dict]:
+def repo_relative(path: str, root: Path = REPO_ROOT) -> str:
+    """Repository-relative POSIX path, independent of where the checkout lives."""
+    posix = path.replace("\\", "/")
+    root_posix = root.as_posix().rstrip("/") + "/"
+    if posix.lower().startswith(root_posix.lower()):
+        return posix[len(root_posix):]
+    # Report produced in another checkout location: anchor on the test dir.
+    marker = posix.rfind("/test/")
+    return posix[marker + 1:] if marker >= 0 else posix
+
+
+def scan(lines, root: Path = REPO_ROOT) -> tuple[dict[str, Counter], set[str], dict]:
     """Return ({file: Counter(kind)}, files that ran, first sample per (file, kind))."""
     suites: dict[int, str] = {}
     test_suite: dict[int, int] = {}
@@ -90,8 +103,7 @@ def scan(lines, root_marker: str = "LearningAppClaude/") -> tuple[dict[str, Coun
         parsed += 1
         kind = event.get("type")
         if kind == "suite":
-            path = str(event["suite"].get("path", "?")).replace("\\", "/")
-            suites[event["suite"]["id"]] = path.split(root_marker)[-1] if root_marker in path else path
+            suites[event["suite"]["id"]] = repo_relative(str(event["suite"].get("path", "?")), root)
         elif kind == "testStart":
             test_suite[event["test"]["id"]] = event["test"].get("suiteID")
         elif kind == "print":
