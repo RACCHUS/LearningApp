@@ -229,7 +229,8 @@ domains:
             2. **Negative exponents**: A negative exponent does NOT make a number negative; it indicates a reciprocal: $2^{-3} = \frac{1}{2^3} = \frac{1}{8} > 0$.
             3. **Base sign convention**: $-3^2 = -(3^2) = -9$, whereas $(-3)^2 = 9$. Parentheses dictate whether the negative sign is part of the base.
       assessment_items:
-      - prompt: Which of the following is equivalent to the expression $(8x^6 y^{-3})^{2/3}$
+      - id: alg-sim-rational-exponent-power-of-monomial
+        prompt: Which of the following is equivalent to the expression $(8x^6 y^{-3})^{2/3}$
           for all positive real values of $x$ and $y$?
         interaction_type: single_choice
         response_spec:
@@ -256,7 +257,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Which expression represents the fully simplified radical form of \sqrt{72x^5
+      - id: alg-sim-simplify-radical-72x5y6
+        prompt: Which expression represents the fully simplified radical form of \sqrt{72x^5
           y^6} where $x > 0$ and $y > 0$?
         interaction_type: single_choice
         response_spec:
@@ -281,7 +283,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Evaluate the quotient \frac{4.8 \times 10^8}{1.2 \times 10^{-4}} and
+      - id: alg-sim-scientific-notation-quotient
+        prompt: Evaluate the quotient \frac{4.8 \times 10^8}{1.2 \times 10^{-4}} and
           express the result in proper scientific notation.
         interaction_type: single_choice
         response_spec:
@@ -306,7 +309,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       questions:
-      - question_text: Which expression is equivalent to $x^{-4}$ for all non-zero
+      - id: alg-fmt-negative-exponent-definition
+        question_text: Which expression is equivalent to $x^{-4}$ for all non-zero
           real numbers $x$?
         options:
         - \frac{1}{x^4}
@@ -319,7 +323,8 @@ domains:
         concept_slugs:
         - alg-exponent-rules
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the radical equivalent of the rational exponent expression
+      - id: alg-fmt-rational-exponent-to-radical
+        question_text: What is the radical equivalent of the rational exponent expression
           $x^{2/5}$ for $x \geq 0$?
         options:
         - \sqrt{x^5}
@@ -471,7 +476,8 @@ domains:
             1. **Sum of squares over reals**: $a^2 + b^2$ is **prime** over the real numbers. It does NOT factor into $(a + b)(a + b)$ or $(a + b)(a - b)$.
             2. **Omitting the GCF**: Always factor out the greatest common numerical and variable factor before applying trinomial or grouping rules.
       assessment_items:
-      - prompt: Which of the following represents the complete factorization over
+      - id: alg-sim-factor-gcf-then-difference-of-squares
+        prompt: Which of the following represents the complete factorization over
           the real numbers of the polynomial $2x^3 - 8x^2 - 24x$?
         interaction_type: single_choice
         response_spec:
@@ -497,7 +503,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Which expression represents the complete factorization of $27x^3 -
+      - id: alg-sim-factor-difference-of-cubes
+        prompt: Which expression represents the complete factorization of $27x^3 -
           64$ over the real numbers?
         interaction_type: single_choice
         response_spec:
@@ -523,7 +530,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Factor the four-term polynomial $x^3 + 3x^2 - 4x - 12$ completely
+      - id: alg-sim-factor-by-grouping-four-terms
+        prompt: Factor the four-term polynomial $x^3 + 3x^2 - 4x - 12$ completely
           over the integers.
         interaction_type: single_choice
         response_spec:
@@ -550,7 +558,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       questions:
-      - question_text: What is the complete factorization of the difference of squares
+      - id: alg-fmt-factor-difference-of-squares
+        question_text: What is the complete factorization of the difference of squares
           $x^2 - 16$ over the real numbers?
         options:
         - (x - 4)^2
@@ -563,7 +572,8 @@ domains:
         concept_slugs:
         - alg-special-products
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: Which algebraic identity gives the factored form of the sum
+      - id: alg-fmt-sum-of-cubes-identity
+        question_text: Which algebraic identity gives the factored form of the sum
           of cubes $a^3 + b^3$?
         options:
         - (a + b)(a^2 + ab + b^2)
@@ -706,7 +716,8 @@ domains:
             1. **Universal cancellation error**: In $\frac{x + 5}{x}$, students mistakenly cancel $x$ to get $5$. This is incorrect because $x$ is a term, not a factor. In fact, $\frac{x+5}{x} = 1 + \frac{5}{x}$.
             2. **Forgetting domain exclusions after canceling**: If $\frac{(x-2)(x+3)}{x-2} = x+3$, the domain restriction $x \neq 2$ remains in effect even after the factor is canceled.
       assessment_items:
-      - prompt: What are all real values of $x$ excluded from the domain of the rational
+      - id: alg-sim-rational-expression-excluded-values
+        prompt: What are all real values of $x$ excluded from the domain of the rational
           expression $\frac{x - 4}{x^2 - 9}$?
         interaction_type: single_choice
         response_spec:
@@ -732,7 +743,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Which of the following is equivalent to the complex fraction $\frac{\frac{1}{x}
+      - id: alg-sim-complex-fraction-domain-exclusion
+        prompt: Which of the following is equivalent to the complex fraction $\frac{\frac{1}{x}
           - \frac{1}{y}}{\frac{1}{x^2} - \frac{1}{y^2}}$ for all non-zero real numbers
           $x, y$ with $x \neq \pm y$?
         interaction_type: single_choice
@@ -761,7 +773,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Combine and simplify the rational expression $\frac{2}{x - 3} + \frac{5}{x
+      - id: alg-sim-add-rational-expressions
+        prompt: Combine and simplify the rational expression $\frac{2}{x - 3} + \frac{5}{x
           + 2}$.
         interaction_type: single_choice
         response_spec:
@@ -787,7 +800,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       questions:
-      - question_text: What real value of $x$ must be excluded from the domain of
+      - id: alg-fmt-rational-expression-excluded-value
+        question_text: What real value of $x$ must be excluded from the domain of
           the rational expression $\frac{3x + 1}{2x - 8}$?
         options:
         - x = 4
@@ -800,7 +814,8 @@ domains:
         concept_slugs:
         - alg-domain-restrictions
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: Why is canceling $x$ in the expression $\frac{x + 7}{x}$ algebraically
+      - id: alg-fmt-invalid-term-cancellation
+        question_text: Why is canceling $x$ in the expression $\frac{x + 7}{x}$ algebraically
           invalid?
         options:
         - Because variables can never appear in denominators of rational expressions
@@ -952,7 +967,8 @@ domains:
             1. **Distributing absolute value over sums**: $|a + b| \neq |a| + |b|$ in general. For instance, $|3 + (-5)| = |-2| = 2$, but $|3| + |-5| = 3 + 5 = 8$.
             2. **Sign of variables**: Assuming that $|x - 5| = x - 5$. If $x < 5$, then $x - 5$ is negative, so $|x - 5| = -(x - 5) = 5 - x$.
       assessment_items:
-      - prompt: Evaluate the arithmetic expression $|-3| - 2|4 - 9| + |-(-5)|$.
+      - id: alg-sim-evaluate-nested-absolute-values
+        prompt: Evaluate the arithmetic expression $|-3| - 2|4 - 9| + |-(-5)|$.
         interaction_type: single_choice
         response_spec:
           options:
@@ -976,7 +992,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Which inequality expresses the condition that the distance between
+      - id: alg-sim-absolute-value-distance-inequality
+        prompt: Which inequality expresses the condition that the distance between
           a real number $x$ and $-4$ on the number line is strictly less than $7$?
         interaction_type: single_choice
         response_spec:
@@ -1001,7 +1018,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: For any real number $x < 5$, which expression is equivalent to $\frac{|x
+      - id: alg-sim-absolute-value-quotient-sign
+        prompt: For any real number $x < 5$, which expression is equivalent to $\frac{|x
           - 5|}{x - 5}$?
         interaction_type: single_choice
         response_spec:
@@ -1027,7 +1045,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       questions:
-      - question_text: What is the geometric distance between the coordinates $-5$
+      - id: alg-fmt-absolute-value-distance
+        question_text: What is the geometric distance between the coordinates $-5$
           and $3$ on the real number line?
         options:
         - '-2'
@@ -1040,7 +1059,8 @@ domains:
         concept_slugs:
         - alg-distance-real-line
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: If $x$ is a strictly negative real number ($x < 0$), what does
+      - id: alg-fmt-absolute-value-of-negative
+        question_text: If $x$ is a strictly negative real number ($x < 0$), what does
           the absolute value $|x|$ simplify to algebraically?
         options:
         - x
@@ -1190,7 +1210,8 @@ domains:
             2. **Quotient of logs**: $\frac{\log_b(x)}{\log_b(y)} \neq \log_b(x - y)$ and does NOT equal $\log_b(x/y)$. Note that $\frac{\log_b(x)}{\log_b(y)} = \log_y(x)$ by the change-of-base formula.
             3. **Negative arguments**: The domain of $\log_b(x)$ requires $x > 0$. Expressions like $\log_2(-4)$ or $\ln(0)$ are undefined over the real numbers.
       assessment_items:
-      - prompt: Which of the following expressions represents the expanded form of
+      - id: alg-sim-expand-logarithm-quotient-product
+        prompt: Which of the following expressions represents the expanded form of
           $\log_2\left(\frac{x^3 \sqrt{y}}{z^4}\right)$ for all positive real numbers
           $x, y, z$?
         interaction_type: single_choice
@@ -1217,7 +1238,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Condense the expression $2\ln(x) - \frac{1}{3}\ln(y) + \ln(z)$ into
+      - id: alg-sim-condense-natural-logarithms
+        prompt: Condense the expression $2\ln(x) - \frac{1}{3}\ln(y) + \ln(z)$ into
           a single logarithm with coefficient 1 for positive real numbers $x, y, z$.
         interaction_type: single_choice
         response_spec:
@@ -1243,7 +1265,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '1.0'
-      - prompt: Evaluate the exact numerical value of the expression $\log_3(81) -
+      - id: alg-sim-evaluate-mixed-logarithms
+        prompt: Evaluate the exact numerical value of the expression $\log_3(81) -
           \log_2\left(\frac{1}{8}\right) + \ln(e^5)$.
         interaction_type: single_choice
         response_spec:
@@ -1270,7 +1293,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '1.0'
       questions:
-      - question_text: What is the exact numerical value of the logarithm $\log_4(64)$?
+      - id: alg-fmt-evaluate-log-base-4
+        question_text: What is the exact numerical value of the logarithm $\log_4(64)$?
         options:
         - '3'
         - '16'
@@ -1282,7 +1306,8 @@ domains:
         concept_slugs:
         - alg-log-definition
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: According to the power property of logarithms, which expression
+      - id: alg-fmt-log-power-property
+        question_text: According to the power property of logarithms, which expression
           is equivalent to $\log_b(x^5)$ for $x > 0$?
         options:
         - (\log_b x)^5
@@ -1453,7 +1478,8 @@ domains:
             1. **Distributing negative signs**: In an expression like $5 - (2x - 3)$, the negative sign must distribute to BOTH terms: $5 - 2x + 3 = 8 - 2x$.
             2. **Fraction multiplication**: When clearing fractions by multiplying by the LCD, ensure that EVERY single term on both sides is multiplied by the LCD, including constant terms with denominator 1.
       assessment_items:
-      - prompt: Solve the linear equation $\frac{2x - 3}{4} - \frac{x + 1}{6} = 2$
+      - id: alg-sim-linear-equation-with-fractions
+        prompt: Solve the linear equation $\frac{2x - 3}{4} - \frac{x + 1}{6} = 2$
           for $x$.
         interaction_type: single_choice
         response_spec:
@@ -1479,7 +1505,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: What is the solution set in interval notation for the compound inequality
+      - id: alg-sim-compound-inequality-interval
+        prompt: What is the solution set in interval notation for the compound inequality
           $-3 \leq 2x - 7 < 5$?
         interaction_type: single_choice
         response_spec:
@@ -1505,7 +1532,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: A rideshare service charges a flat reservation fee of $\$3.50$ plus
+      - id: alg-sim-rideshare-linear-budget-inequality
+        prompt: A rideshare service charges a flat reservation fee of $\$3.50$ plus
           $\$2.25$ per mile traveled. A traveler has a strict maximum budget of $\$26.00$.
           What is the maximum integer number of whole miles the traveler can travel?
         interaction_type: single_choice
@@ -1534,7 +1562,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '2.0'
       questions:
-      - question_text: Solve the linear equation $4x - 7 = 13$ for $x$.
+      - id: alg-fmt-solve-two-step-linear-equation
+        question_text: Solve the linear equation $4x - 7 = 13$ for $x$.
         options:
         - x = 1.5
         - x = 20
@@ -1545,7 +1574,8 @@ domains:
         concept_slugs:
         - alg-linear-equations
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: When solving the inequality $-3x \leq 12$, what is the correct
+      - id: alg-fmt-inequality-sign-flip
+        question_text: When solving the inequality $-3x \leq 12$, what is the correct
           resulting inequality?
         options:
         - x \leq -4
@@ -1702,7 +1732,8 @@ domains:
             2. **Division by $2a$**: The division by $2a$ spans the ENTIRE numerator $(-b \pm \sqrt{\Delta})$, not just the radical term.
             3. **Calculation of $-4ac$**: When $c$ is negative (e.g. $a=2, c=-3$), $-4ac = -4(2)(-3) = +24$. The sign becomes positive.
       assessment_items:
-      - prompt: Find all real solutions to the quadratic equation $2x^2 - 5x - 3 =
+      - id: alg-sim-quadratic-by-factoring
+        prompt: Find all real solutions to the quadratic equation $2x^2 - 5x - 3 =
           0$.
         interaction_type: single_choice
         response_spec:
@@ -1729,7 +1760,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: For what real value of $k$ does the quadratic equation $x^2 - 6x +
+      - id: alg-sim-discriminant-repeated-root-k
+        prompt: For what real value of $k$ does the quadratic equation $x^2 - 6x +
           k = 0$ have exactly one repeated real solution?
         interaction_type: single_choice
         response_spec:
@@ -1755,7 +1787,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: A toy rocket launched from ground level follows the height trajectory
+      - id: alg-sim-projectile-quadratic-model
+        prompt: A toy rocket launched from ground level follows the height trajectory
           $h(t) = -16t^2 + 80t$ where $h(t)$ is in feet and $t$ is in seconds. At
           what positive time $t$ will the rocket hit the ground?
         interaction_type: single_choice
@@ -1782,7 +1815,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '2.0'
       questions:
-      - question_text: What does a discriminant value of $\Delta = b^2 - 4ac = 0$
+      - id: alg-fmt-zero-discriminant-meaning
+        question_text: What does a discriminant value of $\Delta = b^2 - 4ac = 0$
           indicate about the solutions of a quadratic equation?
         options:
         - The equation has exactly one repeated real rational solution
@@ -1795,7 +1829,8 @@ domains:
         concept_slugs:
         - alg-discriminant-nature
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What are all real roots of the quadratic equation $x^2 - 9
+      - id: alg-fmt-difference-of-squares-roots
+        question_text: What are all real roots of the quadratic equation $x^2 - 9
           = 0$?
         options:
         - x = 3 only
@@ -1945,7 +1980,8 @@ domains:
             1. **Failing to isolate before squaring**: In $\sqrt{x + 2} - x = 4$, squaring both sides immediately as $(x + 2) + x^2 = 16$ is algebraically FALSE. You must isolate: $\sqrt{x + 2} = x + 4$ before squaring.
             2. **Absolute value with negative target**: $|2x - 3| = -5$ has **no real solution**. Writing $2x - 3 = -5$ and solving produces an invalid answer.
       assessment_items:
-      - prompt: Find all real solutions to the radical equation $\sqrt{2x + 7} - x
+      - id: alg-sim-radical-equation-extraneous-root
+        prompt: Find all real solutions to the radical equation $\sqrt{2x + 7} - x
           = 2$.
         interaction_type: single_choice
         response_spec:
@@ -1973,7 +2009,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: Solve the rational equation $\frac{x}{x - 2} + \frac{1}{x - 4} = \frac{2}{(x
+      - id: alg-sim-rational-equation-extraneous-root
+        prompt: Solve the rational equation $\frac{x}{x - 2} + \frac{1}{x - 4} = \frac{2}{(x
           - 2)(x - 4)}$ for $x$.
         interaction_type: single_choice
         response_spec:
@@ -2002,7 +2039,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: Find all real solutions to the absolute value equation $|3x - 5| =
+      - id: alg-sim-absolute-value-equation-linear-rhs
+        prompt: Find all real solutions to the absolute value equation $|3x - 5| =
           2x + 10$.
         interaction_type: single_choice
         response_spec:
@@ -2029,7 +2067,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '2.0'
       questions:
-      - question_text: Why must candidate solutions to radical equations always be
+      - id: alg-fmt-radical-equation-check-solutions
+        question_text: Why must candidate solutions to radical equations always be
           checked in the original un-squared equation?
         options:
         - Radical roots can only be calculated with approximate decimal precision
@@ -2044,7 +2083,8 @@ domains:
         concept_slugs:
         - alg-radical-equations
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the solution set to the absolute value equation $|2x
+      - id: alg-fmt-absolute-value-equals-negative
+        question_text: What is the solution set to the absolute value equation $|2x
           + 1| = -7$?
         options:
         - x = -4 and x = 3
@@ -2196,7 +2236,8 @@ domains:
             1. **Incomplete solutions**: Solving for $x$ and forgetting to calculate $y$. A solution to a 2-variable system is always an ordered pair $(x, y)$.
             2. **Multiplication errors in elimination**: Forgetting to multiply the constant term on the right side of the equation when multiplying by a factor.
       assessment_items:
-      - prompt: 'Solve the linear system of equations: $3x + 2y = 12$ and $5x - 4y
+      - id: alg-sim-linear-system-sum-of-solution
+        prompt: 'Solve the linear system of equations: $3x + 2y = 12$ and $5x - 4y
           = -2$. What is the value of $x + y$?'
         interaction_type: single_choice
         response_spec:
@@ -2223,7 +2264,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: For what real value of $k$ will the system of equations $2x - 3y =
+      - id: alg-sim-inconsistent-system-parameter
+        prompt: For what real value of $k$ will the system of equations $2x - 3y =
           8$ and $4x - 6y = k$ be inconsistent (have no solution)?
         interaction_type: single_choice
         response_spec:
@@ -2250,7 +2292,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: Find all points of intersection between the line $y = 2x - 1$ and
+      - id: alg-sim-line-parabola-intersection
+        prompt: Find all points of intersection between the line $y = 2x - 1$ and
           the parabola $y = x^2 - 4$.
         interaction_type: single_choice
         response_spec:
@@ -2278,7 +2321,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '2.0'
       questions:
-      - question_text: Graphically, what does an inconsistent linear system in two
+      - id: alg-fmt-inconsistent-system-graph
+        question_text: Graphically, what does an inconsistent linear system in two
           variables represent?
         options:
         - Two distinct parallel lines that never intersect
@@ -2292,7 +2336,8 @@ domains:
         concept_slugs:
         - alg-system-classification
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: In the linear system $x + y = 6$ and $x - y = 2$, what is the
+      - id: alg-fmt-elimination-simple-system
+        question_text: In the linear system $x + y = 6$ and $x - y = 2$, what is the
           value of $x$?
         options:
         - x = 2
@@ -2448,7 +2493,8 @@ domains:
             1. **Multiplying base before exponent**: In $3 \cdot 2^x = 24$, you CANNOT multiply $3 \cdot 2 = 6^x$. You must first divide by 3: $2^x = 8 \implies x = 3$.
             2. **Confusing continuous vs discrete models**: Continuous compounding uses base $e$ ($A = P e^{rt}$); discrete compounding uses $(1 + r/n)^{nt}$. Do not interchange them.
       assessment_items:
-      - prompt: Solve the exponential equation $4^{2x - 1} = 8^{x + 2}$ for $x$.
+      - id: alg-sim-exponential-equation-common-base
+        prompt: Solve the exponential equation $4^{2x - 1} = 8^{x + 2}$ for $x$.
         interaction_type: single_choice
         response_spec:
           options:
@@ -2473,7 +2519,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: Solve the logarithmic equation $\log_2(x) + \log_2(x - 3) = 2$ for
+      - id: alg-sim-logarithmic-equation-domain-check
+        prompt: Solve the logarithmic equation $\log_2(x) + \log_2(x - 3) = 2$ for
           $x$.
         interaction_type: single_choice
         response_spec:
@@ -2501,7 +2548,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '2.0'
-      - prompt: An initial sample of $200$ grams of a radioactive isotope decays according
+      - id: alg-sim-radioactive-decay-continuous-model
+        prompt: An initial sample of $200$ grams of a radioactive isotope decays according
           to the model $A(t) = 200 e^{-0.035t}$, where $t$ is in years. Which expression
           gives the half-life of the isotope in years?
         interaction_type: single_choice
@@ -2529,7 +2577,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '2.0'
       questions:
-      - question_text: Solve the exponential equation $2^{x + 1} = 16$ for $x$.
+      - id: alg-fmt-exponential-equation-common-base
+        question_text: Solve the exponential equation $2^{x + 1} = 16$ for $x$.
         options:
         - x = 4
         - x = 7
@@ -2541,7 +2590,8 @@ domains:
         concept_slugs:
         - alg-exponential-equations
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the standard continuous compound interest formula for
+      - id: alg-fmt-continuous-compound-interest-formula
+        question_text: What is the standard continuous compound interest formula for
           accumulated amount $A$?
         options:
         - A = P(1 + r)^t
@@ -2704,7 +2754,8 @@ domains:
             1. **Evaluating $f(x + h)$**: In $f(x) = x^2 - 3$, evaluating $f(x + h)$ requires replacing every $x$ with $(x + h)$: $f(x + h) = (x + h)^2 - 3 = x^2 + 2xh + h^2 - 3$. It does NOT equal $f(x) + h = x^2 - 3 + h$.
             2. **Radical in denominator**: In $f(x) = \frac{1}{\sqrt{x - 4}}$, the condition is $x - 4 > 0$ (strict inequality), NOT $x - 4 \geq 0$, because the denominator cannot be zero.
       assessment_items:
-      - prompt: What is the domain of the function $f(x) = \frac{\sqrt{x - 2}}{x -
+      - id: alg-sim-domain-sqrt-over-linear
+        prompt: What is the domain of the function $f(x) = \frac{\sqrt{x - 2}}{x -
           5}$ expressed in interval notation?
         interaction_type: single_choice
         response_spec:
@@ -2730,7 +2781,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Given the function $f(x) = 2x^2 - 3x + 1$, evaluate the difference
+      - id: alg-sim-difference-quotient-quadratic
+        prompt: Given the function $f(x) = 2x^2 - 3x + 1$, evaluate the difference
           quotient $\frac{f(x + h) - f(x)}{h}$ for $h \neq 0$.
         interaction_type: single_choice
         response_spec:
@@ -2756,7 +2808,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: What is the range of the quadratic function $f(x) = -(x - 3)^2 + 7$?
+      - id: alg-sim-range-of-downward-parabola
+        prompt: What is the range of the quadratic function $f(x) = -(x - 3)^2 + 7$?
         interaction_type: single_choice
         response_spec:
           options:
@@ -2783,7 +2836,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: Which geometric test verifies whether a curve in the coordinate
+      - id: alg-fmt-vertical-line-test
+        question_text: Which geometric test verifies whether a curve in the coordinate
           plane represents a function $y = f(x)$?
         options:
         - Vertical Line Test
@@ -2797,7 +2851,8 @@ domains:
         concept_slugs:
         - alg-function-definition
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the domain of the function $f(x) = \sqrt{x - 9}$ in
+      - id: alg-fmt-domain-of-square-root
+        question_text: What is the domain of the function $f(x) = \sqrt{x - 9}$ in
           interval notation?
         options:
         - (9, \infty)
@@ -2948,7 +3003,8 @@ domains:
             1. **Multiplying instead of composing**: $(f \circ g)(x) \neq f(x) \cdot g(x)$. Composition feeds one function inside the other; multiplication multiplies their outputs.
             2. **Ignoring inner function domain**: If $f(x) = x^2$ and $g(x) = \sqrt{x}$, the composition $f(g(x)) = (\sqrt{x})^2 = x$. Although $x$ alone has domain $(-\infty, \infty)$, the domain of $f \circ g$ remains $[0, \infty)$ because the inner function requires $x \geq 0$.
       assessment_items:
-      - prompt: If $f(x) = 2x^2 - 1$ and $g(x) = 3x - 4$, what is the value of $(f
+      - id: alg-sim-composition-evaluate-at-point
+        prompt: If $f(x) = 2x^2 - 1$ and $g(x) = 3x - 4$, what is the value of $(f
           \circ g)(2)$?
         interaction_type: single_choice
         response_spec:
@@ -2973,7 +3029,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Given $f(x) = x^2 + 1$ and $g(x) = \frac{1}{x - 2}$, what is the algebraic
+      - id: alg-sim-composition-formula-g-of-f
+        prompt: Given $f(x) = x^2 + 1$ and $g(x) = \frac{1}{x - 2}$, what is the algebraic
           formula for $(g \circ f)(x)$?
         interaction_type: single_choice
         response_spec:
@@ -2997,7 +3054,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: What is the domain of $(f \circ g)(x)$ where $f(x) = \sqrt{x}$ and
+      - id: alg-sim-composition-domain-sqrt-linear
+        prompt: What is the domain of $(f \circ g)(x)$ where $f(x) = \sqrt{x}$ and
           $g(x) = 2x - 6$?
         interaction_type: single_choice
         response_spec:
@@ -3024,7 +3082,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: If $f(x) = x + 3$ and $g(x) = x^2$, what is the value of the
+      - id: alg-fmt-evaluate-composition
+        question_text: If $f(x) = x + 3$ and $g(x) = x^2$, what is the value of the
           composite function $(f \circ g)(2)$?
         options:
         - '25'
@@ -3037,7 +3096,8 @@ domains:
         concept_slugs:
         - alg-function-composition
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: Is function composition $(f \circ g)(x)$ commutative in general?
+      - id: alg-fmt-composition-not-commutative
+        question_text: Is function composition $(f \circ g)(x)$ commutative in general?
         options:
         - Yes, composition is commutative for all pairs of functions
         - Yes, but only when both functions have identical domain restrictions
@@ -3191,7 +3251,8 @@ domains:
             1. **Even/Odd is not like integer numbers**: An integer is either even or odd. Functions are usually NEITHER even nor odd!
             2. **Origin vs x-axis symmetry**: A function can NEVER have symmetry across the $x$-axis (except the zero function $y = 0$), because any non-zero point $(x, y)$ reflected to $(x, -y)$ would violate the Vertical Line Test.
       assessment_items:
-      - prompt: Determine whether the function $f(x) = 3x^4 - 2x^2 + 5$ is even, odd,
+      - id: alg-sim-even-odd-quartic-polynomial
+        prompt: Determine whether the function $f(x) = 3x^4 - 2x^2 + 5$ is even, odd,
           or neither.
         interaction_type: single_choice
         response_spec:
@@ -3217,7 +3278,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: What are all $x$-intercepts and the $y$-intercept of the quadratic
+      - id: alg-sim-quadratic-intercepts
+        prompt: What are all $x$-intercepts and the $y$-intercept of the quadratic
           function $f(x) = x^2 - 6x + 8$?
         interaction_type: single_choice
         response_spec:
@@ -3242,7 +3304,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Determine whether the function $g(x) = 2x^3 - 5x$ is even, odd, or
+      - id: alg-sim-even-odd-cubic-polynomial
+        prompt: Determine whether the function $g(x) = 2x^3 - 5x$ is even, odd, or
           neither.
         interaction_type: single_choice
         response_spec:
@@ -3268,7 +3331,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: What algebraic condition defines an even function $f(x)$ for
+      - id: alg-fmt-even-function-definition
+        question_text: What algebraic condition defines an even function $f(x)$ for
           all $x$ in its domain?
         options:
         - f(-x) = f(x)
@@ -3281,7 +3345,8 @@ domains:
         concept_slugs:
         - alg-function-symmetry
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: If an odd function $f(x)$ contains the point $(4, -7)$ on its
+      - id: alg-fmt-odd-function-symmetric-point
+        question_text: If an odd function $f(x)$ contains the point $(4, -7)$ on its
           graph, what other point must also lie on the graph?
         options:
         - (-4, -7)
@@ -3430,7 +3495,8 @@ domains:
             1. **Order of transformations**: When multiple transformations occur, follow the standard order: (1) horizontal shift, (2) horizontal scaling/reflection, (3) vertical scaling/reflection, (4) vertical shift.
             2. **Factoring the inside**: In $f(2x - 6)$, the horizontal shift is NOT 6! You must factor out 2: $f(2(x - 3))$, which reveals a horizontal compression by 2 and a shift right by 3 units.
       assessment_items:
-      - prompt: Which sequence of geometric transformations transforms the graph of
+      - id: alg-sim-parent-quadratic-transformation-sequence
+        prompt: Which sequence of geometric transformations transforms the graph of
           the parent function $f(x) = x^2$ into the graph of $g(x) = -(x + 4)^2 -
           5$?
         interaction_type: single_choice
@@ -3458,7 +3524,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: If the point $(3, 8)$ lies on the graph of $y = f(x)$, what point
+      - id: alg-sim-point-under-combined-transformation
+        prompt: If the point $(3, 8)$ lies on the graph of $y = f(x)$, what point
           must lie on the graph of $y = 2f(x - 1) + 3$?
         interaction_type: single_choice
         response_spec:
@@ -3485,7 +3552,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Write the equation of the function $g(x)$ resulting from reflecting
+      - id: alg-sim-reflect-and-shift-square-root
+        prompt: Write the equation of the function $g(x)$ resulting from reflecting
           the parent square root function $f(x) = \sqrt{x}$ across the $y$-axis and
           shifting it up $2$ units.
         interaction_type: single_choice
@@ -3513,7 +3581,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: What geometric shift does the transformation $g(x) = f(x -
+      - id: alg-fmt-horizontal-shift
+        question_text: What geometric shift does the transformation $g(x) = f(x -
           5)$ represent relative to $f(x)$?
         options:
         - Horizontal shift to the left by 5 units
@@ -3526,7 +3595,8 @@ domains:
         concept_slugs:
         - alg-shifts
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: How does the graph of $y = -f(x)$ compare geometrically to
+      - id: alg-fmt-reflection-across-x-axis
+        question_text: How does the graph of $y = -f(x)$ compare geometrically to
           the graph of $y = f(x)$?
         options:
         - It is reflected across the y-axis
@@ -3676,7 +3746,8 @@ domains:
             1. **Inverting non-one-to-one functions**: Quadratic functions like $f(x) = x^2$ do NOT have an inverse on $(-\infty, \infty)$ because they fail the horizontal line test. The domain must be restricted (e.g. $x \geq 0$) to make the function one-to-one.
             2. **Rational algebra in swapping**: When solving for $y$ in $x = \frac{ay + b}{cy + d}$, you must cross-multiply, collect all terms with $y$ on one side, factor out $y$, and divide.
       assessment_items:
-      - prompt: Find the inverse function $f^{-1}(x)$ for the one-to-one rational
+      - id: alg-sim-inverse-of-rational-function
+        prompt: Find the inverse function $f^{-1}(x)$ for the one-to-one rational
           function $f(x) = \frac{2x + 1}{x - 3}$ for $x \neq 3$.
         interaction_type: single_choice
         response_spec:
@@ -3703,7 +3774,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: What domain restriction must be placed on the quadratic function $f(x)
+      - id: alg-sim-quadratic-inverse-domain-restriction
+        prompt: What domain restriction must be placed on the quadratic function $f(x)
           = (x - 2)^2 + 3$ so that its inverse $f^{-1}(x)$ exists as a function?
         interaction_type: single_choice
         response_spec:
@@ -3730,7 +3802,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: If $f(x) = 4x - 7$, which of the following is the inverse function
+      - id: alg-sim-inverse-of-linear-function
+        prompt: If $f(x) = 4x - 7$, which of the following is the inverse function
           $f^{-1}(x)$?
         interaction_type: single_choice
         response_spec:
@@ -3755,7 +3828,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: Which geometric test verifies whether a function has an inverse
+      - id: alg-fmt-horizontal-line-test
+        question_text: Which geometric test verifies whether a function has an inverse
           that is also a function?
         options:
         - Horizontal Line Test
@@ -3769,7 +3843,8 @@ domains:
         concept_slugs:
         - alg-one-to-one-functions
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: If $f(2) = 9$ for a one-to-one function $f$, what is the value
+      - id: alg-fmt-inverse-function-value
+        question_text: If $f(2) = 9$ for a one-to-one function $f$, what is the value
           of $f^{-1}(9)$?
         options:
         - \frac{1}{9}
@@ -3920,7 +3995,8 @@ domains:
             1. **Declaring a hole as a vertical asymptote**: In $f(x) = \frac{x^2 - 9}{x - 3} = \frac{(x-3)(x+3)}{x-3}$, the factor $(x - 3)$ cancels completely. There is NO vertical asymptote at $x = 3$; instead, there is a removable hole at $(3, 6)$.
             2. **Ignoring the remainder in slant asymptotes**: When finding a slant asymptote via long division, the slant asymptote is strictly the linear quotient $y = mx + b$; discard the fractional remainder.
       assessment_items:
-      - prompt: Identify all vertical asymptotes and holes for the rational function
+      - id: alg-sim-rational-function-asymptotes-and-holes
+        prompt: Identify all vertical asymptotes and holes for the rational function
           $f(x) = \frac{x^2 - 4}{x^2 - x - 2}$.
         interaction_type: single_choice
         response_spec:
@@ -3946,7 +4022,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Find the horizontal asymptote of the rational function $f(x) = \frac{6x^2
+      - id: alg-sim-horizontal-asymptote-equal-degree
+        prompt: Find the horizontal asymptote of the rational function $f(x) = \frac{6x^2
           - 5x + 1}{2x^2 + 7}$.
         interaction_type: single_choice
         response_spec:
@@ -3972,7 +4049,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '3.0'
-      - prompt: Find the slant (oblique) asymptote of the rational function $f(x)
+      - id: alg-sim-slant-asymptote
+        prompt: Find the slant (oblique) asymptote of the rational function $f(x)
           = \frac{2x^2 + 5x - 3}{x + 1}$.
         interaction_type: single_choice
         response_spec:
@@ -3999,7 +4077,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '3.0'
       questions:
-      - question_text: What is the horizontal asymptote of the rational function $f(x)
+      - id: alg-fmt-horizontal-asymptote-equal-degree
+        question_text: What is the horizontal asymptote of the rational function $f(x)
           = \frac{4x - 1}{2x + 5}$?
         options:
         - y = 0
@@ -4013,7 +4092,8 @@ domains:
         concept_slugs:
         - alg-horizontal-asymptotes
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the horizontal asymptote of the rational function $f(x)
+      - id: alg-fmt-horizontal-asymptote-lower-degree
+        question_text: What is the horizontal asymptote of the rational function $f(x)
           = \frac{7x + 2}{x^2 - 9}$?
         options:
         - y = 7
@@ -4183,7 +4263,8 @@ domains:
             1. **Square roots are not always irrational**: $\sqrt{49} = 7$, which is a natural, integer, and rational number! Only square roots of non-perfect squares (e.g. $\sqrt{50}$) are irrational.
             2. **Repeating decimals are rational**: Numbers like $0.121212\dots$ are rational numbers ($12/99 = 4/33$). Only decimals that never terminate AND never repeat are irrational.
       assessment_items:
-      - prompt: Which of the following numbers is an irrational number?
+      - id: alg-sim-identify-irrational-number
+        prompt: Which of the following numbers is an irrational number?
         interaction_type: single_choice
         response_spec:
           options:
@@ -4208,7 +4289,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Which algebraic field property is demonstrated by the equation $3(x
+      - id: alg-sim-distributive-property
+        prompt: Which algebraic field property is demonstrated by the equation $3(x
           + 4) = 3x + 12$?
         interaction_type: single_choice
         response_spec:
@@ -4232,7 +4314,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: What is the unique prime factorization of the integer $360$?
+      - id: alg-sim-prime-factorization-360
+        prompt: What is the unique prime factorization of the integer $360$?
         interaction_type: single_choice
         response_spec:
           options:
@@ -4256,7 +4339,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '4.0'
       questions:
-      - question_text: To which subsets of the real number system does the integer
+      - id: alg-fmt-real-number-subsets
+        question_text: To which subsets of the real number system does the integer
           $-4$ belong?
         options:
         - Integers, rational numbers, and real numbers
@@ -4269,7 +4353,8 @@ domains:
         concept_slugs:
         - alg-real-number-subsets
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the additive inverse of $-8$ in the real number system?
+      - id: alg-fmt-additive-inverse
+        question_text: What is the additive inverse of $-8$ in the real number system?
         options:
         - -\frac{1}{8}
         - '8'
@@ -4420,7 +4505,8 @@ domains:
             1. **Multiplying negative radicals**: $\sqrt{-4} \cdot \sqrt{-9} \neq \sqrt{36} = 6$. You MUST convert to $i$ notation first: $\sqrt{-4} \cdot \sqrt{-9} = (2i)(3i) = 6i^2 = -6$.
             2. **Conjugate sign**: The complex conjugate of $a + bi$ changes the sign of the IMAGINARY part only ($a - bi$). Do NOT change the sign of $a$!
       assessment_items:
-      - prompt: Evaluate the value of the power $i^{75}$, where $i = \sqrt{-1}$.
+      - id: alg-sim-power-of-imaginary-unit
+        prompt: Evaluate the value of the power $i^{75}$, where $i = \sqrt{-1}$.
         interaction_type: single_choice
         response_spec:
           options:
@@ -4444,7 +4530,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Multiply the complex numbers $(3 - 2i)(4 + 5i)$ and write the result
+      - id: alg-sim-multiply-complex-numbers
+        prompt: Multiply the complex numbers $(3 - 2i)(4 + 5i)$ and write the result
           in standard form $a + bi$.
         interaction_type: single_choice
         response_spec:
@@ -4469,7 +4556,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Divide the complex numbers $\frac{5 + i}{2 - 3i}$ and express the
+      - id: alg-sim-divide-complex-numbers
+        prompt: Divide the complex numbers $\frac{5 + i}{2 - 3i}$ and express the
           quotient in standard form $a + bi$.
         interaction_type: single_choice
         response_spec:
@@ -4496,7 +4584,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '4.0'
       questions:
-      - question_text: What is the value of $i^2$ by definition of the imaginary unit
+      - id: alg-fmt-imaginary-unit-squared
+        question_text: What is the value of $i^2$ by definition of the imaginary unit
           $i$?
         options:
         - '1'
@@ -4509,7 +4598,8 @@ domains:
         concept_slugs:
         - alg-imaginary-unit
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: What is the complex conjugate of the number $7 - 3i$?
+      - id: alg-fmt-complex-conjugate
+        question_text: What is the complex conjugate of the number $7 - 3i$?
         options:
         - -7 + 3i
         - -7 - 3i
@@ -4665,7 +4755,8 @@ domains:
             1. **Off-by-one in geometric power**: The $n$-th term is $a_1 r^{n-1}$, NOT $a_1 r^n$. For instance, the first term ($n = 1$) is $a_1 r^0 = a_1$.
             2. **Divergent series trap**: Applying $S = a_1 / (1 - r)$ when $r = 2$ gives $S = a_1 / (1 - 2) = -a_1$, which is absurd for positive terms. Always check $|r| < 1$ first.
       assessment_items:
-      - prompt: Find the 20th term ($a_{20}$) of an arithmetic sequence whose first
+      - id: alg-sim-arithmetic-sequence-nth-term
+        prompt: Find the 20th term ($a_{20}$) of an arithmetic sequence whose first
           term is $a_1 = 7$ and whose common difference is $d = 4$.
         interaction_type: single_choice
         response_spec:
@@ -4689,7 +4780,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Calculate the sum of the first 30 terms of the arithmetic series $\sum_{k=1}^{30}
+      - id: alg-sim-arithmetic-series-sum
+        prompt: Calculate the sum of the first 30 terms of the arithmetic series $\sum_{k=1}^{30}
           (3k - 2)$.
         interaction_type: single_choice
         response_spec:
@@ -4714,7 +4806,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Evaluate the exact sum of the infinite geometric series $12 + 4 +
+      - id: alg-sim-infinite-geometric-series-sum
+        prompt: Evaluate the exact sum of the infinite geometric series $12 + 4 +
           \frac{4}{3} + \frac{4}{9} + \dots$.
         interaction_type: single_choice
         response_spec:
@@ -4741,7 +4834,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '4.0'
       questions:
-      - question_text: In an arithmetic sequence with initial term $a_1 = 5$ and common
+      - id: alg-fmt-arithmetic-sequence-term
+        question_text: In an arithmetic sequence with initial term $a_1 = 5$ and common
           difference $d = 3$, what is the 4th term $a_4$?
         options:
         - '14'
@@ -4754,7 +4848,8 @@ domains:
         concept_slugs:
         - alg-arithmetic-sequences
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: Under what condition does an infinite geometric series with
+      - id: alg-fmt-geometric-series-convergence
+        question_text: Under what condition does an infinite geometric series with
           common ratio $r$ converge to a finite sum?
         options:
         - '|r| > 1'
@@ -4907,7 +5002,8 @@ domains:
             1. **Negative signs in binomials**: When expanding $(2x - 3)^4$, set $a = 2x$ and $b = -3$. Odd powers of $b$ will produce negative signs: $(2x)^3(-3)^1 = 8x^3(-3) = -24x^3$.
             2. **Off-by-one in finding the $r$-th term**: The 4th term corresponds to $k = 3$ in $\binom{n}{k} a^{n-k} b^k$, because the expansion starts at $k = 0$.
       assessment_items:
-      - prompt: Evaluate the combination $\binom{8}{3}$, which represents the number
+      - id: alg-sim-evaluate-combination-8-choose-3
+        prompt: Evaluate the combination $\binom{8}{3}$, which represents the number
           of ways to choose 3 items from a set of 8.
         interaction_type: single_choice
         response_spec:
@@ -4931,7 +5027,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: Find the numerical coefficient of the $x^3$ term in the binomial expansion
+      - id: alg-sim-binomial-expansion-coefficient
+        prompt: Find the numerical coefficient of the $x^3$ term in the binomial expansion
           of $(2x - 1)^5$.
         interaction_type: single_choice
         response_spec:
@@ -4957,7 +5054,8 @@ domains:
           is_protected: true
           exposure: timed_exam_only
           domain_code: '4.0'
-      - prompt: In a regional track meet with 10 competitors, how many different ways
+      - id: alg-sim-ordered-medal-permutations
+        prompt: In a regional track meet with 10 competitors, how many different ways
           can the 1st, 2nd, and 3rd place medals be awarded?
         interaction_type: single_choice
         response_spec:
@@ -4983,7 +5081,8 @@ domains:
           exposure: timed_exam_only
           domain_code: '4.0'
       questions:
-      - question_text: What is the numerical value of $5!$ (five factorial)?
+      - id: alg-fmt-evaluate-factorial
+        question_text: What is the numerical value of $5!$ (five factorial)?
         options:
         - '24'
         - '60'
@@ -4994,7 +5093,8 @@ domains:
         concept_slugs:
         - alg-factorials-permutations
         citation: OpenStax College Algebra 1e, CC BY 4.0
-      - question_text: When selecting a 4-person committee from 10 volunteers, which
+      - id: alg-fmt-combination-vs-permutation
+        question_text: When selecting a 4-person committee from 10 volunteers, which
           counting method is appropriate and why?
         options:
         - Permutations, because committee members have distinct names

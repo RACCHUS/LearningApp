@@ -144,6 +144,7 @@ DOMAIN_01 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-rational-exponent-power-of-monomial",
                             "prompt": "Which of the following is equivalent to the expression $(8x^6 y^{-3})^{2/3}$ for all positive real values of $x$ and $y$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -162,6 +163,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-exponent-rules", "alg-rational-exponents"],
                         },
                         {
+                            "id": "alg-sim-simplify-radical-72x5y6",
                             "prompt": "Which expression represents the fully simplified radical form of \\sqrt{72x^5 y^6} where $x > 0$ and $y > 0$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -180,6 +182,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-rational-exponents"],
                         },
                         {
+                            "id": "alg-sim-scientific-notation-quotient",
                             "prompt": "Evaluate the quotient \\frac{4.8 \\times 10^8}{1.2 \\times 10^{-4}} and express the result in proper scientific notation.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -338,6 +341,7 @@ DOMAIN_01 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-factor-gcf-then-difference-of-squares",
                             "prompt": "Which of the following represents the complete factorization over the real numbers of the polynomial $2x^3 - 8x^2 - 24x$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -356,6 +360,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-factoring-techniques"],
                         },
                         {
+                            "id": "alg-sim-factor-difference-of-cubes",
                             "prompt": "Which expression represents the complete factorization of $27x^3 - 64$ over the real numbers?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -374,6 +379,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-special-products", "alg-factoring-techniques"],
                         },
                         {
+                            "id": "alg-sim-factor-by-grouping-four-terms",
                             "prompt": "Factor the four-term polynomial $x^3 + 3x^2 - 4x - 12$ completely over the integers.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -530,6 +536,7 @@ DOMAIN_01 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-rational-expression-excluded-values",
                             "prompt": "What are all real values of $x$ excluded from the domain of the rational expression $\\frac{x - 4}{x^2 - 9}$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -548,6 +555,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-domain-restrictions"],
                         },
                         {
+                            "id": "alg-sim-complex-fraction-domain-exclusion",
                             "prompt": "Which of the following is equivalent to the complex fraction $\\frac{\\frac{1}{x} - \\frac{1}{y}}{\\frac{1}{x^2} - \\frac{1}{y^2}}$ for all non-zero real numbers $x, y$ with $x \\neq \\pm y$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -566,6 +574,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-complex-fractions"],
                         },
                         {
+                            "id": "alg-sim-add-rational-expressions",
                             "prompt": "Combine and simplify the rational expression $\\frac{2}{x - 3} + \\frac{5}{x + 2}$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -724,6 +733,7 @@ DOMAIN_01 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-evaluate-nested-absolute-values",
                             "prompt": "Evaluate the arithmetic expression $|-3| - 2|4 - 9| + |-(-5)|$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -742,6 +752,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-absolute-value-definition"],
                         },
                         {
+                            "id": "alg-sim-absolute-value-distance-inequality",
                             "prompt": "Which inequality expresses the condition that the distance between a real number $x$ and $-4$ on the number line is strictly less than $7$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -760,6 +771,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-distance-real-line"],
                         },
                         {
+                            "id": "alg-sim-absolute-value-quotient-sign",
                             "prompt": "For any real number $x < 5$, which expression is equivalent to $\\frac{|x - 5|}{x - 5}$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -919,6 +931,7 @@ DOMAIN_01 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-expand-logarithm-quotient-product",
                             "prompt": "Which of the following expressions represents the expanded form of $\\log_2\\left(\\frac{x^3 \\sqrt{y}}{z^4}\\right)$ for all positive real numbers $x, y, z$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -937,6 +950,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-log-properties"],
                         },
                         {
+                            "id": "alg-sim-condense-natural-logarithms",
                             "prompt": "Condense the expression $2\\ln(x) - \\frac{1}{3}\\ln(y) + \\ln(z)$ into a single logarithm with coefficient 1 for positive real numbers $x, y, z$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -955,6 +969,7 @@ DOMAIN_01 = {
                             "concept_slugs": ["alg-log-properties"],
                         },
                         {
+                            "id": "alg-sim-evaluate-mixed-logarithms",
                             "prompt": "Evaluate the exact numerical value of the expression $\\log_3(81) - \\log_2\\left(\\frac{1}{8}\\right) + \\ln(e^5)$.",
                             "interaction_type": "single_choice",
                             "response_spec": {

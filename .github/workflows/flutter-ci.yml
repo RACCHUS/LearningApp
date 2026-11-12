@@ -270,6 +270,7 @@ jobs:
         run: |
           "$CI_TEST_PYTHON" tool/ci/check_algebra_manifest_parity.py
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_check_algebra_manifest_parity.py' -v
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_generate_clep_algebra_ids.py' -v
 
       - name: Verify College Algebra mathematical accuracy (pytest + SymPy)
         run: PYTHONPATH=. "$CI_TEST_PYTHON" -m pytest tool/tests/test_clep_algebra_math_accuracy.py -v

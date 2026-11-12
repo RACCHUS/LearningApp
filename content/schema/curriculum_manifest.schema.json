@@ -307,6 +307,7 @@
       "additionalProperties": false,
       "required": ["question_text"],
       "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Optional stable source identifier for authored assessment content. Required for some targets by tool/lint_manifest.dart." },
         "question_text": { "type": "string", "minLength": 1 },
         "options": { "type": "array", "minItems": 2, "items": { "type": "string" } },
         "correct_answer": { "type": "integer", "minimum": 0 },
@@ -330,6 +331,7 @@
       "additionalProperties": false,
       "required": ["prompt", "interaction_type", "response_spec", "scoring_spec"],
       "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Optional stable source identifier for authored assessment content. Required for some targets by tool/lint_manifest.dart." },
         "stimulus_id": { "type": "string" },
         "stimulus_key": { "type": "string" },
         "interaction_type": {

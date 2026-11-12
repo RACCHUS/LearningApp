@@ -10,6 +10,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     # Domain 1.0: Algebraic Operations
     "Exponents, Radicals, and Scientific Notation": [
         {
+            "id": "alg-fmt-negative-exponent-definition",
             "question_text": "Which expression is equivalent to $x^{-4}$ for all non-zero real numbers $x$?",
             "correct_text": "\\frac{1}{x^4}",
             "distractors": [
@@ -21,6 +22,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-exponent-rules"],
         },
         {
+            "id": "alg-fmt-rational-exponent-to-radical",
             "question_text": "What is the radical equivalent of the rational exponent expression $x^{2/5}$ for $x \\geq 0$?",
             "correct_text": "\\sqrt[5]{x^2}",
             "distractors": [
@@ -34,6 +36,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Polynomial Operations, Factoring, and Special Products": [
         {
+            "id": "alg-fmt-factor-difference-of-squares",
             "question_text": "What is the complete factorization of the difference of squares $x^2 - 16$ over the real numbers?",
             "correct_text": "(x - 4)(x + 4)",
             "distractors": [
@@ -45,6 +48,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-special-products"],
         },
         {
+            "id": "alg-fmt-sum-of-cubes-identity",
             "question_text": "Which algebraic identity gives the factored form of the sum of cubes $a^3 + b^3$?",
             "correct_text": "(a + b)(a^2 - ab + b^2)",
             "distractors": [
@@ -58,6 +62,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Rational Expressions and Domain Restrictions": [
         {
+            "id": "alg-fmt-rational-expression-excluded-value",
             "question_text": "What real value of $x$ must be excluded from the domain of the rational expression $\\frac{3x + 1}{2x - 8}$?",
             "correct_text": "x = 4",
             "distractors": [
@@ -69,6 +74,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-domain-restrictions"],
         },
         {
+            "id": "alg-fmt-invalid-term-cancellation",
             "question_text": "Why is canceling $x$ in the expression $\\frac{x + 7}{x}$ algebraically invalid?",
             "correct_text": "Because x in the numerator is an added term, not a common factor multiplying the entire numerator",
             "distractors": [
@@ -82,6 +88,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Absolute Value Operations and Real Line Distance": [
         {
+            "id": "alg-fmt-absolute-value-distance",
             "question_text": "What is the geometric distance between the coordinates $-5$ and $3$ on the real number line?",
             "correct_text": "8",
             "distractors": [
@@ -93,6 +100,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-distance-real-line"],
         },
         {
+            "id": "alg-fmt-absolute-value-of-negative",
             "question_text": "If $x$ is a strictly negative real number ($x < 0$), what does the absolute value $|x|$ simplify to algebraically?",
             "correct_text": "-x",
             "distractors": [
@@ -106,6 +114,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Logarithmic Expressions and Properties": [
         {
+            "id": "alg-fmt-evaluate-log-base-4",
             "question_text": "What is the exact numerical value of the logarithm $\\log_4(64)$?",
             "correct_text": "3",
             "distractors": [
@@ -117,6 +126,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-log-definition"],
         },
         {
+            "id": "alg-fmt-log-power-property",
             "question_text": "According to the power property of logarithms, which expression is equivalent to $\\log_b(x^5)$ for $x > 0$?",
             "correct_text": "5\\log_b(x)",
             "distractors": [
@@ -132,6 +142,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     # Domain 2.0: Equations and Inequalities
     "Linear Equations, Applications, and Inequalities": [
         {
+            "id": "alg-fmt-solve-two-step-linear-equation",
             "question_text": "Solve the linear equation $4x - 7 = 13$ for $x$.",
             "correct_text": "x = 5",
             "distractors": [
@@ -143,6 +154,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-linear-equations"],
         },
         {
+            "id": "alg-fmt-inequality-sign-flip",
             "question_text": "When solving the inequality $-3x \\leq 12$, what is the correct resulting inequality?",
             "correct_text": "x \\geq -4",
             "distractors": [
@@ -156,6 +168,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Quadratic Equations and Discriminant Analysis": [
         {
+            "id": "alg-fmt-zero-discriminant-meaning",
             "question_text": "What does a discriminant value of $\\Delta = b^2 - 4ac = 0$ indicate about the solutions of a quadratic equation?",
             "correct_text": "The equation has exactly one repeated real rational solution",
             "distractors": [
@@ -167,6 +180,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-discriminant-nature"],
         },
         {
+            "id": "alg-fmt-difference-of-squares-roots",
             "question_text": "What are all real roots of the quadratic equation $x^2 - 9 = 0$?",
             "correct_text": "x = 3 and x = -3",
             "distractors": [
@@ -180,6 +194,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Radical, Rational, and Absolute Value Equations": [
         {
+            "id": "alg-fmt-radical-equation-check-solutions",
             "question_text": "Why must candidate solutions to radical equations always be checked in the original un-squared equation?",
             "correct_text": "Squaring both sides is not a one-to-one operation and can introduce extraneous solutions",
             "distractors": [
@@ -191,6 +206,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-radical-equations"],
         },
         {
+            "id": "alg-fmt-absolute-value-equals-negative",
             "question_text": "What is the solution set to the absolute value equation $|2x + 1| = -7$?",
             "correct_text": "No solution (empty set)",
             "distractors": [
@@ -204,6 +220,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Systems of Linear and Non-Linear Equations": [
         {
+            "id": "alg-fmt-inconsistent-system-graph",
             "question_text": "Graphically, what does an inconsistent linear system in two variables represent?",
             "correct_text": "Two distinct parallel lines that never intersect",
             "distractors": [
@@ -215,6 +232,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-system-classification"],
         },
         {
+            "id": "alg-fmt-elimination-simple-system",
             "question_text": "In the linear system $x + y = 6$ and $x - y = 2$, what is the value of $x$?",
             "correct_text": "x = 4",
             "distractors": [
@@ -228,6 +246,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Exponential and Logarithmic Equations and Models": [
         {
+            "id": "alg-fmt-exponential-equation-common-base",
             "question_text": "Solve the exponential equation $2^{x + 1} = 16$ for $x$.",
             "correct_text": "x = 3",
             "distractors": [
@@ -239,6 +258,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-exponential-equations"],
         },
         {
+            "id": "alg-fmt-continuous-compound-interest-formula",
             "question_text": "What is the standard continuous compound interest formula for accumulated amount $A$?",
             "correct_text": "A = P e^{rt}",
             "distractors": [
@@ -254,6 +274,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     # Domain 3.0: Functions and Their Properties
     "Functions, Domain, Range, and Evaluation": [
         {
+            "id": "alg-fmt-vertical-line-test",
             "question_text": "Which geometric test verifies whether a curve in the coordinate plane represents a function $y = f(x)$?",
             "correct_text": "Vertical Line Test",
             "distractors": [
@@ -265,6 +286,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-function-definition"],
         },
         {
+            "id": "alg-fmt-domain-of-square-root",
             "question_text": "What is the domain of the function $f(x) = \\sqrt{x - 9}$ in interval notation?",
             "correct_text": "[9, \\infty)",
             "distractors": [
@@ -278,6 +300,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Operations and Composition of Functions": [
         {
+            "id": "alg-fmt-evaluate-composition",
             "question_text": "If $f(x) = x + 3$ and $g(x) = x^2$, what is the value of the composite function $(f \\circ g)(2)$?",
             "correct_text": "7",
             "distractors": [
@@ -289,6 +312,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-function-composition"],
         },
         {
+            "id": "alg-fmt-composition-not-commutative",
             "question_text": "Is function composition $(f \\circ g)(x)$ commutative in general?",
             "correct_text": "No, (f o g)(x) does not generally equal (g o f)(x)",
             "distractors": [
@@ -302,6 +326,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Graphical Behavior, Intercepts, and Symmetry": [
         {
+            "id": "alg-fmt-even-function-definition",
             "question_text": "What algebraic condition defines an even function $f(x)$ for all $x$ in its domain?",
             "correct_text": "f(-x) = f(x)",
             "distractors": [
@@ -313,6 +338,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-function-symmetry"],
         },
         {
+            "id": "alg-fmt-odd-function-symmetric-point",
             "question_text": "If an odd function $f(x)$ contains the point $(4, -7)$ on its graph, what other point must also lie on the graph?",
             "correct_text": "(-4, 7)",
             "distractors": [
@@ -326,6 +352,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Transformations of Parent Functions": [
         {
+            "id": "alg-fmt-horizontal-shift",
             "question_text": "What geometric shift does the transformation $g(x) = f(x - 5)$ represent relative to $f(x)$?",
             "correct_text": "Horizontal shift to the right by 5 units",
             "distractors": [
@@ -337,6 +364,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-shifts"],
         },
         {
+            "id": "alg-fmt-reflection-across-x-axis",
             "question_text": "How does the graph of $y = -f(x)$ compare geometrically to the graph of $y = f(x)$?",
             "correct_text": "It is reflected across the x-axis",
             "distractors": [
@@ -350,6 +378,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Inverse Functions and One-to-One Criteria": [
         {
+            "id": "alg-fmt-horizontal-line-test",
             "question_text": "Which geometric test verifies whether a function has an inverse that is also a function?",
             "correct_text": "Horizontal Line Test",
             "distractors": [
@@ -361,6 +390,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-one-to-one-functions"],
         },
         {
+            "id": "alg-fmt-inverse-function-value",
             "question_text": "If $f(2) = 9$ for a one-to-one function $f$, what is the value of $f^{-1}(9)$?",
             "correct_text": "2",
             "distractors": [
@@ -374,6 +404,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Rational Functions and Asymptotic Behavior": [
         {
+            "id": "alg-fmt-horizontal-asymptote-equal-degree",
             "question_text": "What is the horizontal asymptote of the rational function $f(x) = \\frac{4x - 1}{2x + 5}$?",
             "correct_text": "y = 2",
             "distractors": [
@@ -385,6 +416,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-horizontal-asymptotes"],
         },
         {
+            "id": "alg-fmt-horizontal-asymptote-lower-degree",
             "question_text": "What is the horizontal asymptote of the rational function $f(x) = \\frac{7x + 2}{x^2 - 9}$?",
             "correct_text": "y = 0",
             "distractors": [
@@ -400,6 +432,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     # Domain 4.0: Number Systems and Operations
     "Real Number System and Fundamental Properties": [
         {
+            "id": "alg-fmt-real-number-subsets",
             "question_text": "To which subsets of the real number system does the integer $-4$ belong?",
             "correct_text": "Integers, rational numbers, and real numbers",
             "distractors": [
@@ -411,6 +444,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-real-number-subsets"],
         },
         {
+            "id": "alg-fmt-additive-inverse",
             "question_text": "What is the additive inverse of $-8$ in the real number system?",
             "correct_text": "8",
             "distractors": [
@@ -424,6 +458,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Complex Numbers and Imaginary Arithmetic": [
         {
+            "id": "alg-fmt-imaginary-unit-squared",
             "question_text": "What is the value of $i^2$ by definition of the imaginary unit $i$?",
             "correct_text": "-1",
             "distractors": [
@@ -435,6 +470,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-imaginary-unit"],
         },
         {
+            "id": "alg-fmt-complex-conjugate",
             "question_text": "What is the complex conjugate of the number $7 - 3i$?",
             "correct_text": "7 + 3i",
             "distractors": [
@@ -448,6 +484,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Arithmetic and Geometric Sequences and Series": [
         {
+            "id": "alg-fmt-arithmetic-sequence-term",
             "question_text": "In an arithmetic sequence with initial term $a_1 = 5$ and common difference $d = 3$, what is the 4th term $a_4$?",
             "correct_text": "14",
             "distractors": [
@@ -459,6 +496,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-arithmetic-sequences"],
         },
         {
+            "id": "alg-fmt-geometric-series-convergence",
             "question_text": "Under what condition does an infinite geometric series with common ratio $r$ converge to a finite sum?",
             "correct_text": "|r| < 1",
             "distractors": [
@@ -472,6 +510,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
     ],
     "Combinatorics and the Binomial Theorem": [
         {
+            "id": "alg-fmt-evaluate-factorial",
             "question_text": "What is the numerical value of $5!$ (five factorial)?",
             "correct_text": "120",
             "distractors": [
@@ -483,6 +522,7 @@ RAW_FORMATIVE_QUESTIONS_BY_LESSON: dict[str, list[dict]] = {
             "concept_slugs": ["alg-factorials-permutations"],
         },
         {
+            "id": "alg-fmt-combination-vs-permutation",
             "question_text": "When selecting a 4-person committee from 10 volunteers, which counting method is appropriate and why?",
             "correct_text": "Combinations, because the order of selection within the committee does not matter",
             "distractors": [
@@ -511,6 +551,7 @@ def build_balanced_formative_questions() -> dict[str, list[dict]]:
             options = distractors[:target_pos] + [correct_text] + distractors[target_pos:]
 
             lesson_qs.append({
+                "id": raw["id"],
                 "question_text": raw["question_text"],
                 "options": options,
                 "correct_answer": target_pos,

@@ -121,9 +121,9 @@ class ParityMutationTest(unittest.TestCase):
 
     def test_added_field_is_detected(self):
         def mutate(m):
-            first_item(m)[1]["id"] = "alg-unreviewed"
+            first_item(m)[1]["unreviewed_note"] = "added only in YAML"
 
-        self.assertTrue(any(p.endswith(".id: only in committed") for p in self.mutated(mutate)))
+        self.assertTrue(any(p.endswith(".unreviewed_note: only in committed") for p in self.mutated(mutate)))
 
     def test_output_never_prints_values(self):
         def mutate(m):

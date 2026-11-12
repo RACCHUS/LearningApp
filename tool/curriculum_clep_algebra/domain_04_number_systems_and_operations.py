@@ -144,6 +144,7 @@ DOMAIN_04 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-identify-irrational-number",
                             "prompt": "Which of the following numbers is an irrational number?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -162,6 +163,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-real-number-subsets"],
                         },
                         {
+                            "id": "alg-sim-distributive-property",
                             "prompt": "Which algebraic field property is demonstrated by the equation $3(x + 4) = 3x + 12$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -180,6 +182,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-field-properties"],
                         },
                         {
+                            "id": "alg-sim-prime-factorization-360",
                             "prompt": "What is the unique prime factorization of the integer $360$?",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -341,6 +344,7 @@ DOMAIN_04 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-power-of-imaginary-unit",
                             "prompt": "Evaluate the value of the power $i^{75}$, where $i = \\sqrt{-1}$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -359,6 +363,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-imaginary-unit"],
                         },
                         {
+                            "id": "alg-sim-multiply-complex-numbers",
                             "prompt": "Multiply the complex numbers $(3 - 2i)(4 + 5i)$ and write the result in standard form $a + bi$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -377,6 +382,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-complex-arithmetic"],
                         },
                         {
+                            "id": "alg-sim-divide-complex-numbers",
                             "prompt": "Divide the complex numbers $\\frac{5 + i}{2 - 3i}$ and express the quotient in standard form $a + bi$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -541,6 +547,7 @@ DOMAIN_04 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-arithmetic-sequence-nth-term",
                             "prompt": "Find the 20th term ($a_{20}$) of an arithmetic sequence whose first term is $a_1 = 7$ and whose common difference is $d = 4$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -559,6 +566,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-arithmetic-sequences"],
                         },
                         {
+                            "id": "alg-sim-arithmetic-series-sum",
                             "prompt": "Calculate the sum of the first 30 terms of the arithmetic series $\\sum_{k=1}^{30} (3k - 2)$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -577,6 +585,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-arithmetic-sequences"],
                         },
                         {
+                            "id": "alg-sim-infinite-geometric-series-sum",
                             "prompt": "Evaluate the exact sum of the infinite geometric series $12 + 4 + \\frac{4}{3} + \\frac{4}{9} + \\dots$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -737,6 +746,7 @@ DOMAIN_04 = {
                     ],
                     "assessment_items": [
                         {
+                            "id": "alg-sim-evaluate-combination-8-choose-3",
                             "prompt": "Evaluate the combination $\\binom{8}{3}$, which represents the number of ways to choose 3 items from a set of 8.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -755,6 +765,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-combinations"],
                         },
                         {
+                            "id": "alg-sim-binomial-expansion-coefficient",
                             "prompt": "Find the numerical coefficient of the $x^3$ term in the binomial expansion of $(2x - 1)^5$.",
                             "interaction_type": "single_choice",
                             "response_spec": {
@@ -773,6 +784,7 @@ DOMAIN_04 = {
                             "concept_slugs": ["alg-binomial-theorem"],
                         },
                         {
+                            "id": "alg-sim-ordered-medal-permutations",
                             "prompt": "In a regional track meet with 10 competitors, how many different ways can the 1st, 2nd, and 3rd place medals be awarded?",
                             "interaction_type": "single_choice",
                             "response_spec": {
