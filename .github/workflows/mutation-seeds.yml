@@ -1,0 +1,67 @@
+name: Critical Mutation Seeds
+
+# Plan PR-4b (Workstream C2): plant each known-risky bug in a disposable
+# checkout and require the targeted tests to fail. Not a required check:
+# it runs weekly and on demand. Every PR already runs
+# `mutation_seeds.py --check` so seeds cannot silently stop applying.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Optional single seed id to run
+        required: false
+        default: ''
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-seeds-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  seeds:
+    name: Run critical mutation seeds
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cp .env.example .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+
+      - name: Install pinned Python test tooling
+        run: |
+          venv="$RUNNER_TEMP/ci-tests-venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check -r requirements-ci-tests.txt
+          "$venv/bin/python" -m pip check
+          echo "CI_TEST_PYTHON=$venv/bin/python" >> "$GITHUB_ENV"
+
+      - name: Run seeds (each must be killed by its tests)
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            python3 tool/ci/mutation_seeds.py --only "$ONLY"
+          else
+            python3 tool/ci/mutation_seeds.py
+          fi
+
+      - name: Confirm the checkout was restored
+        if: ${{ always() }}
+        run: git diff --exit-code
