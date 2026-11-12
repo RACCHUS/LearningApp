@@ -139,9 +139,14 @@ select is(public.publish_lesson_contribution(
   'published', 'admin publishes the approved version');
 select is((select trust_tier from public.list_published_contributions(10) limit 1),
   'community_unreviewed', 'published copies are labelled community_unreviewed (A93)');
+-- Read as the table owner: row-level security rightly hides A's private
+-- lesson from the admin's own session.
+reset role;
 select is((select visibility from public.lessons
             where id = 'c0700000-0000-4000-8000-000000000101'),
   'private', 'publishing does not change the source lesson');
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'c0700000-0000-4000-8000-00000000000d', true);
 
 -- Anonymous readers see only the published snapshot, and only while ON.
 set local role anon;
