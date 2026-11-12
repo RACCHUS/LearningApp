@@ -44,11 +44,9 @@ from pathlib import Path
 # Known gaps tolerated in ratchet mode. Each entry must be removed when the
 # gap closes (the guard fails on stale entries). See
 # LearningApp_CI_Test_Quality_Optimization_Plan.md §0C.2 (PR-2a).
-KNOWN_GAPS: dict[str, str] = {
-    "test_clep_algebra_math_accuracy.py": (
-        "pytest + SymPy suite not yet run in CI; activation is PR-2a"
-    ),
-}
+# CI runs this guard with --strict, so entries here only matter for local
+# ratchet-mode runs. Keep it empty; a new entry needs a plan reference.
+KNOWN_GAPS: dict[str, str] = {}
 
 UNITTEST = "unittest"
 PYTEST = "pytest"
