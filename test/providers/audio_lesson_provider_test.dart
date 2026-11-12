@@ -5,6 +5,8 @@ import 'package:learning_pwa/providers/audio_lesson_provider.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 import 'dart:io';
 
+import '../test_helpers/platform_channel_fakes.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -14,6 +16,7 @@ void main() {
     late Directory testDir;
 
     setUp(() async {
+      installFakeTtsChannel();
       // Create temporary directory for Hive
       testDir = await Directory.systemTemp.createTemp('audio_test_');
       

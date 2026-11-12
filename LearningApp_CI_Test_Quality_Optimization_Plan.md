@@ -203,6 +203,24 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 | PR-2c | `tool/tests/clep_algebra_oracles.py`: one oracle per ID (100/100), truth computed by SymPy from each prompt's own mathematics, every option's text mapped to its meaning so exactly one option must be correct and it must be the keyed one (distractors proven false); 7 definitional items use reviewed rationales with computed witnesses where possible; prompt fingerprints force oracle re-derivation on any rewording. `test_clep_algebra_math_accuracy.py` rewritten to read the **committed YAML by ID** (316 tests, ~7 s): coverage both ways, per-item oracle, every wrong key for every item, option edit/reorder, prompt edit, renamed ID, domain exclusions, explanation draft-note scan; Haladyna and 20–30% balance gates retained. Corrupting one key in the committed YAML now fails this suite on its own (it passed 9/9 before). **Oracle review found two content defects, fixed in a separate commit:** the zero-discriminant formative key claimed the repeated root is always *rational*; and a simulation distractor (`x ≥ 3`) for the quadratic-inverse restriction was also correct. Closes **Q-03** | Branch `chore/ci-test-quality-pr2c` |
 | PR-3 … PR-9 | As in §13 | Planned |
 
+### 0C.4 PR-4 split and PR-4a results (log triage, Q-07; first Q-04 fixes)
+
+PR-4 is split: **PR-4a** fixes test-setup gaps that made passing tests exercise error paths by accident and adds a ratchet against new ones; **PR-4b** adds the C2 mutation seed runner and the assertion upgrades it drives.
+
+Measured on a full local run (JSON reporter): **0 error events**, but ~220 lines of setup-gap messages in passing tests. PR-4a outcome:
+
+| Test | Problem | Fix |
+|---|---|---|
+| `audio_settings_test`, `audio_service_mockito_test`, `pre_reader_literacy_test`, `audio_lesson_provider_test` | `flutter_tts` unmocked (`MissingPluginException` ×117) | `test/test_helpers/platform_channel_fakes.dart`: per-test fake engine that also emits `speak.onComplete` |
+| `connectivity_service_mockito_test` | plugin unmocked; all 5 assertions were `isA<bool>()` | rewritten: faked channel, 14 tests on transport types, stream, degraded / permission / recovery health |
+| `notification_service_mockito_test` | **no assertions**; `initialize` unstubbed | rewritten: 11 tests verifying every scheduled argument, rethrow, cancel; documents that inactive filtering is the caller's job |
+| `v2_stabilization_test` (fail-closed context) | **false green**: empty result came from a `LateInitializationError`, not the not-found branch | real empty context lookups; asserts which branch ran |
+| `scope_resolver_rpc_test` (RPC fallback) | **false green**: fallback crashed on an unstubbed mock; safety net returned the expected empty scope | `FakeSupabaseClient` with seeded nodes/concepts; asserts the cascade's result |
+| `community_qa_service_test` | "offline" simulated by an uninitialized `Supabase.instance` (×34) | injected offline client throwing `SocketException` |
+| `library_create_chooser_test`, `app_initialization_provider_test` | uninitialized Supabase / `shared_preferences` | provider overrides / mock initial values |
+
+`tool/ci/check_test_log_noise.py` (+8 unit tests) now runs after the Flutter suite in **ratchet mode**: setup-gap signatures fail CI unless the file is in `KNOWN_NOISE` with a reason; clean known files fail as stale. Five documented follow-ups remain listed: `audio_lesson_orchestrator_test` (its playback tests only pass because TTS fails instantly; with a working engine they run at real pacing; needs a controllable clock), `overview_tour_screen_test`, `library_v2_test`, and two community widget tests (services reach an uninitialized global client inside the widget tree). Also recorded: `ScopeResolver._resolveOnline` special-cases test fakes by runtime type name (`contains('Fake')`), a production-code smell to remove.
+
 ---
 
 ## 1. Executive decision

@@ -54,6 +54,9 @@ jobs:
       - name: Test Flutter JSON report summarizer (report-only)
         run: python3 -m unittest discover -s tool/tests -p 'test_summarize_flutter_test_report.py' -v
 
+      - name: Test the test log-noise guard
+        run: python3 -m unittest discover -s tool/tests -p 'test_check_test_log_noise.py' -v
+
       - name: Validate feature registry contract (no external service)
         run: |
           python3 tool/verify_feature_registry.py
@@ -320,6 +323,11 @@ jobs:
       - name: Summarize Flutter test timing and inventory (report-only)
         if: ${{ always() }}
         run: python3 tool/ci/summarize_flutter_test_report.py build/reports/flutter-tests.json --label "Flutter test suite"
+
+      - name: Reject test-setup gaps logged by passing tests (ratchet)
+        # MissingPluginException / MissingStubError / uninitialized Supabase in
+        # a green run means a test exercised an error path by accident.
+        run: python3 tool/ci/check_test_log_noise.py build/reports/flutter-tests.json
 
       - name: EXM 50k synthetic JSON export load probe (no user data)
         run: >-
