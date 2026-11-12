@@ -1,4 +1,5 @@
 import 'package:learning_core/learning_core.dart';
+import 'package:learning_pwa/models/answer_key.dart';
 
 /// Predefined pilot cohort tracks combining Adult Basic Education (ABE) tools with vocational credential targets (ECO-08).
 enum PilotCohortType {
@@ -264,7 +265,14 @@ class DiagnosticQuestion {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      correctIndex: json['correct_index'] as int? ?? 0,
+      // Invalid/missing keys are unscorable (-1), never option 0.
+      correctIndex: AnswerKey.fromIndex(
+        json['correct_index'],
+        (json['options'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const <String>[],
+      ).storedIndex,
       conceptKey: json['concept_key'] as String? ?? '',
       explanation: json['explanation'] as String? ?? '',
     );
