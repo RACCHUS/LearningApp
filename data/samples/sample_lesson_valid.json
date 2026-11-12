@@ -363,16 +363,16 @@
       "tags": ["connectivity", "displays", "expansion"]
     },
     {
-      "type": "text",
+      "type": "concept",
       "id": "e0b1f2a3-4567-89de-f012-0abcdef12345",
       "order": 26,
-      "text": "Understanding laptop hardware, displays, and features is essential for CompTIA A+ certification. Key exam topics include memory types (SODIMM), storage interfaces (M.2 NVMe vs SATA), display technologies (LCD, OLED, touch), wireless standards, power management, and common troubleshooting scenarios. Focus on the differences between laptop and desktop components, as well as the integrated nature of laptop systems that affects repair and upgrade options."
+      "concept_text": "Understanding laptop hardware, displays, and features is essential for CompTIA A+ certification. Key exam topics include memory types (SODIMM), storage interfaces (M.2 NVMe vs SATA), display technologies (LCD, OLED, touch), wireless standards, power management, and common troubleshooting scenarios. Focus on the differences between laptop and desktop components, as well as the integrated nature of laptop systems that affects repair and upgrade options."
     },
     {
-      "type": "text",
+      "type": "concept",
       "id": "f1c2a3b4-5678-90ef-0123-1abcdef23456",
       "order": 27,
-      "text": "Practice identifying laptop-specific hardware by form factor and connector types. Remember that laptops prioritize mobility, battery life, and thermal efficiency over raw performance, leading to design choices that impact serviceability and upgrade paths. This foundational knowledge will help you succeed on the CompTIA A+ Core 1 exam and in real-world laptop support scenarios."
+      "concept_text": "Practice identifying laptop-specific hardware by form factor and connector types. Remember that laptops prioritize mobility, battery life, and thermal efficiency over raw performance, leading to design choices that impact serviceability and upgrade paths. This foundational knowledge will help you succeed on the CompTIA A+ Core 1 exam and in real-world laptop support scenarios."
     }
   ]
 }
