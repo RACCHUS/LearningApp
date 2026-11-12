@@ -22,7 +22,8 @@ MIGRATIONS = ROOT / "supabase" / "migrations"
 FOUNDATION = "20261110220000_marketing_feature_control_foundation.sql"
 SEED_MARKER = "INSERT INTO private.site_feature_controls"
 SAFE_ON = {"tel.fast", "tel.overview"}
-KEY_RE = re.compile(r"static const String [A-Za-z0-9_]+ = '([^']+)';")
+# Tolerates `dart format` wrapping a long declaration after `=`.
+KEY_RE = re.compile(r"static const String [A-Za-z0-9_]+\s*=\s*'([^']+)';")
 SEED_RE = re.compile(
     r"^\s*\('(?P<key>[a-z][a-z0-9_.]+)',\s*'[^']+',\s*'[^']+',"
     r"\s*'(?P<kind>[^']+)',\s*(?P<enabled>true|false),"
