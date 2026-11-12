@@ -224,6 +224,42 @@ class BridgeLesson {
   /// Validates and decodes. Every issue is collected; nothing is repaired.
   static BridgeDecodeResult decode(Object? json) =>
       _BridgeDecoder().decode(json);
+
+  /// A stable key for a check's computation, used to require that checks
+  /// elsewhere use numbers the learner has not already seen.
+  static String signatureOf(
+    BridgeCheckTemplate template,
+    Map<String, Object?> inputs,
+  ) => _BridgeDecoder._signature(template, inputs);
+
+  /// Signatures of every worked example and check in this Bridge.
+  Set<String> get shownSignatures => {
+    for (final b in [...teach, ...examples, ...alternateExplanations])
+      if (b.worked != null) signatureOf(b.worked!.template, b.worked!.inputs),
+    for (final c in checks) signatureOf(c.template, c.inputs),
+  };
+
+  /// Decodes a list of check items with the same strict rules Bridges use
+  /// (allowlisted templates, recomputed answers, one correct option).
+  static ({List<BridgeCheck> checks, List<BridgeIssue> issues}) decodeChecks(
+    Object? raw,
+    String path, {
+    int min = 1,
+  }) {
+    final d = _BridgeDecoder();
+    final checks = <BridgeCheck>[];
+    final ids = <String>{};
+    final items = d.list({'checks': raw}, 'checks', path, min: min) ?? [];
+    for (final (i, c) in items.indexed) {
+      final check = d.check(c, '$path.checks[$i]');
+      if (check == null) continue;
+      if (!ids.add(check.itemId)) {
+        d.issue('$path.checks[$i].item_id', 'duplicate item id');
+      }
+      checks.add(check);
+    }
+    return (checks: checks, issues: List.of(d.issues));
+  }
 }
 
 class _BridgeDecoder {

@@ -27,6 +27,7 @@ abstract final class SiteFeatureKeys {
   static const String aiManualGenerationV2 = 'ai.manual_generation_v2';
   static const String learningAutoGapSuggestions =
       'learning.auto_gap_suggestions';
+  static const String contentExternalCompanion = 'content.external_companion';
 
   static const Set<String> all = {
     telFast,
@@ -50,5 +51,6 @@ abstract final class SiteFeatureKeys {
     learningQuickRescue,
     aiManualGenerationV2,
     learningAutoGapSuggestions,
+    contentExternalCompanion,
   };
 }

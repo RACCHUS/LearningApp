@@ -76,6 +76,9 @@ flutter:
     - content/bridges/fraction_decimal.bridge.json
     - content/bridges/percent_change.bridge.json
     - content/bridges/spreadsheet_percent_format.bridge.json
+    - content/companions/fraction_decimal.companion.json
+    - content/companions/percent_change.companion.json
+    - content/companions/spreadsheet_percent_format.companion.json
     - .env
     
   # To add assets from your dependencies, use the following syntax:

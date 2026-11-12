@@ -6,6 +6,7 @@ import 'package:learning_pwa/models/learning_support/return_anchor.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
+import 'package:learning_pwa/widgets/learning_support/external_companion_section.dart';
 import 'package:uuid/uuid.dart';
 
 /// Route name shared by every Bridge screen, so "Back to the start" can pop
@@ -377,6 +378,7 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
                       label: Text(prereq.title),
                     ),
             ],
+            ExternalCompanionSection(bridgeId: _bridge.bridgeId),
             section('Sources (links only)'),
             for (final s in _bridge.sources)
               Padding(
