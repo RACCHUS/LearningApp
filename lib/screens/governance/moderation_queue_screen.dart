@@ -594,6 +594,8 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
         return Icons.help_outline;
       case ModerationTargetType.communityAnswer:
         return Icons.chat_bubble_outline;
+      case ModerationTargetType.lessonContribution:
+        return Icons.volunteer_activism_outlined;
       case ModerationTargetType.profile:
         return Icons.person;
     }

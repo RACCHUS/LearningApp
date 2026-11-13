@@ -14,6 +14,7 @@ import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/providers/scope_resolver_provider.dart';
+import 'package:learning_pwa/screens/community/community_lessons_screen.dart';
 import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
@@ -249,6 +250,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   label: const Text('Words'),
                 ),
               ),
+              const CommunityLessonsEntry(),
               const Spacer(),
               OutlinedButton.icon(
                 key: const Key('library-create'),
