@@ -73,6 +73,15 @@ class ContributionException implements Exception {
     'rate_limited' => 'You have shared a lot today. Please try again tomorrow.',
     'contribution_already_open' => 'This lesson is already waiting for review.',
     'authentication_required' => 'Please sign in to share lessons.',
+    'moderator_required' => 'Only moderators can do this.',
+    'admin_required' => 'Only admins can publish.',
+    'cannot_review_own_contribution' => 'You cannot review your own lesson.',
+    'cannot_publish_own_contribution' => 'You cannot publish your own lesson.',
+    'rejection_reason_required' => 'Please give a reason for rejecting.',
+    'takedown_reason_required' => 'Please give a reason for the takedown.',
+    'invalid_state_transition' =>
+      'This contribution changed meanwhile. Refresh and try again.',
+    'not_published' => 'Only published contributions can be taken down.',
     _ => 'Something went wrong. Your lesson was not changed.',
   };
 
@@ -98,6 +107,14 @@ class LessonContributionService {
     'rate_limited',
     'contribution_already_open',
     'authentication_required',
+    'moderator_required',
+    'admin_required',
+    'cannot_review_own_contribution',
+    'cannot_publish_own_contribution',
+    'rejection_reason_required',
+    'takedown_reason_required',
+    'invalid_state_transition',
+    'not_published',
   };
 
   static ContributionException _map(Object e) {
@@ -146,6 +163,44 @@ class LessonContributionService {
     }
   }
 
+  /// Moderator queue (row-level security returns rows only to moderators).
+  Future<List<ContributionQueueItem>> fetchQueue(List<String> statuses) async {
+    final rows = await _db
+        .from('content_contributions')
+        .select(
+          'id, version, status, license, ai_assisted, trust_tier, snapshot, '
+          'check_issues, review_note, created_at, published_at',
+        )
+        .inFilter('status', statuses)
+        .order('created_at', ascending: false)
+        .limit(50);
+    return [
+      for (final r in rows)
+        ContributionQueueItem.fromJson(Map<String, dynamic>.from(r)),
+    ];
+  }
+
+  Future<void> review(String id, {required bool approve, String? note}) =>
+      _call('review_lesson_contribution', {
+        'p_id': id,
+        'p_decision': approve ? 'approve' : 'reject',
+        'p_note': note,
+      });
+
+  Future<void> publish(String id) =>
+      _call('publish_lesson_contribution', {'p_id': id});
+
+  Future<void> takedown(String id, String reason) =>
+      _call('takedown_lesson_contribution', {'p_id': id, 'p_reason': reason});
+
+  Future<void> _call(String fn, Map<String, dynamic> params) async {
+    try {
+      await _db.rpc(fn, params: params);
+    } catch (e) {
+      throw _map(e);
+    }
+  }
+
   Future<void> withdraw(String contributionId) async {
     try {
       await _db.rpc(
@@ -156,4 +211,56 @@ class LessonContributionService {
       throw _map(e);
     }
   }
+}
+
+/// One row in the moderator queue, with the frozen snapshot to review.
+class ContributionQueueItem {
+  const ContributionQueueItem({
+    required this.id,
+    required this.version,
+    required this.status,
+    required this.license,
+    required this.aiAssisted,
+    required this.snapshot,
+    required this.createdAt,
+    this.issues = const [],
+    this.reviewNote,
+  });
+
+  factory ContributionQueueItem.fromJson(Map<String, dynamic> j) =>
+      ContributionQueueItem(
+        id: j['id'] as String,
+        version: (j['version'] as num).toInt(),
+        status: j['status'] as String,
+        license: j['license'] as String,
+        aiAssisted: j['ai_assisted'] == true,
+        snapshot: Map<String, dynamic>.from(j['snapshot'] as Map),
+        createdAt: DateTime.tryParse('${j['created_at']}') ?? DateTime(1970),
+        issues: [
+          for (final i in (j['check_issues'] ?? []) as List)
+            if (i is Map) '${i['code']}',
+        ],
+        reviewNote: j['review_note'] as String?,
+      );
+
+  final String id;
+  final int version;
+  final String status;
+  final String license;
+  final bool aiAssisted;
+  final Map<String, dynamic> snapshot;
+  final DateTime createdAt;
+  final List<String> issues;
+  final String? reviewNote;
+
+  String get title => '${snapshot['title'] ?? '(untitled)'}';
+
+  List<Map<String, dynamic>> _list(String key) => [
+    for (final e in (snapshot[key] as List?) ?? const [])
+      if (e is Map) Map<String, dynamic>.from(e),
+  ];
+
+  List<Map<String, dynamic>> get terms => _list('terms');
+  List<Map<String, dynamic>> get concepts => _list('concepts');
+  List<Map<String, dynamic>> get questions => _list('questions');
 }

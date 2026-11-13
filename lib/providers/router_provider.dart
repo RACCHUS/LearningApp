@@ -40,6 +40,7 @@ import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.d
     deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
+import 'package:learning_pwa/screens/governance/contribution_review_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
@@ -519,6 +520,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: () =>
               product_analytics_privacy.ProductAnalyticsPrivacyScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/moderation/contributions',
+        name: 'contribution-review',
+        builder: (context, state) => const ContributionReviewScreen(),
       ),
       GoRoute(
         path: '/moderation',
