@@ -6,6 +6,7 @@ import 'package:learning_pwa/models/learning_support/support_identifiers.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/providers/reading_position_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_lesson_view.dart';
 
@@ -84,6 +85,11 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
     );
   }
 
+  String? _currentBlock() {
+    final block = ref.read(readingBlockProvider(widget.lessonId));
+    return SupportIdentifiers.isId(block) ? block : null;
+  }
+
   Future<void> _open(BridgeLibrary library) async {
     final key = _key();
     if (key == null) return;
@@ -97,6 +103,7 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
         lessonId: widget.lessonId,
         lessonTitle: widget.lessonTitle,
         strategy: ref.read(supportStrategyProvider),
+        blockId: _currentBlock(),
       ),
       bridge: bridge,
     );
@@ -114,7 +121,20 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
           if (!mounted) return;
           ref
               .read(learningSupportControllerProvider(key).notifier)
-              .settleAt('/lesson/${widget.lessonId}');
+              .settleAt('/lesson/${widget.lessonId}')
+              .then((root) {
+                final block = root?.blockId;
+                if (mounted && block != null) {
+                  ref
+                          .read(
+                            pendingReturnBlockProvider(
+                              widget.lessonId,
+                            ).notifier,
+                          )
+                          .state =
+                      block;
+                }
+              });
         });
       }
     }

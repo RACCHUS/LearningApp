@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/models/unified_lesson.dart';
@@ -17,10 +18,23 @@ class RichLessonReader extends StatefulWidget {
   final UnifiedLesson unifiedLesson;
   final VoidCallback? onCompleted;
 
+  /// Reports the block nearest the top of the screen while reading, so a
+  /// help trail can remember the exact place (master plan v2.6 §10.5).
+  final ValueChanged<String>? onVisibleBlockChanged;
+
+  /// A block to scroll back to once, e.g. after a refresh mid-help.
+  final String? initialBlockId;
+
+  /// Called after [initialBlockId] was shown (or could not be found).
+  final VoidCallback? onInitialBlockHandled;
+
   const RichLessonReader({
     super.key,
     required this.unifiedLesson,
     this.onCompleted,
+    this.onVisibleBlockChanged,
+    this.initialBlockId,
+    this.onInitialBlockHandled,
   });
 
   @override
@@ -39,6 +53,67 @@ class _RichLessonReaderState extends State<RichLessonReader> {
   double _scrollProgress = 0.0;
   double _fontSizeFactor = 1.0;
   bool _showAssessmentSection = false;
+  final Map<String, GlobalKey> _blockKeys = {};
+  String? _visibleBlockId;
+
+  GlobalKey _keyFor(String blockId) =>
+      _blockKeys.putIfAbsent(blockId, () => GlobalKey(debugLabel: blockId));
+
+  /// The laid-out block whose top is closest above the reading line.
+  void _reportVisibleBlock() {
+    final report = widget.onVisibleBlockChanged;
+    if (report == null || !_scrollController.hasClients) return;
+    final readingLine = _scrollController.position.pixels + 48;
+    String? best;
+    String? first;
+    var firstOffset = double.infinity;
+    var bestOffset = double.negativeInfinity;
+    for (final b in widget.unifiedLesson.effectiveBlocks) {
+      final box =
+          _blockKeys[b.id]?.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) continue;
+      final viewport = RenderAbstractViewport.maybeOf(box);
+      if (viewport == null) continue;
+      final top = viewport.getOffsetToReveal(box, 0).offset;
+      if (top < firstOffset) {
+        firstOffset = top;
+        first = b.id;
+      }
+      if (top <= readingLine && top > bestOffset) {
+        bestOffset = top;
+        best = b.id;
+      }
+    }
+    // Above the first block (e.g. the lesson header), the first visible
+    // block is the reading position.
+    best ??= first;
+    if (best != null && best != _visibleBlockId) {
+      _visibleBlockId = best;
+      report(best);
+    }
+  }
+
+  /// Scrolls until [blockId] is laid out, then reveals it near the top.
+  Future<void> _scrollToBlock(String blockId) async {
+    try {
+      for (var i = 0; i < 60 && mounted; i++) {
+        final ctx = _blockKeys[blockId]?.currentContext;
+        if (ctx != null && ctx.mounted) {
+          await Scrollable.ensureVisible(ctx, alignment: 0.05);
+          return;
+        }
+        if (!_scrollController.hasClients) return;
+        final pos = _scrollController.position;
+        if (pos.pixels >= pos.maxScrollExtent) return;
+        _scrollController.jumpTo(
+          math.min(pos.pixels + pos.viewportDimension * 0.8, pos.maxScrollExtent),
+        );
+        await WidgetsBinding.instance.endOfFrame;
+      }
+    } finally {
+      widget.onInitialBlockHandled?.call();
+    }
+  }
 
   int get attemptNonce => _attemptNonce;
 
@@ -62,6 +137,17 @@ class _RichLessonReaderState extends State<RichLessonReader> {
     }
     _refreshAllItemNonces();
     _scrollController.addListener(_onScroll);
+    final initial = widget.initialBlockId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (initial != null &&
+          widget.unifiedLesson.effectiveBlocks.any((b) => b.id == initial)) {
+        _scrollToBlock(initial);
+      } else {
+        if (initial != null) widget.onInitialBlockHandled?.call();
+        _reportVisibleBlock();
+      }
+    });
   }
 
   @override
@@ -133,6 +219,7 @@ class _RichLessonReaderState extends State<RichLessonReader> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    _reportVisibleBlock();
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
     if (maxScroll > 0) {
@@ -329,9 +416,12 @@ class _RichLessonReaderState extends State<RichLessonReader> {
               const SizedBox(height: 16),
               // Ordered Lesson Blocks
               ...blocks.map(
-                (b) => LessonBlockRenderer(
-                  block: b,
-                  fontSizeFactor: _fontSizeFactor,
+                (b) => KeyedSubtree(
+                  key: _keyFor(b.id),
+                  child: LessonBlockRenderer(
+                    block: b,
+                    fontSizeFactor: _fontSizeFactor,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
