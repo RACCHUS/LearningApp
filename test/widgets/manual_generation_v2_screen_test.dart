@@ -7,12 +7,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
+import 'package:learning_pwa/services/content_generation/manual_job.dart';
+import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late List<String> imported;
   String? clipboard;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     imported = [];
     clipboard = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -53,6 +57,7 @@ void main() {
       ProviderScope(
         overrides: [
           manualGenerationV2EnabledProvider.overrideWithValue(enabled),
+          manualJobOwnerProvider.overrideWithValue('owner-1'),
           manualDraftImporterProvider.overrideWithValue((json) async {
             imported.add(json);
             return 'new-lesson';
@@ -156,5 +161,56 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('manual_v2_plan_error')), findsOneWidget);
     expect(find.byKey(const Key('manual_v2_copy_prompt')), findsNothing);
+  });
+
+  testWidgets('a saved job is offered and resumes with its items', (
+    tester,
+  ) async {
+    final job = ManualJob.plan(
+      ManualJobRequest(
+        subject: 'Saved topic',
+        concepts: ['Idea'],
+        questionsPerConcept: 0,
+        includeTerms: false,
+      ),
+    );
+    final saved = ManualJobSession(job)
+      ..applyPaste(
+        jsonEncode({
+          'schema': 'la-gen/1.1',
+          'job': job.plan.jobCode,
+          'items': [
+            {
+              'slot': 'S1',
+              'kind': 'explanation',
+              'concept': 'C1',
+              'title': 'Idea',
+              'text': 'Explained.',
+            },
+          ],
+        }),
+      );
+    await ManualJobStore(editorId: 'earlier').save('owner-1', saved);
+
+    await pump(tester, enabled: true);
+    expect(find.byKey(const Key('manual_v2_resume_card')), findsOneWidget);
+    expect(find.textContaining('"Saved topic", 1 of 1 items ready'), findsOne);
+    await tester.tap(find.byKey(const Key('manual_v2_resume')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1 of 1 items ready'), findsWidgets);
+    expect(find.byKey(const Key('manual_v2_import')), findsOneWidget);
+  });
+
+  testWidgets('progress is saved after checking a reply', (tester) async {
+    await pump(tester, enabled: true);
+    await tester.enterText(find.byKey(const Key('manual_v2_ideas')), 'Idea');
+    await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('manual_v2_save_status'))).data,
+      'Saved on this device.',
+    );
+    final stored = await ManualJobStore(editorId: 'x').load('owner-1');
+    expect(stored!.session.job.request.subject, 'Percentages');
   });
 }

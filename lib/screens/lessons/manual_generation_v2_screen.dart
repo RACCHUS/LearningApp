@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
+import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 
@@ -41,6 +42,61 @@ class _ManualGenerationV2ScreenState
   bool _importing = false;
   bool _leaving = false;
   String? _importError;
+  ManualSaveOutcome? _saveOutcome;
+  SavedManualJob? _offer;
+
+  ManualJobStore get _store => ref.read(manualJobStoreProvider);
+  String get _owner => ref.read(manualJobOwnerProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !ref.read(manualGenerationV2EnabledProvider)) return;
+      final saved = await _store.load(_owner);
+      if (mounted && saved != null && _session == null) {
+        setState(() => _offer = saved);
+      }
+    });
+  }
+
+  Future<void> _persist() async {
+    final s = _session;
+    if (s == null || _saveOutcome == ManualSaveOutcome.conflict) return;
+    final outcome = await _store.save(_owner, s);
+    if (mounted) setState(() => _saveOutcome = outcome);
+  }
+
+  void _resume(SavedManualJob saved) {
+    final s = saved.session;
+    setState(() {
+      _session = s;
+      _offer = null;
+      _saveOutcome = ManualSaveOutcome.saved;
+      _subject.text = s.job.request.subject;
+      _ideas.text = s.job.request.concepts.join('\n');
+      _questions = s.job.request.questionsPerConcept.clamp(0, 3);
+      _terms = s.job.request.includeTerms;
+      _title.text = s.job.request.subject;
+    });
+  }
+
+  Future<void> _discardSaved() async {
+    await _store.clear(_owner);
+    if (mounted) setState(() => _offer = null);
+  }
+
+  Future<void> _copyProgress(ManualJobSession s) async {
+    await Clipboard.setData(ClipboardData(text: s.acceptedPackage()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Progress copied as text. Keep it somewhere safe as a backup.',
+        ),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -63,11 +119,13 @@ class _ManualGenerationV2ScreenState
       );
       setState(() {
         _session = ManualJobSession(job);
+        _offer = null;
         _planError = null;
         _importError = null;
         _paste.clear();
         _title.text = job.request.subject;
       });
+      _persist();
     } on ArgumentError catch (e) {
       setState(() => _planError = '${e.message}');
     }
@@ -97,6 +155,7 @@ class _ManualGenerationV2ScreenState
   void _check(ManualJobSession s) {
     if (_paste.text.trim().isEmpty) return;
     setState(() => s.applyPaste(_paste.text));
+    _persist();
   }
 
   Future<void> _import(ManualJobSession s, Map<String, dynamic> lesson) async {
@@ -108,6 +167,7 @@ class _ManualGenerationV2ScreenState
       final id = await ref.read(manualDraftImporterProvider)(
         jsonEncode(lesson),
       );
+      await _store.clear(_owner);
       if (!mounted) return;
       context.go('/lesson/$id');
     } on LessonImportValidationException catch (e) {
@@ -192,7 +252,11 @@ class _ManualGenerationV2ScreenState
     );
 
     return PopScope(
-      canPop: _leaving || s == null || s.accepted.isEmpty,
+      canPop:
+          _leaving ||
+          s == null ||
+          s.accepted.isEmpty ||
+          _saveOutcome == ManualSaveOutcome.saved,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (await _confirmLeave() && context.mounted) {
@@ -210,7 +274,7 @@ class _ManualGenerationV2ScreenState
           children: [
             Text(
               'Experimental. Uses your own AI chat: the app sends nothing. '
-              'Progress on this page is kept only while it is open.',
+              'Progress is saved on this device (best effort).',
               style: theme.textTheme.bodySmall,
             ),
             heading('1. Plan'),
@@ -298,9 +362,80 @@ class _ManualGenerationV2ScreenState
               onPressed: _makePlan,
               child: Text(s == null ? 'Make plan' : 'Start a new plan'),
             ),
+            if (_offer != null) _resumeCard(_offer!, theme),
+            if (s != null) _saveStatus(s, theme),
             if (s != null) ..._jobSections(s, theme, heading),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _resumeCard(SavedManualJob saved, ThemeData theme) {
+    final s = saved.session;
+    return Card(
+      key: const Key('manual_v2_resume_card'),
+      margin: const EdgeInsets.only(top: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You have a saved job: "${s.job.request.subject}", '
+              '${s.accepted.length} of ${s.job.plan.slots.length} items ready.',
+            ),
+            Wrap(
+              spacing: 8,
+              children: [
+                FilledButton(
+                  key: const Key('manual_v2_resume'),
+                  onPressed: () => _resume(saved),
+                  child: const Text('Resume'),
+                ),
+                TextButton(
+                  key: const Key('manual_v2_discard_saved'),
+                  onPressed: _discardSaved,
+                  child: const Text('Discard it'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _saveStatus(ManualJobSession s, ThemeData theme) {
+    final text = switch (_saveOutcome) {
+      ManualSaveOutcome.saved => 'Saved on this device.',
+      ManualSaveOutcome.conflict =>
+        'This job was changed in another tab or window, so this one stopped '
+            'saving. Copy your progress to keep it.',
+      ManualSaveOutcome.failed =>
+        "Couldn't save on this device. Copy your progress to keep it.",
+      null => null,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (text != null)
+            Text(
+              text,
+              key: const Key('manual_v2_save_status'),
+              style: theme.textTheme.bodySmall,
+            ),
+          if (s.accepted.isNotEmpty)
+            TextButton.icon(
+              key: const Key('manual_v2_copy_progress'),
+              onPressed: () => _copyProgress(s),
+              icon: const Icon(Icons.copy_all),
+              label: const Text('Copy my progress'),
+            ),
+        ],
       ),
     );
   }
