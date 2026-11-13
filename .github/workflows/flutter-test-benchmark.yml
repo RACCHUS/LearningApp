@@ -1,0 +1,111 @@
+name: Flutter Test Concurrency Benchmark
+
+# Plan PR-5 (§9 E1): measure `flutter test --concurrency` on the real hosted
+# runner before changing the required `Analyze, test, and build` job.
+# Advisory only: NOT a required check, never deploys, no secrets, no services.
+# Each trial runs on its own fresh runner, so expect some machine-to-machine
+# noise; compare p50 across several trials, not single runs.
+# Runs on PRs that change the benchmark itself, and on manual dispatch.
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/flutter-test-benchmark.yml
+      - tool/ci/flutter_test_benchmark.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-test-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trial:
+    name: Benchmark flutter test (-j ${{ matrix.concurrency }}, trial ${{ matrix.trial }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # `default` = no flag (package:test uses max(1, nproc ~/ 2)).
+        concurrency: ['default', '3', '4', '6']
+        trial: [1, 2, 3, 4, 5]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cp .env.example .env
+          flutter pub get
+
+      - name: Record runner facts
+        run: |
+          echo "nproc=$(nproc)"
+          free -m
+          flutter --version
+
+      - name: Run the full Flutter suite (timed)
+        env:
+          CONCURRENCY: ${{ matrix.concurrency }}
+        run: |
+          mkdir -p build/reports build/bench
+          flag=()
+          if [ "$CONCURRENCY" != "default" ]; then flag=(--concurrency "$CONCURRENCY"); fi
+          # Sample used memory every 2 s while the suite runs.
+          ( while true; do free -m | awk '/^Mem:/{print $3}'; sleep 2; done ) > build/bench/memory.log &
+          sampler=$!
+          start=$(date +%s.%N)
+          set +e
+          flutter test "${flag[@]}" --reporter compact --file-reporter json:build/reports/flutter-tests.json
+          code=$?
+          set -e
+          end=$(date +%s.%N)
+          kill "$sampler" || true
+          wall=$(python3 -c "print($end - $start)")
+          python3 tool/ci/flutter_test_benchmark.py record \
+            --report build/reports/flutter-tests.json \
+            --concurrency "$CONCURRENCY" --trial ${{ matrix.trial }} \
+            --wall-seconds "$wall" --exit-code "$code" \
+            --memory-log build/bench/memory.log \
+            --out "build/bench/result-$CONCURRENCY-${{ matrix.trial }}.json"
+
+      - name: Upload trial result
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ matrix.concurrency }}-${{ matrix.trial }}
+          path: build/bench/result-*.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  summarize:
+    name: Summarize concurrency benchmark
+    needs: trial
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Download trial results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bench-*
+          path: build/bench-results
+
+      - name: Compare trials (fails if any trial failed or collected different tests)
+        run: python3 tool/ci/flutter_test_benchmark.py summarize build/bench-results
