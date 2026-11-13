@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/services/content_generation/la_gen_parser.dart';
 import 'package:learning_pwa/services/content_generation/la_gen_personal_adapter.dart';
+import 'package:learning_pwa/services/content_generation/lesson_composer.dart';
 
 /// How much one chat message may ask for (master plan v2.6 §5.3). The
 /// learner picks it; unknown defaults to [compact]. These are starting
@@ -244,13 +245,28 @@ class ManualJobSession {
 
   /// Personal-lesson JSON (dialect P) from the accepted slots, in plan
   /// order. The importer re-validates it before anything is saved.
-  Map<String, dynamic> toPersonalLesson({required String title}) {
+  ///
+  /// When [objectiveType] is given, the Lesson Composer sets each item's
+  /// display order by that template; otherwise items keep plan order.
+  Map<String, dynamic> toPersonalLesson({
+    required String title,
+    LessonObjectiveType? objectiveType,
+  }) {
     final tags = <String>{'ai-generated', 'unreviewed'}.toList();
     return LaGenPersonalAdapter.toPersonalLesson(
       title: title,
       description: 'Private draft made with your own AI chat. Not reviewed.',
       tags: tags,
       result: LaGenParseResult(plan: job.plan, accepted: Map.of(_accepted)),
+      orderBySlot: objectiveType == null
+          ? null
+          : LessonComposer.positions(
+              LessonComposer.compose(
+                job.plan,
+                _accepted.keys.toSet(),
+                objectiveType,
+              ),
+            ),
     );
   }
 }

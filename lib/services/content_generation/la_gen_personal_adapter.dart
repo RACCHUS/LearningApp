@@ -16,6 +16,7 @@ class LaGenPersonalAdapter {
     String? description,
     List<String> tags = const [],
     required LaGenParseResult result,
+    Map<String, int>? orderBySlot,
   }) {
     final terms = <Map<String, dynamic>>[];
     final concepts = <Map<String, dynamic>>[];
@@ -26,9 +27,11 @@ class LaGenPersonalAdapter {
       final slot = result.accepted[spec.code];
       if (slot == null) continue;
       final f = slot.fields;
+      final order = orderBySlot?[spec.code];
       switch (spec.kind) {
         case SlotKind.term:
           terms.add({
+            'order': ?order,
             'term': f['term'],
             'definition': f['definition'],
             if (f['example'] != null) 'example': f['example'],
@@ -36,6 +39,7 @@ class LaGenPersonalAdapter {
         case SlotKind.explanation:
           final example = f['example'] as String?;
           concepts.add({
+            'order': ?order,
             'concept_text': f['title'],
             'example_text': example == null
                 ? f['text']
@@ -43,6 +47,7 @@ class LaGenPersonalAdapter {
           });
         case SlotKind.mcq:
           questions.add({
+            'order': ?order,
             'type': 'mcq',
             'question': f['stem'],
             'options': f['options'],

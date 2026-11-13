@@ -69,7 +69,7 @@ class _FailingQuestionsContentService extends LessonContentService {
   _FailingQuestionsContentService(SupabaseClient client) : super(supabase: client);
 
   @override
-  Future<void> addQuestions(String lessonId, List<Question> questions) async {
+  Future<void> addQuestions(String lessonId, List<Question> questions, {List<int?> orders = const []}) async {
     throw const PostgrestException(message: 'simulated network drop during questions insert');
   }
 }
