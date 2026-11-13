@@ -81,7 +81,9 @@ class ContributionException implements Exception {
     'takedown_reason_required' => 'Please give a reason for the takedown.',
     'invalid_state_transition' =>
       'This contribution changed meanwhile. Refresh and try again.',
-    'not_published' => 'Only published contributions can be taken down.',
+    'not_published' => 'This lesson is no longer shared.',
+    'already_reported' => 'You already reported this lesson. Thank you.',
+    'invalid_reason' => 'Please choose a reason.',
     _ => 'Something went wrong. Your lesson was not changed.',
   };
 
@@ -115,6 +117,8 @@ class LessonContributionService {
     'takedown_reason_required',
     'invalid_state_transition',
     'not_published',
+    'already_reported',
+    'invalid_reason',
   };
 
   static ContributionException _map(Object e) {
@@ -200,6 +204,28 @@ class LessonContributionService {
       throw _map(e);
     }
   }
+
+  /// Published community copies (empty when the feature is OFF).
+  Future<List<ContributionQueueItem>> listPublished({int limit = 50}) async {
+    final rows = await _db.rpc(
+      'list_published_contributions',
+      params: {'p_limit': limit},
+    );
+    return [
+      for (final r in rows as List)
+        ContributionQueueItem.fromJson({
+          ...Map<String, dynamic>.from(r as Map),
+          'status': 'published',
+          'created_at': r['published_at'],
+        }),
+    ];
+  }
+
+  /// Reports a published copy to the Trust & Safety queue.
+  Future<void> report(String id, String reason, {String? description}) => _call(
+    'report_lesson_contribution',
+    {'p_id': id, 'p_reason': reason, 'p_description': description},
+  );
 
   Future<void> withdraw(String contributionId) async {
     try {

@@ -12,7 +12,8 @@ enum ModerationTargetType {
   question('question', 'Question'),
   profile('profile', 'User Profile'),
   communityQuestion('community_question', 'Community Question'),
-  communityAnswer('community_answer', 'Community Answer');
+  communityAnswer('community_answer', 'Community Answer'),
+  lessonContribution('lesson_contribution', 'Community Lesson');
 
   const ModerationTargetType(this.dbValue, this.displayName);
   final String dbValue;
@@ -129,12 +130,12 @@ class ModerationRole {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'role': role,
-        'granted_by': grantedBy,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'user_id': userId,
+    'role': role,
+    'granted_by': grantedBy,
+    'created_at': createdAt.toIso8601String(),
+  };
 }
 
 class ModerationReport {
@@ -177,16 +178,16 @@ class ModerationReport {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'reporter_id': reporterId,
-        'target_type': targetType.dbValue,
-        'target_id': targetId,
-        'reason': reason.dbValue,
-        'description': description,
-        'status': status.dbValue,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'reporter_id': reporterId,
+    'target_type': targetType.dbValue,
+    'target_id': targetId,
+    'reason': reason.dbValue,
+    'description': description,
+    'status': status.dbValue,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 }
 
 class ModerationAction {
@@ -227,14 +228,14 @@ class ModerationAction {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'report_id': reportId,
-        'moderator_id': moderatorId,
-        'action': action.dbValue,
-        'target_type': targetType.dbValue,
-        'target_id': targetId,
-        'reason': reason,
-        'notes': notes,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'report_id': reportId,
+    'moderator_id': moderatorId,
+    'action': action.dbValue,
+    'target_type': targetType.dbValue,
+    'target_id': targetId,
+    'reason': reason,
+    'notes': notes,
+    'created_at': createdAt.toIso8601String(),
+  };
 }
