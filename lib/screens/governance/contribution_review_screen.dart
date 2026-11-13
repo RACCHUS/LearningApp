@@ -21,7 +21,8 @@ enum _Tab {
   waiting('Waiting', ['submitted']),
   approved('Approved', ['ready_for_publication']),
   published('Published', ['published']),
-  closed('Closed', ['checks_failed', 'rejected', 'withdrawn', 'superseded']);
+  closed('Closed', ['checks_failed', 'rejected', 'withdrawn', 'superseded']),
+  suggestions('Suggestions', []);
 
   const _Tab(this.label, this.statuses);
   final String label;
@@ -32,6 +33,7 @@ class _ContributionReviewScreenState
     extends ConsumerState<ContributionReviewScreen> {
   _Tab _tab = _Tab.waiting;
   List<ContributionQueueItem>? _items;
+  List<RefreshProposal>? _proposals;
   Object? _loadError;
   bool _busy = false;
 
@@ -47,9 +49,20 @@ class _ContributionReviewScreenState
   Future<void> _load() async {
     setState(() {
       _items = null;
+      _proposals = null;
       _loadError = null;
     });
     try {
+      if (_tab == _Tab.suggestions) {
+        final proposals = await _service.openProposals();
+        if (mounted) {
+          setState(() {
+            _proposals = proposals;
+            _items = const [];
+          });
+        }
+        return;
+      }
       final items = await _service.fetchQueue(_tab.statuses);
       if (mounted) setState(() => _items = items);
     } catch (e) {
@@ -209,13 +222,22 @@ class _ContributionReviewScreenState
                 )
               : items == null
               ? const Center(child: CircularProgressIndicator())
-              : items.isEmpty
+              : items.isEmpty && _tab != _Tab.suggestions
               ? const Center(child: Text('Nothing here.'))
               : ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    for (final item in items) _card(item, roles, enabled),
-                  ],
+                  children: _tab == _Tab.suggestions
+                      ? [
+                          if ((_proposals ?? const []).isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 24),
+                              child: Center(child: Text('Nothing here.')),
+                            ),
+                          for (final p
+                              in _proposals ?? const <RefreshProposal>[])
+                            _proposalCard(p),
+                        ]
+                      : [for (final item in items) _card(item, roles, enabled)],
                 ),
         ),
       ],
@@ -291,6 +313,69 @@ class _ContributionReviewScreenState
               child: Wrap(spacing: 8, runSpacing: 8, children: actions),
             ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _decide(RefreshProposal p, {required bool accept}) async {
+    final note = await _askReason(
+      accept ? 'Accept suggestion' : 'Decline suggestion',
+      required: !accept,
+    );
+    if (note == null) return;
+    await _run(
+      () => _service.decideProposal(p.id, accept: accept, note: note),
+      accept
+          ? 'Accepted. The author will see it; nothing was changed.'
+          : 'Declined.',
+    );
+  }
+
+  Widget _proposalCard(RefreshProposal p) {
+    final theme = Theme.of(context);
+    final on = ref.watch(refreshProposalsEnabledProvider);
+    return Card(
+      key: Key('proposal_${p.id}'),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${p.kind.label}${p.itemRef == null ? '' : ' · ${p.itemRef}'}',
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(p.description),
+            if (p.sourceUrl != null)
+              SelectableText(p.sourceUrl!, style: theme.textTheme.bodySmall),
+            if (!on)
+              Text(
+                'Suggestions are switched off: decisions are paused.',
+                style: theme.textTheme.bodySmall,
+              ),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton(
+                  key: Key('decline_${p.id}'),
+                  onPressed: _busy || !on
+                      ? null
+                      : () => _decide(p, accept: false),
+                  child: const Text('Decline'),
+                ),
+                FilledButton(
+                  key: Key('accept_${p.id}'),
+                  onPressed: _busy || !on
+                      ? null
+                      : () => _decide(p, accept: true),
+                  child: const Text('Accept'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

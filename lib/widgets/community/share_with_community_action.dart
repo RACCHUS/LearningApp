@@ -66,6 +66,7 @@ class _ShareWithCommunityDialogState
   bool _busy = false;
   bool _loaded = false;
   ContributionStatus? _latest;
+  List<RefreshProposal> _accepted = const [];
   String? _message;
 
   static const _issueText = {
@@ -102,6 +103,9 @@ class _ShareWithCommunityDialogState
           _loaded = true;
         });
       }
+    });
+    _service.acceptedProposalsFor(widget.lessonId).then((p) {
+      if (mounted) setState(() => _accepted = p);
     });
   }
 
@@ -188,6 +192,24 @@ class _ShareWithCommunityDialogState
                   onPressed: _busy ? null : () => _withdraw(latest),
                   child: const Text('Withdraw'),
                 ),
+            ],
+            if (_accepted.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Update suggestions accepted by moderators',
+                key: const Key('accepted_suggestions'),
+                style: theme.textTheme.titleSmall,
+              ),
+              for (final p in _accepted)
+                Text(
+                  '• ${p.kind.label}'
+                  '${p.itemRef == null ? '' : ' (${p.itemRef})'}: '
+                  '${p.description}',
+                ),
+              Text(
+                'Edit your lesson, then submit again to share the update.',
+                style: theme.textTheme.bodySmall,
+              ),
             ],
             const SizedBox(height: 12),
             Text('Licence', style: theme.textTheme.titleSmall),

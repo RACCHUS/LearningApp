@@ -29,6 +29,7 @@ abstract final class SiteFeatureKeys {
       'learning.auto_gap_suggestions';
   static const String contentExternalCompanion = 'content.external_companion';
   static const String contentPublicContribution = 'content.public_contribution';
+  static const String contentRefreshProposals = 'content.refresh_proposals';
 
   static const Set<String> all = {
     telFast,
@@ -54,5 +55,6 @@ abstract final class SiteFeatureKeys {
     learningAutoGapSuggestions,
     contentExternalCompanion,
     contentPublicContribution,
+    contentRefreshProposals,
   };
 }
