@@ -324,9 +324,15 @@ jobs:
           dart test
 
       - name: Run tests
+        # --concurrency 3 is measured, not guessed (plan PR-5, #257): on the
+        # 4-vCPU hosted runner the default is nproc ~/ 2 = 2. In 5 trials each,
+        # -j 3 had p50 237 s vs 306 s for the default (-23%), the same 3,139
+        # tests (identical inventory hash), no failures, and peak memory
+        # ~3.2 of 16 GiB. -j 4 and -j 6 were no faster beyond runner noise.
+        # Re-benchmark with flutter-test-benchmark.yml if the runner changes.
         run: |
           mkdir -p build/reports
-          flutter test --reporter expanded --file-reporter json:build/reports/flutter-tests.json
+          flutter test --concurrency 3 --reporter expanded --file-reporter json:build/reports/flutter-tests.json
 
       - name: Summarize Flutter test timing and inventory (report-only)
         if: ${{ always() }}
