@@ -16,6 +16,16 @@ final publicContributionEnabledProvider = Provider<bool>((ref) {
   );
 });
 
+/// `content.refresh_proposals` (PR-H slice 4). Default OFF; the server
+/// re-checks it on every proposal and decision.
+final refreshProposalsEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.contentRefreshProposals,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
 final lessonContributionServiceProvider = Provider<LessonContributionService>(
   (ref) => LessonContributionService(),
 );

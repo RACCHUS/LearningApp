@@ -84,6 +84,11 @@ class ContributionException implements Exception {
     'not_published' => 'This lesson is no longer shared.',
     'already_reported' => 'You already reported this lesson. Thank you.',
     'invalid_reason' => 'Please choose a reason.',
+    'invalid_proposal' =>
+      'Please describe the change (at least 10 characters) and use an '
+          'https link.',
+    'decline_reason_required' => 'Please give a reason for declining.',
+    'cannot_decide_own_proposal' => 'You cannot decide your own suggestion.',
     _ => 'Something went wrong. Your lesson was not changed.',
   };
 
@@ -119,6 +124,9 @@ class LessonContributionService {
     'not_published',
     'already_reported',
     'invalid_reason',
+    'invalid_proposal',
+    'decline_reason_required',
+    'cannot_decide_own_proposal',
   };
 
   static ContributionException _map(Object e) {
@@ -227,6 +235,71 @@ class LessonContributionService {
     {'p_id': id, 'p_reason': reason, 'p_description': description},
   );
 
+  /// Suggests an update to a published community copy. Never edits it.
+  Future<void> proposeRefresh({
+    required String contributionId,
+    required RefreshKind kind,
+    required String description,
+    String? itemRef,
+    String? sourceUrl,
+  }) => _call('propose_contribution_refresh', {
+    'p_contribution_id': contributionId,
+    'p_kind': kind.wire,
+    'p_description': description,
+    'p_item_ref': itemRef,
+    'p_source_url': sourceUrl,
+  });
+
+  /// Open proposals for moderators (row-level security scoped).
+  Future<List<RefreshProposal>> openProposals() async {
+    final rows = await _db
+        .from('content_refresh_proposals')
+        .select(
+          'id, contribution_id, kind, item_ref, description, source_url, '
+          'status, review_note, created_at',
+        )
+        .eq('status', 'open')
+        .order('created_at')
+        .limit(50);
+    return [
+      for (final r in rows)
+        RefreshProposal.fromJson(Map<String, dynamic>.from(r)),
+    ];
+  }
+
+  /// Accepted proposals on the caller's own lesson (any version).
+  Future<List<RefreshProposal>> acceptedProposalsFor(String lessonId) async {
+    try {
+      final rows = await _db
+          .from('content_refresh_proposals')
+          .select(
+            'id, contribution_id, kind, item_ref, description, source_url, '
+            'status, review_note, created_at, '
+            'content_contributions!inner(lesson_id)',
+          )
+          .eq('content_contributions.lesson_id', lessonId)
+          .eq('status', 'accepted')
+          .order('created_at', ascending: false)
+          .limit(20);
+      return [
+        for (final r in rows)
+          RefreshProposal.fromJson(Map<String, dynamic>.from(r)),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> decideProposal(
+    String id, {
+    required bool accept,
+    String? note,
+  }) => _call('decide_refresh_proposal', {
+    'p_id': id,
+    'p_accept': accept,
+    'p_note': note,
+  });
+
   Future<void> withdraw(String contributionId) async {
     try {
       await _db.rpc(
@@ -289,4 +362,51 @@ class ContributionQueueItem {
   List<Map<String, dynamic>> get terms => _list('terms');
   List<Map<String, dynamic>> get concepts => _list('concepts');
   List<Map<String, dynamic>> get questions => _list('questions');
+}
+
+enum RefreshKind {
+  sourceChanged('source_changed', 'The source changed'),
+  correction('correction', 'Something is wrong'),
+  outdated('outdated', 'It is out of date');
+
+  const RefreshKind(this.wire, this.label);
+  final String wire;
+  final String label;
+
+  static RefreshKind fromWire(Object? v) =>
+      values.firstWhere((k) => k.wire == v, orElse: () => correction);
+}
+
+/// A reviewed suggestion to update a published community lesson.
+class RefreshProposal {
+  const RefreshProposal({
+    required this.id,
+    required this.contributionId,
+    required this.kind,
+    required this.description,
+    required this.status,
+    this.itemRef,
+    this.sourceUrl,
+    this.reviewNote,
+  });
+
+  factory RefreshProposal.fromJson(Map<String, dynamic> j) => RefreshProposal(
+    id: j['id'] as String,
+    contributionId: j['contribution_id'] as String,
+    kind: RefreshKind.fromWire(j['kind']),
+    description: j['description'] as String,
+    status: j['status'] as String,
+    itemRef: j['item_ref'] as String?,
+    sourceUrl: j['source_url'] as String?,
+    reviewNote: j['review_note'] as String?,
+  );
+
+  final String id;
+  final String contributionId;
+  final RefreshKind kind;
+  final String description;
+  final String status;
+  final String? itemRef;
+  final String? sourceUrl;
+  final String? reviewNote;
 }

@@ -133,6 +133,109 @@ class _CommunityLessonReaderScreenState
     'other': 'Something else',
   };
 
+  Future<void> _suggestUpdate() async {
+    final item = widget.item;
+    final parts = <String, String>{
+      'lesson': 'The whole lesson',
+      for (var i = 0; i < item.terms.length; i++) 'terms[$i]': 'Term ${i + 1}',
+      for (var i = 0; i < item.concepts.length; i++)
+        'concepts[$i]': 'Idea ${i + 1}',
+      for (var i = 0; i < item.questions.length; i++)
+        'questions[$i]': 'Question ${i + 1}',
+    };
+    var kind = RefreshKind.correction;
+    var part = 'lesson';
+    final description = TextEditingController();
+    final url = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: const Text('Suggest an update'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'A moderator reviews suggestions. Nothing changes until the '
+                  'author updates the lesson and it is reviewed again.',
+                ),
+                DropdownButton<RefreshKind>(
+                  key: const Key('refresh_kind'),
+                  value: kind,
+                  isExpanded: true,
+                  items: [
+                    for (final k in RefreshKind.values)
+                      DropdownMenuItem(value: k, child: Text(k.label)),
+                  ],
+                  onChanged: (v) => setLocal(() => kind = v ?? kind),
+                ),
+                DropdownButton<String>(
+                  key: const Key('refresh_part'),
+                  value: part,
+                  isExpanded: true,
+                  items: [
+                    for (final e in parts.entries)
+                      DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  ],
+                  onChanged: (v) => setLocal(() => part = v ?? part),
+                ),
+                TextField(
+                  key: const Key('refresh_description'),
+                  controller: description,
+                  maxLength: 2000,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: 'What should change, and why?',
+                  ),
+                ),
+                TextField(
+                  key: const Key('refresh_url'),
+                  controller: url,
+                  decoration: const InputDecoration(
+                    hintText: 'Source link (https://…, optional)',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('refresh_send'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Send'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    String message;
+    try {
+      await ref
+          .read(lessonContributionServiceProvider)
+          .proposeRefresh(
+            contributionId: item.id,
+            kind: kind,
+            description: description.text.trim(),
+            itemRef: part,
+            sourceUrl: url.text.trim().isEmpty ? null : url.text.trim(),
+          );
+      message = 'Thanks. A moderator will review your suggestion.';
+    } on ContributionException catch (e) {
+      message = e.message;
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   Future<void> _report() async {
     var reason = 'misinformation';
     final details = TextEditingController();
@@ -210,6 +313,13 @@ class _CommunityLessonReaderScreenState
       appBar: AppBar(
         title: Text(item.title, overflow: TextOverflow.ellipsis),
         actions: [
+          if (ref.watch(refreshProposalsEnabledProvider))
+            IconButton(
+              key: const Key('community_suggest_update'),
+              tooltip: 'Suggest an update',
+              icon: const Icon(Icons.edit_note),
+              onPressed: _suggestUpdate,
+            ),
           IconButton(
             key: const Key('community_report'),
             tooltip: 'Report this lesson',
