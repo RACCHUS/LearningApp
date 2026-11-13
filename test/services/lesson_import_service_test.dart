@@ -55,18 +55,18 @@ class MockLessonContentService implements LessonContentService {
   bool failQuestions = false;
 
   @override
-  Future<void> addTerms(String lessonId, List<Term> terms) async {
+  Future<void> addTerms(String lessonId, List<Term> terms, {List<int?> orders = const []}) async {
     addedTerms.putIfAbsent(lessonId, () => []).addAll(terms);
   }
 
   @override
-  Future<void> addQuestions(String lessonId, List<Question> questions) async {
+  Future<void> addQuestions(String lessonId, List<Question> questions, {List<int?> orders = const []}) async {
     if (failQuestions) throw StateError('network down');
     addedQuestions.putIfAbsent(lessonId, () => []).addAll(questions);
   }
 
   @override
-  Future<void> addConcepts(String lessonId, List<Concept> concepts) async {
+  Future<void> addConcepts(String lessonId, List<Concept> concepts, {List<int?> orders = const []}) async {
     addedConcepts.putIfAbsent(lessonId, () => []).addAll(concepts);
   }
 

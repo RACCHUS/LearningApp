@@ -71,10 +71,10 @@ class LessonImportIncompleteException implements Exception {
   @override
   String toString() => cleanedUp
       ? 'Import failed while saving $stage, and the partial lesson was '
-          'removed. Your draft is unchanged — try again. ($cause)'
+            'removed. Your draft is unchanged — try again. ($cause)'
       : 'Import failed while saving $stage. A partial lesson may remain in '
-          'your library and should be deleted. Your draft is unchanged. '
-          '($cause)';
+            'your library and should be deleted. Your draft is unchanged. '
+            '($cause)';
 }
 
 /// Result of [LessonImportService.preview]: what would be imported.
@@ -102,6 +102,12 @@ class _PreparedLesson {
   final List<Question> questions = [];
   final List<Concept> concepts = [];
   final List<LessonImportIssue> issues = [];
+
+  /// Optional explicit display order per item (parallel to the lists
+  /// above). Null keeps the reader's existing default ordering.
+  final List<int?> termOrders = [];
+  final List<int?> questionOrders = [];
+  final List<int?> conceptOrders = [];
 }
 
 /// Service for importing lessons from JSON
@@ -117,7 +123,7 @@ class LessonImportService {
     LessonCrudService? crudService,
     LessonContentService? contentService,
   }) : _crudService = crudService ?? LessonCrudService(),
-        _contentService = contentService ?? LessonContentService();
+       _contentService = contentService ?? LessonContentService();
 
   static const _questionTypes = {
     'mcq',
@@ -203,33 +209,45 @@ class LessonImportService {
 
   static List<LessonImportIssue> _dialectIssues(NormalizedLessonDraft draft) =>
       draft.issues
-          .map((i) => LessonImportIssue(
-                path: i.path.isEmpty ? '(document)' : i.path,
-                code: i.code,
-                message: i.message,
-              ))
+          .map(
+            (i) => LessonImportIssue(
+              path: i.path.isEmpty ? '(document)' : i.path,
+              code: i.code,
+              message: i.message,
+            ),
+          )
           .toList();
 
   Future<void> _writeContent(String lessonId, _PreparedLesson prepared) async {
     final stages = <String, Future<void> Function()>{
       if (prepared.terms.isNotEmpty)
-        'terms': () => _contentService.addTerms(lessonId, prepared.terms),
+        'terms': () => _contentService.addTerms(
+          lessonId,
+          prepared.terms,
+          orders: prepared.termOrders,
+        ),
       if (prepared.questions.isNotEmpty)
-        'questions': () =>
-            _contentService.addQuestions(lessonId, prepared.questions),
+        'questions': () => _contentService.addQuestions(
+          lessonId,
+          prepared.questions,
+          orders: prepared.questionOrders,
+        ),
       if (prepared.concepts.isNotEmpty)
         'concepts': () => _contentService.addConcepts(
-              lessonId,
-              prepared.concepts
-                  .map((c) => Concept(
-                        id: c.id,
-                        lessonId: lessonId,
-                        conceptText: c.conceptText,
-                        exampleText: c.exampleText,
-                        createdBy: c.createdBy,
-                      ))
-                  .toList(),
-            ),
+          lessonId,
+          prepared.concepts
+              .map(
+                (c) => Concept(
+                  id: c.id,
+                  lessonId: lessonId,
+                  conceptText: c.conceptText,
+                  exampleText: c.exampleText,
+                  createdBy: c.createdBy,
+                ),
+              )
+              .toList(),
+          orders: prepared.conceptOrders,
+        ),
     };
     for (final entry in stages.entries) {
       try {
@@ -255,7 +273,10 @@ class LessonImportService {
 
   /// Converts and validates all terms, questions, concepts and generic
   /// content items. Collects every problem instead of stopping at the first.
-  static _PreparedLesson _prepareContent(Map<String, dynamic> jsonData, String userId) {
+  static _PreparedLesson _prepareContent(
+    Map<String, dynamic> jsonData,
+    String userId,
+  ) {
     final prepared = _PreparedLesson();
 
     void listOf(String key, void Function(Map<String, dynamic>, String) each) {
@@ -263,11 +284,13 @@ class LessonImportService {
       final raw = jsonData[key];
       if (raw == null) return;
       if (raw is! List) {
-        prepared.issues.add(LessonImportIssue(
-          path: key,
-          code: 'invalid_format',
-          message: '"$key" must be a list.',
-        ));
+        prepared.issues.add(
+          LessonImportIssue(
+            path: key,
+            code: 'invalid_format',
+            message: '"$key" must be a list.',
+          ),
+        );
         return;
       }
       for (var i = 0; i < raw.length; i++) {
@@ -275,20 +298,50 @@ class LessonImportService {
         final sourcePath = item is Map ? item['_source_path'] : null;
         final path = sourcePath is String ? sourcePath : '$key[$i]';
         if (item is! Map<String, dynamic>) {
-          prepared.issues.add(LessonImportIssue(
-            path: path,
-            code: 'invalid_format',
-            message: 'Each item must be a JSON object.',
-          ));
+          prepared.issues.add(
+            LessonImportIssue(
+              path: path,
+              code: 'invalid_format',
+              message: 'Each item must be a JSON object.',
+            ),
+          );
           continue;
         }
+        // Optional explicit order (e.g. from the Lesson Composer).
+        final order = item['order'];
+        if (order != null && (order is! int || order < 0 || order > 9999)) {
+          prepared.issues.add(
+            LessonImportIssue(
+              path: '$path.order',
+              code: 'invalid_order',
+              message: '"order" must be a whole number from 0 to 9999.',
+            ),
+          );
+          continue;
+        }
+        final before = (
+          prepared.terms.length,
+          prepared.questions.length,
+          prepared.concepts.length,
+        );
         each(item, path);
+        if (prepared.terms.length > before.$1) {
+          prepared.termOrders.add(order as int?);
+        }
+        if (prepared.questions.length > before.$2) {
+          prepared.questionOrders.add(order as int?);
+        }
+        if (prepared.concepts.length > before.$3) {
+          prepared.conceptOrders.add(order as int?);
+        }
       }
     }
 
     listOf('terms', (t, path) => _prepareTerm(t, path, userId, prepared));
-    listOf('questions',
-        (q, path) => _prepareQuestion(q, path, userId, prepared));
+    listOf(
+      'questions',
+      (q, path) => _prepareQuestion(q, path, userId, prepared),
+    );
     listOf('concepts', (c, path) => _prepareConcept(c, path, userId, prepared));
     listOf('content', (item, path) {
       final type = item['type']?.toString();
@@ -299,65 +352,89 @@ class LessonImportService {
       } else if (type != null && _questionTypes.contains(type)) {
         _prepareQuestion(item, path, userId, prepared);
       } else {
-        prepared.issues.add(LessonImportIssue(
-          path: '$path.type',
-          code: AnswerKeyStatus.unsupportedType.code,
-          message: 'Unsupported content type "${type ?? '(none)'}".',
-        ));
+        prepared.issues.add(
+          LessonImportIssue(
+            path: '$path.type',
+            code: AnswerKeyStatus.unsupportedType.code,
+            message: 'Unsupported content type "${type ?? '(none)'}".',
+          ),
+        );
       }
     });
     return prepared;
   }
 
-  static void _prepareTerm(Map<String, dynamic> t, String path, String userId,
-      _PreparedLesson prepared) {
+  static void _prepareTerm(
+    Map<String, dynamic> t,
+    String path,
+    String userId,
+    _PreparedLesson prepared,
+  ) {
     final term = t['term']?.toString() ?? '';
     final definition = t['definition']?.toString() ?? '';
     if (term.trim().isEmpty || definition.trim().isEmpty) {
-      prepared.issues.add(LessonImportIssue(
-        path: path,
-        code: 'missing_field',
-        message: 'A term needs both "term" and "definition".',
-      ));
+      prepared.issues.add(
+        LessonImportIssue(
+          path: path,
+          code: 'missing_field',
+          message: 'A term needs both "term" and "definition".',
+        ),
+      );
       return;
     }
-    prepared.terms.add(Term(
-      id: t['id']?.toString() ?? const Uuid().v4(),
-      term: term,
-      definition: definition,
-      example: t['example']?.toString(),
-      createdBy: t['created_by']?.toString() ?? userId,
-    ));
+    prepared.terms.add(
+      Term(
+        id: t['id']?.toString() ?? const Uuid().v4(),
+        term: term,
+        definition: definition,
+        example: t['example']?.toString(),
+        createdBy: t['created_by']?.toString() ?? userId,
+      ),
+    );
   }
 
-  static void _prepareConcept(Map<String, dynamic> c, String path, String userId,
-      _PreparedLesson prepared) {
+  static void _prepareConcept(
+    Map<String, dynamic> c,
+    String path,
+    String userId,
+    _PreparedLesson prepared,
+  ) {
     final text = c['concept_text']?.toString() ?? c['title']?.toString() ?? '';
     if (text.trim().isEmpty) {
-      prepared.issues.add(LessonImportIssue(
-        path: path,
-        code: 'missing_field',
-        message: 'A concept needs "concept_text".',
-      ));
+      prepared.issues.add(
+        LessonImportIssue(
+          path: path,
+          code: 'missing_field',
+          message: 'A concept needs "concept_text".',
+        ),
+      );
       return;
     }
-    prepared.concepts.add(Concept(
-      id: c['id']?.toString() ?? const Uuid().v4(),
-      lessonId: '',
-      conceptText: text,
-      exampleText: c['example_text']?.toString() ?? c['example']?.toString(),
-      createdBy: c['created_by']?.toString() ?? userId,
-    ));
+    prepared.concepts.add(
+      Concept(
+        id: c['id']?.toString() ?? const Uuid().v4(),
+        lessonId: '',
+        conceptText: text,
+        exampleText: c['example_text']?.toString() ?? c['example']?.toString(),
+        createdBy: c['created_by']?.toString() ?? userId,
+      ),
+    );
   }
 
-  static void _prepareQuestion(Map<String, dynamic> q, String path, String userId,
-      _PreparedLesson prepared) {
+  static void _prepareQuestion(
+    Map<String, dynamic> q,
+    String path,
+    String userId,
+    _PreparedLesson prepared,
+  ) {
     void issue(String field, String code, String message) =>
-        prepared.issues.add(LessonImportIssue(
-          path: field.isEmpty ? path : '$path.$field',
-          code: code,
-          message: message,
-        ));
+        prepared.issues.add(
+          LessonImportIssue(
+            path: field.isEmpty ? path : '$path.$field',
+            code: code,
+            message: message,
+          ),
+        );
 
     final text =
         q['question_text']?.toString() ?? q['question']?.toString() ?? '';
@@ -384,11 +461,12 @@ class LessonImportService {
     final flagged = q['_answer_error']?.toString();
     if (flagged != null) {
       issue(
-          'correct_answer',
-          flagged,
-          q['_answer_error_detail']?.toString() ??
-              'This question has no clear correct answer. Choose one '
-                  'before importing.');
+        'correct_answer',
+        flagged,
+        q['_answer_error_detail']?.toString() ??
+            'This question has no clear correct answer. Choose one '
+                'before importing.',
+      );
       return;
     }
 
@@ -404,39 +482,50 @@ class LessonImportService {
           accepted = [options[key.index!]];
           correctIndex = key.index!;
         } else {
-          issue('accepted_answers', AnswerKeyStatus.missingKey.code,
-              'A short-answer question needs at least one accepted answer.');
+          issue(
+            'accepted_answers',
+            AnswerKeyStatus.missingKey.code,
+            'A short-answer question needs at least one accepted answer.',
+          );
           return;
         }
       }
     } else {
       final key = AnswerKey.fromIndex(q['correct_answer'], options);
       if (!key.isScorable) {
-        issue('correct_answer', key.status.code,
-            key.detail ?? 'The correct answer is not valid.');
+        issue(
+          'correct_answer',
+          key.status.code,
+          key.detail ?? 'The correct answer is not valid.',
+        );
         return;
       }
       if (type == 'true_false' && !TrueFalseKey.hasValidLabels(options)) {
-        issue('options', AnswerKeyStatus.unsupportedType.code,
-            'True/false options must be one "True" and one "False".');
+        issue(
+          'options',
+          AnswerKeyStatus.unsupportedType.code,
+          'True/false options must be one "True" and one "False".',
+        );
         return;
       }
       correctIndex = key.index!;
     }
     if (text.trim().isEmpty) return;
 
-    prepared.questions.add(Question(
-      id: q['id']?.toString() ?? const Uuid().v4(),
-      questionText: text,
-      options: options,
-      correctAnswer: correctIndex,
-      type: type,
-      explanation: q['explanation']?.toString(),
-      acceptedAnswers: accepted,
-      gradingMethod: q['grading_method']?.toString(),
-      numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
-      createdBy: q['created_by']?.toString() ?? userId,
-    ));
+    prepared.questions.add(
+      Question(
+        id: q['id']?.toString() ?? const Uuid().v4(),
+        questionText: text,
+        options: options,
+        correctAnswer: correctIndex,
+        type: type,
+        explanation: q['explanation']?.toString(),
+        acceptedAnswers: accepted,
+        gradingMethod: q['grading_method']?.toString(),
+        numericTolerance: (q['numeric_tolerance'] as num?)?.toDouble(),
+        createdBy: q['created_by']?.toString() ?? userId,
+      ),
+    );
   }
 
   /// Validate JSON structure
@@ -445,7 +534,8 @@ class LessonImportService {
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
 
       // Check required fields
-      if (jsonData['title'] == null || jsonData['title'].toString().trim().isEmpty) {
+      if (jsonData['title'] == null ||
+          jsonData['title'].toString().trim().isEmpty) {
         return false;
       }
 

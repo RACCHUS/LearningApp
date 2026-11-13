@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
+import 'package:learning_pwa/services/content_generation/lesson_composer.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
@@ -36,6 +37,7 @@ class _ManualGenerationV2ScreenState
   int _questions = 2;
   bool _terms = true;
   ModelSizeTier _tier = ModelSizeTier.compact;
+  LessonObjectiveType _objective = LessonObjectiveType.understand;
   bool _lines = false;
   String? _planError;
   ManualJobSession? _session;
@@ -452,6 +454,7 @@ class _ManualGenerationV2ScreenState
     final lesson = done == 0
         ? null
         : s.toPersonalLesson(
+            objectiveType: _objective,
             title: _title.text.trim().isEmpty
                 ? s.job.request.subject
                 : _title.text.trim(),
@@ -567,14 +570,30 @@ class _ManualGenerationV2ScreenState
           'term(s), ${preview.questionCount} question(s).',
           key: const Key('manual_v2_preview_counts'),
         ),
-        for (final spec in s.job.plan.slots)
-          if (s.accepted.containsKey(spec.code))
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.check_circle_outline),
-              title: Text(describe(spec)),
-            ),
+        const SizedBox(height: 8),
+        Text('Lesson order', style: theme.textTheme.titleSmall),
+        DropdownButton<LessonObjectiveType>(
+          key: const Key('manual_v2_objective'),
+          value: _objective,
+          isExpanded: true,
+          items: [
+            for (final t in LessonObjectiveType.values)
+              DropdownMenuItem(value: t, child: Text(t.label)),
+          ],
+          onChanged: (v) => setState(() => _objective = v ?? _objective),
+        ),
+        for (final (i, code) in LessonComposer.compose(
+          s.job.plan,
+          s.accepted.keys.toSet(),
+          _objective,
+        ).indexed)
+          ListTile(
+            key: Key('manual_v2_composed_$i'),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Text('${i + 1}.'),
+            title: Text(describe(s.job.plan[code]!)),
+          ),
         for (final issue in preview.issues)
           Text(
             '• ${issue.message}',

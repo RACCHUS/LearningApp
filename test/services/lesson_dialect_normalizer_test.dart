@@ -51,12 +51,12 @@ class _Content implements LessonContentService {
   final concepts = <Concept>[];
 
   @override
-  Future<void> addTerms(String lessonId, List<Term> t) async => terms.addAll(t);
+  Future<void> addTerms(String lessonId, List<Term> t, {List<int?> orders = const []}) async => terms.addAll(t);
   @override
-  Future<void> addQuestions(String lessonId, List<Question> q) async =>
+  Future<void> addQuestions(String lessonId, List<Question> q, {List<int?> orders = const []}) async =>
       questions.addAll(q);
   @override
-  Future<void> addConcepts(String lessonId, List<Concept> c) async =>
+  Future<void> addConcepts(String lessonId, List<Concept> c, {List<int?> orders = const []}) async =>
       concepts.addAll(c);
 
   @override
