@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
@@ -60,7 +61,17 @@ class ManualJob {
 
   /// Builds the slot plan. Per idea: one explanation, an optional key
   /// term, then the questions, so the lesson reads teach → term → check.
-  factory ManualJob.plan(ManualJobRequest request, {Random? random}) {
+  ///
+  /// [jobCode] restores a saved job's code; it must look like one this app
+  /// issues, otherwise an [ArgumentError] is thrown.
+  factory ManualJob.plan(
+    ManualJobRequest request, {
+    Random? random,
+    String? jobCode,
+  }) {
+    if (jobCode != null && !_jobCode.hasMatch(jobCode)) {
+      throw ArgumentError.value(jobCode, 'jobCode');
+    }
     final slots = <SlotSpec>[];
     final names = <String, String>{};
     var n = 0;
@@ -87,10 +98,15 @@ class ManualJob {
     }
     return ManualJob._(
       request,
-      SlotPlan(jobCode: newJobCode(random ?? Random.secure()), slots: slots),
+      SlotPlan(
+        jobCode: jobCode ?? newJobCode(random ?? Random.secure()),
+        slots: slots,
+      ),
       Map.unmodifiable(names),
     );
   }
+
+  static final RegExp _jobCode = RegExp(r'^J[A-HJKMNP-Z2-9]{4}$');
 
   /// `J` plus four characters without look-alikes (no 0/O, 1/I/L).
   static String newJobCode(Random random) {
@@ -164,6 +180,66 @@ class ManualJobSession {
       newlyAccepted: fresh,
       alreadyAccepted: repeat,
     );
+  }
+
+  /// The accepted slots as one `la-gen/1.1` package, in plan order. Used
+  /// for saving and for the learner's own export.
+  String acceptedPackage() => jsonEncode({
+    'schema': LaGenParser.schemaId,
+    'job': job.plan.jobCode,
+    'items': [
+      for (final spec in job.plan.slots)
+        if (_accepted[spec.code] case final slot?)
+          {
+            'slot': spec.code,
+            'kind': spec.kind.wire,
+            'concept': spec.conceptCode,
+            ...slot.fields,
+          },
+    ],
+    'end': job.plan.endSentinel,
+  });
+
+  static const int saveVersion = 1;
+
+  Map<String, Object?> toJson() => {
+    'version': saveVersion,
+    'request': {
+      'subject': job.request.subject,
+      'concepts': job.request.concepts,
+      'questions_per_concept': job.request.questionsPerConcept,
+      'include_terms': job.request.includeTerms,
+    },
+    'job_code': job.plan.jobCode,
+    'accepted': acceptedPackage(),
+  };
+
+  /// Restores a saved session. Saved items are re-checked by the same
+  /// strict parser as a fresh paste, so a damaged or edited save can only
+  /// lose items, never add unchecked ones. Returns `null` when unusable.
+  static ManualJobSession? fromJson(Object? json) {
+    try {
+      if (json is! Map || json['version'] != saveVersion) return null;
+      final r = json['request'] as Map;
+      final job = ManualJob.plan(
+        ManualJobRequest(
+          subject: r['subject'] as String,
+          concepts: [for (final c in r['concepts'] as List) c as String],
+          questionsPerConcept: r['questions_per_concept'] as int,
+          includeTerms: r['include_terms'] as bool,
+        ),
+        jobCode: json['job_code'] as String,
+      );
+      final session = ManualJobSession(job);
+      final accepted = json['accepted'];
+      if (accepted is String && accepted.isNotEmpty) {
+        session.applyPaste(accepted);
+        session.lastOutcome = null;
+      }
+      return session;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Personal-lesson JSON (dialect P) from the accepted slots, in plan
