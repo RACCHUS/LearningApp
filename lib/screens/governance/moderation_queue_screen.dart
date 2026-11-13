@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/governance/moderation_report.dart';
 import 'package:learning_pwa/services/analytics/item_analytics_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
@@ -608,6 +609,12 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
         title: const Text('Trust & Safety Console'),
         actions: [
           if (_isModerator) ...[
+            IconButton(
+              key: const Key('open_contribution_review'),
+              icon: const Icon(Icons.volunteer_activism_outlined),
+              tooltip: 'Lesson contributions',
+              onPressed: () => context.push('/moderation/contributions'),
+            ),
             IconButton(
               icon: const Icon(Icons.analytics_outlined),
               tooltip: 'Evaluate Item Analytics',
