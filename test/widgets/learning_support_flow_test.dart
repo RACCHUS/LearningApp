@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/providers/reading_position_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
 import 'package:learning_pwa/services/learning_support/support_session_store.dart';
 import 'package:learning_pwa/widgets/learning_support/learning_help_action.dart';
@@ -253,5 +254,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(depth(second), 0);
     expect(await SupportSessionStore().load('user-a'), isNull);
+  });
+
+  testWidgets('the open block is saved and restored after a refresh', (
+    tester,
+  ) async {
+    final first = await pumpLesson(tester);
+    first.read(readingBlockProvider('excel-101').notifier).state = 'blk-7';
+    await openFromSheet(tester, 'bridge-percent-change');
+    final saved = await SupportSessionStore().load('user-a');
+    expect(saved!.root!.blockId, 'blk-7');
+    expect(saved.root!.assetVersionId, 'excel-101');
+
+    // Simulated refresh: a new app instance lands on the lesson again.
+    await tester.pumpWidget(const SizedBox());
+    final second = await pumpLesson(tester);
+    await tester.pumpAndSettle();
+    expect(second.read(pendingReturnBlockProvider('excel-101')), 'blk-7');
+    expect(await SupportSessionStore().load('user-a'), isNull);
+  });
+
+  testWidgets('without a reported block the anchor has no position', (
+    tester,
+  ) async {
+    await pumpLesson(tester);
+    await openFromSheet(tester, 'bridge-percent-change');
+    final saved = await SupportSessionStore().load('user-a');
+    expect(saved!.root!.blockId, isNull);
+    expect(saved.root!.assetVersionId, isNull);
   });
 }

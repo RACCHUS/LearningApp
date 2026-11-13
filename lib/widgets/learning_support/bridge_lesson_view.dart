@@ -19,11 +19,16 @@ class BridgeOrigin {
     required this.lessonId,
     required this.lessonTitle,
     required this.strategy,
+    this.blockId,
   });
 
   final String lessonId;
   final String lessonTitle;
   final PersistedLearningStrategy strategy;
+
+  /// The lesson block the learner was reading, when the reader reported
+  /// one. Recorded in the root anchor for an exact return.
+  final String? blockId;
 
   String get route => '/lesson/$lessonId';
 }
@@ -46,7 +51,10 @@ Future<BridgeOpenOutcome> openBridgeFrom(
     rootId: leaving?.conceptId ?? origin.lessonId,
     originRoute: origin.route,
     lessonId: origin.lessonId,
-    blockId: leaving?.bridgeId,
+    assetVersionId: leaving == null && origin.blockId != null
+        ? origin.lessonId
+        : null,
+    blockId: leaving?.bridgeId ?? origin.blockId,
     activeLearningStrategy: origin.strategy,
     originActivityStateRevision: 0,
     rescueSessionId: const Uuid().v4(),
@@ -188,7 +196,7 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
 
     // Where "Back" goes: the Bridge we came from, or the original lesson.
     final entries = state.stack.entries;
-    final leftBridgeId = _depth >= 1 && _depth <= entries.length
+    final leftBridgeId = _depth > 1 && _depth <= entries.length
         ? entries[_depth - 1].anchor.blockId
         : null;
     final backTitle = leftBridgeId != null

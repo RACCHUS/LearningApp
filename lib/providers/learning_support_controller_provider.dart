@@ -183,12 +183,17 @@ class LearningSupportController extends StateNotifier<LearningSupportState> {
 
   /// After a refresh the help screens are gone and the learner is back on
   /// [currentRoute]. If that is where the trail started, the trail is done.
-  Future<void> settleAt(String currentRoute) async {
+  ///
+  /// Returns the original anchor when the trail was settled, so the reader
+  /// can scroll back to the exact block that was open.
+  Future<ReturnAnchor?> settleAt(String currentRoute) async {
     await restore();
     final root = state.stack.root;
     if (root != null && root.originRoute == currentRoute) {
       await _commit(state.stack.unwindToRoot().pop());
+      return root;
     }
+    return null;
   }
 
   /// Saves [anchor] and pushes [bridge] onto the trail. The anchor is

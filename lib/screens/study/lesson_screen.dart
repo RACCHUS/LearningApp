@@ -32,6 +32,7 @@ import 'package:learning_pwa/widgets/global_voice_indicator.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/unified_lesson_provider.dart';
 import 'package:learning_pwa/widgets/lesson/rich_lesson_reader.dart';
+import 'package:learning_pwa/providers/reading_position_provider.dart';
 import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/analytics/active_lesson_study_capture.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
@@ -463,6 +464,15 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                                       child: RichLessonReader(
                                         unifiedLesson: unified,
                                         onCompleted: _onLessonComplete,
+                                        onVisibleBlockChanged: (id) => ref
+                                            .read(readingBlockProvider(widget.lessonId).notifier)
+                                            .state = id,
+                                        initialBlockId: ref.read(
+                                          pendingReturnBlockProvider(widget.lessonId),
+                                        ),
+                                        onInitialBlockHandled: () => ref
+                                            .read(pendingReturnBlockProvider(widget.lessonId).notifier)
+                                            .state = null,
                                       ),
                                     ),
                                     loading: () => const Center(child: CircularProgressIndicator()),
