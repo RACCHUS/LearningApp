@@ -21,7 +21,8 @@
    "map_tests": "partial",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 2,
-   "note": "tests listed; known gap stated"
+   "note": "tests listed; known gap stated",
+   "draft_scored_by": "plan author"
   },
   {
    "id": "T3",
@@ -41,7 +42,23 @@
    "map_tests": "yes",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 1,
-   "note": "both rubric copies named; parity gap stated"
+   "note": "both rubric copies named; parity gap stated",
+   "draft_scored_by": "plan author",
+   "reconciled_draft": {
+    "map_owner": "yes",
+    "map_contract": "partial",
+    "map_tests": "partial",
+    "false_owner_candidates": 1,
+    "source": "independent second review, accepted",
+    "why": "Draft named neither pilot_pipeline nor spec nor card tests; \"change both together\" was a false lead"
+   },
+   "corrected_map_pr273": {
+    "map_owner": "yes",
+    "map_contract": "yes",
+    "map_tests": "yes",
+    "false_owner_candidates": 0,
+    "source": "author re-score after applying review corrections; not re-reviewed"
+   }
   },
   {
    "id": "T6",
@@ -61,7 +78,8 @@
    "map_tests": "yes",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 0,
-   "note": "CI job wiring for tests not in section"
+   "note": "CI job wiring for tests not in section",
+   "draft_scored_by": "plan author"
   },
   {
    "id": "T7",
@@ -81,7 +99,23 @@
    "map_tests": "yes",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 0,
-   "note": "Library insertion point (library_screen.dart:445) not named"
+   "note": "Library insertion point (library_screen.dart:445) not named",
+   "draft_scored_by": "plan author",
+   "reconciled_draft": {
+    "map_owner": "partial",
+    "map_contract": "yes",
+    "map_tests": "partial",
+    "false_owner_candidates": 0,
+    "source": "independent second review, accepted",
+    "why": "Draft missed Library insertion point, /literacy route and phase_5_pwa_ux_test"
+   },
+   "corrected_map_pr273": {
+    "map_owner": "yes",
+    "map_contract": "yes",
+    "map_tests": "yes",
+    "false_owner_candidates": 0,
+    "source": "author re-score after applying review corrections; not re-reviewed"
+   }
   },
   {
    "id": "T8",
@@ -103,7 +137,23 @@
    "map_tests": "partial",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 1,
-   "note": "gate location given as a grep rule, not a file; per-feature pgTAP not named"
+   "note": "gate location given as a grep rule, not a file; per-feature pgTAP not named",
+   "draft_scored_by": "plan author",
+   "reconciled_draft": {
+    "map_owner": "yes",
+    "map_contract": "partial",
+    "map_tests": "partial",
+    "false_owner_candidates": 0,
+    "source": "independent second review, accepted",
+    "why": "Owner is the key registry (yes); gate given only as a grep rule (partial)"
+   },
+   "corrected_map_pr273": {
+    "map_owner": "yes",
+    "map_contract": "yes",
+    "map_tests": "yes",
+    "false_owner_candidates": 0,
+    "source": "author re-score after applying review corrections; not re-reviewed"
+   }
   },
   {
    "id": "T9",
@@ -123,7 +173,13 @@
    "map_tests": "yes",
    "false_owner_candidates": 0,
    "baseline_false_owner_candidates": 1,
-   "note": "rule lines given inline"
+   "note": "rule lines given inline",
+   "draft_scored_by": "plan author",
+   "reconciled_draft": {
+    "source": "independent second review agrees",
+    "note": "direct_access_rule_test only checks find.byType(Badge); a dot or count built from other widgets would not be caught"
+   }
   }
- ]
+ ],
+ "reconciliation": "2026-11-14: independent reviewer scored T3, T7, T8, T9 from the draft map without seeing these scores first; disagreements resolved in favour of the reviewer where line evidence supported it."
 }

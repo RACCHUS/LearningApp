@@ -1,6 +1,6 @@
 {
   "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
-  "manifest_sha256": "ffa44f7d00a3c88587d40cc2cc27f13f970bc482c906255e169cefa71741ed50",
+  "manifest_sha256": "1ba2d6f00253fc233aef6c2abdf6632e2dbc42bb2d6b5bb86238eb11f93a3a24",
   "python": "3.13.4",
   "tokenizer": {
     "library": "tiktoken 0.9.0",
@@ -171,15 +171,16 @@
     {
       "id": "T3",
       "kind": "refactor-sensitive",
-      "files": 6,
-      "whole_file_bytes": 76098,
-      "bounded_range_bytes": 36311,
-      "whole_file_tokens": 17055,
-      "bounded_range_tokens": 8516,
+      "files": 10,
+      "whole_file_bytes": 123937,
+      "bounded_range_bytes": 47007,
+      "whole_file_tokens": 26678,
+      "bounded_range_tokens": 10843,
       "by_role_range_bytes": {
-        "contract": 6366,
+        "contract": 10295,
         "owner": 14639,
-        "test": 15306
+        "policy": 711,
+        "test": 21362
       },
       "scripted_route": [
         {
@@ -207,7 +208,7 @@
       "scripted_route_bytes": 58699,
       "avoidable_bytes_before_owner": 39787,
       "false_owner_candidates": [
-        "lib/widgets/software_learning/excel_upload_card.dart (as sole rubric owner; it is the unverified client copy)"
+        "Treating the two rubrics as copies that must match (would push toward trusting the browser rubric's cached total)"
       ],
       "map_section_owner": "not_measured",
       "map_section_contract": "not_measured",
@@ -280,6 +281,51 @@
           "range_bytes": 10446,
           "whole_tokens": 2562,
           "range_tokens": 2562
+        },
+        {
+          "path": "tool/software_learning/pilot_pipeline.py",
+          "role": "contract",
+          "ranges": [
+            "1-70"
+          ],
+          "whole_bytes": 2754,
+          "range_bytes": 2754,
+          "whole_tokens": 650,
+          "range_tokens": 650
+        },
+        {
+          "path": "data/software_learning/excel_budget_total_v1.json",
+          "role": "contract",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 1175,
+          "range_bytes": 1175,
+          "whole_tokens": 318,
+          "range_tokens": 318
+        },
+        {
+          "path": "docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md",
+          "role": "policy",
+          "ranges": [
+            "27-35"
+          ],
+          "whole_bytes": 24330,
+          "range_bytes": 711,
+          "whole_tokens": 4686,
+          "range_tokens": 140
+        },
+        {
+          "path": "test/widgets/software_learning/excel_upload_card_test.dart",
+          "role": "test",
+          "ranges": [
+            "187-312",
+            "372-409"
+          ],
+          "whole_bytes": 19580,
+          "range_bytes": 6056,
+          "whole_tokens": 3969,
+          "range_tokens": 1219
         }
       ]
     },
@@ -590,14 +636,15 @@
     {
       "id": "T7",
       "kind": "navigation-control",
-      "files": 8,
-      "whole_file_bytes": 103611,
-      "bounded_range_bytes": 20856,
-      "whole_file_tokens": 19869,
-      "bounded_range_tokens": 4442,
+      "files": 11,
+      "whole_file_bytes": 149023,
+      "bounded_range_bytes": 24986,
+      "whole_file_tokens": 29351,
+      "bounded_range_tokens": 5389,
       "by_role_range_bytes": {
-        "owner": 9934,
-        "test": 10922
+        "contract": 2807,
+        "owner": 13694,
+        "test": 8485
       },
       "scripted_route": [
         {
@@ -608,12 +655,12 @@
         {
           "step": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
           "bytes": 9816,
-          "outside_mvcs": 4694
+          "outside_mvcs": 1927
         },
         {
           "step": "lib/providers/pre_reader_provider.dart",
           "bytes": 3966,
-          "outside_mvcs": 1945
+          "outside_mvcs": 1528
         },
         {
           "step": "lib/services/pre_reader_audio_service.dart",
@@ -656,26 +703,26 @@
           "path": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
           "role": "owner",
           "ranges": [
-            "30-70",
-            "120-160",
-            "195-245"
+            "29-110",
+            "119-243"
           ],
           "whole_bytes": 9816,
-          "range_bytes": 5122,
+          "range_bytes": 7889,
           "whole_tokens": 2052,
-          "range_tokens": 1046
+          "range_tokens": 1673
         },
         {
           "path": "lib/providers/pre_reader_provider.dart",
           "role": "owner",
           "ranges": [
             "1-42",
-            "83-93"
+            "83-101",
+            "121-125"
           ],
           "whole_bytes": 3966,
-          "range_bytes": 2021,
+          "range_bytes": 2438,
           "whole_tokens": 908,
-          "range_tokens": 458
+          "range_tokens": 553
         },
         {
           "path": "lib/services/pre_reader_audio_service.dart",
@@ -711,17 +758,6 @@
           "range_tokens": 1132
         },
         {
-          "path": "test/widgets/pre_reader_home_navigation_test.dart",
-          "role": "test",
-          "ranges": [
-            "all"
-          ],
-          "whole_bytes": 4907,
-          "range_bytes": 4907,
-          "whole_tokens": 1043,
-          "range_tokens": 1043
-        },
-        {
           "path": "test/widgets/pre_reader_literacy_test.dart",
           "role": "test",
           "ranges": [
@@ -731,6 +767,50 @@
           "range_bytes": 615,
           "whole_tokens": 2736,
           "range_tokens": 128
+        },
+        {
+          "path": "lib/models/pre_reader_profile.dart",
+          "role": "contract",
+          "ranges": [
+            "12-23"
+          ],
+          "whole_bytes": 1622,
+          "range_bytes": 296,
+          "whole_tokens": 400,
+          "range_tokens": 73
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "role": "contract",
+          "ranges": [
+            "251-310"
+          ],
+          "whole_bytes": 29396,
+          "range_bytes": 2511,
+          "whole_tokens": 6187,
+          "range_tokens": 528
+        },
+        {
+          "path": "lib/screens/literacy/life_domains_screen.dart",
+          "role": "owner",
+          "ranges": [
+            "40-60"
+          ],
+          "whole_bytes": 7800,
+          "range_bytes": 576,
+          "whole_tokens": 1482,
+          "range_tokens": 129
+        },
+        {
+          "path": "test/widgets/phase_5_pwa_ux_test.dart",
+          "role": "test",
+          "ranges": [
+            "64-123"
+          ],
+          "whole_bytes": 11501,
+          "range_bytes": 2470,
+          "whole_tokens": 2456,
+          "range_tokens": 538
         }
       ]
     },

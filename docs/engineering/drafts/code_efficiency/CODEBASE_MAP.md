@@ -1,5 +1,7 @@
 # LearningApp Codebase Map (DRAFT — not active)
 
+> **Superseded.** This is the draft as scored in `AI_CONTEXT_BENCHMARK.md` §3. Its Excel, feature-control and pre-reader sections were corrected after the independent review (§6); the corrected, applied map is `docs/engineering/CODEBASE_MAP.md` in PR #273.
+
 Status: Phase 1 draft for owner review. Proposed home on acceptance: `docs/engineering/CODEBASE_MAP.md`.
 Pinned to `06221ed`. Read **one section**, not the whole file. Each section gives the owner, the contract that must not break, and the tests to run.
 Machine-checked references are the `map-ref` comments only (grammar: `drafts/code_efficiency/VERIFY_CODEBASE_MAP_DESIGN.md`). Prose paths are not checked.

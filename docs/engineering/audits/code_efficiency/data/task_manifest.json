@@ -2,7 +2,7 @@
   "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
   "frozen": "2026-11-14",
   "scope": "T1-T9 (owner approved T9 on 2026-11-14)",
-  "status": "frozen_pending_second_review_of_T3_T7",
+  "status": "frozen; T3 and T7 reconciled with independent second review 2026-11-14 (additions recorded, one T7 test removed with reason)",
   "inclusion_rule": "Plan v0.6 section 7.1: (1) minimum code/callsite identifying the edit owner; (2) each direct data/permission/trust/side-effect contract needed to validate the task; (3) named tests and necessary fixtures for that boundary; (4) required authoritative policy text even from a normally excluded document. Ranges are inclusive 1-based line numbers of the Git blob at the pin. 'all' means the whole file.",
   "baseline_route_rule": "Scripted no-map route: read whole files in the order of the v0.5 section 7.2 starting probe; when the probe does not contain the owner, the next hop is the single grep a developer would run for the task's key identifier, then the hit. owner_step is the 1-based step that first reads the correct owner. Avoidable bytes = bytes read before owner_step that fall outside this task's MVCS ranges.",
   "tasks": [
@@ -138,7 +138,7 @@
             "all"
           ],
           "role": "owner",
-          "why": "Authoritative server-side Budget rubric (isolated worker); accepts exact SUM range or each term once"
+          "why": "Upload checker for real uploads: ignores cached totals, uses server-issued inputs; returns unverified_checker_only (never awards)"
         },
         {
           "path": "lib/widgets/software_learning/excel_upload_card.dart",
@@ -148,7 +148,7 @@
             "445-526"
           ],
           "role": "owner",
-          "why": "Client unverified checker (SoftwareLearningWorkbookEvaluator) constants + evaluateWorkbook; _submitWorkbook trust guard (evidenceTrust == unverified_checker_only)"
+          "why": "Browser preview rubric (cached total vs fixed demo inputs) + constants; _submitWorkbook trust guard (evidenceTrust == unverified_checker_only)"
         },
         {
           "path": "lib/services/software_learning/demo_workbook_reader.dart",
@@ -172,7 +172,7 @@
             "all"
           ],
           "role": "test",
-          "why": "Authoritative rubric tests"
+          "why": "Upload checker tests (incl. spec parity)"
         },
         {
           "path": "test/services/software_learning/demo_workbook_evaluator_test.dart",
@@ -181,6 +181,39 @@
           ],
           "role": "test",
           "why": "Client checker tests"
+        },
+        {
+          "path": "tool/software_learning/pilot_pipeline.py",
+          "ranges": [
+            "1-70"
+          ],
+          "role": "contract",
+          "why": "Only caller of check_budget_total; enforces worker envelope (parsed_unverified, can_award_skill false). Added by second review"
+        },
+        {
+          "path": "data/software_learning/excel_budget_total_v1.json",
+          "ranges": [
+            "all"
+          ],
+          "role": "contract",
+          "why": "Declarative spec asserted by the checker tests. Added by second review"
+        },
+        {
+          "path": "docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md",
+          "ranges": [
+            "27-35"
+          ],
+          "role": "policy",
+          "why": "Real uploads must never use the browser rubric. Added by second review"
+        },
+        {
+          "path": "test/widgets/software_learning/excel_upload_card_test.dart",
+          "ranges": [
+            "187-312",
+            "372-409"
+          ],
+          "role": "test",
+          "why": "Card behaviour and trust-binding rejection. Added by second review"
         }
       ],
       "excluded_candidates": [
@@ -190,8 +223,8 @@
         }
       ],
       "findings": [
-        "v0.5 probe misses the authoritative Python rubric: a developer following it edits only the unverified client copy",
-        "Two rubric implementations (Dart demo, Python authoritative) must change together; their equivalence is not tested across languages: trust-twin parity gap"
+        "v0.5 probe misses the upload checker (tool/software_learning/excel_budget_total.py) and its trust gate (pilot_pipeline.py)",
+        "CORRECTED by second review: the two rubrics differ on purpose (browser: cached total vs fixed demo inputs; upload checker: ignores cache, server inputs). Neither is skill-awarding; 'change both together' and 'no parity test' were wrong framings. Both suites do check the same starter inputs."
       ],
       "baseline_route": [
         "lib/widgets/software_learning/excel_upload_card.dart",
@@ -201,8 +234,9 @@
       ],
       "owner_step": 4,
       "false_owner_candidates": [
-        "lib/widgets/software_learning/excel_upload_card.dart (as sole rubric owner; it is the unverified client copy)"
-      ]
+        "Treating the two rubrics as copies that must match (would push toward trusting the browser rubric's cached total)"
+      ],
+      "task_note": "Reconciled with independent review 2026-11-14: the two rubrics differ on purpose (release-gates policy); neither awards skills."
     },
     {
       "id": "T4",
@@ -438,21 +472,21 @@
         {
           "path": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
           "ranges": [
-            "30-70",
-            "120-160",
-            "195-245"
+            "29-110",
+            "119-243"
           ],
           "role": "owner",
-          "why": "tile routes; tap-only directory narration; tile tap -> context.push + speaker"
+          "why": "all 8 tile routes incl. /literacy; tap-only narration and tile tap/speaker (second review widened 30-70 to 29-110)"
         },
         {
           "path": "lib/providers/pre_reader_provider.dart",
           "ranges": [
             "1-42",
-            "83-93"
+            "83-101",
+            "121-125"
           ],
           "role": "owner",
-          "why": "audio service provider; auto-speak persistence and toggle"
+          "why": "audio service provider; auto-speak persistence/toggle; preReaderProvider definition (121-125 added by second review)"
         },
         {
           "path": "lib/services/pre_reader_audio_service.dart",
@@ -479,31 +513,60 @@
           "why": "playback cancellation/ordering"
         },
         {
-          "path": "test/widgets/pre_reader_home_navigation_test.dart",
-          "ranges": [
-            "all"
-          ],
-          "role": "test",
-          "why": "Learn/Library navigation into pre-reader"
-        },
-        {
           "path": "test/widgets/pre_reader_literacy_test.dart",
           "ranges": [
             "69-85"
           ],
           "role": "test",
           "why": "toggleAutoSpeak persistence"
+        },
+        {
+          "path": "lib/models/pre_reader_profile.dart",
+          "ranges": [
+            "12-23"
+          ],
+          "role": "contract",
+          "why": "autoSpeakScreens defaults to true. Added by second review"
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "ranges": [
+            "251-310"
+          ],
+          "role": "contract",
+          "why": "Query parsing for grid routes. Added by second review"
+        },
+        {
+          "path": "lib/screens/literacy/life_domains_screen.dart",
+          "ranges": [
+            "40-60"
+          ],
+          "role": "owner",
+          "why": "Auto-speak consumer for 4 of 8 tiles. Added by second review"
+        },
+        {
+          "path": "test/widgets/phase_5_pwa_ux_test.dart",
+          "ranges": [
+            "64-123"
+          ],
+          "role": "test",
+          "why": "Only test of grid tiles and speakers. Added by second review"
         }
       ],
       "excluded_candidates": [
         {
           "path": "lib/services/audio_service.dart",
           "why": "global narration engine; out of scope per task text"
+        },
+        {
+          "path": "test/widgets/pre_reader_home_navigation_test.dart",
+          "why": "Removed on second review: exercises Learn's banner/explore action, not the Library grid"
         }
       ],
       "findings": [
         "The grid never reads autoSpeakScreens; auto-speak is consumed by routed screens (/milestones, /domains): the v0.5 probe chain misses the consumer",
-        "Neither v0.5-named test exercises auto-speak; pre_reader_literacy_test.dart does"
+        "Neither v0.5-named test exercises auto-speak; pre_reader_literacy_test.dart does",
+        "Second review: the grid calls PreReaderAudioService.speak() without the learner's track, so it uses the default adult track and rate even for a youth track (pre_reader_picture_grid_widget.dart 156, 240; pre_reader_audio_service.dart 22). Possible bug, not fixed by this audit"
       ],
       "baseline_route": [
         "lib/screens/library/library_screen.dart",

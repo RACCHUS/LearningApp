@@ -5,7 +5,7 @@
 **Branch:** `chore/code-efficiency-audit-baseline` (evidence only).
 **Tooling:** git 2.x (exact version in `data/inventory.json`), Python 3.13.4; `scripts/phase0_inventory.py`.
 **Byte source:** Git blob sizes at the pin. Working-tree sizes are not used (`core.autocrlf=true`).
-**Status:** inventory, top-25, churn, instruction surface and the **T1–T9 deterministic MVCS baseline measured** (see `AI_CONTEXT_BENCHMARK.md`). Clone scan, dead-code candidate scan, Phase 1 drafts and the map-condition score are done. Second-reviewer check of T3/T7 and owner decisions pending. Zero live-model calls.
+**Status:** inventory, top-25, churn, instruction surface and the **T1–T9 deterministic MVCS baseline measured** (see `AI_CONTEXT_BENCHMARK.md`). Clone scan, dead-code candidate scan, Phase 1 drafts, the map-condition score and the independent T3/T7 review are done; owner decisions pending. Zero live-model calls.
 
 ## 1. Re-pin delta
 
@@ -117,6 +117,6 @@ T9 was approved by the owner before measurement. Frozen manifest: `data/task_man
 
 ## 10. Next steps
 
-1. Second-reviewer check of the T3 and T7 ranges and of the map scoring (human or independent reviewer).
-2. Owner decision on Phase 1 drafts in `docs/engineering/drafts/code_efficiency/` (map, `AGENTS.md` and `Main.instructions.md` diffs, validator design, PR-template checkbox).
-3. Owner decision on the stop recommendation (`AI_CONTEXT_BENCHMARK.md` §6) and on the housekeeping/test follow-ups.
+1. Done: independent second review of T3/T7 and the map scoring, reconciled in `AI_CONTEXT_BENCHMARK.md` §6.
+2. Done (owner-approved): map and instruction diffs applied in PR #273, corrected after the review; two missing tests added in PR #274. The proposed Dart/Python Excel parity test was dropped because its premise was wrong.
+3. Open owner decisions: the stop recommendation (`AI_CONTEXT_BENCHMARK.md` §4), validator build and CI activation, PR-template checkbox, dead-code candidates (§9), and the T7 pre-reader track finding.
