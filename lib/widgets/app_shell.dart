@@ -151,7 +151,12 @@ class _AppShellState extends State<AppShell> {
               ],
             ),
             const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: widget.child),
+            // The routed page is its own semantics container. Its route's
+            // modal barrier carries BlockSemantics, which otherwise drops
+            // everything painted before it - i.e. this whole rail - from
+            // the accessibility tree (screen readers could not reach
+            // Learn / Library / Progress on tablet and desktop widths).
+            Expanded(child: Semantics(container: true, child: widget.child)),
           ],
         ),
       );
