@@ -217,7 +217,7 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 - Five `KNOWN_NOISE` test files from §0C.4 and the `ScopeResolver` test-fake type-name check.
 - Python tooling coverage (needs a pinned `coverage` package) and a Supabase security/contract matrix document (§12).
 - Two SQL-level mutation seeds (cross-learner attempt read; protected keys in a simulation response) that need the DB job.
-- Add tests for the least-covered critical files from the first audit (assessment screens, `content_loading_service.dart`, `assessment_provider.dart`, the sync services, `auth_provider.dart`); offline/sync/storage is the weakest area.
+- Least-covered critical files from the first audit: assessment screen and result view, `assessment_provider.dart`, `skill_assessment_service.dart`, `content_loading_service.dart` and `progress_sync_service.dart` now have behavior tests (with two fixes: a failed submit is now shown to the learner; a grading response without `is_verified` is no longer treated as verified). **Still open:** `learning_context_sync_service.dart` (needs Hive-box conflict fixtures) and `auth_provider.dart`.
 - Review third-party Action pinning and deprecated Node runtimes (§9 E6).
 - Verify branch-protection required-check settings through an authorized admin view (connector read returned 403).
 
