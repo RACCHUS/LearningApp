@@ -5,6 +5,12 @@
 - [ ] `flutter analyze` (or equivalent) passed
 - [ ] Relevant tests passed
 
+## Test Quality ([policy](docs/testing/TEST_QUALITY_POLICY.md))
+- [ ] Changed behavior is covered by a test that **fails on the old implementation**
+- [ ] Risk-area evidence from policy §3 is included (assessment, auth/RLS, feature controls, import, migrations, UI/a11y, sync, privacy)
+- [ ] No test was skipped, loosened, deleted, renamed or moved out of discovery without a stated replacement; any new skip is registered (§4)
+- [ ] No new nondeterminism, real network calls, secrets, shared mutable state or sleeps in tests
+
 ## UI / Design Checklist
 - [ ] New UI color usage prefers theme tokens (`colorScheme` / `SemanticColors`) over hardcoded `Colors.*`
 - [ ] Any new custom palette mappings are centralized (no duplicated color maps)

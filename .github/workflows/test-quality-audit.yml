@@ -1,0 +1,69 @@
+name: Test Quality Audit
+
+# Plan PR-9 (§11, §12): a bounded weekly audit, not a required check.
+# - Dart line coverage by risk area (report-only, no percentage gate).
+# - The full suite's timing/skip report, kept as a dated artifact so test
+#   runtime history survives beyond GitHub's log retention.
+# No secrets, no services, no production access.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-quality-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Coverage and test-runtime audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cp .env.example .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+
+      - name: Run the full Flutter suite with coverage
+        run: |
+          mkdir -p build/reports
+          flutter test --concurrency 3 --coverage --reporter compact \
+            --file-reporter json:build/reports/flutter-tests.json
+
+      - name: Summarize timing and inventory
+        if: ${{ always() }}
+        run: python3 tool/ci/summarize_flutter_test_report.py build/reports/flutter-tests.json --label "Weekly audit (with coverage)"
+
+      - name: Summarize coverage by risk area (report-only)
+        if: ${{ always() }}
+        run: python3 tool/ci/summarize_coverage.py coverage/lcov.info
+
+      - name: Check skipped-test registry
+        run: python3 tool/ci/check_test_skips.py build/reports/flutter-tests.json
+
+      - name: Keep coverage and test report for trend history
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-quality-audit-${{ github.sha }}
+          path: |
+            coverage/lcov.info
+            build/reports/flutter-tests.json
+          retention-days: 90
+          if-no-files-found: warn
