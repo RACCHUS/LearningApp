@@ -21,7 +21,9 @@ concurrency:
 
 jobs:
   verify:
-    name: Analyze, test, and build
+    # Everything except the web builds. Not itself a required check: the
+    # required `Analyze, test, and build` is the fail-closed gate job below.
+    name: Analyze and test
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -363,6 +365,33 @@ jobs:
           test/services/assessment/reference_practice_json_load_probe_test.dart
           --reporter expanded
 
+      - name: Test the required-gate logic
+        run: python3 -m unittest discover -s tool/tests -p 'test_check_required_results.py' -v
+
+  web-builds:
+    # Runs in parallel with `verify` on its own runner (plan §9 E2). The two
+    # variants stay sequential here: they share this checkout's .dart_tool.
+    name: Build web releases (standard and simulation preview)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cp .env.example .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+
       - name: Build web release
         run: flutter build web --release
 
@@ -371,6 +400,27 @@ jobs:
 
       - name: Check Word Learning PWA spelling asset size
         run: python3 tool/measure_word_lexicon.py
+
+  required-gate:
+    # THE required check. Same exact name as before the split, so branch
+    # protection is unchanged. Always runs, and fails unless every needed job
+    # succeeded: skipped, cancelled or missing jobs fail it (plan §9 E1).
+    name: Analyze, test, and build
+    if: ${{ always() }}
+    needs: [verify, web-builds]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          sparse-checkout: tool/ci
+
+      - name: Reject failed, cancelled, skipped or missing jobs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python3 tool/ci/check_required_results.py verify web-builds
 
   early-feedback:
     # Plan PR-8 (§9 E5): fast, change-aware first signal on pull requests.

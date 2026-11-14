@@ -11,7 +11,9 @@ The goal is not more tests or a higher percentage. It is that **a green PR is tr
 
 | Check (exact name) | Workflow | Required | What it proves |
 |---|---|---|---|
-| `Analyze, test, and build` | `flutter-ci.yml` | **Yes** | Analysis, every Python/Dart tool suite, schema/registry/manifest contracts, full Flutter suite (`--concurrency 3`), log-noise and skip ratchets, both web release builds |
+| `Analyze, test, and build` | `flutter-ci.yml` | **Yes** | A fail-closed gate job (`tool/ci/check_required_results.py`): passes only if both jobs below succeeded; skipped, cancelled or missing counts as failure |
+| ↳ `Analyze and test` | `flutter-ci.yml` | via gate | Analysis, every Python/Dart tool suite, schema/registry/manifest contracts, full Flutter suite (`--concurrency 3`), log-noise and skip ratchets |
+| ↳ `Build web releases (standard and simulation preview)` | `flutter-ci.yml` | via gate | Both web release builds (sequential, own runner, in parallel with the job above) and the spelling-asset size check |
 | `Verify clean Supabase migrations and complete official taxonomy ingestion` | `flutter-ci.yml` | **Yes** | Incremental upgrade, hosted-ledger backfill, clean slate, post-ingestion pgTAP (parity enforced across all four), storage/broker races, local lesson import/readback, `db lint` |
 | `Validate official taxonomy sources` | `taxonomy-official-data.yml` | **Yes** | Pinned official source files |
 | `Early feedback (changed files)` | `flutter-ci.yml` | No | Fast first signal on checks related to the PR diff; never replaces a required check |
@@ -22,7 +24,7 @@ The goal is not more tests or a higher percentage. It is that **a green PR is tr
 
 Rules:
 
-- **Never rename** a required check, add `paths` filters to a required workflow, or put `continue-on-error` on required work. If a required job is ever split, its replacement must be one always-running, fail-closed job **with the same name** (plan §9 E1).
+- **Never rename** a required check, add `paths` filters to a required workflow, or put `continue-on-error` on required work. `Analyze, test, and build` is now a gate job: any job added behind it must be listed in its `needs:` **and** in the gate script's arguments, and no other job may reuse that name (plan §9 E1).
 - Superseded runs are cancelled on PR branches only; every push to `main` keeps its own run.
 - An advisory job becomes required only after a sustained stable record (at least 30 consecutive non-cancelled green runs over at least 14 days, with no reruns needed to get there) and maintainer sign-off. Branch protection on `main` requires up-to-date branches and applies to admins, so a flaky required check blocks every merge.
 
