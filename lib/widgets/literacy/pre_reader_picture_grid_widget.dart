@@ -120,7 +120,8 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final audio = ref.read(preReaderAudioServiceProvider);
+    // Speak through the notifier so the learner's track and speech rate apply.
+    final audio = ref.read(preReaderProvider.notifier);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,7 +195,8 @@ class PreReaderPictureGridWidget extends ConsumerWidget {
     ColorScheme colorScheme,
   ) {
     final isDark = theme.brightness == Brightness.dark;
-    final audio = ref.read(preReaderAudioServiceProvider);
+    // Speak through the notifier so the learner's track and speech rate apply.
+    final audio = ref.read(preReaderProvider.notifier);
 
     return Material(
       color: Colors.transparent,
