@@ -39,7 +39,7 @@ jobs:
       EXPECTED_PROJECT_REF: xzvkdwebtbxlrxagtzlv
     steps:
       - name: Checkout full audited migration history
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
@@ -55,7 +55,7 @@ jobs:
           }
 
       - name: Install pinned Flutter and Dart
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: '3.47.7'
           channel: stable
@@ -65,7 +65,7 @@ jobs:
         run: flutter pub get
 
       - name: Install reviewed, pinned Supabase CLI
-        uses: supabase/setup-cli@v3
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.67.1
 
@@ -88,7 +88,7 @@ jobs:
 
       - name: Upload non-secret, reviewed dry-run report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: analytics-guarded-dry-run-report
           path: build/analytics_preflight_reports/
