@@ -7,6 +7,7 @@ import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 import 'package:learning_pwa/widgets/account_actions.dart';
+import 'package:learning_pwa/widgets/daily_goal_ring.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 
 import 'package:learning_pwa/models/learning_context.dart';
@@ -118,8 +119,13 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               data: (progress) => Column(
                 children: [
                   _CompletionSection(progress: progress),
-                  _ActivitySection(progress: progress),
-                  if (!motivation.isFullyQuiet)
+                  _ActivitySection(
+                    progress: progress,
+                    showDailyGoal: motivation.dailyGoal,
+                  ),
+                  // The daily goal lives in Activity (UI spec section 10), so
+                  // Motivation appears only for streaks, XP or levels.
+                  if (motivation.streaks || motivation.xp || motivation.levels)
                     _MotivationSection(
                       progress: progress,
                       preferences: motivation,
@@ -698,7 +704,10 @@ class _CompletionSection extends StatelessWidget {
 class _ActivitySection extends StatelessWidget {
   final DashboardProgress progress;
 
-  const _ActivitySection({required this.progress});
+  /// Mirrors the "Daily goal" motivation setting; hidden when it is off.
+  final bool showDailyGoal;
+
+  const _ActivitySection({required this.progress, this.showDailyGoal = false});
 
   @override
   Widget build(BuildContext context) {
@@ -706,6 +715,11 @@ class _ActivitySection extends StatelessWidget {
       title: 'Activity',
       subtitle: 'Time and sessions',
       children: [
+        if (showDailyGoal)
+          const Padding(
+            padding: EdgeInsets.only(bottom: DesignTokens.space3),
+            child: Center(child: DailyGoalRingLarge(size: 104)),
+          ),
         _MetricRow(label: 'Study time', value: progress.formattedTime),
         _MetricRow(
           label: 'Study set sessions',
@@ -739,8 +753,15 @@ class _MotivationSection extends StatelessWidget {
           _MetricRow(label: 'Current streak', value: '${progress.currentStreak}'),
           _MetricRow(label: 'Longest streak', value: '${progress.longestStreak}'),
         ],
-        if (!preferences.streaks && !preferences.xp && !preferences.levels)
-          const Text('Nothing enabled.'),
+        // XP is not awarded anywhere in the app yet, so showing a level or
+        // XP total would always read zero. Say so instead of faking it.
+        if (preferences.xp || preferences.levels)
+          Text(
+            'XP and levels are not tracked yet.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
       ],
     );
   }
