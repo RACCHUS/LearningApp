@@ -77,7 +77,8 @@ A passing test that logs `MissingPluginException`, `MissingStubError`, `LateInit
 - **Report-only, no percentage gate.** The weekly audit publishes line coverage per critical area (`tool/ci/summarize_coverage.py`) and the least-covered critical files. Generated code (`*.g.dart`, `*.freezed.dart`, `*.mocks.dart`, generated l10n) is excluded.
 - Use it to find untested critical code, then write tests that would fail on a real bug. Coverage never substitutes for functional review, and test counts are not a quality measure.
 - Numerical floors may be introduced later only for critical areas, after a baseline and a false-positive review, and only by changing this policy.
-- pgTAP assertion counts are not SQL coverage; database security is judged by the scenario and role matrix above.
+- Python tooling coverage by subsystem is in the same weekly audit (`tool/ci/summarize_python_coverage.py`, pins in `requirements-python-coverage.txt`).
+- pgTAP assertion counts are not SQL coverage. Database security evidence per area is in [DATABASE_SECURITY_MATRIX.md](DATABASE_SECURITY_MATRIX.md), generated from `supabase/tests/` by `tool/ci/pgtap_security_matrix.py --write`; CI fails if it is stale, so regenerate it whenever a pgTAP file changes.
 
 ## 8. Performance and timing
 

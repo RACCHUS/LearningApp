@@ -1,0 +1,8 @@
+# Weekly Python tooling coverage audit (test-quality-audit.yml, plan §12).
+# The pinned CI test set plus the coverage tool and the one suite-specific
+# extra (openpyxl for the BLS/IPEDS adapters). Full transitive pins; the
+# workflow installs into an isolated venv and runs `pip check`.
+-r requirements-ci-tests.txt
+coverage==7.17.0
+openpyxl==3.1.5
+et_xmlfile==2.0.0

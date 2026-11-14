@@ -1,7 +1,8 @@
 name: Test Quality Audit
 
 # Plan PR-9 (§11, §12): a bounded weekly audit, not a required check.
-# - Dart line coverage by risk area (report-only, no percentage gate).
+# - Dart line coverage by risk area and Python tooling coverage by
+#   subsystem (report-only, no percentage gate).
 # - The full suite's timing/skip report, kept as a dated artifact so test
 #   runtime history survives beyond GitHub's log retention.
 # No secrets, no services, no production access.
@@ -57,6 +58,19 @@ jobs:
       - name: Check skipped-test registry
         run: python3 tool/ci/check_test_skips.py build/reports/flutter-tests.json
 
+      - name: Python tooling coverage by subsystem (report-only)
+        if: ${{ always() }}
+        # Every tool/tests suite except the browser smoke (it needs a served
+        # web build); pytest also collects the unittest suites.
+        run: |
+          venv="$RUNNER_TEMP/py-coverage-venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check -r requirements-python-coverage.txt
+          "$venv/bin/python" -m pip check
+          PYTHONPATH=. "$venv/bin/python" -m coverage run --source=tool --data-file=build/reports/.coverage             -m pytest tool/tests --ignore=tool/tests/test_browser_smoke.py -q -p no:cacheprovider
+          "$venv/bin/python" -m coverage json --data-file=build/reports/.coverage --omit='tool/tests/*'             -o build/reports/python-coverage.json
+          python3 tool/ci/summarize_python_coverage.py build/reports/python-coverage.json
+
       - name: Keep coverage and test report for trend history
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -65,5 +79,6 @@ jobs:
           path: |
             coverage/lcov.info
             build/reports/flutter-tests.json
+            build/reports/python-coverage.json
           retention-days: 90
           if-no-files-found: warn
