@@ -472,6 +472,13 @@ jobs:
       - name: Test the early feedback planner
         run: python3 -m unittest discover -s tool/tests -p 'test_early_feedback.py' -v
 
+      # Advisory (TEST_QUALITY_POLICY.md): paths and line ranges in the
+      # codebase map only; promote after the stability bar if wanted.
+      - name: Check codebase map references
+        run: |
+          python3 tool/verify_codebase_map.py
+          python3 -m unittest discover -s tool/tests -p 'test_verify_codebase_map.py' -v
+
   browser-smoke:
     # Plan PR-7 (§10 F): real-browser guest journeys against the release web
     # build. Advisory for now (not a required check); promote only after a

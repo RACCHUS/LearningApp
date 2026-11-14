@@ -4,6 +4,7 @@
 ## Validation
 - [ ] `flutter analyze` (or equivalent) passed
 - [ ] Relevant tests passed
+- [ ] If this PR moves, renames or changes the owner, contract or tests of a feature in [`docs/engineering/CODEBASE_MAP.md`](docs/engineering/CODEBASE_MAP.md), that section is updated (or N/A)
 
 ## Test Quality ([policy](docs/testing/TEST_QUALITY_POLICY.md))
 - [ ] Changed behavior is covered by a test that **fails on the old implementation**
