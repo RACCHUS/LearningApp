@@ -11,7 +11,7 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final _logger = AppLogger('AuthNotifier');
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
   late final StreamSubscription _authStateSubscription;
 
   bool get isAnonymousSession =>
@@ -19,7 +19,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get hasAuthenticatedSession => _supabase.auth.currentUser != null;
 
-  AuthNotifier() : super(AuthInitial()) {
+  /// [client] is for tests; the app uses the global Supabase client.
+  AuthNotifier({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client,
+        super(AuthInitial()) {
     final session = _supabase.auth.currentSession;
     if (session != null) {
       _upsertUser(session.user);

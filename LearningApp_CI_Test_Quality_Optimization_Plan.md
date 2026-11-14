@@ -212,14 +212,14 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 
 **Open follow-ups after PR-9** (not done; each is its own reviewable change):
 
-- Promote `Browser smoke (Chromium guest journeys)` to required after a sustained stable record (maintainer decision).
+- Promote `Browser smoke (Chromium guest journeys)` to required once it meets the policy bar (≥30 consecutive non-cancelled green runs over ≥14 days, no reruns needed). Record on 2026-11-14: 12/12 green in ~1 day; not yet met. Promotion is a branch-protection change the maintainer makes.
 - Browser journey 2 (signed-in create → reload → readback) needs a local-backend browser harness; covered today at the service layer only.
-- ~~Five `KNOWN_NOISE` test files from §0C.4~~: fixed; `KNOWN_NOISE` is now empty and the full suite logs no setup gaps. **Still open:** the `ScopeResolver` test-fake type-name check.
+- ~~Five `KNOWN_NOISE` test files from §0C.4~~: fixed; `KNOWN_NOISE` is now empty and the full suite logs no setup gaps. The `ScopeResolver` test-fake type-name bypass is removed; non-UUID roots never query, whatever the client (regression test added).
 - Python tooling coverage (needs a pinned `coverage` package) and a Supabase security/contract matrix document (§12).
 - Two SQL-level mutation seeds (cross-learner attempt read; protected keys in a simulation response) that need the DB job.
-- Least-covered critical files from the first audit: assessment screen and result view, `assessment_provider.dart`, `skill_assessment_service.dart`, `content_loading_service.dart` and `progress_sync_service.dart` now have behavior tests (with two fixes: a failed submit is now shown to the learner; a grading response without `is_verified` is no longer treated as verified). **Still open:** `learning_context_sync_service.dart` (needs Hive-box conflict fixtures) and `auth_provider.dart`.
+- Least-covered critical files from the first audit: assessment screen and result view, `assessment_provider.dart`, `skill_assessment_service.dart`, `content_loading_service.dart` and `progress_sync_service.dart` now have behavior tests (with two fixes: a failed submit is now shown to the learner; a grading response without `is_verified` is no longer treated as verified). `learning_context_sync_service.dart` (8 tests: push/pull, newer-side-wins re-keying with pointer migration, per-user filtering, failure leaves local data) and `auth_provider.dart` (10 tests; `AuthNotifier` gained an optional client parameter) are now covered too.
 - Review third-party Action pinning and deprecated Node runtimes (§9 E6).
-- Verify branch-protection required-check settings through an authorized admin view (connector read returned 403).
+- ~~Verify branch-protection settings~~: read via the GitHub API on 2026-11-14: the three required checks are exactly `Analyze, test, and build`, `Verify clean Supabase migrations and complete official taxonomy ingestion` and `Validate official taxonomy sources`; branches must be up to date (`strict`); admins are included.
 
 ### 0C.4 PR-4 split and PR-4a results (log triage, Q-07; first Q-04 fixes)
 
