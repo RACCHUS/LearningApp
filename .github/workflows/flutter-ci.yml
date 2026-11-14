@@ -359,6 +359,57 @@ jobs:
       - name: Check Word Learning PWA spelling asset size
         run: python3 tool/measure_word_lexicon.py
 
+  browser-smoke:
+    # Plan PR-7 (§10 F): real-browser guest journeys against the release web
+    # build. Advisory for now (not a required check); promote only after a
+    # sustained stable record. Placeholder backend from .env.example; no
+    # secrets, no accounts, no production services.
+    name: Browser smoke (Chromium guest journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Build web release (placeholder backend)
+        run: |
+          cp .env.example .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+          flutter build web --release
+
+      - name: Install pinned Playwright and Chromium
+        run: |
+          venv="$RUNNER_TEMP/e2e-venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check -r requirements-e2e.txt
+          "$venv/bin/python" -m pip check
+          "$venv/bin/python" -m playwright install --with-deps chromium
+          echo "E2E_PYTHON=$venv/bin/python" >> "$GITHUB_ENV"
+
+      - name: Run guest browser smoke journeys
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory build/web > build/e2e-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/ > /dev/null && break; sleep 1; done
+          E2E_BASE_URL=http://127.0.0.1:8765/ E2E_ARTIFACT_DIR=build/e2e-artifacts             "$E2E_PYTHON" -m pytest tool/tests/test_browser_smoke.py -v -p no:cacheprovider
+
+      - name: Upload failure screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-failures
+          path: build/e2e-artifacts/
+          retention-days: 7
+          if-no-files-found: ignore
+
   verify-database:
     name: Verify clean Supabase migrations and complete official taxonomy ingestion
     runs-on: ubuntu-latest

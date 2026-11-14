@@ -1,0 +1,14 @@
+# Browser smoke tests (plan PR-7): tool/tests/test_browser_smoke.py
+# Exact pins for the full transitive set; CI installs into an isolated venv
+# and runs `pip check`. Chromium comes from `playwright install`, which is
+# pinned by the playwright version below.
+greenlet==3.5.6
+iniconfig==2.3.1
+packaging==26.3
+playwright==1.64.1
+pluggy==1.7.0
+pyee==14.0.0
+Pygments==2.21.0
+pytest==9.0.2
+typing_extensions==4.16.0
+colorama==0.4.6 ; sys_platform == "win32"
