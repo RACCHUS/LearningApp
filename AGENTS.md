@@ -61,6 +61,13 @@ When tasked with debugging UI issues, testing new web features, or verifying res
 - Current documentation lives in `README.md`, the architecture documents, and organized `docs/` sections. `docs/history/` and `docs/history/LEGACY_SDD.md` are archival—not current behavior or policy.
 - Do not commit generated Flutter build output, local Supabase CLI metadata (`supabase/.temp/`), or unused assets. Confirm references and CI coverage before removing source files.
 
+## 🧭 Finding Code and Reading Efficiently
+
+- Start with the relevant section of [docs/engineering/CODEBASE_MAP.md](docs/engineering/CODEBASE_MAP.md): owner, contract and tests per feature. Read that section, not the whole map.
+- Read bounded line ranges of large files. Do not preload root master plans, `supabase/migrations/`, `content/`, `data/`, generated code or `docs/history/`.
+- Exceptions: open them when the task is in that domain (UI rules: `UI_ARCHITECTURE_LOCKED.md`; schema, RLS, grading or flag gates: the relevant migrations; curriculum: `content/`). A default exclusion is never a ban.
+- If you move or rename a map owner, update the map section in the same PR.
+
 ## 📋 Core Architectural Rules for Agents
 
 - **Navigation Baseline**: Three primary destinations: **Learn**, **Library**, and **Progress**. See [UI_ARCHITECTURE_LOCKED.md](UI_ARCHITECTURE_LOCKED.md).
