@@ -1,0 +1,169 @@
+{
+  "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+  "pin_committer_time": "2026-11-14T09:54:13-05:00",
+  "pin_committer_time_utc": "2026-11-14T14:54:13+00:00",
+  "git_version": "git version 2.49.0.windows.1",
+  "python_version": "3.13.4",
+  "measurement": "Git blob bytes at pin (git ls-tree -l); lines = str.splitlines()",
+  "tree_entries_files_and_dirs": 1995,
+  "dart_all": {
+    "files": 1162,
+    "bytes": 9625967
+  },
+  "dart_lib": {
+    "files": 697,
+    "bytes": 6284136
+  },
+  "dart_test": {
+    "files": 389,
+    "bytes": 2753135
+  },
+  "python_all": {
+    "files": 141,
+    "bytes": 1596357
+  },
+  "python_tool": {
+    "files": 141,
+    "bytes": 1596357
+  },
+  "root_markdown": {
+    "files": 14,
+    "bytes": 1282238,
+    "by_file": [
+      {
+        "path": "LEARNINGAPP_CONTENT_INTELLIGENCE_AND_GAP_RESCUE_MASTER_PLAN_V2_6_2026-11-11.md",
+        "bytes": 405303
+      },
+      {
+        "path": "LEARNINGAPP_MARKETING_ADVERTISING_FINANCIAL_SUSTAINABILITY_MASTER_PLAN.md",
+        "bytes": 165380
+      },
+      {
+        "path": "LearningApp_CI_Test_Quality_Optimization_Plan.md",
+        "bytes": 131725
+      },
+      {
+        "path": "LEARNINGAPP_ANALYTICS_IMPLEMENTATION_PLAN.md",
+        "bytes": 87172
+      },
+      {
+        "path": "LearningApp_Codebase_Simplification_AI_Context_Optimization_Plan_v0_5.md",
+        "bytes": 84082
+      },
+      {
+        "path": "UI_ARCHITECTURE_LOCKED.md",
+        "bytes": 79012
+      },
+      {
+        "path": "LEARNINGAPP_TEL_V0_5_MASTER_IMPLEMENTATION_PLAN.md",
+        "bytes": 73678
+      },
+      {
+        "path": "LEARNING_ARCHITECTURE_V2.md",
+        "bytes": 65814
+      },
+      {
+        "path": "CANONICAL_TAXONOMY_ARCHITECTURE.md",
+        "bytes": 52447
+      },
+      {
+        "path": "ARCHITECTURE_REVIEW.md",
+        "bytes": 50458
+      },
+      {
+        "path": "SOFTWARE_LEARNING_PLAN.md",
+        "bytes": 37183
+      },
+      {
+        "path": "LearningApp_CLEP_Content_Plan_for_Antigravity.md",
+        "bytes": 28116
+      },
+      {
+        "path": "README.md",
+        "bytes": 14605
+      },
+      {
+        "path": "AGENTS.md",
+        "bytes": 7263
+      }
+    ]
+  },
+  "instruction_surface": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 7263,
+      "lines": 90
+    },
+    {
+      "path": ".agents/rules/mcp-tooling.md",
+      "bytes": 1409,
+      "lines": 20
+    },
+    {
+      "path": ".github/instructions/Main.instructions.md",
+      "bytes": 1138,
+      "lines": 12
+    },
+    {
+      "path": ".github/agents/lesson-generator.agent.md",
+      "bytes": 4653,
+      "lines": 106
+    },
+    {
+      "path": ".github/prompts/generate-lesson.prompt.md",
+      "bytes": 384,
+      "lines": 11
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "bytes": 1987,
+      "lines": 29
+    }
+  ],
+  "empty_blobs_in_lib_tool_test": [
+    "lib/services/audio_lesson/audio_lesson_controller.dart",
+    "lib/widgets/progress/recent_activity_list.dart"
+  ],
+  "class_totals_lib_tool": {
+    "authored-application": {
+      "files": 681,
+      "bytes": 6038640
+    },
+    "data-in-lib": {
+      "files": 5,
+      "bytes": 143008
+    },
+    "generated": {
+      "files": 9,
+      "bytes": 27610
+    },
+    "test": {
+      "files": 63,
+      "bytes": 396983
+    },
+    "protected-operations": {
+      "files": 12,
+      "bytes": 275667
+    },
+    "documentation": {
+      "files": 2,
+      "bytes": 13886
+    },
+    "authored-support-tool": {
+      "files": 81,
+      "bytes": 611150
+    },
+    "curriculum-as-code": {
+      "files": 21,
+      "bytes": 768851
+    }
+  },
+  "churn": {
+    "window_start_utc": "2026-08-16T14:54:13Z",
+    "window_end_utc": "2026-11-14T14:54:13Z",
+    "eligible_files": 755,
+    "files_with_churn": 621,
+    "renames": "git log --follow per single path; numstat counted on whatever path the commit touched",
+    "binary": "numstat '-' counted as 0 lines and flagged binary_seen"
+  }
+}
