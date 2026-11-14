@@ -9,6 +9,10 @@ import '../test_helpers/platform_channel_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // One working fake TTS engine for the whole file. Creating the orchestrator
+  // starts an asynchronous voice lookup; a per-test fake could be removed
+  // before that call lands, which logged MissingPluginException at random.
+  setUpAll(installFakeTtsChannel);
 
   group('AudioLessonSettingsNotifier', () {
     late ProviderContainer container;
@@ -16,7 +20,6 @@ void main() {
     late Directory testDir;
 
     setUp(() async {
-      installFakeTtsChannel();
       // Create temporary directory for Hive
       testDir = await Directory.systemTemp.createTemp('audio_test_');
       
