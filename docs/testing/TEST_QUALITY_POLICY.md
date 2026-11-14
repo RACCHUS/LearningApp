@@ -68,7 +68,7 @@ Never quarantine a test protecting answer correctness, grading, auth/RLS, privac
 
 ## 6. Log noise
 
-A passing test that logs `MissingPluginException`, `MissingStubError`, `LateInitializationError` or an uninitialized-Supabase error usually tested an error path by accident. `tool/ci/check_test_log_noise.py` fails on new noise; `KNOWN_NOISE` lists the remaining follow-ups and may only shrink.
+A passing test that logs `MissingPluginException`, `MissingStubError`, `LateInitializationError` or an uninitialized-Supabase error usually tested an error path by accident. `tool/ci/check_test_log_noise.py` fails on any such message. `KNOWN_NOISE` is empty: fix new noise rather than listing it. For offline behavior, use `test/test_helpers/offline_supabase_client.dart`; for text-to-speech, `installFakeTtsChannel`.
 
 ## 7. Coverage
 

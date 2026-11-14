@@ -43,31 +43,7 @@ SETUP_GAP_PATTERNS: dict[str, re.Pattern[str]] = {
 
 # Test files allowed to log setup-gap messages for now, with the reason and
 # the follow-up. Remove an entry when the file is fixed (stale entries fail).
-KNOWN_NOISE: dict[str, str] = {
-    "test/audio_lesson_orchestrator_test.dart": (
-        "Tests rely on TTS failing instantly: with a working fake engine, playback runs at "
-        "real pacing and the suite times out. Needs a controllable clock / engine before the "
-        "playback assertions can test the happy path (plan PR-4a follow-up)."
-    ),
-    "test/widgets/community/teach_this_topic_and_bookmarks_test.dart": (
-        "Widgets construct CommunityQaService with the global client, which is uninitialized in "
-        "tests, so 'offline' behavior is really 'misconfigured'. Needs a provider override with an "
-        "offline client, as done for community_qa_service_test (plan PR-4a follow-up)."
-    ),
-    "test/widgets/study/in_context_qa_integration_test.dart": (
-        "Same as teach_this_topic_and_bookmarks_test: CommunityQaService reaches an uninitialized "
-        "Supabase.instance inside the widget tree (plan PR-4a follow-up)."
-    ),
-    "test/widgets/library_v2_test.dart": (
-        "LibraryScreen catalog providers reach an uninitialized Supabase.instance; override them "
-        "as library_create_chooser_test now does (plan PR-4a follow-up)."
-    ),
-    "test/widgets/overview/overview_tour_screen_test.dart": (
-        "OverviewTourScreen fetches the target version through an uninitialized Supabase "
-        "client; the test covers the fallback only. Needs a LearningTargetService override "
-        "(plan PR-4a follow-up)."
-    ),
-}
+KNOWN_NOISE: dict[str, str] = {}
 
 
 class ReportError(Exception):

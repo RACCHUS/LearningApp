@@ -10,6 +10,10 @@ import 'package:learning_pwa/screens/study/lesson_screen.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 
 import 'package:learning_pwa/providers/audio_provider.dart';
+import 'package:learning_pwa/providers/community_qa_provider.dart';
+import 'package:learning_pwa/services/community/community_qa_service.dart';
+
+import '../../test_helpers/offline_supabase_client.dart';
 
 void main() {
   group('ECO-01: In-Context Learning Screen Q&A Integration', () {
@@ -38,6 +42,9 @@ void main() {
             canSpeakProvider.overrideWithValue(false),
         readAloudOffProvider.overrideWithValue(false),
             canListenProvider.overrideWithValue(false),
+            // Offline on purpose: the sheet falls back to curated FAQs.
+            communityQaServiceProvider.overrideWithValue(
+                CommunityQaService(supabase: OfflineSupabaseClient())),
           ],
           child: const MaterialApp(
             home: LessonScreen(lessonId: 'lesson-qa-101'),
@@ -78,6 +85,9 @@ void main() {
             canSpeakProvider.overrideWithValue(false),
         readAloudOffProvider.overrideWithValue(false),
             canListenProvider.overrideWithValue(false),
+            // Offline on purpose: the sheet falls back to curated FAQs.
+            communityQaServiceProvider.overrideWithValue(
+                CommunityQaService(supabase: OfflineSupabaseClient())),
           ],
           child: MaterialApp(
             home: ConceptScreen(

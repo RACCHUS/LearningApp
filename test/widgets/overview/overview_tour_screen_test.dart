@@ -4,16 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/learning_strategy.dart';
+import 'package:learning_pwa/models/learning_target.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/providers/learning_strategy_provider.dart';
+import 'package:learning_pwa/providers/learning_target_provider.dart';
 import 'package:learning_pwa/screens/overview/overview_tour_screen.dart';
+import 'package:learning_pwa/services/learning_target_service.dart';
 import 'package:learning_pwa/widgets/library/quick_overview_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../test_helpers/offline_supabase_client.dart';
+
+/// Target lookups are offline unless a test supplies the latest version.
+class _FakeTargetService extends LearningTargetService {
+  _FakeTargetService({this.latestVersion}) : super(supabase: OfflineSupabaseClient());
+
+  final TargetVersion? latestVersion;
+
+  @override
+  Future<TargetVersion?> getLatestVersion(String targetId) async => latestVersion;
+}
 
 class _SpyContextsNotifier extends LearningContextsNotifier {
   int createOrSwitchCalls = 0;
   String? lastRootId;
   ContextRootType? lastRootType;
+  String? lastTargetVersionId;
 
   _SpyContextsNotifier() : super.stub(const LearningContextsState());
 
@@ -33,6 +49,7 @@ class _SpyContextsNotifier extends LearningContextsNotifier {
     createOrSwitchCalls++;
     lastRootId = rootId;
     lastRootType = rootType;
+    lastTargetVersionId = targetVersionId;
     final created = LearningContext(
       id: 'ctx-created-from-overview',
       userId: userId,
@@ -75,6 +92,7 @@ void main() {
             overrides: [
               learningContextsProvider.overrideWith((ref) => spyNotifier),
               learnerIdProvider.overrideWithValue('learner-test'),
+              learningTargetServiceProvider.overrideWithValue(_FakeTargetService()),
             ],
             child: const MaterialApp(
               home: OverviewTourScreen(
@@ -183,6 +201,17 @@ void main() {
               learningContextsProvider.overrideWith((ref) => spyNotifier),
               fastPreferenceStoreProvider.overrideWithValue(store),
               learnerIdProvider.overrideWithValue('learner-uuid-test'),
+              learningTargetServiceProvider.overrideWithValue(
+                _FakeTargetService(
+                  latestVersion: TargetVersion(
+                    id: 'version-2026',
+                    targetId: canonicalTargetUuid,
+                    versionCode: '2026',
+                    createdAt: DateTime.utc(2026),
+                    updatedAt: DateTime.utc(2026),
+                  ),
+                ),
+              ),
             ],
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -202,6 +231,8 @@ void main() {
         expect(spyNotifier.createOrSwitchCalls, 1);
         expect(spyNotifier.lastRootType, ContextRootType.target);
         expect(spyNotifier.lastRootId, canonicalTargetUuid);
+        expect(spyNotifier.lastTargetVersionId, 'version-2026',
+            reason: 'the created context is pinned to the latest target version');
         expect(
           store
               .getOrDefault(
@@ -234,6 +265,7 @@ void main() {
               learningContextsProvider.overrideWith((ref) => spyNotifier),
               fastPreferenceStoreProvider.overrideWithValue(store),
               learnerIdProvider.overrideWithValue('learner-slug-only'),
+              learningTargetServiceProvider.overrideWithValue(_FakeTargetService()),
             ],
             child: const MaterialApp(
               home: OverviewTourScreen(
@@ -273,6 +305,7 @@ void main() {
               telFeatureFlagsProvider.overrideWith(
                 (ref) => TelFeatureFlags.disabled,
               ),
+              learningTargetServiceProvider.overrideWithValue(_FakeTargetService()),
             ],
             child: const MaterialApp(
               home: Scaffold(

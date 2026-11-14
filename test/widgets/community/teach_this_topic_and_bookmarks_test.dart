@@ -12,6 +12,7 @@ import 'package:learning_pwa/services/community/educator_reputation_service.dart
 import 'package:learning_pwa/services/community/community_bookmark_service.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 import 'package:learning_pwa/widgets/community/bookmarked_explanations_sheet.dart';
+import '../../test_helpers/offline_supabase_client.dart';
 
 class _MockQaService extends CommunityQaService {
   final List<CommunityQuestion> seedQuestions;
@@ -23,7 +24,7 @@ class _MockQaService extends CommunityQaService {
   _MockQaService({
     required this.seedQuestions,
     required this.answersMap,
-  });
+  }) : super(supabase: OfflineSupabaseClient());
 
   @override
   String? get currentUserId => 'educator_user_42';

@@ -17,6 +17,9 @@ import 'package:learning_pwa/screens/home/home_courses_list.dart';
 import 'package:learning_pwa/screens/library/library_screen.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:learning_pwa/services/learning_target_service.dart';
+import 'package:learning_pwa/providers/available_lessons_provider.dart';
+import '../test_helpers/offline_supabase_client.dart';
 
 void main() {
   setUp(() {
@@ -157,6 +160,12 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
+            // Offline on purpose: the catalog section has nothing to show.
+            learningTargetServiceProvider.overrideWithValue(
+                LearningTargetService(supabase: OfflineSupabaseClient())),
+            // A reachable catalog with nothing readable for this guest.
+            remoteCatalogLessonsProvider.overrideWith((ref) async => const []),
+            offlineCatalogLessonsProvider.overrideWith((ref) async => const []),
             learningContextsProvider.overrideWith(
               (ref) => LearningContextsNotifier.stub(contextsState),
             ),
@@ -205,6 +214,12 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
+            // Offline on purpose: the catalog section has nothing to show.
+            learningTargetServiceProvider.overrideWithValue(
+                LearningTargetService(supabase: OfflineSupabaseClient())),
+            // A reachable catalog with nothing readable for this guest.
+            remoteCatalogLessonsProvider.overrideWith((ref) async => const []),
+            offlineCatalogLessonsProvider.overrideWith((ref) async => const []),
             learningContextsProvider.overrideWith(
               (ref) => LearningContextsNotifier.stub(contextsState),
             ),
@@ -249,6 +264,12 @@ void main() {
         ProviderScope(
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(GuestMode())),
+            // Offline on purpose: the catalog section has nothing to show.
+            learningTargetServiceProvider.overrideWithValue(
+                LearningTargetService(supabase: OfflineSupabaseClient())),
+            // A reachable catalog with nothing readable for this guest.
+            remoteCatalogLessonsProvider.overrideWith((ref) async => const []),
+            offlineCatalogLessonsProvider.overrideWith((ref) async => const []),
             learningBootstrapProvider.overrideWith((ref) async {}),
             learningContextsProvider.overrideWith(
               (ref) => LearningContextsNotifier.stub(
