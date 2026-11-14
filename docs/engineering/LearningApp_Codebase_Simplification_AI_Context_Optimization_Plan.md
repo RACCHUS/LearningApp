@@ -1,13 +1,14 @@
 # LearningApp — Codebase Simplification & AI Context Optimization Plan
 
-**Status:** **OWNER CONDITIONALLY APPROVED: Phase 0 audit + Phase 1 drafts only. Phase 2 NOT AUTHORIZED.**
-**Version:** **0.5** — incorporates Gemini Argon, Grok, Z.ai, and Qwen independent reviews (November 12, 2026).  
-**Prepared:** November 12, 2026.  
+**Status:** **ACCEPTED (November 14, 2026).** Phase 0 and Phase 1 are complete. The owner accepted the recommendations and allowed targeted refactoring where it makes sense, instead of the broad Phase 2 pilots; see the session status in §12 and `audits/code_efficiency/AI_CONTEXT_BENCHMARK.md` §4. The authorization text below is kept as the record of how the work was gated.
+**Version:** **0.6** (November 14, 2026) — execution-time re-pin and drift corrections on top of v0.5 (Gemini Argon, Grok, Z.ai, Qwen reviews). See §2.1b and §13 "v0.6 disposition".  
+**Prepared:** November 12, 2026; revised November 14, 2026.  
+**Phase 0 execution pin (v0.6):** `06221ed6f9ef617113f76d0ddd072c20a0042250` (committer time 2026-11-14T14:54:13Z; PR #270 merge). Audit branch `chore/code-efficiency-audit-baseline` was created from this SHA.  
 **Repository:** [RACCHUS/LearningApp](https://github.com/RACCHUS/LearningApp).  
 **Historical inventory/plan baseline:** `a458b4138719811e441dd75268bd354d0125d302` (CI/test-quality plan v4, PR #240). **Latest `main` observed during v0.5 review:** `1e6757678b8311dfc7f4814e4e17699498c28792` (November 12, 2026, 19:53:02 UTC; PR #244 merge). **Neither commit is a frozen Phase 0 execution baseline. Re-pin `main` when the audit branch is actually created.** See §2.1a for the checked delta.  
 **Authorization boundary:** A future Phase 0 execution may establish the dedicated audit branch and commit **audit evidence only**. Phase 1 may prepare **reviewable draft documents and proposed diffs**; applying agent instructions, activating a validator, changing CI, or merging Phase 1 work requires a fresh owner decision. No Phase 2 code movement, refactoring, file deletion, or production/migration action is authorized.  
 **Review inputs:** Gemini Argon, Grok, the user-supplied Z.ai independent-review DOCX, and Qwen’s written v0.4 review. Z.ai reports 120+ checks from a pinned clone; those counts are reviewer-reported, not independently rerun by this plan author. Specific T7, B3, T6, and instruction claims were spot-checked; the v0.5 `main` SHA, comparison, fresh tree totals and CI file were checked through the GitHub connector. Qwen’s assertions are independently qualified below.
-**Proposed canonical home on owner acceptance:** `docs/engineering/LearningApp_Codebase_Simplification_AI_Context_Optimization_Plan.md`. This downloadable v0.5 is **not** a repository change.
+**Location:** `docs/engineering/LearningApp_Codebase_Simplification_AI_Context_Optimization_Plan.md`. It was moved here from the repository root (`…_Plan_v0_5.md`) on acceptance.
 
 ---
 
@@ -86,7 +87,30 @@ The GitHub tree inventory returned **1,926 entries, not truncated**, including d
 
 **Qualitative delta relevant to this initiative:** `.github/workflows/flutter-ci.yml` has changed (+40/−5 lines), retains named `verify` and `verify-database` jobs in the checked file, and now includes test-inventory and College Algebra parity/accuracy steps. `tool/ingest_curriculum.dart`, `tool/lint_manifest.dart`, algebra curriculum generation/tests, and `content/schema/curriculum_manifest.schema.json` have changed or gained tests. **Do not infer that the entire separate CI v4 restructuring or required-check-name decisions are finished merely because CI PRs landed.** Before proposing any later CI integration, verify that plan’s current state and check-name stability.
 
-**Execution gate, not executed by this revision:** from an up-to-date local checkout, record `git rev-parse origin/main` (or `git rev-parse HEAD` after fast-forwarding a clean local `main`), `git diff --stat a458b4138719811e441dd75268bd354d0125d302..HEAD`, the new top-25 inventory, and any source/test/instruction deltas affecting T1–T8. Do not silently reuse the historical line ranges, top-25 order or T6 coverage assumptions. Any new drift between this reviewed `1e67576` snapshot and audit execution must also be reported. The proposed branch remains `chore/code-efficiency-audit-baseline`; creating it is **not** part of drafting v0.5.
+### 2.1b Phase 0 execution re-pin — `06221ed` (v0.6, measured)
+
+**Executed November 14, 2026** with `phase0_inventory.py` (on the audit branch under `docs/engineering/audits/code_efficiency/scripts/`), reading **Git blob sizes at the pin**, not the working tree. `main` is **67 commits** past `1e67576`; `a458b41..06221ed` changes **145 files (+15,177/−2,766)**.
+
+| Snapshot metric | `1e67576` (v0.5) | **`06221ed` (pin)** |
+|---|---:|---:|
+| Recursive Git tree entries | 1,937 | **1,995** |
+| All Dart files | 1,141 | **1,162** |
+| Dart files / bytes in `lib/` | 691 / 6,217,786 | **697 / 6,284,136** |
+| Dart files in `test/` | 374 | **389** |
+| Python files (all under `tool/`) | 120 | **141** |
+| Root Markdown files / bytes | 13 / 1,184,126 | **14 / 1,282,238** |
+| Always-on/agent instruction surface (6 files) | not measured | **16,834 bytes** (`AGENTS.md` 7,263 B / 90 lines) |
+
+**Drift that changes this plan:**
+
+1. **The CI/test-quality v4 plan has landed** (PR-1..PR-9, #241–#261). The required check is now the fail-closed gate job **`Analyze, test, and build`** (`required-gate` in `flutter-ci.yml`, behind `verify` and `web-builds`); `early-feedback` and `browser-smoke` are advisory; `verify-database` remains. Policy lives in `docs/testing/TEST_QUALITY_POLICY.md`, which forbids renaming required checks and sets a 30-run/14-day stability bar before an advisory job becomes required. The CI hold in §§2.2, 6 and 12 is therefore **no longer blocked on v4**; it is blocked only on owner approval plus that policy.
+2. **Measurement hygiene:** the owner's Windows checkout has `core.autocrlf=true`, so working-tree bytes are inflated (e.g. `excel_upload_card.dart` 46,277 B on disk vs **45,008 B** blob). **All byte metrics must come from Git objects at the pin** (`git ls-tree -l`, `git cat-file -s`, `git show <pin>:<path>`).
+3. **This plan is itself a root mega-plan** (84,082 B), which is why root Markdown grew by one file. Moving it under `docs/engineering/` on acceptance is now a concrete §2.2 action, not a nicety.
+4. **Top-25 changed** (recomputed; see `top25_size.csv`): `tool/tests/clep_algebra_oracles.py` (47,046 B, class `test`) entered; `tool/ingest_official_taxonomies.dart` dropped out; `tool/ingest_curriculum.dart` grew to 59,126 B. All §5/§7.2 pilot line anchors were re-checked and still hold (`excel_upload_card.dart:13` and `:309`; `in_context_qa_sheet.dart:766`, `:793`, `:1005`, dialogs at `:2298`/`:2386`).
+5. **Churn finding not anticipated by v0.5:** by the frozen §2.4 method (window 2026-08-16T14:54:13Z → 2026-11-14T14:54:13Z), the highest-churn eligible file is **`lib/providers/router_provider.dart`** (31 commits, 3,091 changed lines), ahead of Library (19) and Q&A (14). It is a navigation owner, not a pilot candidate; record it as a **map priority** (it is also T9's owner).
+6. Both zero-byte Dart files are still present and still empty at the pin.
+
+**Execution gate (v0.5 text, now satisfied by §2.1b):** from an up-to-date local checkout, record `git rev-parse origin/main` (or `git rev-parse HEAD` after fast-forwarding a clean local `main`), `git diff --stat a458b4138719811e441dd75268bd354d0125d302..HEAD`, the new top-25 inventory, and any source/test/instruction deltas affecting T1–T8. Do not silently reuse the historical line ranges, top-25 order or T6 coverage assumptions. Any new drift between this reviewed `1e67576` snapshot and audit execution must also be reported. The proposed branch remains `chore/code-efficiency-audit-baseline`; creating it is **not** part of drafting v0.5.
 
 ---
 
@@ -97,7 +121,7 @@ The GitHub tree inventory returned **1,926 entries, not truncated**, including d
 - Existing instruction surface is broader than `AGENTS.md`: `.agents/rules/mcp-tooling.md`; `.github/instructions/Main.instructions.md` (**`applyTo: '**'`**); `.github/agents/lesson-generator.agent.md`; `.github/prompts/generate-lesson.prompt.md`; and `.github/pull_request_template.md` with feature-preservation checkboxes. Phase 0 must inventory overlaps and precedence without copying these into another megadocument.
 - **Verified instruction conflict:** `.github/instructions/Main.instructions.md` currently says to suggest modularizing when a file exceeds **400 lines** and extract helpers when a function exceeds **50 lines**. These blanket triggers conflict with this plan's cohesion/hop-count rule. **Phase 1 must draft a replacement** (see §6); it is not permission to edit the active instruction file yet.
 - Existing disabled lint entries in `analysis_options.yaml` are largely style rules; `use_build_context_synchronously` is already an error. No broad lint re-enable/format sweep is justified by this audit.
-- `.github/workflows/flutter-ci.yml` is an established required workflow; the **CI/test-quality v4 job restructure** controls timing of any eventual validator step. **No CI modification in Phase 0 or Phase 1 drafts.**
+- `.github/workflows/flutter-ci.yml` is an established required workflow. The **CI/test-quality v4 restructure has landed** (§2.1b); any eventual validator step must follow `docs/testing/TEST_QUALITY_POLICY.md` (start advisory, never rename `Analyze, test, and build`, add to the gate's `needs:` only after the stability bar). **No CI modification in Phase 0 or Phase 1 drafts.**
 - `UI_ARCHITECTURE_LOCKED.md` (**79,012 bytes**) is a required exception for certain UI tasks. **B3 prohibits badges/dots/counts on top-level `NavigationBar`/`NavigationRail` destinations**, while allowing informational counts *inside* Library/Progress (§3 and the line-108 erratum). Taxonomy/learning architecture documents may be required for their domains. **Retrieval exclusions are defaults, never bans**. Historical migrations can also be necessary for schema or security changes. Every exclusion requires task-specific override rules.
 - Large migrations, self-host schema snapshots, generated mocks, content manifests, data-shaped model files and official-source catalogs must be separately classified, not counted as unnecessary production duplication.
 
@@ -365,6 +389,8 @@ Proceed only after Phase 2 evidence and separate owner approval. Candidate domai
 | Behavioral safety | Targeted and required CI tests; permissions, data and state invariants | Hard pass/fail, not traded for token savings |
 | Runtime / test cost | Fast pure unit runs, retained widget/integration tests, CI time, bundle size where relevant | Avoid shifting work into slower or riskier surfaces |
 
+**Byte source (v0.6):** every byte figure is the **Git blob size at the pin**, never a working-tree size; bounded-range bytes are the raw bytes of the selected lines from `git show <pin>:<path>`, each with its stored line ending (a few blobs, e.g. `tool/ingest_curriculum.dart`, are committed with CRLF; no normalisation).
+
 **Counting protocol:** Pin the **actual execution** repository SHA and committer time (not a review-time observation); task statement; written MVCS inclusion rules; actual files, line ranges, tests/fixtures and contracts; instruction surfaces; source classification; and the exact measurement scripts before the first reading. Use **UTF-8 bytes as primary**. For an optional reproducible token proxy use Python `tiktoken` **`o200k_base` encoding** (an OpenAI-family approximation, **not** a universal Gemini/Claude tokenizer), recording its installed library version and hashes before measurement; if unavailable, report tokens as `not_measured` rather than fabricate them. Use the **same estimator and encoding** before/after. Report whole-file and bounded-range footprints separately. Pin source-line convention as Python `splitlines()` (logical text lines; explain difference from `wc -l`'s newline count). Do not count unused on-disk documentation as consumed model context. Include an independently measured **instruction baseline** (`AGENTS.md` and applicable instructions) plus increment from map sections.
 
 **Written Minimum Viable Context Set (MVCS) inclusion rule, frozen pre-measurement:** include (1) the minimum code/callsite required to identify the actual edit owner; (2) each direct data/permission/trust/side-effect contract needed to safely validate the task, including protected §8 invariants; (3) the named tests **and necessary fixtures** that exercise the relevant boundary; and (4) required authoritative policy text—even in an otherwise excluded large document—only for tasks that need it. Exclude unrelated imports, whole plans, generated artifacts and historical migrations **only where no task invariant depends on them**. For every file or bounded range, record *why required*, *why range sufficient*, and notable excluded candidates. A second reviewer should independently check T3 and T7 (or two other risk-diverse tasks) before freeze; record reconciled disagreements. Do not shrink the post-change MVCS by pretending a newly necessary dependency is irrelevant.
@@ -384,7 +410,16 @@ Proceed only after Phase 2 evidence and separate owner approval. Candidate domai
 | **T7** | Trace the **pre-reader picture-grid route, auto-speak preference state, and audio playback entry** from Library; **not global narration controls** | `lib/screens/library/library_screen.dart` → `lib/widgets/literacy/pre_reader_picture_grid_widget.dart` → `lib/providers/pre_reader_provider.dart` → **`lib/services/pre_reader_audio_service.dart`**; `test/services/pre_reader_audio_service_test.dart` and `test/widgets/pre_reader_home_navigation_test.dart` | **Navigation/map control**; corrected pre-freeze to cover actual state and service |
 | **T8** | Locate **feature-control owner and server enforcement gate** for a named feature (and BYOK/Fast exclusions) | `AGENTS.md`; `lib/models/governance/site_feature_keys.dart`; `lib/services/governance/site_feature_service.dart`; registry/flag tests and production effect gate as warranted | **Navigation/map control** |
 
-**T9 — PROPOSED, unmeasured, and NOT AUTHORIZED by Qwen’s recommendation or this revision; not part of the eight approved tasks:** "Determine whether a badge or count may appear on the **top-level Library navigation destination**, and locate the binding UI architecture rule, distinguishing it from informational counts inside Library." Expected exception-read path: `lib/providers/router_provider.dart` (navigation owner), and **normally excluded** `UI_ARCHITECTURE_LOCKED.md` (B3 erratum around line 108 and prohibition around lines 231 and 875), with any targeted navigation test located at freeze. Expected answer: **no top-level navigation badge; informational in-Library counts are distinct**. T9 is an **excluded-but-required document-path control**. Obtain explicit owner permission to expand from eight to nine *before* taking baseline measurements, or record this unmeasured as a pending coverage gap; never silently call T9 part of the original approved eight.
+**v0.6 freeze (November 14, 2026):** the owner **approved T9** before measurement, so the benchmark is **T1–T9**. The frozen manifest (`docs/engineering/audits/code_efficiency/data/task_manifest.json`) corrects four starting probes from the table above, because tracing the code showed them to be wrong or incomplete:
+
+- **T1:** `scope_resolver.dart` / `scope_resolver_provider.dart` are **not** used by the source filter (a pure switch on `LearningTarget.isTrustedPublic`/`isOfficial`/`createdBy` and the auth user); the server contract is the `targets_read` RLS policy (`20261009000005_…provenance.sql:103-110`).
+- **T3:** the probe misses the **upload checker** `tool/software_learning/excel_budget_total.py` and its trust gate `pilot_pipeline.py`. It and the Dart browser rubric differ on purpose (cached total vs server inputs, per `docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md`), and neither awards skills. Both belong in the MVCS; neither is a copy of the other. (Corrected after the independent review.)
+- **T8:** frozen named feature is **`content.refresh_proposals`**; its server gate is SQL (`private.site_feature_enabled` in `propose_contribution_refresh` / `decide_refresh_proposal`), not `site_feature_service.dart`.
+- **T9:** destination controls are owned by **`lib/widgets/app_shell.dart`**; `router_provider.dart` only wraps pages in `AppShell`. Test: `direct_access_rule_test.dart` "no nav destination shows a badge".
+
+T7 additionally needs the routed consumer of auto-speak (`life_milestones_screen.dart`) and `pre_reader_literacy_test.dart`. The original v0.5 T9 text follows for the record.
+
+**T9 — (v0.5 text; approved in v0.6):** "Determine whether a badge or count may appear on the **top-level Library navigation destination**, and locate the binding UI architecture rule, distinguishing it from informational counts inside Library." Expected exception-read path: `lib/providers/router_provider.dart` (navigation owner), and **normally excluded** `UI_ARCHITECTURE_LOCKED.md` (B3 erratum around line 108 and prohibition around lines 231 and 875), with any targeted navigation test located at freeze. Expected answer: **no top-level navigation badge; informational in-Library counts are distinct**. T9 is an **excluded-but-required document-path control**. Obtain explicit owner permission to expand from eight to nine *before* taking baseline measurements, or record this unmeasured as a pending coverage gap; never silently call T9 part of the original approved eight.
 
 **Required zero-cost protocol, T1–T8:**
 
@@ -532,12 +567,12 @@ This table records **actual conditional authorization from the owner** and the G
 | **Phase 0 audit** | **Approved with conditions** | Branch `chore/code-efficiency-audit-baseline`, re-pin, top-25 list + denylist, no production/CI/active-instruction changes, small reports |
 | **Deterministic MVCS** | **Approved for T1–T8** | Correct T7 *before* freeze, lock inclusion criteria, T6 tests and estimator; T1–T5 refactor-sensitive vs T6–T8 controls; zero live-agent calls |
 | **Phase 1 documentation/map/instruction/validator drafts** | **Approved as drafts only** | Map <=250 lines/~20 KB, `AGENTS.md` <=40 touched / <=+20 net lines, Copilot threshold replacement, structured validator design; no merge/activation |
-| **Phase 1 applied changes** | **Not approved** | Owner must review exact diffs and authorize file edits/merge separately |
-| **CI edits** | **Not approved** | Do not modify `.github/workflows/flutter-ci.yml` until CI v4 check-name/job restructuring is landed or expressly deferred |
+| **Phase 1 applied changes** | **Approved by owner (November 14, 2026)** | Applied in PR #273 (map, `AGENTS.md`, `Main.instructions.md`); merge remains the owner's call |
+| **CI edits** | **Not approved** | CI v4 has landed (§2.1b), so the remaining blockers are owner approval and `docs/testing/TEST_QUALITY_POLICY.md` (advisory first; never rename `Analyze, test, and build`) |
 | **Pilot B then C then A** | **NOT AUTHORIZED** | First demonstrate map-only insufficiency; B requires trust-twin map; C requires T1 proof; A requires characterization |
 | **Legacy, RLS, grading, auth, CAS, migrations, BYOK/Fast** | **No change authorized** | Continue existing hard invariants; independent review on any future relevant PR |
 | **Live LLM discovery traces** | **Not approved / no budget** | Separate explicit credit and task authorization needed |
-| **T9 excluded-document exception probe** | **Proposed, not yet approved** | Owner must explicitly approve nine-task scope before first deterministic measurement; otherwise leave unmeasured and document gap |
+| **T9 excluded-document exception probe** | **Approved by owner (November 14, 2026), before first measurement** | Measured with T1–T8 under the same frozen rules |
 
 ### Draft-only execution directive
 
@@ -548,7 +583,7 @@ This table records **actual conditional authorization from the owner** and the G
 5. Separate Phase 0 evidence (`docs/engineering/audits/code_efficiency/`) from Phase 1 drafts (`docs/engineering/drafts/code_efficiency/`) on the audit branch until the owner accepts exact diffs. Accepted documents move to `docs/engineering/`, not root. No new CI workflow step, no live-model traces and no Phase 2 changes.
 6. Report whether **navigation-only intervention is sufficient**. If yes, recommend stopping code refactoring. Otherwise submit Pilot B/C/A briefs for **new owner sign-off**; do not start them.
 
-**Current session status:** This v0.4 revision is a planning document only. It **does not create the audit branch, make GitHub commits, modify CI or commence Phase 0 execution**.
+**Current session status (v0.6):** Phase 0 has **started** on `chore/code-efficiency-audit-baseline` at pin `06221ed`: re-pin, delta, inventory, top-25, frozen-method churn ranking and instruction-surface bytes are recorded under `docs/engineering/audits/code_efficiency/`. T1–T9 are frozen and measured (`data/mvcs_baseline.json`); the bounded clone scan and a dead-code candidate scan are recorded; **Phase 1 drafts** are in `docs/engineering/drafts/code_efficiency/` (map 188 lines / 14.4 KB; `AGENTS.md` diff 7 touched / +7 net; `Main.instructions.md` cohesion diff; validator design; instruction inventory). Scored against the baseline, the draft map removes every false-owner path and all avoidable whole-file reads in T3, T7, T8 and T9. **Phase 0/1 recommendation: no Phase 2 pilot** (`AI_CONTEXT_BENCHMARK.md` §4). An independent reviewer checked T3/T7 and the map scoring; its additions and corrections are reconciled (§6 of that report). With owner approval, the map and instruction diffs (corrected) are in PR #273, and two missing tests are in PR #274. **Owner decision (2026-11-14):** the recommendations were accepted, with targeted refactoring allowed where it makes sense. Follow-ups: #273 (map and instructions), #274 (tests), #275 (pre-reader voice-track fix) and #277 (Q&A audit-log widget) are merged; #276 (removal of 36 retired unreachable files) and #278 (map validator as an advisory CI step, plus the PR-template checkbox) were open at the time of writing. See `AI_CONTEXT_BENCHMARK.md` §4. Still open for the owner: the 15 unreachable files kept in #276, and whether to promote the validator to required after the stability bar. No CI or migration change has been made.
 
 ## 13. Consolidated Gemini Argon + Grok + Z.ai + Qwen review disposition
 
@@ -603,6 +638,21 @@ This table records **actual conditional authorization from the owner** and the G
 
 **Next action after reviewing v0.5:** at authorized execution, re-pin `main` (review-time `1e67576` may already be stale), report the reviewed `a458b41` → current `HEAD` delta, fix/freeze T7 and written MVCS/churn/estimator rules, and request an owner decision on T9. Then execute only the already conditionally approved **Phase 0 evidence-gathering and Phase 1 draft preparation**, returning findings and drafts for a new owner decision. **Do not automatically move into Phase 2**.
 
+**v0.6 disposition (execution re-pin, November 14, 2026):**
+
+| Change | Reason |
+|---|---|
+| Pin `06221ed`; §2.1b delta table | v0.5's `1e67576` was 67 commits stale at execution |
+| CI hold re-based on `TEST_QUALITY_POLICY.md` | CI v4 (PR-1..PR-9) has landed; required check is now the `Analyze, test, and build` gate job |
+| Git-blob bytes mandated (§7.1) | `core.autocrlf=true` inflates working-tree bytes on the owner's checkout |
+| `router_provider.dart` recorded as map priority | Highest frozen-method churn; absent from v0.5 candidate lists |
+| Plan file itself flagged for relocation | It is now the 5th-largest root Markdown file |
+| Stale "v0.4 revision" status line replaced | Text drift |
+
+| T9 approved; nine tasks frozen and measured; four probes corrected (§7.2) | Owner decision; code tracing showed false-owner probes in T1, T3, T8, T9 |
+
+Unchanged: Phase 2 remains unauthorized; no live traces.
+
 ---
 
 ### Source links for reviewers
@@ -620,4 +670,4 @@ This table records **actual conditional authorization from the owner** and the G
 - [Restricted preview Excel reader](https://github.com/RACCHUS/LearningApp/blob/main/lib/services/software_learning/demo_workbook_reader.dart)
 - [PR template: feature-preservation controls](https://github.com/RACCHUS/LearningApp/blob/main/.github/pull_request_template.md)
 
-*End of v0.5 — conditional-approval review plan. No GitHub changes, audit branch creation, live-agent traces, CI edits or Phase 2 implementation performed by this revision.*
+*End of v0.6 — conditional-approval plan with Phase 0 execution started. No live-agent traces, CI edits or Phase 2 implementation performed.*

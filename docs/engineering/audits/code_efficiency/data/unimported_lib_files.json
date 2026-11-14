@@ -1,0 +1,150 @@
+{
+ "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+ "method": "Dart files under lib/ whose path is not named by any import/export/part URI (incl. conditional-import alternatives) in any tracked .dart file; excludes lib/main.dart and generated files. Candidates only: files imported solely by other candidates are not detected.",
+ "files": [
+  {
+   "path": "lib/models/community/community.dart",
+   "git_bytes": 378
+  },
+  {
+   "path": "lib/models/community/community_answer_revision.dart",
+   "git_bytes": 1415
+  },
+  {
+   "path": "lib/providers/home_screen_providers.dart",
+   "git_bytes": 1886
+  },
+  {
+   "path": "lib/screens/careers/career_path_create_screen.dart",
+   "git_bytes": 15101
+  },
+  {
+   "path": "lib/screens/careers/career_path_detail_screen.dart",
+   "git_bytes": 14860
+  },
+  {
+   "path": "lib/screens/careers/career_paths_screen.dart",
+   "git_bytes": 7387
+  },
+  {
+   "path": "lib/screens/careers/my_careers_screen.dart",
+   "git_bytes": 11419
+  },
+  {
+   "path": "lib/screens/home/home_category_filters.dart",
+   "git_bytes": 4917
+  },
+  {
+   "path": "lib/screens/home/home_lessons_list.dart",
+   "git_bytes": 7911
+  },
+  {
+   "path": "lib/screens/home/home_search_bar.dart",
+   "git_bytes": 4096
+  },
+  {
+   "path": "lib/screens/home/home_study_sets_section.dart",
+   "git_bytes": 9356
+  },
+  {
+   "path": "lib/screens/reminder_screen.dart",
+   "git_bytes": 11494
+  },
+  {
+   "path": "lib/screens/study/audio_enhanced_lesson_screen.dart",
+   "git_bytes": 11782
+  },
+  {
+   "path": "lib/screens/study/lesson_mode_screen.dart",
+   "git_bytes": 2665
+  },
+  {
+   "path": "lib/screens/study/study_screen.dart",
+   "git_bytes": 4911
+  },
+  {
+   "path": "lib/screens/test/notification_test_screen.dart",
+   "git_bytes": 2230
+  },
+  {
+   "path": "lib/services/assessment/exam_part_practice_history_service.dart",
+   "git_bytes": 3746
+  },
+  {
+   "path": "lib/services/audio_lesson/audio_lesson_controller.dart",
+   "git_bytes": 0
+  },
+  {
+   "path": "lib/services/audio_lesson/lesson_timer_service.dart",
+   "git_bytes": 4018
+  },
+  {
+   "path": "lib/services/browser_compatibility_stub.dart",
+   "git_bytes": 611
+  },
+  {
+   "path": "lib/services/discovery/discovery_and_feedback_service.dart",
+   "git_bytes": 2451
+  },
+  {
+   "path": "lib/services/marketplace/marketplace_service.dart",
+   "git_bytes": 4404
+  },
+  {
+   "path": "lib/services/microphone_permission_service.dart",
+   "git_bytes": 7055
+  },
+  {
+   "path": "lib/services/search_service.dart",
+   "git_bytes": 11375
+  },
+  {
+   "path": "lib/services/study_service.dart",
+   "git_bytes": 2870
+  },
+  {
+   "path": "lib/utils/date_utils.dart",
+   "git_bytes": 5685
+  },
+  {
+   "path": "lib/utils/math_utils.dart",
+   "git_bytes": 5137
+  },
+  {
+   "path": "lib/utils/string_utils.dart",
+   "git_bytes": 7611
+  },
+  {
+   "path": "lib/widgets/avatar/avatar_customizer_sheet.dart",
+   "git_bytes": 8388
+  },
+  {
+   "path": "lib/widgets/dashboard_skill_widgets.dart",
+   "git_bytes": 22971
+  },
+  {
+   "path": "lib/widgets/desktop_sidebar.dart",
+   "git_bytes": 14447
+  },
+  {
+   "path": "lib/widgets/progress/progress_stats_overview.dart",
+   "git_bytes": 3921
+  },
+  {
+   "path": "lib/widgets/progress/recent_activity_list.dart",
+   "git_bytes": 0
+  },
+  {
+   "path": "lib/widgets/progress/sync_status_indicator.dart",
+   "git_bytes": 1500
+  },
+  {
+   "path": "lib/widgets/safari_permission_dialog.dart",
+   "git_bytes": 12189
+  },
+  {
+   "path": "lib/widgets/whiteboard/whiteboard_widget.dart",
+   "git_bytes": 11836
+  }
+ ]
+}

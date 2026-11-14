@@ -1,0 +1,5474 @@
+{
+ "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+ "window_logical_lines": 8,
+ "eligible_files": 755,
+ "eligible_logical_lines": 129461,
+ "candidate_runs": 607,
+ "candidate_logical_lines_in_any_run": 6369,
+ "candidate_rate_unconfirmed": 0.0492,
+ "runs": [
+  {
+   "a": "lib/widgets/empty_state.dart",
+   "a_lines": "123-381",
+   "b": "lib/widgets/shimmer_loading.dart",
+   "b_lines": "425-666",
+   "logical_lines": 169,
+   "same_file": false,
+   "sample": "required this.type,"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "151-212",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "149-210",
+   "logical_lines": 52,
+   "same_file": false,
+   "sample": "\"on conflict (source_namespace, source_key) do nothing;\","
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "151-212",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "149-210",
+   "logical_lines": 52,
+   "same_file": false,
+   "sample": "\"on conflict (source_namespace, source_key) do nothing;\","
+  },
+  {
+   "a": "tool/catalog_p2k_cam_pathways.py",
+   "a_lines": "149-210",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "149-210",
+   "logical_lines": 52,
+   "same_file": false,
+   "sample": "\"on conflict (source_namespace, source_key) do nothing;\","
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "157-216",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "153-212",
+   "logical_lines": 50,
+   "same_file": false,
+   "sample": "\"update public.catalog_intake_candidates\","
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "157-216",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "151-210",
+   "logical_lines": 50,
+   "same_file": false,
+   "sample": "\"update public.catalog_intake_candidates\","
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "157-216",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "151-210",
+   "logical_lines": 50,
+   "same_file": false,
+   "sample": "\"update public.catalog_intake_candidates\","
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "41-98",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "39-96",
+   "logical_lines": 47,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "41-98",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "39-96",
+   "logical_lines": 47,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "tool/catalog_p2k_cam_pathways.py",
+   "a_lines": "39-96",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "39-96",
+   "logical_lines": 47,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "tool/catalog_p2k_cam_pathways.py",
+   "a_lines": "98-147",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "98-147",
+   "logical_lines": 39,
+   "same_file": false,
+   "sample": "assert r[\"source_checked_on\"] == \"2026-11-07\" and r[\"reviewed_on\"] == \"2026-11-07\""
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1624-1667",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1748-1791",
+   "logical_lines": 33,
+   "same_file": true,
+   "sample": "maxLines: 2,"
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "99-138",
+   "b": "lib/screens/literacy/life_milestones_screen.dart",
+   "b_lines": "100-139",
+   "logical_lines": 31,
+   "same_file": false,
+   "sample": "tooltip: 'Return to Learn home',"
+  },
+  {
+   "a": "tool/catalog_p2f_insurance_pathways.py",
+   "a_lines": "47-79",
+   "b": "tool/catalog_p2g_contractor_pathways.py",
+   "b_lines": "52-84",
+   "logical_lines": 31,
+   "same_file": false,
+   "sample": "labels=[]"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "109-149",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "107-147",
+   "logical_lines": 31,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "109-149",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "107-147",
+   "logical_lines": 31,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "lib/screens/course_builder_screen.dart",
+   "a_lines": "77-112",
+   "b": "lib/screens/lesson_editor_screen.dart",
+   "b_lines": "92-127",
+   "logical_lines": 27,
+   "same_file": false,
+   "sample": "leading: IconButton("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1878-1906",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "2006-2034",
+   "logical_lines": 27,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "a_lines": "42-76",
+   "b": "lib/widgets/taxonomy/cip_detail_sheet.dart",
+   "b_lines": "34-68",
+   "logical_lines": 27,
+   "same_file": false,
+   "sample": "maxChildSize: 0.95,"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "42-70",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "41-69",
+   "logical_lines": 25,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "42-70",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "39-67",
+   "logical_lines": 25,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "42-70",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "39-67",
+   "logical_lines": 25,
+   "same_file": false,
+   "sample": "def valid_url(value: str) -> bool:"
+  },
+  {
+   "a": "lib/screens/home/home_study_sets_list.dart",
+   "a_lines": "121-156",
+   "b": "lib/screens/home/home_study_sets_section.dart",
+   "b_lines": "136-175",
+   "logical_lines": 24,
+   "same_file": false,
+   "sample": "void _openStudySet(BuildContext context, SavedStudySet studySet) {"
+  },
+  {
+   "a": "lib/widgets/content_renderers/question_content_renderer.dart",
+   "a_lines": "163-194",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "162-194",
+   "logical_lines": 24,
+   "same_file": false,
+   "sample": "presentationSeed: _presentationSeed,"
+  },
+  {
+   "a": "lib/services/scope_resolver.dart",
+   "a_lines": "395-422",
+   "b": "lib/services/scope_resolver.dart",
+   "b_lines": "528-555",
+   "logical_lines": 23,
+   "same_file": true,
+   "sample": "final allConceptIds = {...coreConceptIds, ...supportingConceptIds};"
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "489-512",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "383-406",
+   "logical_lines": 22,
+   "same_file": false,
+   "sample": "if (_isBatchComplete && !widget.isEmbeddedInLesson)"
+  },
+  {
+   "a": "lib/widgets/content_renderers/question_content_renderer.dart",
+   "a_lines": "42-75",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "32-65",
+   "logical_lines": 22,
+   "same_file": false,
+   "sample": "late int _attemptNonce;"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "501-532",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "612-643",
+   "logical_lines": 22,
+   "same_file": false,
+   "sample": "style: theme.textTheme.bodyMedium?.copyWith("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1578-1600",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1699-1721",
+   "logical_lines": 21,
+   "same_file": true,
+   "sample": "final statusLabel = isArchived"
+  },
+  {
+   "a": "lib/providers/audio_playback_provider.dart",
+   "a_lines": "61-98",
+   "b": "lib/providers/audio_provider.dart",
+   "b_lines": "146-183",
+   "logical_lines": 20,
+   "same_file": false,
+   "sample": "Future<bool> speak(String text, {bool interrupt = false}) async {"
+  },
+  {
+   "a": "lib/screens/courses/course_detail_screen.dart",
+   "a_lines": "295-314",
+   "b": "lib/screens/home/home_courses_list.dart",
+   "b_lines": "327-346",
+   "logical_lines": 20,
+   "same_file": false,
+   "sample": "IconData _getCategoryIcon(String category) {"
+  },
+  {
+   "a": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "a_lines": "755-777",
+   "b": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "b_lines": "923-945",
+   "logical_lines": 20,
+   "same_file": true,
+   "sample": "borderColor = const Color(0xFF10B981);"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "450-473",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "565-588",
+   "logical_lines": 20,
+   "same_file": false,
+   "sample": "Color? cardColor;"
+  },
+  {
+   "a": "lib/screens/literacy/foundational_literacy_screen.dart",
+   "a_lines": "187-211",
+   "b": "lib/screens/literacy/life_domains_screen.dart",
+   "b_lines": "113-137",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "IconButton("
+  },
+  {
+   "a": "lib/screens/literacy/foundational_literacy_screen.dart",
+   "a_lines": "187-211",
+   "b": "lib/screens/literacy/life_milestones_screen.dart",
+   "b_lines": "114-138",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "IconButton("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "485-506",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "463-485",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "39-60",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "53-74",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "def validate_tree(node, allowed_urls, depth=0):"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "39-60",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "51-72",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "def validate_tree(node, allowed_urls, depth=0):"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "39-60",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "51-72",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "def validate_tree(node, allowed_urls, depth=0):"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "68-88",
+   "b": "tool/catalog_p2i_broker_pathways.py",
+   "b_lines": "105-126",
+   "logical_lines": 19,
+   "same_file": false,
+   "sample": "assert r[\"revision\"] == 1 and r[\"supersedes_revision\"] is None and r[\"jurisdiction\"] == \"US-FL\""
+  },
+  {
+   "a": "lib/screens/course_builder_screen.dart",
+   "a_lines": "129-151",
+   "b": "lib/screens/lesson_editor_screen.dart",
+   "b_lines": "174-196",
+   "logical_lines": 18,
+   "same_file": false,
+   "sample": "decoration: BoxDecoration("
+  },
+  {
+   "a": "lib/screens/taxonomy/occupation_detail_screen.dart",
+   "a_lines": "576-595",
+   "b": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "b_lines": "337-356",
+   "logical_lines": 18,
+   "same_file": false,
+   "sample": "padding: const EdgeInsets.all(12),"
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "83-104",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "81-102",
+   "logical_lines": 18,
+   "same_file": false,
+   "sample": "Navigator.of(context).pop();"
+  },
+  {
+   "a": "tool/catalog_p2f_insurance_pathways.py",
+   "a_lines": "18-36",
+   "b": "tool/catalog_p2g_contractor_pathways.py",
+   "b_lines": "22-40",
+   "logical_lines": 18,
+   "same_file": false,
+   "sample": "def validate_tree(node,allowed_urls,depth=0):"
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "274-294",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "264-283",
+   "logical_lines": 17,
+   "same_file": false,
+   "sample": "IconButton("
+  },
+  {
+   "a": "lib/widgets/learn/context_switcher.dart",
+   "a_lines": "95-111",
+   "b": "lib/widgets/learn/context_switcher.dart",
+   "b_lines": "204-220",
+   "logical_lines": 17,
+   "same_file": true,
+   "sample": "await showModalBottomSheet<void>("
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "95-113",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "109-127",
+   "logical_lines": 17,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/providers/learning_strategy_provider.dart",
+   "a_lines": "959-976",
+   "b": "lib/providers/learning_strategy_provider.dart",
+   "b_lines": "1002-1019",
+   "logical_lines": 16,
+   "same_file": true,
+   "sample": "final nextPrefs = Map<String, FastPreference>.from("
+  },
+  {
+   "a": "lib/screens/course_builder_screen.dart",
+   "a_lines": "419-439",
+   "b": "lib/screens/lesson_editor_screen.dart",
+   "b_lines": "224-244",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Future<bool> _showUnsavedChangesDialog() async {"
+  },
+  {
+   "a": "lib/services/audio_lesson/lesson_state_manager.dart",
+   "a_lines": "5-23",
+   "b": "lib/services/audio_lesson_orchestrator.dart",
+   "b_lines": "12-29",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "enum AudioLessonState {"
+  },
+  {
+   "a": "lib/widgets/learn/zero_state.dart",
+   "a_lines": "25-42",
+   "b": "lib/widgets/learn/zero_state.dart",
+   "b_lines": "86-103",
+   "logical_lines": 16,
+   "same_file": true,
+   "sample": "return Center("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "485-502",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-684",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "486-503",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "203-221",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "203-221",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "464-482",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "a_lines": "78-95",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "104-121",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "a_lines": "463-481",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-684",
+   "logical_lines": 16,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "39-55",
+   "b": "tool/catalog_p2i_broker_pathways.py",
+   "b_lines": "54-70",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "def validate_tree(node, allowed_urls, depth=0):"
+  },
+  {
+   "a": "tool/import_lesson.dart",
+   "a_lines": "46-63",
+   "b": "tool/seed_pilot_community_faqs.dart",
+   "b_lines": "6-23",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "tool/import_lesson.dart",
+   "a_lines": "46-63",
+   "b": "tool/seed_taxonomy.dart",
+   "b_lines": "25-42",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "tool/import_lesson.dart",
+   "a_lines": "46-63",
+   "b": "tool/taxonomy_status.dart",
+   "b_lines": "25-42",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "tool/seed_pilot_community_faqs.dart",
+   "a_lines": "6-23",
+   "b": "tool/seed_taxonomy.dart",
+   "b_lines": "25-42",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "tool/seed_pilot_community_faqs.dart",
+   "a_lines": "6-23",
+   "b": "tool/taxonomy_status.dart",
+   "b_lines": "25-42",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "tool/seed_taxonomy.dart",
+   "a_lines": "25-42",
+   "b": "tool/taxonomy_status.dart",
+   "b_lines": "25-42",
+   "logical_lines": 16,
+   "same_file": false,
+   "sample": "Map<String, String> _loadDotenv() {"
+  },
+  {
+   "a": "lib/providers/learning_strategy_provider.dart",
+   "a_lines": "453-468",
+   "b": "lib/providers/learning_strategy_provider.dart",
+   "b_lines": "573-588",
+   "logical_lines": 15,
+   "same_file": true,
+   "sample": "try {"
+  },
+  {
+   "a": "lib/screens/library/library_screen.dart",
+   "a_lines": "535-554",
+   "b": "lib/screens/library/library_screen.dart",
+   "b_lines": "854-873",
+   "logical_lines": 15,
+   "same_file": true,
+   "sample": "maxLines: 1,"
+  },
+  {
+   "a": "lib/screens/study/concept_screen.dart",
+   "a_lines": "244-260",
+   "b": "lib/screens/study/mixed_mode_screen.dart",
+   "b_lines": "264-280",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "style: theme.textTheme.headlineSmall,"
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "156-171",
+   "b": "lib/widgets/words/combined_word_practice_widget.dart",
+   "b_lines": "140-155",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/content_renderers/question_content_renderer.dart",
+   "a_lines": "134-152",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "130-148",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "void _resetState({List<int>? previousOrder}) {"
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "292-307",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "540-555",
+   "logical_lines": 15,
+   "same_file": true,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/lesson/concept_content_form.dart",
+   "a_lines": "176-197",
+   "b": "lib/widgets/lesson/mcq_content_form.dart",
+   "b_lines": "260-281",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "style: ElevatedButton.styleFrom("
+  },
+  {
+   "a": "lib/widgets/lesson/concept_content_form.dart",
+   "a_lines": "176-197",
+   "b": "lib/widgets/lesson/term_content_form.dart",
+   "b_lines": "129-150",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "style: ElevatedButton.styleFrom("
+  },
+  {
+   "a": "lib/widgets/lesson/mcq_content_form.dart",
+   "a_lines": "260-281",
+   "b": "lib/widgets/lesson/term_content_form.dart",
+   "b_lines": "129-150",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "style: ElevatedButton.styleFrom("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "203-220",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "668-684",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "137-155",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "127-145",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "def q(v):"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "137-155",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "125-143",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "def q(v):"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "137-155",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "125-143",
+   "logical_lines": 15,
+   "same_file": false,
+   "sample": "def q(v):"
+  },
+  {
+   "a": "lib/screens/governance/cost_observability_screen.dart",
+   "a_lines": "131-146",
+   "b": "lib/screens/governance/moderation_queue_screen.dart",
+   "b_lines": "652-667",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "return Center("
+  },
+  {
+   "a": "lib/services/lesson/lesson_crud_service.dart",
+   "a_lines": "52-65",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "93-106",
+   "logical_lines": 14,
+   "same_file": true,
+   "sample": "return (response as List)"
+  },
+  {
+   "a": "lib/services/scope_resolver.dart",
+   "a_lines": "582-597",
+   "b": "lib/services/scope_resolver.dart",
+   "b_lines": "621-636",
+   "logical_lines": 14,
+   "same_file": true,
+   "sample": ".order('order_index');"
+  },
+  {
+   "a": "lib/widgets/casestudy/case_study_reader_widget.dart",
+   "a_lines": "57-71",
+   "b": "lib/widgets/language/bilingual_bridge_widget.dart",
+   "b_lines": "73-87",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1603-1622",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1727-1746",
+   "logical_lines": 14,
+   "same_file": true,
+   "sample": "const SizedBox(width: 8),"
+  },
+  {
+   "a": "lib/widgets/global_voice_indicator.dart",
+   "a_lines": "54-67",
+   "b": "lib/widgets/global_voice_indicator.dart",
+   "b_lines": "105-118",
+   "logical_lines": 14,
+   "same_file": true,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "565-581",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "455-471",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "if (isCorrect) {"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "565-581",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "570-586",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "if (isCorrect) {"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "585-600",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "475-490",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(DesignTokens.radiusMd),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "585-600",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "590-605",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(DesignTokens.radiusMd),"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "475-490",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "590-605",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(DesignTokens.radiusMd),"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "89-105",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "82-98",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "assert valid_url(dest[\"official_url\"])"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "89-105",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "80-96",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "assert valid_url(dest[\"official_url\"])"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "89-105",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "80-96",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "assert valid_url(dest[\"official_url\"])"
+  },
+  {
+   "a": "tool/catalog_p2k_cam_pathways.py",
+   "a_lines": "19-34",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "19-34",
+   "logical_lines": 14,
+   "same_file": false,
+   "sample": "CHECKLIST_URL,"
+  },
+  {
+   "a": "lib/screens/library/library_screen.dart",
+   "a_lines": "583-596",
+   "b": "lib/screens/library/library_screen.dart",
+   "b_lines": "716-729",
+   "logical_lines": 13,
+   "same_file": true,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/screens/library/library_screen.dart",
+   "a_lines": "583-596",
+   "b": "lib/screens/library/library_screen.dart",
+   "b_lines": "808-821",
+   "logical_lines": 13,
+   "same_file": true,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/screens/library/library_screen.dart",
+   "a_lines": "716-729",
+   "b": "lib/screens/library/library_screen.dart",
+   "b_lines": "808-821",
+   "logical_lines": 13,
+   "same_file": true,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "a_lines": "786-798",
+   "b": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "b_lines": "965-977",
+   "logical_lines": 13,
+   "same_file": true,
+   "sample": "decoration: BoxDecoration("
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "157-173",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "171-187",
+   "logical_lines": 13,
+   "same_file": false,
+   "sample": "const SizedBox(height: 24),"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "20-34",
+   "b": "tool/catalog_p2i_broker_pathways.py",
+   "b_lines": "23-37",
+   "logical_lines": 13,
+   "same_file": false,
+   "sample": "STATUTE_URL,"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "22-36",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "20-34",
+   "logical_lines": 13,
+   "same_file": false,
+   "sample": "STATUTE,"
+  },
+  {
+   "a": "tool/catalog_p2j_contractor_pathways.py",
+   "a_lines": "22-36",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "20-34",
+   "logical_lines": 13,
+   "same_file": false,
+   "sample": "STATUTE,"
+  },
+  {
+   "a": "lib/models/learning_support/bridge_lesson.dart",
+   "a_lines": "271-285",
+   "b": "lib/models/learning_support/external_companion.dart",
+   "b_lines": "83-97",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "String? text(Map m, String key, String path, int max, {bool req = true}) {"
+  },
+  {
+   "a": "lib/providers/learning_strategy_provider.dart",
+   "a_lines": "910-923",
+   "b": "lib/providers/learning_strategy_provider.dart",
+   "b_lines": "963-976",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "_scheduleRemoteSync("
+  },
+  {
+   "a": "lib/providers/learning_strategy_provider.dart",
+   "a_lines": "910-923",
+   "b": "lib/providers/learning_strategy_provider.dart",
+   "b_lines": "1006-1019",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "_scheduleRemoteSync("
+  },
+  {
+   "a": "lib/screens/assessment/exam_report_screen.dart",
+   "a_lines": "396-409",
+   "b": "lib/screens/assessment/exam_report_screen.dart",
+   "b_lines": "588-601",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "return Container("
+  },
+  {
+   "a": "lib/screens/course_builder_screen.dart",
+   "a_lines": "59-75",
+   "b": "lib/screens/lesson_editor_screen.dart",
+   "b_lines": "74-90",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "if (!state.isLoading) {"
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "89-103",
+   "b": "lib/screens/lessons/create_lesson_screen.dart",
+   "b_lines": "138-152",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "await _handlePostSaveAttachment(lesson);"
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "206-219",
+   "b": "lib/screens/literacy/life_milestones_screen.dart",
+   "b_lines": "305-318",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "required ColorScheme colorScheme,"
+  },
+  {
+   "a": "lib/screens/study/concept_screen.dart",
+   "a_lines": "225-236",
+   "b": "lib/screens/study/flashcard_screen.dart",
+   "b_lines": "582-593",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "if (_isComplete && !widget.isEmbeddedInLesson)"
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "522-534",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "416-428",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "backgroundColor: theme.colorScheme.surfaceContainerHighest,"
+  },
+  {
+   "a": "lib/screens/study/mcq_screen.dart",
+   "a_lines": "478-489",
+   "b": "lib/screens/study/mixed_mode_screen.dart",
+   "b_lines": "245-256",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "if (_isComplete)"
+  },
+  {
+   "a": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "a_lines": "802-813",
+   "b": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "b_lines": "1041-1052",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "return const ["
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "51-62",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "78-89",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "child: InContextQaSheet("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "219-231",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "334-345",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "219-231",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "616-628",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "219-231",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "745-757",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "334-345",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "616-628",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "334-345",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "745-757",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "616-628",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "745-757",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "95-107",
+   "b": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "b_lines": "83-95",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "147-160",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "121-134",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "147-160",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "74-87",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "227-240",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "217-230",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "required ColorScheme colorScheme,"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "227-240",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "170-183",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "required ColorScheme colorScheme,"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "630-642",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "169-183",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "121-134",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "74-87",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "174-188",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "328-343",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "174-188",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "127-141",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "174-188",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "230-244",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "217-230",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "170-183",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "required ColorScheme colorScheme,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "199-214",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "223-237",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "328-343",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "127-141",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "328-343",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "230-244",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "127-141",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "230-244",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/marketplace/resource_offer_card.dart",
+   "a_lines": "33-45",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "22-34",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "a_lines": "124-138",
+   "b": "lib/widgets/taxonomy/cip_detail_sheet.dart",
+   "b_lines": "143-157",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(8),"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "23-34",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "25-36",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "23-34",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "23-34",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "23-34",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "23-34",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "26-37",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "25-36",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "26-37",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "23-34",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "26-37",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "23-34",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "IDENTITIES = set(STEP_URLS)"
+  },
+  {
+   "a": "tool/generate_clep_algebra_course.py",
+   "a_lines": "141-158",
+   "b": "tool/generate_clep_psychology_course.py",
+   "b_lines": "163-180",
+   "logical_lines": 12,
+   "same_file": false,
+   "sample": "\"domains\": ALL_DOMAINS,"
+  },
+  {
+   "a": "tool/lint_manifest.dart",
+   "a_lines": "340-353",
+   "b": "tool/lint_manifest.dart",
+   "b_lines": "406-419",
+   "logical_lines": 12,
+   "same_file": true,
+   "sample": "if (options.length >= 2 && correctIdx != null && correctIdx >= 0 && correctIdx < options.length) {"
+  },
+  {
+   "a": "lib/models/letter_stroke_data.dart",
+   "a_lines": "284-297",
+   "b": "lib/models/letter_stroke_data.dart",
+   "b_lines": "320-333",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "const NormalizedStroke("
+  },
+  {
+   "a": "lib/screens/home/home_study_sets_list.dart",
+   "a_lines": "230-241",
+   "b": "lib/screens/home/home_study_sets_section.dart",
+   "b_lines": "269-280",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "Row("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "294-304",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "418-429",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/reminder_screen.dart",
+   "a_lines": "126-139",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "235-248",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "onTap: () async {"
+  },
+  {
+   "a": "lib/screens/reminder_screen.dart",
+   "a_lines": "150-163",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "257-270",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "onTap: () async {"
+  },
+  {
+   "a": "lib/screens/reminder_screen.dart",
+   "a_lines": "23-36",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "314-327",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "String _formatFrequency(ReminderFrequency frequency) {"
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "426-436",
+   "b": "lib/widgets/skill_badges.dart",
+   "b_lines": "399-409",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/study/concept_screen.dart",
+   "a_lines": "226-236",
+   "b": "lib/screens/study/mixed_mode_screen.dart",
+   "b_lines": "246-256",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "Container("
+  },
+  {
+   "a": "lib/screens/study/concept_screen.dart",
+   "a_lines": "226-236",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "479-489",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "Container("
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "583-593",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "479-489",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "Container("
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "583-593",
+   "b": "lib/screens/study/mixed_mode_screen.dart",
+   "b_lines": "246-256",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "Container("
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "607-619",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "503-515",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "style: theme.textTheme.titleMedium?.copyWith("
+  },
+  {
+   "a": "lib/screens/study/mcq_screen.dart",
+   "a_lines": "447-457",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "534-544",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "onPressed: () {"
+  },
+  {
+   "a": "lib/services/ai/llm_client.dart",
+   "a_lines": "72-84",
+   "b": "lib/services/ai/llm_client.dart",
+   "b_lines": "150-162",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": ": _client = httpClient ?? http.Client();"
+  },
+  {
+   "a": "lib/services/assessment/reference_practice_json_download_web.dart",
+   "a_lines": "17-27",
+   "b": "lib/services/assessment/reference_practice_json_download_web.dart",
+   "b_lines": "44-54",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "final url = html.Url.createObjectUrlFromBlob(blob);"
+  },
+  {
+   "a": "lib/services/lesson/lesson_catalog_service.dart",
+   "a_lines": "28-39",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "50-60",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": ".order('updated_at', ascending: false)"
+  },
+  {
+   "a": "lib/services/saved_study_set_service.dart",
+   "a_lines": "604-616",
+   "b": "lib/services/saved_study_set_service.dart",
+   "b_lines": "634-646",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "'last_studied_at': DateTime.now().toIso8601String(),"
+  },
+  {
+   "a": "lib/services/speech_recognition/web_speech_api_stub.dart",
+   "a_lines": "30-43",
+   "b": "lib/services/speech_recognition/web_speech_api_web.dart",
+   "b_lines": "323-336",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "class SpeechResult {"
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "156-167",
+   "b": "lib/widgets/community/before_after_assessment_widget.dart",
+   "b_lines": "292-303",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "292-303",
+   "b": "lib/widgets/words/combined_word_practice_widget.dart",
+   "b_lines": "140-151",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1887-1897",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "2172-2182",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "2015-2025",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "2172-2182",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "219-230",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "416-427",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "334-344",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "416-427",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "416-427",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "616-627",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "416-427",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "745-756",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/widgets/content_renderers/term_content_renderer.dart",
+   "a_lines": "18-28",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "255-265",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Center("
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "161-173",
+   "b": "lib/widgets/editors/question_editor_sheet.dart",
+   "b_lines": "412-424",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/editors/question_editor_sheet.dart",
+   "a_lines": "412-424",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "175-187",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/help/help_topic_view.dart",
+   "a_lines": "99-112",
+   "b": "lib/widgets/help/help_topic_view.dart",
+   "b_lines": "123-136",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "topic.actionLabel != null &&"
+  },
+  {
+   "a": "lib/widgets/lesson_content_renderer.dart",
+   "a_lines": "110-123",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "153-164",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "options: options,"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "393-404",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "365-376",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "456-467",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "b_lines": "485-496",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "463-475",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "681-692",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-678",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "147-159",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "285-297",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "278-293",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "134-150",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "}).toList(),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "389-401",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "298-310",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "const SizedBox(width: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "485-496",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "393-404",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "485-496",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "365-376",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "485-496",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "456-467",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "121-133",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "285-297",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "393-404",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "365-376",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "393-404",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "456-467",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "393-404",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "463-475",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "393-404",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-678",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "365-376",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "463-475",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "365-376",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-678",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "365-376",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "456-467",
+   "logical_lines": 11,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "456-467",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "463-475",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "456-467",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "667-678",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "74-86",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "285-297",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "116-130",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "109-123",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "116-130",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "107-121",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/catalog_p2i_broker_pathways.py",
+   "a_lines": "116-130",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "107-121",
+   "logical_lines": 11,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "87-99",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "191-203",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "createdBy: json['created_by'] as String?,"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "74-86",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "98-110",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "74-86",
+   "b": "lib/models/module.dart",
+   "b_lines": "35-47",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},"
+  },
+  {
+   "a": "lib/models/flashcard.dart",
+   "a_lines": "32-44",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-111",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/lesson_block.dart",
+   "a_lines": "98-110",
+   "b": "lib/models/module.dart",
+   "b_lines": "35-47",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "metadata: (json['metadata'] as Map?)?.cast<String, dynamic>() ?? const {},"
+  },
+  {
+   "a": "lib/providers/progress_provider.dart",
+   "a_lines": "109-122",
+   "b": "lib/providers/progress_provider.dart",
+   "b_lines": "142-155",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "int? studyTimeSeconds,"
+  },
+  {
+   "a": "lib/screens/taxonomy/taxonomy_explorer_screen.dart",
+   "a_lines": "308-322",
+   "b": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "b_lines": "253-267",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "decoration: BoxDecoration("
+  },
+  {
+   "a": "lib/services/lesson/lesson_crud_service.dart",
+   "a_lines": "301-310",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "457-466",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "return Lesson("
+  },
+  {
+   "a": "lib/services/saved_study_set_service.dart",
+   "a_lines": "757-766",
+   "b": "lib/services/saved_study_set_service.dart",
+   "b_lines": "781-790",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "required String studySetId,"
+  },
+  {
+   "a": "lib/services/scope_resolver.dart",
+   "a_lines": "152-163",
+   "b": "lib/services/scope_resolver.dart",
+   "b_lines": "314-325",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "final snapshotNodes = nodesList"
+  },
+  {
+   "a": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "a_lines": "815-824",
+   "b": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "b_lines": "1027-1036",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "TargetCrosswalkOccupation("
+  },
+  {
+   "a": "lib/utils/voice_input_handler.dart",
+   "a_lines": "29-39",
+   "b": "lib/utils/voice_input_handler.dart",
+   "b_lines": "67-77",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "'four': 3,"
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "38-47",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "19-28",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "38-47",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "170-179",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/casestudy/case_study_reader_widget.dart",
+   "a_lines": "62-72",
+   "b": "lib/widgets/community/pilot_progress_card.dart",
+   "b_lines": "42-52",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "388-397",
+   "b": "lib/widgets/community/before_after_assessment_widget.dart",
+   "b_lines": "421-430",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "Expanded("
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "388-397",
+   "b": "lib/widgets/community/before_after_assessment_widget.dart",
+   "b_lines": "488-497",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "Expanded("
+  },
+  {
+   "a": "lib/widgets/community/before_after_assessment_widget.dart",
+   "a_lines": "421-430",
+   "b": "lib/widgets/community/before_after_assessment_widget.dart",
+   "b_lines": "488-497",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "Expanded("
+  },
+  {
+   "a": "lib/widgets/content_renderers/question_content_renderer.dart",
+   "a_lines": "77-90",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "67-80",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "super.didUpdateWidget(oldWidget);"
+  },
+  {
+   "a": "lib/widgets/editors/content_list_tile.dart",
+   "a_lines": "181-191",
+   "b": "lib/widgets/editors/course_lesson_tile.dart",
+   "b_lines": "257-267",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/library/quick_overview_entry.dart",
+   "a_lines": "61-70",
+   "b": "lib/widgets/library/quick_overview_entry.dart",
+   "b_lines": "85-94",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "label: Wrap("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "234-244",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "178-188",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "padding: const EdgeInsets.all(DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "234-244",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "333-343",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "padding: const EdgeInsets.all(DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "234-244",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "131-141",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "padding: const EdgeInsets.all(DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "234-244",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "234-244",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "padding: const EdgeInsets.all(DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "333-345",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "137-150",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "333-345",
+   "b": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "b_lines": "281-293",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "682-692",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "203-214",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "682-692",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "227-237",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "430-440",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "404-414",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "486-496",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "227-237",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "203-214",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "366-376",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "203-214",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "457-467",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "203-214",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "394-404",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "394-404",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "227-237",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "a_lines": "53-63",
+   "b": "lib/widgets/taxonomy/taxonomy_banner_card.dart",
+   "b_lines": "52-62",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "227-237",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "464-475",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "227-237",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "668-678",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "227-237",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "366-376",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "227-237",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "457-467",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "a_lines": "331-343",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "760-772",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "const SizedBox(height: DesignTokens.space4),"
+  },
+  {
+   "a": "lib/widgets/prompt_display_widget.dart",
+   "a_lines": "19-28",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "170-179",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/shimmer_loading.dart",
+   "a_lines": "249-259",
+   "b": "lib/widgets/shimmer_loading.dart",
+   "b_lines": "339-349",
+   "logical_lines": 10,
+   "same_file": true,
+   "sample": "@override"
+  },
+  {
+   "a": "tool/catalog_p2e_pathways.py",
+   "a_lines": "24-34",
+   "b": "tool/catalog_p2f_insurance_pathways.py",
+   "b_lines": "27-37",
+   "logical_lines": 10,
+   "same_file": false,
+   "sample": "if \"condition\" in node: assert isinstance(node[\"condition\"],str) and 10<=len(node[\"condition\"].strip"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/community/educator_profile.dart",
+   "b_lines": "50-61",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/community/educator_verification.dart",
+   "b_lines": "64-75",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/curriculum_node.dart",
+   "b_lines": "75-86",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/flashcard.dart",
+   "b_lines": "32-43",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/knowledge_concept.dart",
+   "b_lines": "145-156",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/assessment_stimulus.dart",
+   "a_lines": "88-99",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/community/educator_verification.dart",
+   "b_lines": "64-75",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/curriculum_node.dart",
+   "b_lines": "75-86",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/flashcard.dart",
+   "b_lines": "32-43",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/knowledge_concept.dart",
+   "b_lines": "145-156",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "192-203",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_profile.dart",
+   "a_lines": "50-61",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/curriculum_node.dart",
+   "b_lines": "75-86",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/flashcard.dart",
+   "b_lines": "32-43",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/knowledge_concept.dart",
+   "b_lines": "145-156",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "192-203",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/educator_verification.dart",
+   "a_lines": "64-75",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/community/family_abe_pilot.dart",
+   "a_lines": "330-338",
+   "b": "lib/services/community/outcome_assessment_service.dart",
+   "b_lines": "70-78",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "required String participantId,"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "75-86",
+   "b": "lib/models/flashcard.dart",
+   "b_lines": "32-43",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "75-86",
+   "b": "lib/models/knowledge_concept.dart",
+   "b_lines": "145-156",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "75-86",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "192-203",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/curriculum_node.dart",
+   "a_lines": "75-86",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/flashcard.dart",
+   "a_lines": "32-43",
+   "b": "lib/models/knowledge_concept.dart",
+   "b_lines": "145-156",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/flashcard.dart",
+   "a_lines": "32-43",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "192-203",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/flashcard.dart",
+   "a_lines": "32-43",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/flashcard.dart",
+   "a_lines": "32-43",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/knowledge_concept.dart",
+   "a_lines": "145-156",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "192-203",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/knowledge_concept.dart",
+   "a_lines": "145-156",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/knowledge_concept.dart",
+   "a_lines": "145-156",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/knowledge_concept.dart",
+   "a_lines": "145-156",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "192-203",
+   "b": "lib/models/learning_target.dart",
+   "b_lines": "395-406",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "192-203",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "192-203",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "395-406",
+   "b": "lib/models/lesson_block.dart",
+   "b_lines": "99-110",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "395-406",
+   "b": "lib/models/module.dart",
+   "b_lines": "36-47",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "createdAt: json['created_at'] != null"
+  },
+  {
+   "a": "lib/models/letter_stroke_data.dart",
+   "a_lines": "103-115",
+   "b": "lib/models/letter_stroke_data.dart",
+   "b_lines": "125-137",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "const NormalizedStroke("
+  },
+  {
+   "a": "lib/models/taxonomy/field_occupation_metric.dart",
+   "a_lines": "66-77",
+   "b": "lib/models/taxonomy/taxonomy_node_lineage.dart",
+   "b_lines": "37-48",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "notes: json['notes'] as String?,"
+  },
+  {
+   "a": "lib/providers/course_builder_provider.dart",
+   "a_lines": "205-217",
+   "b": "lib/providers/lesson_editor_provider.dart",
+   "b_lines": "131-143",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "void setTags(List<String> tags) {"
+  },
+  {
+   "a": "lib/providers/reminder_provider.dart",
+   "a_lines": "103-115",
+   "b": "lib/services/notification_service.dart",
+   "b_lines": "112-124",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "} catch (e) {"
+  },
+  {
+   "a": "lib/screens/careers/career_paths_screen.dart",
+   "a_lines": "112-120",
+   "b": "lib/screens/careers/my_careers_screen.dart",
+   "b_lines": "189-198",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/course_management_screen.dart",
+   "a_lines": "216-224",
+   "b": "lib/widgets/taxonomy/pathway_preparation_sheet.dart",
+   "b_lines": "118-127",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "294-302",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "221-230",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "294-302",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "336-344",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "294-302",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "618-627",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "294-302",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "747-756",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1057",
+   "b": "lib/screens/settings/audio_settings_screen.dart",
+   "b_lines": "88-96",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1057",
+   "b": "lib/screens/settings/audio_settings_screen.dart",
+   "b_lines": "239-247",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1057",
+   "b": "lib/screens/settings/reset_center_screen.dart",
+   "b_lines": "482-490",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1057",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "422-430",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1057",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-208",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-219",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-286",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "76-85",
+   "b": "lib/screens/literacy/life_milestones_screen.dart",
+   "b_lines": "77-86",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "216-225",
+   "b": "lib/screens/literacy/life_milestones_screen.dart",
+   "b_lines": "258-267",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "borderRadius: BorderRadius.circular(DesignTokens.radiusLg),"
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-318",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-286",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-247",
+   "b": "lib/screens/settings/reset_center_screen.dart",
+   "b_lines": "482-490",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-247",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "422-430",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-247",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-208",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-96",
+   "b": "lib/screens/settings/audio_settings_screen.dart",
+   "b_lines": "239-247",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-96",
+   "b": "lib/screens/settings/reset_center_screen.dart",
+   "b_lines": "482-490",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-96",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "422-430",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-96",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-208",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-490",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "422-430",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-490",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-208",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/skills/skills_profile_screen.dart",
+   "a_lines": "249-259",
+   "b": "lib/widgets/editors/course_lesson_tile.dart",
+   "b_lines": "64-74",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "const SizedBox(width: 12),"
+  },
+  {
+   "a": "lib/screens/study/concept_screen.dart",
+   "a_lines": "127-136",
+   "b": "lib/screens/study/mixed_mode_screen.dart",
+   "b_lines": "145-153",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/study/lesson_mode_dialog.dart",
+   "a_lines": "126-134",
+   "b": "lib/screens/study/lesson_screen.dart",
+   "b_lines": "84-92",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "questions: lessonContent.whereType<QuestionContent>().map((c) => Question("
+  },
+  {
+   "a": "lib/screens/targets/target_simulation_screen.dart",
+   "a_lines": "37-48",
+   "b": "lib/widgets/targets/simulation_exam_launch_card.dart",
+   "b_lines": "37-48",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "bool _hasActiveAttempt = false;"
+  },
+  {
+   "a": "lib/services/lesson/lesson_catalog_service.dart",
+   "a_lines": "31-39",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "93-101",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return (response as List)"
+  },
+  {
+   "a": "lib/services/lesson/lesson_crud_service.dart",
+   "a_lines": "301-309",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "393-401",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "return Lesson("
+  },
+  {
+   "a": "lib/services/lesson/lesson_crud_service.dart",
+   "a_lines": "393-401",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "457-465",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "return Lesson("
+  },
+  {
+   "a": "lib/services/search_service.dart",
+   "a_lines": "155-166",
+   "b": "lib/services/search_service.dart",
+   "b_lines": "297-307",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": ".select('id, title, description')"
+  },
+  {
+   "a": "lib/services/speech_recognition/native_web_speech_provider.dart",
+   "a_lines": "171-179",
+   "b": "lib/services/speech_recognition/safari_speech_provider.dart",
+   "b_lines": "134-142",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "a_lines": "488-496",
+   "b": "lib/services/taxonomy/taxonomy_crosswalk_service.dart",
+   "b_lines": "511-519",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": ".ilike('title', '%$q%')"
+  },
+  {
+   "a": "lib/widgets/ai/byok_settings_dialog.dart",
+   "a_lines": "93-101",
+   "b": "lib/widgets/ai/byok_settings_dialog.dart",
+   "b_lines": "136-144",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "final config = ByokConfig("
+  },
+  {
+   "a": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "a_lines": "571-579",
+   "b": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "b_lines": "1065-1073",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "decoration: BoxDecoration("
+  },
+  {
+   "a": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "a_lines": "832-840",
+   "b": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "b_lines": "994-1002",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "const SizedBox(width: 12),"
+  },
+  {
+   "a": "lib/widgets/casestudy/case_study_reader_widget.dart",
+   "a_lines": "58-67",
+   "b": "lib/widgets/community/pilot_outcome_dashboard.dart",
+   "b_lines": "51-60",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/community/educator_profile_edit_dialog.dart",
+   "a_lines": "160-168",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "2496-2504",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "content: SizedBox("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1849-1857",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1977-1985",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "return Center("
+  },
+  {
+   "a": "lib/widgets/community/pilot_outcome_dashboard.dart",
+   "a_lines": "51-60",
+   "b": "lib/widgets/language/bilingual_bridge_widget.dart",
+   "b_lines": "74-83",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/community/pilot_progress_card.dart",
+   "a_lines": "40-49",
+   "b": "lib/widgets/community/resource_card.dart",
+   "b_lines": "33-42",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/pilot_progress_card.dart",
+   "a_lines": "42-51",
+   "b": "lib/widgets/language/bilingual_bridge_widget.dart",
+   "b_lines": "78-87",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/content_renderers/question_content_renderer.dart",
+   "a_lines": "97-106",
+   "b": "lib/widgets/lesson_content_renderer.dart",
+   "b_lines": "89-98",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "McqOptions.countNonAnchorOptions(options) > 1) {"
+  },
+  {
+   "a": "lib/widgets/daily_goal_ring.dart",
+   "a_lines": "35-45",
+   "b": "lib/widgets/daily_goal_ring.dart",
+   "b_lines": "133-142",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": ") {"
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "299-307",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "22-30",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "422-430",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-208",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "547-555",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "22-30",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/widgets/desktop_sidebar.dart",
+   "a_lines": "337-345",
+   "b": "lib/widgets/desktop_sidebar.dart",
+   "b_lines": "392-400",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "37-46",
+   "b": "lib/widgets/marketplace/resource_offer_card.dart",
+   "b_lines": "33-42",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "37-46",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "22-31",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "37-46",
+   "b": "lib/widgets/video/creator_channel_card.dart",
+   "b_lines": "28-37",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "160-170",
+   "b": "lib/widgets/editors/lesson_picker_dialog.dart",
+   "b_lines": "279-289",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "Row("
+  },
+  {
+   "a": "lib/widgets/editors/lesson_picker_dialog.dart",
+   "a_lines": "279-289",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "174-184",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "Row("
+  },
+  {
+   "a": "lib/widgets/learn/context_switcher.dart",
+   "a_lines": "36-45",
+   "b": "lib/widgets/learn/context_switcher.dart",
+   "b_lines": "67-76",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/lesson/concept_content_form.dart",
+   "a_lines": "21-30",
+   "b": "lib/widgets/lesson/mcq_content_form.dart",
+   "b_lines": "31-40",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/lesson/concept_content_form.dart",
+   "a_lines": "21-30",
+   "b": "lib/widgets/lesson/term_content_form.dart",
+   "b_lines": "21-30",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/lesson/content_preview_list.dart",
+   "a_lines": "76-86",
+   "b": "lib/widgets/lesson/lesson_metadata_form.dart",
+   "b_lines": "143-153",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(8),"
+  },
+  {
+   "a": "lib/widgets/lesson/mcq_content_form.dart",
+   "a_lines": "31-40",
+   "b": "lib/widgets/lesson/term_content_form.dart",
+   "b_lines": "21-30",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/level_badge.dart",
+   "a_lines": "133-145",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "187-199",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "loading: () => Card("
+  },
+  {
+   "a": "lib/widgets/literacy/audio_phonics_widget.dart",
+   "a_lines": "94-102",
+   "b": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "b_lines": "135-143",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "204-214",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "395-404",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "228-237",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "367-376",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "458-467",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "b_lines": "487-496",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/currency_atm_widget.dart",
+   "b_lines": "683-692",
+   "logical_lines": 9,
+   "same_file": true,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "465-475",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "429-439",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "669-678",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "34-44",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "34-44",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "278-291",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "220-233",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "}).toList(),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "640-653",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "530-543",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "const SizedBox(width: DesignTokens.space2),"
+  },
+  {
+   "a": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "a_lines": "16-25",
+   "b": "lib/widgets/taxonomy/taxonomy_banner_card.dart",
+   "b_lines": "15-24",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "final isDark = theme.brightness == Brightness.dark;"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "220-233",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "134-148",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "}).toList(),"
+  },
+  {
+   "a": "lib/widgets/marketplace/resource_offer_card.dart",
+   "a_lines": "33-42",
+   "b": "lib/widgets/video/creator_channel_card.dart",
+   "b_lines": "28-37",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/marketplace/resource_offer_card.dart",
+   "a_lines": "34-43",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "108-116",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "a_lines": "22-31",
+   "b": "lib/widgets/video/creator_channel_card.dart",
+   "b_lines": "28-37",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "elevation: 2,"
+  },
+  {
+   "a": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "a_lines": "23-32",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "108-116",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/question_widgets/mcq_question_widget.dart",
+   "a_lines": "113-121",
+   "b": "lib/widgets/question_widgets/short_answer_question_widget.dart",
+   "b_lines": "37-45",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/question_widgets/mcq_question_widget.dart",
+   "a_lines": "113-121",
+   "b": "lib/widgets/question_widgets/true_false_question_widget.dart",
+   "b_lines": "37-45",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/question_widgets/short_answer_question_widget.dart",
+   "a_lines": "37-45",
+   "b": "lib/widgets/question_widgets/true_false_question_widget.dart",
+   "b_lines": "37-45",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "a_lines": "104-122",
+   "b": "lib/widgets/taxonomy/cip_detail_sheet.dart",
+   "b_lines": "122-140",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "overflow: TextOverflow.ellipsis,"
+  },
+  {
+   "a": "tool/catalog_p2e_pathways.py",
+   "a_lines": "24-33",
+   "b": "tool/catalog_p2g_contractor_pathways.py",
+   "b_lines": "31-40",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "if \"condition\" in node: assert isinstance(node[\"condition\"],str) and 10<=len(node[\"condition\"].strip"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "78-88",
+   "b": "tool/catalog_p2j_contractor_pathways.py",
+   "b_lines": "109-119",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "78-88",
+   "b": "tool/catalog_p2k_cam_pathways.py",
+   "b_lines": "107-117",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/catalog_p2h_real_estate_pathways.py",
+   "a_lines": "78-88",
+   "b": "tool/catalog_p2l_cosmetologist_pathways.py",
+   "b_lines": "107-117",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "labels = []"
+  },
+  {
+   "a": "tool/generate_clep_algebra_course.py",
+   "a_lines": "40-55",
+   "b": "tool/generate_clep_psychology_course.py",
+   "b_lines": "57-72",
+   "logical_lines": 9,
+   "same_file": false,
+   "sample": "class CleanYamlDumper(yaml.SafeDumper):"
+  },
+  {
+   "a": "lib/l10n/app_localizations_en.dart",
+   "a_lines": "110-119",
+   "b": "lib/l10n/app_localizations_es.dart",
+   "b_lines": "110-119",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/models/base_lesson.dart",
+   "a_lines": "28-35",
+   "b": "lib/models/lesson.dart",
+   "b_lines": "104-111",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "String? id,"
+  },
+  {
+   "a": "lib/models/base_lesson.dart",
+   "a_lines": "28-35",
+   "b": "lib/models/local_lesson.dart",
+   "b_lines": "87-94",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "String? id,"
+  },
+  {
+   "a": "lib/models/learning_support/bridge_lesson.dart",
+   "a_lines": "677-684",
+   "b": "lib/models/learning_support/bridge_lesson.dart",
+   "b_lines": "725-732",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return BridgeCheck("
+  },
+  {
+   "a": "lib/models/learning_target.dart",
+   "a_lines": "16-23",
+   "b": "lib/providers/verified_destinations_provider.dart",
+   "b_lines": "55-62",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "case 'certification':"
+  },
+  {
+   "a": "lib/models/lesson.dart",
+   "a_lines": "104-111",
+   "b": "lib/models/local_lesson.dart",
+   "b_lines": "87-94",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "String? id,"
+  },
+  {
+   "a": "lib/models/letter_stroke_data.dart",
+   "a_lines": "271-279",
+   "b": "lib/models/letter_stroke_data.dart",
+   "b_lines": "302-310",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const NormalizedStroke("
+  },
+  {
+   "a": "lib/providers/audio_playback_provider.dart",
+   "a_lines": "32-43",
+   "b": "lib/providers/audio_provider.dart",
+   "b_lines": "117-128",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "state = state.copyWith("
+  },
+  {
+   "a": "lib/providers/course_builder_provider.dart",
+   "a_lines": "303-310",
+   "b": "lib/providers/course_builder_provider.dart",
+   "b_lines": "326-333",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "title: state.title,"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "158-166",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "199-207",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "158-166",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "229-237",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "158-166",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "255-263",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "199-207",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "229-237",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "199-207",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "255-263",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/lesson_provider.dart",
+   "a_lines": "229-237",
+   "b": "lib/providers/lesson_provider.dart",
+   "b_lines": "255-263",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "createdAt: e['created_at'] != null"
+  },
+  {
+   "a": "lib/providers/reset_provider.dart",
+   "a_lines": "145-154",
+   "b": "lib/providers/reset_provider.dart",
+   "b_lines": "228-237",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "_ref.read(userCareerPathsProvider.notifier).refresh();"
+  },
+  {
+   "a": "lib/providers/router_provider.dart",
+   "a_lines": "582-591",
+   "b": "lib/providers/router_provider.dart",
+   "b_lines": "602-611",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "final tabParam = state.uri.queryParameters['tab'];"
+  },
+  {
+   "a": "lib/providers/study_set_provider.dart",
+   "a_lines": "104-112",
+   "b": "lib/providers/study_set_provider.dart",
+   "b_lines": "138-146",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "List<String> tags = const [],"
+  },
+  {
+   "a": "lib/screens/assessment/exam_report_screen.dart",
+   "a_lines": "141-148",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1316-1323",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/assessment/exam_report_screen.dart",
+   "a_lines": "406-413",
+   "b": "lib/screens/assessment/exam_report_screen.dart",
+   "b_lines": "510-517",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/assessment/exam_report_screen.dart",
+   "a_lines": "406-413",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "427-434",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/assessment/exam_report_screen.dart",
+   "a_lines": "510-517",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "427-434",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/careers/career_path_detail_screen.dart",
+   "a_lines": "377-385",
+   "b": "lib/screens/skills/skill_detail_screen.dart",
+   "b_lines": "268-276",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/screens/careers/career_path_detail_screen.dart",
+   "a_lines": "383-390",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "632-639",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/careers/career_paths_screen.dart",
+   "a_lines": "112-119",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "299-306",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/careers/career_paths_screen.dart",
+   "a_lines": "112-119",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "547-554",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/careers/career_paths_screen.dart",
+   "a_lines": "112-119",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "22-29",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/careers/my_careers_screen.dart",
+   "a_lines": "189-197",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "299-306",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/careers/my_careers_screen.dart",
+   "a_lines": "189-197",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "547-554",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/careers/my_careers_screen.dart",
+   "a_lines": "189-197",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "22-29",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "borderRadius: BorderRadius.circular(12),"
+  },
+  {
+   "a": "lib/screens/course_management_screen.dart",
+   "a_lines": "212-219",
+   "b": "lib/screens/governance/moderation_queue_screen.dart",
+   "b_lines": "408-415",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/course_management_screen.dart",
+   "a_lines": "403-410",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "1480-1487",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return SingleChildScrollView("
+  },
+  {
+   "a": "lib/screens/courses/course_detail_screen.dart",
+   "a_lines": "367-375",
+   "b": "lib/widgets/desktop_sidebar.dart",
+   "b_lines": "400-407",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/governance/cost_observability_screen.dart",
+   "a_lines": "148-157",
+   "b": "lib/screens/governance/moderation_queue_screen.dart",
+   "b_lines": "669-678",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "textAlign: TextAlign.center,"
+  },
+  {
+   "a": "lib/screens/governance/moderation_queue_screen.dart",
+   "a_lines": "422-429",
+   "b": "lib/widgets/community/educator_profile_card.dart",
+   "b_lines": "71-78",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Expanded("
+  },
+  {
+   "a": "lib/screens/governance/version_staging_dashboard_screen.dart",
+   "a_lines": "164-171",
+   "b": "lib/widgets/analytics/item_psychometrics_sheet.dart",
+   "b_lines": "83-90",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Row("
+  },
+  {
+   "a": "lib/screens/home/home_lessons_list.dart",
+   "a_lines": "198-206",
+   "b": "lib/widgets/shimmer_loading.dart",
+   "b_lines": "251-259",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "final colorScheme = Theme.of(context).colorScheme;"
+  },
+  {
+   "a": "lib/screens/home/home_lessons_list.dart",
+   "a_lines": "198-206",
+   "b": "lib/widgets/shimmer_loading.dart",
+   "b_lines": "341-349",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "final colorScheme = Theme.of(context).colorScheme;"
+  },
+  {
+   "a": "lib/screens/home/home_study_sets_section.dart",
+   "a_lines": "210-218",
+   "b": "lib/widgets/targets/simulation_exam_launch_card.dart",
+   "b_lines": "99-106",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "184-192",
+   "b": "lib/screens/lessons/guided_generation_screen.dart",
+   "b_lines": "1179-1188",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "if (isBound) {"
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "297-304",
+   "b": "lib/screens/lessons/create_lesson_screen.dart",
+   "b_lines": "430-437",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/screens/lessons/create_lesson_screen.dart",
+   "a_lines": "430-437",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "422-429",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1056",
+   "b": "lib/widgets/audio_settings/testing_section.dart",
+   "b_lines": "40-47",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1056",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1056",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1049-1056",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1050-1057",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "300-307",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1050-1057",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "548-555",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1050-1057",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "23-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/lessons/guided_generation_screen.dart",
+   "a_lines": "1050-1057",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/library/library_screen.dart",
+   "a_lines": "593-602",
+   "b": "lib/widgets/targets/create_target_dialog.dart",
+   "b_lines": "337-346",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-218",
+   "b": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "b_lines": "230-239",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-218",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "220-229",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-218",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "375-384",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-218",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "173-182",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_domains_screen.dart",
+   "a_lines": "209-218",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-317",
+   "b": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "b_lines": "230-239",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-317",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "220-229",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-317",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "375-384",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-317",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "173-182",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/literacy/life_milestones_screen.dart",
+   "a_lines": "308-317",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/screens/overview/overview_tour_screen.dart",
+   "a_lines": "510-517",
+   "b": "lib/widgets/lesson_card.dart",
+   "b_lines": "124-132",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/progress/progress_screen.dart",
+   "a_lines": "234-241",
+   "b": "lib/widgets/learn/context_switcher.dart",
+   "b_lines": "264-271",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "PopupMenuItem("
+  },
+  {
+   "a": "lib/screens/progress/progress_screen.dart",
+   "a_lines": "607-614",
+   "b": "lib/screens/progress/progress_screen.dart",
+   "b_lines": "763-770",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return Padding("
+  },
+  {
+   "a": "lib/screens/reminder_screen.dart",
+   "a_lines": "23-30",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "127-134",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "String _formatFrequency(ReminderFrequency frequency) {"
+  },
+  {
+   "a": "lib/screens/reminder_screen.dart",
+   "a_lines": "97-108",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "210-219",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "decoration: const InputDecoration("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-246",
+   "b": "lib/widgets/audio_settings/testing_section.dart",
+   "b_lines": "40-47",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-246",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-246",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "239-246",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "240-247",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "300-307",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "240-247",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "548-555",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "240-247",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "23-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "240-247",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-95",
+   "b": "lib/widgets/audio_settings/testing_section.dart",
+   "b_lines": "40-47",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-95",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-95",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "88-95",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "89-96",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "300-307",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "89-96",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "548-555",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "89-96",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "23-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/audio_settings_screen.dart",
+   "a_lines": "89-96",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-489",
+   "b": "lib/widgets/audio_settings/testing_section.dart",
+   "b_lines": "40-47",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-489",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-489",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "482-489",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "483-490",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "300-307",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "483-490",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "548-555",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "483-490",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "23-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/settings/reset_center_screen.dart",
+   "a_lines": "483-490",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/screens/study/flashcard_screen.dart",
+   "a_lines": "296-305",
+   "b": "lib/screens/study/mcq_screen.dart",
+   "b_lines": "285-294",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "backgroundColor: theme.colorScheme.surfaceContainerHighest,"
+  },
+  {
+   "a": "lib/screens/study/lesson_screen.dart",
+   "a_lines": "375-383",
+   "b": "lib/screens/study/study_set_screen.dart",
+   "b_lines": "166-174",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "final timerNotifier = ref.read(timerProvider.notifier);"
+  },
+  {
+   "a": "lib/screens/targets/target_simulation_screen.dart",
+   "a_lines": "245-254",
+   "b": "lib/widgets/targets/simulation_exam_launch_card.dart",
+   "b_lines": "88-97",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder("
+  },
+  {
+   "a": "lib/screens/taxonomy/occupation_detail_screen.dart",
+   "a_lines": "207-214",
+   "b": "lib/screens/taxonomy/occupation_detail_screen.dart",
+   "b_lines": "374-381",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/screens/taxonomy/occupation_detail_screen.dart",
+   "a_lines": "84-91",
+   "b": "lib/widgets/taxonomy/cip_detail_sheet.dart",
+   "b_lines": "79-86",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Expanded("
+  },
+  {
+   "a": "lib/screens/taxonomy/occupation_detail_screen.dart",
+   "a_lines": "87-95",
+   "b": "lib/widgets/assessment/assessment_item_renderer.dart",
+   "b_lines": "445-454",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/services/community/field_pilot_service.dart",
+   "a_lines": "96-103",
+   "b": "lib/services/community/field_pilot_service.dart",
+   "b_lines": "132-139",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "final updatedSession = PilotParticipantSession("
+  },
+  {
+   "a": "lib/services/governance/cost_observability_service.dart",
+   "a_lines": "37-44",
+   "b": "lib/services/governance/moderation_service.dart",
+   "b_lines": "27-34",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Future<bool> isAdmin() async {"
+  },
+  {
+   "a": "lib/services/lesson/lesson_catalog_service.dart",
+   "a_lines": "44-51",
+   "b": "lib/services/lesson/lesson_crud_service.dart",
+   "b_lines": "65-72",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": ": DateTime.now(),"
+  },
+  {
+   "a": "lib/services/saved_study_set_service.dart",
+   "a_lines": "275-284",
+   "b": "lib/services/saved_study_set_service.dart",
+   "b_lines": "296-305",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "try {"
+  },
+  {
+   "a": "lib/services/saved_study_set_service.dart",
+   "a_lines": "605-613",
+   "b": "lib/services/saved_study_set_service.dart",
+   "b_lines": "667-675",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "};"
+  },
+  {
+   "a": "lib/services/saved_study_set_service.dart",
+   "a_lines": "635-643",
+   "b": "lib/services/saved_study_set_service.dart",
+   "b_lines": "667-675",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "};"
+  },
+  {
+   "a": "lib/services/scope_resolver.dart",
+   "a_lines": "130-137",
+   "b": "lib/services/scope_resolver.dart",
+   "b_lines": "285-293",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "final verRes = await client"
+  },
+  {
+   "a": "lib/services/scope_resolver.dart",
+   "a_lines": "166-173",
+   "b": "lib/services/scope_resolver.dart",
+   "b_lines": "327-334",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "await _snapshotBox.put("
+  },
+  {
+   "a": "lib/services/skill_assessment_service.dart",
+   "a_lines": "66-75",
+   "b": "lib/services/skill_assessment_service.dart",
+   "b_lines": "89-98",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "final userId = _userId;"
+  },
+  {
+   "a": "lib/services/speech_recognition/native_web_speech_provider.dart",
+   "a_lines": "351-361",
+   "b": "lib/services/speech_recognition/safari_speech_provider.dart",
+   "b_lines": "304-314",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/audio_status_card.dart",
+   "a_lines": "15-22",
+   "b": "lib/widgets/audio_settings/testing_section.dart",
+   "b_lines": "38-45",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/audio_status_card.dart",
+   "a_lines": "15-22",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "19-26",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/audio_status_card.dart",
+   "a_lines": "15-22",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "170-177",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/audio_status_card.dart",
+   "a_lines": "15-22",
+   "b": "lib/widgets/simulation/network_troubleshooting_simulation.dart",
+   "b_lines": "227-234",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "38-45",
+   "b": "lib/widgets/simulation/network_troubleshooting_simulation.dart",
+   "b_lines": "227-234",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "40-47",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "422-429",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "40-47",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "40-47",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-207",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/audio_settings/testing_section.dart",
+   "a_lines": "41-48",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "423-430",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1715-1722",
+   "b": "lib/widgets/study/concept_content.dart",
+   "b_lines": "22-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1887-1894",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "634-641",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1887-1894",
+   "b": "lib/widgets/progress/daily_plan_card.dart",
+   "b_lines": "34-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "1946-1953",
+   "b": "lib/widgets/community/in_context_qa_sheet.dart",
+   "b_lines": "2097-2104",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const SizedBox(height: 12),"
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "2015-2022",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "634-641",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "2015-2022",
+   "b": "lib/widgets/progress/daily_plan_card.dart",
+   "b_lines": "34-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "2172-2179",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "634-641",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/in_context_qa_sheet.dart",
+   "a_lines": "2172-2179",
+   "b": "lib/widgets/progress/daily_plan_card.dart",
+   "b_lines": "34-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/community/pilot_progress_card.dart",
+   "a_lines": "40-48",
+   "b": "lib/widgets/marketplace/resource_offer_card.dart",
+   "b_lines": "35-43",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/pilot_progress_card.dart",
+   "a_lines": "40-48",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "24-32",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/pilot_progress_card.dart",
+   "a_lines": "40-48",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "109-116",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/resource_card.dart",
+   "a_lines": "33-41",
+   "b": "lib/widgets/marketplace/resource_offer_card.dart",
+   "b_lines": "35-43",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/resource_card.dart",
+   "a_lines": "33-41",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "24-32",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/community/resource_card.dart",
+   "a_lines": "33-41",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "109-116",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "247-256",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "363-370",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "247-256",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "645-654",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "247-256",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "785-794",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "247-256",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "812-819",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "363-370",
+   "b": "lib/widgets/content_quality_widget.dart",
+   "b_lines": "645-654",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "363-370",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "785-794",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "363-370",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "812-819",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "645-654",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "785-794",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/content_quality_widget.dart",
+   "a_lines": "645-654",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "812-819",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "300-307",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "423-430",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "300-307",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "201-208",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "300-307",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "422-429",
+   "b": "lib/widgets/level_badge.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "422-429",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "422-429",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "423-430",
+   "b": "lib/widgets/dashboard_skill_widgets.dart",
+   "b_lines": "548-555",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "423-430",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "23-30",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "423-430",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "548-555",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "201-208",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "548-555",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/dashboard_skill_widgets.dart",
+   "a_lines": "634-641",
+   "b": "lib/widgets/progress/daily_plan_card.dart",
+   "b_lines": "34-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/desktop_sidebar.dart",
+   "a_lines": "164-172",
+   "b": "lib/widgets/desktop_sidebar.dart",
+   "b_lines": "276-284",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return Container("
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "117-124",
+   "b": "lib/widgets/marketplace/resource_offer_card.dart",
+   "b_lines": "37-45",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "117-124",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "26-34",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "117-124",
+   "b": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "b_lines": "227-235",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "38-46",
+   "b": "lib/widgets/governance/content_proposal_review_card.dart",
+   "b_lines": "26-34",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/discovery/coach_recommendations_card.dart",
+   "a_lines": "38-46",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "108-115",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "111-125",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "109-123",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "style: theme.textTheme.titleLarge?.copyWith("
+  },
+  {
+   "a": "lib/widgets/editors/concept_editor_sheet.dart",
+   "a_lines": "83-93",
+   "b": "lib/widgets/editors/question_editor_sheet.dart",
+   "b_lines": "196-206",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Navigator.of(context).pop();"
+  },
+  {
+   "a": "lib/widgets/editors/content_list_tile.dart",
+   "a_lines": "30-37",
+   "b": "lib/widgets/editors/content_list_tile.dart",
+   "b_lines": "170-177",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "IconData get _typeIcon {"
+  },
+  {
+   "a": "lib/widgets/editors/lesson_picker_dialog.dart",
+   "a_lines": "280-289",
+   "b": "lib/widgets/editors/question_editor_sheet.dart",
+   "b_lines": "412-421",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/editors/question_editor_sheet.dart",
+   "a_lines": "196-206",
+   "b": "lib/widgets/editors/term_editor_sheet.dart",
+   "b_lines": "81-91",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Navigator.of(context).pop();"
+  },
+  {
+   "a": "lib/widgets/enhanced_json_import_widget.dart",
+   "a_lines": "785-794",
+   "b": "lib/widgets/enhanced_json_import_widget.dart",
+   "b_lines": "812-819",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "const SizedBox(height: 16),"
+  },
+  {
+   "a": "lib/widgets/governance/content_proposal_review_card.dart",
+   "a_lines": "137-145",
+   "b": "lib/widgets/governance/content_proposal_review_card.dart",
+   "b_lines": "173-181",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return Container("
+  },
+  {
+   "a": "lib/widgets/governance/content_proposal_review_card.dart",
+   "a_lines": "26-34",
+   "b": "lib/widgets/marketplace/resource_offer_card.dart",
+   "b_lines": "34-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/governance/content_proposal_review_card.dart",
+   "a_lines": "26-34",
+   "b": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "b_lines": "23-31",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/governance/content_proposal_review_card.dart",
+   "a_lines": "26-34",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "108-115",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/governance/content_proposal_review_card.dart",
+   "a_lines": "26-34",
+   "b": "lib/widgets/video/creator_channel_card.dart",
+   "b_lines": "29-37",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/lesson/blocks/callout_block_widget.dart",
+   "a_lines": "59-67",
+   "b": "lib/widgets/lesson/content_preview_list.dart",
+   "b_lines": "31-38",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/lesson/concept_content_form.dart",
+   "a_lines": "123-131",
+   "b": "lib/widgets/lesson/concept_content_form.dart",
+   "b_lines": "197-205",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "size: 16,"
+  },
+  {
+   "a": "lib/widgets/lesson/content_type_selector.dart",
+   "a_lines": "93-102",
+   "b": "lib/widgets/lesson/lesson_metadata_form.dart",
+   "b_lines": "139-148",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "decoration: BoxDecoration("
+  },
+  {
+   "a": "lib/widgets/lesson/mcq_content_form.dart",
+   "a_lines": "181-189",
+   "b": "lib/widgets/lesson/term_content_form.dart",
+   "b_lines": "28-36",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "Container("
+  },
+  {
+   "a": "lib/widgets/level_badge.dart",
+   "a_lines": "148-155",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "21-28",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/level_badge.dart",
+   "a_lines": "148-155",
+   "b": "lib/widgets/prompt_display_widget.dart",
+   "b_lines": "172-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/level_badge.dart",
+   "a_lines": "148-155",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-207",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/audio_phonics_widget.dart",
+   "a_lines": "94-101",
+   "b": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "b_lines": "95-102",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/audio_phonics_widget.dart",
+   "a_lines": "94-101",
+   "b": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "b_lines": "83-90",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/audio_phonics_widget.dart",
+   "a_lines": "94-101",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "109-116",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "333-343",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "199-209",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/currency_atm_widget.dart",
+   "a_lines": "333-343",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "223-233",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "105-113",
+   "b": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "b_lines": "148-155",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "34-43",
+   "b": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "b_lines": "33-42",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/cvc_blending_widget.dart",
+   "a_lines": "95-102",
+   "b": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "b_lines": "135-142",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "230-239",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "375-384",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "230-239",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "230-239",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-285",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "281-291",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "199-209",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "377-385",
+   "b": "lib/widgets/literacy/food_safety_widget.dart",
+   "b_lines": "287-295",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "459-468",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "432-441",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "textAlign: TextAlign.center,"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "494-502",
+   "b": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "b_lines": "57-66",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "630-638",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "520-528",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/dmv_exam_simulator_widget.dart",
+   "a_lines": "630-638",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "631-639",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "220-229",
+   "b": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "b_lines": "375-384",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "220-229",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "220-229",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-285",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/food_safety_widget.dart",
+   "a_lines": "441-449",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "295-303",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "199-209",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "137-148",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "211-220",
+   "b": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "b_lines": "57-66",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "375-384",
+   "b": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "b_lines": "173-182",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "375-384",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "375-384",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-285",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/ged_bridge_widget.dart",
+   "a_lines": "520-528",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "169-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "a_lines": "135-142",
+   "b": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "b_lines": "83-90",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "a_lines": "135-142",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "109-116",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Stack("
+  },
+  {
+   "a": "lib/widgets/literacy/letter_tracing_canvas.dart",
+   "a_lines": "148-155",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "119-127",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "a_lines": "53-61",
+   "b": "lib/widgets/targets/simulation_exam_launch_card.dart",
+   "b_lines": "97-104",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "a_lines": "57-66",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "472-481",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/literacy/life_milestones_banner_card.dart",
+   "a_lines": "57-66",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "676-684",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "children: ["
+  },
+  {
+   "a": "lib/widgets/literacy/oral_diagnostic_widget.dart",
+   "a_lines": "125-133",
+   "b": "lib/widgets/literacy/oral_diagnostic_widget.dart",
+   "b_lines": "266-274",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/literacy/personal_id_form_widget.dart",
+   "a_lines": "33-42",
+   "b": "lib/widgets/literacy/survival_words_widget.dart",
+   "b_lines": "34-43",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "173-182",
+   "b": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "b_lines": "387-396",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/rx_and_first_aid_widget.dart",
+   "a_lines": "173-182",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-285",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "a_lines": "387-396",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "276-285",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return ChoiceChip("
+  },
+  {
+   "a": "lib/widgets/literacy/uscis_civics_simulator_widget.dart",
+   "a_lines": "631-639",
+   "b": "lib/widgets/literacy/workplace_safety_widget.dart",
+   "b_lines": "169-179",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "const SizedBox(height: DesignTokens.space3),"
+  },
+  {
+   "a": "lib/widgets/marketplace/resource_offer_card.dart",
+   "a_lines": "37-45",
+   "b": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "b_lines": "227-235",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/marketplace/tutoring_booking_card.dart",
+   "a_lines": "26-34",
+   "b": "lib/widgets/taxonomy/career_crosswalk_sheet.dart",
+   "b_lines": "227-235",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Column("
+  },
+  {
+   "a": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "a_lines": "106-113",
+   "b": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "b_lines": "209-216",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "Card("
+  },
+  {
+   "a": "lib/widgets/performance/procedural_rubric_widget.dart",
+   "a_lines": "108-115",
+   "b": "lib/widgets/video/creator_channel_card.dart",
+   "b_lines": "29-37",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),"
+  },
+  {
+   "a": "lib/widgets/prompt_display_widget.dart",
+   "a_lines": "170-177",
+   "b": "lib/widgets/simulation/network_troubleshooting_simulation.dart",
+   "b_lines": "227-234",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/prompt_display_widget.dart",
+   "a_lines": "172-179",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-207",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/prompt_display_widget.dart",
+   "a_lines": "19-26",
+   "b": "lib/widgets/simulation/network_troubleshooting_simulation.dart",
+   "b_lines": "227-234",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "@override"
+  },
+  {
+   "a": "lib/widgets/prompt_display_widget.dart",
+   "a_lines": "21-28",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "200-207",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "return Card("
+  },
+  {
+   "a": "lib/widgets/reminders/reminder_card.dart",
+   "a_lines": "127-134",
+   "b": "lib/widgets/reminders/reminder_card.dart",
+   "b_lines": "314-321",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "String _formatFrequency(ReminderFrequency frequency) {"
+  },
+  {
+   "a": "lib/widgets/reminders/reminder_card.dart",
+   "a_lines": "23-30",
+   "b": "lib/widgets/review_widgets.dart",
+   "b_lines": "201-208",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/reminders/reminder_card.dart",
+   "a_lines": "23-30",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/review_widgets.dart",
+   "a_lines": "201-208",
+   "b": "lib/widgets/rubric/long_answer_grading_widget.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/targets/simulation_exam_launch_card.dart",
+   "a_lines": "97-104",
+   "b": "lib/widgets/taxonomy/taxonomy_banner_card.dart",
+   "b_lines": "52-60",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "child: Padding("
+  },
+  {
+   "a": "lib/widgets/voice_command_confirmation.dart",
+   "a_lines": "69-77",
+   "b": "lib/widgets/voice_command_confirmation.dart",
+   "b_lines": "322-329",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "child: Column("
+  },
+  {
+   "a": "tool/ci/check_pgtap_parity.py",
+   "a_lines": "93-102",
+   "b": "tool/ci/check_test_skips.py",
+   "b_lines": "142-151",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "print(text)"
+  },
+  {
+   "a": "tool/ci/summarize_coverage.py",
+   "a_lines": "133-142",
+   "b": "tool/ci/summarize_python_coverage.py",
+   "b_lines": "82-91",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "print(text)"
+  },
+  {
+   "a": "tool/software_learning/hosted_runtime.py",
+   "a_lines": "10-31",
+   "b": "tool/software_learning/retention_batch.py",
+   "b_lines": "7-20",
+   "logical_lines": 8,
+   "same_file": false,
+   "sample": "\"\"\""
+  },
+  {
+   "a": "tool/software_learning/private_retention_db.py",
+   "a_lines": "94-107",
+   "b": "tool/software_learning/private_retention_db.py",
+   "b_lines": "117-127",
+   "logical_lines": 8,
+   "same_file": true,
+   "sample": "\"AND \" + _ELIGIBLE + \" \""
+  }
+ ]
+}

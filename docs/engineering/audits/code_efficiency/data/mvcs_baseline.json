@@ -1,0 +1,1041 @@
+{
+  "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+  "manifest_sha256": "1ba2d6f00253fc233aef6c2abdf6632e2dbc42bb2d6b5bb86238eb11f93a3a24",
+  "python": "3.13.4",
+  "tokenizer": {
+    "library": "tiktoken 0.9.0",
+    "encoding": "o200k_base",
+    "ranks_sha256": "11ab290e07c46f3d7d08d4bd78f7c54b9197bac97669eb12cd4fabc90e3bef36"
+  },
+  "live_model_calls": 0,
+  "tasks": [
+    {
+      "id": "T1",
+      "kind": "refactor-sensitive",
+      "files": 5,
+      "whole_file_bytes": 87102,
+      "bounded_range_bytes": 7428,
+      "whole_file_tokens": 16989,
+      "bounded_range_tokens": 1551,
+      "by_role_range_bytes": {
+        "contract": 1044,
+        "owner": 2503,
+        "test": 3881
+      },
+      "scripted_route": [
+        {
+          "step": "lib/screens/library/library_screen.dart",
+          "bytes": 50609,
+          "outside_mvcs": 48106
+        }
+      ],
+      "scripted_hops_to_owner": 1,
+      "scripted_route_file_reads": 1,
+      "scripted_route_bytes": 50609,
+      "avoidable_bytes_before_owner": 0,
+      "false_owner_candidates": [
+        "lib/services/scope_resolver.dart",
+        "lib/providers/scope_resolver_provider.dart"
+      ],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/screens/library/library_screen.dart",
+          "role": "owner",
+          "ranges": [
+            "43-61",
+            "145-162",
+            "415-441"
+          ],
+          "whole_bytes": 50609,
+          "range_bytes": 2503,
+          "whole_tokens": 8875,
+          "range_tokens": 492
+        },
+        {
+          "path": "lib/models/learning_target.dart",
+          "role": "contract",
+          "ranges": [
+            "266-281"
+          ],
+          "whole_bytes": 14448,
+          "range_bytes": 713,
+          "whole_tokens": 3272,
+          "range_tokens": 150
+        },
+        {
+          "path": "supabase/migrations/20261009000005_learning_target_catalog_provenance.sql",
+          "role": "contract",
+          "ranges": [
+            "103-110"
+          ],
+          "whole_bytes": 4647,
+          "range_bytes": 331,
+          "whole_tokens": 1043,
+          "range_tokens": 73
+        },
+        {
+          "path": "test/widgets/library_create_chooser_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-53",
+            "79-93"
+          ],
+          "whole_bytes": 6472,
+          "range_bytes": 3090,
+          "whole_tokens": 1408,
+          "range_tokens": 643
+        },
+        {
+          "path": "test/widgets/create_target_suggestions_test.dart",
+          "role": "test",
+          "ranges": [
+            "36-56"
+          ],
+          "whole_bytes": 10926,
+          "range_bytes": 791,
+          "whole_tokens": 2391,
+          "range_tokens": 193
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "refactor-sensitive",
+      "files": 3,
+      "whole_file_bytes": 178919,
+      "bounded_range_bytes": 9638,
+      "whole_file_tokens": 37221,
+      "bounded_range_tokens": 2166,
+      "by_role_range_bytes": {
+        "contract": 1564,
+        "owner": 2875,
+        "test": 5199
+      },
+      "scripted_route": [
+        {
+          "step": "lib/widgets/community/in_context_qa_sheet.dart",
+          "bytes": 100717,
+          "outside_mvcs": 97842
+        }
+      ],
+      "scripted_hops_to_owner": 1,
+      "scripted_route_file_reads": 1,
+      "scripted_route_bytes": 100717,
+      "avoidable_bytes_before_owner": 0,
+      "false_owner_candidates": [],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/widgets/community/in_context_qa_sheet.dart",
+          "role": "owner",
+          "ranges": [
+            "766-858"
+          ],
+          "whole_bytes": 100717,
+          "range_bytes": 2875,
+          "whole_tokens": 19461,
+          "range_tokens": 603
+        },
+        {
+          "path": "lib/services/community/community_qa_service.dart",
+          "role": "contract",
+          "ranges": [
+            "504-552"
+          ],
+          "whole_bytes": 20663,
+          "range_bytes": 1564,
+          "whole_tokens": 4836,
+          "range_tokens": 371
+        },
+        {
+          "path": "test/widgets/community/in_context_qa_sheet_test.dart",
+          "role": "test",
+          "ranges": [
+            "200-231",
+            "253-280",
+            "515-562",
+            "596-639"
+          ],
+          "whole_bytes": 57539,
+          "range_bytes": 5199,
+          "whole_tokens": 12924,
+          "range_tokens": 1192
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "kind": "refactor-sensitive",
+      "files": 10,
+      "whole_file_bytes": 123937,
+      "bounded_range_bytes": 47007,
+      "whole_file_tokens": 26678,
+      "bounded_range_tokens": 10843,
+      "by_role_range_bytes": {
+        "contract": 10295,
+        "owner": 14639,
+        "policy": 711,
+        "test": 21362
+      },
+      "scripted_route": [
+        {
+          "step": "lib/widgets/software_learning/excel_upload_card.dart",
+          "bytes": 45008,
+          "outside_mvcs": 34783
+        },
+        {
+          "step": "lib/services/software_learning/demo_workbook_reader.dart",
+          "bytes": 9277,
+          "outside_mvcs": 5004
+        },
+        {
+          "step": "grep:check_budget_total",
+          "bytes": 0
+        },
+        {
+          "step": "tool/software_learning/excel_budget_total.py",
+          "bytes": 4414,
+          "outside_mvcs": 0
+        }
+      ],
+      "scripted_hops_to_owner": 4,
+      "scripted_route_file_reads": 3,
+      "scripted_route_bytes": 58699,
+      "avoidable_bytes_before_owner": 39787,
+      "false_owner_candidates": [
+        "Treating the two rubrics as copies that must match (would push toward trusting the browser rubric's cached total)"
+      ],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "tool/software_learning/excel_budget_total.py",
+          "role": "owner",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 4414,
+          "range_bytes": 4414,
+          "whole_tokens": 993,
+          "range_tokens": 993
+        },
+        {
+          "path": "lib/widgets/software_learning/excel_upload_card.dart",
+          "role": "owner",
+          "ranges": [
+            "1-38",
+            "128-294",
+            "445-526"
+          ],
+          "whole_bytes": 45008,
+          "range_bytes": 10225,
+          "whole_tokens": 9625,
+          "range_tokens": 2281
+        },
+        {
+          "path": "lib/services/software_learning/demo_workbook_reader.dart",
+          "role": "contract",
+          "ranges": [
+            "1-111"
+          ],
+          "whole_bytes": 9277,
+          "range_bytes": 4273,
+          "whole_tokens": 2230,
+          "range_tokens": 1035
+        },
+        {
+          "path": "tool/software_learning/xlsx_worker.py",
+          "role": "contract",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 2093,
+          "range_bytes": 2093,
+          "whole_tokens": 466,
+          "range_tokens": 466
+        },
+        {
+          "path": "tool/tests/test_software_learning_excel_checker.py",
+          "role": "test",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 4860,
+          "range_bytes": 4860,
+          "whole_tokens": 1179,
+          "range_tokens": 1179
+        },
+        {
+          "path": "test/services/software_learning/demo_workbook_evaluator_test.dart",
+          "role": "test",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 10446,
+          "range_bytes": 10446,
+          "whole_tokens": 2562,
+          "range_tokens": 2562
+        },
+        {
+          "path": "tool/software_learning/pilot_pipeline.py",
+          "role": "contract",
+          "ranges": [
+            "1-70"
+          ],
+          "whole_bytes": 2754,
+          "range_bytes": 2754,
+          "whole_tokens": 650,
+          "range_tokens": 650
+        },
+        {
+          "path": "data/software_learning/excel_budget_total_v1.json",
+          "role": "contract",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 1175,
+          "range_bytes": 1175,
+          "whole_tokens": 318,
+          "range_tokens": 318
+        },
+        {
+          "path": "docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md",
+          "role": "policy",
+          "ranges": [
+            "27-35"
+          ],
+          "whole_bytes": 24330,
+          "range_bytes": 711,
+          "whole_tokens": 4686,
+          "range_tokens": 140
+        },
+        {
+          "path": "test/widgets/software_learning/excel_upload_card_test.dart",
+          "role": "test",
+          "ranges": [
+            "187-312",
+            "372-409"
+          ],
+          "whole_bytes": 19580,
+          "range_bytes": 6056,
+          "whole_tokens": 3969,
+          "range_tokens": 1219
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "kind": "refactor-sensitive",
+      "files": 5,
+      "whole_file_bytes": 84202,
+      "bounded_range_bytes": 20344,
+      "whole_file_tokens": 16914,
+      "bounded_range_tokens": 4365,
+      "by_role_range_bytes": {
+        "contract": 4975,
+        "owner": 9402,
+        "test": 5967
+      },
+      "scripted_route": [
+        {
+          "step": "lib/widgets/assessment/assessment_item_renderer.dart",
+          "bytes": 49617,
+          "outside_mvcs": 40215
+        }
+      ],
+      "scripted_hops_to_owner": 1,
+      "scripted_route_file_reads": 1,
+      "scripted_route_bytes": 49617,
+      "avoidable_bytes_before_owner": 0,
+      "false_owner_candidates": [],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/widgets/assessment/assessment_item_renderer.dart",
+          "role": "owner",
+          "ranges": [
+            "1-40",
+            "242-310",
+            "702-863"
+          ],
+          "whole_bytes": 49617,
+          "range_bytes": 9402,
+          "whole_tokens": 9417,
+          "range_tokens": 1899
+        },
+        {
+          "path": "lib/models/assessment_item.dart",
+          "role": "contract",
+          "ranges": [
+            "135-141"
+          ],
+          "whole_bytes": 8012,
+          "range_bytes": 378,
+          "whole_tokens": 1818,
+          "range_tokens": 83
+        },
+        {
+          "path": "lib/services/assessment/assessment_grading_service.dart",
+          "role": "contract",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 4597,
+          "range_bytes": 4597,
+          "whole_tokens": 1049,
+          "range_tokens": 1049
+        },
+        {
+          "path": "test/widgets/assessment_item_renderer_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-26",
+            "27-85"
+          ],
+          "whole_bytes": 18747,
+          "range_bytes": 2738,
+          "whole_tokens": 3895,
+          "range_tokens": 599
+        },
+        {
+          "path": "test/widgets/assessment_item_server_grading_test.dart",
+          "role": "test",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 3229,
+          "range_bytes": 3229,
+          "whole_tokens": 735,
+          "range_tokens": 735
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "kind": "refactor-sensitive",
+      "files": 5,
+      "whole_file_bytes": 104655,
+      "bounded_range_bytes": 41999,
+      "whole_file_tokens": 23270,
+      "bounded_range_tokens": 9811,
+      "by_role_range_bytes": {
+        "contract": 12723,
+        "owner": 11949,
+        "test": 17327
+      },
+      "scripted_route": [
+        {
+          "step": "lib/providers/learning_strategy_provider.dart",
+          "bytes": 43442,
+          "outside_mvcs": 31493
+        }
+      ],
+      "scripted_hops_to_owner": 1,
+      "scripted_route_file_reads": 1,
+      "scripted_route_bytes": 43442,
+      "avoidable_bytes_before_owner": 0,
+      "false_owner_candidates": [],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/providers/learning_strategy_provider.dart",
+          "role": "owner",
+          "ranges": [
+            "17-131",
+            "376-559",
+            "815-845"
+          ],
+          "whole_bytes": 43442,
+          "range_bytes": 11949,
+          "whole_tokens": 9379,
+          "range_tokens": 2528
+        },
+        {
+          "path": "lib/services/learning_context_sync_service.dart",
+          "role": "contract",
+          "ranges": [
+            "8-30",
+            "177-226"
+          ],
+          "whole_bytes": 9942,
+          "range_bytes": 2708,
+          "whole_tokens": 2277,
+          "range_tokens": 591
+        },
+        {
+          "path": "supabase/migrations/20261111030000_tel_01b_context_fast_preferences.sql",
+          "role": "contract",
+          "ranges": [
+            "54-346"
+          ],
+          "whole_bytes": 12855,
+          "range_bytes": 10015,
+          "whole_tokens": 3084,
+          "range_tokens": 2450
+        },
+        {
+          "path": "test/providers/learning_strategy_provider_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-98",
+            "479-578"
+          ],
+          "whole_bytes": 28760,
+          "range_bytes": 7671,
+          "whole_tokens": 5848,
+          "range_tokens": 1560
+        },
+        {
+          "path": "supabase/tests/tel_01b_context_fast_preferences_test.sql",
+          "role": "test",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 9656,
+          "range_bytes": 9656,
+          "whole_tokens": 2682,
+          "range_tokens": 2682
+        }
+      ]
+    },
+    {
+      "id": "T6",
+      "kind": "navigation-control",
+      "files": 8,
+      "whole_file_bytes": 161241,
+      "bounded_range_bytes": 20697,
+      "whole_file_tokens": 39422,
+      "bounded_range_tokens": 5152,
+      "by_role_range_bytes": {
+        "contract": 9317,
+        "owner": 3089,
+        "test": 8291
+      },
+      "scripted_route": [
+        {
+          "step": "tool/ingest_curriculum.dart",
+          "bytes": 59126,
+          "outside_mvcs": 56037
+        }
+      ],
+      "scripted_hops_to_owner": 1,
+      "scripted_route_file_reads": 1,
+      "scripted_route_bytes": 59126,
+      "avoidable_bytes_before_owner": 0,
+      "false_owner_candidates": [],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "tool/ingest_curriculum.dart",
+          "role": "owner",
+          "ranges": [
+            "1-56",
+            "128-145",
+            "351-355"
+          ],
+          "whole_bytes": 59126,
+          "range_bytes": 3089,
+          "whole_tokens": 14063,
+          "range_tokens": 677
+        },
+        {
+          "path": "tool/lint_manifest.dart",
+          "role": "contract",
+          "ranges": [
+            "46-100",
+            "487-552"
+          ],
+          "whole_bytes": 24550,
+          "range_bytes": 4012,
+          "whole_tokens": 5757,
+          "range_tokens": 963
+        },
+        {
+          "path": "content/schema/curriculum_manifest.schema.json",
+          "role": "contract",
+          "ranges": [
+            "1-60"
+          ],
+          "whole_bytes": 18057,
+          "range_bytes": 1754,
+          "whole_tokens": 4677,
+          "range_tokens": 480
+        },
+        {
+          "path": "tool/ci/check_algebra_manifest_parity.py",
+          "role": "contract",
+          "ranges": [
+            "1-40"
+          ],
+          "whole_bytes": 4584,
+          "range_bytes": 1606,
+          "whole_tokens": 1145,
+          "range_tokens": 400
+        },
+        {
+          "path": ".github/workflows/flutter-ci.yml",
+          "role": "contract",
+          "ranges": [
+            "296-300",
+            "345-372"
+          ],
+          "whole_bytes": 30500,
+          "range_bytes": 1945,
+          "whole_tokens": 7696,
+          "range_tokens": 476
+        },
+        {
+          "path": "test/tool/curriculum_stable_ids_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-28",
+            "29-100"
+          ],
+          "whole_bytes": 7292,
+          "range_bytes": 4496,
+          "whole_tokens": 1855,
+          "range_tokens": 1182
+        },
+        {
+          "path": "test/services/curriculum_manifest_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-20",
+            "126-170"
+          ],
+          "whole_bytes": 11152,
+          "range_bytes": 2869,
+          "whole_tokens": 2822,
+          "range_tokens": 767
+        },
+        {
+          "path": "tool/tests/test_check_algebra_manifest_parity.py",
+          "role": "test",
+          "ranges": [
+            "1-30"
+          ],
+          "whole_bytes": 5980,
+          "range_bytes": 926,
+          "whole_tokens": 1407,
+          "range_tokens": 207
+        }
+      ]
+    },
+    {
+      "id": "T7",
+      "kind": "navigation-control",
+      "files": 11,
+      "whole_file_bytes": 149023,
+      "bounded_range_bytes": 24986,
+      "whole_file_tokens": 29351,
+      "bounded_range_tokens": 5389,
+      "by_role_range_bytes": {
+        "contract": 2807,
+        "owner": 13694,
+        "test": 8485
+      },
+      "scripted_route": [
+        {
+          "step": "lib/screens/library/library_screen.dart",
+          "bytes": 50609,
+          "outside_mvcs": 50262
+        },
+        {
+          "step": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
+          "bytes": 9816,
+          "outside_mvcs": 1927
+        },
+        {
+          "step": "lib/providers/pre_reader_provider.dart",
+          "bytes": 3966,
+          "outside_mvcs": 1528
+        },
+        {
+          "step": "lib/services/pre_reader_audio_service.dart",
+          "bytes": 3604,
+          "outside_mvcs": 1700
+        },
+        {
+          "step": "grep:autoSpeakScreens",
+          "bytes": 0
+        },
+        {
+          "step": "lib/screens/literacy/life_milestones_screen.dart",
+          "bytes": 12720,
+          "outside_mvcs": 12180
+        }
+      ],
+      "scripted_hops_to_owner": 2,
+      "scripted_route_file_reads": 5,
+      "scripted_route_bytes": 80715,
+      "avoidable_bytes_before_owner": 50262,
+      "false_owner_candidates": [],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/screens/library/library_screen.dart",
+          "role": "owner",
+          "ranges": [
+            "23-24",
+            "107-107",
+            "445-446"
+          ],
+          "whole_bytes": 50609,
+          "range_bytes": 347,
+          "whole_tokens": 8875,
+          "range_tokens": 74
+        },
+        {
+          "path": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
+          "role": "owner",
+          "ranges": [
+            "29-110",
+            "119-243"
+          ],
+          "whole_bytes": 9816,
+          "range_bytes": 7889,
+          "whole_tokens": 2052,
+          "range_tokens": 1673
+        },
+        {
+          "path": "lib/providers/pre_reader_provider.dart",
+          "role": "owner",
+          "ranges": [
+            "1-42",
+            "83-101",
+            "121-125"
+          ],
+          "whole_bytes": 3966,
+          "range_bytes": 2438,
+          "whole_tokens": 908,
+          "range_tokens": 553
+        },
+        {
+          "path": "lib/services/pre_reader_audio_service.dart",
+          "role": "owner",
+          "ranges": [
+            "1-53"
+          ],
+          "whole_bytes": 3604,
+          "range_bytes": 1904,
+          "whole_tokens": 875,
+          "range_tokens": 437
+        },
+        {
+          "path": "lib/screens/literacy/life_milestones_screen.dart",
+          "role": "owner",
+          "ranges": [
+            "40-61"
+          ],
+          "whole_bytes": 12720,
+          "range_bytes": 540,
+          "whole_tokens": 2248,
+          "range_tokens": 124
+        },
+        {
+          "path": "test/services/pre_reader_audio_service_test.dart",
+          "role": "test",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 5400,
+          "range_bytes": 5400,
+          "whole_tokens": 1132,
+          "range_tokens": 1132
+        },
+        {
+          "path": "test/widgets/pre_reader_literacy_test.dart",
+          "role": "test",
+          "ranges": [
+            "69-85"
+          ],
+          "whole_bytes": 12589,
+          "range_bytes": 615,
+          "whole_tokens": 2736,
+          "range_tokens": 128
+        },
+        {
+          "path": "lib/models/pre_reader_profile.dart",
+          "role": "contract",
+          "ranges": [
+            "12-23"
+          ],
+          "whole_bytes": 1622,
+          "range_bytes": 296,
+          "whole_tokens": 400,
+          "range_tokens": 73
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "role": "contract",
+          "ranges": [
+            "251-310"
+          ],
+          "whole_bytes": 29396,
+          "range_bytes": 2511,
+          "whole_tokens": 6187,
+          "range_tokens": 528
+        },
+        {
+          "path": "lib/screens/literacy/life_domains_screen.dart",
+          "role": "owner",
+          "ranges": [
+            "40-60"
+          ],
+          "whole_bytes": 7800,
+          "range_bytes": 576,
+          "whole_tokens": 1482,
+          "range_tokens": 129
+        },
+        {
+          "path": "test/widgets/phase_5_pwa_ux_test.dart",
+          "role": "test",
+          "ranges": [
+            "64-123"
+          ],
+          "whole_bytes": 11501,
+          "range_bytes": 2470,
+          "whole_tokens": 2456,
+          "range_tokens": 538
+        }
+      ]
+    },
+    {
+      "id": "T8",
+      "kind": "navigation-control",
+      "files": 7,
+      "whole_file_bytes": 40327,
+      "bounded_range_bytes": 8183,
+      "whole_file_tokens": 9494,
+      "bounded_range_tokens": 1795,
+      "by_role_range_bytes": {
+        "contract": 663,
+        "owner": 5250,
+        "policy": 1275,
+        "test": 995
+      },
+      "scripted_route": [
+        {
+          "step": "AGENTS.md",
+          "bytes": 7263,
+          "outside_mvcs": 5988
+        },
+        {
+          "step": "lib/models/governance/site_feature_keys.dart",
+          "bytes": 2622,
+          "outside_mvcs": 0
+        },
+        {
+          "step": "lib/services/governance/site_feature_service.dart",
+          "bytes": 6556,
+          "outside_mvcs": 6556
+        },
+        {
+          "step": "grep:content.refresh_proposals",
+          "bytes": 0
+        },
+        {
+          "step": "supabase/migrations/20261113020000_content_refresh_proposals.sql",
+          "bytes": 9303,
+          "outside_mvcs": 7050
+        }
+      ],
+      "scripted_hops_to_owner": 5,
+      "scripted_route_file_reads": 4,
+      "scripted_route_bytes": 25744,
+      "avoidable_bytes_before_owner": 12544,
+      "false_owner_candidates": [
+        "lib/services/governance/site_feature_service.dart"
+      ],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "AGENTS.md",
+          "role": "policy",
+          "ranges": [
+            "83-90"
+          ],
+          "whole_bytes": 7263,
+          "range_bytes": 1275,
+          "whole_tokens": 1572,
+          "range_tokens": 236
+        },
+        {
+          "path": "lib/models/governance/site_feature_keys.dart",
+          "role": "owner",
+          "ranges": [
+            "all"
+          ],
+          "whole_bytes": 2622,
+          "range_bytes": 2622,
+          "whole_tokens": 552,
+          "range_tokens": 552
+        },
+        {
+          "path": "lib/providers/site_feature_provider.dart",
+          "role": "contract",
+          "ranges": [
+            "22-30"
+          ],
+          "whole_bytes": 1097,
+          "range_bytes": 253,
+          "whole_tokens": 230,
+          "range_tokens": 59
+        },
+        {
+          "path": "lib/providers/lesson_contribution_provider.dart",
+          "role": "owner",
+          "ranges": [
+            "19-26"
+          ],
+          "whole_bytes": 2000,
+          "range_bytes": 375,
+          "whole_tokens": 431,
+          "range_tokens": 84
+        },
+        {
+          "path": "supabase/migrations/20261113020000_content_refresh_proposals.sql",
+          "role": "owner",
+          "ranges": [
+            "1-20",
+            "115-136",
+            "175-193"
+          ],
+          "whole_bytes": 9303,
+          "range_bytes": 2253,
+          "whole_tokens": 2214,
+          "range_tokens": 530
+        },
+        {
+          "path": "supabase/migrations/20261110220000_marketing_feature_control_foundation.sql",
+          "role": "contract",
+          "ranges": [
+            "88-97"
+          ],
+          "whole_bytes": 11940,
+          "range_bytes": 410,
+          "whole_tokens": 2741,
+          "range_tokens": 91
+        },
+        {
+          "path": "supabase/tests/content_refresh_proposals_test.sql",
+          "role": "test",
+          "ranges": [
+            "30-50"
+          ],
+          "whole_bytes": 6102,
+          "range_bytes": 995,
+          "whole_tokens": 1754,
+          "range_tokens": 243
+        }
+      ]
+    },
+    {
+      "id": "T9",
+      "kind": "navigation-control (excluded-document exception)",
+      "files": 4,
+      "whole_file_bytes": 125956,
+      "bounded_range_bytes": 5404,
+      "whole_file_tokens": 28151,
+      "bounded_range_tokens": 1148,
+      "by_role_range_bytes": {
+        "contract": 288,
+        "owner": 2178,
+        "policy": 920,
+        "test": 2018
+      },
+      "scripted_route": [
+        {
+          "step": "lib/providers/router_provider.dart",
+          "bytes": 29396,
+          "outside_mvcs": 29108
+        },
+        {
+          "step": "lib/widgets/app_shell.dart",
+          "bytes": 7401,
+          "outside_mvcs": 5223
+        },
+        {
+          "step": "UI_ARCHITECTURE_LOCKED.md",
+          "bytes": 79012,
+          "outside_mvcs": 78092
+        }
+      ],
+      "scripted_hops_to_owner": 2,
+      "scripted_route_file_reads": 3,
+      "scripted_route_bytes": 115809,
+      "avoidable_bytes_before_owner": 29108,
+      "false_owner_candidates": [
+        "lib/providers/router_provider.dart (as destination owner)"
+      ],
+      "map_section_owner": "not_measured",
+      "map_section_contract": "not_measured",
+      "map_section_tests": "not_measured",
+      "files_detail": [
+        {
+          "path": "lib/widgets/app_shell.dart",
+          "role": "owner",
+          "ranges": [
+            "128-192"
+          ],
+          "whole_bytes": 7401,
+          "range_bytes": 2178,
+          "whole_tokens": 1520,
+          "range_tokens": 412
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "role": "contract",
+          "ranges": [
+            "120-127"
+          ],
+          "whole_bytes": 29396,
+          "range_bytes": 288,
+          "whole_tokens": 6187,
+          "range_tokens": 62
+        },
+        {
+          "path": "UI_ARCHITECTURE_LOCKED.md",
+          "role": "policy",
+          "ranges": [
+            "108-108",
+            "231-231",
+            "875-875"
+          ],
+          "whole_bytes": 79012,
+          "range_bytes": 920,
+          "whole_tokens": 18182,
+          "range_tokens": 204
+        },
+        {
+          "path": "test/widgets/direct_access_rule_test.dart",
+          "role": "test",
+          "ranges": [
+            "1-40",
+            "247-257"
+          ],
+          "whole_bytes": 10147,
+          "range_bytes": 2018,
+          "whole_tokens": 2262,
+          "range_tokens": 470
+        }
+      ]
+    }
+  ]
+}
