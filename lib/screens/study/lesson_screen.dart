@@ -38,6 +38,7 @@ import 'package:learning_pwa/widgets/analytics/active_lesson_study_capture.dart'
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 import 'package:learning_pwa/widgets/learning_support/learning_help_action.dart';
 import 'package:learning_pwa/widgets/community/share_with_community_action.dart';
+import 'package:learning_pwa/providers/community_qa_provider.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -355,6 +356,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     context,
                     lessonId: widget.lessonId,
                     topicTitle: lessonData.lesson.title,
+                    service: ref.read(communityQaServiceProvider),
                   );
                 },
               ),

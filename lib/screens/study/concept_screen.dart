@@ -5,6 +5,7 @@ import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
+import 'package:learning_pwa/providers/community_qa_provider.dart';
 
 class ConceptScreen extends ConsumerStatefulWidget {
   final List<ConceptContent> concepts;
@@ -95,6 +96,7 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
                 context,
                 conceptId: currentConcept?.id,
                 topicTitle: currentConcept?.conceptText,
+                service: ref.read(communityQaServiceProvider),
               );
             },
           ),

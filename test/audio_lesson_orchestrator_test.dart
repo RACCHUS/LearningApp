@@ -3,7 +3,15 @@ import 'package:learning_pwa/services/audio_lesson_orchestrator.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/models/audio_lesson_settings.dart';
 
+import 'test_helpers/platform_channel_fakes.dart';
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  // A working fake TTS engine for the whole file (each speak completes), so
+  // playback tests exercise the real reading path instead of passing only
+  // because TTS failed instantly. Installed once, so it outlives each test's
+  // tearDown (which stops the lesson through the same channel).
+  setUpAll(installFakeTtsChannel);
   // Helper to create test content with all required fields
   ConceptContent createTestConcept(String id, String text, {String? example}) {
     return ConceptContent(
@@ -48,6 +56,12 @@ void main() {
 
     setUp(() {
       orchestrator = AudioLessonOrchestrator();
+    });
+
+    tearDown(() async {
+      // Stop playback before the fake TTS channel is removed, so no
+      // lesson keeps running (and calling the plugin) after the test.
+      await orchestrator.stopLesson();
     });
 
     test('should initialize successfully', () async {
@@ -317,6 +331,12 @@ void main() {
       ));
     });
 
+    tearDown(() async {
+      // Stop playback before the fake TTS channel is removed, so no
+      // lesson keeps running (and calling the plugin) after the test.
+      await orchestrator.stopLesson();
+    });
+
     test('should simulate next voice command', () async {
       await orchestrator.startLesson(testContent);
       expect(orchestrator.currentIndex, equals(0));
@@ -542,6 +562,12 @@ void main() {
       orchestrator = AudioLessonOrchestrator();
     });
 
+    tearDown(() async {
+      // Stop playback before the fake TTS channel is removed, so no
+      // lesson keeps running (and calling the plugin) after the test.
+      await orchestrator.stopLesson();
+    });
+
     test('should respect hands-free mode setting', () {
       const settings = AudioLessonSettings(
         handsFreeModeEnabled: true,
@@ -607,6 +633,12 @@ void main() {
 
     setUp(() {
       orchestrator = AudioLessonOrchestrator();
+    });
+
+    tearDown(() async {
+      // Stop playback before the fake TTS channel is removed, so no
+      // lesson keeps running (and calling the plugin) after the test.
+      await orchestrator.stopLesson();
     });
 
     test('should emit action events', () async {

@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 CI_DIR = Path(__file__).resolve().parents[1] / "ci"
@@ -24,6 +25,15 @@ def report(prints, extra_suites=()):
         events.append({"type": "print", "testID": 100 + files.index(f), "message": message, "time": 2})
     events.append({"type": "done", "success": True, "time": 3})
     return [json.dumps(e) for e in events]
+
+
+# The ratchet logic is tested against this fixture, not the live list (which
+# is empty once every file is fixed).
+KNOWN_FIXTURE = {
+    "test/known_a_test.dart": "Fixture entry: a test file allowed to log setup gaps for now, with a real follow-up.",
+    "test/known_b_test.dart": "Fixture entry: a second allowed file, used to check that a clean known file is stale.",
+}
+use_fixture = mock.patch.dict(noise.KNOWN_NOISE, KNOWN_FIXTURE, clear=True)
 
 
 class LogNoiseTest(unittest.TestCase):
@@ -64,6 +74,7 @@ class LogNoiseTest(unittest.TestCase):
         self.assertEqual(dict(hits), {})
         self.assertEqual(self.run_main(lines), 0)
 
+    @use_fixture
     def test_new_noise_fails_and_known_noise_warns(self):
         known_file = next(iter(noise.KNOWN_NOISE))
         lines = report([
@@ -76,11 +87,13 @@ class LogNoiseTest(unittest.TestCase):
         self.assertEqual([f for f, _ in warnings], [known_file])
         self.assertEqual(self.run_main(lines), 1)
 
+    @use_fixture
     def test_only_known_noise_passes_ratchet_but_fails_strict(self):
         lines = report([(f, "MissingStubError: 'x'") for f in noise.KNOWN_NOISE])
         self.assertEqual(self.run_main(lines), 0)
         self.assertEqual(self.run_main(lines, "--strict"), 1)
 
+    @use_fixture
     def test_known_file_that_ran_clean_is_stale(self):
         clean_known = next(iter(noise.KNOWN_NOISE))
         others = [(f, "MissingStubError: 'x'") for f in noise.KNOWN_NOISE if f != clean_known]
@@ -109,6 +122,11 @@ class LogNoiseTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         self.assertEqual(noise.repo_relative(str(root / "test" / "x_test.dart")), "test/x_test.dart")
 
+    def test_live_list_is_empty(self):
+        # Every file from plan PR-4a is fixed; new noise must be fixed, not listed.
+        self.assertEqual(noise.KNOWN_NOISE, {})
+
+    @use_fixture
     def test_every_known_entry_has_a_reason(self):
         for file, reason in noise.KNOWN_NOISE.items():
             self.assertTrue(file.startswith("test/") and file.endswith("_test.dart"), file)

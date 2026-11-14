@@ -214,7 +214,7 @@ This is not acceptance of a partial fix: each PR closes only the findings it ful
 
 - Promote `Browser smoke (Chromium guest journeys)` to required after a sustained stable record (maintainer decision).
 - Browser journey 2 (signed-in create → reload → readback) needs a local-backend browser harness; covered today at the service layer only.
-- Five `KNOWN_NOISE` test files from §0C.4 and the `ScopeResolver` test-fake type-name check.
+- ~~Five `KNOWN_NOISE` test files from §0C.4~~: fixed; `KNOWN_NOISE` is now empty and the full suite logs no setup gaps. **Still open:** the `ScopeResolver` test-fake type-name check.
 - Python tooling coverage (needs a pinned `coverage` package) and a Supabase security/contract matrix document (§12).
 - Two SQL-level mutation seeds (cross-learner attempt read; protected keys in a simulation response) that need the DB job.
 - Add tests for the least-covered critical files from the first audit (assessment screens, `content_loading_service.dart`, `assessment_provider.dart`, the sync services, `auth_provider.dart`); offline/sync/storage is the weakest area.
