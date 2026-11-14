@@ -1,0 +1,725 @@
+{
+  "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+  "frozen": "2026-11-14",
+  "scope": "T1-T9 (owner approved T9 on 2026-11-14)",
+  "status": "frozen; T3 and T7 reconciled with independent second review 2026-11-14 (additions recorded, one T7 test removed with reason)",
+  "inclusion_rule": "Plan v0.6 section 7.1: (1) minimum code/callsite identifying the edit owner; (2) each direct data/permission/trust/side-effect contract needed to validate the task; (3) named tests and necessary fixtures for that boundary; (4) required authoritative policy text even from a normally excluded document. Ranges are inclusive 1-based line numbers of the Git blob at the pin. 'all' means the whole file.",
+  "baseline_route_rule": "Scripted no-map route: read whole files in the order of the v0.5 section 7.2 starting probe; when the probe does not contain the owner, the next hop is the single grep a developer would run for the task's key identifier, then the hit. owner_step is the 1-based step that first reads the correct owner. Avoidable bytes = bytes read before owner_step that fall outside this task's MVCS ranges.",
+  "tasks": [
+    {
+      "id": "T1",
+      "kind": "refactor-sensitive",
+      "task": "Locate and safely change one Library trusted/official/reviewed/mine source filter decision.",
+      "mvcs": [
+        {
+          "path": "lib/screens/library/library_screen.dart",
+          "ranges": [
+            "43-61",
+            "145-162",
+            "415-441"
+          ],
+          "role": "owner",
+          "why": "_CatalogSource enum + state field; the switch that decides visibility; the picker that sets _source"
+        },
+        {
+          "path": "lib/models/learning_target.dart",
+          "ranges": [
+            "266-281"
+          ],
+          "role": "contract",
+          "why": "isTrustedPublic predicate and sourceLabel used by the filter"
+        },
+        {
+          "path": "supabase/migrations/20261009000005_learning_target_catalog_provenance.sql",
+          "ranges": [
+            "103-110"
+          ],
+          "role": "contract",
+          "why": "targets_read RLS policy: server mirror of isTrustedPublic; proves the client filter cannot widen access"
+        },
+        {
+          "path": "test/widgets/library_create_chooser_test.dart",
+          "ranges": [
+            "1-53",
+            "79-93"
+          ],
+          "role": "test",
+          "why": "harness + 'source chips collapse into one picker defaulting to Trusted'"
+        },
+        {
+          "path": "test/widgets/create_target_suggestions_test.dart",
+          "ranges": [
+            "36-56"
+          ],
+          "role": "test",
+          "why": "isTrustedPublic provenance cases"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/services/scope_resolver.dart",
+          "why": "Listed in the v0.5 probe but the source filter does not read scope; it only filters LearningTarget by trust flags and auth user id"
+        },
+        {
+          "path": "lib/providers/scope_resolver_provider.dart",
+          "why": "Same; activeResolvedScopeProvider is watched in build() for other sections, not for the source decision"
+        }
+      ],
+      "findings": [
+        "v0.5 probe names scope_resolver files: false-owner candidates for this task",
+        "No test asserts which targets each source value shows (only the picker default): coverage gap",
+        "The decision is a pure function of (source, target, userId): Pilot C feasibility evidence, not authorization"
+      ],
+      "baseline_route": [
+        "lib/screens/library/library_screen.dart"
+      ],
+      "owner_step": 1,
+      "false_owner_candidates": [
+        "lib/services/scope_resolver.dart",
+        "lib/providers/scope_resolver_provider.dart"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "refactor-sensitive",
+      "task": "Locate the question-versus-answer moderation review message without changing domain action semantics.",
+      "mvcs": [
+        {
+          "path": "lib/widgets/community/in_context_qa_sheet.dart",
+          "ranges": [
+            "766-858"
+          ],
+          "role": "owner",
+          "why": "_handleReviewQuestion/_handleReviewAnswer success SnackBars and shared _handleReviewError"
+        },
+        {
+          "path": "lib/services/community/community_qa_service.dart",
+          "ranges": [
+            "504-552"
+          ],
+          "role": "contract",
+          "why": "reviewQuestion/reviewAnswer RPC contracts that must stay distinct"
+        },
+        {
+          "path": "test/widgets/community/in_context_qa_sheet_test.dart",
+          "ranges": [
+            "200-231",
+            "253-280",
+            "515-562",
+            "596-639"
+          ],
+          "role": "test",
+          "why": "fake review calls; harness; publish/reject question; answer review tab"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/widgets/community/in_context_qa_sheet.dart:1005-2297",
+          "why": "build/subview region; not needed to change the message text"
+        }
+      ],
+      "findings": [
+        "No test asserts the 'review action ... recorded successfully' message text: coverage gap"
+      ],
+      "baseline_route": [
+        "lib/widgets/community/in_context_qa_sheet.dart"
+      ],
+      "owner_step": 1,
+      "false_owner_candidates": []
+    },
+    {
+      "id": "T3",
+      "kind": "refactor-sensitive",
+      "task": "Locate the Excel Budget workbook rubric evaluation rule, with the untrusted preview/worker boundary unchanged.",
+      "mvcs": [
+        {
+          "path": "tool/software_learning/excel_budget_total.py",
+          "ranges": [
+            "all"
+          ],
+          "role": "owner",
+          "why": "Upload checker for real uploads: ignores cached totals, uses server-issued inputs; returns unverified_checker_only (never awards)"
+        },
+        {
+          "path": "lib/widgets/software_learning/excel_upload_card.dart",
+          "ranges": [
+            "1-38",
+            "128-294",
+            "445-526"
+          ],
+          "role": "owner",
+          "why": "Browser preview rubric (cached total vs fixed demo inputs) + constants; _submitWorkbook trust guard (evidenceTrust == unverified_checker_only)"
+        },
+        {
+          "path": "lib/services/software_learning/demo_workbook_reader.dart",
+          "ranges": [
+            "1-111"
+          ],
+          "role": "contract",
+          "why": "Restricted preview reader limits and read() contract"
+        },
+        {
+          "path": "tool/software_learning/xlsx_worker.py",
+          "ranges": [
+            "all"
+          ],
+          "role": "contract",
+          "why": "Worker envelope that feeds the authoritative checker"
+        },
+        {
+          "path": "tool/tests/test_software_learning_excel_checker.py",
+          "ranges": [
+            "all"
+          ],
+          "role": "test",
+          "why": "Upload checker tests (incl. spec parity)"
+        },
+        {
+          "path": "test/services/software_learning/demo_workbook_evaluator_test.dart",
+          "ranges": [
+            "all"
+          ],
+          "role": "test",
+          "why": "Client checker tests"
+        },
+        {
+          "path": "tool/software_learning/pilot_pipeline.py",
+          "ranges": [
+            "1-70"
+          ],
+          "role": "contract",
+          "why": "Only caller of check_budget_total; enforces worker envelope (parsed_unverified, can_award_skill false). Added by second review"
+        },
+        {
+          "path": "data/software_learning/excel_budget_total_v1.json",
+          "ranges": [
+            "all"
+          ],
+          "role": "contract",
+          "why": "Declarative spec asserted by the checker tests. Added by second review"
+        },
+        {
+          "path": "docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md",
+          "ranges": [
+            "27-35"
+          ],
+          "role": "policy",
+          "why": "Real uploads must never use the browser rubric. Added by second review"
+        },
+        {
+          "path": "test/widgets/software_learning/excel_upload_card_test.dart",
+          "ranges": [
+            "187-312",
+            "372-409"
+          ],
+          "role": "test",
+          "why": "Card behaviour and trust-binding rejection. Added by second review"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "tool/software_learning/brokered_upload.py, pilot_pipeline.py, private_assessment*.py",
+          "why": "Sealed upload, pipeline and retention are unchanged by a rubric-rule edit; their tests remain the regression net (plan section 6 Pilot B)"
+        }
+      ],
+      "findings": [
+        "v0.5 probe misses the upload checker (tool/software_learning/excel_budget_total.py) and its trust gate (pilot_pipeline.py)",
+        "CORRECTED by second review: the two rubrics differ on purpose (browser: cached total vs fixed demo inputs; upload checker: ignores cache, server inputs). Neither is skill-awarding; 'change both together' and 'no parity test' were wrong framings. Both suites do check the same starter inputs."
+      ],
+      "baseline_route": [
+        "lib/widgets/software_learning/excel_upload_card.dart",
+        "lib/services/software_learning/demo_workbook_reader.dart",
+        "grep:check_budget_total",
+        "tool/software_learning/excel_budget_total.py"
+      ],
+      "owner_step": 4,
+      "false_owner_candidates": [
+        "Treating the two rubrics as copies that must match (would push toward trusting the browser rubric's cached total)"
+      ],
+      "task_note": "Reconciled with independent review 2026-11-14: the two rubrics differ on purpose (release-gates policy); neither awards skills."
+    },
+    {
+      "id": "T4",
+      "kind": "refactor-sensitive",
+      "task": "Identify the source of a single-choice assessment interaction presentation without changing grading.",
+      "mvcs": [
+        {
+          "path": "lib/widgets/assessment/assessment_item_renderer.dart",
+          "ranges": [
+            "1-40",
+            "242-310",
+            "702-863"
+          ],
+          "role": "owner",
+          "why": "imports/gradingService field; submit -> server grading for hidden keys -> _gradeWith single-choice case; _buildInteractionContent + _buildSingleChoice"
+        },
+        {
+          "path": "lib/models/assessment_item.dart",
+          "ranges": [
+            "135-141"
+          ],
+          "role": "contract",
+          "why": "hidden-answer-key flag semantics"
+        },
+        {
+          "path": "lib/services/assessment/assessment_grading_service.dart",
+          "ranges": [
+            "all"
+          ],
+          "role": "contract",
+          "why": "server grading boundary"
+        },
+        {
+          "path": "test/widgets/assessment_item_renderer_test.dart",
+          "ranges": [
+            "1-26",
+            "27-85"
+          ],
+          "role": "test",
+          "why": "single-choice render/submit"
+        },
+        {
+          "path": "test/widgets/assessment_item_server_grading_test.dart",
+          "ranges": [
+            "all"
+          ],
+          "role": "test",
+          "why": "hidden-key server grading and retryable error"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/widgets/mcq_options.dart",
+          "why": "Not used by _buildSingleChoice"
+        }
+      ],
+      "findings": [],
+      "baseline_route": [
+        "lib/widgets/assessment/assessment_item_renderer.dart"
+      ],
+      "owner_step": 1,
+      "false_owner_candidates": []
+    },
+    {
+      "id": "T5",
+      "kind": "refactor-sensitive",
+      "task": "Trace offline Fast preference CAS conflict replay without changing strategy behavior.",
+      "mvcs": [
+        {
+          "path": "lib/providers/learning_strategy_provider.dart",
+          "ranges": [
+            "17-131",
+            "376-559",
+            "815-845"
+          ],
+          "role": "owner",
+          "why": "CAS callback typedefs, conflict exception, pending mutation; remote sync + flushOfflineQueueToRemote + applyCompareAndSet + enqueue; notifier replayOfflineQueue/_flushOfflineQueue"
+        },
+        {
+          "path": "lib/services/learning_context_sync_service.dart",
+          "ranges": [
+            "8-30",
+            "177-226"
+          ],
+          "role": "contract",
+          "why": "FastPreferenceRemoteCasResult and the update_context_fast_preferences RPC client"
+        },
+        {
+          "path": "supabase/migrations/20261111030000_tel_01b_context_fast_preferences.sql",
+          "ranges": [
+            "54-346"
+          ],
+          "role": "contract",
+          "why": "Server CAS function: revision check and conflict semantics"
+        },
+        {
+          "path": "test/providers/learning_strategy_provider_test.dart",
+          "ranges": [
+            "1-98",
+            "479-578"
+          ],
+          "role": "test",
+          "why": "CAS/idempotent replay; offline-first replay on startup; replay after reconnect"
+        },
+        {
+          "path": "supabase/tests/tel_01b_context_fast_preferences_test.sql",
+          "ranges": [
+            "all"
+          ],
+          "role": "test",
+          "why": "pgTAP for the CAS RPC"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/providers/learning_strategy_provider.dart:656-814,846-1225",
+          "why": "state class and planner wiring outside replay"
+        }
+      ],
+      "findings": [],
+      "baseline_route": [
+        "lib/providers/learning_strategy_provider.dart"
+      ],
+      "owner_step": 1,
+      "false_owner_candidates": []
+    },
+    {
+      "id": "T6",
+      "kind": "navigation-control",
+      "task": "Locate curriculum-ingestion test and authority contracts, with no source modifications.",
+      "mvcs": [
+        {
+          "path": "tool/ingest_curriculum.dart",
+          "ranges": [
+            "1-56",
+            "128-145",
+            "351-355"
+          ],
+          "role": "owner",
+          "why": "pipeline doc/usage; JSON-schema validation; exported test hook"
+        },
+        {
+          "path": "tool/lint_manifest.dart",
+          "ranges": [
+            "46-100",
+            "487-552"
+          ],
+          "role": "contract",
+          "why": "ManifestLinter entry; stable item id authority check"
+        },
+        {
+          "path": "content/schema/curriculum_manifest.schema.json",
+          "ranges": [
+            "1-60"
+          ],
+          "role": "contract",
+          "why": "schema root and required fields"
+        },
+        {
+          "path": "tool/ci/check_algebra_manifest_parity.py",
+          "ranges": [
+            "1-40"
+          ],
+          "role": "contract",
+          "why": "generator-to-manifest parity check"
+        },
+        {
+          "path": ".github/workflows/flutter-ci.yml",
+          "ranges": [
+            "296-300",
+            "345-372"
+          ],
+          "role": "contract",
+          "why": "which job runs the parity check and the Dart tests"
+        },
+        {
+          "path": "test/tool/curriculum_stable_ids_test.dart",
+          "ranges": [
+            "1-28",
+            "29-100"
+          ],
+          "role": "test",
+          "why": "imports ingest_curriculum + lint_manifest; id authority cases"
+        },
+        {
+          "path": "test/services/curriculum_manifest_test.dart",
+          "ranges": [
+            "1-20",
+            "126-170"
+          ],
+          "role": "test",
+          "why": "official blueprint conformance cases"
+        },
+        {
+          "path": "tool/tests/test_check_algebra_manifest_parity.py",
+          "ranges": [
+            "1-30"
+          ],
+          "role": "test",
+          "why": "parity check tests"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "tool/ingest_curriculum.dart:151-281,368-1469",
+          "why": "REST transport and apply/stage/publish; no source change in scope"
+        }
+      ],
+      "findings": [
+        "The ingestion network transport (SupabaseRestClient, _executeApply/_executePublish) has no direct test: documented coverage gap, not a defect claim"
+      ],
+      "baseline_route": [
+        "tool/ingest_curriculum.dart"
+      ],
+      "owner_step": 1,
+      "false_owner_candidates": []
+    },
+    {
+      "id": "T7",
+      "kind": "navigation-control",
+      "task": "Trace the pre-reader picture-grid route, auto-speak preference state, and audio playback entry from Library; not global narration controls.",
+      "mvcs": [
+        {
+          "path": "lib/screens/library/library_screen.dart",
+          "ranges": [
+            "23-24",
+            "107-107",
+            "445-446"
+          ],
+          "role": "owner",
+          "why": "imports; isPreReader watch; grid insertion"
+        },
+        {
+          "path": "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
+          "ranges": [
+            "29-110",
+            "119-243"
+          ],
+          "role": "owner",
+          "why": "all 8 tile routes incl. /literacy; tap-only narration and tile tap/speaker (second review widened 30-70 to 29-110)"
+        },
+        {
+          "path": "lib/providers/pre_reader_provider.dart",
+          "ranges": [
+            "1-42",
+            "83-101",
+            "121-125"
+          ],
+          "role": "owner",
+          "why": "audio service provider; auto-speak persistence/toggle; preReaderProvider definition (121-125 added by second review)"
+        },
+        {
+          "path": "lib/services/pre_reader_audio_service.dart",
+          "ranges": [
+            "1-53"
+          ],
+          "role": "owner",
+          "why": "playback entry speak()"
+        },
+        {
+          "path": "lib/screens/literacy/life_milestones_screen.dart",
+          "ranges": [
+            "40-61"
+          ],
+          "role": "owner",
+          "why": "where auto-speak is actually consumed after a grid tap"
+        },
+        {
+          "path": "test/services/pre_reader_audio_service_test.dart",
+          "ranges": [
+            "all"
+          ],
+          "role": "test",
+          "why": "playback cancellation/ordering"
+        },
+        {
+          "path": "test/widgets/pre_reader_literacy_test.dart",
+          "ranges": [
+            "69-85"
+          ],
+          "role": "test",
+          "why": "toggleAutoSpeak persistence"
+        },
+        {
+          "path": "lib/models/pre_reader_profile.dart",
+          "ranges": [
+            "12-23"
+          ],
+          "role": "contract",
+          "why": "autoSpeakScreens defaults to true. Added by second review"
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "ranges": [
+            "251-310"
+          ],
+          "role": "contract",
+          "why": "Query parsing for grid routes. Added by second review"
+        },
+        {
+          "path": "lib/screens/literacy/life_domains_screen.dart",
+          "ranges": [
+            "40-60"
+          ],
+          "role": "owner",
+          "why": "Auto-speak consumer for 4 of 8 tiles. Added by second review"
+        },
+        {
+          "path": "test/widgets/phase_5_pwa_ux_test.dart",
+          "ranges": [
+            "64-123"
+          ],
+          "role": "test",
+          "why": "Only test of grid tiles and speakers. Added by second review"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/services/audio_service.dart",
+          "why": "global narration engine; out of scope per task text"
+        },
+        {
+          "path": "test/widgets/pre_reader_home_navigation_test.dart",
+          "why": "Removed on second review: exercises Learn's banner/explore action, not the Library grid"
+        }
+      ],
+      "findings": [
+        "The grid never reads autoSpeakScreens; auto-speak is consumed by routed screens (/milestones, /domains): the v0.5 probe chain misses the consumer",
+        "Neither v0.5-named test exercises auto-speak; pre_reader_literacy_test.dart does",
+        "Second review: the grid calls PreReaderAudioService.speak() without the learner's track, so it uses the default adult track and rate even for a youth track (pre_reader_picture_grid_widget.dart 156, 240; pre_reader_audio_service.dart 22). Possible bug, not fixed by this audit"
+      ],
+      "baseline_route": [
+        "lib/screens/library/library_screen.dart",
+        "lib/widgets/literacy/pre_reader_picture_grid_widget.dart",
+        "lib/providers/pre_reader_provider.dart",
+        "lib/services/pre_reader_audio_service.dart",
+        "grep:autoSpeakScreens",
+        "lib/screens/literacy/life_milestones_screen.dart"
+      ],
+      "owner_step": 2,
+      "false_owner_candidates": []
+    },
+    {
+      "id": "T8",
+      "kind": "navigation-control",
+      "task": "Locate the feature-control owner and server enforcement gate for content.refresh_proposals (and the BYOK/Fast exclusions).",
+      "named_feature": "content.refresh_proposals",
+      "mvcs": [
+        {
+          "path": "AGENTS.md",
+          "ranges": [
+            "83-90"
+          ],
+          "role": "policy",
+          "why": "FLAG-010/016 rules incl. BYOK latch and TEL Fast"
+        },
+        {
+          "path": "lib/models/governance/site_feature_keys.dart",
+          "ranges": [
+            "all"
+          ],
+          "role": "owner",
+          "why": "stable key registry"
+        },
+        {
+          "path": "lib/providers/site_feature_provider.dart",
+          "ranges": [
+            "22-30"
+          ],
+          "role": "contract",
+          "why": "client gate helper isSiteFeatureEnabled"
+        },
+        {
+          "path": "lib/providers/lesson_contribution_provider.dart",
+          "ranges": [
+            "19-26"
+          ],
+          "role": "owner",
+          "why": "client gate for this feature"
+        },
+        {
+          "path": "supabase/migrations/20261113020000_content_refresh_proposals.sql",
+          "ranges": [
+            "1-20",
+            "115-136",
+            "175-193"
+          ],
+          "role": "owner",
+          "why": "seed default OFF; server gates in propose_contribution_refresh and decide_refresh_proposal"
+        },
+        {
+          "path": "supabase/migrations/20261110220000_marketing_feature_control_foundation.sql",
+          "ranges": [
+            "88-97"
+          ],
+          "role": "contract",
+          "why": "private.site_feature_enabled definition"
+        },
+        {
+          "path": "supabase/tests/content_refresh_proposals_test.sql",
+          "ranges": [
+            "30-50"
+          ],
+          "role": "test",
+          "why": "refused-while-OFF assertion"
+        }
+      ],
+      "excluded_candidates": [
+        {
+          "path": "lib/services/governance/site_feature_service.dart",
+          "why": "client snapshot fetch/admin RPCs; not the enforcement gate"
+        }
+      ],
+      "findings": [
+        "v0.5 probe names site_feature_service.dart as the gate location: false owner; the gate is SQL"
+      ],
+      "baseline_route": [
+        "AGENTS.md",
+        "lib/models/governance/site_feature_keys.dart",
+        "lib/services/governance/site_feature_service.dart",
+        "grep:content.refresh_proposals",
+        "supabase/migrations/20261113020000_content_refresh_proposals.sql"
+      ],
+      "owner_step": 5,
+      "false_owner_candidates": [
+        "lib/services/governance/site_feature_service.dart"
+      ]
+    },
+    {
+      "id": "T9",
+      "kind": "navigation-control (excluded-document exception)",
+      "task": "Determine whether a badge or count may appear on the top-level Library navigation destination, and locate the binding UI rule, distinguishing it from informational counts inside Library.",
+      "expected_answer": "No top-level navigation badge/dot/count; informational counts inside Library are permitted (B3).",
+      "mvcs": [
+        {
+          "path": "lib/widgets/app_shell.dart",
+          "ranges": [
+            "128-192"
+          ],
+          "role": "owner",
+          "why": "NavigationRail/NavigationBar destinations and _Destination"
+        },
+        {
+          "path": "lib/providers/router_provider.dart",
+          "ranges": [
+            "120-127"
+          ],
+          "role": "contract",
+          "why": "ShellRoute wraps pages in AppShell (one hop)"
+        },
+        {
+          "path": "UI_ARCHITECTURE_LOCKED.md",
+          "ranges": [
+            "108-108",
+            "231-231",
+            "875-875"
+          ],
+          "role": "policy",
+          "why": "B3 erratum, binding rule, ship checklist"
+        },
+        {
+          "path": "test/widgets/direct_access_rule_test.dart",
+          "ranges": [
+            "1-40",
+            "247-257"
+          ],
+          "role": "test",
+          "why": "SHIP GATE: no nav destination shows a badge"
+        }
+      ],
+      "excluded_candidates": [],
+      "findings": [
+        "v0.5 names router_provider.dart as navigation owner: false owner for destination controls; AppShell owns them"
+      ],
+      "baseline_route": [
+        "lib/providers/router_provider.dart",
+        "lib/widgets/app_shell.dart",
+        "UI_ARCHITECTURE_LOCKED.md"
+      ],
+      "owner_step": 2,
+      "false_owner_candidates": [
+        "lib/providers/router_provider.dart (as destination owner)"
+      ]
+    }
+  ]
+}
