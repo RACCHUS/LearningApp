@@ -2,7 +2,7 @@
 
 **Pin:** `06221ed6f9ef617113f76d0ddd072c20a0042250`. **Manifest:** `data/task_manifest.json` (frozen 2026-11-14; T9 owner-approved before measurement). **Results:** `data/mvcs_baseline.json`. **Script:** `scripts/measure_mvcs.py`.
 **Bytes (primary):** raw Git blob bytes; every whole-file figure was cross-checked against `git cat-file -s`. **Tokens (secondary):** `tiktoken` 0.9.0, `o200k_base`, ranks SHA-256 `11ab290e…3bef36` (an OpenAI-family proxy, not Claude/Gemini tokens). **Live model calls:** 0.
-**Condition measured:** baseline only (current instructions, no codebase map). The map condition is `not_measured` until the Phase 1 map draft exists.
+**Conditions measured:** baseline (current instructions, no map) in §§1–2; draft-map condition in §3.
 
 ## 1. MVCS footprints
 
@@ -36,16 +36,26 @@ Route rule: follow the v0.5 §7.2 starting probe as whole-file reads; when it mi
 | T8 | 5 | 4 | 25,744 | **12,544** | `site_feature_service.dart` |
 | T9 | 2 | 3 | 115,809 | **29,108** | `router_provider.dart` as destination owner |
 
-## 3. Map-sufficiency rubric (navigation controls)
+## 3. Map-sufficiency rubric (baseline vs draft map)
 
-| Task | (a) hops | (b) avoidable B | (c) map: owner / contract / tests | (d) false owners |
-|---|---:|---:|---|---|
-| T6 | 1 | 0 | not_measured | 0 |
-| T7 | 2 | 50,262 | not_measured | 0 |
-| T8 | 5 | 12,544 | not_measured | 1 |
-| T9 | 2 | 29,108 | not_measured | 1 |
+Map condition: read one section of `drafts/code_efficiency/CODEBASE_MAP.md` plus its "How to use" block (441 B), then follow the section. Same route rules as §2. Data: `data/map_condition.json`. Scored by the plan author, not independently reviewed.
 
-Column (c) is filled when the Phase 1 map draft is scored under the same rules.
+| Task | Hops to owner (base → map) | Avoidable bytes (base → map) | Map section cost | Map: owner / contract / tests | False owners (base → map) |
+|---|---|---|---:|---|---|
+| T6 | 1 → 2 | 0 → 0 | 753 B | yes / yes / yes | 0 → 0 |
+| T7 | 2 → 2 | **50,262 → 0** | 986 B | yes / yes / yes | 0 → 0 |
+| T8 | 5 → 4 | **12,544 → 0** | 938 B | partial / yes / partial | 1 → 0 |
+| T9 | 2 → 2 | **29,108 → 0** | 1,000 B | yes / yes / yes | 1 → 0 |
+| T1 (refactor-sensitive) | 1 → 2 | 0 → 0 | 917 B | yes / yes / partial | 2 → 0 |
+| T3 (refactor-sensitive) | 4 → 2 | **39,787 → 0** | 1,174 B | yes / yes / yes | 1 → 0 |
+
+T8 is `partial` because the section gives a rule ("grep the key in `supabase/migrations/`") rather than the specific migration; this is deliberate, since the section serves every feature key. T1 tests are `partial` because the known test gap is stated rather than filled. The map adds one hop when the probe already started at the owner (T1, T6); it costs under 1.7 KB per task including "How to use".
+
+## 6. Stop decision (plan §7.2 step 8)
+
+The draft map resolves owner, contract and tests for all four navigation controls with **no false-owner path** and no avoidable whole-file reads, and it also removes the false owners found in two refactor-sensitive tasks (T1, T3). The remaining context cost in T2–T5 is in genuinely needed code that range reads already handle.
+
+**Recommendation: no Phase 2 code pilot.** Pilot B (Excel move) would not fix T3's real problem, which is navigation (two rubric copies) and a missing parity test. Pilot C's predicate is pure but has no test; a test, not a split, is the next step. Pilot A has no task evidence that a split would cut context. Separate, owner-decided follow-ups instead: apply the map and instruction diffs; add the three missing tests; review the dead-code candidates in `CODE_EFFICIENCY_BASELINE.md` §9.
 
 ## 4. Findings (verified at the pin)
 

@@ -5,7 +5,7 @@
 **Branch:** `chore/code-efficiency-audit-baseline` (evidence only).
 **Tooling:** git 2.x (exact version in `data/inventory.json`), Python 3.13.4; `scripts/phase0_inventory.py`.
 **Byte source:** Git blob sizes at the pin. Working-tree sizes are not used (`core.autocrlf=true`).
-**Status:** inventory, top-25, churn, instruction surface and the **T1–T9 deterministic MVCS baseline measured** (see `AI_CONTEXT_BENCHMARK.md`). Second-reviewer check of T3/T7, clone detection and Phase 1 drafts pending. Zero live-model calls.
+**Status:** inventory, top-25, churn, instruction surface and the **T1–T9 deterministic MVCS baseline measured** (see `AI_CONTEXT_BENCHMARK.md`). Clone scan, dead-code candidate scan, Phase 1 drafts and the map-condition score are done. Second-reviewer check of T3/T7 and owner decisions pending. Zero live-model calls.
 
 ## 1. Re-pin delta
 
@@ -97,8 +97,26 @@ T9 was approved by the owner before measurement. Frozen manifest: `data/task_man
 - **T7:** call path confirmed: `library_screen.dart:446` renders `PreReaderPictureGridWidget` when `preReaderProvider.enabled`; `pre_reader_provider.dart` imports `pre_reader_audio_service.dart`. Corrected task text stands.
 - **T9:** approved and measured; owner is `lib/widgets/app_shell.dart`, rule at `UI_ARCHITECTURE_LOCKED.md:108,231,875`.
 
-## 8. Next Phase 0 steps
+## 8. Clone candidates (bounded scan)
 
-1. Second-reviewer check of the T3 and T7 ranges (human or an independent reviewer); record any changes as additions.
-2. Bounded clone detection over `authored-application` + `authored-support-tool` only.
-3. Then Phase 1 drafts under `docs/engineering/drafts/code_efficiency/` (map, `AGENTS.md` guidance, `Main.instructions.md` diff, validator design), and score the map condition with the same scripts.
+`scripts/clone_scan.py`, window 8 normalised logical lines (blank, comment, import and lone-brace lines dropped), authored-application + authored-support-tool only (755 files, 129,461 logical lines). **607 candidate runs; 6,369 logical lines (4.9%) in any run — unconfirmed.** Raw: `data/clone_candidates.json`. Manual review of the largest clusters:
+
+| Cluster | Size | Status | Decision |
+|---|---:|---|---|
+| `widgets/shimmer_loading.dart:418-666` copies `widgets/empty_state.dart:116-381` (illustration painter) | ~249 lines | **Verified**: 23 differing diff lines, comments and class name only | Duplicate; its only consumer is unimported (§9). Housekeeping candidate |
+| `tool/catalog_p2{i,j,k,l}_*_pathways.py` (URL validation, label logic, SQL render) | 25–52 lines × 4 | **Verified** repeated structure | Keep separate for now: each is a reviewed one-batch import with its own test; extract a helper only if more batches follow |
+| `in_context_qa_sheet.dart` question vs answer card subviews (1578/1699, 1624/1748, 1878/2006) | 21–33 lines | Candidate | Pilot A territory; held |
+| `life_domains_screen.dart` vs `life_milestones_screen.dart` app bar | 31 lines | Candidate | Low value |
+| `question_content_renderer.dart` vs `lesson_content_renderer.dart` state setup | 22–24 lines | Candidate, semantics not inspected | Inspect before any action |
+| `audio_playback_provider.dart` vs `audio_provider.dart` speak wrappers | 20 lines | Candidate, semantics not inspected | Two providers wrap one `AudioService`; check for competing implementations |
+| `scope_resolver.dart:395-422` vs `528-555` | 23 lines | Candidate | Scope/privacy logic; keep unless tests prove equivalence |
+
+## 9. Dead-code candidates (evidence only)
+
+36 `lib/` Dart files (242,023 B) are named by **no** import/export/part URI (including conditional-import alternatives) in any tracked Dart file, tests included: `data/unimported_lib_files.json`. Dart has no reflection-based loading, so these are unreachable from `lib/main.dart` unless built by another entry point; files imported only by other candidates are not counted, so the true set may be larger. Notable: `screens/careers/` (4 files, 48.8 KB), `screens/home/home_lessons_list.dart` and `home_study_sets_section.dart`, `widgets/dashboard_skill_widgets.dart` (23 KB), `widgets/desktop_sidebar.dart`, `widgets/whiteboard/whiteboard_widget.dart`, `screens/test/notification_test_screen.dart`, and both empty files. **No deletion proposed.** Per the legacy-parity rule each needs a capability check (is there a replacement?) and owner approval.
+
+## 10. Next steps
+
+1. Second-reviewer check of the T3 and T7 ranges and of the map scoring (human or independent reviewer).
+2. Owner decision on Phase 1 drafts in `docs/engineering/drafts/code_efficiency/` (map, `AGENTS.md` and `Main.instructions.md` diffs, validator design, PR-template checkbox).
+3. Owner decision on the stop recommendation (`AI_CONTEXT_BENCHMARK.md` §6) and on the housekeeping/test follow-ups.

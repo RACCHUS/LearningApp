@@ -1,0 +1,129 @@
+{
+ "pin": "06221ed6f9ef617113f76d0ddd072c20a0042250",
+ "condition": "draft map section read first (agent reads one section + How to use), same route rules as baseline",
+ "scored_by": "plan author; not independently reviewed",
+ "tasks": [
+  {
+   "id": "T1",
+   "map_section": "library",
+   "map_section_bytes": 917,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#library",
+    "lib/screens/library/library_screen.dart"
+   ],
+   "hops_to_owner": 2,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 1,
+   "baseline_avoidable_bytes": 0,
+   "map_owner": "yes",
+   "map_contract": "yes",
+   "map_tests": "partial",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 2,
+   "note": "tests listed; known gap stated"
+  },
+  {
+   "id": "T3",
+   "map_section": "excel",
+   "map_section_bytes": 1174,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#excel",
+    "tool/software_learning/excel_budget_total.py"
+   ],
+   "hops_to_owner": 2,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 4,
+   "baseline_avoidable_bytes": 39787,
+   "map_owner": "yes",
+   "map_contract": "yes",
+   "map_tests": "yes",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 1,
+   "note": "both rubric copies named; parity gap stated"
+  },
+  {
+   "id": "T6",
+   "map_section": "ingestion",
+   "map_section_bytes": 753,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#ingestion",
+    "tool/ingest_curriculum.dart"
+   ],
+   "hops_to_owner": 2,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 1,
+   "baseline_avoidable_bytes": 0,
+   "map_owner": "yes",
+   "map_contract": "yes",
+   "map_tests": "yes",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 0,
+   "note": "CI job wiring for tests not in section"
+  },
+  {
+   "id": "T7",
+   "map_section": "prereader",
+   "map_section_bytes": 986,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#prereader",
+    "lib/widgets/literacy/pre_reader_picture_grid_widget.dart"
+   ],
+   "hops_to_owner": 2,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 2,
+   "baseline_avoidable_bytes": 50262,
+   "map_owner": "yes",
+   "map_contract": "yes",
+   "map_tests": "yes",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 0,
+   "note": "Library insertion point (library_screen.dart:445) not named"
+  },
+  {
+   "id": "T8",
+   "map_section": "flags",
+   "map_section_bytes": 938,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#flags",
+    "lib/models/governance/site_feature_keys.dart",
+    "grep:content.refresh_proposals",
+    "supabase/migrations/20261113020000_content_refresh_proposals.sql"
+   ],
+   "hops_to_owner": 4,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 5,
+   "baseline_avoidable_bytes": 12544,
+   "map_owner": "partial",
+   "map_contract": "yes",
+   "map_tests": "partial",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 1,
+   "note": "gate location given as a grep rule, not a file; per-feature pgTAP not named"
+  },
+  {
+   "id": "T9",
+   "map_section": "nav",
+   "map_section_bytes": 1000,
+   "how_to_use_bytes": 441,
+   "route": [
+    "map#nav",
+    "lib/widgets/app_shell.dart"
+   ],
+   "hops_to_owner": 2,
+   "avoidable_bytes_before_owner": 0,
+   "baseline_hops_to_owner": 2,
+   "baseline_avoidable_bytes": 29108,
+   "map_owner": "yes",
+   "map_contract": "yes",
+   "map_tests": "yes",
+   "false_owner_candidates": 0,
+   "baseline_false_owner_candidates": 1,
+   "note": "rule lines given inline"
+  }
+ ]
+}
