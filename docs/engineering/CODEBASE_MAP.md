@@ -93,12 +93,14 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 
 ## Community Q&A {#qa}
 
-<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="766-858" -->
-- Owner: `lib/widgets/community/in_context_qa_sheet.dart` — moderation review handlers (766-858); main build from line 1005; dialogs at 2298 and 2386.
+<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="759-851" -->
+- Owner: `lib/widgets/community/in_context_qa_sheet.dart` — moderation review handlers (759-851); main build from line 998; dialogs at 2124 and 2212.
+<!-- map-ref path="lib/widgets/community/qa_audit_log_list.dart" role="owner" -->
+- Moderator audit log: `lib/widgets/community/qa_audit_log_list.dart` (read-only; shows internal notes, so build it only inside the moderator review queue).
 <!-- map-ref path="lib/services/community/community_qa_service.dart" role="contract" lines="504-552" -->
 - Contract: `reviewQuestion` / `reviewAnswer` RPCs (`community_qa_service.dart` 504-552). Keep question and answer paths separate.
 <!-- map-ref path="test/widgets/community/in_context_qa_sheet_test.dart" role="test" -->
-- Tests: `test/widgets/community/in_context_qa_sheet_test.dart`, `test/services/community/community_qa_service_test.dart`.
+- Tests: `test/widgets/community/in_context_qa_sheet_test.dart`, `test/widgets/community/qa_audit_log_list_test.dart`, `test/services/community/community_qa_service_test.dart`.
 
 ## Community lessons and refresh proposals {#contributions}
 
