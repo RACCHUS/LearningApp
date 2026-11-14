@@ -396,19 +396,28 @@ jobs:
       - name: Verify append-only migration history & immutability
         run: dart run tool/verify_migration_history.dart --base-ref origin/main
 
+      - name: Isolate pending migrations to stage the origin/main baseline (git only)
+        run: dart run tool/verify_migration_history.dart --base-ref origin/main --isolate-pending build/pending_migrations
+
+      - name: Start local Supabase on the origin/main baseline
+        # A fresh `supabase start` applies the (baseline-only) migrations and
+        # seed exactly as `supabase db reset` would, so the former start +
+        # immediate reset pair was a duplicate full schema build (~40 s,
+        # plan PR-6). Services nothing in this job uses are excluded; the job
+        # needs postgres, kong, gotrue (auth admin), postgrest, storage-api
+        # and realtime. pgTAP parity below proves no scenario lost coverage.
+        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,mailpit
+
       - name: Verify incremental migration upgrade path from main
         run: |
-          supabase start
-          # 1. Isolate any pending migrations to establish origin/main baseline
-          dart run tool/verify_migration_history.dart --base-ref origin/main --isolate-pending build/pending_migrations
-          # 2. Reset database with baseline migrations from origin/main
-          supabase db reset
-          # 3. Restore newly introduced migrations
+          set -o pipefail
+          mkdir -p build/pgtap
+          # Restore newly introduced migrations
           dart run tool/verify_migration_history.dart --base-ref origin/main --restore-pending build/pending_migrations
-          # 4. Apply new migrations incrementally (--include-all admits registry-approved backdated reconciliations)
+          # Apply new migrations incrementally (--include-all admits registry-approved backdated reconciliations)
           supabase migration up --local --include-all
-          # 5. Run pgTAP test suite against incrementally upgraded database
-          supabase test db
+          # Run pgTAP test suite against incrementally upgraded database
+          supabase test db | tee build/pgtap/incremental.log
 
       - name: Verify local Supabase Storage create-only and cleanup races (synthetic)
         run: |
@@ -428,6 +437,7 @@ jobs:
         # hosted ledger snapshot, then apply every never-applied migration out of
         # order (as `--approve-historical-backfill` does) and run pgTAP.
         run: |
+          set -o pipefail
           ledger=supabase/rehearsal/production_applied_versions.txt
           mkdir -p build/backfill_rehearsal
           for f in supabase/migrations/*.sql; do
@@ -439,12 +449,13 @@ jobs:
           mv build/backfill_rehearsal/*.sql supabase/migrations/
           git diff --exit-code -- supabase/migrations
           supabase migration up --local --include-all
-          supabase test db
+          supabase test db | tee build/pgtap/backfill.log
 
       - name: Verify clean-slate migrations and initial pgTAP tests from scratch
         run: |
+          set -o pipefail
           supabase db reset
-          supabase test db
+          supabase test db | tee build/pgtap/clean-slate.log
 
       - name: Verify real lesson import and readback against local Supabase (synthetic)
         # Production import/read code paths against the clean local stack.
@@ -476,5 +487,11 @@ jobs:
 
       - name: Verify post-ingestion database integrity and pgTAP tests
         run: |
-          supabase test db
+          set -o pipefail
+          supabase test db | tee build/pgtap/post-ingestion.log
           supabase db lint --fail-on warning
+
+      - name: Check every migration scenario ran the identical pgTAP suite
+        run: |
+          python3 tool/ci/check_pgtap_parity.py build/pgtap
+          python3 -m unittest discover -s tool/tests -p 'test_check_pgtap_parity.py' -v
