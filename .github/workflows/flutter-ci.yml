@@ -392,6 +392,9 @@ jobs:
           flutter pub get
           (cd packages/learning_core && dart pub get)
 
+      - name: TEMPORARY gate test - deliberately fail the build job (revert before merge)
+        run: exit 1
+
       - name: Build web release
         run: flutter build web --release
 
