@@ -1,6 +1,6 @@
 # Code Efficiency Baseline — Phase 0 (in progress)
 
-**Plan:** `LearningApp_Codebase_Simplification_AI_Context_Optimization_Plan_v0_5.md` (v0.6 content).
+**Plan:** `docs/engineering/LearningApp_Codebase_Simplification_AI_Context_Optimization_Plan.md` (v0.6 content).
 **Pin:** `06221ed6f9ef617113f76d0ddd072c20a0042250`, committer time 2026-11-14T14:54:13Z (PR #270 merge).
 **Branch:** `chore/code-efficiency-audit-baseline` (evidence only).
 **Tooling:** git 2.x (exact version in `data/inventory.json`), Python 3.13.4; `scripts/phase0_inventory.py`.

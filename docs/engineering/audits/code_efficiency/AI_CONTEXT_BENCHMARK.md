@@ -63,9 +63,10 @@ The draft map resolves owner, contract and tests for all four navigation control
 |---|---|---|
 | #273 | Codebase map, `AGENTS.md` guidance, cohesion rule in `Main.instructions.md` | Merged |
 | #274 | Tests: Library source filtering; Q&A review confirmations | Merged |
-| #275 | Fix: Library pre-reader grid narrates in the learner's track and rate | Open |
+| #275 | Fix: Library pre-reader grid narrates in the learner's track and rate | Merged |
 | #276 | Remove 36 retired Dart files unreachable from the app (224 KB); 15 other unreachable files kept for an owner decision | Open |
-| #277 | Refactor: Q&A moderation audit log extracted into `QaAuditLogList` (pure move, three read-only inputs) | Open |
+| #277 | Refactor: Q&A moderation audit log extracted into `QaAuditLogList` (pure move, three read-only inputs) | Merged |
+| #278 | `tool/verify_codebase_map.py` (advisory CI step) and PR-template map checkbox | Open |
 
 The one refactor done (#277) is the piece of the Q&A sheet that passes the cohesion rule: no callbacks, no `setState`, three inputs. The sheet's other tabs share loading, auth-switch and dialog state, so they were left in place. No pilots B or C.
 
