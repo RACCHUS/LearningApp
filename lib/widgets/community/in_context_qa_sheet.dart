@@ -21,6 +21,7 @@ import 'package:learning_pwa/services/community/educator_reputation_service.dart
 import 'package:learning_pwa/services/community/community_bookmark_service.dart';
 import 'package:learning_pwa/widgets/community/educator_credential_badge.dart';
 import 'package:learning_pwa/widgets/community/bookmarked_explanations_sheet.dart';
+import 'package:learning_pwa/widgets/community/qa_audit_log_list.dart';
 
 /// Opens the in-context Concept Q&A sheet for learning screens (ECO-01 & ECO-02).
 Future<void> showInContextQaSheet(
@@ -221,15 +222,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
     }
   }
 
-  String _formatAuthorId(String id) {
-    if (id == 'offline-demo') return 'Offline Demo';
-    return 'Learner (${id.length > 8 ? id.substring(0, 8) : id})';
-  }
-
-  String _formatReviewerId(String? id) {
-    if (id == null) return 'System';
-    return 'Moderator (${id.length > 8 ? id.substring(0, 8) : id})';
-  }
+  String _formatAuthorId(String id) => formatQaAuthorId(id);
 
   String _formatDate(DateTime dt) {
     return '${dt.month}/${dt.day}/${dt.year}';
@@ -1837,7 +1830,11 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
           child: switch (_reviewSubTab) {
             0 => _buildReviewQuestionsList(theme),
             1 => _buildReviewAnswersList(theme),
-            _ => _buildAuditLogList(theme),
+            _ => QaAuditLogList(
+                auditLogs: _auditLogs,
+                questionTitles: _questionTitles,
+                answerParentQuestionIds: _answerParentQuestionIds,
+              ),
           },
         ),
       ],
@@ -2115,177 +2112,6 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAuditLogList(ThemeData theme) {
-    if (_auditLogs.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.history_toggle_off, size: 36, color: Colors.grey),
-              const SizedBox(height: 8),
-              Text(
-                'No Audit Records Yet',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Moderation decisions and review actions will appear here.',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: _auditLogs.length,
-      itemBuilder: (context, index) {
-        final audit = _auditLogs[index];
-        final actionColor = switch (audit.action) {
-          'publish' => Colors.green,
-          'reject' => Colors.red,
-          'flag' => Colors.orange,
-          _ => Colors.blueGrey,
-        };
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: actionColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            audit.action.toUpperCase(),
-                            style: TextStyle(
-                              color: actionColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          audit.targetType == 'question' ? 'Question Review' : 'Answer Review',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '${audit.createdAt.month}/${audit.createdAt.day}/${audit.createdAt.year} ${audit.createdAt.hour}:${audit.createdAt.minute.toString().padLeft(2, '0')}',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Builder(
-                  builder: (context) {
-                    String targetTitle;
-                    if (audit.isQuestion) {
-                      final qTitle = _questionTitles[audit.targetId];
-                      targetTitle = qTitle ?? 'Question #${_formatAuthorId(audit.targetId)}';
-                    } else {
-                      final parentQuestionId = _answerParentQuestionIds[audit.targetId];
-                      final parentTitle = parentQuestionId != null ? _questionTitles[parentQuestionId] : null;
-                      targetTitle = parentTitle != null
-                          ? 'Answer to: "$parentTitle"'
-                          : 'Answer #${_formatAuthorId(audit.targetId)}';
-                    }
-                    return Text(
-                      'Target: $targetTitle',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey),
-                    );
-                  },
-                ),
-                const SizedBox(height: 2),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: [
-                    Text(
-                      'Reviewer: ${_formatReviewerId(audit.reviewerId)}',
-                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-                    ),
-                    Text(
-                      'Status change: ${audit.previousStatus} -> ${audit.newStatus}',
-                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-                    ),
-                  ],
-                ),
-                if (audit.notes != null && audit.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.comment_outlined, size: 12, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Author Feedback: ${audit.notes!}',
-                            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                if (audit.internalNotes != null && audit.internalNotes!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.shield_outlined, size: 12, color: Colors.amber),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Internal Notes: ${audit.internalNotes!}',
-                            style: TextStyle(fontSize: 11, color: Colors.amber[900]),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
