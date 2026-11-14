@@ -14,7 +14,10 @@ permissions:
 
 concurrency:
   group: flutter-ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede stale runs only on PR branches. Every push to main keeps its own
+  # verification (plan §9 E5): with `true`, quick successive merges cancelled
+  # main runs and left merge commits with no CI record.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
@@ -358,6 +361,50 @@ jobs:
 
       - name: Check Word Learning PWA spelling asset size
         run: python3 tool/measure_word_lexicon.py
+
+  early-feedback:
+    # Plan PR-8 (§9 E5): fast, change-aware first signal on pull requests.
+    # Advisory only: NOT a required check, and it never skips or replaces any
+    # required check; those always run in full.
+    name: Early feedback (changed files)
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Plan early checks from the PR's changed files
+        id: plan
+        run: |
+          mkdir -p build
+          # The PR merge commit's first parent is the base; this is exactly the PR diff.
+          git diff --name-only HEAD^1 HEAD > build/changed-files.txt
+          python3 tool/ci/early_feedback.py plan build/changed-files.txt --out build/early-plan.json
+
+      - name: Set up Flutter
+        if: ${{ steps.plan.outputs.needs_flutter == 'true' }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        if: ${{ steps.plan.outputs.needs_flutter == 'true' }}
+        run: |
+          cp .env.example .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+
+      - name: Run early checks
+        run: python3 tool/ci/early_feedback.py run build/early-plan.json
+
+      - name: Test the early feedback planner
+        run: python3 -m unittest discover -s tool/tests -p 'test_early_feedback.py' -v
 
   browser-smoke:
     # Plan PR-7 (§10 F): real-browser guest journeys against the release web
