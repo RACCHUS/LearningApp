@@ -57,6 +57,18 @@ The draft map resolves owner, contract and tests for all four navigation control
 
 **Recommendation: no Phase 2 code pilot.** Pilot B (Excel move) would not fix T3's real problem, which is navigation: two rubrics whose difference is intentional. Pilot C's predicate is pure but has no test; a test, not a split, is the next step. Pilot A has no task evidence that a split would cut context. Separate, owner-decided follow-ups instead: apply the map and instruction diffs; add the missing tests (two done in PR #274); review the dead-code candidates in `CODE_EFFICIENCY_BASELINE.md` §9.
 
+**Owner decision and outcome (2026-11-14).** The owner accepted the recommendations and allowed targeted refactoring where it makes sense, rather than a strict no-refactor rule. Follow-ups:
+
+| PR | Change | Status at writing |
+|---|---|---|
+| #273 | Codebase map, `AGENTS.md` guidance, cohesion rule in `Main.instructions.md` | Merged |
+| #274 | Tests: Library source filtering; Q&A review confirmations | Merged |
+| #275 | Fix: Library pre-reader grid narrates in the learner's track and rate | Open |
+| #276 | Remove 36 retired Dart files unreachable from the app (224 KB); 15 other unreachable files kept for an owner decision | Open |
+| #277 | Refactor: Q&A moderation audit log extracted into `QaAuditLogList` (pure move, three read-only inputs) | Open |
+
+The one refactor done (#277) is the piece of the Q&A sheet that passes the cohesion rule: no callbacks, no `setState`, three inputs. The sheet's other tabs share loading, auth-switch and dialog state, so they were left in place. No pilots B or C.
+
 ## 5. Findings (verified at the pin)
 
 1. **Four of nine v0.5 starting probes pointed at a wrong or partial owner** (T1, T3, T8, T9). These are the cases a map fixes directly; none needs a code move.
