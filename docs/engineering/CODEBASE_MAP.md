@@ -80,16 +80,16 @@ Protected: hidden answer keys never reach the client.
 
 ## Excel software learning {#excel}
 
-Two rubric copies with different trust: change both together.
+Two Budget rubrics that differ **on purpose**: do not make them identical. Neither awards skills; both return `unverified_checker_only`. Policy: `docs/product/EXCEL_PILOT_SECURITY_RELEASE_GATES.md` (lines 27-35).
 
 <!-- map-ref path="tool/software_learning/excel_budget_total.py" role="owner" -->
-- Authoritative rubric: `tool/software_learning/excel_budget_total.py` (isolated worker; `xlsx_worker.py`, sealed upload `brokered_upload.py`).
+- Upload checker (real uploads): `tool/software_learning/excel_budget_total.py` `check_budget_total`. It ignores cached totals and uses server-issued inputs; spec `data/software_learning/excel_budget_total_v1.json`.
+<!-- map-ref path="tool/software_learning/pilot_pipeline.py" role="contract" -->
+- Its only caller and trust gate: `tool/software_learning/pilot_pipeline.py` `grade_parsed_snapshot` (requires the `xlsx_worker.py` envelope `parsed_unverified`, `can_award_skill` false).
 <!-- map-ref path="lib/widgets/software_learning/excel_upload_card.dart" role="owner" lines="13-294" -->
-- Client unverified checker: `SoftwareLearningWorkbookEvaluator` in `lib/widgets/software_learning/excel_upload_card.dart` (13-294); result must stay `unverified_checker_only`.
-<!-- map-ref path="lib/services/software_learning/demo_workbook_reader.dart" role="contract" -->
-- Contract: `lib/services/software_learning/demo_workbook_reader.dart` is a restricted **preview** reader, never authoritative.
+- Browser preview rubric: `SoftwareLearningWorkbookEvaluator` in `lib/widgets/software_learning/excel_upload_card.dart` (13-294). It checks a cached total against fixed demo inputs, parsed by the restricted preview reader `lib/services/software_learning/demo_workbook_reader.dart`. The card's trust guard is in `_submitWorkbook` (445-526).
 <!-- map-ref path="tool/tests/test_software_learning_excel_checker.py" role="test" -->
-- Tests: `tool/tests/test_software_learning_excel_checker.py`, `tool/tests/test_xlsx_worker.py`, `tool/tests/test_brokered_upload.py`, `test/services/software_learning/demo_workbook_evaluator_test.dart`. Known gap: no test checks the two rubrics agree.
+- Tests: `tool/tests/test_software_learning_excel_checker.py` (incl. spec parity), `tool/tests/test_excel_pilot_pipeline.py`, `tool/tests/test_xlsx_worker.py`, `test/services/software_learning/demo_workbook_evaluator_test.dart`, `test/widgets/software_learning/excel_upload_card_test.dart` (trust binding).
 
 ## Community Q&A {#qa}
 
@@ -113,20 +113,22 @@ Two rubric copies with different trust: change both together.
 - Policy: `AGENTS.md` FLAG-010/016 (BYOK hard-off latch; TEL Fast stays Experimental).
 <!-- map-ref path="lib/models/governance/site_feature_keys.dart" role="owner" -->
 - Keys: `lib/models/governance/site_feature_keys.dart`; client check `isSiteFeatureEnabled` in `lib/providers/site_feature_provider.dart`.
-- **Server gate is SQL**: `private.site_feature_enabled(...)` called inside each RPC (defined in `supabase/migrations/20261110220000_marketing_feature_control_foundation.sql`); grep the feature key in `supabase/migrations/` to find its gates. `lib/services/governance/site_feature_service.dart` only fetches snapshots.
+- **Server gate is SQL**: each gated RPC calls `if not private.site_feature_enabled('<key>')`. To find a feature's gates, grep `site_feature_enabled('<key>')` in `supabase/migrations/`; the hits are the enforcement points (e.g. `content.refresh_proposals`: `20261113020000_content_refresh_proposals.sql` lines 135 and 192). The helper itself is defined in `20261110220000_marketing_feature_control_foundation.sql`. `lib/services/governance/site_feature_service.dart` only fetches snapshots.
 <!-- map-ref path="tool/tests/test_verify_feature_registry.py" role="test" -->
-- Tests: `tool/tests/test_verify_feature_registry.py` (`python3 tool/verify_feature_registry.py`), per-feature pgTAP in `supabase/tests/`.
+- Tests: `tool/tests/test_verify_feature_registry.py` (`python3 tool/verify_feature_registry.py`); the per-feature refused-while-OFF pgTAP is in `supabase/tests/<feature>_test.sql` (e.g. `content_refresh_proposals_test.sql`).
 
 ## Pre-reader and literacy {#prereader}
 
+<!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="445-446" -->
+- Library inserts the grid when `preReaderProvider.enabled` (`library_screen.dart` 107, 445-446).
 <!-- map-ref path="lib/widgets/literacy/pre_reader_picture_grid_widget.dart" role="owner" -->
-- Library entry: `lib/widgets/literacy/pre_reader_picture_grid_widget.dart` (tap-only narration; tiles route to `/milestones`, `/domains`).
+- Grid: `lib/widgets/literacy/pre_reader_picture_grid_widget.dart`: 8 tiles routing to `/milestones?…`, `/domains?…` and `/literacy` (query parsing in `router_provider.dart`). Narration is tap-only and calls `preReaderAudioServiceProvider` directly with the default track.
 <!-- map-ref path="lib/providers/pre_reader_provider.dart" role="owner" -->
-- State: `lib/providers/pre_reader_provider.dart` (`autoSpeakScreens` persisted); playback `lib/services/pre_reader_audio_service.dart`.
+- State: `lib/providers/pre_reader_provider.dart` (`autoSpeakScreens` persisted, defaults to true in `lib/models/pre_reader_profile.dart`); playback `lib/services/pre_reader_audio_service.dart`.
 <!-- map-ref path="lib/screens/literacy/life_milestones_screen.dart" role="owner" lines="40-61" -->
-- Auto-speak is consumed by routed screens (`life_milestones_screen.dart`, `life_domains_screen.dart`, `foundational_literacy_screen.dart`), not by the grid.
+- Auto-speak is consumed by the routed screens (`life_milestones_screen.dart`, `life_domains_screen.dart` 40-60, `foundational_literacy_screen.dart`), not by the grid.
 <!-- map-ref path="test/widgets/pre_reader_literacy_test.dart" role="test" -->
-- Tests: `test/widgets/pre_reader_literacy_test.dart`, `test/services/pre_reader_audio_service_test.dart`, `test/widgets/pre_reader_home_navigation_test.dart`.
+- Tests: `test/widgets/phase_5_pwa_ux_test.dart` (grid tiles and speakers), `test/widgets/pre_reader_literacy_test.dart` (auto-speak toggle), `test/services/pre_reader_audio_service_test.dart`.
 
 ## Help {#help}
 
