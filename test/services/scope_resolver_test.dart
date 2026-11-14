@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/hive_type_ids.dart';
 import 'package:learning_pwa/models/learning_context.dart';
 import 'package:learning_pwa/models/scope.dart';
@@ -182,6 +183,33 @@ void main() {
     );
   });
 
+  group('Root id validation does not depend on the client type', () {
+    test(
+      'a non-UUID target root makes no database call, even with a test client',
+      () async {
+        // Named "Fake" on purpose: production code used to skip UUID
+        // validation for any client whose type name contained "Fake".
+        final client = _FakeRecordingClient();
+        final resolver = ScopeResolver(supabase: client, scopeBox: scopeBox, snapshotBox: snapshotBox);
+        final context = LearningContext(
+          id: 'ctx-slug',
+          userId: 'u1',
+          label: 'Slug target',
+          rootType: ContextRootType.target,
+          rootId: 'clep-introductory-psychology',
+          lastActiveAt: DateTime.now(),
+        );
+
+        final scope = await resolver.resolveScope(context);
+        final nodes = await resolver.resolveCurriculumNodes(context);
+
+        expect(client.calls, isEmpty);
+        expect(scope.orderedActivities, isEmpty);
+        expect(nodes, isEmpty);
+      },
+    );
+  });
+
   group('Scope Filtering and Concept Membership', () {
     test(
       'ScopeMode.coreOnly ignores supporting concepts in active concept scope',
@@ -212,7 +240,7 @@ void main() {
       final fake = FakeSupabaseClient();
       fake.setTableData('study_sets', [
         {
-          'id': 'set-1',
+          'id': '5e700000-0000-4000-8000-000000000001',
           'title': 'My set',
           'question_ids': ['question-in-set'],
           'term_ids': <String>[],
@@ -221,7 +249,7 @@ void main() {
         },
       ]);
       fake.setTableData('study_set_flashcards', [
-        {'study_set_id': 'set-1', 'flashcard_id': 'flashcard-in-set'},
+        {'study_set_id': '5e700000-0000-4000-8000-000000000001', 'flashcard_id': 'flashcard-in-set'},
       ]);
       fake.setTableData('v2_migration_map', [
         {
@@ -246,7 +274,7 @@ void main() {
         userId: 'user-1',
         label: 'My set',
         rootType: ContextRootType.studySet,
-        rootId: 'set-1',
+        rootId: '5e700000-0000-4000-8000-000000000001',
         lastActiveAt: DateTime.now(),
       );
       final scope = await ScopeResolver(supabase: fake).resolveScope(context);
@@ -329,7 +357,7 @@ void main() {
           userId: 'user-1',
           label: 'Focus Test',
           rootType: ContextRootType.target,
-          rootId: 'target-1',
+          rootId: '7a700000-0000-4000-8000-000000000001',
           targetVersionId: 'ver-1',
           activeFocusId: 'node-parent',
           activeFocusType: 'domain',
@@ -389,7 +417,7 @@ void main() {
           userId: 'user-1',
           label: 'Order Test',
           rootType: ContextRootType.target,
-          rootId: 'target-1',
+          rootId: '7a700000-0000-4000-8000-000000000001',
           targetVersionId: 'ver-1',
           lastActiveAt: DateTime.now(),
         );
@@ -444,7 +472,7 @@ void main() {
           userId: 'user-1',
           label: 'Practice Test',
           rootType: ContextRootType.target,
-          rootId: 'target-1',
+          rootId: '7a700000-0000-4000-8000-000000000001',
           targetVersionId: 'ver-1',
           lastActiveAt: DateTime.now(),
         );
@@ -465,7 +493,7 @@ void main() {
         userId: 'user-A',
         label: 'Test',
         rootType: ContextRootType.target,
-        rootId: 'target-1',
+        rootId: '7a700000-0000-4000-8000-000000000001',
         lastActiveAt: DateTime.now(),
       );
       final ctxUserB = LearningContext(
@@ -473,7 +501,7 @@ void main() {
         userId: 'user-B',
         label: 'Test',
         rootType: ContextRootType.target,
-        rootId: 'target-1',
+        rootId: '7a700000-0000-4000-8000-000000000001',
         lastActiveAt: DateTime.now(),
       );
 
@@ -485,4 +513,21 @@ void main() {
       expect(hashA, isNot(equals(hashB)));
     });
   });
+}
+
+/// Records every query or RPC; the root-id test expects none.
+class _FakeRecordingClient extends FakeSupabaseClient {
+  final List<String> calls = [];
+
+  @override
+  SupabaseQueryBuilder from(String table) {
+    calls.add('from:$table');
+    return super.from(table);
+  }
+
+  @override
+  PostgrestFilterBuilder<T> rpc<T>(String fn, {Map<String, dynamic>? params, dynamic get}) {
+    calls.add('rpc:$fn');
+    return super.rpc<T>(fn, params: params, get: get);
+  }
 }

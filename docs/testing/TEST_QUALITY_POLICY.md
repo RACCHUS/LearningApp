@@ -24,7 +24,7 @@ Rules:
 
 - **Never rename** a required check, add `paths` filters to a required workflow, or put `continue-on-error` on required work. If a required job is ever split, its replacement must be one always-running, fail-closed job **with the same name** (plan §9 E1).
 - Superseded runs are cancelled on PR branches only; every push to `main` keeps its own run.
-- An advisory job becomes required only after a sustained stable record and maintainer sign-off.
+- An advisory job becomes required only after a sustained stable record (at least 30 consecutive non-cancelled green runs over at least 14 days, with no reruns needed to get there) and maintainer sign-off. Branch protection on `main` requires up-to-date branches and applies to admins, so a flaky required check blocks every merge.
 
 ## 2. Discovery: no test may silently stop running
 
