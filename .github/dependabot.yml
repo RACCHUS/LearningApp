@@ -1,0 +1,24 @@
+# Automated update *proposals* for GitHub Actions (plan §9 E6).
+# Every workflow pins actions to full commit SHAs with the version in a
+# trailing comment; Dependabot keeps both current by opening grouped PRs.
+# Nothing merges automatically: each PR runs the full required checks and
+# needs maintainer review. Changes to production-touching workflows
+# (analytics deploy/preflight/retention, hosted taxonomy imports) deserve
+# the same review as any other change to them (see AGENTS.md).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Match the repo rule: only adopt releases at least two weeks old.
+    cooldown:
+      default-days: 14
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci

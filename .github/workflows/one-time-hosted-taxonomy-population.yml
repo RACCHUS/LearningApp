@@ -25,12 +25,12 @@ jobs:
 
     steps:
       - name: Check out reviewed release
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
 
       - name: Install pinned Flutter and Dart
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: '3.47.7'
           channel: stable
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload aggregate verification (no credentials or learner records)
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: learningapp-taxonomy-import-counts
           path: build/taxonomy-import-report/*.json
