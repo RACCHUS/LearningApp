@@ -66,6 +66,12 @@ jobs:
         run: |
           python3 -m unittest discover -s tool/tests -p 'test_check_test_skips.py' -v
           python3 -m unittest discover -s tool/tests -p 'test_summarize_coverage.py' -v
+          python3 -m unittest discover -s tool/tests -p 'test_summarize_python_coverage.py' -v
+
+      - name: Database security-check matrix is current (regenerate with --write)
+        run: |
+          python3 tool/ci/pgtap_security_matrix.py --check
+          python3 -m unittest discover -s tool/tests -p 'test_pgtap_security_matrix.py' -v
 
       - name: Test the advisory test-concurrency benchmark tooling
         run: python3 -m unittest discover -s tool/tests -p 'test_flutter_test_benchmark.py' -v

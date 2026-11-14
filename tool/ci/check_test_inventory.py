@@ -69,6 +69,7 @@ class TestFile:
     framework: str
     test_count: int
     runners: list[str] = field(default_factory=list)
+    workflows: list[str] = field(default_factory=list)  # parallel to runners
 
 
 @dataclass
@@ -149,10 +150,27 @@ def find_registrations(workflow_texts: dict[str, str], tests_dir_rel: str, names
                     regs.append((UNITTEST, name, workflow))
         for match in _PYTEST_CMD.finditer(text):
             args = match.group("args")
-            for token in args.split():
-                token = token.strip("'\"")
+            tokens = [t.strip("'\"") for t in args.split()]
+            ignored = set()
+            for i, token in enumerate(tokens):
+                if token.startswith("--ignore="):
+                    ignored.add(token.split("=", 1)[1])
+                elif token == "--ignore" and i + 1 < len(tokens):
+                    ignored.add(tokens[i + 1])
+            ignored_names = {p[len(tests_dir_rel) + 1:] for p in ignored if p.startswith(tests_dir_rel + "/")}
+            skip_next = False
+            for token in tokens:
+                if skip_next:  # the path argument of a bare `--ignore`
+                    skip_next = False
+                    continue
+                if token == "--ignore":
+                    skip_next = True
+                    continue
+                if token.startswith("--ignore="):
+                    continue
                 if token.rstrip("/") == tests_dir_rel:
-                    regs.extend((PYTEST, n, workflow) for n in names if n.endswith(".py"))
+                    regs.extend((PYTEST, n, workflow) for n in names
+                                if n.endswith(".py") and n not in ignored_names)
                 elif token.startswith(tests_dir_rel + "/"):
                     candidate = token[len(tests_dir_rel) + 1 :].split("::", 1)[0]
                     if candidate in names:
@@ -181,8 +199,9 @@ def build_inventory(root: Path, tests_dir_rel: str = "tool/tests", workflows_rel
         raise InventoryError(f"no workflow files found in {workflows_dir}")
 
     files = discover_tests(tests_dir)
-    for runner, name, _workflow in find_registrations(texts, tests_dir_rel, list(files)):
+    for runner, name, workflow in find_registrations(texts, tests_dir_rel, list(files)):
         files[name].runners.append(runner)
+        files[name].workflows.append(workflow)
     return files
 
 
@@ -197,11 +216,15 @@ def find_problems(files: dict[str, TestFile], known_gaps: dict[str, str]) -> lis
             problems.append(
                 Problem("runner_mismatch", f.name, "pytest-style module is only run by unittest, which collects 0 tests")
             )
-        for runner in sorted(set(f.runners)):
-            if f.runners.count(runner) > 1:
-                problems.append(
-                    Problem("duplicate", f.name, f"run {f.runners.count(runner)} times by {runner}")
-                )
+        # A duplicate is the same suite run twice by one runner in ONE workflow
+        # (wasted time, masked flakes). A separate workflow re-running suites on
+        # purpose, e.g. the weekly coverage audit, is not a duplicate.
+        pairs = list(zip(f.runners, f.workflows)) if f.workflows else [(r, "") for r in f.runners]
+        for runner, workflow in sorted(set(pairs)):
+            count = pairs.count((runner, workflow))
+            if count > 1:
+                where = f" in {workflow}" if workflow else ""
+                problems.append(Problem("duplicate", f.name, f"run {count} times by {runner}{where}"))
     gap_files = {p.file for p in problems}
     for name in known_gaps:
         if name not in gap_files:

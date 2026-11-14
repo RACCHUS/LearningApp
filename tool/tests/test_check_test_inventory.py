@@ -124,6 +124,29 @@ class InventoryTest(unittest.TestCase):
         _, problems = self.problems()
         self.assertEqual(self.kinds(problems), [("duplicate", "test_a.py"), ("zero_tests", "test_empty.py")])
 
+    def test_rerun_in_a_separate_workflow_is_not_a_duplicate(self):
+        self.add_test("test_a.py", UNITTEST_SRC)
+        self.add_test("test_b.py", PYTEST_SRC)
+        self.set_workflow(
+            "python3 -m unittest discover -s tool/tests -p 'test_a.py'",
+            "python3 -m pytest tool/tests/test_b.py",
+        )
+        # e.g. a weekly coverage audit re-running everything on purpose
+        (self.root / ".github/workflows/audit.yml").write_text(
+            workflow("python3 -m pytest tool/tests --ignore=tool/tests/test_skip.py -q"), encoding="utf-8")
+        _, problems = self.problems()
+        self.assertEqual(problems, [])
+
+    def test_pytest_ignore_excludes_a_file_from_directory_registration(self):
+        self.add_test("test_b.py", PYTEST_SRC)
+        self.add_test("test_c.py", PYTEST_SRC)
+        self.set_workflow("python3 -m pytest tool/tests --ignore=tool/tests/test_c.py")
+        _, problems = self.problems()
+        self.assertEqual(self.kinds(problems), [("unregistered", "test_c.py")])
+        self.set_workflow("python3 -m pytest tool/tests --ignore tool/tests/test_c.py")
+        _, problems = self.problems()
+        self.assertEqual(self.kinds(problems), [("unregistered", "test_c.py")])
+
     def test_known_gap_is_tolerated_in_ratchet_mode_but_fails_strict(self):
         self.add_test("test_a.py", UNITTEST_SRC)
         self.add_test("test_b.py", PYTEST_SRC)
