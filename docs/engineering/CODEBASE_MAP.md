@@ -189,3 +189,6 @@ Read to understand; no refactor proposals.
 
 <!-- map-ref path="docs/testing/TEST_QUALITY_POLICY.md" role="policy" -->
 - Policy: `docs/testing/TEST_QUALITY_POLICY.md`. Required check `Analyze, test, and build` (gate job in `.github/workflows/flutter-ci.yml`); never rename it.
+<!-- map-ref path="tool/tests/test_check_required_results.py" role="test" -->
+- Tests: `tool/tests/test_check_required_results.py` (fail-closed gate), `tool/tests/test_check_test_inventory.py` (every suite runs in CI).
+- This map is checked by `tool/verify_codebase_map.py` (paths and line ranges only, advisory `early-feedback` job). It cannot tell whether an owner is still the owner: update the section when you move one.
