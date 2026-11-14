@@ -1,5 +1,7 @@
 # LearningApp test suite
 
+What must be tested, how skips, flaky tests and coverage are handled, and which CI checks are required: see [docs/testing/TEST_QUALITY_POLICY.md](../docs/testing/TEST_QUALITY_POLICY.md).
+
 Tests are organized by the code or boundary they exercise. Do not maintain static test-count claims here; the suite changes continuously and CI is the authoritative result.
 
 ## Flutter tests
@@ -9,7 +11,7 @@ Tests are organized by the code or boundary they exercise. Do not maintain stati
 - `test/services/` — service, sync, scheduling, and business logic.
 - `test/widgets/` and `test/screens/` — widget and screen behavior.
 - `test/mocks/` and `test/test_helpers/` — shared fakes and generated Mockito mocks.
-- `test/integration/` — environment-dependent/manual integration scripts. These are not automatically included by `flutter test` unless named as Flutter test files.
+- `test/integration/` — tests that need a local backend. They are collected by `flutter test` and skip with a reason when `LOCAL_SUPABASE_*` is not set; the required DB job runs them with `REQUIRE_LOCAL_SUPABASE=true`.
 
 ## Run checks
 

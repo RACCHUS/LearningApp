@@ -60,6 +60,11 @@ jobs:
       - name: Test the test log-noise guard
         run: python3 -m unittest discover -s tool/tests -p 'test_check_test_log_noise.py' -v
 
+      - name: Test the skip registry and coverage summary tooling
+        run: |
+          python3 -m unittest discover -s tool/tests -p 'test_check_test_skips.py' -v
+          python3 -m unittest discover -s tool/tests -p 'test_summarize_coverage.py' -v
+
       - name: Test the advisory test-concurrency benchmark tooling
         run: python3 -m unittest discover -s tool/tests -p 'test_flutter_test_benchmark.py' -v
 
@@ -345,6 +350,11 @@ jobs:
         # MissingPluginException / MissingStubError / uninitialized Supabase in
         # a green run means a test exercised an error path by accident.
         run: python3 tool/ci/check_test_log_noise.py build/reports/flutter-tests.json
+
+      - name: Reject unregistered or expired test skips (ratchet)
+        # Every skip must be a registered conditional skip (runs elsewhere) or
+        # a time-boxed quarantine; see docs/testing/TEST_QUALITY_POLICY.md.
+        run: python3 tool/ci/check_test_skips.py build/reports/flutter-tests.json
 
       - name: EXM 50k synthetic JSON export load probe (no user data)
         run: >-
