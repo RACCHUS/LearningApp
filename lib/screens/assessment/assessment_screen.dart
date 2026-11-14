@@ -338,8 +338,21 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
     );
 
     if (confirmed == true) {
-      _timer?.cancel();
-      await ref.read(assessmentSessionProvider.notifier).submitAssessment();
+      final result =
+          await ref.read(assessmentSessionProvider.notifier).submitAssessment();
+      if (result != null) {
+        _timer?.cancel();
+      } else if (mounted) {
+        // The session stays active, so without this the learner would land
+        // back on the questions with no sign that nothing was graded.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Your answers could not be submitted. Check your connection and try again.',
+            ),
+          ),
+        );
+      }
     }
   }
 }

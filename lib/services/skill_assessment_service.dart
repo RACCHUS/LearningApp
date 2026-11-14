@@ -271,7 +271,8 @@ class SkillAssessmentService {
       final passed = gradeMap['passed'] as bool? ?? false;
       final previousLevel = gradeMap['previous_level'] as int? ?? 0;
       final newLevel = gradeMap['new_level'] as int? ?? 0;
-      final isVerified = gradeMap['is_verified'] as bool? ?? true;
+      // Fail closed: only an explicit server `true` counts as verified.
+      final isVerified = gradeMap['is_verified'] as bool? ?? false;
       final serverTimeTaken = gradeMap['time_spent_seconds'] as int? ?? timeTaken;
       final serverIsOvertime = gradeMap['is_overtime'] as bool? ?? wasOvertime;
       final returnedAttemptId = gradeMap['attempt_id'] as String? ?? attemptId;
