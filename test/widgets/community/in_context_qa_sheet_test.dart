@@ -533,6 +533,9 @@ void main() {
 
       expect(fakeService.lastReviewedQuestionId, 'review-1');
       expect(fakeService.lastReviewAction, 'publish');
+      // The confirmation names the question path, never the answer path.
+      expect(find.text('Question review action "publish" recorded successfully.'), findsOneWidget);
+      expect(find.textContaining('Answer review action'), findsNothing);
     });
 
     testWidgets('moderator tapping Reject calls reviewQuestion with reject', (tester) async {
@@ -636,6 +639,9 @@ void main() {
 
       expect(fakeService.lastReviewedAnswerId, 'rev-ans-1');
       expect(fakeService.lastAnswerReviewAction, 'publish');
+      // The confirmation names the answer path, never the question path.
+      expect(find.text('Answer review action "publish" recorded successfully.'), findsOneWidget);
+      expect(find.textContaining('Question review action'), findsNothing);
     });
 
     testWidgets('moderator can view Audit Log segment displaying historical governance actions', (tester) async {
