@@ -41,7 +41,7 @@ class _ScratchpadSection extends ConsumerWidget {
         tilePadding: EdgeInsets.zero,
         leading: const Icon(Icons.draw_outlined),
         title: const Text('Scratchpad'),
-        subtitle: const Text('For working things out. Not saved.'),
+        subtitle: const Text('For working things out. Not saved; use Download to keep a copy.'),
         children: const [
           WhiteboardWidget(height: 280),
         ],

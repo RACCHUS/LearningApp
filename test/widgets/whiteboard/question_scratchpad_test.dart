@@ -59,7 +59,7 @@ void main() {
       (tester) async {
     await pump(tester, featureOn: true, prefs: optedIn);
     expect(find.text('Scratchpad'), findsOneWidget);
-    expect(find.text('For working things out. Not saved.'), findsOneWidget);
+    expect(find.textContaining('Not saved; use Download'), findsOneWidget);
     expect(find.byKey(const Key('whiteboard-canvas')), findsNothing);
 
     await tester.tap(find.text('Scratchpad'));

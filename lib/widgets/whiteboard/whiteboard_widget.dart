@@ -5,20 +5,28 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../../models/whiteboard/whiteboard_stroke.dart';
 import '../../services/whiteboard/whiteboard_storage_service.dart';
+import '../../services/whiteboard/png_download_stub.dart'
+    if (dart.library.js_interop) '../../services/whiteboard/png_download_web.dart';
 
 /// Interactive scratchpad whiteboard with freehand drawing, tool selection
 /// and undo/redo (P8-2). With a [storageService] it can also save and reload
-/// on this device; without one it is temporary and nothing is stored.
+/// on this device; without one it is temporary and nothing is stored, but
+/// the learner can download the current drawing as a PNG file.
 class WhiteboardWidget extends StatefulWidget {
   final WhiteboardStorageService? storageService;
   final double height;
   final Color backgroundColor;
+
+  /// Hands the PNG to the browser as a file download. Defaults to the
+  /// platform implementation; injectable for tests.
+  final Future<bool> Function(Uint8List png, String fileName)? pngDownloader;
 
   const WhiteboardWidget({
     super.key,
     this.storageService,
     this.height = 420.0,
     this.backgroundColor = Colors.white,
+    this.pngDownloader,
   });
 
   @override
@@ -120,24 +128,39 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
     });
   }
 
-  Future<void> _saveWhiteboard({bool exportPng = true}) async {
-    Uint8List? pngBytes;
-    if (exportPng) {
-      try {
-        final boundary =
-            _boundaryKey.currentContext?.findRenderObject()
-                as RenderRepaintBoundary?;
-        if (boundary != null) {
-          final image = await boundary.toImage(pixelRatio: 2.0);
-          final byteData = await image.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
-          pngBytes = byteData?.buffer.asUint8List();
-        }
-      } catch (e) {
-        debugPrint('Error capturing whiteboard PNG: $e');
-      }
+  Future<Uint8List?> _capturePng() async {
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('Error capturing whiteboard PNG: $e');
+      return null;
     }
+  }
+
+  /// Downloads the drawing as it is now. Stored nowhere by the app.
+  Future<void> _downloadPng() async {
+    final png = await _capturePng();
+    final now = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final name = 'scratchpad-${now.year}${two(now.month)}${two(now.day)}-'
+        '${two(now.hour)}${two(now.minute)}.png';
+    final ok = png != null &&
+        await (widget.pngDownloader ?? downloadPng)(png, name);
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Drawing downloaded as $name.'
+          : 'Could not download the drawing. You can take a screenshot instead.'),
+    ));
+  }
+
+  Future<void> _saveWhiteboard({bool exportPng = true}) async {
+    final pngBytes = exportPng ? await _capturePng() : null;
 
     final storage = widget.storageService;
     if (storage == null) return;
@@ -248,6 +271,15 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
                   onPressed: _strokes.isNotEmpty ? _clearCanvas : null,
                 ),
 
+                // A temporary board offers a file download instead.
+                if (widget.storageService == null)
+                  OutlinedButton.icon(
+                    key: const Key('download_whiteboard_button'),
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('Download',
+                        style: TextStyle(fontSize: 12)),
+                    onPressed: _strokes.isNotEmpty ? _downloadPng : null,
+                  ),
                 // Save & Reload (only when this board is stored)
                 if (widget.storageService != null) ...[
                   FilledButton.icon(
