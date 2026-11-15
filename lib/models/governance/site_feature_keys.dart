@@ -31,6 +31,7 @@ abstract final class SiteFeatureKeys {
   static const String contentPublicContribution = 'content.public_contribution';
   static const String contentRefreshProposals = 'content.refresh_proposals';
   static const String learningXpAchievements = 'learning.xp_achievements';
+  static const String learningStudyReminders = 'learning.study_reminders';
 
   static const Set<String> all = {
     telFast,
@@ -58,5 +59,6 @@ abstract final class SiteFeatureKeys {
     contentPublicContribution,
     contentRefreshProposals,
     learningXpAchievements,
+    learningStudyReminders,
   };
 }

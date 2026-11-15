@@ -39,6 +39,7 @@ import 'package:learning_pwa/screens/settings/reset_center_screen.dart'
 import 'package:learning_pwa/screens/settings/product_analytics_privacy_screen.dart'
     deferred as product_analytics_privacy;
 import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
+import 'package:learning_pwa/screens/settings/study_reminders_screen.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/screens/governance/contribution_review_screen.dart';
 import 'package:learning_pwa/screens/community/community_lessons_screen.dart';
@@ -512,6 +513,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/motivation',
         name: 'settings-motivation',
         builder: (context, state) => const MotivationSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/reminders',
+        name: 'settings-reminders',
+        builder: (context, state) => const StudyRemindersScreen(),
       ),
       GoRoute(
         path: '/settings/privacy/analytics',

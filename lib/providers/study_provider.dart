@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_pwa/models/reminder.dart';
 import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/models/lesson_progress.dart' as progress_model;
-import 'package:learning_pwa/services/notification_service.dart';
 import 'package:learning_pwa/services/lesson_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
@@ -23,13 +21,11 @@ final studyProvider = StateNotifierProvider<StudyNotifier, StudyState>((ref) {
 
 class StudyNotifier extends StateNotifier<StudyState> {
   final _logger = AppLogger('StudyNotifier');
-  final NotificationService _notificationService = NotificationService();
   final LessonService _lessonService = LessonService();
   final _supabase = Supabase.instance.client;
 
   StudyNotifier() : super(StudyState.initial()) {
     // Initialize notification service
-    _notificationService.init();
   }
 
   Future<void> startStudySession(String lessonId, StudyMode mode) async {
@@ -239,15 +235,6 @@ class StudyNotifier extends StateNotifier<StudyState> {
         unawaited(_syncProgressAfterLocalCache());
       }
 
-      // Schedule next study session reminder if this was a significant study session
-      if (durationMinutes != null && durationMinutes >= 15) {
-        try {
-          await _scheduleNextStudyReminder(lessonTitle);
-        } catch (reminderError) {
-          // Reminder failure shouldn't block completion
-          _logger.warn('Failed to schedule reminder', error: reminderError);
-        }
-      }
 
       // Add missed items to spaced repetition review queue
       try {
@@ -339,35 +326,6 @@ class StudyNotifier extends StateNotifier<StudyState> {
     }
   }
 
-  /// Schedule a reminder for the next study session
-  Future<void> _scheduleNextStudyReminder(String? lessonTitle) async {
-    try {
-      // Default to 24 hours from now
-      final nextDay = DateTime.now().add(const Duration(hours: 24));
-      final nextStudyTime =
-          TimeOfDay(hour: nextDay.hour, minute: nextDay.minute);
-
-      final reminder = Reminder(
-        id: 'next_study_${DateTime.now().millisecondsSinceEpoch}',
-        userId: 'current_user', // This should be replaced with actual user ID
-        title: 'Continue Learning',
-        message: lessonTitle != null
-            ? 'Time to continue with "$lessonTitle"'
-            : 'Time for your next study session!',
-        timeOfDay: nextStudyTime,
-        frequency: ReminderFrequency.daily,
-        type: ReminderType.study,
-        isActive: true,
-        isRepeating: false,
-      );
-
-      await _notificationService.scheduleStudyReminder(reminder);
-    } catch (e) {
-      debugPrint('Error scheduling next study reminder: $e');
-      // Don't throw, as this shouldn't block the main operation
-    }
-  }
-
   void resetStudySession() {
     state = StudyState.initial();
   }
@@ -442,30 +400,6 @@ class StudyState {
 
   // Helper methods
   bool isTermKnown(String termId) => termStatus[termId] ?? false;
-
-  /// Schedule a reminder for a specific term
-  Future<void> scheduleTermReminder(String term, String definition) async {
-    try {
-      final reminder = Reminder(
-        id: 'term_${DateTime.now().millisecondsSinceEpoch}',
-        userId: 'current_user', // This should be replaced with actual user ID
-        title: 'Review Term: $term',
-        message: 'Remember: $definition',
-        timeOfDay: TimeOfDay.now().replacing(
-          minute: (TimeOfDay.now().minute + 30) % 60,
-        ),
-        frequency: ReminderFrequency.daily,
-        type: ReminderType.study,
-        isActive: true,
-        isRepeating: true,
-      );
-
-      await NotificationService().scheduleStudyReminder(reminder);
-    } catch (e) {
-      debugPrint('Error scheduling term reminder: $e');
-      rethrow;
-    }
-  }
 
   double get accuracy {
     final total = correctAnswers + incorrectAnswers;

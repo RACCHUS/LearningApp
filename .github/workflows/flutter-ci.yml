@@ -86,6 +86,16 @@ jobs:
           python3 tool/verify_feature_registry.py
           python3 -m unittest discover -s tool/tests -p 'test_verify_feature_registry.py' -v
 
+      - name: Set up Deno (Edge Function unit tests)
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - name: Test study-reminder dispatch and type-check the Edge Function (no network or secrets)
+        run: |
+          deno test supabase/functions/send-study-reminders/dispatch_test.ts
+          deno check supabase/functions/send-study-reminders/index.ts
+
       - name: Validate zero-cost public SEO preview and editorial gates
         run: |
           python3 -m unittest discover -s tool/tests -p 'test_public_site_build.py' -v
