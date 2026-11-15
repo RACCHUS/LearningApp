@@ -14,9 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final displayName = ref.watch(displayNameProvider).valueOrNull;
-    final avatarEnabled = ref.watch(avatarCustomizerEnabledProvider);
-    final avatarService =
-        avatarEnabled ? ref.watch(avatarPersistenceProvider) : null;
+    final avatarService = watchAccountAvatar(ref);
 
     return Scaffold(
       appBar: AppBar(

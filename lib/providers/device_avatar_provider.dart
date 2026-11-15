@@ -19,15 +19,20 @@ final avatarCustomizerEnabledProvider = Provider<bool>((ref) {
   );
 });
 
-/// Rebuilt on account changes: no local avatar is shared between learners
-/// who use the same browser.
-final avatarPersistenceProvider =
-    ChangeNotifierProvider.autoDispose<AvatarPersistenceService>((ref) {
-  final auth = ref.watch(authProvider);
-  if (auth is! AuthSuccess || auth.user.isAnonymous) {
-    throw StateError('Avatar preferences require a signed-in account.');
-  }
-  final service = AvatarPersistenceService(userId: auth.user.id);
+/// Keyed by account id, so no local avatar is shared between learners who
+/// use the same browser and a sign-out can never read another account's key.
+final avatarPersistenceProvider = ChangeNotifierProvider.autoDispose
+    .family<AvatarPersistenceService, String>((ref, userId) {
+  final service = AvatarPersistenceService(userId: userId);
   unawaited(service.load());
   return service;
 });
+
+/// The signed-in learner's avatar service, or null when the customizer is
+/// off, signed out or a guest.
+AvatarPersistenceService? watchAccountAvatar(WidgetRef ref) {
+  if (!ref.watch(avatarCustomizerEnabledProvider)) return null;
+  final auth = ref.watch(authProvider);
+  if (auth is! AuthSuccess || auth.user.isAnonymous) return null;
+  return ref.watch(avatarPersistenceProvider(auth.user.id));
+}

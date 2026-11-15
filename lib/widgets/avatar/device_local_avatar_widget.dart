@@ -81,15 +81,24 @@ class DeviceLocalAvatarWidget extends StatelessWidget {
       ],
     );
 
+    // The face is an emoji; read a plain label instead of its Unicode name.
+    final labelled = Semantics(
+      label: 'Avatar',
+      image: onTap == null,
+      button: onTap != null,
+      excludeSemantics: true,
+      child: content,
+    );
+
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
-        child: content,
+        child: labelled,
       );
     }
 
-    return content;
+    return labelled;
   }
 }
 

@@ -44,11 +44,13 @@ void main() {
     createdAt: DateTime(2026, 1, 1).toIso8601String(),
   );
 
-  Widget app(_FakeRepo repo, {bool withAvatar = false}) => ProviderScope(
+  Widget app(_FakeRepo repo, {bool withAvatar = false, User? as}) =>
+      ProviderScope(
         overrides: [
           if (withAvatar)
             avatarCustomizerEnabledProvider.overrideWithValue(true),
-          authProvider.overrideWith((ref) => _FakeAuthNotifier(AuthSuccess(user))),
+          authProvider.overrideWith(
+              (ref) => _FakeAuthNotifier(AuthSuccess(as ?? user))),
           displayNameRepositoryProvider.overrideWithValue(repo),
         ],
         child: const MaterialApp(home: ProfileScreen()),
@@ -132,6 +134,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('😎'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == 'Avatar'),
+        findsOneWidget,
+        reason: 'the emoji face is announced as "Avatar"');
+  });
+
+  testWidgets('a guest never gets the avatar customizer, even when ON',
+      (tester) async {
+    final guest = User(
+      id: 'guest-1',
+      appMetadata: const {},
+      userMetadata: const {},
+      aud: 'authenticated',
+      createdAt: DateTime(2026, 1, 1).toIso8601String(),
+      isAnonymous: true,
+    );
+    await tester.pumpWidget(app(_FakeRepo('Guest'), withAvatar: true, as: guest));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-customize-avatar')), findsNothing);
+    expect(find.byKey(const Key('profile-local-avatar')), findsNothing);
+  });
+
+  testWidgets('feature OFF keeps the initial avatar', (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-customize-avatar')), findsNothing);
+    expect(find.text('A'), findsWidgets);
   });
 
 }

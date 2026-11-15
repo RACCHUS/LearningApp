@@ -24,10 +24,7 @@ class AccountActions extends ConsumerWidget {
       final label = displayName ??
           (email?.isNotEmpty == true ? email! : 'signed in');
       final colors = Theme.of(context).colorScheme;
-      final avatarEnabled = ref.watch(avatarCustomizerEnabledProvider);
-      final localAvatar = avatarEnabled
-          ? ref.watch(avatarPersistenceProvider).avatar
-          : null;
+      final localAvatar = watchAccountAvatar(ref)?.avatar;
 
       return PopupMenuButton<String>(
         key: const Key('account-menu'),
