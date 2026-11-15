@@ -11,6 +11,8 @@ import 'package:learning_pwa/providers/scope_resolver_provider.dart';
 import 'package:learning_pwa/services/offline/learning_event_outbox.dart';
 import 'package:uuid/uuid.dart';
 import 'concept_evidence_service.dart';
+import 'package:learning_pwa/models/achievement.dart';
+import 'package:learning_pwa/providers/xp_achievements_provider.dart';
 
 /// Service for managing spaced repetition review items
 class SpacedRepetitionService {
@@ -461,6 +463,7 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
       isLoading: false,
       isComplete: items.isEmpty,
       contextId: contextId,
+      sessionId: const Uuid().v4(),
     );
   }
 
@@ -496,9 +499,23 @@ class ReviewSessionNotifier extends StateNotifier<ReviewSessionState> {
       if (isComplete) {
         _ref.invalidate(dueReviewItemsProvider);
         _ref.invalidate(reviewSummaryProvider);
+        await _claimSessionXp();
       }
     } else {
       state = state.copyWith(isLoading: false);
+    }
+  }
+
+  /// One XP claim per finished session, keyed by the session id so a retry
+  /// or rebuild can never claim twice. Failure never blocks the summary.
+  Future<void> _claimSessionXp() async {
+    final sessionId = state.sessionId;
+    if (sessionId == null || state.reviewedCount == 0) return;
+    final result = await _ref
+        .read(activityXpRecorderProvider)
+        .record(ActivityXpKind.reviewSession, sessionId, eventId: sessionId);
+    if (result != null && state.sessionId == sessionId) {
+      state = state.copyWith(xpResult: result);
     }
   }
 
@@ -529,6 +546,12 @@ class ReviewSessionState {
   final int correctCount;
   final String? contextId;
 
+  /// Fresh per started session; the XP claim's source and event id.
+  final String? sessionId;
+
+  /// Server answer to this session's XP claim, if any.
+  final ActivityXpResult? xpResult;
+
   const ReviewSessionState({
     this.items = const [],
     this.currentIndex = 0,
@@ -537,6 +560,8 @@ class ReviewSessionState {
     this.reviewedCount = 0,
     this.correctCount = 0,
     this.contextId,
+    this.sessionId,
+    this.xpResult,
   });
 
   ReviewableItem? get currentItem =>
@@ -557,6 +582,7 @@ class ReviewSessionState {
     int? reviewedCount,
     int? correctCount,
     String? contextId,
+    ActivityXpResult? xpResult,
   }) {
     return ReviewSessionState(
       items: items ?? this.items,
@@ -566,6 +592,8 @@ class ReviewSessionState {
       reviewedCount: reviewedCount ?? this.reviewedCount,
       correctCount: correctCount ?? this.correctCount,
       contextId: contextId ?? this.contextId,
+      sessionId: sessionId,
+      xpResult: xpResult ?? this.xpResult,
     );
   }
 }

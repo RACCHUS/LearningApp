@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:learning_pwa/models/achievement.dart';
 import 'package:learning_pwa/models/user_xp.dart';
 import 'package:uuid/uuid.dart';
 
@@ -96,114 +97,58 @@ class XpService {
     }
   }
 
-  /// Award XP to user via transactional, idempotent RPC
-  Future<XpEvent?> awardXp({
-    required XpEventType type,
-    int? customAmount,
-    String? sourceId,
-    String? description,
+  /// Claims server-awarded XP for a finished activity (`claim_activity_xp`).
+  ///
+  /// The server fixes the amount, applies cooldowns, daily limits and the
+  /// `learning.xp_achievements` gate, and returns any achievements this
+  /// claim earned. Returns null when signed out, offline or refused; XP is
+  /// a motivation extra and never blocks the learning flow.
+  Future<ActivityXpResult?> claimActivityXp({
+    required ActivityXpKind kind,
+    required String sourceId,
     String? eventId,
   }) async {
     final client = _client;
-    final userId = _userId;
-    if (client == null || userId == null) return null;
-
+    if (client == null || _userId == null || sourceId.trim().isEmpty) {
+      return null;
+    }
     try {
-      final xpAmount = customAmount ?? type.baseXp;
-      final effectiveEventId = eventId ?? _uuid.v4();
-
-      final result = await client.rpc('record_xp_award', params: {
-        'p_event_id': effectiveEventId,
-        'p_event_type': type.name,
-        'p_xp_amount': xpAmount,
+      final result = await client.rpc('claim_activity_xp', params: {
+        'p_event_id': eventId ?? _uuid.v4(),
+        'p_kind': kind.wireName,
         'p_source_id': sourceId,
-        'p_description': description,
       });
-
-      final awardedXp = (result is Map)
-          ? (result['awarded_xp'] as int? ?? xpAmount)
-          : xpAmount;
-
-      return XpEvent(
-        id: effectiveEventId,
-        type: type,
-        xpAmount: awardedXp,
-        sourceId: sourceId,
-        description: description,
-        earnedAt: DateTime.now().toUtc(),
-      );
+      if (result is! Map) return null;
+      return ActivityXpResult.fromJson(Map<String, dynamic>.from(result));
     } catch (e) {
       if (kDebugMode) {
-        print('Error awarding XP: $e');
+        print('XP claim skipped: $e');
       }
       return null;
     }
   }
 
-  /// Award XP for completing a question correctly.
-  /// [lessonId] and [questionId] are both required to construct a stable source
-  /// identifier ('$lessonId:$questionId'), ensuring distinct questions do not collide
-  /// and repeated attempts for the same question adhere to replay cooldowns.
-  Future<XpEvent?> awardQuestionXp(
-    String lessonId, {
-    required String questionId,
-    String? eventId,
-  }) async {
-    final source = '$lessonId:$questionId';
-    return awardXp(
-      type: XpEventType.questionCorrect,
-      sourceId: source,
-      eventId: eventId,
-    );
-  }
-
-  /// Award XP for completing a lesson
-  Future<XpEvent?> awardLessonCompleteXp(String lessonId, String lessonTitle, {String? eventId}) async {
-    return awardXp(
-      type: XpEventType.lessonComplete,
-      sourceId: lessonId,
-      eventId: eventId,
-      description: 'Completed "$lessonTitle"',
-    );
-  }
-
-  /// Award XP for completing a course
-  Future<XpEvent?> awardCourseCompleteXp(String courseId, String courseTitle, {String? eventId}) async {
-    return awardXp(
-      type: XpEventType.courseComplete,
-      sourceId: courseId,
-      eventId: eventId,
-      description: 'Completed "$courseTitle"',
-    );
-  }
-
-  /// Award XP for review session.
-  /// [sessionId] is required to uniquely identify this specific review session instance,
-  /// preventing retries or re-renders of the same session from claiming multiple awards,
-  /// while ensuring subsequent sessions in the same learning context are not blocked.
-  Future<XpEvent?> awardReviewSessionXp(
-    int itemsReviewed, {
-    required String sessionId,
-    String? eventId,
-  }) async {
-    final bonusXp = (itemsReviewed * 2).clamp(0, 50); // Max 50 bonus
-    return awardXp(
-      type: XpEventType.reviewSession,
-      customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: sessionId,
-      eventId: eventId,
-      description: 'Reviewed $itemsReviewed items',
-    );
-  }
-
-  /// Award streak bonus XP
-  Future<XpEvent?> awardStreakBonusXp(int streakDays) async {
-    final xpAmount = XpConstants.perStreakDay * streakDays;
-    return awardXp(
-      type: XpEventType.streakBonus,
-      customAmount: xpAmount,
-      description: '$streakDays day streak!',
-    );
+  /// The signed-in learner's earned achievement keys, oldest first.
+  Future<List<EarnedAchievementRecord>> getAchievements() async {
+    final client = _client;
+    final userId = _userId;
+    if (client == null || userId == null) return const [];
+    try {
+      final rows = await client
+          .from('user_achievements')
+          .select('achievement_key, earned_at')
+          .eq('user_id', userId)
+          .order('earned_at', ascending: true);
+      return (rows as List)
+          .map((row) => EarnedAchievementRecord.fromJson(
+              Map<String, dynamic>.from(row as Map)))
+          .toList(growable: false);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching achievements: $e');
+      }
+      return const [];
+    }
   }
 
   /// Get recent XP events
@@ -255,115 +200,8 @@ final recentXpEventsProvider = FutureProvider<List<XpEvent>>((ref) async {
   return service.getRecentEvents();
 });
 
-/// Notifier for tracking XP changes and level-ups
-class XpNotifier extends StateNotifier<XpState> {
-  final XpService _service;
-  final Ref _ref;
-
-  XpNotifier(this._service, this._ref) : super(const XpState());
-
-  /// Award XP and check for level up
-  Future<void> awardXp({
-    required XpEventType type,
-    int? customAmount,
-    String? sourceId,
-    String? description,
-    String? eventId,
-  }) async {
-    final previousXp = state.totalXp;
-
-    final event = await _service.awardXp(
-      type: type,
-      customAmount: customAmount,
-      sourceId: sourceId,
-      description: description,
-      eventId: eventId,
-    );
-
-    if (event != null) {
-      final newTotalXp = previousXp + event.xpAmount;
-      final previousLevel = XpConstants.levelFromXp(previousXp);
-      final newLevel = XpConstants.levelFromXp(newTotalXp);
-      final leveledUp = newLevel > previousLevel;
-
-      state = XpState(
-        totalXp: newTotalXp,
-        lastEvent: event,
-        didLevelUp: leveledUp,
-        newLevel: leveledUp ? newLevel : null,
-      );
-
-      // Invalidate providers to refresh data
-      _ref.invalidate(userXpSummaryProvider);
-      _ref.invalidate(totalXpProvider);
-    }
-  }
-
-  void clearLevelUpNotification() {
-    state = state.copyWith(didLevelUp: false, newLevel: null);
-  }
-
-  /// Award XP for question completion via notifier
-  Future<void> awardQuestionXp(
-    String lessonId, {
-    required String questionId,
-    String? eventId,
-  }) async {
-    await awardXp(
-      type: XpEventType.questionCorrect,
-      sourceId: '$lessonId:$questionId',
-      eventId: eventId,
-    );
-  }
-
-  /// Award XP for review session completion via notifier
-  Future<void> awardReviewSessionXp(
-    int itemsReviewed, {
-    required String sessionId,
-    String? eventId,
-  }) async {
-    final bonusXp = (itemsReviewed * 2).clamp(0, 50);
-    await awardXp(
-      type: XpEventType.reviewSession,
-      customAmount: XpConstants.perReviewSession + bonusXp,
-      sourceId: sessionId,
-      eventId: eventId,
-      description: 'Reviewed $itemsReviewed items',
-    );
-  }
-}
-
-/// State for XP tracking
-class XpState {
-  final int totalXp;
-  final XpEvent? lastEvent;
-  final bool didLevelUp;
-  final int? newLevel;
-
-  const XpState({
-    this.totalXp = 0,
-    this.lastEvent,
-    this.didLevelUp = false,
-    this.newLevel,
-  });
-
-  XpState copyWith({
-    int? totalXp,
-    XpEvent? lastEvent,
-    bool? didLevelUp,
-    int? newLevel,
-  }) {
-    return XpState(
-      totalXp: totalXp ?? this.totalXp,
-      lastEvent: lastEvent ?? this.lastEvent,
-      didLevelUp: didLevelUp ?? this.didLevelUp,
-      newLevel: newLevel,
-    );
-  }
-}
-
-/// Provider for XP notifier
-final xpNotifierProvider = StateNotifierProvider<XpNotifier, XpState>((ref) {
-  final service = ref.read(xpServiceProvider);
-  return XpNotifier(service, ref);
+/// Earned achievements for the signed-in learner.
+final userAchievementsProvider =
+    FutureProvider<List<EarnedAchievementRecord>>((ref) async {
+  return ref.read(xpServiceProvider).getAchievements();
 });

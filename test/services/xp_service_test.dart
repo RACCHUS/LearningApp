@@ -1,5 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/achievement.dart';
 import 'package:learning_pwa/models/user_xp.dart';
+import 'package:learning_pwa/providers/xp_achievements_provider.dart';
 import 'package:learning_pwa/services/xp_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../test_helpers/fake_supabase_client.dart';
@@ -203,168 +206,155 @@ void main() {
     });
   });
 
-  group('XpService stable identifiers and cooldown semantics', () {
-    test('awardQuestionXp builds distinct sourceIds for different questions in the same lesson', () async {
-      final capturedCalls = <Map<String, dynamic>>[];
-      final user = User(
-        id: 'test-user-id',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      final fakeClient = FakeSupabaseClient(currentUser: user);
-      fakeClient.rpcHandler = (fn, {params}) {
-        capturedCalls.add({'fn': fn, 'params': params});
-        return {
-          'id': 'event-1',
-          'user_id': 'test-user-id',
-          'event_type': 'question_correct',
-          'xp_amount': 10,
-          'earned_at': DateTime.now().toIso8601String(),
-          'source_id': params?['p_source_id'],
+  group('XpService.claimActivityXp', () {
+    User user() => User(
+          id: 'test-user-id',
+          appMetadata: const {},
+          userMetadata: const {},
+          aud: 'authenticated',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+
+    test('sends only kind, source and event id; never an XP amount', () async {
+      final calls = <(String, Map<String, dynamic>?)>[];
+      final client = FakeSupabaseClient(currentUser: user())
+        ..rpcHandler = (fn, {params}) {
+          calls.add((fn, params));
+          return {
+            'status': 'awarded',
+            'awarded_xp': 50,
+            'total_xp': 50,
+            'new_achievements': ['first_lesson', 'not_in_this_build'],
+          };
         };
-      };
 
-      final service = XpService(supabase: fakeClient);
+      final result = await XpService(supabase: client).claimActivityXp(
+        kind: ActivityXpKind.lessonComplete,
+        sourceId: 'lesson-1',
+        eventId: 'e-1',
+      );
 
-      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
-      await service.awardQuestionXp('lesson-1', questionId: 'q-2');
-
-      expect(capturedCalls.length, 2);
-      expect(capturedCalls[0]['params']['p_source_id'], 'lesson-1:q-1');
-      expect(capturedCalls[1]['params']['p_source_id'], 'lesson-1:q-2');
-      expect(capturedCalls[0]['params']['p_source_id'], isNot(equals(capturedCalls[1]['params']['p_source_id'])));
+      expect(calls.single.$1, 'claim_activity_xp');
+      expect(calls.single.$2, {
+        'p_event_id': 'e-1',
+        'p_kind': 'lesson_complete',
+        'p_source_id': 'lesson-1',
+      });
+      expect(result!.awarded, isTrue);
+      expect(result.awardedXp, 50);
+      expect(result.newAchievements, ['first_lesson'],
+          reason: 'unknown server keys are dropped, not shown raw');
     });
 
-    test('awardQuestionXp reuses identical sourceId for repeated attempts of same question', () async {
-      final capturedCalls = <Map<String, dynamic>>[];
-      final user = User(
-        id: 'test-user-id',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      final fakeClient = FakeSupabaseClient(currentUser: user);
-      fakeClient.rpcHandler = (fn, {params}) {
-        capturedCalls.add({'fn': fn, 'params': params});
-        return {
-          'id': 'event-1',
-          'user_id': 'test-user-id',
-          'event_type': 'question_correct',
-          'xp_amount': 10,
-          'earned_at': DateTime.now().toIso8601String(),
-          'source_id': params?['p_source_id'],
-        };
-      };
-
-      final service = XpService(supabase: fakeClient);
-
-      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
-      await service.awardQuestionXp('lesson-1', questionId: 'q-1');
-
-      expect(capturedCalls.length, 2);
-      expect(capturedCalls[0]['params']['p_source_id'], 'lesson-1:q-1');
-      expect(capturedCalls[1]['params']['p_source_id'], 'lesson-1:q-1');
+    test('a cooldown or limit answer is not reported as awarded', () async {
+      final client = FakeSupabaseClient(currentUser: user())
+        ..rpcHandler = (fn, {params}) => {
+              'status': 'limit_reached',
+              'awarded_xp': 0,
+              'total_xp': 900,
+              'new_achievements': <String>[],
+            };
+      final result = await XpService(supabase: client).claimActivityXp(
+          kind: ActivityXpKind.reviewSession, sourceId: 's-1');
+      expect(result!.awarded, isFalse);
+      expect(result.totalXp, 900);
     });
 
-    test('awardReviewSessionXp requires stable sessionId and forwards it to RPC without timestamp drift', () async {
-      final capturedCalls = <Map<String, dynamic>>[];
-      final user = User(
-        id: 'test-user-id',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      final fakeClient = FakeSupabaseClient(currentUser: user);
-      fakeClient.rpcHandler = (fn, {params}) {
-        capturedCalls.add({'fn': fn, 'params': params});
-        return {
-          'id': 'event-1',
-          'user_id': 'test-user-id',
-          'event_type': 'review_session',
-          'xp_amount': 25,
-          'earned_at': DateTime.now().toIso8601String(),
-          'source_id': params?['p_source_id'],
-        };
-      };
-
-      final service = XpService(supabase: fakeClient);
-
-      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
-      await service.awardReviewSessionXp(5, sessionId: 'session_20261101_userA');
-
-      expect(capturedCalls.length, 2);
-      expect(capturedCalls[0]['params']['p_source_id'], 'session_20261101_userA');
-      expect(capturedCalls[1]['params']['p_source_id'], 'session_20261101_userA');
-      // Base XP is 25 + 10 bonus = 35
-      expect(capturedCalls[0]['params']['p_xp_amount'], 35);
+    test('signed out or blank source sends nothing', () async {
+      var calls = 0;
+      final signedOut = FakeSupabaseClient()
+        ..rpcHandler = (fn, {params}) => calls++;
+      expect(
+          await XpService(supabase: signedOut).claimActivityXp(
+              kind: ActivityXpKind.lessonComplete, sourceId: 'lesson-1'),
+          isNull);
+      final signedIn = FakeSupabaseClient(currentUser: user())
+        ..rpcHandler = (fn, {params}) => calls++;
+      expect(
+          await XpService(supabase: signedIn).claimActivityXp(
+              kind: ActivityXpKind.lessonComplete, sourceId: '  '),
+          isNull);
+      expect(calls, 0);
     });
 
-    test('awardReviewSessionXp distinguishes two different sessions in the same learning context', () async {
-      final capturedCalls = <Map<String, dynamic>>[];
-      final user = User(
-        id: 'test-user-id',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      final fakeClient = FakeSupabaseClient(currentUser: user);
-      fakeClient.rpcHandler = (fn, {params}) {
-        capturedCalls.add({'fn': fn, 'params': params});
-        return {
-          'id': 'event-1',
-          'user_id': 'test-user-id',
-          'event_type': 'review_session',
-          'xp_amount': 25,
-          'earned_at': DateTime.now().toIso8601String(),
-          'source_id': params?['p_source_id'],
-        };
-      };
-
-      final service = XpService(supabase: fakeClient);
-
-      // Two distinct review sessions in the same 'biology' learning context
-      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-1');
-      await service.awardReviewSessionXp(5, sessionId: 'review_biology:session-uuid-2');
-
-      expect(capturedCalls.length, 2);
-      expect(capturedCalls[0]['params']['p_source_id'], 'review_biology:session-uuid-1');
-      expect(capturedCalls[1]['params']['p_source_id'], 'review_biology:session-uuid-2');
-      expect(capturedCalls[0]['params']['p_source_id'], isNot(equals(capturedCalls[1]['params']['p_source_id'])));
+    test('a server refusal returns null instead of throwing', () async {
+      final client = FakeSupabaseClient(currentUser: user())
+        ..rpcHandler = (fn, {params}) => throw Exception('feature_disabled');
+      expect(
+          await XpService(supabase: client).claimActivityXp(
+              kind: ActivityXpKind.lessonComplete, sourceId: 'lesson-1'),
+          isNull);
     });
 
-    test('awardReviewSessionXp clamps bonus XP to maximum of 50', () async {
-      final capturedCalls = <Map<String, dynamic>>[];
-      final user = User(
-        id: 'test-user-id',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      final fakeClient = FakeSupabaseClient(currentUser: user);
-      fakeClient.rpcHandler = (fn, {params}) {
-        capturedCalls.add({'fn': fn, 'params': params});
-        return {
-          'id': 'event-1',
-          'user_id': 'test-user-id',
-          'event_type': 'review_session',
-          'xp_amount': params?['p_xp_amount'],
-          'earned_at': DateTime.now().toIso8601String(),
-          'source_id': params?['p_source_id'],
-        };
-      };
+    test('getAchievements reads only the learner own rows', () async {
+      final client = FakeSupabaseClient(currentUser: user())
+        ..setTableData('user_achievements', [
+          {
+            'user_id': 'test-user-id',
+            'achievement_key': 'first_lesson',
+            'earned_at': '2026-11-15T10:00:00Z',
+          },
+          {
+            'user_id': 'someone-else',
+            'achievement_key': 'lessons_10',
+            'earned_at': '2026-11-15T10:00:00Z',
+          },
+        ]);
+      final earned = await XpService(supabase: client).getAchievements();
+      expect(earned.map((e) => e.key), ['first_lesson']);
+    });
+  });
 
-      final service = XpService(supabase: fakeClient);
+  group('ActivityXpRecorder', () {
+    test('gate OFF claims nothing and sends no request', () async {
+      var calls = 0;
+      final client = FakeSupabaseClient(
+        currentUser: User(
+          id: 'u',
+          appMetadata: const {},
+          userMetadata: const {},
+          aud: 'authenticated',
+          createdAt: '2026-11-15T00:00:00Z',
+        ),
+      )..rpcHandler = (fn, {params}) => calls++;
+      final container = ProviderContainer(overrides: [
+        xpAchievementsEnabledProvider.overrideWithValue(false),
+        xpServiceProvider.overrideWithValue(XpService(supabase: client)),
+      ]);
+      addTearDown(container.dispose);
 
-      // 100 items * 2 = 200 bonus, clamped to 50 max bonus -> baseXp (25) + 50 = 75
-      await service.awardReviewSessionXp(100, sessionId: 'big-session');
+      final result = await container
+          .read(activityXpRecorderProvider)
+          .record(ActivityXpKind.lessonComplete, 'lesson-1');
+      expect(result, isNull);
+      expect(calls, 0);
+    });
 
-      expect(capturedCalls.first['params']['p_xp_amount'], 75);
+    test('gate ON forwards the claim', () async {
+      final client = FakeSupabaseClient(
+        currentUser: User(
+          id: 'u',
+          appMetadata: const {},
+          userMetadata: const {},
+          aud: 'authenticated',
+          createdAt: '2026-11-15T00:00:00Z',
+        ),
+      )..rpcHandler = (fn, {params}) => {
+            'status': 'awarded',
+            'awarded_xp': 25,
+            'total_xp': 25,
+            'new_achievements': ['first_review'],
+          };
+      final container = ProviderContainer(overrides: [
+        xpAchievementsEnabledProvider.overrideWithValue(true),
+        xpServiceProvider.overrideWithValue(XpService(supabase: client)),
+      ]);
+      addTearDown(container.dispose);
+
+      final result = await container
+          .read(activityXpRecorderProvider)
+          .record(ActivityXpKind.reviewSession, 'session-1');
+      expect(result?.awardedXp, 25);
     });
   });
 }

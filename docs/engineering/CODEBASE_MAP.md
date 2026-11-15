@@ -119,6 +119,19 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 <!-- map-ref path="tool/tests/test_verify_feature_registry.py" role="test" -->
 - Tests: `tool/tests/test_verify_feature_registry.py` (`python3 tool/verify_feature_registry.py`); the per-feature refused-while-OFF pgTAP is in `supabase/tests/<feature>_test.sql` (e.g. `content_refresh_proposals_test.sql`).
 
+## XP and achievements {#xp}
+
+Gate `learning.xp_achievements` (default OFF). Shown only in Progress §4 and session summaries (`UI_ARCHITECTURE_LOCKED.md` §9).
+
+<!-- map-ref path="supabase/migrations/20261115000000_learning_xp_achievements.sql" role="contract" -->
+- Contract: `claim_activity_xp` (server fixes the amount; replay, cooldown and daily limits) and `private.evaluate_user_achievements` in `supabase/migrations/20261115000000_learning_xp_achievements.sql`. Verified-assessment XP stays in `submit_assessment_attempt`.
+<!-- map-ref path="lib/services/xp_service.dart" role="owner" -->
+- Owner: `lib/services/xp_service.dart` (claim + reads), `lib/providers/xp_achievements_provider.dart` (gate + `ActivityXpRecorder`), `lib/models/achievement.dart` (catalog mirrors the SQL CHECK list).
+- UI: `lib/widgets/progress/motivation_xp_rows.dart` (Progress rows, `SessionXpSummary`); claims fire from `ReviewSessionNotifier` and `LessonScreen._onLessonComplete`.
+<!-- map-ref path="supabase/tests/learning_xp_achievements_test.sql" role="test" -->
+- Tests: `supabase/tests/learning_xp_achievements_test.sql`, `test/services/xp_service_test.dart`, `test/widgets/progress/session_xp_summary_test.dart`, `test/widgets/progress/progress_motivation_sections_test.dart`.
+- Trap: `record_xp_award` is service-role only; browsers must never call it.
+
 ## Pre-reader and literacy {#prereader}
 
 <!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="445-446" -->

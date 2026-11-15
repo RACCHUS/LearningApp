@@ -25,6 +25,7 @@ import 'package:learning_pwa/widgets/progress/reference_practice_batch_erasure_c
 import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/providers/reset_provider.dart';
+import 'package:learning_pwa/widgets/progress/motivation_xp_rows.dart';
 
 final contextScopeProvider = FutureProvider.family<ResolvedScope, LearningContext>((ref, context) async {
   return ref.watch(scopeResolverProvider).resolveScope(context);
@@ -753,15 +754,12 @@ class _MotivationSection extends StatelessWidget {
           _MetricRow(label: 'Current streak', value: '${progress.currentStreak}'),
           _MetricRow(label: 'Longest streak', value: '${progress.longestStreak}'),
         ],
-        // XP is not awarded anywhere in the app yet, so showing a level or
-        // XP total would always read zero. Say so instead of faking it.
-        if (preferences.xp || preferences.levels)
-          Text(
-            'XP and levels are not tracked yet.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
+        // Server-awarded XP behind `learning.xp_achievements`; while that
+        // gate is OFF this says XP is not tracked rather than showing zero.
+        MotivationXpRows(
+          showXp: preferences.xp,
+          showLevels: preferences.levels,
+        ),
       ],
     );
   }
