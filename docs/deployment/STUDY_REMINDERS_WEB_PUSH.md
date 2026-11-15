@@ -8,14 +8,16 @@ set up, and nothing is sent.
 
 1. A learner adds reminders (local time, weekdays) and turns them on for a
    browser. The browser registers a push subscription with
-   `register_push_subscription`.
+   `register_push_subscription`, which accepts only the real Web Push
+   services (Google FCM, Mozilla, Apple, Windows) over https.
 2. The server stores each reminder's IANA time zone and computes
    `next_fire_at`; browsers never write it.
 3. Every 5 minutes a scheduler calls the `send-study-reminders` Edge
    Function. It calls `claim_due_study_reminders` (at most once per
    occurrence, skips anything more than 30 minutes late), sends one
-   encrypted push per browser, and reports each result with
-   `record_push_delivery` (404/410 removes the subscription).
+   encrypted push per browser (again only to those push services), and
+   reports each result with `record_push_delivery` (404/410 removes the
+   subscription).
 4. `web/push_sw.js` shows the notification and opens Learn when tapped.
 
 With the gate OFF the claim returns no rows, so scheduled runs send nothing.
@@ -38,13 +40,29 @@ With the gate OFF the claim returns no rows, so scheduled runs send nothing.
    ```bash
    supabase functions deploy send-study-reminders
    ```
+   `supabase/config.toml` sets `verify_jwt = false` for this function: this
+   project's publishable keys are not JWTs, and the function authenticates
+   the scheduler itself with `REMINDER_CRON_SECRET`.
 5. **Schedule it** every 5 minutes (Dashboard › Integrations › Cron): an HTTP
-   POST to the function URL with headers `Authorization: Bearer <anon key>`
-   and `x-reminder-cron-secret: <REMINDER_CRON_SECRET>`.
-6. **Give the web build the public key**: `--dart-define=WEB_PUSH_VAPID_PUBLIC_KEY=<public>`
-   (or the same name in `.env`). It is a public key; never put the private
-   key in the client.
-7. **Turn it on** in `/admin/features`: enabled + release-ready.
+   POST to the function URL with the header
+   `x-reminder-cron-secret: <REMINDER_CRON_SECRET>`. No Authorization header
+   is needed.
+6. **Give the web build the public key** with the build flag (web builds do
+   not read `.env`):
+   ```bash
+   flutter build web --release --dart-define=WEB_PUSH_VAPID_PUBLIC_KEY=<public>
+   ```
+   then `firebase deploy --only hosting`. It is a public key; never put the
+   private key in the client.
+7. **Check it is idle**: with the gate still OFF, the function logs should
+   show runs with `claimed: 0`.
+8. **Turn it on** in `/admin/features`: enabled + release-ready.
+9. **Test one real delivery**: add a reminder 2–3 minutes ahead, turn it on
+   for this browser, close the tab, and wait up to 5 minutes. Switching the
+   gate OFF stops all sending at once.
+
+Run these steps yourself, signed in on your own machine. Do not paste the
+private key, service role key or deploy tokens into a chat.
 
 ## Turning it off
 

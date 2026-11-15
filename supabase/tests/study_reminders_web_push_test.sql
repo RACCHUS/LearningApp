@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(30);
+select plan(36);
 
 insert into auth.users (id, email) values
  ('5e100000-0000-4000-8000-000000000001', 'rem1@example.invalid'),
@@ -44,7 +44,7 @@ select throws_ok(
   $$ select public.save_study_reminder(null, '09:00', array[1]::smallint[], 'UTC') $$,
   '42501', 'feature_disabled', 'saving is refused while the gate is OFF');
 select throws_ok(
-  $$ select public.register_push_subscription('https://push.example.invalid/a',
+  $$ select public.register_push_subscription('https://fcm.googleapis.com/fcm/send/test-a',
        'p256dh-key-0123456789abcdef', 'auth-secret-01') $$,
   '42501', 'feature_disabled', 'registering a browser is refused while OFF');
 select throws_ok(
@@ -80,7 +80,37 @@ select is(
   (select days_of_week from public.study_reminders limit 1),
   array[1, 3]::smallint[], 'weekdays are de-duplicated and sorted');
 
-select public.register_push_subscription('https://push.example.invalid/a',
+-- Only real Web Push services are accepted (matches the dispatcher check).
+select throws_ok(
+  $$ select public.register_push_subscription('https://attacker.example/collect',
+       'p256dh-key-0123456789abcdef', 'auth-secret-01') $$,
+  '22023', 'unsupported_push_service', 'arbitrary hosts are refused');
+select throws_ok(
+  $$ select public.register_push_subscription('http://fcm.googleapis.com/fcm/send/x',
+       'p256dh-key-0123456789abcdef', 'auth-secret-01') $$,
+  '22023', 'unsupported_push_service', 'plain http is refused');
+select throws_ok(
+  $$ select public.register_push_subscription('https://fcm.googleapis.com:8443/fcm/send/x',
+       'p256dh-key-0123456789abcdef', 'auth-secret-01') $$,
+  '22023', 'unsupported_push_service', 'a custom port is refused');
+select throws_ok(
+  $$ select public.register_push_subscription('https://user@fcm.googleapis.com/fcm/send/x',
+       'p256dh-key-0123456789abcdef', 'auth-secret-01') $$,
+  '22023', 'unsupported_push_service', 'user info in the URL is refused');
+reset role;
+select ok(
+  private.is_trusted_push_endpoint('https://wns2-par02p.notify.windows.com/w/?token=abc')
+  and private.is_trusted_push_endpoint('https://web.push.apple.com/QGuQ')
+  and private.is_trusted_push_endpoint('https://updates.push.services.mozilla.com/wpush/v2/x'),
+  'Windows, Apple and Mozilla push hosts are accepted');
+select ok(
+  not private.is_trusted_push_endpoint('https://fcm.googleapis.com.evil.example/x')
+  and not private.is_trusted_push_endpoint(null),
+  'look-alike hosts and null are refused');
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '5e100000-0000-4000-8000-000000000001', true);
+
+select public.register_push_subscription('https://fcm.googleapis.com/fcm/send/test-a',
   'p256dh-key-0123456789abcdef', 'auth-secret-01');
 select is((select count(*)::int from public.push_subscriptions), 1,
   'the owner sees their registered browser');
@@ -142,13 +172,13 @@ select ok(
 
 -- Delivery bookkeeping.
 select public.record_push_delivery(
-  (select id from public.push_subscriptions where endpoint = 'https://push.example.invalid/a'), 201);
+  (select id from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/test-a'), 201);
 select ok(
   (select last_success_at is not null from public.push_subscriptions
-    where endpoint = 'https://push.example.invalid/a'),
+    where endpoint = 'https://fcm.googleapis.com/fcm/send/test-a'),
   '2xx records a success');
 select public.record_push_delivery(
-  (select id from public.push_subscriptions where endpoint = 'https://push.example.invalid/a'), 410);
+  (select id from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/test-a'), 410);
 select is((select count(*)::int from public.push_subscriptions), 0,
   '410 Gone deletes the subscription');
 
