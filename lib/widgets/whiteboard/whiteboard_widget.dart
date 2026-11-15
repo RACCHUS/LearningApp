@@ -1,22 +1,32 @@
 import 'dart:ui' as ui;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../../models/whiteboard/whiteboard_stroke.dart';
 import '../../services/whiteboard/whiteboard_storage_service.dart';
+import '../../services/whiteboard/png_download_stub.dart'
+    if (dart.library.js_interop) '../../services/whiteboard/png_download_web.dart';
 
-/// Interactive scratchpad whiteboard with freehand drawing, tool selection,
-/// undo/redo, and local PNG saving and reload (P8-2).
+/// Interactive scratchpad whiteboard with freehand drawing, tool selection
+/// and undo/redo (P8-2). With a [storageService] it can also save and reload
+/// on this device; without one it is temporary and nothing is stored, but
+/// the learner can download the current drawing as a PNG file.
 class WhiteboardWidget extends StatefulWidget {
-  final WhiteboardStorageService storageService;
+  final WhiteboardStorageService? storageService;
   final double height;
   final Color backgroundColor;
 
+  /// Hands the PNG to the browser as a file download. Defaults to the
+  /// platform implementation; injectable for tests.
+  final Future<bool> Function(Uint8List png, String fileName)? pngDownloader;
+
   const WhiteboardWidget({
     super.key,
-    required this.storageService,
+    this.storageService,
     this.height = 420.0,
     this.backgroundColor = Colors.white,
+    this.pngDownloader,
   });
 
   @override
@@ -30,7 +40,8 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
 
   WhiteboardTool _activeTool = WhiteboardTool.pen;
   Color _activeColor = Colors.black;
-  double _strokeWidth = 3.0;
+  // Must match one of the width menu values (2, 4, 8).
+  double _strokeWidth = 4.0;
 
   List<WhiteboardPoint>? _currentPoints;
   bool _isLoading = false;
@@ -51,8 +62,10 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
   }
 
   Future<void> _loadInitialStrokes() async {
+    final storage = widget.storageService;
+    if (storage == null) return;
     setState(() => _isLoading = true);
-    final loaded = await widget.storageService.loadStrokes();
+    final loaded = await storage.loadStrokes();
     if (mounted) {
       setState(() {
         _strokes.clear();
@@ -115,31 +128,47 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
     });
   }
 
-  Future<void> _saveWhiteboard({bool exportPng = true}) async {
-    Uint8List? pngBytes;
-    if (exportPng) {
-      try {
-        final boundary = _boundaryKey.currentContext?.findRenderObject()
-            as RenderRepaintBoundary?;
-        if (boundary != null) {
-          final image = await boundary.toImage(pixelRatio: 2.0);
-          final byteData =
-              await image.toByteData(format: ui.ImageByteFormat.png);
-          pngBytes = byteData?.buffer.asUint8List();
-        }
-      } catch (e) {
-        debugPrint('Error capturing whiteboard PNG: $e');
-      }
+  Future<Uint8List?> _capturePng() async {
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('Error capturing whiteboard PNG: $e');
+      return null;
     }
+  }
 
-    await widget.storageService.saveStrokes(_strokes, pngBytes: pngBytes);
+  /// Downloads the drawing as it is now. Stored nowhere by the app.
+  Future<void> _downloadPng() async {
+    final png = await _capturePng();
+    final now = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final name = 'scratchpad-${now.year}${two(now.month)}${two(now.day)}-'
+        '${two(now.hour)}${two(now.minute)}.png';
+    final ok = png != null &&
+        await (widget.pngDownloader ?? downloadPng)(png, name);
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Drawing downloaded as $name.'
+          : 'Could not download the drawing. You can take a screenshot instead.'),
+    ));
+  }
+
+  Future<void> _saveWhiteboard({bool exportPng = true}) async {
+    final pngBytes = exportPng ? await _capturePng() : null;
+
+    final storage = widget.storageService;
+    if (storage == null) return;
+    await storage.saveStrokes(_strokes, pngBytes: pngBytes);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Whiteboard saved locally! Vector strokes and PNG stored.'),
-          backgroundColor: Colors.teal,
-        ),
+        const SnackBar(content: Text('Drawing saved on this device.')),
       );
     }
   }
@@ -158,8 +187,9 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
             child: Wrap(
               spacing: 8,
@@ -172,7 +202,10 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
                     return ButtonSegment(
                       value: tool,
                       icon: Icon(tool.icon, size: 16),
-                      label: Text(tool.label, style: const TextStyle(fontSize: 11)),
+                      label: Text(
+                        tool.label,
+                        style: const TextStyle(fontSize: 11),
+                      ),
                     );
                   }).toList(),
                   selected: {_activeTool},
@@ -195,7 +228,9 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
                           color: color,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? Colors.blue : Colors.grey.shade400,
+                            color: isSelected
+                                ? Colors.blue
+                                : Colors.grey.shade400,
                             width: isSelected ? 2.5 : 1.0,
                           ),
                         ),
@@ -236,19 +271,30 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
                   onPressed: _strokes.isNotEmpty ? _clearCanvas : null,
                 ),
 
-                // Save & Reload
-                FilledButton.icon(
-                  key: const Key('save_whiteboard_button'),
-                  icon: const Icon(Icons.save, size: 16),
-                  label: const Text('Save PNG', style: TextStyle(fontSize: 12)),
-                  onPressed: _saveWhiteboard,
-                ),
-                OutlinedButton.icon(
-                  key: const Key('reload_whiteboard_button'),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Reload', style: TextStyle(fontSize: 12)),
-                  onPressed: _loadInitialStrokes,
-                ),
+                // A temporary board offers a file download instead.
+                if (widget.storageService == null)
+                  OutlinedButton.icon(
+                    key: const Key('download_whiteboard_button'),
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('Download',
+                        style: TextStyle(fontSize: 12)),
+                    onPressed: _strokes.isNotEmpty ? _downloadPng : null,
+                  ),
+                // Save & Reload (only when this board is stored)
+                if (widget.storageService != null) ...[
+                  FilledButton.icon(
+                    key: const Key('save_whiteboard_button'),
+                    icon: const Icon(Icons.save, size: 16),
+                    label: const Text('Save', style: TextStyle(fontSize: 12)),
+                    onPressed: _saveWhiteboard,
+                  ),
+                  OutlinedButton.icon(
+                    key: const Key('reload_whiteboard_button'),
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Reload', style: TextStyle(fontSize: 12)),
+                    onPressed: _loadInitialStrokes,
+                  ),
+                ],
               ],
             ),
           ),
@@ -263,20 +309,36 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
                     key: _boundaryKey,
                     child: Container(
                       color: widget.backgroundColor,
-                      child: GestureDetector(
-                        onPanStart: _onPanStart,
-                        onPanUpdate: _onPanUpdate,
-                        onPanEnd: _onPanEnd,
-                        child: CustomPaint(
-                          painter: _WhiteboardPainter(
-                            strokes: _strokes,
-                            currentPoints: _currentPoints,
-                            activeTool: _activeTool,
-                            activeColor: _activeColor,
-                            strokeWidth: _strokeWidth,
-                            backgroundColor: widget.backgroundColor,
+                      // Claims the drag at once so drawing works inside a
+                      // scrolling page (a vertical stroke would otherwise
+                      // scroll the page on touch screens).
+                      child: RawGestureDetector(
+                        key: const Key('whiteboard-canvas'),
+                        gestures: {
+                          _EagerPanGestureRecognizer:
+                              GestureRecognizerFactoryWithHandlers<
+                                _EagerPanGestureRecognizer
+                              >(
+                                _EagerPanGestureRecognizer.new,
+                                (r) => r
+                                  ..onStart = _onPanStart
+                                  ..onUpdate = _onPanUpdate
+                                  ..onEnd = _onPanEnd,
+                              ),
+                        },
+                        child: Semantics(
+                          label: 'Scratchpad drawing area',
+                          child: CustomPaint(
+                            painter: _WhiteboardPainter(
+                              strokes: _strokes,
+                              currentPoints: _currentPoints,
+                              activeTool: _activeTool,
+                              activeColor: _activeColor,
+                              strokeWidth: _strokeWidth,
+                              backgroundColor: widget.backgroundColor,
+                            ),
+                            size: Size.infinite,
                           ),
-                          size: Size.infinite,
                         ),
                       ),
                     ),
@@ -285,6 +347,15 @@ class _WhiteboardWidgetState extends State<WhiteboardWidget> {
         ],
       ),
     );
+  }
+}
+
+/// A pan recognizer that wins the gesture arena on pointer down.
+class _EagerPanGestureRecognizer extends PanGestureRecognizer {
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
   }
 }
 
@@ -381,4 +452,3 @@ class _WhiteboardPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _WhiteboardPainter oldDelegate) => true;
 }
-
