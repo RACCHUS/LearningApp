@@ -4,6 +4,7 @@ import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
 import 'package:learning_pwa/services/spaced_repetition_service.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
+import 'package:learning_pwa/widgets/progress/motivation_xp_rows.dart';
 
 /// Main review screen for spaced repetition
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -268,7 +269,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen>
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            SessionXpSummary(result: session.xpResult),
+            const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.check),

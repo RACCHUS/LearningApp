@@ -39,6 +39,9 @@ import 'package:learning_pwa/widgets/community/in_context_qa_sheet.dart';
 import 'package:learning_pwa/widgets/learning_support/learning_help_action.dart';
 import 'package:learning_pwa/widgets/community/share_with_community_action.dart';
 import 'package:learning_pwa/providers/community_qa_provider.dart';
+import 'package:learning_pwa/models/achievement.dart';
+import 'package:learning_pwa/providers/xp_achievements_provider.dart';
+import 'package:learning_pwa/widgets/progress/motivation_xp_rows.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   final String lessonId;
@@ -557,6 +560,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     if (!mounted) return;
     _completionHandled = true;
 
+    // Server-awarded XP; shown in the summary when it arrives, never blocks it.
+    final xpClaim = ref
+        .read(activityXpRecorderProvider)
+        .record(ActivityXpKind.lessonComplete, widget.lessonId);
+
     // Trigger celebration (confetti + haptic)
     HapticUtils.milestone();
     CelebrationOverlay.trigger(ref, CelebrationType.lessonComplete);
@@ -593,6 +601,13 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
+            FutureBuilder<ActivityXpResult?>(
+              future: xpClaim,
+              builder: (context, snapshot) => Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: SessionXpSummary(result: snapshot.data),
+              ),
+            ),
           ],
         ),
         actions: [

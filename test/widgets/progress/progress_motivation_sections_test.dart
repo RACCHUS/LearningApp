@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/models/achievement.dart';
 import 'package:learning_pwa/models/retrieval_state.dart';
+import 'package:learning_pwa/models/user_xp.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
+import 'package:learning_pwa/providers/xp_achievements_provider.dart';
 import 'package:learning_pwa/screens/progress/progress_dashboard_screen.dart';
 import 'package:learning_pwa/screens/progress/progress_screen.dart';
+import 'package:learning_pwa/services/xp_service.dart';
 import 'package:learning_pwa/widgets/daily_goal_ring.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,8 +19,9 @@ import '../../test_helper.dart';
 /// Progress Activity/Motivation honour the Settings motivation switches
 /// (UI_ARCHITECTURE_LOCKED section 5.5 and the section 10 migration map):
 /// the daily goal ring lives in Activity and is hidden when the goal is off;
-/// XP and levels are not awarded anywhere yet, so Progress says so instead
-/// of showing a permanent zero.
+/// while `learning.xp_achievements` is OFF, Progress says XP is not tracked
+/// instead of showing a permanent zero; when ON it shows server XP, level and
+/// achievements per the XP and Levels switches.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -28,6 +33,7 @@ void main() {
   Future<void> pumpProgress(
     WidgetTester tester, {
     required Map<String, Object> motivation,
+    List<Override> extra = const [],
   }) async {
     SharedPreferences.setMockInitialValues(motivation);
     tester.view.physicalSize = const Size(1000, 3000);
@@ -53,6 +59,7 @@ void main() {
             goalMinutes: 20,
           ),
         ),
+        ...extra,
       ],
       child: const MaterialApp(home: ProgressScreen()),
     ));
@@ -122,6 +129,65 @@ void main() {
     expect(find.text('Current streak'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('XP and levels are not tracked yet.'), findsNothing);
+  });
+
+  List<Override> xpOn({int totalXp = 400, List<String> earned = const []}) => [
+        xpAchievementsEnabledProvider.overrideWithValue(true),
+        userXpSummaryProvider.overrideWith(
+          (ref) async => UserXpSummary.fromTotalXp(totalXp),
+        ),
+        userAchievementsProvider.overrideWith(
+          (ref) async => [
+            for (final key in earned)
+              EarnedAchievementRecord(
+                  key: key, earnedAt: DateTime.utc(2026, 11, 15)),
+          ],
+        ),
+      ];
+
+  testWidgets('gate ON shows server XP, level and earned achievements',
+      (tester) async {
+    await pumpProgress(
+      tester,
+      motivation: {'motivation.xp': true, 'motivation.levels': true},
+      extra: xpOn(totalXp: 400, earned: ['first_lesson', 'unknown_key']),
+    );
+    await expand(tester, 'Motivation');
+
+    expect(find.text('XP and levels are not tracked yet.'), findsNothing);
+    expect(find.text('Total XP'), findsOneWidget);
+    expect(find.text('400'), findsOneWidget);
+    expect(find.text('Level'), findsOneWidget);
+    expect(find.text('First lesson'), findsOneWidget);
+    expect(find.text('unknown_key'), findsNothing);
+  });
+
+  testWidgets('levels without XP hides the XP total and achievements',
+      (tester) async {
+    await pumpProgress(
+      tester,
+      motivation: {'motivation.xp': false, 'motivation.levels': true},
+      extra: xpOn(totalXp: 400, earned: ['first_lesson']),
+    );
+    await expand(tester, 'Motivation');
+
+    expect(find.text('Level'), findsOneWidget);
+    expect(find.text('Total XP'), findsNothing);
+    expect(find.text('Achievements'), findsNothing);
+  });
+
+  testWidgets('gate ON with no XP yet invites a first activity',
+      (tester) async {
+    await pumpProgress(
+      tester,
+      motivation: {'motivation.xp': true, 'motivation.levels': false},
+      extra: xpOn(totalXp: 0),
+    );
+    await expand(tester, 'Motivation');
+
+    expect(find.text('Finish a lesson or a review session to earn XP.'),
+        findsOneWidget);
+    expect(find.text('None yet.'), findsOneWidget);
   });
 }
 
