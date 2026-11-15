@@ -132,6 +132,17 @@ Gate `learning.xp_achievements` (default OFF). Shown only in Progress §4 and se
 - Tests: `supabase/tests/learning_xp_achievements_test.sql`, `test/services/xp_service_test.dart`, `test/widgets/progress/session_xp_summary_test.dart`, `test/widgets/progress/progress_motivation_sections_test.dart`.
 - Trap: `record_xp_award` is service-role only; browsers must never call it.
 
+## Study reminders (web push) {#reminders}
+
+Gate `learning.study_reminders` (default OFF). Owner setup: `docs/deployment/STUDY_REMINDERS_WEB_PUSH.md`.
+
+<!-- map-ref path="supabase/migrations/20261115010000_study_reminders_web_push.sql" role="contract" -->
+- Contract: `save_study_reminder`, `register_push_subscription`, service-role `claim_due_study_reminders` / `record_push_delivery` in `supabase/migrations/20261115010000_study_reminders_web_push.sql`. The legacy `public.reminders` table is unused.
+<!-- map-ref path="lib/screens/settings/study_reminders_screen.dart" role="owner" -->
+- Owner: `lib/screens/settings/study_reminders_screen.dart`; data and Push API seam in `lib/services/study_reminder_service.dart`; browser interop `lib/services/notifications/web_push_web.dart`; handler `web/push_sw.js`; sender `supabase/functions/send-study-reminders/`.
+<!-- map-ref path="supabase/tests/study_reminders_web_push_test.sql" role="test" -->
+- Tests: `supabase/tests/study_reminders_web_push_test.sql`, `supabase/functions/send-study-reminders/dispatch_test.ts`, `test/screens/settings/study_reminders_screen_test.dart`, `test/services/study_reminder_service_test.dart`.
+
 ## Pre-reader and literacy {#prereader}
 
 <!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="445-446" -->

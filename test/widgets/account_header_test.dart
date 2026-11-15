@@ -140,9 +140,10 @@ void main() {
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    final notifications =
-        find.widgetWithText(SwitchListTile, 'Enable Notifications');
-    expect(tester.widget<SwitchListTile>(notifications).value, isFalse);
+    // Reminders moved to Settings > Study reminders (web push); the old
+    // local notification switch never delivered anything.
+    expect(find.text('Study reminders'), findsOneWidget);
+    expect(find.text('Enable Notifications'), findsNothing);
 
     final themeMode = find.byKey(const Key('settings-theme-mode'));
     Set<ThemeMode> selected() =>

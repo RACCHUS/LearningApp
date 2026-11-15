@@ -13,7 +13,6 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/utils/constants.dart';
 import 'package:learning_pwa/utils/pwa_install_utils.dart';
-import 'package:learning_pwa/services/push_notification_service.dart';
 
 const String _dailyGoalKey = 'dailyGoalMinutes';
 
@@ -28,11 +27,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late SettingsModel _settings;
   bool _loading = true;
   Object? _loadError;
-  final _timeController = TextEditingController();
   int _dailyGoalMinutes = StudyConstants.defaultStudyGoalMinutes;
   bool _dailyGoalSet = false;
   bool _canInstallPwa = false;
-  bool _requestingNotificationsPermission = false;
 
   @override
   void initState() {
@@ -128,69 +125,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('settings', _settings.toRawJson());
-  }
-
-  void _addTime(String time) {
-    if (!_settings.notificationTimes.contains(time)) {
-      setState(() {
-        _settings.notificationTimes.add(time);
-      });
-      _saveSettings();
-    }
-  }
-
-  void _removeTime(String time) {
-    setState(() {
-      _settings.notificationTimes.remove(time);
-    });
-    _saveSettings();
-  }
-
-  Future<void> _toggleNotifications(bool value) async {
-    if (!value) {
-      setState(() {
-        _settings.notificationsEnabled = false;
-      });
-      await _saveSettings();
-      return;
-    }
-
-    setState(() {
-      _requestingNotificationsPermission = true;
-    });
-
-    try {
-      final granted = await PushNotificationService().requestPermission();
-      if (!mounted) return;
-
-      setState(() {
-        _requestingNotificationsPermission = false;
-        _settings.notificationsEnabled = granted;
-      });
-      if (granted) {
-        await _saveSettings();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Notifications were not enabled. You can allow them later in browser settings.',
-            ),
-          ),
-        );
-      }
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _requestingNotificationsPermission = false;
-        _settings.notificationsEnabled = false;
-      });
-      debugPrint('Failed to request notification permission: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not enable notifications. Please try again.'),
-        ),
-      );
-    }
   }
 
   void _setThemeMode(ThemeMode mode) {
@@ -296,55 +230,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile(
-              title: const Text('Enable Notifications'),
-              subtitle: const Text('Permission is requested only when enabled'),
-              value: _settings.notificationsEnabled,
-              onChanged: _requestingNotificationsPermission
-                  ? null
-                  : _toggleNotifications,
+            // Reminders are scheduled on the server and delivered by web
+            // push; the old local notification times never fired.
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Study reminders'),
+              subtitle: const Text('Optional notifications at times you choose'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () => context.push('/settings/reminders'),
             ),
-            if (_settings.notificationsEnabled) ...[
-              const SizedBox(height: 8),
-              const Text('Notification Times:'),
-              Wrap(
-                spacing: 8,
-                children: _settings.notificationTimes.map((t) => Chip(
-                  label: Text(t),
-                  onDeleted: () => _removeTime(t),
-                )).toList(),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _timeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Add Time (e.g. 10:00)',
-                      ),
-                      keyboardType: TextInputType.datetime,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      final time = _timeController.text.trim();
-                      if (RegExp(r'^([01]?\d|2[0-3]):[0-5]\d$')
-                          .hasMatch(time)) {
-                        _addTime(time);
-                        _timeController.clear();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Enter a valid 24-hour time, e.g. 09:30'),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
             const Divider(height: 32),
 
             // Audio Settings Navigation
