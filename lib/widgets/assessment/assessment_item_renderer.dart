@@ -5,6 +5,7 @@ import 'package:learning_pwa/services/assessment/assessment_grading_service.dart
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
+import '../whiteboard/question_scratchpad.dart';
 
 class AssessmentItemRenderer extends StatefulWidget {
   final AssessmentItem item;
@@ -675,6 +676,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
               ],
             ),
           ),
+          // Opt-in scratchpad (learning.scratchpad); empty unless enabled.
+          QuestionScratchpad(key: ValueKey('scratchpad-${item.id}')),
         ],
       ),
     );

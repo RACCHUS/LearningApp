@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_pwa/providers/daily_goal_provider.dart';
 import 'package:learning_pwa/utils/constants.dart';
 import 'package:learning_pwa/utils/pwa_install_utils.dart';
+import 'package:learning_pwa/providers/scratchpad_provider.dart';
 
 const String _dailyGoalKey = 'dailyGoalMinutes';
 
@@ -467,6 +468,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _saveSettings();
               },
             ),
+
+            // Opt-in scratchpad under questions (learning.scratchpad).
+            if (ref.watch(scratchpadFeatureEnabledProvider))
+              SwitchListTile(
+                key: const Key('settings-scratchpad'),
+                title: const Text('Scratchpad under questions'),
+                subtitle: const Text(
+                  'Adds a collapsed drawing area below each question for '
+                  'working things out. Nothing is saved.',
+                ),
+                value: ref.watch(scratchpadPreferenceProvider),
+                onChanged: (value) =>
+                    ref.read(scratchpadPreferenceProvider.notifier).set(value),
+              ),
           ],
         ),
       ),

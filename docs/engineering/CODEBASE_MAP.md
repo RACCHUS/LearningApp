@@ -124,12 +124,12 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 Gate `learning.xp_achievements` (default OFF). Shown only in Progress §4 and session summaries (`UI_ARCHITECTURE_LOCKED.md` §9).
 
 <!-- map-ref path="supabase/migrations/20261115000000_learning_xp_achievements.sql" role="contract" -->
-- Contract: `claim_activity_xp` (server fixes the amount; replay, cooldown and daily limits) and `private.evaluate_user_achievements` in `supabase/migrations/20261115000000_learning_xp_achievements.sql`. Verified-assessment XP stays in `submit_assessment_attempt`.
+- Contract: `claim_activity_xp` (server fixes amounts and limits) and `private.evaluate_user_achievements` in that migration.
 <!-- map-ref path="lib/services/xp_service.dart" role="owner" -->
-- Owner: `lib/services/xp_service.dart` (claim + reads), `lib/providers/xp_achievements_provider.dart` (gate + `ActivityXpRecorder`), `lib/models/achievement.dart` (catalog mirrors the SQL CHECK list).
+- Owner: `lib/services/xp_service.dart`; gate + `ActivityXpRecorder` in `lib/providers/xp_achievements_provider.dart`; catalog `lib/models/achievement.dart` mirrors the SQL CHECK.
 - UI: `lib/widgets/progress/motivation_xp_rows.dart` (Progress rows, `SessionXpSummary`); claims fire from `ReviewSessionNotifier` and `LessonScreen._onLessonComplete`.
 <!-- map-ref path="supabase/tests/learning_xp_achievements_test.sql" role="test" -->
-- Tests: `supabase/tests/learning_xp_achievements_test.sql`, `test/services/xp_service_test.dart`, `test/widgets/progress/session_xp_summary_test.dart`, `test/widgets/progress/progress_motivation_sections_test.dart`.
+- Tests: that pgTAP file, `test/services/xp_service_test.dart`, `test/widgets/progress/`.
 - Trap: `record_xp_award` is service-role only; browsers must never call it.
 
 ## Study reminders (web push) {#reminders}
@@ -137,11 +137,21 @@ Gate `learning.xp_achievements` (default OFF). Shown only in Progress §4 and se
 Gate `learning.study_reminders` (default OFF). Owner setup: `docs/deployment/STUDY_REMINDERS_WEB_PUSH.md`.
 
 <!-- map-ref path="supabase/migrations/20261115010000_study_reminders_web_push.sql" role="contract" -->
-- Contract: `save_study_reminder`, `register_push_subscription`, service-role `claim_due_study_reminders` / `record_push_delivery` in `supabase/migrations/20261115010000_study_reminders_web_push.sql`. The legacy `public.reminders` table is unused.
+- Contract: gated save/register RPCs and service-role `claim_due_study_reminders` / `record_push_delivery`. Legacy `public.reminders` is unused.
 <!-- map-ref path="lib/screens/settings/study_reminders_screen.dart" role="owner" -->
 - Owner: `lib/screens/settings/study_reminders_screen.dart`; data and Push API seam in `lib/services/study_reminder_service.dart`; browser interop `lib/services/notifications/web_push_web.dart`; handler `web/push_sw.js`; sender `supabase/functions/send-study-reminders/`.
 <!-- map-ref path="supabase/tests/study_reminders_web_push_test.sql" role="test" -->
-- Tests: `supabase/tests/study_reminders_web_push_test.sql`, `supabase/functions/send-study-reminders/dispatch_test.ts`, `test/screens/settings/study_reminders_screen_test.dart`, `test/services/study_reminder_service_test.dart`.
+- Tests: that pgTAP file, `dispatch_test.ts` beside the function, `test/screens/settings/study_reminders_screen_test.dart`, `test/services/study_reminder_service_test.dart`.
+
+## Question scratchpad {#scratchpad}
+
+Gate `learning.scratchpad` (default OFF) plus a Settings opt-in. Temporary: one blank pad per question, nothing stored (`UI_ARCHITECTURE_LOCKED.md` §5.6 clarification).
+
+<!-- map-ref path="lib/widgets/whiteboard/question_scratchpad.dart" role="owner" -->
+- Owner: `lib/widgets/whiteboard/question_scratchpad.dart` (placed in `McqScreen` and `AssessmentItemRenderer`); drawing in `lib/widgets/whiteboard/whiteboard_widget.dart`; gate and opt-in in `lib/providers/scratchpad_provider.dart`.
+<!-- map-ref path="test/widgets/whiteboard/question_scratchpad_test.dart" role="test" -->
+- Tests: that file, `test/screens/settings/settings_scratchpad_switch_test.dart`, `test/screens/study/mcq_screen_test.dart`.
+- Trap: keep the canvas's eager pan recognizer, or touch strokes scroll the page.
 
 ## Pre-reader and literacy {#prereader}
 
@@ -219,12 +229,12 @@ Read to understand; no refactor proposals.
 
 ## Device-local avatar {#avatar}
 
-The customizer is a browser-only preference, scoped by signed-in user ID; it never uploads images or writes a learner avatar to Supabase. The operator flag `learning.avatar_customizer` is default OFF, and a missing feature snapshot hides the entry point.
+Browser-only, per signed-in account; nothing is uploaded. Gate `learning.avatar_customizer` (default OFF).
 
 <!-- map-ref path="lib/providers/device_avatar_provider.dart" role="owner" -->
 - Gate and user-scoped lifecycle: `lib/providers/device_avatar_provider.dart`.
 <!-- map-ref path="lib/services/avatar/avatar_persistence_service.dart" role="contract" -->
-- Persistence: `lib/services/avatar/avatar_persistence_service.dart`; avoid reusing the legacy unscoped key for real signed-in accounts.
+- Persistence: `lib/services/avatar/avatar_persistence_service.dart` (never the legacy unscoped key for accounts).
 <!-- map-ref path="lib/widgets/avatar/avatar_customizer_sheet.dart" role="owner" -->
 - Editor: `lib/widgets/avatar/avatar_customizer_sheet.dart`; entry point `lib/screens/profile_screen.dart`, header preview `lib/widgets/account_actions.dart`.
 <!-- map-ref path="test/services/avatar/avatar_persistence_service_test.dart" role="test" -->

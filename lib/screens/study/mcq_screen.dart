@@ -11,6 +11,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:learning_pwa/widgets/study/break_overlay.dart';
 import 'package:learning_pwa/widgets/audio/audio_preferences_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:learning_pwa/widgets/whiteboard/question_scratchpad.dart';
 
 class McqScreen extends ConsumerStatefulWidget {
   final List<Question> questions;
@@ -370,6 +371,11 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                               ),
                             ),
                           ],
+                          // Opt-in scratchpad (learning.scratchpad); a new
+                          // blank pad per question, never saved.
+                          QuestionScratchpad(
+                            key: ValueKey('scratchpad-${currentQuestion.id}'),
+                          ),
                         ],
                       ),
                     );

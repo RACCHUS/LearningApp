@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
+import 'package:learning_pwa/providers/scratchpad_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/screens/study/mcq_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,9 +58,13 @@ void main() {
     ),
   ];
 
-  Widget buildTestWidget({required List<Question> questions}) {
+  Widget buildTestWidget({
+    required List<Question> questions,
+    bool scratchpad = false,
+  }) {
     return ProviderScope(
       overrides: [
+        showQuestionScratchpadProvider.overrideWithValue(scratchpad),
         canSpeakProvider.overrideWithValue(false),
         readAloudOffProvider.overrideWithValue(false),
         canListenProvider.overrideWithValue(false),
@@ -236,6 +241,25 @@ void main() {
       // Final completion overlay
       expect(find.text('Quiz Complete!'), findsOneWidget);
       expect(find.text('Score: 3/3'), findsOneWidget);
+    });
+  });
+
+  group('McqScreen scratchpad (learning.scratchpad, opt-in)', () {
+    testWidgets('default: no scratchpad under the question', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await tester.pumpWidget(buildTestWidget(questions: testQuestions));
+      await tester.pumpAndSettle();
+      expect(find.text('Scratchpad'), findsNothing);
+    });
+
+    testWidgets('enabled and opted in: a collapsed scratchpad per question',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await tester.pumpWidget(
+          buildTestWidget(questions: testQuestions, scratchpad: true));
+      await tester.pumpAndSettle();
+      expect(find.text('Scratchpad'), findsOneWidget);
+      expect(find.byKey(const ValueKey('scratchpad-q-1')), findsOneWidget);
     });
   });
 }
