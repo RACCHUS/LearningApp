@@ -40,6 +40,30 @@ export const REMINDER_PAYLOAD = JSON.stringify({
   tag: 'study-reminder',
 });
 
+const pushServiceHosts = new Set([
+  'fcm.googleapis.com',
+  'updates.push.services.mozilla.com',
+  'web.push.apple.com',
+]);
+
+function trustedPushEndpoint(endpoint: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== 'https:' || url.port || url.username || url.password || url.hash) {
+    return null;
+  }
+
+  // Edge's Windows Push Notification Service uses regional hosts.
+  const isWindowsPush = /^[a-z0-9-]+\.notify\.windows\.com$/.test(url.hostname);
+  if (!pushServiceHosts.has(url.hostname) && !isWindowsPush) return null;
+  return url.href;
+}
+
 export async function dispatchDueReminders(
   deps: DispatchDeps,
   limit = 200,
@@ -52,10 +76,18 @@ export async function dispatchDueReminders(
   let delivered = 0;
   let failed = 0;
   for (const row of bySubscription.values()) {
+    const endpoint = trustedPushEndpoint(row.endpoint);
+    if (endpoint === null) {
+      failed++;
+      // Treat unsupported destinations as permanently invalid subscriptions.
+      await deps.record(row.subscription_id, 410);
+      continue;
+    }
+
     let status: number;
     try {
       status = await deps.send(
-        { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth_secret } },
+        { endpoint, keys: { p256dh: row.p256dh, auth: row.auth_secret } },
         REMINDER_PAYLOAD,
       );
     } catch (error) {
