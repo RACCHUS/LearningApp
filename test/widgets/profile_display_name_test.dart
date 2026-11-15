@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
+import 'package:learning_pwa/providers/device_avatar_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -30,6 +32,9 @@ class _FakeAuthNotifier extends StateNotifier<AuthState>
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   final user = User(
     id: 'learner-1',
     email: 'learner@example.com',
@@ -39,8 +44,10 @@ void main() {
     createdAt: DateTime(2026, 1, 1).toIso8601String(),
   );
 
-  Widget app(_FakeRepo repo) => ProviderScope(
+  Widget app(_FakeRepo repo, {bool withAvatar = false}) => ProviderScope(
         overrides: [
+          if (withAvatar)
+            avatarCustomizerEnabledProvider.overrideWithValue(true),
           authProvider.overrideWith((ref) => _FakeAuthNotifier(AuthSuccess(user))),
           displayNameRepositoryProvider.overrideWithValue(repo),
         ],
@@ -106,4 +113,25 @@ void main() {
       'Ashley R',
     );
   });
+  testWidgets('customize avatar saves a device-local profile appearance',
+      (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley'), withAvatar: true));
+    await tester.pumpAndSettle();
+
+    final editAvatar = find.byKey(const Key('profile-customize-avatar'));
+    expect(editAvatar, findsOneWidget);
+    await tester.tap(editAvatar);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Customize Your Persona'), findsOneWidget);
+    await tester.tap(find.text('😎 Confident'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Save Avatar'));
+    await tester.tap(find.text('Save Avatar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('😎'), findsOneWidget);
+  });
+
 }

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
+import 'package:learning_pwa/providers/device_avatar_provider.dart';
+import 'package:learning_pwa/widgets/avatar/avatar_customizer_sheet.dart';
+import 'package:learning_pwa/widgets/avatar/device_local_avatar_widget.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -11,6 +14,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final displayName = ref.watch(displayNameProvider).valueOrNull;
+    final avatarEnabled = ref.watch(avatarCustomizerEnabledProvider);
+    final avatarService =
+        avatarEnabled ? ref.watch(avatarPersistenceProvider) : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -24,16 +30,37 @@ class ProfileScreen extends ConsumerWidget {
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: Text(
-                          accountInitial(displayName, authState.user.email) ??
-                              '?',
-                          style:
-                              const TextStyle(fontSize: 40, color: Colors.white),
+                      if (avatarService != null)
+                        DeviceLocalAvatarWidget(
+                          key: const Key('profile-local-avatar'),
+                          avatar: avatarService.avatar,
+                          radius: 50,
+                          onTap: () => AvatarCustomizerSheet.show(
+                            context,
+                            service: avatarService,
+                          ),
+                        )
+                      else
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          child: Text(
+                            accountInitial(displayName, authState.user.email) ??
+                                '?',
+                            style: const TextStyle(
+                                fontSize: 40, color: Colors.white),
+                          ),
                         ),
-                      ),
+                      if (avatarService != null)
+                        TextButton.icon(
+                          key: const Key('profile-customize-avatar'),
+                          onPressed: () => AvatarCustomizerSheet.show(
+                            context,
+                            service: avatarService,
+                          ),
+                          icon: const Icon(Icons.palette_outlined),
+                          label: const Text('Customize avatar'),
+                        ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisSize: MainAxisSize.min,

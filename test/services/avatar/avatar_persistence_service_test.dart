@@ -50,5 +50,29 @@ void main() {
       expect(service.avatar.customNickname, isNull);
       expect(service.avatar.accessory, equals(AvatarAccessory.none));
     });
+    test('per-account avatars survive reload without leaking to another user',
+        () async {
+      final alice = AvatarPersistenceService(userId: 'alice');
+      await alice.saveAvatar(DeviceLocalAvatar(
+        expression: AvatarExpression.cool,
+        customNickname: 'Alice local',
+        updatedAt: DateTime.now(),
+      ));
+
+      final aliceAgain = AvatarPersistenceService(userId: 'alice');
+      await aliceAgain.load();
+      expect(aliceAgain.avatar.expression, AvatarExpression.cool);
+      expect(aliceAgain.avatar.customNickname, 'Alice local');
+
+      final bob = AvatarPersistenceService(userId: 'bob');
+      await bob.load();
+      expect(bob.avatar.expression, AvatarExpression.happy);
+      expect(bob.avatar.customNickname, isNull);
+
+      alice.dispose();
+      aliceAgain.dispose();
+      bob.dispose();
+    });
+
   });
 }
