@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
+import 'package:learning_pwa/providers/device_avatar_provider.dart';
+import 'package:learning_pwa/widgets/avatar/device_local_avatar_widget.dart';
 
 /// Account access without hiding signed-out settings behind a login screen.
 class AccountActions extends ConsumerWidget {
@@ -22,18 +24,21 @@ class AccountActions extends ConsumerWidget {
       final label = displayName ??
           (email?.isNotEmpty == true ? email! : 'signed in');
       final colors = Theme.of(context).colorScheme;
+      final localAvatar = watchAccountAvatar(ref)?.avatar;
 
       return PopupMenuButton<String>(
         key: const Key('account-menu'),
         tooltip: 'Account: $label',
-        icon: CircleAvatar(
-          radius: 16,
-          backgroundColor: colors.primaryContainer,
-          foregroundColor: colors.onPrimaryContainer,
-          child: initial == null
-              ? const Icon(Icons.person, size: 18)
-              : Text(initial),
-        ),
+        icon: localAvatar != null
+            ? DeviceLocalAvatarWidget(avatar: localAvatar, radius: 16)
+            : CircleAvatar(
+                radius: 16,
+                backgroundColor: colors.primaryContainer,
+                foregroundColor: colors.onPrimaryContainer,
+                child: initial == null
+                    ? const Icon(Icons.person, size: 18)
+                    : Text(initial),
+              ),
         onSelected: (route) => context.push(route),
         itemBuilder: (context) => const [
           PopupMenuItem(value: '/profile', child: Text('Profile')),

@@ -1,0 +1,38 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/models/governance/site_feature_keys.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/providers/site_feature_provider.dart';
+import 'package:learning_pwa/services/avatar/avatar_persistence_service.dart';
+import 'package:learning_pwa/services/governance/site_feature_service.dart';
+
+/// This is a device-local preference only. There is no server mutation.
+/// A missing/unavailable operator flag leaves the customizer hidden.
+final avatarCustomizerEnabledProvider = Provider<bool>((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth is! AuthSuccess || auth.user.isAnonymous) return false;
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningAvatarCustomizer,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+/// Keyed by account id, so no local avatar is shared between learners who
+/// use the same browser and a sign-out can never read another account's key.
+final avatarPersistenceProvider = ChangeNotifierProvider.autoDispose
+    .family<AvatarPersistenceService, String>((ref, userId) {
+  final service = AvatarPersistenceService(userId: userId);
+  unawaited(service.load());
+  return service;
+});
+
+/// The signed-in learner's avatar service, or null when the customizer is
+/// off, signed out or a guest.
+AvatarPersistenceService? watchAccountAvatar(WidgetRef ref) {
+  if (!ref.watch(avatarCustomizerEnabledProvider)) return null;
+  final auth = ref.watch(authProvider);
+  if (auth is! AuthSuccess || auth.user.isAnonymous) return null;
+  return ref.watch(avatarPersistenceProvider(auth.user.id));
+}

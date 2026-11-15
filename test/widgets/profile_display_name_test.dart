@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
+import 'package:learning_pwa/providers/device_avatar_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:learning_pwa/screens/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -30,6 +32,9 @@ class _FakeAuthNotifier extends StateNotifier<AuthState>
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   final user = User(
     id: 'learner-1',
     email: 'learner@example.com',
@@ -39,9 +44,13 @@ void main() {
     createdAt: DateTime(2026, 1, 1).toIso8601String(),
   );
 
-  Widget app(_FakeRepo repo) => ProviderScope(
+  Widget app(_FakeRepo repo, {bool withAvatar = false, User? as}) =>
+      ProviderScope(
         overrides: [
-          authProvider.overrideWith((ref) => _FakeAuthNotifier(AuthSuccess(user))),
+          if (withAvatar)
+            avatarCustomizerEnabledProvider.overrideWithValue(true),
+          authProvider.overrideWith(
+              (ref) => _FakeAuthNotifier(AuthSuccess(as ?? user))),
           displayNameRepositoryProvider.overrideWithValue(repo),
         ],
         child: const MaterialApp(home: ProfileScreen()),
@@ -106,4 +115,53 @@ void main() {
       'Ashley R',
     );
   });
+  testWidgets('customize avatar saves a device-local profile appearance',
+      (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley'), withAvatar: true));
+    await tester.pumpAndSettle();
+
+    final editAvatar = find.byKey(const Key('profile-customize-avatar'));
+    expect(editAvatar, findsOneWidget);
+    await tester.tap(editAvatar);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Customize Your Persona'), findsOneWidget);
+    await tester.tap(find.text('😎 Confident'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Save Avatar'));
+    await tester.tap(find.text('Save Avatar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('😎'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate(
+            (w) => w is Semantics && w.properties.label == 'Avatar'),
+        findsOneWidget,
+        reason: 'the emoji face is announced as "Avatar"');
+  });
+
+  testWidgets('a guest never gets the avatar customizer, even when ON',
+      (tester) async {
+    final guest = User(
+      id: 'guest-1',
+      appMetadata: const {},
+      userMetadata: const {},
+      aud: 'authenticated',
+      createdAt: DateTime(2026, 1, 1).toIso8601String(),
+      isAnonymous: true,
+    );
+    await tester.pumpWidget(app(_FakeRepo('Guest'), withAvatar: true, as: guest));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-customize-avatar')), findsNothing);
+    expect(find.byKey(const Key('profile-local-avatar')), findsNothing);
+  });
+
+  testWidgets('feature OFF keeps the initial avatar', (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-customize-avatar')), findsNothing);
+    expect(find.text('A'), findsWidgets);
+  });
+
 }
