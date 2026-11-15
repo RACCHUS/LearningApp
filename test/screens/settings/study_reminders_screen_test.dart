@@ -6,7 +6,7 @@ import 'package:learning_pwa/screens/settings/study_reminders_screen.dart';
 import 'package:learning_pwa/services/study_reminder_service.dart';
 
 class _FakePush extends WebPushClient {
-  _FakePush({this.isSupported = true, this.result, this.existing});
+  _FakePush({this.isSupported = true, this.result});
 
   final bool isSupported;
   final WebPushSubscribeResult? result;
