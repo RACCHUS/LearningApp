@@ -93,14 +93,16 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 
 ## Community Q&A {#qa}
 
-<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="759-851" -->
-- Owner: `lib/widgets/community/in_context_qa_sheet.dart` — moderation review handlers (759-851); main build from line 998; dialogs at 2124 and 2212.
+<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="794-886" -->
+- Owner: `lib/widgets/community/in_context_qa_sheet.dart`: review handlers 794-886, build from 1044, dialogs from 2186.
 <!-- map-ref path="lib/widgets/community/qa_audit_log_list.dart" role="owner" -->
-- Moderator audit log: `lib/widgets/community/qa_audit_log_list.dart` (read-only; shows internal notes, so build it only inside the moderator review queue).
-<!-- map-ref path="lib/services/community/community_qa_service.dart" role="contract" lines="504-552" -->
-- Contract: `reviewQuestion` / `reviewAnswer` RPCs (`community_qa_service.dart` 504-552). Keep question and answer paths separate.
+- Audit log: `lib/widgets/community/qa_audit_log_list.dart` (shows internal notes: moderator queue only).
+<!-- map-ref path="lib/services/community/community_qa_service.dart" role="contract" lines="505-553" -->
+- Contract: `reviewQuestion` / `reviewAnswer` RPCs (505-553). Keep question and answer paths separate.
+<!-- map-ref path="lib/widgets/community/answer_revisions_dialog.dart" role="owner" -->
+- Answer history (`learning.answer_revisions`): `answer_revisions_dialog.dart`; RPCs in migration `20261115050000`. Author and moderators only; never internal notes.
 <!-- map-ref path="test/widgets/community/in_context_qa_sheet_test.dart" role="test" -->
-- Tests: `test/widgets/community/in_context_qa_sheet_test.dart`, `test/widgets/community/qa_audit_log_list_test.dart`, `test/services/community/community_qa_service_test.dart`.
+- Tests: `in_context_qa_sheet_test.dart`, `qa_audit_log_list_test.dart`, `community_qa_service_test.dart`, `community_answer_revisions_service_test.dart`, pgTAP `community_answer_revisions_test.sql`.
 
 ## Community lessons and refresh proposals {#contributions}
 

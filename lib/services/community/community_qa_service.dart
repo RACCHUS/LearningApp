@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/core/logging/app_logger.dart';
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_answer_revision.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/data/seed_faqs_catalog.dart';
@@ -550,6 +551,62 @@ class CommunityQaService {
       rethrow;
     }
   }
+
+  /// Links a resubmitted answer to the rejected answer it revises
+  /// (`learning.answer_revisions`). The server copies the rejected answer's
+  /// own history and records its text with the learner-facing review note.
+  ///
+  /// Best effort: the resubmission itself has already been saved, so a
+  /// failure is logged and returns null instead of throwing.
+  Future<int?> linkAnswerResubmission({
+    required String answerId,
+    required String previousAnswerId,
+  }) async {
+    try {
+      final response = await _supabase.rpc(
+        'link_community_answer_resubmission',
+        params: {
+          'p_answer_id': answerId,
+          'p_previous_answer_id': previousAnswerId,
+        },
+      );
+      return (response as num?)?.toInt();
+    } catch (e, st) {
+      _logger.warn('Failed to link answer revision history: $e', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
+  /// Earlier versions per answer, newest first. The server returns only the
+  /// caller's own answers' history (or all of it for moderators). At most
+  /// [maxAnswersPerRequest] answers are asked about; errors yield `{}`.
+  Future<Map<String, List<CommunityAnswerRevision>>> fetchAnswerRevisions(
+    List<String> answerIds,
+  ) async {
+    final ids = answerIds.toSet().take(maxAnswersPerRequest).toList();
+    if (ids.isEmpty || _supabase.auth.currentUser == null) return {};
+    try {
+      final response = await _supabase.rpc(
+        'list_community_answer_revisions',
+        params: {'p_answer_ids': ids},
+      );
+      final map = <String, List<CommunityAnswerRevision>>{};
+      for (final row in response as List<dynamic>) {
+        final r = CommunityAnswerRevision.fromJson(Map<String, dynamic>.from(row as Map));
+        map.putIfAbsent(r.answerId, () => []).add(r);
+      }
+      for (final list in map.values) {
+        list.sort((a, b) => b.revisionNumber.compareTo(a.revisionNumber));
+      }
+      return map;
+    } catch (e, st) {
+      _logger.warn('Failed to fetch answer revision history: $e', error: e, stackTrace: st);
+      return {};
+    }
+  }
+
+  /// Server cap for [fetchAnswerRevisions] (list_community_answer_revisions).
+  static const int maxAnswersPerRequest = 100;
 
   /// Accepts an answer for a question via the atomic database RPC.
   ///
