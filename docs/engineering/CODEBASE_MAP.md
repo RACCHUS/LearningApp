@@ -216,3 +216,16 @@ Read to understand; no refactor proposals.
 <!-- map-ref path="tool/tests/test_check_required_results.py" role="test" -->
 - Tests: `tool/tests/test_check_required_results.py` (fail-closed gate), `tool/tests/test_check_test_inventory.py` (every suite runs in CI).
 - This map is checked by `tool/verify_codebase_map.py` (paths and line ranges only, advisory `early-feedback` job). It cannot tell whether an owner is still the owner: update the section when you move one.
+
+## Device-local avatar {#avatar}
+
+The customizer is a browser-only preference, scoped by signed-in user ID; it never uploads images or writes a learner avatar to Supabase. The operator flag `learning.avatar_customizer` is default OFF, and a missing feature snapshot hides the entry point.
+
+<!-- map-ref path="lib/providers/device_avatar_provider.dart" role="owner" -->
+- Gate and user-scoped lifecycle: `lib/providers/device_avatar_provider.dart`.
+<!-- map-ref path="lib/services/avatar/avatar_persistence_service.dart" role="contract" -->
+- Persistence: `lib/services/avatar/avatar_persistence_service.dart`; avoid reusing the legacy unscoped key for real signed-in accounts.
+<!-- map-ref path="lib/widgets/avatar/avatar_customizer_sheet.dart" role="owner" -->
+- Editor: `lib/widgets/avatar/avatar_customizer_sheet.dart`; entry point `lib/screens/profile_screen.dart`, header preview `lib/widgets/account_actions.dart`.
+<!-- map-ref path="test/services/avatar/avatar_persistence_service_test.dart" role="test" -->
+- Tests: `test/services/avatar/avatar_persistence_service_test.dart`, `test/widgets/profile_display_name_test.dart`, `test/widgets/account_header_test.dart`.

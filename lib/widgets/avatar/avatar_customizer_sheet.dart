@@ -65,14 +65,19 @@ class _AvatarCustomizerSheetState extends State<AvatarCustomizerSheet> {
 
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
-    await widget.service.saveAvatar(_previewAvatar);
-    if (mounted) {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await widget.service.saveAvatar(_previewAvatar);
+      if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Avatar saved to your device!'),
-          backgroundColor: Colors.teal,
-        ),
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Avatar saved on this browser.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not save avatar. Try again.')),
       );
     }
   }
@@ -116,7 +121,7 @@ class _AvatarCustomizerSheetState extends State<AvatarCustomizerSheet> {
                 ),
               ),
               Text(
-                'Stored device-locally • 100% private',
+                'Saved on this browser for this account',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.outline,
                 ),
@@ -219,6 +224,7 @@ class _AvatarCustomizerSheetState extends State<AvatarCustomizerSheet> {
               // Nickname Input
               TextField(
                 controller: _nicknameController,
+                maxLength: 32,
                 decoration: const InputDecoration(
                   labelText: 'Learner Nickname (Optional)',
                   hintText: 'e.g. CodeLearner or SafetyPro',
