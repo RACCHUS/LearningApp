@@ -1,4 +1,4 @@
-import { assertEquals } from 'jsr:@std/assert@1.0.13';
+import { deepStrictEqual as assertEquals } from 'node:assert/strict';
 import {
   dispatchDueReminders,
   DueReminder,
@@ -11,7 +11,7 @@ function row(subscription: string, reminder = 'r-' + subscription): DueReminder 
   return {
     reminder_id: reminder,
     subscription_id: subscription,
-    endpoint: `https://push.example.invalid/${subscription}`,
+    endpoint: `https://fcm.googleapis.com/fcm/send/${subscription}`,
     p256dh: 'p256dh-key-0123456789abcdef',
     auth_secret: 'auth-secret-01',
   };
@@ -72,4 +72,34 @@ Deno.test('secret check', () => {
 Deno.test('statusOf reads WebPushError.statusCode, else 0', () => {
   assertEquals(statusOf({ statusCode: 404 }), 404);
   assertEquals(statusOf(new Error('x')), 0);
+});
+
+Deno.test('only sends to supported HTTPS push services', async () => {
+  const endpoints = [
+    'https://fcm.googleapis.com/fcm/send/token',
+    'https://updates.push.services.mozilla.com/wpush/v2/token',
+    'https://web.push.apple.com/token',
+    'https://wns2-am3p.notify.windows.com/w/?token=test',
+    'https://example.invalid/token',
+    'http://fcm.googleapis.com/fcm/send/token',
+    'https://fcm.googleapis.com:8443/fcm/send/token',
+  ];
+  const sent: string[] = [];
+  const recorded: number[] = [];
+  await dispatchDueReminders({
+    claimDue: () => Promise.resolve(endpoints.map((endpoint, index) => ({
+      ...row(String(index)),
+      endpoint,
+    }))),
+    send: (target) => {
+      sent.push(target.endpoint);
+      return Promise.resolve(201);
+    },
+    record: (_id, status) => {
+      recorded.push(status);
+      return Promise.resolve();
+    },
+  });
+  assertEquals(sent, endpoints.slice(0, 4));
+  assertEquals(recorded, [201, 201, 201, 201, 410, 410, 410]);
 });
