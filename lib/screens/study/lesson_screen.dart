@@ -360,6 +360,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     lessonId: widget.lessonId,
                     topicTitle: lessonData.lesson.title,
                     service: ref.read(communityQaServiceProvider),
+                    answerHistoryEnabled: ref.read(answerRevisionsFeatureEnabledProvider),
                   );
                 },
               ),

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, AuthChangeEvent, Session, User;
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_answer_revision.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
@@ -39,6 +40,11 @@ class FakeCommunityQaService extends CommunityQaService {
   String? lastCreatedAnswerQuestionId;
   String? lastCreatedAnswerBody;
   bool? lastCreatedAnswerSubmitForReview;
+
+  /// learning.answer_revisions hooks.
+  Map<String, List<CommunityAnswerRevision>> fakeRevisions = {};
+  int revisionFetchCount = 0;
+  final List<(String, String)> linkedResubmissions = [];
 
   FakeCommunityQaService({
     required this.fakeSeeds,
@@ -231,6 +237,26 @@ class FakeCommunityQaService extends CommunityQaService {
   }
 
   @override
+  Future<Map<String, List<CommunityAnswerRevision>>> fetchAnswerRevisions(
+    List<String> answerIds,
+  ) async {
+    revisionFetchCount++;
+    return {
+      for (final id in answerIds)
+        if (fakeRevisions.containsKey(id)) id: fakeRevisions[id]!,
+    };
+  }
+
+  @override
+  Future<int?> linkAnswerResubmission({
+    required String answerId,
+    required String previousAnswerId,
+  }) async {
+    linkedResubmissions.add((answerId, previousAnswerId));
+    return 1;
+  }
+
+  @override
   Future<Map<String, dynamic>> acceptAnswer({
     required String answerId,
   }) async {
@@ -317,6 +343,7 @@ void main() {
     ModerationService? moderationService,
     GlobalKey<InContextQaSheetState>? sheetKey,
     bool isAdultConfirmed = true,
+    bool answerHistoryEnabled = false,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -333,6 +360,7 @@ void main() {
             ),
             moderationService: moderationService ?? FakeModerationService(isMod: false),
             isAdultConfirmed: isAdultConfirmed,
+            answerHistoryEnabled: answerHistoryEnabled,
           ),
         ),
       ),
@@ -1583,6 +1611,147 @@ void main() {
       expect(find.text('Author: Learner (learner-)'), findsOneWidget);
       expect(find.text('Submitted: 10/21/2026'), findsOneWidget);
       expect(find.text('Yes, OSHA aligns with GHS Annex 4 requiring all 16 sections.'), findsOneWidget);
+    });
+  });
+  group('learning.answer_revisions: earlier versions of resubmitted answers', () {
+    CommunityAnswer answer(String id, String status, String body) => CommunityAnswer(
+          id: id,
+          questionId: 'faq-1',
+          authorId: 'user-mock',
+          bodyMarkdown: body,
+          status: status,
+          createdAt: DateTime(2026, 11, 3),
+          updatedAt: DateTime(2026, 11, 3),
+        );
+    CommunityAnswerRevision revision(String answerId, int n, String body, {String? reason}) =>
+        CommunityAnswerRevision(
+          id: 'rev-$n',
+          answerId: answerId,
+          revisionNumber: n,
+          bodyMarkdown: body,
+          editorId: 'user-mock',
+          editReason: reason,
+          createdAt: DateTime(2026, 11, n),
+        );
+    final history = {
+      'ans-v3': [
+        revision('ans-v3', 2, 'Second attempt with a wrong example.', reason: 'The example is wrong.'),
+        revision('ans-v3', 1, 'First attempt without an example.', reason: 'Please add an example.'),
+      ],
+    };
+
+    testWidgets('gate ON: the author sees earlier versions with review feedback', (tester) async {
+      final service = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeDraftAnswers: [
+          answer('ans-v3', 'under_review', 'Third attempt, with a correct example.'),
+          answer('ans-other', 'under_review', 'An answer with no earlier versions.'),
+        ],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'user-mock',
+      )..fakeRevisions = history;
+
+      await tester.pumpWidget(buildTestWidget(service: service, answerHistoryEnabled: true));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My Drafts (2)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Earlier versions (2)'), findsOneWidget,
+          reason: 'only the answer that has history gets the button');
+      await tester.tap(find.byKey(const Key('answer-revisions-ans-v3')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Earlier versions'), findsOneWidget);
+      expect(find.text('Second attempt with a wrong example.'), findsOneWidget);
+      expect(find.text('Review feedback: The example is wrong.'), findsOneWidget);
+      expect(find.text('First attempt without an example.'), findsOneWidget);
+      final v2 = tester.getTopLeft(find.byKey(const Key('answer-revision-2')));
+      final v1 = tester.getTopLeft(find.byKey(const Key('answer-revision-1')));
+      expect(v2.dy, lessThan(v1.dy), reason: 'newest first');
+    });
+
+    testWidgets('gate OFF: no history request, no button, no linking', (tester) async {
+      final rejected = answer('ans-old', 'archived', 'Original answer text needing correction.');
+      final service = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeDraftAnswers: [rejected, answer('ans-v3', 'under_review', 'Third attempt.')],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'user-mock',
+      )..fakeRevisions = history;
+
+      await tester.pumpWidget(buildTestWidget(service: service));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My Drafts (2)'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Earlier versions'), findsNothing);
+
+      await tester.tap(find.text('Revise and Resubmit Answer'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Your Revised Answer (Markdown supported)'),
+        'A revised answer long enough to pass the length check.',
+      );
+      await tester.tap(find.text('Submit Revised Answer'));
+      await tester.pumpAndSettle();
+
+      expect(service.lastCreatedAnswerSubmitForReview, isTrue, reason: 'resubmission still works');
+      expect(service.linkedResubmissions, isEmpty);
+      expect(service.revisionFetchCount, 0);
+    });
+
+    testWidgets('gate ON: resubmitting links the new answer to the rejected one', (tester) async {
+      final rejected = answer('ans-old', 'archived', 'Original answer text needing correction.');
+      final service = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeDraftAnswers: [rejected],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'user-mock',
+      );
+
+      await tester.pumpWidget(buildTestWidget(service: service, answerHistoryEnabled: true));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('My Drafts (1)'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Revise and Resubmit Answer'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Your Revised Answer (Markdown supported)'),
+        'A revised answer long enough to pass the length check.',
+      );
+      final fetchesBefore = service.revisionFetchCount;
+      await tester.tap(find.text('Submit Revised Answer'));
+      await tester.pumpAndSettle();
+
+      expect(service.linkedResubmissions, [('mock-ans-2', 'ans-old')]);
+      expect(service.revisionFetchCount, greaterThan(fetchesBefore),
+          reason: 'history is refreshed so the new answer shows its earlier version');
+      expect(find.text('Revised answer submitted for educator review.'), findsOneWidget);
+    });
+
+    testWidgets('gate ON: moderators see earlier versions in the review queue', (tester) async {
+      final service = FakeCommunityQaService(
+        fakeSeeds: List.from(testSeeds),
+        fakeDrafts: [],
+        fakeReviewAnswers: [answer('ans-v3', 'under_review', 'Third attempt, with a correct example.')],
+        fakeQuestionTitles: {'faq-1': 'How does phonics blending work?'},
+        fakeUserId: 'mod-1',
+      )..fakeRevisions = history;
+
+      await tester.pumpWidget(buildTestWidget(
+        service: service,
+        moderationService: FakeModerationService(isMod: true),
+        answerHistoryEnabled: true,
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Review Queue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Answers'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('answer-revisions-ans-v3')), findsOneWidget);
     });
   });
 }

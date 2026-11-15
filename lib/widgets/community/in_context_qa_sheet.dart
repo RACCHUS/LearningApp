@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
+import 'package:learning_pwa/models/community/community_answer_revision.dart';
 import 'package:learning_pwa/models/community/community_review_audit.dart';
 import 'package:learning_pwa/models/community/author_review_feedback.dart';
 import 'package:learning_pwa/services/community/community_qa_service.dart';
@@ -22,6 +23,7 @@ import 'package:learning_pwa/services/community/community_bookmark_service.dart'
 import 'package:learning_pwa/widgets/community/educator_credential_badge.dart';
 import 'package:learning_pwa/widgets/community/bookmarked_explanations_sheet.dart';
 import 'package:learning_pwa/widgets/community/qa_audit_log_list.dart';
+import 'package:learning_pwa/widgets/community/answer_revisions_dialog.dart';
 
 /// Opens the in-context Concept Q&A sheet for learning screens (ECO-01 & ECO-02).
 Future<void> showInContextQaSheet(
@@ -36,6 +38,7 @@ Future<void> showInContextQaSheet(
   EducatorReputationService? reputationService,
   CommunityBookmarkService? bookmarkService,
   bool isAdultConfirmed = false,
+  bool answerHistoryEnabled = false,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   final effectiveService = service ?? CommunityQaService();
@@ -61,6 +64,7 @@ Future<void> showInContextQaSheet(
           reputationService: reputationService,
           bookmarkService: bookmarkService,
           isAdultConfirmed: isAdultConfirmed,
+          answerHistoryEnabled: answerHistoryEnabled,
         ),
       ),
     );
@@ -88,6 +92,7 @@ Future<void> showInContextQaSheet(
             reputationService: reputationService,
             bookmarkService: bookmarkService,
             isAdultConfirmed: isAdultConfirmed,
+            answerHistoryEnabled: answerHistoryEnabled,
           ),
         ),
       ),
@@ -107,6 +112,10 @@ class InContextQaSheet extends StatefulWidget {
   final CommunityBookmarkService? bookmarkService;
   final bool isAdultConfirmed;
 
+  /// `learning.answer_revisions`: show earlier versions of resubmitted
+  /// answers and link new resubmissions to them. Off: no extra requests.
+  final bool answerHistoryEnabled;
+
   const InContextQaSheet({
     super.key,
     this.conceptId,
@@ -119,6 +128,7 @@ class InContextQaSheet extends StatefulWidget {
     this.reputationService,
     this.bookmarkService,
     this.isAdultConfirmed = false,
+    this.answerHistoryEnabled = false,
   });
 
   @override
@@ -158,6 +168,8 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
   List<CommunityQuestion> _myDrafts = [];
   List<CommunityAnswer> _myDraftAnswers = [];
   Map<String, AuthorReviewFeedback> _submissionFeedback = {};
+  Map<String, List<CommunityAnswerRevision>> _answerRevisions = {};
+  int _answerRevisionsSeq = 0;
   List<CommunityQuestion> _reviewQuestions = [];
   List<CommunityAnswer> _reviewAnswers = [];
   List<CommunityReviewAudit> _auditLogs = [];
@@ -263,6 +275,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
       _myDrafts = [];
       _myDraftAnswers = [];
       _submissionFeedback = {};
+      _answerRevisions = {};
       _reviewQuestions = [];
       _reviewAnswers = [];
       _auditLogs = [];
@@ -368,6 +381,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
         _isModerator = isMod;
         _isLoading = false;
       });
+      unawaited(_refreshAnswerRevisions());
     } catch (_) {
       if (!_isSessionValid(sessionGen, sessionUserId) || loadSeq != _loadDataSeq) {
         return;
@@ -421,7 +435,28 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
         _answerParentQuestionIds = answerParentMap;
         _questionTitles = questionTitles;
       });
+      unawaited(_refreshAnswerRevisions());
     } catch (_) {}
+  }
+
+  /// Loads earlier versions for the learner's own answers and, for
+  /// moderators, the review queue. Only when the gate is ON.
+  Future<void> _refreshAnswerRevisions() async {
+    if (!widget.answerHistoryEnabled) return;
+    final int sessionGen = _authSessionGeneration;
+    final int seq = ++_answerRevisionsSeq;
+    final String? sessionUserId = widget.service.currentUserId;
+    final ids = <String>{
+      ..._myDraftAnswers.map((a) => a.id),
+      ..._reviewAnswers.map((a) => a.id),
+    }.toList();
+    final revisions = await widget.service.fetchAnswerRevisions(ids);
+    if (!mounted ||
+        !_isSessionValid(sessionGen, sessionUserId) ||
+        seq != _answerRevisionsSeq) {
+      return;
+    }
+    setState(() => _answerRevisions = revisions);
   }
 
   Future<void> _loadAnswers(String questionId) async {
@@ -975,11 +1010,21 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
           dialogAuthorId: dialogAuthorId,
           sessionGen: sessionGen,
           isSessionValid: _isSessionValid,
-          onSubmitAnswer: (bodyMarkdown) => widget.service.createDraftAnswer(
-            questionId: rejectedAnswer.questionId,
-            bodyMarkdown: bodyMarkdown,
-            submitForReview: true,
-          ),
+          onSubmitAnswer: (bodyMarkdown) async {
+            final created = await widget.service.createDraftAnswer(
+              questionId: rejectedAnswer.questionId,
+              bodyMarkdown: bodyMarkdown,
+              submitForReview: true,
+            );
+            if (created != null && widget.answerHistoryEnabled) {
+              // Best effort: the resubmission is saved either way.
+              await widget.service.linkAnswerResubmission(
+                answerId: created.id,
+                previousAnswerId: rejectedAnswer.id,
+              );
+            }
+            return created;
+          },
           onSuccess: (newAnswer) {
             setState(() {
               _myDraftAnswers.insert(0, newAnswer);
@@ -987,6 +1032,7 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
               _statusMessage = 'Revised answer submitted for educator review.';
             });
             _tabController?.animateTo(2);
+            unawaited(_refreshAnswerRevisions());
           },
         );
       },
@@ -1776,6 +1822,14 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                         ),
                       ),
                     ],
+                    if (_answerRevisions[a.id]?.isNotEmpty ?? false)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: AnswerRevisionsButton(
+                          answerId: a.id,
+                          revisions: _answerRevisions[a.id]!,
+                        ),
+                      ),
                     if (isArchived) ...[
                       const SizedBox(height: 8),
                       Align(
@@ -2091,6 +2145,14 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                   a.bodyMarkdown,
                   style: theme.textTheme.bodyMedium,
                 ),
+                if (_answerRevisions[a.id]?.isNotEmpty ?? false)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AnswerRevisionsButton(
+                      answerId: a.id,
+                      revisions: _answerRevisions[a.id]!,
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,

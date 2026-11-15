@@ -34,6 +34,7 @@ abstract final class SiteFeatureKeys {
   static const String learningAvatarCustomizer = 'learning.avatar_customizer';
   static const String learningStudyReminders = 'learning.study_reminders';
   static const String learningScratchpad = 'learning.scratchpad';
+  static const String learningAnswerRevisions = 'learning.answer_revisions';
 
   static const Set<String> all = {
     telFast,
@@ -64,5 +65,6 @@ abstract final class SiteFeatureKeys {
     learningAvatarCustomizer,
     learningStudyReminders,
     learningScratchpad,
+    learningAnswerRevisions,
   };
 }
