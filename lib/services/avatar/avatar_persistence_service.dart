@@ -20,7 +20,7 @@ class AvatarPersistenceService extends ChangeNotifier {
       : _prefs = prefs,
         _storageKey = userId == null
             ? _legacyStorageKey
-            : 'device_local_avatar_v2_${userId}' {
+            : 'device_local_avatar_v2_$userId' {
     if (prefs != null) _loadFromStorage(prefs);
   }
 
