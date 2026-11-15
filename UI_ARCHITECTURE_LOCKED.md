@@ -572,6 +572,7 @@ The lesson does not get busier than the screen that launched it.
 - Retrieval before reveal. Immediate, informative feedback. Hints that degrade rather than reveal.
 - Chrome during study: progress-within-lesson indicator + exit. That is all. No XP tickers, no streak, no timer ring.
 - XP/celebration, if enabled, appears **only** on the session summary — never mid-item, where it competes with feedback the learner should be reading.
+- *Clarification (2026-11-15, owner-approved):* a learner-chosen working aid inside the item content, such as the collapsed **Scratchpad** below a question (`learning.scratchpad`, Settings opt-in, default off), is not chrome. It never appears unless the learner turned it on, starts collapsed, and stores nothing.
 
 ### 5.8 HELP (F2)
 
