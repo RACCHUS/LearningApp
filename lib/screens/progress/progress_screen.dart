@@ -26,6 +26,8 @@ import 'package:learning_pwa/models/user_concept_state.dart' as ucs;
 import 'package:learning_pwa/providers/target_readiness_provider.dart';
 import 'package:learning_pwa/providers/reset_provider.dart';
 import 'package:learning_pwa/widgets/progress/motivation_xp_rows.dart';
+import 'package:learning_pwa/widgets/progress/reinforcement_suggestions_list.dart';
+import 'package:learning_pwa/providers/reinforcement_suggestions_provider.dart';
 
 final contextScopeProvider = FutureProvider.family<ResolvedScope, LearningContext>((ref, context) async {
   return ref.watch(scopeResolverProvider).resolveScope(context);
@@ -63,6 +65,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             onPressed: () {
               ref.invalidate(dashboardProgressProvider);
               ref.invalidate(retentionSummaryProvider);
+              ref.invalidate(reinforcementSuggestionsProvider);
             },
           ),
           const AccountActions(),
@@ -584,6 +587,8 @@ class _RetentionSection extends StatelessWidget {
                         count: data[band],
                         total: data.total,
                       ),
+                    // UI spec §5.5: the tappable "needs reinforcement" list.
+                    const ReinforcementSuggestionsList(),
                   ],
                 );
               },
