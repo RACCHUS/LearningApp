@@ -305,7 +305,7 @@ Map the proposed logical entities to existing tables first; use new tables only 
 **Tasks**
 - [x] **Educational Quality Framework**: Evidence scoring based on diagnostic-to-post gains and concept retention (strictly separated from engagement metrics). (Delivered `EvidenceScorerCore`, `ContentQualityScore`, and Educational Quality Index EQI tiers in PR #157).
 - [x] **Autonomous Proposals**: System identifies content gaps, repeated misconceptions, and outdated regulatory citations, generating reviewable update proposals. (Delivered `ProposalGeneratorCore`, `ContentProposalCore`, and `ContentProposalReviewCard` in PR #157).
-- [x] **Coach Principle Recommendations**: Personalized recommendations matching learner needs to resources and educators—**always suggesting, never compelling**. (Delivered `CoachRecommendationEngine`, `CoachRecommendationsCard`, and `DiscoveryAndFeedbackService` in PR #157).
+- [x] **Coach Principle Recommendations**: Personalized recommendations matching learner needs to resources and educators—**always suggesting, never compelling**. (First delivered as `CoachRecommendationEngine` in PR #157; retired on 2026-11-16 because its copy broke UI spec §6.1. Replaced by the Progress "needs reinforcement" list, `learning.reinforcement_suggestions`, PR #289.)
 
 **Exit:** Learners receive transparent, opt-in recommendations; content improvements are systematically proposed, reviewed, published, and measured.
 

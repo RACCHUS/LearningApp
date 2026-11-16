@@ -21,7 +21,6 @@ export 'src/algorithms/learning_gain_calculator.dart';
 export 'src/algorithms/procedural_evaluator_core.dart';
 export 'src/algorithms/evidence_scorer_core.dart';
 export 'src/algorithms/proposal_generator_core.dart';
-export 'src/algorithms/coach_recommendation_engine.dart';
 export 'src/algorithms/irt_calibrator_core.dart';
 export 'src/validation/manifest_validator_core.dart';
 
