@@ -161,7 +161,7 @@ Gate `learning.reinforcement_suggestions` (OFF, read-only): the §5.5 list in Re
 - Owner: that service; UI `widgets/progress/reinforcement_suggestions_list.dart`; gate and hiding in its provider.
 <!-- map-ref path="test/widgets/progress/reinforcement_suggestions_list_test.dart" role="test" -->
 - Tests: that file and `reinforcement_suggestion_service_test.dart`.
-- Trap: `/review?concepts=` takes review-item ids, not concept ids. `CoachRecommendationEngine` copy breaks §6.1: keep it unwired.
+- Trap: `/review?concepts=` takes review-item ids, not concept ids. No percentages or "mastery" in its copy (§6.1).
 
 ## Pre-reader and literacy {#prereader}
 
