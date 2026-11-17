@@ -207,7 +207,7 @@ Gate `learning.reinforcement_suggestions` (OFF, read-only): the §5.5 list in Re
 ## Taxonomy {#taxonomy}
 
 <!-- map-ref path="lib/services/taxonomy/taxonomy_crosswalk_service.dart" role="owner" -->
-- Owner: `lib/services/taxonomy/taxonomy_crosswalk_service.dart`; official sources (data) `lib/services/taxonomy/official_taxonomy_sources.dart`. Read `CANONICAL_TAXONOMY_ARCHITECTURE.md` for taxonomy policy.
+- Owner: `lib/services/taxonomy/taxonomy_crosswalk_service.dart` (offline samples: `taxonomy_crosswalk_fallbacks.dart`); official sources `official_taxonomy_sources.dart`. Read `CANONICAL_TAXONOMY_ARCHITECTURE.md` for taxonomy policy.
 <!-- map-ref path="test/services/taxonomy_crosswalk_service_test.dart" role="test" -->
 - Tests: `test/services/taxonomy_crosswalk_service_test.dart`, `test/services/official_taxonomy_sources_test.dart`.
 
