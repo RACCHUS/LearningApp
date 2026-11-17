@@ -50,9 +50,12 @@ With the gate OFF the claim returns no rows, so scheduled runs send nothing.
 6. **Give the web build the public key** with the build flag (web builds do
    not read `.env`):
    ```bash
-   flutter build web --release --dart-define=WEB_PUSH_VAPID_PUBLIC_KEY=<public>
+   flutter build web --release --no-web-resources-cdn \
+     --dart-define=SITE_FEATURE_RPC_READY=true \
+     --dart-define=WEB_PUSH_VAPID_PUBLIC_KEY=<public>
    ```
-   then `firebase deploy --only hosting`. It is a public key; never put the
+   then deploy as in `DEPLOYMENT_GUIDE.md` (preview channel first). All three
+   flags are needed: see that guide. It is a public key; never put the
    private key in the client.
 7. **Check it is idle**: with the gate still OFF, the function logs should
    show runs with `claimed: 0`.
