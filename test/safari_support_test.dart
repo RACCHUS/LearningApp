@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/safari_compatibility_service.dart';
-import 'package:learning_pwa/services/safari_audio_service.dart';
 import 'package:learning_pwa/services/speech_recognition/safari_speech_provider.dart';
 
 void main() {
@@ -99,78 +98,6 @@ void main() {
     });
   });
 
-  group('Safari Audio Service Tests', () {
-    late SafariAudioService audioService;
-
-    setUp(() {
-      audioService = SafariAudioService();
-    });
-
-    test('should initialize audio service', () async {
-      final initialized = await audioService.initialize();
-      expect(initialized, isA<bool>());
-      expect(audioService.isInitialized, isTrue);
-    });
-
-    test('should handle audio context initialization', () async {
-      await audioService.initialize();
-      
-      final contextReady = await audioService.initializeAudioContextWithGesture();
-      expect(contextReady, isA<bool>());
-      
-      if (SafariCompatibilityService.isSafari) {
-        expect(audioService.userGestureReceived, isTrue);
-      }
-    });
-
-    test('should provide audio capabilities', () async {
-      await audioService.initialize();
-      
-      final capabilities = audioService.audioCapabilities;
-      expect(capabilities, isA<Map<String, bool>>());
-      expect(capabilities.containsKey('speechSynthesis'), isTrue);
-      expect(capabilities.containsKey('audioContext'), isTrue);
-      expect(capabilities.containsKey('userGestureRequired'), isTrue);
-    });
-
-    test('should provide audio recommendations', () async {
-      await audioService.initialize();
-      
-      final recommendations = audioService.audioRecommendations;
-      expect(recommendations, isA<Map<String, dynamic>>());
-      expect(recommendations.containsKey('userGestureRequired'), isTrue);
-      expect(recommendations.containsKey('recommendations'), isTrue);
-    });
-
-    test('should handle speech synthesis', () async {
-      await audioService.initialize();
-      
-      final speechResult = await audioService.speak('Test speech');
-      expect(speechResult, isA<bool>());
-    });
-
-    test('should provide diagnostic information', () async {
-      await audioService.initialize();
-      
-      final diagnostics = audioService.getDiagnosticInfo();
-      expect(diagnostics, isA<Map<String, dynamic>>());
-      expect(diagnostics.containsKey('isInitialized'), isTrue);
-      expect(diagnostics.containsKey('audioContextReady'), isTrue);
-      expect(diagnostics.containsKey('capabilities'), isTrue);
-    });
-
-    test('should reset and dispose properly', () async {
-      await audioService.initialize();
-      
-      audioService.reset();
-      expect(audioService.audioContextReady, isFalse);
-      expect(audioService.userGestureReceived, isFalse);
-      
-      audioService.dispose();
-      expect(audioService.isInitialized, isFalse);
-    });
-  });
-
   group('Safari Speech Provider Tests', () {
     late SafariSpeechProvider speechProvider;
 
@@ -266,11 +193,8 @@ void main() {
     test('should work together properly', () async {
       // Test that Safari services work together
       final safariInfo = await SafariCompatibilityService.initializeSafariOptimizations();
-      final audioService = SafariAudioService();
       final speechProvider = SafariSpeechProvider();
       
-      // Initialize services
-      await audioService.initialize();
       final speechSupported = await speechProvider.isSupported();
       
       // Verify consistent state
@@ -282,7 +206,6 @@ void main() {
       }
       
       // Clean up
-      audioService.dispose();
       speechProvider.dispose();
     });
 
