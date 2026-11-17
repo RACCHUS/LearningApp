@@ -19,6 +19,8 @@ import 'package:learning_pwa/widgets/audio_aware_lesson_renderer.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
 import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/widgets/study/break_overlay.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
+import 'package:learning_pwa/widgets/literacy/pre_permission_dialog.dart';
 
 class LessonContentPager extends ConsumerStatefulWidget {
   final List<LessonContent> contentList;
@@ -180,6 +182,24 @@ class _LessonContentPagerState extends ConsumerState<LessonContentPager> {
     print('🎙️ About to request microphone permissions for hands-free mode...'); // Always print
     print('🎙️ Audio notifier: $audioNotifier'); // Always print
     
+    // Literacy accessibility plan §5.2: pre-readers hear what the browser's
+    // text-only microphone prompt is for before it appears, and can choose
+    // a tap-only path instead. Skipped once the microphone is allowed.
+    if (ref.read(preReaderProvider).enabled &&
+        !await audioNotifier.checkMicrophonePermissions()) {
+      if (!mounted) return;
+      var wantsMic = false;
+      await PrePermissionAudioDialog.show(
+        context,
+        onAcceptMic: () => wantsMic = true,
+        onContinueTapOnly: () {},
+      );
+      if (!wantsMic) {
+        if (mounted) setState(() => _isOrchestratorMode = false);
+        return;
+      }
+    }
+
     final permissionsGranted = await audioNotifier.requestMicrophonePermissions();
     print('🎙️ Permission request completed. Result: $permissionsGranted'); // Always print
     if (!permissionsGranted) {
