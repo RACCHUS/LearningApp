@@ -752,6 +752,16 @@ Largest authored files, with the decision for each. "Split" means a behaviour-pr
 | W5 proposal review card | **Superseded** by `ContributionReviewScreen` and `RefreshProposal`; removed with `ContentProposalCore` and `ProposalGeneratorCore` |
 | W6 taxonomy banner | **Superseded**: UI spec H3 replaced it with the Library "More" link to `/taxonomy` |
 | W7 pre-permission dialog | **Wired** in #301 (pre-reader hands-free start) |
+| W3 contributor profiles | **Wired** in #303 behind `learning.educator_profiles` (OFF); resources section hidden |
+| W4 community resources | **Needs a backend:** `CommunityResourceService` keeps resources in memory only, and there is no `community_resources` table. Building it (table, RLS, review flow) is an owner decision |
+| W8 word senses, W9 bilingual bridge, W10 case studies | **Wireable, but content is demo-sized:** 5, 5 and 1 bundled items. Owner decision: ship as small practice sets, or author content first |
+| W11 long-answer rubric | **Needs content:** no long-answer items exist to grade |
+| W12 procedural rubric, W13 interactive video | **Need a backend and content:** attempts and checkpoints are kept in memory only, and there is no rubric or video content |
+| W14 item psychometrics | **Needs a data pipeline:** the calculators are pure, but nothing aggregates item responses for admins yet |
+| W15 adaptive practice screen | **Phase 3:** it scores a client-side item pool, so it must be checked against the server-grading and answer-key confidentiality rules before wiring |
+| W16 AI explanation, usage quota | **Owner-gated:** paid AI calls (managed AI or BYOK latch). `UsageQuotaService` is the quota check those calls must use, so it stays with them |
+| W16 SEO metadata | **Owner decision:** it hard-codes `app.learningapp.io` (not the live domain), and `seo.dynamic_endpoints` is OFF; the hash-routed app is not crawlable as is |
+| W17 interoperability (LTI, xAPI, cmi5) | **Owner-gated:** needs external LMS or LRS partners |
 | Deferred removals | `lesson_card`, `lesson_content_renderer`, `progress_provider`, `module`/`flashcard`, `user_progress` shim: their tests also cover live code |
 
 *End of v0.7 (November 17, 2026). v0.6 ended with Phase 0 execution started; Phases 0–1 are now complete and Phases 2–4 are authorized and in progress (§14).*
