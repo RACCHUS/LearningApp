@@ -24,6 +24,7 @@ import 'package:learning_pwa/widgets/literacy/pre_reader_picture_grid_widget.dar
 import 'package:learning_pwa/providers/pre_reader_provider.dart';
 import 'package:learning_pwa/widgets/library/create_chooser_sheet.dart';
 import 'package:learning_pwa/widgets/library/quick_overview_entry.dart';
+import 'package:learning_pwa/screens/library/catalog_source.dart';
 
 /// Where choice expands. Higher information density is correct here: the user
 /// came to browse and manage.
@@ -40,16 +41,6 @@ class LibraryScreen extends ConsumerStatefulWidget {
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-enum _CatalogSource {
-  trusted('Trusted catalog'),
-  official('Official'),
-  reviewed('Reviewed community'),
-  mine('My goals');
-
-  final String label;
-  const _CatalogSource(this.label);
-}
-
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   late final TextEditingController _search =
       TextEditingController(text: widget.initialQuery ?? '');
@@ -57,7 +48,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Timer? _searchDebounce;
   String? _selectedCategory;
   bool _isScoped = true;
-  _CatalogSource _source = _CatalogSource.trusted;
+  CatalogSource _source = CatalogSource.trusted;
 
   @override
   void initState() {
@@ -147,19 +138,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     // remain visible only through the explicit "My goals" choice.
     final authState = ref.watch(authProvider);
     final userId = authState is AuthSuccess ? authState.user.id : null;
-    targets = targets.where((target) {
-      switch (_source) {
-        case _CatalogSource.trusted:
-          return target.isTrustedPublic;
-        case _CatalogSource.official:
-          return target.isTrustedPublic && target.isOfficial;
-        case _CatalogSource.reviewed:
-          return target.isTrustedPublic &&
-              !target.isOfficial && target.createdBy != null;
-        case _CatalogSource.mine:
-          return userId != null && target.createdBy == userId;
-      }
-    }).toList();
+    targets = targets
+        .where((target) => _source.shows(target, userId: userId))
+        .toList();
 
     // Query courses (when searching)
     List<Course> courses = const [];
@@ -412,13 +393,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: DesignTokens.space2),
           Align(
             alignment: Alignment.centerLeft,
-            child: PopupMenuButton<_CatalogSource>(
+            child: PopupMenuButton<CatalogSource>(
               key: const Key('library-source-picker'),
               tooltip: 'Choose where goals come from',
               initialValue: _source,
               onSelected: (value) => setState(() => _source = value),
               itemBuilder: (context) => [
-                for (final value in _CatalogSource.values)
+                for (final value in CatalogSource.values)
                   PopupMenuItem(
                     key: Key('library-source-${value.name}'),
                     value: value,
@@ -744,7 +725,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              _source == _CatalogSource.trusted
+                              _source == CatalogSource.trusted
                                   ? 'Try another source or category, or use Create to set up your own.'
                                   : 'Try the Trusted catalog source, or use Create to set up your own.',
                               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
