@@ -86,8 +86,8 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 - Upload checker (real uploads): `tool/software_learning/excel_budget_total.py` `check_budget_total`. It ignores cached totals and uses server-issued inputs; spec `data/software_learning/excel_budget_total_v1.json`.
 <!-- map-ref path="tool/software_learning/pilot_pipeline.py" role="contract" -->
 - Its only caller and trust gate: `tool/software_learning/pilot_pipeline.py` `grade_parsed_snapshot` (requires the `xlsx_worker.py` envelope `parsed_unverified`, `can_award_skill` false).
-<!-- map-ref path="lib/widgets/software_learning/excel_upload_card.dart" role="owner" lines="13-294" -->
-- Browser preview rubric: `SoftwareLearningWorkbookEvaluator` in `lib/widgets/software_learning/excel_upload_card.dart` (13-294). It checks a cached total against fixed demo inputs, parsed by the restricted preview reader `lib/services/software_learning/demo_workbook_reader.dart`. The card's trust guard is in `_submitWorkbook` (445-526).
+<!-- map-ref path="lib/services/software_learning/software_learning_workbook_evaluator.dart" role="owner" -->
+- Browser preview rubric: `SoftwareLearningWorkbookEvaluator` in `lib/services/software_learning/software_learning_workbook_evaluator.dart`. It checks a cached total against fixed demo inputs, parsed by the restricted preview reader `demo_workbook_reader.dart`. The UI card's trust guard is `_submitWorkbook` in `lib/widgets/software_learning/excel_upload_card.dart` (145-226).
 <!-- map-ref path="tool/tests/test_software_learning_excel_checker.py" role="test" -->
 - Tests: `tool/tests/test_software_learning_excel_checker.py` (incl. spec parity), `tool/tests/test_excel_pilot_pipeline.py`, `tool/tests/test_xlsx_worker.py`, `test/services/software_learning/demo_workbook_evaluator_test.dart`, `test/widgets/software_learning/excel_upload_card_test.dart` (trust binding).
 
