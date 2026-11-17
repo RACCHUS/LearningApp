@@ -64,12 +64,12 @@ Protected: CAS conflict semantics, replay idempotency, account separation. Indep
 
 Protected: hidden answer keys never reach the client.
 
-<!-- map-ref path="lib/widgets/assessment/assessment_item_renderer.dart" role="owner" lines="702-863" -->
-- Owner: `lib/widgets/assessment/assessment_item_renderer.dart` — interaction dispatch and single choice (702-863); submit/grade path (242-310).
+<!-- map-ref path="lib/widgets/assessment/assessment_item_renderer.dart" role="owner" lines="245-409" -->
+- Owner: `assessment_item_renderer.dart`: answer state, submit and grading (245-409), view wiring (706-818). Views (display only): `assessment_answer_views.dart`.
 <!-- map-ref path="lib/services/assessment/assessment_grading_service.dart" role="contract" -->
 - Contract: `lib/services/assessment/assessment_grading_service.dart` (server grading for hidden-key items).
 <!-- map-ref path="test/widgets/assessment_item_server_grading_test.dart" role="test" -->
-- Tests: `test/widgets/assessment_item_server_grading_test.dart`, `test/widgets/assessment_item_renderer_test.dart`.
+- Tests: `assessment_item_server_grading_test.dart`, `assessment_item_renderer_test.dart`, `assessment_item_renderer_exam_mode_test.dart`.
 
 ## CLEP simulation {#simulation}
 
