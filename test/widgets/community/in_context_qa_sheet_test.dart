@@ -344,6 +344,7 @@ void main() {
     GlobalKey<InContextQaSheetState>? sheetKey,
     bool isAdultConfirmed = true,
     bool answerHistoryEnabled = false,
+    bool educatorProfilesEnabled = false,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -361,6 +362,7 @@ void main() {
             moderationService: moderationService ?? FakeModerationService(isMod: false),
             isAdultConfirmed: isAdultConfirmed,
             answerHistoryEnabled: answerHistoryEnabled,
+            educatorProfilesEnabled: educatorProfilesEnabled,
           ),
         ),
       ),
@@ -1752,6 +1754,55 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('answer-revisions-ans-v3')), findsOneWidget);
+    });
+  });
+  group('learning.educator_profiles: link answer authors to their profile', () {
+    Future<void> pumpAnswers(WidgetTester tester, {required bool enabled}) async {
+      final answers = {
+        'faq-1': [
+          CommunityAnswer(
+            id: 'ans-edu',
+            questionId: 'faq-1',
+            authorId: 'edu-1',
+            bodyMarkdown: 'Blend sounds smoothly without pauses.',
+            status: 'published',
+            createdAt: DateTime(2026, 11, 1),
+            updatedAt: DateTime(2026, 11, 1),
+          ),
+          CommunityAnswer(
+            id: 'ans-demo',
+            questionId: 'faq-1',
+            authorId: 'offline-demo',
+            bodyMarkdown: 'An offline example answer for this topic.',
+            status: 'published',
+            createdAt: DateTime(2026, 11, 1),
+            updatedAt: DateTime(2026, 11, 1),
+          ),
+        ],
+      };
+      await tester.pumpWidget(buildTestWidget(
+        service: FakeCommunityQaService(
+          fakeSeeds: List.from(testSeeds),
+          fakeDrafts: [],
+          fakeAnswers: answers,
+        ),
+        educatorProfilesEnabled: enabled,
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.expand_more).first);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('gate ON: real authors get a profile link, demo authors do not',
+        (tester) async {
+      await pumpAnswers(tester, enabled: true);
+      expect(find.byKey(const Key('author_profile_ans-edu')), findsOneWidget);
+      expect(find.byKey(const Key('author_profile_ans-demo')), findsNothing);
+    });
+
+    testWidgets('gate OFF: no profile links', (tester) async {
+      await pumpAnswers(tester, enabled: false);
+      expect(find.text('Contributor profile'), findsNothing);
     });
   });
 }

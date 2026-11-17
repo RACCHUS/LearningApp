@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/providers/community_qa_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
 import 'package:learning_pwa/providers/device_avatar_provider.dart';
 import 'package:learning_pwa/widgets/avatar/avatar_customizer_sheet.dart';
@@ -15,6 +16,14 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final displayName = ref.watch(displayNameProvider).valueOrNull;
     final avatarService = watchAccountAvatar(ref);
+    // learning.educator_profiles: permanent accounts only (anonymous users
+    // cannot own a contributor profile).
+    final contributorProfileUserId =
+        ref.watch(educatorProfilesFeatureEnabledProvider) &&
+                authState is AuthSuccess &&
+                !authState.user.isAnonymous
+            ? authState.user.id
+            : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -134,6 +143,17 @@ class ProfileScreen extends ConsumerWidget {
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () => context.push('/progress'),
                       ),
+                      if (contributorProfileUserId != null) ...[
+                        const Divider(height: 1),
+                        ListTile(
+                          key: const Key('profile-contributor-profile'),
+                          leading: const Icon(Icons.school_outlined, color: Colors.teal),
+                          title: const Text('Contributor profile'),
+                          subtitle: const Text('How you appear when you answer questions'),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => context.push('/educators/$contributorProfileUserId'),
+                        ),
+                      ],
                     ],
                   ),
                 ),

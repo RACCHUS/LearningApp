@@ -98,6 +98,7 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
                 topicTitle: currentConcept?.conceptText,
                 service: ref.read(communityQaServiceProvider),
                 answerHistoryEnabled: ref.read(answerRevisionsFeatureEnabledProvider),
+                educatorProfilesEnabled: ref.read(educatorProfilesFeatureEnabledProvider),
               );
             },
           ),

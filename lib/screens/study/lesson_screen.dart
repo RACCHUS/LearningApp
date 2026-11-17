@@ -361,6 +361,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     topicTitle: lessonData.lesson.title,
                     service: ref.read(communityQaServiceProvider),
                     answerHistoryEnabled: ref.read(answerRevisionsFeatureEnabledProvider),
+                    educatorProfilesEnabled: ref.read(educatorProfilesFeatureEnabledProvider),
                   );
                 },
               ),

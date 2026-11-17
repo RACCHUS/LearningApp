@@ -174,23 +174,35 @@ void main() {
       expect(find.text('Following'), findsOneWidget);
     });
 
-    testWidgets('shows edit button and author resource button when current user is profile owner', (tester) async {
+    Future<void> pumpOwner(WidgetTester tester, {bool resourcesEnabled = false}) async {
       final ownerService = _MockEducatorService(
         profile: profile,
         subjects: subjects,
         verifications: verifications,
         mockUserId: 'edu_555', // same as educatorId
       );
-
       await tester.pumpWidget(buildApp(EducatorProfileScreen(
         educatorId: 'edu_555',
         service: ownerService,
         reputationService: reputationService,
+        resourcesEnabled: resourcesEnabled,
       )));
-
       await tester.pumpAndSettle();
+    }
 
+    testWidgets('owner sees the edit button; resources are hidden by default',
+        (tester) async {
+      await pumpOwner(tester);
       expect(find.byKey(const Key('edit_profile_icon_button')), findsOneWidget);
+      // CommunityResourceService only keeps resources in memory, so the
+      // section stays hidden until resources have a real backend.
+      expect(find.text('Authored Resources & Guides'), findsNothing);
+      expect(find.byKey(const Key('author_new_resource_button')), findsNothing);
+    });
+
+    testWidgets('owner sees the resource section when resources are enabled',
+        (tester) async {
+      await pumpOwner(tester, resourcesEnabled: true);
       expect(find.text('Authored Resources & Guides'), findsOneWidget);
       expect(find.byKey(const Key('author_new_resource_button')), findsOneWidget);
     });
