@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import 'package:learning_pwa/models/community/community_question.dart';
 import 'package:learning_pwa/models/community/community_answer.dart';
@@ -40,6 +41,7 @@ Future<void> showInContextQaSheet(
   CommunityBookmarkService? bookmarkService,
   bool isAdultConfirmed = false,
   bool answerHistoryEnabled = false,
+  bool educatorProfilesEnabled = false,
 }) {
   final width = MediaQuery.sizeOf(context).width;
   final effectiveService = service ?? CommunityQaService();
@@ -66,6 +68,7 @@ Future<void> showInContextQaSheet(
           bookmarkService: bookmarkService,
           isAdultConfirmed: isAdultConfirmed,
           answerHistoryEnabled: answerHistoryEnabled,
+          educatorProfilesEnabled: educatorProfilesEnabled,
         ),
       ),
     );
@@ -94,6 +97,7 @@ Future<void> showInContextQaSheet(
             bookmarkService: bookmarkService,
             isAdultConfirmed: isAdultConfirmed,
             answerHistoryEnabled: answerHistoryEnabled,
+            educatorProfilesEnabled: educatorProfilesEnabled,
           ),
         ),
       ),
@@ -117,6 +121,9 @@ class InContextQaSheet extends StatefulWidget {
   /// answers and link new resubmissions to them. Off: no extra requests.
   final bool answerHistoryEnabled;
 
+  /// `learning.educator_profiles`: link answer authors to their profile.
+  final bool educatorProfilesEnabled;
+
   const InContextQaSheet({
     super.key,
     this.conceptId,
@@ -130,6 +137,7 @@ class InContextQaSheet extends StatefulWidget {
     this.bookmarkService,
     this.isAdultConfirmed = false,
     this.answerHistoryEnabled = false,
+    this.educatorProfilesEnabled = false,
   });
 
   @override
@@ -1335,6 +1343,19 @@ class InContextQaSheetState extends State<InContextQaSheet> with SingleTickerPro
                     for (final v in _authorVerificationsCache[ans.authorId]!)
                       EducatorCredentialBadge(verification: v, isCompact: true),
                   ],
+                  if (widget.educatorProfilesEnabled &&
+                      ans.authorId.isNotEmpty &&
+                      ans.authorId != 'offline-demo' &&
+                      ans.authorId != 'system')
+                    TextButton(
+                      key: Key('author_profile_${ans.id}'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      onPressed: () => context.push('/educators/${ans.authorId}'),
+                      child: const Text('Contributor profile', style: TextStyle(fontSize: 11)),
+                    ),
                 ],
               ),
             ),

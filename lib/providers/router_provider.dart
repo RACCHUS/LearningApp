@@ -73,6 +73,7 @@ import 'package:learning_pwa/widgets/deferred_loader_widget.dart';
 import 'package:learning_pwa/widgets/help/help_action.dart';
 import 'package:learning_pwa/widgets/simulation/simulation_navigation.dart';
 import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
+import 'package:learning_pwa/screens/community/educator_profile_screen.dart';
 
 /// Builds the deferred simulation route. [loader] is injectable so the
 /// load-failure return path can be tested end to end.
@@ -704,6 +705,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Contributor profiles (learning.educator_profiles; entry points are
+      // gated, and public reads are gated again by the server).
+      GoRoute(
+        path: '/educators/:educatorId',
+        name: 'educator-profile',
+        builder: (context, state) => EducatorProfileScreen(
+          educatorId: state.pathParameters['educatorId']!,
+        ),
+      ),
       // Skills routes
       GoRoute(
         path: '/skills',
