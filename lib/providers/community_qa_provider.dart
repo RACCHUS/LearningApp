@@ -14,6 +14,17 @@ final communityQaServiceProvider = Provider<CommunityQaService>(
   (ref) => CommunityQaService(),
 );
 
+/// `learning.educator_profiles`: contributor profile pages and their entry
+/// points. Default OFF. Public profile reads are separately gated on the
+/// server (`private.is_educator_profiles_public_enabled`).
+final educatorProfilesFeatureEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningEducatorProfiles,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
 /// `learning.answer_revisions`: earlier versions of resubmitted Q&A answers.
 /// Default OFF and fails closed; the server RPCs refuse while it is OFF.
 final answerRevisionsFeatureEnabledProvider = Provider<bool>((ref) {

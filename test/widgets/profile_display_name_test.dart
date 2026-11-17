@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:learning_pwa/providers/community_qa_provider.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/display_name_provider.dart';
 import 'package:learning_pwa/providers/device_avatar_provider.dart';
@@ -44,11 +45,14 @@ void main() {
     createdAt: DateTime(2026, 1, 1).toIso8601String(),
   );
 
-  Widget app(_FakeRepo repo, {bool withAvatar = false, User? as}) =>
+  Widget app(_FakeRepo repo,
+          {bool withAvatar = false, bool withContributor = false, User? as}) =>
       ProviderScope(
         overrides: [
           if (withAvatar)
             avatarCustomizerEnabledProvider.overrideWithValue(true),
+          if (withContributor)
+            educatorProfilesFeatureEnabledProvider.overrideWithValue(true),
           authProvider.overrideWith(
               (ref) => _FakeAuthNotifier(AuthSuccess(as ?? user))),
           displayNameRepositoryProvider.overrideWithValue(repo),
@@ -164,4 +168,30 @@ void main() {
     expect(find.text('A'), findsWidgets);
   });
 
+  testWidgets('learning.educator_profiles: contributor profile link for accounts',
+      (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley'), withContributor: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-contributor-profile')), findsOneWidget);
+  });
+
+  testWidgets('no contributor profile link when OFF', (tester) async {
+    await tester.pumpWidget(app(_FakeRepo('Ashley')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-contributor-profile')), findsNothing);
+  });
+
+  testWidgets('no contributor profile link for guests, even when ON', (tester) async {
+    final guest = User(
+      id: 'guest-2',
+      appMetadata: const {},
+      userMetadata: const {},
+      aud: 'authenticated',
+      createdAt: DateTime(2026, 1, 1).toIso8601String(),
+      isAnonymous: true,
+    );
+    await tester.pumpWidget(app(_FakeRepo('Guest'), withContributor: true, as: guest));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-contributor-profile')), findsNothing);
+  });
 }
