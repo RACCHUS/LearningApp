@@ -1,36 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/lesson_progress.dart' as canonical;
-import 'package:learning_pwa/models/user_progress.dart' as compatibility;
 
 void main() {
-  group('ANA-001B canonical progress model import', () {
-    test('legacy and canonical imports refer to the same UserProgress type', () {
-      final compatibility.UserProgress progress = compatibility.UserProgress(
-        id: 'local-test-record',
-        userId: 'test-user',
-        lessonId: 'prog_01_variables',
-        studyMode: compatibility.StudyMode.lesson,
-        date: DateTime.utc(2026, 11, 9),
-        questionsAnswered: 0,
-        correctCount: 0,
-        lessonCompleted: true,
-        studyTimeSeconds: 90,
-      );
-
-      // This assignment must compile without any conversion or duplicate DTO.
-      final canonical.UserProgress sameInstance = progress;
-      const canonical.StudyMode sameMode = compatibility.StudyMode.lesson;
-      expect(identical(progress, sameInstance), isTrue);
-      expect(sameMode, canonical.StudyMode.lesson);
-      expect(sameInstance.lessonId, 'prog_01_variables');
-    });
-
+  group('ANA-001B canonical progress model', () {
     test('legacy Hive-style model retains local-only identity and sync state', () {
-      final compatibility.UserProgress cached = compatibility.UserProgress(
+      final canonical.UserProgress cached = canonical.UserProgress(
         id: 'user_lesson_123',
         userId: 'user',
         lessonId: 'legacy-lesson',
-        studyMode: compatibility.StudyMode.flashcard,
+        studyMode: canonical.StudyMode.flashcard,
         date: DateTime.utc(2026, 11, 9),
         questionsAnswered: 2,
         correctCount: 1,
