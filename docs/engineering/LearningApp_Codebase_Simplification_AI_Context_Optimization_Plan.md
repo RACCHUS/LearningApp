@@ -1,7 +1,7 @@
 # LearningApp — Codebase Simplification & AI Context Optimization Plan
 
-**Status:** **ACCEPTED (November 14, 2026).** Phase 0 and Phase 1 are complete. The owner accepted the recommendations and allowed targeted refactoring where it makes sense, instead of the broad Phase 2 pilots; see the session status in §12 and `audits/code_efficiency/AI_CONTEXT_BENCHMARK.md` §4. The authorization text below is kept as the record of how the work was gated.
-**Version:** **0.6** (November 14, 2026) — execution-time re-pin and drift corrections on top of v0.5 (Gemini Argon, Grok, Z.ai, Qwen reviews). See §2.1b and §13 "v0.6 disposition".  
+**Status:** **v0.7 — Phases 2–4 AUTHORIZED (November 17, 2026).** Phases 0 and 1 are complete and all their follow-ups (#272–#280) are merged. On 2026-11-17 the owner authorized the rest: split the large files agents must read through (Phase 2), wire up code that is not connected unless another system replaced it, and carry on through Phases 3–4 under the safety rules below. **§14 is the current work list; read it first.** The authorization text in §1–§13 is kept as the record of how earlier work was gated.
+**Version:** **0.7** (November 17, 2026) — Phase 2–4 authorization, unreachable-code triage and execution order (§14). v0.6 (November 14, 2026) added the execution-time re-pin and drift corrections on top of v0.5 (Gemini Argon, Grok, Z.ai, Qwen reviews); see §2.1b and §13.  
 **Prepared:** November 12, 2026; revised November 14, 2026.  
 **Phase 0 execution pin (v0.6):** `06221ed6f9ef617113f76d0ddd072c20a0042250` (committer time 2026-11-14T14:54:13Z; PR #270 merge). Audit branch `chore/code-efficiency-audit-baseline` was created from this SHA.  
 **Repository:** [RACCHUS/LearningApp](https://github.com/RACCHUS/LearningApp).  
@@ -331,7 +331,7 @@ Assess whether refactors touch protected paths such as server-side grading, answ
 
 **Exit gate:** compact map and proposed diffs satisfy caps (**AGENTS.md net growth <=20 lines**); path validator design passes review; instruction contradiction has a clear proposed fix; baseline instruction bytes and map-only decision rubric are reviewable; CI activation remains held. Owner separately approves any Phase 1 commit/CI change. **No Phase 2 refactoring.**
 
-### Phase 2 — Controlled code simplification pilots **(NOT AUTHORIZED — briefs only)**
+### Phase 2 — Controlled code simplification pilots **(AUTHORIZED 2026-11-17 — see §14)**
 
 **None of the following is approval to move files or change behavior.** Before any pilot, Phase 0 must demonstrate that the map/instruction change alone is insufficient and that representative MVCS/hop-count measurements justify editing code. No automatic promotion from Phase 0/1 to Phase 2.
 
@@ -583,7 +583,7 @@ This table records **actual conditional authorization from the owner** and the G
 5. Separate Phase 0 evidence (`docs/engineering/audits/code_efficiency/`) from Phase 1 drafts (`docs/engineering/drafts/code_efficiency/`) on the audit branch until the owner accepts exact diffs. Accepted documents move to `docs/engineering/`, not root. No new CI workflow step, no live-model traces and no Phase 2 changes.
 6. Report whether **navigation-only intervention is sufficient**. If yes, recommend stopping code refactoring. Otherwise submit Pilot B/C/A briefs for **new owner sign-off**; do not start them.
 
-**Current session status (v0.6):** Phase 0 has **started** on `chore/code-efficiency-audit-baseline` at pin `06221ed`: re-pin, delta, inventory, top-25, frozen-method churn ranking and instruction-surface bytes are recorded under `docs/engineering/audits/code_efficiency/`. T1–T9 are frozen and measured (`data/mvcs_baseline.json`); the bounded clone scan and a dead-code candidate scan are recorded; **Phase 1 drafts** are in `docs/engineering/drafts/code_efficiency/` (map 188 lines / 14.4 KB; `AGENTS.md` diff 7 touched / +7 net; `Main.instructions.md` cohesion diff; validator design; instruction inventory). Scored against the baseline, the draft map removes every false-owner path and all avoidable whole-file reads in T3, T7, T8 and T9. **Phase 0/1 recommendation: no Phase 2 pilot** (`AI_CONTEXT_BENCHMARK.md` §4). An independent reviewer checked T3/T7 and the map scoring; its additions and corrections are reconciled (§6 of that report). With owner approval, the map and instruction diffs (corrected) are in PR #273, and two missing tests are in PR #274. **Owner decision (2026-11-14):** the recommendations were accepted, with targeted refactoring allowed where it makes sense. Follow-ups: #273 (map and instructions), #274 (tests), #275 (pre-reader voice-track fix) and #277 (Q&A audit-log widget) are merged; #276 (removal of 36 retired unreachable files) and #278 (map validator as an advisory CI step, plus the PR-template checkbox) were open at the time of writing. See `AI_CONTEXT_BENCHMARK.md` §4. Still open for the owner: the 15 unreachable files kept in #276, and whether to promote the validator to required after the stability bar. No CI or migration change has been made.
+**Current session status (v0.6):** Phase 0 has **started** on `chore/code-efficiency-audit-baseline` at pin `06221ed`: re-pin, delta, inventory, top-25, frozen-method churn ranking and instruction-surface bytes are recorded under `docs/engineering/audits/code_efficiency/`. T1–T9 are frozen and measured (`data/mvcs_baseline.json`); the bounded clone scan and a dead-code candidate scan are recorded; **Phase 1 drafts** are in `docs/engineering/drafts/code_efficiency/` (map 188 lines / 14.4 KB; `AGENTS.md` diff 7 touched / +7 net; `Main.instructions.md` cohesion diff; validator design; instruction inventory). Scored against the baseline, the draft map removes every false-owner path and all avoidable whole-file reads in T3, T7, T8 and T9. **Phase 0/1 recommendation: no Phase 2 pilot** (`AI_CONTEXT_BENCHMARK.md` §4). An independent reviewer checked T3/T7 and the map scoring; its additions and corrections are reconciled (§6 of that report). With owner approval, the map and instruction diffs (corrected) are in PR #273, and two missing tests are in PR #274. **Owner decision (2026-11-14):** the recommendations were accepted, with targeted refactoring allowed where it makes sense. Follow-ups, all merged: #273 (map and instructions), #274 (tests), #275 (pre-reader voice-track fix), #276 (removal of 36 retired unreachable files), #277 (Q&A audit-log widget), #278 (map validator as an advisory CI step, plus the PR-template checkbox), #279 and #280 (motivation widgets). See `AI_CONTEXT_BENCHMARK.md` §4. **Superseded by §14 (2026-11-17)**, which covers the remaining unreachable files and the validator promotion.
 
 ## 13. Consolidated Gemini Argon + Grok + Z.ai + Qwen review disposition
 
@@ -670,4 +670,74 @@ Unchanged: Phase 2 remains unauthorized; no live traces.
 - [Restricted preview Excel reader](https://github.com/RACCHUS/LearningApp/blob/main/lib/services/software_learning/demo_workbook_reader.dart)
 - [PR template: feature-preservation controls](https://github.com/RACCHUS/LearningApp/blob/main/.github/pull_request_template.md)
 
-*End of v0.6 — conditional-approval plan with Phase 0 execution started. No live-agent traces, CI edits or Phase 2 implementation performed.*
+## 14. Phases 2–4 execution (owner-authorized November 17, 2026)
+
+**Owner direction (2026-11-17):** Phase 2 should split the large files that agents have to read through instead of reaching what they need. Code that is not wired up must be wired up, unless another system replaced it. The owner does not review files one by one: this plan and the implementer's recommendation decide each case, and anything that needs a product or money decision is listed for the owner.
+
+**Rules that still apply** (they override this section): the §4C cohesion and hop-count rule for every split; behaviour-preserving moves first, with tests before and after; no change to RLS, server grading or answer-key confidentiality, auth or consent, Fast CAS sync, migrations or the hard-disabled BYOK release latch without independent review; new learner-facing features behind an OFF feature key (FLAG-010/016); one concern per PR; update `CODEBASE_MAP.md` in the same PR when an owner moves.
+
+### 14.1 Status on 2026-11-17 (main `2112e81`)
+
+- Phases 0 and 1: done (#272–#280).
+- 80 `lib/` files are unreachable from `lib/main.dart`: 5 are used by tools, 70 only by tests, and 5 by nothing (measured by an import-graph walk; generated files excluded).
+- Map validator: advisory CI step (#278). Eligible to become required around 2026-11-28 under `TEST_QUALITY_POLICY.md`.
+
+### 14.2 Phase 2 — split the files agents read through
+
+Largest authored files, with the decision for each. "Split" means a behaviour-preserving move of a cohesive part behind a narrow contract, measured with the §4C rule; if the measurement does not improve, the split is dropped.
+
+| Order | File (lines) | Decision |
+|---|---|---|
+| 1 | `widgets/software_learning/excel_upload_card.dart` (1,269) | **Pilot B:** move `SoftwareLearningWorkbookEvaluator` to `lib/services/software_learning/`, unchanged. Keep the preview reader and trust roles distinct. |
+| 2 | `widgets/community/in_context_qa_sheet.dart` (2,499) | **Pilot A:** move the self-contained dialogs, and the review queue and drafts tabs if they pass the hop-count rule. Do not merge moderation domain calls; leave the silent catch in `_handleAcceptAnswer` alone. |
+| 3 | `widgets/enhanced_json_import_widget.dart` (1,070) | Separate parsing and validation (pure) from the widget. |
+| 4 | `screens/lessons/guided_generation_screen.dart` (1,256) | Inspect; split only cohesive non-UI logic. |
+| 5 | `screens/library/library_screen.dart` (1,194) | **Pilot C:** extract the pure catalog-source filter only if T1 shows it is independent of scope, privacy and pre-reader state. No `scope_resolver.dart` split. |
+| Phase 3 | `assessment_item_renderer.dart`, `learning_strategy_provider.dart`, `scope_resolver.dart`, `taxonomy_crosswalk_service.dart` | Sensitive (grading presentation, Fast CAS, scoping, taxonomy). Characterization tests first, then a split with independent human review on the PR. |
+| Denylist | `guarded_deployment_manager.dart`, `reset_service.dart`, `official_taxonomy_sources.dart`, `migration_history_validator.dart` | Operational and safety-critical: not split. |
+| Keep | Data and content files (`lib/data/`), generated code | Size is not a code problem. |
+
+### 14.3 Unreachable code — verdicts
+
+**Keep (tools):** `guarded_deployment_manager.dart`, `guarded_database_connection.dart`, `migration_history_validator.dart`, `official_taxonomy_sources.dart`, `taxonomy_importer.dart`. These are used by `tool/`, not by the app.
+
+**Owner-gated, not wired:**
+- **BYOK** (`byok_provider`, `byok_release_gate`, `byok_settings_dialog`, `llm_client`, `curriculum_generator`, `item_evaluator`, `generated_content_models`): the BYOK release latch is hard-disabled by owner policy (FLAG-015).
+- **Marketplace** (`marketplace_service`, `resource_offer_card`, `tutoring_booking_card`): it needs a payment provider, payouts and terms.
+
+**v2.6 foundations, wired by the master-plan phases that use them** (no standalone wiring): `asset_publication_status`, `generation_job_status`, `content_resolution_decision`, `content_need`, `learning_support_origin`, `return_position_resolver`, `option_permutation`, `checkpoint_store`. `option_permutation` touches grading and counts as Phase 3.
+
+**Wire up** (each its own PR, behind an OFF key, with any table it needs added by migration and RLS-tested):
+
+| Slice | Files | Where it goes |
+|---|---|---|
+| W1 | `exam_part_practice_history_service`, `exam_part_practice_attempt` | Exam-part progress (private history; the table exists) |
+| W2 | `skill_badges` | Progress › Motivation (UI spec §9; Minimal preset hides it) |
+| W3 | `educator_profile_card`, `educator_profile_edit_dialog`, `educator_profile_screen` | Q&A answer authors, Profile (ECO-04 tables exist) |
+| W4 | `community_resource` model and service, `resource_card`, `resource_authoring_screen` | Library resources and contributor authoring (ECO-06) |
+| W5 | `content_proposal_review_card` | Admin proposal review, only if it adds to the live proposal flow; otherwise remove |
+| W6 | `taxonomy_banner_card` | Library or Learn entry to the taxonomy explorer, if the UI spec allows; otherwise remove |
+| W7 | `pre_permission_dialog` | Before microphone or audio permission prompts in pre-reader flows |
+| W8 | `word_sense_item`, `word_sense_service`, `combined_word_practice_widget` | Word learning (W2 sense matching) |
+| W9 | `bilingual_bridge_item`, `bilingual_vocab_service`, `bilingual_bridge_widget` | Word learning or life-milestone tracks (ELL) |
+| W10 | `case_study_scenario`, `case_study_service`, `case_study_reader_widget` | Practice activities |
+| W11 | `long_answer_rubric`, `long_answer_evaluator_service`, `long_answer_grading_widget` | Practice self-review (no server grade claims) |
+| W12 | `procedural_rubric_widget`, `performance_assessment_service` | Performance or checklist practice |
+| W13 | `interactive_video_player`, `video_learning_service`, `creator_channel_card` | Video lessons |
+| W14 | `item_psychometrics_sheet`, `elo_rating_engine`, `item_analytics_calculator` | Admin item analytics |
+| W15 | `adaptive_practice_screen` | Exam practice (CAT), if still matched to the exam engine |
+| W16 | `community_ai_explanation_service`, `seo_metadata_service`, `usage_quota_service` | Q&A AI explanations, published FAQ metadata and cost quotas (each server-gated) |
+| W17 | `lti_and_badges_service`, `open_standards_service`, `cmi5_course_service` | Interoperability exports. These need external partners, so they are listed for the owner unless a learner export applies. |
+
+**Remove if superseded** (verify the live replacement in the same PR first): `lesson_card`, `category_chip`, `empty_state`, `lesson_content_renderer`, `local_lesson_service`, `lesson_creation_service`, `sync_provider`, `progress_provider`, `recommendation_service` (replaced by the Next-Action engine and the reinforcement list), `safari_audio_service`, the three `audio_lesson/` managers (if `audio_lesson_orchestrator` is the live path), the legacy `module.dart`, `flashcard.dart` and `user_progress.dart` shims, and the orphan `community.dart` barrel.
+
+### 14.4 Order of work
+
+1. This plan update.
+2. Phase 2 splits 1–5, one PR each.
+3. Removals of superseded code (R batch), one PR.
+4. Wiring slices W1–W16, in order, one PR each. Each slice that turns out to be replaced, or that needs a product decision, is reported instead of wired.
+5. Phase 3 splits, with characterization tests and an independent human review.
+6. Phase 4: promote the map validator to required once eligible, and repeat this triage every quarter.
+
+*End of v0.7 (November 17, 2026). v0.6 ended with Phase 0 execution started; Phases 0–1 are now complete and Phases 2–4 are authorized and in progress (§14).*
