@@ -26,12 +26,17 @@ class EducatorProfileScreen extends StatefulWidget {
   final EducatorReputationService? reputationService;
   final CommunityResourceService? resourceService;
 
+  /// Standalone resources (ECO-06). Off: `CommunityResourceService` only
+  /// keeps resources in memory, so nothing it shows would be saved.
+  final bool resourcesEnabled;
+
   const EducatorProfileScreen({
     super.key,
     required this.educatorId,
     this.service,
     this.reputationService,
     this.resourceService,
+    this.resourcesEnabled = false,
   });
 
   @override
@@ -77,7 +82,9 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
           : await _service.fetchPublicVerifications(widget.educatorId);
       final reputation = await _reputationService.fetchReputation(widget.educatorId);
       final isFollowing = await _service.isFollowing(widget.educatorId);
-      final resources = await _resourceService.fetchAuthorResources(widget.educatorId);
+      final resources = widget.resourcesEnabled
+          ? await _resourceService.fetchAuthorResources(widget.educatorId)
+          : const <CommunityResource>[];
 
       if (mounted) {
         setState(() {
@@ -294,54 +301,56 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                   ),
                 ],
 
-                const SizedBox(height: 20),
+                if (widget.resourcesEnabled) ...[
+                  const SizedBox(height: 20),
 
-                // Authored Resources & Guides Section (ECO-06, Phase 3)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Authored Resources & Guides',
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    if (_isOwner)
-                      TextButton.icon(
-                        key: const Key('author_new_resource_button'),
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Author Resource'),
-                        onPressed: () async {
-                          final created = await Navigator.of(context).push<CommunityResource>(
-                            MaterialPageRoute(
-                              builder: (ctx) => ResourceAuthoringScreen(
-                                resourceService: _resourceService,
-                                authorId: widget.educatorId,
-                                authorName: _profile?.displayName ?? 'Educator',
-                                authorHeadline: _profile?.headline,
+                  // Authored Resources & Guides Section (ECO-06, Phase 3)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Authored Resources & Guides',
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (_isOwner)
+                        TextButton.icon(
+                          key: const Key('author_new_resource_button'),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Author Resource'),
+                          onPressed: () async {
+                            final created = await Navigator.of(context).push<CommunityResource>(
+                              MaterialPageRoute(
+                                builder: (ctx) => ResourceAuthoringScreen(
+                                  resourceService: _resourceService,
+                                  authorId: widget.educatorId,
+                                  authorName: _profile?.displayName ?? 'Educator',
+                                  authorHeadline: _profile?.headline,
+                                ),
                               ),
-                            ),
-                          );
-                          if (created != null) {
-                            _loadProfileData();
-                          }
-                        },
+                            );
+                            if (created != null) {
+                              _loadProfileData();
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_authoredResources.isEmpty)
+                    Card(
+                      elevation: 0,
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      child: const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'No standalone resources published yet.',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (_authoredResources.isEmpty)
-                  Card(
-                    elevation: 0,
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    child: const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'No standalone resources published yet.',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                    ),
-                  )
-                else
-                  ..._authoredResources.map((res) => ResourceCard(resource: res)),
+                    )
+                  else
+                    ..._authoredResources.map((res) => ResourceCard(resource: res)),
+                ],
               ],
             ),
           ),

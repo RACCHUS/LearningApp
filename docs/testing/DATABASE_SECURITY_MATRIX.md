@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 77 test files, 1777 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 78 test files, 1779 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -22,7 +22,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Learner progress & events | 10 | 247 | 8 | 7 | 85 | 28 | 0 |
 | Assessment, grading & simulation | 20 | 533 | 4 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
-| Community, educators & moderation | 5 | 297 | 3 | 4 | 100 | 4 | 0 |
+| Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
 | Content, lessons & import | 12 | 233 | 7 | 7 | 60 | 7 | 2 |
 | Catalog, taxonomy & versioning | 14 | 261 | 5 | 3 | 75 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
@@ -37,6 +37,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 - `content_primitives_v2.sql` (Content, lessons & import, 16 assertions)
 - `content_provenance.sql` (Content, lessons & import, 12 assertions)
 - `device_avatar_customizer_flag_test.sql` (Other, 2 assertions)
+- `educator_profiles_flag_test.sql` (Community, educators & moderation, 2 assertions)
 - `library_search_performance_test.sql` (Content, lessons & import, 3 assertions)
 - `question_scratchpad_flag_test.sql` (Other, 2 assertions)
 - `reinforcement_suggestions_flag_test.sql` (Other, 2 assertions)
@@ -86,6 +87,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `software_learning_storage_gate_test.sql` | Excel / software-learning uploads & storage | runtime (`no_plan`) | authenticated | 8 | 1 | 2 | 0 |
 | `community_answer_revisions_test.sql` | Community, educators & moderation | 25 | anon, authenticated | 7 | 13 | 0 | 0 |
 | `community_qa_test.sql` | Community, educators & moderation | 102 | anon, authenticated | 16 | 38 | 3 | 0 |
+| `educator_profiles_flag_test.sql` | Community, educators & moderation | 2 | — | 0 | 0 | 0 | 0 |
 | `educator_profiles_test.sql` | Community, educators & moderation | 124 | anon, authenticated, service_role | 42 | 30 | 0 | 0 |
 | `lesson_contribution_reports_test.sql` | Community, educators & moderation | 9 | authenticated | 1 | 4 | 1 | 0 |
 | `moderation_security_test.sql` | Community, educators & moderation | 37 | authenticated | 8 | 15 | 0 | 0 |
