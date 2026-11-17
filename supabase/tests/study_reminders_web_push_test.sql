@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(36);
+select plan(37);
 
 insert into auth.users (id, email) values
  ('5e100000-0000-4000-8000-000000000001', 'rem1@example.invalid'),
@@ -11,9 +11,13 @@ insert into auth.users (id, email) values
 on conflict (id) do nothing;
 
 select is(
-  (select enabled or release_ready from private.site_feature_controls
+  (select enabled from private.site_feature_controls
     where feature_key = 'learning.study_reminders'),
   false, 'learning.study_reminders is seeded OFF');
+select is(
+  (select release_ready from private.site_feature_controls
+    where feature_key = 'learning.study_reminders'),
+  true, 'learning.study_reminders is available for operator activation');
 
 -- Schedule maths (pure helper, run as owner).
 select is(
