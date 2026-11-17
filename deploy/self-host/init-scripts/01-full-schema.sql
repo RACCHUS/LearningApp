@@ -1,7 +1,7 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
 -- Automatically compiled from 129 immutable migrations
--- Generated: 2026-11-17T18:19:53.067245Z
+-- Generated: 2026-11-17T18:39:22.759715Z
 -- ====================================================================
 
 BEGIN;
@@ -43992,7 +43992,19 @@ ON CONFLICT (feature_key) DO NOTHING;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261116000000', 'reinforcement_suggestions_flag') ON CONFLICT (version) DO NOTHING;
 
 -- --------------------------------------------------------------------
--- [128/129] Migration: 20261117000000_educator_profiles_flag.sql
+-- [128/129] Migration: 20261117033523_study_reminders_release_readiness.sql
+-- --------------------------------------------------------------------
+-- Allow the admin UI to activate study reminders after production validation.
+-- The operator still controls the enabled state through the audited admin RPC.
+UPDATE private.site_feature_controls
+SET release_ready = true
+WHERE feature_key = 'learning.study_reminders'
+  AND release_ready = false;
+
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261117033523', 'study_reminders_release_readiness') ON CONFLICT (version) DO NOTHING;
+
+-- --------------------------------------------------------------------
+-- [129/129] Migration: 20261117190000_educator_profiles_flag.sql
 -- --------------------------------------------------------------------
 -- Contributor (educator) profile pages and their entry points (Q&A answer
 -- author link, Profile screen). UI gate: public reads are already gated on
@@ -44006,19 +44018,7 @@ VALUES
   'Contributor profile pages linked from Q&A answers and the Profile screen; public reads stay server-gated')
 ON CONFLICT (feature_key) DO NOTHING;
 
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261117000000', 'educator_profiles_flag') ON CONFLICT (version) DO NOTHING;
-
--- --------------------------------------------------------------------
--- [129/129] Migration: 20261117033523_study_reminders_release_readiness.sql
--- --------------------------------------------------------------------
--- Allow the admin UI to activate study reminders after production validation.
--- The operator still controls the enabled state through the audited admin RPC.
-UPDATE private.site_feature_controls
-SET release_ready = true
-WHERE feature_key = 'learning.study_reminders'
-  AND release_ready = false;
-
-INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261117033523', 'study_reminders_release_readiness') ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261117190000', 'educator_profiles_flag') ON CONFLICT (version) DO NOTHING;
 
 COMMIT;
 
