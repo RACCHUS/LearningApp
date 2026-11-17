@@ -8,7 +8,7 @@ import 'package:learning_pwa/models/question.dart';
 import 'package:learning_pwa/models/session_result.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/screens/study/session_results_screen.dart';
-import 'package:learning_pwa/widgets/lesson_content_renderer.dart';
+import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
 import 'package:learning_pwa/widgets/question_widgets/unscorable_answer_notice.dart';
 
 QuestionContent _q(List<String> options, int correct, {String? type}) =>
@@ -47,7 +47,7 @@ void main() {
     testWidgets('[True, False] key 0: "True" is correct', (tester) async {
       await tester.pumpWidget(
         _host(
-          LessonContentRenderer(
+          QuestionContentRenderer(
             content: _q(['True', 'False'], 0, type: 'true_false'),
             onNext: () {},
           ),
@@ -61,7 +61,7 @@ void main() {
     testWidgets('[False, True] key 0: "False" is correct', (tester) async {
       await tester.pumpWidget(
         _host(
-          LessonContentRenderer(
+          QuestionContentRenderer(
             content: _q(['False', 'True'], 0, type: 'true_false'),
             onNext: () {},
           ),
@@ -74,7 +74,7 @@ void main() {
     testWidgets('[True, False] key 0: "False" is incorrect', (tester) async {
       await tester.pumpWidget(
         _host(
-          LessonContentRenderer(
+          QuestionContentRenderer(
             content: _q(['True', 'False'], 0, type: 'true_false'),
             onNext: () {},
           ),
@@ -87,7 +87,7 @@ void main() {
     testWidgets('unknown labels are not scored', (tester) async {
       await tester.pumpWidget(
         _host(
-          LessonContentRenderer(
+          QuestionContentRenderer(
             content: _q(['True', 'True'], 0, type: 'true_false'),
             onNext: () {},
           ),
@@ -104,7 +104,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       _host(
-        LessonContentRenderer(
+        QuestionContentRenderer(
           content: _q(['Paris', 'Rome', 'Berlin'], AnswerKey.unscorableIndex),
           onNext: () {},
         ),
