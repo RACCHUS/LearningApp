@@ -5,7 +5,6 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
-import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
 
 void main() {
   group('VoiceInputHandler', () {
