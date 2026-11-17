@@ -8,6 +8,14 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
+// The app uses hash routing. Only same-origin app routes are ever opened.
+function reminderTarget(route) {
+  const safeRoute = typeof route === 'string' && route.startsWith('/') && !route.startsWith('//')
+    ? route
+    : '/learn';
+  return new URL('/#' + safeRoute, self.location.origin).href;
+}
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -16,33 +24,69 @@ self.addEventListener('push', (event) => {
     data = {};
   }
   const title = typeof data.title === 'string' ? data.title : 'Study reminder';
+  const target = reminderTarget(data.url);
   const options = {
     body: typeof data.body === 'string' ? data.body : '',
     tag: typeof data.tag === 'string' ? data.tag : 'study-reminder',
     icon: 'icons/icon-192.png',
     badge: 'icons/icon-192.png',
-    data: { route: typeof data.url === 'string' ? data.url : '/learn' },
+    // Browsers with declarative notification navigation open this directly;
+    // the others (Chrome, Edge, Firefox) use the click handler below.
+    navigate: target,
+    actions: [{ action: 'open-learningapp', title: 'Open LearningApp', navigate: target }],
+    data: { route: data.url },
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// A click on the notification body or its "Open LearningApp" button.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  // The app uses hash routing; only same-origin routes are opened.
-  const route = String((event.notification.data || {}).route || '/learn');
-  const safeRoute = route.startsWith('/') && !route.startsWith('//') ? route : '/learn';
-  const target = new URL('/#' + safeRoute, self.location.origin).href;
-  event.waitUntil((async () => {
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of windows) {
-      if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
-        await client.focus();
-        if ('navigate' in client) {
-          try { await client.navigate(target); } catch (_) { /* uncontrolled */ }
-        }
-        return;
-      }
-    }
-    await self.clients.openWindow(target);
-  })());
+  const target = reminderTarget(event.notification.data && event.notification.data.route);
+  event.waitUntil(openReminder(target));
 });
+
+// Reuse an open LearningApp tab, else open a new one.
+//
+// App pages are NOT controlled by this worker (its scope is ./push/), so
+// client.navigate() always rejects for them: an open tab is focused as it
+// is. Every failure is logged, because a silent failure here looks to the
+// learner like "clicking does nothing".
+async function openReminder(target) {
+  let windows = [];
+  try {
+    windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  } catch (error) {
+    console.warn('[push_sw] could not list open tabs', error);
+  }
+  const appWindows = windows
+    .filter((client) => sameOrigin(client.url))
+    // Prefer a tab that is already on the reminder's page.
+    .sort((a, b) => Number(b.url === target) - Number(a.url === target));
+
+  for (const client of appWindows) {
+    try {
+      await client.focus();
+      return 'focused';
+    } catch (error) {
+      console.warn('[push_sw] could not focus an open tab', error);
+    }
+  }
+
+  try {
+    const opened = await self.clients.openWindow(target);
+    if (opened) return 'opened';
+    console.warn('[push_sw] openWindow returned no window for', target);
+  } catch (error) {
+    console.warn('[push_sw] could not open', target, error);
+  }
+  return 'failed';
+}
+
+function sameOrigin(url) {
+  try {
+    return new URL(url).origin === self.location.origin;
+  } catch (_) {
+    return false;
+  }
+}

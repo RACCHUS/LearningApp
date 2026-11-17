@@ -91,9 +91,10 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Test study-reminder dispatch and type-check the Edge Function (no network or secrets)
+      - name: Test study-reminder dispatch, the push worker, and type-check the Edge Function (no network or secrets)
         run: |
           deno test supabase/functions/send-study-reminders/dispatch_test.ts
+          deno test --allow-read test/web/push_sw_test.js
           deno check supabase/functions/send-study-reminders/index.ts
 
       - name: Validate zero-cost public SEO preview and editorial gates
