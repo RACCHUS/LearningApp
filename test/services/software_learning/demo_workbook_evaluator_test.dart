@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/services/software_learning/demo_workbook_reader.dart';
-import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
+import 'package:learning_pwa/services/software_learning/software_learning_workbook_evaluator.dart';
 
 Uint8List rewrite(
   Uint8List bytes, {
