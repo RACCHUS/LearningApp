@@ -30,10 +30,31 @@ Before building or deploying the client web bundle:
 
 ### Step 1: Compile the Production Release Web Build
 
-Run the Flutter release compiler:
+Run the Flutter release compiler with the production settings:
 
 ```bash
-flutter build web --release
+flutter build web --release --no-web-resources-cdn \
+  --dart-define=SITE_FEATURE_RPC_READY=true \
+  --dart-define=WEB_PUSH_VAPID_PUBLIC_KEY=<public key>
+```
+
+All three are required:
+
+- `--no-web-resources-cdn` serves Flutter's renderer (CanvasKit) from the
+  site itself. The hosting Content-Security-Policy only allows connections to
+  the site, Supabase and `fonts.gstatic.com`, so a CDN build shows a blank
+  page (2026-11-16 incident).
+- `SITE_FEATURE_RPC_READY=true` makes the app read the feature switches.
+  Without it, no switch in `/admin/features` has any effect in the browser.
+- `WEB_PUSH_VAPID_PUBLIC_KEY` is the study-reminders public key
+  (`docs/deployment/STUDY_REMINDERS_WEB_PUSH.md`). Public; never the private key.
+
+A local `python -m http.server` test does not send the CSP header. Check a
+build on a preview channel first, which serves the real headers:
+
+```bash
+firebase hosting:channel:deploy preview --expires 1d --project learningapp-2ed8a
+firebase hosting:clone learningapp-2ed8a:preview learningapp-2ed8a:live --project learningapp-2ed8a
 ```
 
 *Output Directory:* `build/web/`  
