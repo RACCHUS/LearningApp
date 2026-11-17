@@ -13,6 +13,11 @@ import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/study_provider.dart';
 import 'package:learning_pwa/providers/timer_provider.dart';
 import 'package:learning_pwa/screens/study/lesson_content_pager.dart';
+import 'package:learning_pwa/models/audio_state.dart';
+import 'package:learning_pwa/models/pre_reader_profile.dart';
+import 'package:learning_pwa/providers/audio_playback_provider.dart';
+import 'package:learning_pwa/providers/pre_reader_provider.dart';
+import 'package:learning_pwa/services/pre_reader_audio_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeStudyNotifier extends StateNotifier<StudyState> implements StudyNotifier {
@@ -67,6 +72,36 @@ class FakeGlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> implements
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Records microphone permission calls without touching browser audio.
+class FakeAudioPlaybackNotifier extends StateNotifier<AudioState>
+    implements AudioPlaybackNotifier {
+  FakeAudioPlaybackNotifier({this.alreadyAllowed = false}) : super(const AudioState());
+
+  final bool alreadyAllowed;
+  int permissionRequests = 0;
+
+  @override
+  Future<bool> checkMicrophonePermissions() async => alreadyAllowed;
+
+  @override
+  Future<bool> requestMicrophonePermissions() async {
+    permissionRequests++;
+    return false; // stop before the orchestrator starts
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SilentPreReaderAudio extends PreReaderAudioService {
+  @override
+  Future<void> speak(String text,
+          {PreReaderTrack track = PreReaderTrack.adult, double? customRate}) async {}
+
+  @override
+  Future<void> stop() async {}
 }
 
 void main() {
@@ -187,6 +222,61 @@ void main() {
       // Break overlay dismisses, lesson content visible again
       expect(find.text('Nice work!'), findsNothing);
       expect(container.read(timerProvider).isOnBreak, isFalse);
+    });
+  });
+  group('Pre-reader microphone pre-permission (literacy plan §5.2)', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    Future<FakeAudioPlaybackNotifier> pump(WidgetTester tester,
+        {required bool preReader, bool alreadyAllowed = false}) async {
+      final audio = FakeAudioPlaybackNotifier(alreadyAllowed: alreadyAllowed);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          ...commonOverrides(),
+          audioPlaybackProvider.overrideWith((ref) => audio),
+          preReaderAudioServiceProvider.overrideWithValue(_SilentPreReaderAudio()),
+          preReaderProvider.overrideWith((ref) => PreReaderNotifier(
+                audioService: _SilentPreReaderAudio(),
+                initialProfile: PreReaderProfile(enabled: preReader),
+              )),
+        ],
+        child: MaterialApp(
+          home: Scaffold(body: LessonContentPager(contentList: testContents)),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Enable Hands-Free'));
+      await tester.pumpAndSettle();
+      return audio;
+    }
+
+    testWidgets('tap-only never shows the browser prompt', (tester) async {
+      final audio = await pump(tester, preReader: true);
+      expect(find.byKey(const Key('pre-permission-tap-only')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('pre-permission-tap-only')));
+      await tester.pumpAndSettle();
+      expect(audio.permissionRequests, 0);
+      expect(find.byTooltip('Enable Hands-Free'), findsOneWidget,
+          reason: 'hands-free stays off');
+    });
+
+    testWidgets('choosing the microphone then asks the browser', (tester) async {
+      final audio = await pump(tester, preReader: true);
+      await tester.tap(find.byKey(const Key('pre-permission-enable-mic')));
+      await tester.pumpAndSettle();
+      expect(audio.permissionRequests, 1);
+    });
+
+    testWidgets('not shown once the microphone is already allowed', (tester) async {
+      final audio = await pump(tester, preReader: true, alreadyAllowed: true);
+      expect(find.byKey(const Key('pre-permission-tap-only')), findsNothing);
+      expect(audio.permissionRequests, 1);
+    });
+
+    testWidgets('other learners go straight to the browser prompt', (tester) async {
+      final audio = await pump(tester, preReader: false);
+      expect(find.byKey(const Key('pre-permission-tap-only')), findsNothing);
+      expect(audio.permissionRequests, 1);
     });
   });
 }
