@@ -34,13 +34,13 @@ Three destinations (Learn, Library, Progress). Routes live in the router; the bu
 
 ## Library catalog and source filter {#library}
 
-<!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="43-61" -->
-- Owner: `lib/screens/library/library_screen.dart` — `_CatalogSource` (lines 43-61), source decision (145-162), picker (415-441).
+<!-- map-ref path="lib/screens/library/catalog_source.dart" role="owner" -->
+- Owner: `lib/screens/library/catalog_source.dart` (`CatalogSource.shows`); picker in `library_screen.dart` (394-420).
 <!-- map-ref path="lib/models/learning_target.dart" role="contract" lines="266-281" -->
 - Contract: `LearningTarget.isTrustedPublic` / `sourceLabel`; server mirror is the `targets_read` RLS policy in `supabase/migrations/20261009000005_learning_target_catalog_provenance.sql` (lines 103-110).
-<!-- map-ref path="test/widgets/library_create_chooser_test.dart" role="test" -->
-- Tests: `test/widgets/library_create_chooser_test.dart`, `test/widgets/create_target_suggestions_test.dart`, `test/widgets/library_v2_test.dart`.
-- Trap: the source filter does **not** use `scope_resolver.dart`. Known gap: no test checks what each source value shows.
+<!-- map-ref path="test/screens/library/catalog_source_test.dart" role="test" -->
+- Tests: that file, `test/widgets/library_source_filter_test.dart`, `library_create_chooser_test.dart`, `library_v2_test.dart`.
+- Trap: the source filter does **not** use `scope_resolver.dart`.
 
 ## Learning contexts and scope {#scope}
 
