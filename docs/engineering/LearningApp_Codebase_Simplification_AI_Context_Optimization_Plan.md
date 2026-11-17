@@ -740,4 +740,18 @@ Largest authored files, with the decision for each. "Split" means a behaviour-pr
 5. Phase 3 splits, with characterization tests and an independent human review.
 6. Phase 4: promote the map validator to required once eligible, and repeat this triage every quarter.
 
+### 14.5 Progress log
+
+| Item | Outcome |
+|---|---|
+| Plan v0.7 | #294 |
+| Phase 2 splits 1–5 | #295 Excel evaluator, #296 Q&A dialogs, #297 JSON-import wording, #298 guided-generation complete view, #299 Library catalog source |
+| R batch | #300: 25 files, about 4,700 lines removed |
+| W1 EXM practice history | **Superseded** by `ExamCombinedPracticePortabilityService` (server RPCs); removed in #300 |
+| W2 skill badges | **Superseded** by server achievements (#282); its "Expert" and streak copy also broke UI spec §6.1/§9. Removed |
+| W5 proposal review card | **Superseded** by `ContributionReviewScreen` and `RefreshProposal`; removed with `ContentProposalCore` and `ProposalGeneratorCore` |
+| W6 taxonomy banner | **Superseded**: UI spec H3 replaced it with the Library "More" link to `/taxonomy` |
+| W7 pre-permission dialog | **Wired** in #301 (pre-reader hands-free start) |
+| Deferred removals | `lesson_card`, `lesson_content_renderer`, `progress_provider`, `module`/`flashcard`, `user_progress` shim: their tests also cover live code |
+
 *End of v0.7 (November 17, 2026). v0.6 ended with Phase 0 execution started; Phases 0–1 are now complete and Phases 2–4 are authorized and in progress (§14).*
