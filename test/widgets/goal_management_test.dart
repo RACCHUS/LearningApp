@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/learning_context.dart';
-import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/providers/learning_context_provider.dart';
-import 'package:learning_pwa/providers/lesson_progress_provider.dart';
 import 'package:learning_pwa/services/next_action_engine.dart';
-import 'package:learning_pwa/theme/app_theme.dart';
 import 'package:learning_pwa/widgets/learn/continue_card.dart';
 import 'package:learning_pwa/widgets/learn/context_switcher.dart';
-import 'package:learning_pwa/widgets/lesson_card.dart';
 
 void main() {
   LearningContext ctx(String id, String label, {bool isArchived = false}) =>
@@ -170,54 +166,6 @@ void main() {
       expect(find.text('Nothing left here'), findsOneWidget);
       expect(find.byKey(const Key('learn-archive-goal-action')), findsOneWidget);
       expect(find.text('Archive completed goal'), findsOneWidget);
-    });
-  });
-
-  group('LessonCard manual progress toggle', () {
-    testWidgets('renders completion icon and toggle action in overflow menu',
-        (tester) async {
-      final lesson = Lesson(
-        id: 'lesson-1',
-        title: 'Introduction to Algorithms',
-        description: 'Basic computational thinking',
-        tags: ['CS'],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        userId: 'test-user',
-        terms: const [],
-        questions: const [],
-        concepts: const [],
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            lessonProgressProvider('lesson-1').overrideWith((ref) => 1.0),
-            lessonMasteryProvider('lesson-1').overrideWith((ref) => null),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme(),
-            home: Scaffold(
-              body: ListView(
-                children: [
-                  LessonCard(lesson: lesson),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Checkmark icon button is visible
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
-
-      // Open overflow menu
-      await tester.tap(find.byIcon(Icons.more_vert));
-      await tester.pumpAndSettle();
-
-      // Manual completion toggle option is present
-      expect(find.text('Mark as incomplete'), findsOneWidget);
     });
   });
 }

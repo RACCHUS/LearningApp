@@ -426,6 +426,67 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                   }
                 },
               ),
+              // Manual completion (goal management, 2026-10-11). Moved here
+              // from the retired LessonCard menu (code-efficiency plan §14).
+              Consumer(
+                builder: (context, ref, _) {
+                  final isCompleted = (ref
+                              .watch(lessonProgressProvider(widget.lessonId))
+                              .valueOrNull ??
+                          0.0) >=
+                      1.0;
+                  return PopupMenuButton<String>(
+                    key: const Key('lesson-more-menu'),
+                    tooltip: 'More options',
+                    onSelected: (value) async {
+                      if (value != 'toggle_complete') return;
+                      await toggleLessonCompletion(
+                        ref,
+                        lessonId: widget.lessonId,
+                        currentCompleted: isCompleted,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isCompleted
+                                  ? 'Marked "${lessonData.lesson.title}" as incomplete'
+                                  : 'Marked "${lessonData.lesson.title}" as completed',
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        key: const Key('lesson-toggle-complete'),
+                        value: 'toggle_complete',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isCompleted
+                                  ? Icons.check_circle
+                                  : Icons.check_circle_outline,
+                              size: 20,
+                              color: isCompleted
+                                  ? Colors.green
+                                  : Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(isCompleted
+                                  ? 'Mark as incomplete'
+                                  : 'Mark as completed'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
           body: Consumer(
