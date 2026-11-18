@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
