@@ -740,6 +740,8 @@ Largest authored files, with the decision for each. "Split" means a behaviour-pr
 5. Phase 3 splits, with characterization tests and an independent human review.
 6. Phase 4: promote the map validator to required once eligible, and repeat this triage every quarter.
 
+**Parked features and why:** `docs/product/PARKED_FEATURES.md` (owner decisions 2026-11-17). Parked code is kept, never deleted without owner approval.
+
 ### 14.5 Progress log
 
 | Item | Outcome |

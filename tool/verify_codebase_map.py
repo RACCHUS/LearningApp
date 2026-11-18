@@ -57,7 +57,9 @@ def unsafe_path(path: str) -> bool:
 
 def check(root: Path, map_path: Path) -> list[str]:
     errors: list[str] = []
-    raw = map_path.read_bytes()
+    # Measure the committed (LF) form, so a Windows checkout with
+    # core.autocrlf (CRLF on disk) gives the same answer as CI.
+    raw = map_path.read_bytes().replace(b"\r\n", b"\n")
     text = raw.decode("utf-8")
     lines = text.splitlines()
     rel_map = map_path.relative_to(root).as_posix() if map_path.is_relative_to(root) else str(map_path)
