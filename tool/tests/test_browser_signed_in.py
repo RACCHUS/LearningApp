@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -185,13 +186,16 @@ def test_registered_learner_import_reload_and_readback():
                 mode_button.click()
                 expect(page.get_by_text(title).first).to_be_visible(timeout=45_000)
                 expect(page.get_by_text("Private").first).to_be_visible()
-                expect(page.get_by_text("Browser Alpha").first).to_be_visible(timeout=30_000)
-                # Lesson Mode now uses RichLessonReader, whose synthesized
-                # personal questions appear as practice-prompt blocks in the
-                # scrollable reader (not the legacy paged "Next" control).
-                page.mouse.move(800, 600)
-                page.mouse.wheel(0, 1400)
-                expect(page.get_by_text("Browser question: two plus two?").first).to_be_visible(timeout=30_000)
+                # Flutter Web semantics combines block contents into named
+                # groups; individual Text widgets are not separate text nodes.
+                # Assert the actual restored callout and practice-prompt
+                # accessibility groups exposed by RichLessonReader.
+                expect(page.get_by_role(
+                    "group", name=re.compile(r"KEY CONCEPT.*Browser Alpha")
+                )).to_be_visible(timeout=30_000)
+                expect(page.get_by_role(
+                    "group", name=re.compile(r"PRACTICE RETRIEVAL.*Browser question: two plus two")
+                )).to_be_visible(timeout=30_000)
 
                 # Independent persisted DB check, not a cached browser object.
                 lesson_rows = _admin(f"/rest/v1/lessons?id=eq.{lesson_id}&select=id,user_id,visibility", "GET")
