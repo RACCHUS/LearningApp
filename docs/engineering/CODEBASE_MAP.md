@@ -93,8 +93,8 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 
 ## Community Q&A {#qa}
 
-<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="686-778" -->
-- Owner: `in_context_qa_sheet.dart`: review handlers 686-778, build from 936. Dialog forms: `qa_review_dialogs.dart`.
+<!-- map-ref path="lib/widgets/community/in_context_qa_sheet.dart" role="owner" lines="703-795" -->
+- Owner: `in_context_qa_sheet.dart`: review handlers 703-795, build 953. Tabs `qa_sheet/`; dialogs `qa_review_dialogs.dart`.
 <!-- map-ref path="lib/widgets/community/qa_audit_log_list.dart" role="owner" -->
 - Audit log: `lib/widgets/community/qa_audit_log_list.dart` (shows internal notes: moderator queue only).
 <!-- map-ref path="lib/services/community/community_qa_service.dart" role="contract" lines="505-553" -->
