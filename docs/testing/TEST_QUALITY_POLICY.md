@@ -26,6 +26,7 @@ Rules:
 
 - **Never rename** a required check, add `paths` filters to a required workflow, or put `continue-on-error` on required work. `Analyze, test, and build` is now a gate job: any job added behind it must be listed in its `needs:` **and** in the gate script's arguments, and no other job may reuse that name (plan §9 E1).
 - Superseded runs are cancelled on PR branches only; every push to `main` keeps its own run.
+- The codebase map check (`tool/verify_codebase_map.py`) is required, inside the `verify` job (owner decision 2026-11-17, ahead of the usual stability record: it is deterministic and has no external service).
 - An advisory job becomes required only after a sustained stable record (at least 30 consecutive non-cancelled green runs over at least 14 days, with no reruns needed to get there) and maintainer sign-off. Branch protection on `main` requires up-to-date branches and applies to admins, so a flaky required check blocks every merge.
 
 ## 2. Discovery: no test may silently stop running

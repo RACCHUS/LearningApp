@@ -104,6 +104,22 @@ class VerifyCodebaseMapTest(unittest.TestCase):
         errs = self.errors(GOOD_SECTION + "x\n" * vcm.MAX_LINES)
         self.assertTrue(any("exceeds cap" in e for e in errs), errs)
 
+    def test_crlf_does_not_count_against_the_byte_cap(self):
+        # A Windows checkout (core.autocrlf) stores CRLF on disk; the cap
+        # applies to the committed LF form, which is what CI measures.
+        count = vcm.MAX_LINES - GOOD_SECTION.count("\n") - 5
+        width = (vcm.MAX_BYTES - len(GOOD_SECTION) - 50) // count - 1
+        body = GOOD_SECTION + ("y" * width + "\n") * count
+        body += "z" * (vcm.MAX_BYTES - 5 - len(body.encode())) + "\n"
+        self.assertLessEqual(len(body.encode()), vcm.MAX_BYTES)
+        map_path = self.root / "MAP.md"
+        map_path.write_bytes(body.replace("\n", "\r\n").encode())
+        # On disk it is over the cap; committed (LF) it is under.
+        self.assertGreater(map_path.stat().st_size, vcm.MAX_BYTES)
+        subprocess.run(["git", "-C", str(self.root), "add", "MAP.md"], check=True)
+        errs = vcm.check(self.root, map_path)
+        self.assertFalse(any("exceeds cap" in e for e in errs), errs)
+
     def test_main_exit_codes(self):
         (self.root / "docs/engineering").mkdir(parents=True)
         (self.root / vcm.DEFAULT_MAP).write_text(GOOD_SECTION, encoding="utf-8")
