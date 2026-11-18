@@ -112,13 +112,23 @@ def test_registered_learner_import_reload_and_readback():
                 page.keyboard.insert_text(json.dumps(payload))
                 import_button = page.get_by_role("button", name="Import Lesson")
                 expect(import_button).to_be_enabled(timeout=20_000)
+                # A lesson-row insert precedes content writes. Wait for the
+                # *questions* insert too: otherwise navigating away after the
+                # lesson POST could interrupt the rest of the import.
                 with page.expect_response(
                     lambda response: response.request.method == "POST"
-                    and "/rest/v1/lessons" in response.url
+                    and "/rest/v1/questions" in response.url
                     and 200 <= response.status < 300,
                     timeout=25_000,
-                ) as created_response:
-                    import_button.click()
+                ) as saved_questions:
+                    with page.expect_response(
+                        lambda response: response.request.method == "POST"
+                        and "/rest/v1/lessons" in response.url
+                        and 200 <= response.status < 300,
+                        timeout=25_000,
+                    ) as created_response:
+                        import_button.click()
+                assert saved_questions.value.ok, "question persistence did not complete"
                 created = created_response.value.json()
                 lesson_row = created[0] if isinstance(created, list) else created
                 lesson_id = lesson_row["id"]
