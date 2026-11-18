@@ -123,10 +123,33 @@ def test_registered_learner_import_reload_and_readback():
                          "explanation": "Two plus two is four."},
                     ],
                 }
-                page.get_by_role("textbox").first.click()
-                page.keyboard.type(json.dumps(payload))
+                # Flutter's first-focus handoff may swallow an editor key
+                # (as the local sign-in test demonstrated). Check the full
+                # JSON that reached the actual user-facing field rather than
+                # mistaking a truncated payload for an importer regression.
+                editor = page.get_by_role("textbox").first
+                json_text = json.dumps(payload)
+                editor.click()
+                page.keyboard.type(json_text)
+                if editor.input_value() != json_text:
+                    editor.click()
+                    page.keyboard.press("ControlOrMeta+A")
+                    page.keyboard.insert_text(json_text)
+                assert editor.input_value() == json_text, (
+                    "JSON editor did not receive the complete input "
+                    f"(got {len(editor.input_value())} of {len(json_text)} characters)"
+                )
                 import_button = page.get_by_role("button", name="Import Lesson")
-                expect(import_button).to_be_enabled(timeout=20_000)
+                try:
+                    expect(import_button).to_be_enabled(timeout=20_000)
+                except AssertionError:
+                    # If the editor is correct but preflight still rejects
+                    # the fixture, preserve its diagnostic instead of a
+                    # generic 'button disabled' CI failure.
+                    raise AssertionError(
+                        "Valid, complete JSON did not enable Import Lesson. "
+                        f"Visible UI: {page.locator('body').aria_snapshot()[:3500]}"
+                    ) from None
                 # A lesson-row insert precedes content writes. Wait for the
                 # *questions* insert too: otherwise navigating away after the
                 # lesson POST could interrupt the rest of the import.
