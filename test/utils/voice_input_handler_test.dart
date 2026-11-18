@@ -5,7 +5,6 @@ import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
-import 'package:learning_pwa/widgets/lesson_content_renderer.dart';
 
 void main() {
   group('VoiceInputHandler', () {
@@ -232,7 +231,7 @@ void main() {
     );
 
     testWidgets(
-      'LessonContentRenderer maps spoken Option A-D through shuffled order and re-randomizes on retry',
+      'QuestionContentRenderer maps spoken Option A-D through shuffled order and re-randomizes on retry',
       (tester) async {
         await tester.pumpWidget(
           ProviderScope(
@@ -243,7 +242,7 @@ void main() {
             ],
             child: MaterialApp(
               home: Scaffold(
-                body: LessonContentRenderer(content: mcq, onNext: () {}),
+                body: QuestionContentRenderer(content: mcq, onNext: () {}),
               ),
             ),
           ),
@@ -251,7 +250,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final state =
-            tester.state(find.byType(LessonContentRenderer)) as dynamic;
+            tester.state(find.byType(QuestionContentRenderer)) as dynamic;
         final order1 = List<int>.from(state.presentationOrder as List<int>);
         expect(order1.toSet(), equals({0, 1, 2, 3}));
 
