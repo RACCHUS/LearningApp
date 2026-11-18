@@ -109,7 +109,7 @@ def test_registered_learner_import_reload_and_readback():
                     ],
                 }
                 page.get_by_role("textbox").first.click()
-                page.keyboard.insert_text(json.dumps(payload))
+                page.keyboard.type(json.dumps(payload))
                 import_button = page.get_by_role("button", name="Import Lesson")
                 expect(import_button).to_be_enabled(timeout=20_000)
                 # A lesson-row insert precedes content writes. Wait for the
