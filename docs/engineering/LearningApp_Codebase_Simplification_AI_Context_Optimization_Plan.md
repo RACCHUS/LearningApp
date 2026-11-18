@@ -762,6 +762,10 @@ Largest authored files, with the decision for each. "Split" means a behaviour-pr
 | W16 AI explanation, usage quota | **Owner-gated:** paid AI calls (managed AI or BYOK latch). `UsageQuotaService` is the quota check those calls must use, so it stays with them |
 | W16 SEO metadata | **Owner decision:** it hard-codes `app.learningapp.io` (not the live domain), and `seo.dynamic_endpoints` is OFF; the hash-routed app is not crawlable as is |
 | W17 interoperability (LTI, xAPI, cmi5) | **Owner-gated:** needs external LMS or LRS partners |
-| Deferred removals | `lesson_card`, `lesson_content_renderer`, `progress_provider`, `module`/`flashcard`, `user_progress` shim: their tests also cover live code |
+| Deferred removals | #305: `lesson_content_renderer` (integrity tests now run against the live `QuestionContentRenderer`), `progress_provider`, `module`/`flashcard`, `user_progress` shim. **Kept:** `lesson_card`, whose manual "Mark as completed" toggle has no live replacement and needs an entry point (owner placement decision) |
+| Phase 3: assessment renderer | #306: answer views extracted, scoring stays in the renderer; exam-mode characterization tests added; human review |
+| Phase 3: taxonomy crosswalk | #307: offline fallback samples moved out (byte-identical) |
+| Phase 3: scope resolver | **No split** (§4C): every resolution path shares the client, cache and three helpers, so a split would force reading parent and child together |
+| Phase 3: Fast preference store | Store, offline queue and CAS sync moved unchanged to `services/fast_preference_store.dart`; provider re-exports it; human review |
 
 *End of v0.7 (November 17, 2026). v0.6 ended with Phase 0 execution started; Phases 0–1 are now complete and Phases 2–4 are authorized and in progress (§14).*

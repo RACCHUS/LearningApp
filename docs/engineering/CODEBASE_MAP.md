@@ -53,8 +53,8 @@ Three destinations (Learn, Library, Progress). Routes live in the router; the bu
 
 Protected: CAS conflict semantics, replay idempotency, account separation. Independent review required for changes.
 
-<!-- map-ref path="lib/providers/learning_strategy_provider.dart" role="owner" lines="376-559" -->
-- Owner: `lib/providers/learning_strategy_provider.dart` — store/CAS/queue (376-559), notifier replay (815-845).
+<!-- map-ref path="lib/services/fast_preference_store.dart" role="owner" lines="371-554" -->
+- Owner: store/CAS/queue `lib/services/fast_preference_store.dart` (371-554); notifier replay in `learning_strategy_provider.dart` (178-208).
 <!-- map-ref path="lib/services/learning_context_sync_service.dart" role="contract" lines="177-226" -->
 - Contract: `update_context_fast_preferences` RPC client (`learning_context_sync_service.dart` 177-226); server function in `supabase/migrations/20261111030000_tel_01b_context_fast_preferences.sql` (54-346).
 <!-- map-ref path="test/providers/learning_strategy_provider_test.dart" role="test" -->
