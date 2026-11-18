@@ -80,6 +80,8 @@ jobs:
         run: |
           python3 tool/ci/mutation_seeds.py --check
           python3 -m unittest discover -s tool/tests -p 'test_mutation_seeds.py' -v
+          python3 tool/ci/db_mutation_seeds.py --check
+          python3 -m unittest discover -s tool/tests -p 'test_db_mutation_seeds.py' -v
 
       - name: Validate feature registry contract (no external service)
         run: |
@@ -537,6 +539,80 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: browser-smoke-failures
+          path: build/e2e-artifacts/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  browser-signed-in:
+    # Separate advisory browser journey 2: real registered local GoTrue user,
+    # production UI JSON import, cold reload, persisted readback. No hosted
+    # credentials, no OAuth, no production DB. Keep outside the required gate
+    # until the TEST_QUALITY_POLICY stability window has been satisfied.
+    name: Browser smoke (registered local learner readback)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Set up local Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.67.1
+
+      - name: Start disposable local Supabase
+        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,mailpit
+
+      - name: Build real local-backend web release (E2E login compiled in)
+        run: |
+          eval "$(supabase status -o env)"
+          case "$API_URL" in
+            http://127.0.0.1:*|http://localhost:*) ;;
+            *) echo "Refusing non-local Supabase backend" >&2; exit 1 ;;
+          esac
+          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          flutter pub get
+          (cd packages/learning_core && dart pub get)
+          flutter build web --release \
+            --dart-define=E2E_LOCAL_AUTH=true \
+            --dart-define=SUPABASE_URL="$API_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$ANON_KEY"
+
+      - name: Install pinned Playwright and Chromium
+        run: |
+          venv="$RUNNER_TEMP/e2e-venv"
+          python3 -m venv "$venv"
+          "$venv/bin/python" -m pip install --disable-pip-version-check -r requirements-e2e.txt
+          "$venv/bin/python" -m pip check
+          "$venv/bin/python" -m playwright install --with-deps chromium
+          echo "E2E_PYTHON=$venv/bin/python" >> "$GITHUB_ENV"
+
+      - name: Registered learner creates and reads back lesson after reload
+        run: |
+          eval "$(supabase status -o env)"
+          case "$API_URL" in
+            http://127.0.0.1:*|http://localhost:*) ;;
+            *) echo "Refusing non-local Supabase backend" >&2; exit 1 ;;
+          esac
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory build/web > build/e2e-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8765/ > /dev/null && break; sleep 1; done
+          LOCAL_SUPABASE_URL="$API_URL" LOCAL_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          E2E_BASE_URL=http://127.0.0.1:8765/ E2E_ARTIFACT_DIR=build/e2e-artifacts \
+            "$E2E_PYTHON" -m pytest tool/tests/test_browser_signed_in.py -v -p no:cacheprovider
+
+      - name: Upload synthetic failure screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: browser-registered-local-failures
           path: build/e2e-artifacts/
           retention-days: 7
           if-no-files-found: ignore

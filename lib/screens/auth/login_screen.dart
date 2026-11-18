@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
+import 'package:learning_pwa/config/supabase_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +15,45 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
+
+  // CI-only email sign-in against a loopback Supabase backend. No bypass:
+  // the local GoTrue service still validates real credentials and issues the
+  // session. The controls are absent from every ordinary web build.
+  static const bool _e2eLocalAuthBuild = bool.fromEnvironment('E2E_LOCAL_AUTH');
+  final _localEmail = TextEditingController();
+  final _localPassword = TextEditingController();
+
+  bool get _showLocalAuth =>
+      _e2eLocalAuthBuild &&
+      {'127.0.0.1', 'localhost', '::1'}
+          .contains(Uri.tryParse(SupabaseConfig.url)?.host);
+
+  @override
+  void dispose() {
+    _localEmail.dispose();
+    _localPassword.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLocalAuth() async {
+    if (!_showLocalAuth) return;
+    setState(() => _isLoading = true);
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _localEmail.text.trim(),
+        password: _localPassword.text,
+      );
+      if (mounted) context.go('/learn');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Local test sign-in failed')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _handleSignIn() async {
     setState(() => _isLoading = true);
@@ -171,6 +212,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   label: const Text(
                     'Google account already exists? Back up spelling lists'),
                 ),
+
+              if (_showLocalAuth) ...[
+                const Text('Local CI authentication (test build only)'),
+                TextField(
+                  controller: _localEmail,
+                  decoration: const InputDecoration(labelText: 'Local test email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                TextField(
+                  controller: _localPassword,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Local test password'),
+                ),
+                FilledButton(
+                  onPressed: _isLoading ? null : _handleLocalAuth,
+                  child: const Text('Sign in to local test account'),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Google Sign In Button
               FilledButton.icon(

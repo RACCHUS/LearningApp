@@ -18,7 +18,9 @@ The goal is not more tests or a higher percentage. It is that **a green PR is tr
 | `Validate official taxonomy sources` | `taxonomy-official-data.yml` | **Yes** | Pinned official source files |
 | `Early feedback (changed files)` | `flutter-ci.yml` | No | Fast first signal on checks related to the PR diff; never replaces a required check |
 | `Browser smoke (Chromium guest journeys)` | `flutter-ci.yml` | No (candidate) | Real-browser guest journeys, a11y-tree selectors, host allow-list |
-| `Run critical mutation seeds` | `mutation-seeds.yml`, weekly | No | Planted known bugs are caught |
+| `Browser smoke (registered local learner readback)` | `flutter-ci.yml` | No (candidate) | Registered local GoTrue user imports through the browser, reloads, reads persisted private content; no external OAuth/hosted DB |
+| `Run critical mutation seeds` | `mutation-seeds.yml`, weekly | No | Planted client-side known bugs are caught |
+| `Kill database security mutations (local pgTAP)` | `mutation-seeds.yml`, weekly/manual | No | Two deliberate SQL changes (cross-learner attempt access, issued answer-key leak) must be caught by pgTAP; database reset to clean local baseline |
 | `Coverage and test-runtime audit` | `test-quality-audit.yml`, weekly | No | Coverage by risk area; dated timing/skip artifacts (90 days) |
 | `Flutter Test Concurrency Benchmark` | `flutter-test-benchmark.yml`, on demand | No | Re-measure `--concurrency` when runners change |
 

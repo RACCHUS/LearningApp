@@ -5,6 +5,15 @@ name: Critical Mutation Seeds
 # it runs weekly and on demand. Every PR already runs
 # `mutation_seeds.py --check` so seeds cannot silently stop applying.
 on:
+  # Restrict the expensive live SQL mutations to high-risk PR changes.
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tool/ci/db_mutation_seeds.py'
+      - 'tool/tests/test_db_mutation_seeds.py'
+      - 'supabase/tests/clep_simulation_bank_and_privacy_test.sql'
+      - 'supabase/migrations/20261108140000_clep_simulation_bank_and_item_privacy.sql'
+      - 'supabase/migrations/20261110180000_clep_simulation_domain_quota_and_metadata_validation.sql'
   workflow_dispatch:
     inputs:
       only:
@@ -23,6 +32,7 @@ concurrency:
 
 jobs:
   seeds:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.only == '' || !startsWith(inputs.only, 'db-'))) }}
     name: Run critical mutation seeds
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -63,5 +73,39 @@ jobs:
           fi
 
       - name: Confirm the checkout was restored
+        if: ${{ always() }}
+        run: git diff --exit-code
+
+  db-seeds:
+    # Weeklies and explicit db-* dispatches only. Never runs against a linked
+    # project; resets a disposable local Supabase instance for each mutant.
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || inputs.only == '' || startsWith(inputs.only, 'db-') }}
+    name: Kill database security mutations (local pgTAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.67.1
+
+      - name: Start disposable local Supabase
+        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,mailpit
+
+      - name: Kill both SQL security mutations and restore clean baseline
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            python3 tool/ci/db_mutation_seeds.py --only "$ONLY"
+          else
+            python3 tool/ci/db_mutation_seeds.py
+          fi
+
+      - name: Confirm migration sources were restored
         if: ${{ always() }}
         run: git diff --exit-code

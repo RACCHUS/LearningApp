@@ -16,11 +16,11 @@ Every test also enforces two browser-wide guards:
   configured Supabase host, and Flutter's own engine/font CDNs. A guest
   session must never contact analytics, AI providers or other third parties.
 
-Journey 2 of the plan (create a lesson as a signed-in learner and read it
-back after reload) needs authentication against a local backend and is an
-explicit, documented gap here; the database job's
-``lesson_import_local_supabase_test.dart`` proves create/readback at the
-service layer. This file checks only that a guest save fails closed.
+This guest-only suite stays on the placeholder backend and proves guest
+save fails closed. Registered-learner journey 2 is in the separate
+``test_browser_signed_in.py`` suite, built with ``E2E_LOCAL_AUTH=true``
+and authenticated against disposable local Supabase; the database job's
+``lesson_import_local_supabase_test.dart`` also verifies service readback.
 """
 from __future__ import annotations
 
