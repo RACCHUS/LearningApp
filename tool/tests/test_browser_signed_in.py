@@ -177,9 +177,14 @@ def test_registered_learner_import_reload_and_readback():
                 # a fresh production lesson-provider fetch with the same session.
                 page.goto(BASE_URL.rstrip("/") + f"/#/lesson/{lesson_id}")
                 page.reload()
+                # The first authenticated visit shows a modal study-mode
+                # picker. Its accessibility scope hides the lesson heading
+                # underneath, so choose a mode before asserting reader text.
+                mode_button = page.get_by_role("button", name="Lesson Mode")
+                expect(mode_button).to_be_visible(timeout=45_000)
+                mode_button.click()
                 expect(page.get_by_text(title).first).to_be_visible(timeout=45_000)
                 expect(page.get_by_text("Private").first).to_be_visible()
-                page.get_by_role("button", name="Lesson Mode").click()
                 expect(page.get_by_text("Browser Alpha").first).to_be_visible(timeout=30_000)
                 page.get_by_role("button", name="Next").click()
                 expect(page.get_by_text("Browser question: two plus two?").first).to_be_visible()
