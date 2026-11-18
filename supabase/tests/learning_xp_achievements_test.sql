@@ -11,11 +11,14 @@ insert into auth.users (id, email) values
  ('ac400000-0000-4000-8000-000000000003', 'xp3@example.invalid')
 on conflict (id) do nothing;
 
--- Registry: seeded OFF and not release-ready.
+-- Registry: activated by owner approval (20261117230000). The OFF-path
+-- checks below switch it off inside this rolled-back transaction.
 select is(
-  (select enabled or release_ready from private.site_feature_controls
+  (select enabled and release_ready from private.site_feature_controls
     where feature_key = 'learning.xp_achievements'),
-  false, 'learning.xp_achievements is seeded OFF');
+  true, 'learning.xp_achievements is activated (owner approval)');
+update private.site_feature_controls set enabled = false
+ where feature_key = 'learning.xp_achievements';
 
 -- The browser cannot pass an amount: the only signature is (uuid, text, text).
 select has_function('public', 'claim_activity_xp', array['uuid', 'text', 'text'],
