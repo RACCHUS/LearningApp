@@ -93,7 +93,7 @@ def require_local_stack() -> None:
 
 
 def _tap(timeout: int) -> subprocess.CompletedProcess[str]:
-    return _command(["supabase", "test", "db", TAP_SUITE, "--local"], timeout)
+    return _command(["supabase", "test", "db", TAP_SUITE], timeout)
 
 
 def _reset(timeout: int) -> None:
