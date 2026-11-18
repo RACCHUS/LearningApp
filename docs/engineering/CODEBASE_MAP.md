@@ -35,7 +35,7 @@ Three destinations (Learn, Library, Progress). Routes live in the router; the bu
 ## Library catalog and source filter {#library}
 
 <!-- map-ref path="lib/screens/library/catalog_source.dart" role="owner" -->
-- Owner: `lib/screens/library/catalog_source.dart` (`CatalogSource.shows`); picker in `library_screen.dart` (394-420).
+- Owner: `lib/screens/library/catalog_source.dart` (`CatalogSource.shows`); picker `library_sections/category_chips.dart`.
 <!-- map-ref path="lib/models/learning_target.dart" role="contract" lines="266-281" -->
 - Contract: `LearningTarget.isTrustedPublic` / `sourceLabel`; server mirror is the `targets_read` RLS policy in `supabase/migrations/20261009000005_learning_target_catalog_provenance.sql` (lines 103-110).
 <!-- map-ref path="test/screens/library/catalog_source_test.dart" role="test" -->
@@ -165,8 +165,8 @@ Gate `learning.reinforcement_suggestions` (OFF, read-only): the §5.5 list in Re
 
 ## Pre-reader and literacy {#prereader}
 
-<!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="445-446" -->
-- Library inserts the grid when `preReaderProvider.enabled` (`library_screen.dart` 107, 445-446).
+<!-- map-ref path="lib/screens/library/library_screen.dart" role="owner" lines="350-351" -->
+- Library inserts the grid when `preReaderProvider.enabled` (`library_screen.dart` 107, 350-351).
 <!-- map-ref path="lib/widgets/literacy/pre_reader_picture_grid_widget.dart" role="owner" -->
 - Grid: `lib/widgets/literacy/pre_reader_picture_grid_widget.dart`: 8 tiles routing to `/milestones?…`, `/domains?…` and `/literacy` (query parsing in `router_provider.dart`). Narration is tap-only and calls `preReaderAudioServiceProvider` directly with the default track.
 <!-- map-ref path="lib/providers/pre_reader_provider.dart" role="owner" -->
