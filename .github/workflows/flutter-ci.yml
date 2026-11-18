@@ -581,7 +581,10 @@ jobs:
           printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
           flutter pub get
           (cd packages/learning_core && dart pub get)
-          flutter build web --release --dart-define=E2E_LOCAL_AUTH=true
+          flutter build web --release \
+            --dart-define=E2E_LOCAL_AUTH=true \
+            --dart-define=SUPABASE_URL="$API_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$ANON_KEY"
 
       - name: Install pinned Playwright and Chromium
         run: |
