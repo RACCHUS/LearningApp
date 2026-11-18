@@ -69,6 +69,11 @@ def test_registered_learner_import_reload_and_readback():
             "email": email, "password": password, "email_confirm": True,
         })
         learner_id = user["id"]
+        # Provision the app's FK-backed profile before the UI write. The
+        # normal AuthProvider profile sync still runs after sign-in.
+        _admin("/rest/v1/users", "POST", {
+            "id": learner_id, "email": email,
+        })
 
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
