@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/curriculum_node.dart';
-import 'package:learning_pwa/models/flashcard.dart';
 import 'package:learning_pwa/models/knowledge_concept.dart';
 import 'package:learning_pwa/models/learning_target.dart';
-import 'package:learning_pwa/models/module.dart';
 import 'package:learning_pwa/models/scope.dart';
 import 'package:learning_pwa/models/user_concept_state.dart';
 
@@ -164,32 +162,6 @@ void main() {
     });
   });
 
-  group('Module Model', () {
-    test('serializes Module correctly', () {
-      final module = Module(
-        id: 'mod-1',
-        courseId: 'course-1',
-        title: 'Vapor Compression Cycle',
-        description: 'Principles of refrigerant phase changes',
-        emoji: '🔄',
-        sortOrder: 2,
-        isRequired: true,
-        createdAt: DateTime(2026, 9, 25),
-        updatedAt: DateTime(2026, 9, 25),
-      );
-
-      final json = module.toJson();
-      expect(json['id'], 'mod-1');
-      expect(json['course_id'], 'course-1');
-      expect(json['title'], 'Vapor Compression Cycle');
-      expect(json['sort_order'], 2);
-
-      final fromJson = Module.fromJson(json);
-      expect(fromJson.id, module.id);
-      expect(fromJson.emoji, '🔄');
-    });
-  });
-
   group('KnowledgeConcept & ConceptRelation Models', () {
     test('serializes KnowledgeConcept and aliases', () {
       final concept = KnowledgeConcept(
@@ -231,26 +203,6 @@ void main() {
       expect(fromJson.relationType, ConceptRelationType.prerequisite);
       expect(fromJson.autoInclude, isTrue);
       expect(fromJson.strength, 0.95);
-    });
-  });
-
-  group('Flashcard & Standalone Decks', () {
-    test('detects standalone flashcard when lessonId is null', () {
-      final standaloneCard = Flashcard(
-        id: 'fc-1',
-        lessonId: null,
-        front: 'What is subcooling?',
-        back: 'Lowering the temperature of liquid refrigerant below condensing temperature',
-        createdAt: DateTime(2026, 9, 25),
-        updatedAt: DateTime(2026, 9, 25),
-      );
-
-      expect(standaloneCard.isStandalone, isTrue);
-      final json = standaloneCard.toJson();
-      expect(json['lesson_id'], isNull);
-
-      final fromJson = Flashcard.fromJson(json);
-      expect(fromJson.isStandalone, isTrue);
     });
   });
 

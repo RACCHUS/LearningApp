@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/providers/audio_provider.dart';
-import 'package:learning_pwa/widgets/lesson_content_renderer.dart';
+import 'package:learning_pwa/widgets/content_renderers/question_content_renderer.dart';
 
 QuestionContent q(List<String> options, {String? type}) => QuestionContent(
   id: 'q',
@@ -26,7 +26,7 @@ Widget host(QuestionContent content) => ProviderScope(
   child: MaterialApp(
     home: Scaffold(
       body: SingleChildScrollView(
-        child: LessonContentRenderer(content: content, onNext: () {}),
+        child: QuestionContentRenderer(content: content, onNext: () {}),
       ),
     ),
   ),
