@@ -52,6 +52,23 @@ def _admin(path: str, method: str, payload: dict | None = None):
         return json.loads(body) if body else None
 
 
+def _enter_flutter_text(page, label: str, value: str) -> None:
+    """Flutter Web can drop the first key immediately after first focus.
+
+    Check the actual semantic input value before submitting. If an initial
+    focus handoff ate a key, re-enter it while the field is already focused.
+    Do not weaken the assertion or silently accept truncated credentials.
+    """
+    field = page.get_by_role("textbox", name=label)
+    field.click()
+    page.keyboard.type(value)
+    if field.input_value() != value:
+        field.click()
+        page.keyboard.press("ControlOrMeta+A")
+        page.keyboard.type(value)
+    assert field.input_value() == value, f"{label} did not receive its complete input"
+
+
 def test_registered_learner_import_reload_and_readback():
     _require_local_configuration()
     email = f"browser-it-{uuid4()}@example.test"
@@ -83,10 +100,8 @@ def test_registered_learner_import_reload_and_readback():
             try:
                 page.goto(BASE_URL.rstrip("/") + "/#/login")
                 expect(page.get_by_role("textbox", name="Local test email")).to_be_visible(timeout=45_000)
-                page.get_by_role("textbox", name="Local test email").click()
-                page.keyboard.type(email)
-                page.get_by_role("textbox", name="Local test password").click()
-                page.keyboard.type(password)
+                _enter_flutter_text(page, "Local test email", email)
+                _enter_flutter_text(page, "Local test password", password)
                 page.get_by_role("button", name="Sign in to local test account").click()
                 expect(page.get_by_role("button", name="Help")).to_be_visible(timeout=45_000)
                 page.wait_for_function("location.hash === '#/learn'")
