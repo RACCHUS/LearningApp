@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/assessment_item.dart';
 import 'package:learning_pwa/services/assessment/assessment_grading_service.dart';
 import 'package:learning_pwa/utils/voice_input_handler.dart';
+import 'package:learning_pwa/widgets/assessment/assessment_answer_views.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
 import '../whiteboard/question_scratchpad.dart';
@@ -730,534 +731,89 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   // 1. Single Choice Renderer
   Widget _buildSingleChoice(BuildContext context, bool isDark) {
-    final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
-    final options = optionsRaw.map((o) => o.toString()).toList();
-    final correctIdx =
-        _item.scoringSpec['correct_index'] as int? ??
-        _item.scoringSpec['correct_answer'] as int? ??
-        0;
-
-    final presentation =
-        _presentationOrder.isNotEmpty &&
-            _presentationOrder.length == options.length
-        ? _presentationOrder
-        : List.generate(options.length, (i) => i);
-
-    return Column(
-      children: presentation.asMap().entries.map((presentationEntry) {
-        final slotIndex = presentationEntry.key;
-        final origIdx = presentationEntry.value;
-        final text = options[origIdx];
-        final isSelected = _selectedSingleChoice == origIdx;
-
-        Color? borderColor;
-        Color? bgColor;
-
-        if (_submitted) {
-          if (origIdx == correctIdx) {
-            borderColor = const Color(0xFF10B981);
-            bgColor = const Color(
-              0xFF10B981,
-            ).withValues(alpha: isDark ? 0.2 : 0.08);
-          } else if (isSelected) {
-            borderColor = const Color(0xFFEF4444);
-            bgColor = const Color(
-              0xFFEF4444,
-            ).withValues(alpha: isDark ? 0.2 : 0.08);
-          }
-        } else if (isSelected) {
-          borderColor = Theme.of(context).colorScheme.primary;
-          bgColor = Theme.of(
-            context,
-          ).colorScheme.primary.withValues(alpha: 0.08);
+    return SingleChoiceAnswerView(
+      item: widget.item,
+      revealedItem: _item,
+      presentationOrder: _presentationOrder,
+      selected: _selectedSingleChoice,
+      submitted: _submitted,
+      isDark: isDark,
+      onSelect: (origIdx) {
+        setState(() => _selectedSingleChoice = origIdx);
+        if (widget.isExamMode) {
+          widget.onResponseChanged?.call(origIdx);
         }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10.0),
-          child: InkWell(
-            onTap: _submitted
-                ? null
-                : () {
-                    setState(() => _selectedSingleChoice = origIdx);
-                    if (widget.isExamMode) {
-                      widget.onResponseChanged?.call(origIdx);
-                    }
-                  },
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color:
-                    bgColor ??
-                    (isDark
-                        ? const Color(0xFF0F172A)
-                        : const Color(0xFFF8FAFC)),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color:
-                      borderColor ??
-                      (isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE2E8F0)),
-                  width: isSelected || (_submitted && origIdx == correctIdx)
-                      ? 1.5
-                      : 1.0,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 26,
-                    height: 26,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.transparent,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
-                      ),
-                    ),
-                    child: Text(
-                      String.fromCharCode(65 + slotIndex),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: GoogleFonts.inter(
-                        fontSize: 14.5,
-                        color: isDark
-                            ? Colors.grey[100]
-                            : const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ),
-                  if (_submitted && origIdx == correctIdx)
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF10B981),
-                      size: 20,
-                    ),
-                  if (_submitted && isSelected && origIdx != correctIdx)
-                    const Icon(
-                      Icons.cancel_rounded,
-                      color: Color(0xFFEF4444),
-                      size: 20,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+      },
     );
   }
 
   // 2. Multi-Select (SATA) Renderer
   Widget _buildMultiSelect(BuildContext context, bool isDark) {
-    final optionsRaw = widget.item.responseSpec['options'] as List? ?? [];
-    final options = optionsRaw.map((o) => o.toString()).toList();
-    final List<dynamic> correctIndicesRaw =
-        _item.scoringSpec['correct_indices'] as List? ?? [];
-    final correctSet = correctIndicesRaw.map((e) => (e as num).toInt()).toSet();
-
-    final presentation =
-        _presentationOrder.isNotEmpty &&
-            _presentationOrder.length == options.length
-        ? _presentationOrder
-        : List.generate(options.length, (i) => i);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_box_outlined,
-                size: 14,
-                color: Color(0xFF8B5CF6),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Select all that apply (${_selectedMultiIndices.length} selected)',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF8B5CF6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...presentation.asMap().entries.map((presentationEntry) {
-          final origIdx = presentationEntry.value;
-          final text = options[origIdx];
-          final isSelected = _selectedMultiIndices.contains(origIdx);
-          final isCorrectChoice = correctSet.contains(origIdx);
-
-          Color? borderColor;
-          Color? bgColor;
-
-          if (_submitted) {
-            if (isCorrectChoice) {
-              borderColor = const Color(0xFF10B981);
-              bgColor = const Color(
-                0xFF10B981,
-              ).withValues(alpha: isDark ? 0.2 : 0.08);
-            } else if (isSelected) {
-              borderColor = const Color(0xFFEF4444);
-              bgColor = const Color(
-                0xFFEF4444,
-              ).withValues(alpha: isDark ? 0.2 : 0.08);
-            }
-          } else if (isSelected) {
-            borderColor = Theme.of(context).colorScheme.primary;
-            bgColor = Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.08);
+    return MultiSelectAnswerView(
+      item: widget.item,
+      revealedItem: _item,
+      presentationOrder: _presentationOrder,
+      selected: _selectedMultiIndices,
+      submitted: _submitted,
+      isDark: isDark,
+      onToggle: (origIdx) {
+        setState(() {
+          if (_selectedMultiIndices.contains(origIdx)) {
+            _selectedMultiIndices.remove(origIdx);
+          } else {
+            _selectedMultiIndices.add(origIdx);
           }
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: InkWell(
-              onTap: _submitted
-                  ? null
-                  : () {
-                      setState(() {
-                        if (_selectedMultiIndices.contains(origIdx)) {
-                          _selectedMultiIndices.remove(origIdx);
-                        } else {
-                          _selectedMultiIndices.add(origIdx);
-                        }
-                      });
-                      if (widget.isExamMode) {
-                        widget.onResponseChanged?.call(
-                          _selectedMultiIndices.toList(),
-                        );
-                      }
-                    },
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      bgColor ??
-                      (isDark
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFF8FAFC)),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color:
-                        borderColor ??
-                        (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0)),
-                    width: isSelected || (_submitted && isCorrectChoice)
-                        ? 1.5
-                        : 1.0,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.check_box_rounded
-                          : Icons.check_box_outline_blank_rounded,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : (isDark ? Colors.grey[500] : Colors.grey[400]),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        text,
-                        style: GoogleFonts.inter(
-                          fontSize: 14.5,
-                          color: isDark
-                              ? Colors.grey[100]
-                              : const Color(0xFF1E293B),
-                        ),
-                      ),
-                    ),
-                    if (_submitted && isCorrectChoice)
-                      const Icon(
-                        Icons.check_circle_rounded,
-                        color: Color(0xFF10B981),
-                        size: 20,
-                      ),
-                    if (_submitted && isSelected && !isCorrectChoice)
-                      const Icon(
-                        Icons.cancel_rounded,
-                        color: Color(0xFFEF4444),
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
-            ),
+        });
+        if (widget.isExamMode) {
+          widget.onResponseChanged?.call(
+            _selectedMultiIndices.toList(),
           );
-        }),
-      ],
+        }
+      },
     );
   }
 
   // 3. Ordered Response Renderer
   Widget _buildOrderedResponse(BuildContext context, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Drag items into the correct chronological or operational sequence:',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ReorderableListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _orderedItems.length,
-          onReorder: _submitted
-              ? (oldIdx, newIdx) {}
-              : (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex -= 1;
-                    final item = _orderedItems.removeAt(oldIndex);
-                    _orderedItems.insert(newIndex, item);
-                  });
-                  if (widget.isExamMode) {
-                    widget.onResponseChanged?.call(
-                      List<String>.from(_orderedItems),
-                    );
-                  }
-                },
-          itemBuilder: (ctx, index) {
-            final itemText = _orderedItems[index];
-            return Container(
-              key: ValueKey(itemText),
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      itemText,
-                      style: GoogleFonts.inter(fontSize: 14),
-                    ),
-                  ),
-                  if (!_submitted)
-                    const Icon(
-                      Icons.drag_indicator_rounded,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
+    return OrderedResponseAnswerView(
+      orderedItems: _orderedItems,
+      submitted: _submitted,
+      isDark: isDark,
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) newIndex -= 1;
+          final item = _orderedItems.removeAt(oldIndex);
+          _orderedItems.insert(newIndex, item);
+        });
+        if (widget.isExamMode) {
+          widget.onResponseChanged?.call(
+            List<String>.from(_orderedItems),
+          );
+        }
+      },
     );
   }
 
   // 4. Matching Renderer
   Widget _buildMatching(BuildContext context, bool isDark) {
-    final keysRaw =
-        widget.item.responseSpec['left_items'] as List? ??
-        widget.item.responseSpec['keys'] as List? ??
-        const [];
-    final valuesRaw =
-        widget.item.responseSpec['right_items'] as List? ??
-        widget.item.responseSpec['values'] as List? ??
-        const [];
-    final keys = keysRaw.map((e) => e.toString()).toList();
-    final values = valuesRaw.map((e) => e.toString()).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Tap a prompt on the left, then tap its matching response on the right:',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left Column: Keys
-            Expanded(
-              child: Column(
-                children: keys.map((key) {
-                  final isSelected = _selectedMatchKey == key;
-                  final hasMatch = _userMatches.containsKey(key);
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: InkWell(
-                      onTap: _submitted
-                          ? null
-                          : () => setState(() => _selectedMatchKey = key),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.12)
-                              : (hasMatch
-                                    ? (isDark
-                                          ? const Color(
-                                              0xFF1E3A8A,
-                                            ).withValues(alpha: 0.3)
-                                          : const Color(0xFFEFF6FF))
-                                    : (isDark
-                                          ? const Color(0xFF0F172A)
-                                          : const Color(0xFFF8FAFC))),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : (hasMatch
-                                      ? const Color(0xFF3B82F6)
-                                      : (isDark
-                                            ? const Color(0xFF334155)
-                                            : const Color(0xFFE2E8F0))),
-                          ),
-                        ),
-                        child: Text(
-                          key,
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Right Column: Values
-            Expanded(
-              child: Column(
-                children: values.map((val) {
-                  final isMatched = _userMatches.containsValue(val);
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: InkWell(
-                      onTap: _submitted || _selectedMatchKey == null
-                          ? null
-                          : () {
-                              setState(() {
-                                _userMatches[_selectedMatchKey!] = val;
-                                _selectedMatchKey = null;
-                              });
-                              if (widget.isExamMode) {
-                                widget.onResponseChanged?.call(
-                                  Map<String, String>.from(_userMatches),
-                                );
-                              }
-                            },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isMatched
-                              ? (isDark
-                                    ? const Color(
-                                        0xFF1E3A8A,
-                                      ).withValues(alpha: 0.3)
-                                    : const Color(0xFFEFF6FF))
-                              : (isDark
-                                    ? const Color(0xFF0F172A)
-                                    : const Color(0xFFF8FAFC)),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isMatched
-                                ? const Color(0xFF3B82F6)
-                                : (isDark
-                                      ? const Color(0xFF334155)
-                                      : const Color(0xFFE2E8F0)),
-                          ),
-                        ),
-                        child: Text(
-                          val,
-                          style: GoogleFonts.inter(fontSize: 13.5),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ],
+    return MatchingAnswerView(
+      item: widget.item,
+      selectedKey: _selectedMatchKey,
+      matches: _userMatches,
+      submitted: _submitted,
+      isDark: isDark,
+      onPickKey: (key) => setState(() => _selectedMatchKey = key),
+      onMatch: (val) {
+        setState(() {
+          _userMatches[_selectedMatchKey!] = val;
+          _selectedMatchKey = null;
+        });
+        if (widget.isExamMode) {
+          widget.onResponseChanged?.call(
+            Map<String, String>.from(_userMatches),
+          );
+        }
+      },
     );
   }
 
