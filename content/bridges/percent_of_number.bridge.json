@@ -1,0 +1,151 @@
+{
+  "bridge_version": 1,
+  "bridge_id": "bridge-percent-of-number",
+  "content_version": "1.0.0",
+  "title": "Finding a percent of a number",
+  "concept_id": "percent-of-number",
+  "primary_objective": {
+    "objective_id": "numeracy.percent-of.compute",
+    "statement": "Find a percent of an amount, such as a 15% tip or a 25% discount, by hand and in a spreadsheet."
+  },
+  "locale": "en-US",
+  "estimated_minutes": 4,
+  "uses_ai": false,
+  "builds_on": ["bridge-fraction-decimal"],
+  "sources": [
+    {
+      "source_id": "openstax-prealgebra-2e-6-1",
+      "publisher": "OpenStax, Rice University",
+      "title": "Prealgebra 2e",
+      "section": "6.1 Understand Percent",
+      "url": "https://openstax.org/books/prealgebra-2e/pages/6-1-understand-percent",
+      "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+      "rights_posture": "link_only"
+    },
+    {
+      "source_id": "ms-format-percentages",
+      "publisher": "Microsoft Support",
+      "title": "Format numbers as percentages in Excel",
+      "url": "https://support.microsoft.com/en-us/excel/format-numbers-as-percentages-in-excel",
+      "license": "Proprietary documentation — reference link only",
+      "rights_posture": "link_only"
+    }
+  ],
+  "teach": [
+    {
+      "block_id": "pof-teach-1",
+      "text": "Percent means per hundred. To find a percent of an amount, change the percent to a decimal by dividing it by 100, then multiply by the amount.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"]
+    },
+    {
+      "block_id": "pof-teach-2",
+      "text": "A quick check: 10% of an amount is the amount divided by 10, and 1% is the amount divided by 100. Use these to see whether an answer is the right size.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"]
+    },
+    {
+      "block_id": "pof-teach-3",
+      "text": "In a spreadsheet, a cell that shows 8% usually stores 0.08, so a formula like =A2*B2 already divides by 100 for you. If the cell stores the plain number 8, write =A2*B2/100 instead.",
+      "source_ids": ["ms-format-percentages"]
+    }
+  ],
+  "examples": [
+    {
+      "block_id": "pof-example-1",
+      "text": "20% of 50: 20 ÷ 100 = 0.2, and 0.2 × 50 = 10.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"],
+      "worked": {
+        "template": "percent_of",
+        "inputs": { "percent": 20, "whole": 50 },
+        "result": 10
+      }
+    },
+    {
+      "block_id": "pof-example-2",
+      "text": "7% sales tax on $300: 7 ÷ 100 = 0.07, and 0.07 × 300 = 21, so the tax is $21.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"],
+      "worked": {
+        "template": "percent_of",
+        "inputs": { "percent": 7, "whole": 300 },
+        "result": 21
+      }
+    }
+  ],
+  "alternate_explanations": [
+    {
+      "block_id": "pof-alt-1",
+      "text": "Think of a percent as a fraction over 100: 20% is 20/100. Taking 20/100 of 50 means splitting 50 into 100 equal parts of 0.5 and taking 20 of them, which is 10.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"]
+    }
+  ],
+  "checks": [
+    {
+      "item_id": "pof-check-1",
+      "kind": "numeric",
+      "prompt": "What is 15% of 80?",
+      "template": "percent_of",
+      "inputs": { "percent": 15, "whole": 80 },
+      "answer": 12,
+      "feedback": "15 ÷ 100 = 0.15, and 0.15 × 80 = 12. Check: 10% of 80 is 8, so 15% should be a bit more than 8."
+    },
+    {
+      "item_id": "pof-check-2",
+      "kind": "choice",
+      "prompt": "A $60 jacket is 25% off. How many dollars is the discount?",
+      "template": "percent_of",
+      "inputs": { "percent": 25, "whole": 60 },
+      "options": [
+        { "option_id": "a", "text": "$15", "value": 15 },
+        { "option_id": "b", "text": "$1,500", "value": 1500, "misconception_id": "pof-forgets-hundred" },
+        { "option_id": "c", "text": "$2.40", "value": "2.4" },
+        { "option_id": "d", "text": "$35", "value": 35 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "25 ÷ 100 = 0.25, and 0.25 × 60 = 15, so the discount is $15. Multiplying 25 × 60 without dividing by 100 gives the far-too-large $1,500."
+    },
+    {
+      "item_id": "pof-check-3",
+      "kind": "choice",
+      "prompt": "A2 holds 200. B2 holds 8% (stored as 0.08). What does =A2*B2 return?",
+      "template": "percent_of",
+      "inputs": { "percent": 8, "whole": 200 },
+      "options": [
+        { "option_id": "a", "text": "1600", "value": 1600, "misconception_id": "pof-forgets-hundred" },
+        { "option_id": "b", "text": "16", "value": 16 },
+        { "option_id": "c", "text": "208", "value": 208 },
+        { "option_id": "d", "text": "0.16", "value": "0.16" }
+      ],
+      "correct_option_id": "b",
+      "feedback": "The cell stores 0.08, so =A2*B2 is 200 × 0.08 = 16. You would only get 1600 if the cell stored the plain number 8."
+    },
+    {
+      "item_id": "pof-check-4",
+      "kind": "numeric",
+      "prompt": "What is 12.5% of 64?",
+      "template": "percent_of",
+      "inputs": { "percent": "12.5", "whole": 64 },
+      "answer": 8,
+      "feedback": "12.5 ÷ 100 = 0.125, and 0.125 × 64 = 8. 12.5% is the same as one eighth."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "pof-forgets-hundred",
+      "label": "using the percent number without dividing by 100",
+      "contrast": "A percent is a number of hundredths, so 25% means 0.25, not 25. Multiplying by 25 instead of 0.25 makes the answer 100 times too big: 25% of 60 is 15, not 1,500. Divide the percent by 100 first, or let a spreadsheet percent cell do it for you.",
+      "source_ids": ["openstax-prealgebra-2e-6-1"]
+    }
+  ],
+  "return_cue": "Back to your lesson: change the percent to a decimal (or let a percent cell do it), then multiply.",
+  "accessibility": {
+    "plain_language": true,
+    "screen_reader_ready": true,
+    "audio_script_available": true,
+    "needs_images": false
+  },
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-19",
+    "deterministic_checks": "All worked examples and check answers are recomputed by BridgeCheckEvaluator (percent_of) in CI.",
+    "notes": "Draft for owner review. Text is independently written; sources are linked only, not excerpted or adapted. Both citation URLs responded on 2026-11-19. No person has reviewed this content yet."
+  }
+}
