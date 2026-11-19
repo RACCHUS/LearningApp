@@ -19,7 +19,7 @@
 
 ### Implementation status (updated 2026-11-19)
 
-This log records progress only; it does not change any decision above. Every new switch is seeded **OFF**. None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5). "Deployed" means the migration is applied in production; it never means switched on.
+This log records progress only; it does not change any decision above. Every new switch is seeded **OFF**. **2026-11-19 activation (owner-approved, after browser verification):** `learning.quick_rescue`, `learning.check_disputes`, `ai.manual_generation_v2` and `content.parametric_practice` are ON (#328). Still OFF: `learning.auto_gap_suggestions` (needs a person's review of the misconception tags), `content.external_companion` (needs re-verification), and `content.public_contribution`, `content.refresh_proposals` and `content.wanted_board` (public user content: owner moderation decision). None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5). "Deployed" means the migration is applied in production; it never means switched on.
 
 | Plan item | Status | PRs |
 |---|---|---|
