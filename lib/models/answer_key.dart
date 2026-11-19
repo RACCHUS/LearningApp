@@ -81,10 +81,31 @@ class AnswerKey {
   static final RegExp _whitespace = RegExp(r'\s+');
   static final RegExp _decimalDigits = RegExp(r'^\d+$');
 
+  static final RegExp _singleQuotes = RegExp('[‘’‚′]');
+  static final RegExp _doubleQuotes = RegExp('[“”„″]');
+  static final RegExp _dashes = RegExp('[‐-―−]');
+  static final RegExp _trailingStop = RegExp('[.。]+\$');
+
   /// Normalization used for exact-text matching: trim, collapse internal
-  /// whitespace and case-fold. No containment, edit distance or stemming.
-  static String normalize(String value) =>
-      value.trim().replaceAll(_whitespace, ' ').toLowerCase();
+  /// whitespace, case-fold, treat typographic quotes and dashes like their
+  /// plain forms, and ignore a trailing full stop. AI chats routinely change
+  /// these when they repeat an option. No containment, edit distance or
+  /// stemming.
+  static String normalize(String value) => value
+      .replaceAll(_singleQuotes, "'")
+      .replaceAll(_doubleQuotes, '"')
+      .replaceAll(_dashes, '-')
+      .trim()
+      .replaceAll(_whitespace, ' ')
+      .replaceAll(_trailingStop, '')
+      .trimRight()
+      .toLowerCase();
+
+  /// `B`, `b)`, `(B)`, `B.` or `B: text` style answers.
+  static final RegExp _lettered = RegExp(
+    r'^\(?([A-Ha-h])\)?(?:[).:\-]\s*(.*)|\s+(.+))?$',
+    dotAll: true,
+  );
 
   /// Validates an explicit index key.
   ///
@@ -141,6 +162,8 @@ class AnswerKey {
         if (normalize(options[i]) == wanted) i,
     ];
     if (matches.isEmpty) {
+      final lettered = _fromLetter(text.trim(), options);
+      if (lettered != null) return lettered;
       return AnswerKeyResult.rejected(
         AnswerKeyStatus.invalidKey,
         'The correct answer "$text" does not exactly match any option.',
@@ -153,6 +176,24 @@ class AnswerKey {
       );
     }
     return _checkIndex(matches.single, options);
+  }
+
+  /// A letter answer (`B`, `B)`, `B. Paris`) is accepted only when it is
+  /// unambiguous: the letter names an existing option, no option is itself
+  /// that letter, and any text after the letter matches that same option.
+  /// Otherwise `null` (the caller reports the original mismatch).
+  static AnswerKeyResult? _fromLetter(String text, List<String> options) {
+    final m = _lettered.firstMatch(text);
+    if (m == null) return null;
+    final letter = m.group(1)!.toUpperCase();
+    final index = letter.codeUnitAt(0) - 0x41;
+    if (index >= options.length) return null;
+    if (options.any((o) => normalize(o) == letter.toLowerCase())) return null;
+    final rest = (m.group(2) ?? m.group(3) ?? '').trim();
+    if (rest.isNotEmpty && normalize(rest) != normalize(options[index])) {
+      return null;
+    }
+    return _checkIndex(index, options);
   }
 
   static AnswerKeyResult _checkIndex(int index, List<String> options) {

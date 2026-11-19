@@ -148,6 +148,32 @@ void main() {
         AnswerKeyStatus.ambiguousOptions,
       );
     });
+
+    test('typographic quotes, dashes and a trailing full stop are ignored', () {
+      const opts = ['It’s a “function”', 'A 2–3 range'];
+      expect(AnswerKey.fromText('It\'s a "function".', opts).index, 0);
+      expect(AnswerKey.fromText('A 2-3 range', opts).index, 1);
+      // Different words still do not match.
+      expect(AnswerKey.fromText('Its a function', opts).isScorable, isFalse);
+    });
+
+    test('letters are accepted only when they cannot be misread', () {
+      expect(AnswerKey.fromText('C', _four).index, 2);
+      expect(AnswerKey.fromText('(b)', _four).index, 1);
+      expect(AnswerKey.fromText('B) beta', _four).index, 1);
+      expect(AnswerKey.fromText('b. Beta.', _four).index, 1);
+      // Letter and text disagree.
+      expect(AnswerKey.fromText('A) beta', _four).isScorable, isFalse);
+      // Letter past the last option.
+      expect(AnswerKey.fromText('E', _four).isScorable, isFalse);
+      // Options that are letters themselves: a letter is ambiguous.
+      expect(
+        AnswerKey.fromText('C) gamma', ['A', 'B', 'C', 'D']).isScorable,
+        isFalse,
+      );
+      // Ordinary words that start with a letter are not letters.
+      expect(AnswerKey.fromText('I think beta', _four).isScorable, isFalse);
+    });
   });
 
   group('TrueFalseKey — semantics from labels, not position', () {
