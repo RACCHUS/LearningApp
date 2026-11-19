@@ -44,6 +44,15 @@ class AssessmentItemRenderer extends StatefulWidget {
   State<AssessmentItemRenderer> createState() => _AssessmentItemRendererState();
 }
 
+/// Public access to the renderer's answer-key rules, for tests and other
+/// readers that must agree with it.
+abstract final class AssessmentItemRendererKeys {
+  static int? resolve(AssessmentItem item) =>
+      _AssessmentItemRendererState.resolveSingleChoiceKey(item);
+  static const unscorableMessage =
+      _AssessmentItemRendererState.unscorableMessage;
+}
+
 class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   static int _globalAttemptNonce = 0x5bf03635;
 
@@ -274,7 +283,10 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     });
     try {
       final service = widget.gradingService ?? AssessmentGradingService();
-      final revealed = await service.revealForResponse(item, _currentResponse());
+      final revealed = await service.revealForResponse(
+        item,
+        _currentResponse(),
+      );
       if (!mounted || widget.item.id != item.id) return;
       setState(() {
         _revealedItem = revealed;
@@ -290,6 +302,28 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
     }
   }
 
+  /// Shown instead of a score when an item's answer key cannot be trusted.
+  static const unscorableMessage =
+      "This question can't be checked: its answer key is missing or "
+      'invalid. It was not scored.';
+
+  /// The single-choice key, or `null` when it is missing, not an integer or
+  /// outside the options. Never defaults to the first option (master plan
+  /// v2.6 §14.8: no "auto-correct to answer A").
+  static int? resolveSingleChoiceKey(AssessmentItem item) {
+    final raw =
+        item.scoringSpec['correct_index'] ?? item.scoringSpec['correct_answer'];
+    final options = item.responseSpec['options'];
+    if (raw is! int || options is! List) return null;
+    return raw >= 0 && raw < options.length ? raw : null;
+  }
+
+  /// Leaves the item unscored: no correct/incorrect, no score and no
+  /// [AssessmentItemRenderer.onAnswerSubmitted] call.
+  void _markUnscorable() {
+    setState(() => _gradingError = unscorableMessage);
+  }
+
   void _gradeWith(AssessmentItem item) {
     final scoring = item.scoringSpec;
 
@@ -299,10 +333,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
     switch (item.interactionType) {
       case AssessmentInteractionType.singleChoice:
-        final correctIdx =
-            scoring['correct_index'] as int? ??
-            scoring['correct_answer'] as int? ??
-            0;
+        final correctIdx = resolveSingleChoiceKey(item);
+        if (correctIdx == null) return _markUnscorable();
         correct = _selectedSingleChoice == correctIdx;
         score = correct ? 1.0 : 0.0;
         feedback = correct
@@ -313,9 +345,15 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       case AssessmentInteractionType.multiSelect:
         final List<dynamic> correctIndicesRaw =
             scoring['correct_indices'] as List? ?? [];
-        final correctSet = correctIndicesRaw
-            .map((e) => (e as num).toInt())
-            .toSet();
+        final optionCount = (item.responseSpec['options'] as List?)?.length;
+        if (optionCount == null ||
+            correctIndicesRaw.isEmpty ||
+            correctIndicesRaw.any(
+              (e) => e is! int || e < 0 || e >= optionCount,
+            )) {
+          return _markUnscorable();
+        }
+        final correctSet = correctIndicesRaw.cast<int>().toSet();
         final method = scoring['scoring_method'] as String? ?? 'all_or_nothing';
 
         if (method == 'all_or_nothing') {
@@ -358,6 +396,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             items.isNotEmpty &&
             correctOrder.length == items.length &&
             correctOrder.every((index) => index >= 0 && index < items.length);
+        if (!hasValidOrder) return _markUnscorable();
         final expectedOrder = hasValidOrder
             ? correctOrder.map((index) => items[index]).toList()
             : <String>[];
@@ -378,6 +417,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
       case AssessmentInteractionType.matching:
         final Map<String, dynamic> correctPairs =
             (scoring['correct_pairs'] as Map?)?.cast<String, dynamic>() ?? {};
+        if (correctPairs.isEmpty) return _markUnscorable();
         int matchedCount = 0;
         correctPairs.forEach((k, v) {
           if (_userMatches[k] == v.toString()) {
@@ -393,9 +433,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         break;
 
       default:
-        correct = false;
-        score = 0.0;
-        feedback = 'This interaction type is not yet supported.';
+        // Unsupported types are not graded as wrong.
+        return _markUnscorable();
     }
 
     setState(() {
@@ -765,9 +804,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
           }
         });
         if (widget.isExamMode) {
-          widget.onResponseChanged?.call(
-            _selectedMultiIndices.toList(),
-          );
+          widget.onResponseChanged?.call(_selectedMultiIndices.toList());
         }
       },
     );
@@ -786,9 +823,7 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
           _orderedItems.insert(newIndex, item);
         });
         if (widget.isExamMode) {
-          widget.onResponseChanged?.call(
-            List<String>.from(_orderedItems),
-          );
+          widget.onResponseChanged?.call(List<String>.from(_orderedItems));
         }
       },
     );
