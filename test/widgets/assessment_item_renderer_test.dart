@@ -581,4 +581,110 @@ void main() {
       },
     );
   });
+
+  group('items whose answer key cannot be trusted are not scored', () {
+    final now = DateTime(2026, 11, 19);
+    AssessmentItem item(
+      AssessmentInteractionType type,
+      Map<String, dynamic> response,
+      Map<String, dynamic> scoring,
+    ) => AssessmentItem(
+      id: 'item-${type.name}',
+      interactionType: type,
+      prompt: 'Pick one',
+      responseSpec: response,
+      scoringSpec: scoring,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    test('single-choice key resolution never defaults to option A', () {
+      AssessmentItem sc(Map<String, dynamic> scoring) =>
+          item(AssessmentInteractionType.singleChoice, {
+            'options': ['A', 'B', 'C'],
+          }, scoring);
+      int? key(Map<String, dynamic> s) =>
+          AssessmentItemRendererKeys.resolve(sc(s));
+      expect(key({'correct_index': 0}), 0, reason: 'a real 0 is valid');
+      expect(key({'correct_answer': 2}), 2);
+      expect(key({'other': 1}), isNull);
+      expect(key({'correct_index': 3}), isNull);
+      expect(key({'correct_index': -1}), isNull);
+      expect(key({'correct_index': '1'}), isNull);
+    });
+
+    Future<({bool? reported})> answerFirst(
+      WidgetTester tester,
+      AssessmentItem it,
+    ) async {
+      bool? reported;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: AssessmentItemRenderer(
+                item: it,
+                shuffleOptions: false,
+                onAnswerSubmitted: (correct, _) => reported = correct,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+      return (reported: reported);
+    }
+
+    testWidgets('a missing single-choice key is not graded at all', (
+      tester,
+    ) async {
+      final r = await answerFirst(
+        tester,
+        item(
+          AssessmentInteractionType.singleChoice,
+          {
+            'options': ['A', 'B', 'C'],
+          },
+          {'explanation_only': true},
+        ),
+      );
+      expect(r.reported, isNull, reason: 'no correct/incorrect reported');
+      expect(
+        find.text(AssessmentItemRendererKeys.unscorableMessage),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an out-of-range key is not graded', (tester) async {
+      final r = await answerFirst(
+        tester,
+        item(
+          AssessmentInteractionType.singleChoice,
+          {
+            'options': ['A', 'B', 'C'],
+          },
+          {'correct_index': 7},
+        ),
+      );
+      expect(r.reported, isNull);
+    });
+
+    testWidgets('an empty multi-select key is not graded', (tester) async {
+      final r = await answerFirst(
+        tester,
+        item(
+          AssessmentInteractionType.multiSelect,
+          {
+            'options': ['A', 'B', 'C'],
+          },
+          {'correct_indices': <int>[]},
+        ),
+      );
+      expect(r.reported, isNull);
+    });
+  });
 }
