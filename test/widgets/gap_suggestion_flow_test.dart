@@ -162,4 +162,53 @@ void main() {
       find.byKey(const Key('bridge-prereq-bridge-fraction-decimal')),
     );
   });
+
+  group('misconception suggestion', () {
+    const card = Key('bridge-misconception-suggestion');
+
+    testWidgets('two tagged first answers show a contrast and a new question', (
+      tester,
+    ) async {
+      await openExcelBridge(tester, suggestions: true);
+      await answerChoice(tester, 'sp-check-1', 'b'); // 0.07% (adds sign)
+      expect(
+        find.byKey(card),
+        findsNothing,
+        reason: 'one answer is not enough',
+      );
+      await answerChoice(tester, 'sp-check-2', 'a'); // 12% (adds sign)
+      await reveal(tester, find.byKey(card));
+      expect(
+        find.textContaining('Percentage format only adds a % sign'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('bridge-misconception-contrast')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('try question 3'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const Key('bridge-misconception-not-the-issue')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(card), findsNothing);
+    });
+
+    testWidgets('a retry with the tagged option does not count again', (
+      tester,
+    ) async {
+      await openExcelBridge(tester, suggestions: true);
+      await answerChoice(tester, 'sp-check-1', 'c'); // wrong, untagged
+      await answerChoice(tester, 'sp-check-1', 'b'); // retry, tagged
+      await answerChoice(tester, 'sp-check-2', 'a'); // tagged
+      expect(find.byKey(card), findsNothing);
+    });
+
+    testWidgets('switch OFF: no misconception suggestion', (tester) async {
+      await openExcelBridge(tester, suggestions: false);
+      await answerChoice(tester, 'sp-check-1', 'b');
+      await answerChoice(tester, 'sp-check-2', 'a');
+      expect(find.byKey(card), findsNothing);
+    });
+  });
 }

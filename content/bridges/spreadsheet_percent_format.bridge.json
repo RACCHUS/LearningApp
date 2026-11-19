@@ -1,7 +1,7 @@
 {
   "bridge_version": 1,
   "bridge_id": "bridge-spreadsheet-percent-format",
-  "content_version": "1.0.0",
+  "content_version": "1.1.0",
   "title": "Showing percentages in Excel",
   "concept_id": "spreadsheet-percent-format",
   "primary_objective": {
@@ -94,7 +94,7 @@
       "inputs": { "value": "0.07" },
       "options": [
         { "option_id": "a", "text": "7%", "value": 7 },
-        { "option_id": "b", "text": "0.07%", "value": "0.07" },
+        { "option_id": "b", "text": "0.07%", "value": "0.07", "misconception_id": "pf-adds-sign-only" },
         { "option_id": "c", "text": "70%", "value": 70 },
         { "option_id": "d", "text": "700%", "value": 700 }
       ],
@@ -108,7 +108,7 @@
       "template": "decimal_to_percent",
       "inputs": { "value": 12 },
       "options": [
-        { "option_id": "a", "text": "12%", "value": 12 },
+        { "option_id": "a", "text": "12%", "value": 12, "misconception_id": "pf-adds-sign-only" },
         { "option_id": "b", "text": "1200%", "value": 1200 },
         { "option_id": "c", "text": "0.12%", "value": "0.12" },
         { "option_id": "d", "text": "120%", "value": 120 }
@@ -125,6 +125,14 @@
       "answer": 30,
       "accepts_percent_sign": true,
       "feedback": "(65 − 50) ÷ 50 = 0.3. Percentage format shows 0.3 × 100 = 30, so C2 shows 30%."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "pf-adds-sign-only",
+      "label": "Percentage format only adds a % sign",
+      "contrast": "It can look as if Percentage format just puts a % sign after the number, so 0.07 would show 0.07% and 12 would show 12%. In fact it shows the stored value multiplied by 100: 0.07 shows 7%, and 12 shows 1200%. To see 12%, the cell must store 0.12.",
+      "source_ids": ["ms-number-formats", "ms-format-percentages"]
     }
   ],
   "return_cue": "Back to your spreadsheet: let the formula produce a decimal, then apply Percentage format to show it as a percent.",

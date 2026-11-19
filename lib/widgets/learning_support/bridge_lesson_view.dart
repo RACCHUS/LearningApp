@@ -125,12 +125,20 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
   /// Prerequisites the learner said are "not the issue" on this screen.
   final Set<String> _dismissed = {};
 
-  void _recordAttempt(String itemId, bool correct) => setState(
-    () => _attempts.putIfAbsent(
-      itemId,
-      () => CheckAttempt(itemId: itemId, firstAttemptCorrect: correct),
-    ),
-  );
+  /// Misconceptions the learner said are "not the issue" on this screen.
+  final Set<String> _dismissedMisconceptions = {};
+
+  void _recordAttempt(String itemId, bool correct, String? misconceptionId) =>
+      setState(
+        () => _attempts.putIfAbsent(
+          itemId,
+          () => CheckAttempt(
+            itemId: itemId,
+            firstAttemptCorrect: correct,
+            misconceptionId: misconceptionId,
+          ),
+        ),
+      );
 
   void _recordDispute(String itemId) => setState(() {
     final a = _attempts[itemId];
@@ -208,6 +216,54 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
     }
   }
 
+  Widget _mixUpCard(ThemeData theme, MisconceptionSuggestion s) {
+    final next = s.nextItemId == null
+        ? null
+        : _bridge.checks.indexWhere((c) => c.itemId == s.nextItemId);
+    final onColor = theme.colorScheme.onTertiaryContainer;
+    return Card(
+      key: const Key('bridge-misconception-suggestion'),
+      color: theme.colorScheme.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                s.reason,
+                style: theme.textTheme.titleSmall?.copyWith(color: onColor),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              s.misconception.contrast,
+              key: const Key('bridge-misconception-contrast'),
+              style: theme.textTheme.bodyMedium?.copyWith(color: onColor),
+            ),
+            if (next != null && next >= 0)
+              Text(
+                'Then try question ${next + 1}, which you have not answered '
+                'yet.',
+                key: const Key('bridge-misconception-next'),
+                style: theme.textTheme.bodySmall?.copyWith(color: onColor),
+              ),
+            TextButton(
+              key: const Key('bridge-misconception-not-the-issue'),
+              onPressed: () => setState(
+                () => _dismissedMisconceptions.add(
+                  s.misconception.misconceptionId,
+                ),
+              ),
+              child: const Text('Not the issue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -223,21 +279,31 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
     final library = ref.watch(bridgeLibraryProvider).valueOrNull;
     final suggestionsOn =
         gateOn && ref.watch(autoGapSuggestionsEnabledProvider);
+    // Quarantined checks are never evidence, even if answered before the
+    // quarantine list arrived.
+    final evidence = _attempts.values
+        .where(
+          (a) => !quarantined.contains(
+            CheckRef(
+              contentId: _bridge.bridgeId,
+              contentVersion: _bridge.contentVersion,
+              itemId: a.itemId,
+            ),
+          ),
+        )
+        .toList();
+    final mixUp = !suggestionsOn
+        ? null
+        : GapSignalService.proposeMisconception(
+            bridge: _bridge,
+            attempts: evidence,
+            dismissed: _dismissedMisconceptions,
+          );
     final suggestion = !suggestionsOn || library == null
         ? null
         : GapSignalService.propose(
             bridge: _bridge,
-            // Quarantined checks are never evidence, even if answered
-            // before the quarantine list arrived.
-            attempts: _attempts.values.where(
-              (a) => !quarantined.contains(
-                CheckRef(
-                  contentId: _bridge.bridgeId,
-                  contentVersion: _bridge.contentVersion,
-                  itemId: a.itemId,
-                ),
-              ),
-            ),
+            attempts: evidence,
             library: library,
             dismissed: _dismissed,
             canOpen: controller.canOpen,
@@ -380,6 +446,7 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
                         .valueOrNull ??
                     const <ParametricFamily>[])
               ParametricPracticeCard(family: family),
+            if (mixUp != null) _mixUpCard(theme, mixUp),
             if (suggestion != null)
               Card(
                 key: const Key('bridge-gap-suggestion'),

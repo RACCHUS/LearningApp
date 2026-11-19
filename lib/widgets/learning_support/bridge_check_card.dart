@@ -17,9 +17,11 @@ class BridgeCheckCard extends StatefulWidget {
   final BridgeCheck check;
   final int index;
 
-  /// Called once, with the first readable answer's result. Retries are not
-  /// reported: they follow feedback and are not independent evidence.
-  final void Function(String itemId, bool correct)? onFirstAttempt;
+  /// Called once, with the first readable answer's result and, for a wrong
+  /// choice, the chosen option's reviewed misconception tag. Retries are
+  /// not reported: they follow feedback and are not independent evidence.
+  final void Function(String itemId, bool correct, String? misconceptionId)?
+  onFirstAttempt;
 
   /// Called when the learner says the question seems wrong.
   final void Function(String itemId)? onDispute;
@@ -51,7 +53,13 @@ class _BridgeCheckCardState extends State<BridgeCheckCard> {
     if (!_reported &&
         (_result == _Result.correct || _result == _Result.wrong)) {
       _reported = true;
-      widget.onFirstAttempt?.call(_check.itemId, _result == _Result.correct);
+      final correct = _result == _Result.correct;
+      final selected = _selected;
+      final tag =
+          !correct && _check.kind == BridgeCheckKind.choice && selected != null
+          ? _check.options[selected].misconceptionId
+          : null;
+      widget.onFirstAttempt?.call(_check.itemId, correct, tag);
     }
   }
 
