@@ -17,10 +17,14 @@ class LessonBlockRenderer extends StatelessWidget {
   final LessonBlock block;
   final double fontSizeFactor;
 
+  /// First checked answer of a practice prompt, by block id.
+  final void Function(String blockId, bool correct)? onPracticeChecked;
+
   const LessonBlockRenderer({
     super.key,
     required this.block,
     this.fontSizeFactor = 1.0,
+    this.onPracticeChecked,
   });
 
   @override
@@ -45,6 +49,9 @@ class LessonBlockRenderer extends StatelessWidget {
         return PracticePromptBlockWidget(
           block: block,
           fontSizeFactor: fontSizeFactor,
+          onFirstChecked: onPracticeChecked == null
+              ? null
+              : (correct) => onPracticeChecked!(block.id, correct),
         );
       case LessonBlockType.image:
         return ImageBlockWidget(block: block, fontSizeFactor: fontSizeFactor);

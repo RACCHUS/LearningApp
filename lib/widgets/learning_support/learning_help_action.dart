@@ -8,6 +8,7 @@ import 'package:learning_pwa/providers/learning_strategy_provider.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/reading_position_provider.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
+import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_lesson_view.dart';
 
 /// The learning context help belongs to: the active context when it has a
@@ -90,10 +91,38 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
     return SupportIdentifiers.isId(block) ? block : null;
   }
 
-  Future<void> _open(BridgeLibrary library) async {
+  /// A dismissible suggestion from this lesson's own practice answers, when
+  /// both `learning.quick_rescue` and `learning.auto_gap_suggestions` are
+  /// on. Never opened automatically.
+  GapSuggestion? _suggestion(BridgeLibrary library, SupportContextKey key) {
+    if (!ref.watch(autoGapSuggestionsEnabledProvider)) return null;
+    final controller = ref.read(
+      learningSupportControllerProvider(key).notifier,
+    );
+    return GapSignalService.proposeForLesson(
+      firstAnswers: ref.watch(lessonPracticeAttemptsProvider(widget.lessonId)),
+      library: library,
+      dismissed: ref.watch(lessonGapDismissedProvider(widget.lessonId)),
+      canOpen: controller.canOpen,
+    );
+  }
+
+  Future<void> _open(BridgeLibrary library, GapSuggestion? suggestion) async {
     final key = _key();
     if (key == null) return;
-    final bridge = await showSupportChoiceSheet(context, library);
+    final bridge = await showSupportChoiceSheet(
+      context,
+      library,
+      suggestion: suggestion,
+      onNotTheIssue: suggestion == null
+          ? null
+          : () {
+              final d = ref.read(
+                lessonGapDismissedProvider(widget.lessonId).notifier,
+              );
+              d.state = {...d.state, suggestion.prerequisite.bridgeId};
+            },
+    );
     if (bridge == null || !mounted) return;
     await openBridgeFrom(
       context,
@@ -146,21 +175,34 @@ class _LearningHelpActionState extends ConsumerState<LearningHelpAction> {
     final library = ref.watch(bridgeLibraryProvider).valueOrNull;
     if (library == null || library.isEmpty) return const SizedBox.shrink();
 
+    final suggestion = _suggestion(library, key);
     return IconButton(
       key: const Key('learning_help_action'),
-      icon: const Icon(Icons.lightbulb_outline),
-      tooltip: 'Learning help',
-      onPressed: () => _open(library),
+      icon: Badge(
+        key: const Key('learning_help_suggestion_dot'),
+        isLabelVisible: suggestion != null,
+        smallSize: 8,
+        child: const Icon(Icons.lightbulb_outline),
+      ),
+      tooltip: suggestion == null
+          ? 'Learning help'
+          : 'Learning help (a suggestion is waiting)',
+      onPressed: () => _open(library, suggestion),
     );
   }
 }
 
 /// Lets the learner pick a Bridge, or close without choosing. Nothing is
 /// opened automatically.
+///
+/// With [suggestion], a dismissible suggestion is shown first, with its
+/// plain reason; "Not the issue" calls [onNotTheIssue] and closes.
 Future<BridgeLesson?> showSupportChoiceSheet(
   BuildContext context,
-  BridgeLibrary library,
-) {
+  BridgeLibrary library, {
+  GapSuggestion? suggestion,
+  VoidCallback? onNotTheIssue,
+}) {
   return showModalBottomSheet<BridgeLesson>(
     context: context,
     isScrollControlled: true,
@@ -186,6 +228,47 @@ Future<BridgeLesson?> showSupportChoiceSheet(
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 8),
+              if (suggestion != null)
+                Card(
+                  key: const Key('support_lesson_suggestion'),
+                  color: theme.colorScheme.tertiaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Suggestion: ${suggestion.reason}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            FilledButton.tonal(
+                              key: const Key('support_lesson_suggestion_open'),
+                              onPressed: () => Navigator.of(
+                                context,
+                              ).pop(suggestion.prerequisite),
+                              child: const Text('Open it'),
+                            ),
+                            TextButton(
+                              key: const Key(
+                                'support_lesson_suggestion_not_the_issue',
+                              ),
+                              onPressed: () {
+                                onNotTheIssue?.call();
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Not the issue'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               for (final b in library.offerOrder)
                 ListTile(
                   key: Key('support_choice_${b.bridgeId}'),
