@@ -155,6 +155,8 @@ void main() {
     expect(find.textContaining('3 of 4 items ready'), findsOneWidget);
 
     expect(find.textContaining('Unreviewed AI content'), findsOneWidget);
+    // The draft has a question with no "why", so a quality tip is offered.
+    expect(find.byKey(const Key('manual_v2_quality_tips')), findsOneWidget);
     await tester.tap(find.byKey(const Key('manual_v2_import')));
     await tester.pumpAndSettle();
     expect(find.text('lesson new-lesson'), findsOneWidget);

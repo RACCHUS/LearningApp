@@ -35,6 +35,11 @@ void main() {
     ).readAsStringSync();
     final imported = await pasteAndImport(tester, reply);
     expect(find.textContaining('Took the lesson JSON out'), findsOneWidget);
+    // Question 3's answer is twice as long as the others: a giveaway.
+    expect(
+      find.textContaining('Quality tip: Question 3: The right answer is much'),
+      findsOneWidget,
+    );
 
     final importButton = find.widgetWithText(FilledButton, 'Import Lesson');
     expect(importButton, findsOneWidget);

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:learning_pwa/utils/lesson_json_validator.dart';
 import 'package:learning_pwa/widgets/content_quality_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_feedback.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
+import 'package:learning_pwa/services/lesson/lesson_quality_check.dart';
 import 'package:learning_pwa/services/lesson/pasted_json.dart';
 
 /// Enhanced JSON import widget with live preview, better validation, and improved UX
@@ -178,11 +178,12 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       // The importer's own normalize + preflight decides importability, so
       // a green preview cannot end in an import error (plan v2.6 §14.9).
       final preview = LessonImportService.preview(parsed);
-      final isEnvelope = parsed['lesson'] is Map;
-      // Quality tips only; they never block import.
-      final tips = isEnvelope
-          ? LessonJsonValidator.validate(parsed).warnings
-          : const <String>[];
+      // Quality tips on what will actually be saved (every dialect); they
+      // never block import.
+      final tips = [
+        for (final t in LessonQualityCheck.check(preview.draft.personal))
+          'Quality tip: $t',
+      ];
       final notSaved = preview.draft.notSaved.isEmpty
           ? const <String>[]
           : [
