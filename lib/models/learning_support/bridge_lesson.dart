@@ -69,11 +69,41 @@ class BridgeWorked {
 }
 
 class BridgeOption {
-  const BridgeOption(this.optionId, this.text, this.value);
+  const BridgeOption(
+    this.optionId,
+    this.text,
+    this.value, {
+    this.misconceptionId,
+  });
 
   final String optionId;
   final String text;
   final ExactNumber value;
+
+  /// Reviewed metadata: the known misconception this wrong option
+  /// reflects (master plan v2.6 §10.9). Never set on the correct option.
+  final String? misconceptionId;
+}
+
+/// A known, reviewed misconception (master plan v2.6 §10.2
+/// `concept_misconception`). Suggested only from a repeated pattern of
+/// tagged answers, never inferred from one answer.
+class BridgeMisconception {
+  const BridgeMisconception({
+    required this.misconceptionId,
+    required this.label,
+    required this.contrast,
+    required this.sourceIds,
+  });
+
+  final String misconceptionId;
+
+  /// Short, neutral name of the mix-up.
+  final String label;
+
+  /// Contrastive explanation: the mix-up next to the correct idea.
+  final String contrast;
+  final List<String> sourceIds;
 }
 
 enum BridgeCheckKind {
@@ -194,6 +224,7 @@ class BridgeLesson {
     required this.returnCue,
     required this.accessibility,
     required this.evidence,
+    this.misconceptions = const [],
   });
 
   static const int currentVersion = 1;
@@ -220,6 +251,16 @@ class BridgeLesson {
   final String returnCue;
   final BridgeAccessibility accessibility;
   final BridgeEvidence evidence;
+
+  /// Known misconceptions that this Bridge's wrong options are tagged with.
+  final List<BridgeMisconception> misconceptions;
+
+  BridgeMisconception? misconception(String id) {
+    for (final m in misconceptions) {
+      if (m.misconceptionId == id) return m;
+    }
+    return null;
+  }
 
   /// Validates and decodes. Every issue is collected; nothing is repaired.
   static BridgeDecodeResult decode(Object? json) =>
@@ -490,6 +531,62 @@ class _BridgeDecoder {
       }
     }
 
+    final misconceptions = <BridgeMisconception>[];
+    if (json.containsKey('misconceptions')) {
+      for (final (i, m) in (list(json, 'misconceptions', p) ?? []).indexed) {
+        final mp = '$p.misconceptions[$i]';
+        final mid = id(m, 'misconception_id', mp);
+        final label = text(m, 'label', mp, 120);
+        final contrast = text(m, 'contrast', mp, BridgeLesson.maxTextLength);
+        final refs = <String>[];
+        final rawRefs = m['source_ids'];
+        if (rawRefs is! List || rawRefs.isEmpty) {
+          issue('$mp.source_ids', 'cite at least one source');
+        } else {
+          for (final r in rawRefs) {
+            if (r is String && sourceIds.contains(r)) {
+              refs.add(r);
+            } else {
+              issue('$mp.source_ids', 'unknown source "$r"');
+            }
+          }
+        }
+        if (mid != null && label != null && contrast != null) {
+          if (misconceptions.any((x) => x.misconceptionId == mid)) {
+            issue('$mp.misconception_id', 'duplicate misconception id');
+          }
+          misconceptions.add(
+            BridgeMisconception(
+              misconceptionId: mid,
+              label: label,
+              contrast: contrast,
+              sourceIds: List.unmodifiable(refs),
+            ),
+          );
+        }
+      }
+    }
+    final definedMisconceptions = {
+      for (final m in misconceptions) m.misconceptionId,
+    };
+    final usedMisconceptions = <String>{};
+    for (final (i, c) in checks.indexed) {
+      for (final o in c.options) {
+        final mid = o.misconceptionId;
+        if (mid == null) continue;
+        usedMisconceptions.add(mid);
+        if (!definedMisconceptions.contains(mid)) {
+          issue(
+            '$p.checks[$i].options',
+            'unknown misconception "$mid" on option ${o.optionId}',
+          );
+        }
+      }
+    }
+    for (final mid in definedMisconceptions.difference(usedMisconceptions)) {
+      issue('$p.misconceptions', 'misconception "$mid" tags no option');
+    }
+
     final returnCue = text(json, 'return_cue', p, BridgeLesson.maxPromptLength);
 
     BridgeAccessibility? accessibility;
@@ -563,6 +660,7 @@ class _BridgeDecoder {
         teach: List.unmodifiable(teach),
         examples: List.unmodifiable(examples),
         alternateExplanations: List.unmodifiable(alternates),
+        misconceptions: List.unmodifiable(misconceptions),
         checks: List.unmodifiable(checks),
         returnCue: returnCue!,
         accessibility: accessibility!,
@@ -704,8 +802,12 @@ class _BridgeDecoder {
       if (ot != null && !optionTexts.add(ot.trim().toLowerCase())) {
         issue('$op.text', 'duplicate option text');
       }
+      String? mid;
+      if (o.containsKey('misconception_id')) {
+        mid = id(o, 'misconception_id', op);
+      }
       if (oid != null && ot != null && ov != null) {
-        options.add(BridgeOption(oid, ot, ov));
+        options.add(BridgeOption(oid, ot, ov, misconceptionId: mid));
       }
     }
     final matching = options.where((o) => o.value == expected).toList();
@@ -719,6 +821,11 @@ class _BridgeDecoder {
       issue(
         '$path.correct_option_id',
         'must be "${matching.single.optionId}", the option equal to $expected',
+      );
+    } else if (matching.single.misconceptionId != null) {
+      issue(
+        '$path.options',
+        'the correct option cannot be tagged with a misconception',
       );
     }
     if (prompt == null || feedback == null || issues.isNotEmpty) return null;

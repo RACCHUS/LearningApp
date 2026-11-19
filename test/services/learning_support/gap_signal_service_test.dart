@@ -96,4 +96,60 @@ void main() {
       isNull,
     );
   });
+
+  group('misconceptions', () {
+    const pf = 'bridge-spreadsheet-percent-format';
+    const tag = 'pf-adds-sign-only';
+    CheckAttempt tagged(String id, {bool disputed = false}) => CheckAttempt(
+      itemId: id,
+      firstAttemptCorrect: false,
+      disputed: disputed,
+      misconceptionId: tag,
+    );
+    MisconceptionSuggestion? mix(
+      List<CheckAttempt> attempts, {
+      Set<String> dismissed = const {},
+    }) => GapSignalService.proposeMisconception(
+      bridge: library[pf]!,
+      attempts: attempts,
+      dismissed: dismissed,
+    );
+
+    test('one tagged answer is never enough', () {
+      expect(mix([tagged('sp-check-1')]), isNull);
+      expect(
+        mix([tagged('sp-check-1'), miss('sp-check-2')]),
+        isNull,
+        reason: 'an untagged miss is not the same mix-up',
+      );
+    });
+
+    test('two different questions suggest it, with a new question', () {
+      final s = mix([tagged('sp-check-1'), tagged('sp-check-2')])!;
+      expect(s.misconception.misconceptionId, tag);
+      expect(s.questions, 2);
+      expect(s.nextItemId, 'sp-check-3');
+      expect(s.reason, contains('2 questions'));
+    });
+
+    test('disputed answers and dismissals stop it', () {
+      expect(
+        mix([tagged('sp-check-1'), tagged('sp-check-2', disputed: true)]),
+        isNull,
+      );
+      expect(
+        mix([tagged('sp-check-1'), tagged('sp-check-2')], dismissed: {tag}),
+        isNull,
+      );
+    });
+
+    test('no unanswered question left means no "try next" pointer', () {
+      final s = mix([
+        tagged('sp-check-1'),
+        tagged('sp-check-2'),
+        hit('sp-check-3'),
+      ])!;
+      expect(s.nextItemId, isNull);
+    });
+  });
 }

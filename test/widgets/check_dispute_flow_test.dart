@@ -49,7 +49,7 @@ class FakeDisputeService extends CheckDisputeService {
 
 const bridgeId = 'bridge-spreadsheet-percent-format';
 
-CheckRef check(String item, {String version = '1.0.0'}) =>
+CheckRef check(String item, {String version = '1.1.0'}) =>
     CheckRef(contentId: bridgeId, contentVersion: version, itemId: item);
 
 void main() {

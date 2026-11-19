@@ -270,4 +270,56 @@ void main() {
       );
     });
   });
+
+  group('misconception tags', () {
+    const pf = 'spreadsheet_percent_format.bridge.json';
+
+    test('bundled tags decode and each spans two different questions', () {
+      for (final name in [pf, 'percent_change.bridge.json']) {
+        final b = BridgeLesson.decode(load(name)).bridge!;
+        expect(b.misconceptions, isNotEmpty, reason: name);
+        for (final m in b.misconceptions) {
+          final items = {
+            for (final c in b.checks)
+              for (final o in c.options)
+                if (o.misconceptionId == m.misconceptionId) c.itemId,
+          };
+          expect(items.length, greaterThanOrEqualTo(2), reason: name);
+        }
+      }
+    });
+
+    test('an unknown tag, a tagged correct option or an unused one fail', () {
+      final unknown = copy(load(pf));
+      ((((unknown['checks'] as List)[0] as Map)['options'] as List)[2]
+              as Map)['misconception_id'] =
+          'nope';
+      expect(issuesOf(unknown).join(), contains('unknown misconception'));
+
+      final correct = copy(load(pf));
+      ((((correct['checks'] as List)[0] as Map)['options'] as List)[0]
+              as Map)['misconception_id'] =
+          'pf-adds-sign-only';
+      expect(issuesOf(correct).join(), contains('correct option cannot'));
+
+      final unused = copy(load(pf));
+      for (final c in (unused['checks'] as List)) {
+        for (final o in ((c as Map)['options'] as List? ?? const [])) {
+          (o as Map).remove('misconception_id');
+        }
+      }
+      expect(issuesOf(unused).join(), contains('tags no option'));
+
+      final uncited = copy(load(pf));
+      (((uncited['misconceptions'] as List)[0]) as Map)['source_ids'] = [];
+      expect(issuesOf(uncited).join(), contains('cite at least one source'));
+    });
+
+    test('Bridges without misconceptions still decode', () {
+      final b = BridgeLesson.decode(
+        load('fraction_decimal.bridge.json'),
+      ).bridge!;
+      expect(b.misconceptions, isEmpty);
+    });
+  });
 }

@@ -10,10 +10,15 @@ class CheckAttempt {
     required this.itemId,
     required this.firstAttemptCorrect,
     this.disputed = false,
+    this.misconceptionId,
   });
 
   final String itemId;
   final bool firstAttemptCorrect;
+
+  /// The reviewed misconception tag of the wrong option chosen first, if
+  /// any. Only the first answer counts (retries follow feedback).
+  final String? misconceptionId;
 
   /// The learner said the question seems wrong. Disputed items never count
   /// as evidence against the learner (§10.0 wrong-answer triage).
@@ -23,6 +28,7 @@ class CheckAttempt {
     itemId: itemId,
     firstAttemptCorrect: firstAttemptCorrect,
     disputed: disputed ?? this.disputed,
+    misconceptionId: misconceptionId,
   );
 }
 
@@ -57,6 +63,31 @@ class GapSuggestion {
       'A short refresher on "${prerequisite.title}" might help.';
 }
 
+/// A possible mix-up, suggested only after the same reviewed misconception
+/// showed up in first answers to at least two different questions (master
+/// plan v2.6 §10.6 `concept_misconception`). A hypothesis, never a label on
+/// the learner; it offers a contrastive explanation and a *new* question,
+/// never the same question again as proof.
+class MisconceptionSuggestion {
+  const MisconceptionSuggestion({
+    required this.misconception,
+    required this.questions,
+    this.nextItemId,
+  });
+
+  final BridgeMisconception misconception;
+
+  /// Distinct questions whose first answer showed it.
+  final int questions;
+
+  /// An unanswered question in this Bridge to try next, if any.
+  final String? nextItemId;
+
+  String get reason =>
+      'Your first answers on $questions questions match a common mix-up: '
+      '${misconception.label}.';
+}
+
 /// Rules-first gap signals for the Bridge pilot (master plan v2.6 §10.6,
 /// PR-D). No learned model, no server data, no mastery writes.
 class GapSignalService {
@@ -74,6 +105,47 @@ class GapSignalService {
     if (missed >= supportedMisses) return GapEvidenceTier.supported;
     if (missed == 1) return GapEvidenceTier.suspected;
     return GapEvidenceTier.none;
+  }
+
+  /// Distinct questions needed before a misconception is suggested.
+  static const misconceptionQuestions = 2;
+
+  /// At most one misconception suggestion for [bridge]. Disputed answers
+  /// never count; [dismissed] holds misconception ids the learner said
+  /// were not the issue.
+  static MisconceptionSuggestion? proposeMisconception({
+    required BridgeLesson bridge,
+    required Iterable<CheckAttempt> attempts,
+    required Set<String> dismissed,
+  }) {
+    final byTag = <String, Set<String>>{};
+    for (final a in attempts) {
+      final tag = a.misconceptionId;
+      if (a.disputed || a.firstAttemptCorrect || tag == null) continue;
+      byTag.putIfAbsent(tag, () => {}).add(a.itemId);
+    }
+    final answered = {for (final a in attempts) a.itemId};
+    // Reviewed order: the Bridge's own misconception list.
+    for (final m in bridge.misconceptions) {
+      final items = byTag[m.misconceptionId] ?? const <String>{};
+      if (items.length < misconceptionQuestions ||
+          dismissed.contains(m.misconceptionId)) {
+        continue;
+      }
+      String? next;
+      for (final c in bridge.checks) {
+        if (!answered.contains(c.itemId)) {
+          next = c.itemId;
+          break;
+        }
+      }
+      return MisconceptionSuggestion(
+        misconception: m,
+        questions: items.length,
+        nextItemId: next,
+      );
+    }
+    return null;
   }
 
   /// At most one suggestion: the first prerequisite of [bridge] (in its

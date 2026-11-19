@@ -1,7 +1,7 @@
 {
   "bridge_version": 1,
   "bridge_id": "bridge-percent-change",
-  "content_version": "1.0.0",
+  "content_version": "1.1.0",
   "title": "Percent change: how much did it grow or shrink?",
   "concept_id": "percent-change",
   "primary_objective": {
@@ -83,7 +83,7 @@
       "inputs": { "original": 250, "new": 200 },
       "options": [
         { "option_id": "a", "text": "−20% (a 20% decrease)", "value": -20 },
-        { "option_id": "b", "text": "−25% (a 25% decrease)", "value": -25 },
+        { "option_id": "b", "text": "−25% (a 25% decrease)", "value": -25, "misconception_id": "pc-new-value-as-base" },
         { "option_id": "c", "text": "+20% (a 20% increase)", "value": 20 },
         { "option_id": "d", "text": "−50% (a 50% decrease)", "value": -50 }
       ],
@@ -100,6 +100,29 @@
       "answer": "33.3",
       "accepts_percent_sign": true,
       "feedback": "The change is 10. 10 ÷ 30 = 0.3333…, and × 100 that is 33.33…, which rounds to 33.3%."
+    },
+    {
+      "item_id": "pc-check-4",
+      "kind": "choice",
+      "prompt": "A jacket cost $120. Now it costs $90. What is the percent change in price?",
+      "template": "percent_change",
+      "inputs": { "original": 120, "new": 90 },
+      "options": [
+        { "option_id": "a", "text": "−25% (a 25% decrease)", "value": -25 },
+        { "option_id": "b", "text": "−33.3% (a 33.3% decrease)", "value": "-33.3", "misconception_id": "pc-new-value-as-base" },
+        { "option_id": "c", "text": "+25% (a 25% increase)", "value": 25 },
+        { "option_id": "d", "text": "−20% (a 20% decrease)", "value": -20 }
+      ],
+      "correct_option_id": "a",
+      "feedback": "The change is 90 − 120 = −30. Divide by the original price: −30 ÷ 120 = −0.25, which is −25%. Dividing by 90 instead gives about −33.3%."
+    }
+  ],
+  "misconceptions": [
+    {
+      "misconception_id": "pc-new-value-as-base",
+      "label": "dividing by the new amount instead of the original",
+      "contrast": "Percent change compares the change with where you started. It is easy to divide by the new amount instead. For $250 to $200 that gives 50 ÷ 200 = 25%, but the change is really 50 ÷ 250 = 20%, a 20% decrease. Always divide the change by the original amount.",
+      "source_ids": ["openstax-prealgebra-2e-6-2"]
     }
   ],
   "return_cue": "Back to your lesson: use the same three steps. Find the change, divide by the original, then multiply by 100.",

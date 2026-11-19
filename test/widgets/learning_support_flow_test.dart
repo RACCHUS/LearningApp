@@ -152,6 +152,9 @@ void main() {
     final result = find.byKey(const Key('bridge-check-result-pc-check-1'));
     await reveal(tester, input);
     await tester.enterText(input, 'fifteen');
+    // Keep the button clear of the app bar before tapping it.
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
     await tester.tap(submit);
     await tester.pump();
     expect(tester.widget<Text>(result).data, contains('Type a number'));
