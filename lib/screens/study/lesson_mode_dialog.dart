@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/learning_support/study_help_context.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,7 +62,15 @@ class _LessonModeDialogState extends ConsumerState<LessonModeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final lessonContent = ref.watch(lessonProvider(widget.lessonId)).asData?.value.lessonContent ?? [];
+    final lessonData = ref.watch(lessonProvider(widget.lessonId)).asData?.value;
+    final lessonContent = lessonData?.lessonContent ?? [];
+    final help = lessonData == null
+        ? null
+        : StudyHelpContext(
+            lessonId: widget.lessonId,
+            lessonTitle: lessonData.lesson.title,
+            tags: lessonData.lesson.tags,
+          );
     return AlertDialog(
       title: const Text('Choose Study Mode'),
       content: Column(
@@ -100,6 +109,7 @@ class _LessonModeDialogState extends ConsumerState<LessonModeDialog> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => FlashcardScreen(
+                      helpContext: help,
                       terms: lessonContent.whereType<TermContent>().map((c) => Term.fromTermContent(c)).toList(),
                     ),
                   ),
@@ -123,6 +133,7 @@ class _LessonModeDialogState extends ConsumerState<LessonModeDialog> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => McqScreen(
+                      helpContext: help,
                       questions: lessonContent.whereType<QuestionContent>().map((c) => Question(
                         id: c.id,
                         questionText: c.questionText,
@@ -154,6 +165,7 @@ class _LessonModeDialogState extends ConsumerState<LessonModeDialog> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ConceptScreen(
+                      helpContext: help,
                       concepts: lessonContent.whereType<ConceptContent>().toList(),
                     ),
                   ),
