@@ -23,9 +23,12 @@ select ok(not has_function_privilege('anon',
 select ok((select relrowsecurity from pg_class
             where oid = 'public.learning_check_disputes'::regclass),
   'row level security is on');
-select is((select enabled or release_ready from private.site_feature_controls
-            where feature_key = 'learning.check_disputes'), false,
-  'gate seeded OFF and not release-ready');
+select is((select enabled and release_ready from private.site_feature_controls
+            where feature_key = 'learning.check_disputes'), true,
+  'gate activated by the owner-approved 20261119030000');
+-- Keep the OFF-path coverage: switch it off inside this rolled-back test.
+update private.site_feature_controls set enabled = false, release_ready = false
+ where feature_key = 'learning.check_disputes';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c0730000-0000-4000-8000-00000000000a', true);

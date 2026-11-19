@@ -19,9 +19,12 @@ select ok(not has_function_privilege('authenticated',
   'learners cannot call the evaluator');
 select ok(not has_function_privilege('anon', 'public.parametric_next_item(text)', 'EXECUTE'),
   'anonymous users cannot get items');
-select is((select enabled or release_ready from private.site_feature_controls
-            where feature_key = 'content.parametric_practice'), false,
-  'gate seeded OFF and not release-ready');
+select is((select enabled and release_ready from private.site_feature_controls
+            where feature_key = 'content.parametric_practice'), true,
+  'gate activated by the owner-approved 20261119030000');
+-- Keep the OFF-path coverage: switch it off inside this rolled-back test.
+update private.site_feature_controls set enabled = false, release_ready = false
+ where feature_key = 'content.parametric_practice';
 select is(
   (select array_agg(c.column_name::text order by c.ordinal_position)
      from information_schema.columns c
