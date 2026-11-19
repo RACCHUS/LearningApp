@@ -10,7 +10,10 @@ import 'package:learning_pwa/services/content_generation/lesson_composer.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
+import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
+import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
+import 'package:learning_pwa/widgets/lesson/ai_chat_profile_section.dart';
 
 /// Additive slot-based manual generator (master plan v2.6 §5, PR-C).
 ///
@@ -46,8 +49,15 @@ class _ManualGenerationV2ScreenState
   String? _importError;
   ManualSaveOutcome? _saveOutcome;
   SavedManualJob? _offer;
+  CapabilityProfiles _profiles = const CapabilityProfiles();
+
+  /// The batch and mode of the last copied prompt. A checked reply counts
+  /// toward the capability profile once, and only after a prompt copy.
+  ({List<String> batch, ManualOutputMode mode})? _awaitingReply;
 
   ManualJobStore get _store => ref.read(manualJobStoreProvider);
+  ModelCapabilityStore get _capabilities =>
+      ref.read(modelCapabilityStoreProvider);
   String get _owner => ref.read(manualJobOwnerProvider);
 
   @override
@@ -55,11 +65,80 @@ class _ManualGenerationV2ScreenState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !ref.read(manualGenerationV2EnabledProvider)) return;
+      final profiles = await _capabilities.load(_owner);
+      if (mounted) setState(() => _applyProfiles(profiles));
       final saved = await _store.load(_owner);
       if (mounted && saved != null && _session == null) {
         setState(() => _offer = saved);
       }
     });
+  }
+
+  /// Loads [profiles] and starts from the selected chat's suggestion.
+  void _applyProfiles(CapabilityProfiles profiles) {
+    _profiles = profiles;
+    final label = profiles.selected;
+    if (label != null) _useSuggestion(profiles.profileFor(label));
+  }
+
+  void _useSuggestion(ModelCapabilityProfile p) {
+    _tier = p.suggestedTier;
+    final mode = p.suggestedMode;
+    if (mode != null) _lines = mode == ManualOutputMode.lines;
+  }
+
+  void _selectAi(AiChatLabel? label) {
+    setState(() {
+      _profiles = CapabilityProfiles(
+        selected: label,
+        profiles: _profiles.profiles,
+      );
+      if (label != null) _useSuggestion(_profiles.profileFor(label));
+    });
+    _capabilities.save(_owner, _profiles);
+  }
+
+  void _forgetAi(AiChatLabel label) {
+    setState(() {
+      _profiles = CapabilityProfiles(
+        selected: _profiles.selected,
+        profiles: {..._profiles.profiles}..remove(label),
+      );
+    });
+    _capabilities.save(_owner, _profiles);
+  }
+
+  Future<void> _copyProfiles() async {
+    await Clipboard.setData(
+      ClipboardData(text: ModelCapabilityStore.encode(_owner, _profiles)),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Copied what this device has learned.')),
+    );
+  }
+
+  /// Counts one checked reply toward the selected chat's profile.
+  void _observe(ManualJobSession s, PasteOutcome outcome) {
+    final label = _profiles.selected;
+    final awaiting = _awaitingReply;
+    if (label == null || awaiting == null) return;
+    _awaitingReply = null;
+    final updated = _profiles
+        .profileFor(label)
+        .record(
+          ReplyObservation.from(
+            mode: awaiting.mode,
+            requested: awaiting.batch,
+            outcome: outcome,
+            nowAccepted: s.accepted.keys.toSet(),
+          ),
+        );
+    _profiles = CapabilityProfiles(
+      selected: label,
+      profiles: {..._profiles.profiles, label: updated},
+    );
+    _capabilities.save(_owner, _profiles);
   }
 
   Future<void> _persist() async {
@@ -141,6 +220,10 @@ class _ManualGenerationV2ScreenState
 
   Future<void> _copyPrompt(ManualJobSession s) async {
     await Clipboard.setData(ClipboardData(text: _prompt(s)));
+    _awaitingReply = (
+      batch: s.nextBatch(_tier),
+      mode: _lines ? ManualOutputMode.lines : ManualOutputMode.package,
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -156,7 +239,7 @@ class _ManualGenerationV2ScreenState
 
   void _check(ManualJobSession s) {
     if (_paste.text.trim().isEmpty) return;
-    setState(() => s.applyPaste(_paste.text));
+    setState(() => _observe(s, s.applyPaste(_paste.text)));
     _persist();
   }
 
@@ -323,6 +406,20 @@ class _ManualGenerationV2ScreenState
                   onSelected: (v) => setState(() => _terms = v),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            AiChatProfileSection(
+              selected: _profiles.selected,
+              profile: _profiles.selected == null
+                  ? null
+                  : _profiles.profileFor(_profiles.selected!),
+              tier: _tier,
+              onSelect: _selectAi,
+              onUseSuggestion: () => setState(
+                () => _useSuggestion(_profiles.profileFor(_profiles.selected!)),
+              ),
+              onForget: () => _forgetAi(_profiles.selected!),
+              onCopy: _copyProfiles,
             ),
             const SizedBox(height: 12),
             Text(
