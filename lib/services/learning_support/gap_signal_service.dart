@@ -76,6 +76,33 @@ class GapSignalService {
     return GapEvidenceTier.none;
   }
 
+  /// A suggestion from the main lesson's own practice (PR-D main-lesson
+  /// evidence): the same two-distinct-misses rule as inside a Bridge, then
+  /// the most specific Bridge that is not dismissed and can be opened.
+  static GapSuggestion? proposeForLesson({
+    required Map<String, bool> firstAnswers,
+    required BridgeLibrary library,
+    required Set<String> dismissed,
+    required bool Function(BridgeLesson bridge) canOpen,
+  }) {
+    final attempts = [
+      for (final e in firstAnswers.entries)
+        CheckAttempt(itemId: e.key, firstAttemptCorrect: e.value),
+    ];
+    final tier = tierFor(attempts);
+    if (tier != GapEvidenceTier.supported) return null;
+    for (final b in library.offerOrder) {
+      if (dismissed.contains(b.bridgeId) || !canOpen(b)) continue;
+      return GapSuggestion(
+        prerequisite: b,
+        tier: tier,
+        missed: attempts.where((a) => !a.firstAttemptCorrect).length,
+        counted: attempts.length,
+      );
+    }
+    return null;
+  }
+
   /// At most one suggestion: the first prerequisite of [bridge] (in its
   /// `builds_on` order) that exists, was not dismissed and can be opened
   /// within the help trail's depth and cycle limits.
