@@ -1,7 +1,7 @@
 -- ====================================================================
 -- LearningApp Consolidated Turnkey Self-Hosting Database Schema Bundle
 -- Automatically compiled from 135 immutable migrations
--- Generated: 2026-11-19T20:19:53.672818Z
+-- Generated: 2026-11-19T20:21:11.452133Z
 -- ====================================================================
 
 BEGIN;
@@ -45076,6 +45076,10 @@ INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261
 -- it (contributions) or a moderator approves it (Wanted needs), and
 -- takedown and reporting work even with the switches off.
 --
+-- Also activates content.external_companion (link-only outside reading for
+-- Bridges, with its own auto-checked questions): the three links were
+-- re-checked on 2026-11-19 and respond with HTTP 200.
+--
 -- Function bodies are copied from 20261112070000 / 20261113020000 with only
 -- the self-check changed.
 
@@ -45219,7 +45223,8 @@ grant execute on function public.decide_refresh_proposal(uuid, boolean, text) to
 WITH targets(feature_key) AS (
   VALUES ('content.public_contribution'),
          ('content.refresh_proposals'),
-         ('content.wanted_board')
+         ('content.wanted_board'),
+         ('content.external_companion')
 ),
 before AS (
   SELECT c.feature_key, c.enabled, c.maturity, c.revision
