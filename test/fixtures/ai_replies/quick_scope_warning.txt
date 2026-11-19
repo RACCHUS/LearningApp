@@ -1,0 +1,89 @@
+⚠️ **SCOPE WARNING**: VLOOKUP is a good size for one lesson, but lookups in general are broad.
+
+**However, here's a comprehensive introduction lesson:**
+
+---
+
+{
+  "lesson": {
+    "title": "Excel VLOOKUP Basics",
+    "description": "Learn how VLOOKUP finds a value in the first column of a table and returns a matching value from another column. You will read each argument, choose exact match, and fix the most common errors.",
+    "estimated_duration_minutes": 15,
+    "difficulty_level": "beginner",
+    "tags": [
+      "excel",
+      "vlookup",
+      "spreadsheets"
+    ]
+  },
+  "content": [
+    {
+      "type": "term",
+      "title": "Lookup value",
+      "content": "The value VLOOKUP searches for in the first column of the table, such as a product ID.",
+      "example": "In =VLOOKUP(A2, D2:F20, 3, FALSE), A2 is the lookup value."
+    },
+    {
+      "type": "term",
+      "title": "Column index number",
+      "content": "The position of the column to return, counted from the left edge of the table range, starting at 1.",
+      "example": "In the range D2:F20, column F is column index 3."
+    },
+    {
+      "type": "concept",
+      "title": "How VLOOKUP searches",
+      "content": "VLOOKUP looks down the first (leftmost) column of the table range until it finds the lookup value, then moves right to the column given by the column index number and returns that cell. It can only look to the right of the first column.",
+      "key_points": [
+        "It always searches the leftmost column of the range",
+        "The column index counts from that leftmost column",
+        "It returns the first match it finds"
+      ]
+    },
+    {
+      "type": "concept",
+      "title": "Exact match with FALSE",
+      "content": "The last argument controls matching. FALSE (or 0) asks for an exact match and returns #N/A when the value is missing. TRUE or leaving it out asks for an approximate match, which only works when the first column is sorted in ascending order.",
+      "key_points": [
+        "Use FALSE for IDs, names and codes",
+        "Approximate match needs sorted data",
+        "#N/A usually means the value was not found"
+      ]
+    },
+    {
+      "type": "mcq",
+      "question": "In =VLOOKUP(A2, D2:F20, 3, FALSE), which column's value is returned?",
+      "options": [
+        "Column D",
+        "Column E",
+        "Column F",
+        "Column G"
+      ],
+      "correct_answer": "Column F",
+      "explanation": "The column index 3 counts from the first column of the range D2:F20: D is 1, E is 2, F is 3."
+    },
+    {
+      "type": "mcq",
+      "question": "Your VLOOKUP returns #N/A for a product ID you can see in the table. What is the most likely cause?",
+      "options": [
+        "The column index number is too small",
+        "The ID has an extra space or is stored as text",
+        "The formula uses FALSE",
+        "The table range is too large"
+      ],
+      "correct_answer": "The ID has an extra space or is stored as text",
+      "explanation": "With exact match, the lookup value must match exactly. A trailing space or a number stored as text makes them different, so VLOOKUP reports #N/A."
+    },
+    {
+      "type": "mcq",
+      "question": "Why can't VLOOKUP return a value from a column to the left of the lookup column?",
+      "options": [
+        "It only searches the leftmost column and returns columns to its right",
+        "Excel blocks formulas that look left",
+        "The column index number cannot be 1",
+        "It needs the data sorted first"
+      ],
+      "correct_answer": "It only searches the leftmost column and returns columns to its right",
+      "explanation": "VLOOKUP searches the first column of the range, and the column index counts to the right from there, so columns to the left cannot be reached."
+    }
+  ]
+}

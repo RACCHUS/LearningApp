@@ -6,6 +6,7 @@ import 'package:learning_pwa/widgets/content_quality_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_feedback.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
+import 'package:learning_pwa/services/lesson/pasted_json.dart';
 
 /// Enhanced JSON import widget with live preview, better validation, and improved UX
 class EnhancedJsonImportWidget extends StatefulWidget {
@@ -151,8 +152,28 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       return;
     }
 
+    final pasted = PastedJson.read(jsonText);
+    if (pasted.json == null) {
+      setState(() {
+        _validationError = pasted.error;
+        _validationWarnings.clear();
+        _validationSuggestions = LessonImportFeedback.jsonSuggestions(
+          pasted.error ?? '',
+        );
+        _parsedJson = null;
+        _lessonPreview = null;
+      });
+      return;
+    }
+    final extractedNote = pasted.extracted
+        ? const [
+            'Took the lesson JSON out of the surrounding text. Nothing inside '
+                'it was changed.',
+          ]
+        : const <String>[];
+
     try {
-      final parsed = jsonDecode(jsonText) as Map<String, dynamic>;
+      final parsed = pasted.json!;
       
       // The importer's own normalize + preflight decides importability, so
       // a green preview cannot end in an import error (plan v2.6 §14.9).
@@ -174,7 +195,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
           _validationError = LessonImportFeedback.formatValidationErrors(
             preview.issues.map((i) => i.toString()).toList(),
           );
-          _validationWarnings = [...notSaved, ...tips];
+          _validationWarnings = [...extractedNote, ...notSaved, ...tips];
           _validationSuggestions = LessonImportFeedback.suggestionsFor(
             preview.issues.map((i) => i.message).toList(),
           );
@@ -184,7 +205,7 @@ class _EnhancedJsonImportWidgetState extends State<EnhancedJsonImportWidget>
       } else {
         setState(() {
           _validationError = null;
-          _validationWarnings = [...notSaved, ...tips];
+          _validationWarnings = [...extractedNote, ...notSaved, ...tips];
           _validationSuggestions.clear();
           _parsedJson = parsed;
           _lessonPreview = LessonImportFeedback.previewSummary(parsed, preview);
