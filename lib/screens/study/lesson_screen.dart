@@ -5,6 +5,7 @@ import 'package:learning_pwa/utils/web_utils.dart';
 import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 // ...existing code...
+import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/lesson_progress_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
@@ -541,6 +542,15 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                                         onInitialBlockHandled: () => ref
                                             .read(pendingReturnBlockProvider(widget.lessonId).notifier)
                                             .state = null,
+                                        // Practice only: feeds dismissible
+                                        // help suggestions, never progress.
+                                        onPracticeAnswered: (itemId, correct) =>
+                                            recordLessonPractice(
+                                              ref,
+                                              widget.lessonId,
+                                              itemId,
+                                              correct,
+                                            ),
                                       ),
                                     ),
                                     loading: () => const Center(child: CircularProgressIndicator()),

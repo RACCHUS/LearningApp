@@ -9,10 +9,17 @@ class PracticePromptBlockWidget extends StatefulWidget {
   final LessonBlock block;
   final double fontSizeFactor;
 
+  /// Called once, the first time the answer is revealed after the learner
+  /// picked an option, with whether that pick matches the stated answer.
+  /// Not called without a pick, or when the answer does not match exactly
+  /// one option (it cannot be checked). Practice only, never progress.
+  final ValueChanged<bool>? onFirstChecked;
+
   const PracticePromptBlockWidget({
     super.key,
     required this.block,
     this.fontSizeFactor = 1.0,
+    this.onFirstChecked,
   });
 
   @override
@@ -23,6 +30,22 @@ class PracticePromptBlockWidget extends StatefulWidget {
 class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
   bool _revealed = false;
   int? _selectedOptionIndex;
+  bool _reported = false;
+
+  /// Reports the first checked pick, if it can be checked.
+  void _reportFirstCheck(List<String>? options, String? answer) {
+    if (_reported || widget.onFirstChecked == null) return;
+    final pick = _selectedOptionIndex;
+    if (pick == null || options == null || answer == null) return;
+    final key = answer.trim();
+    final matches = [
+      for (final (i, o) in options.indexed)
+        if (o.trim() == key) i,
+    ];
+    if (key.isEmpty || matches.length != 1) return;
+    _reported = true;
+    widget.onFirstChecked!(matches.single == pick);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +240,7 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                     children: [
                       ElevatedButton.icon(
                         onPressed: () {
+                          if (!_revealed) _reportFirstCheck(options, answer);
                           setState(() => _revealed = !_revealed);
                         },
                         icon: Icon(
