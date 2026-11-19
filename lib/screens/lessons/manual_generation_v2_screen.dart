@@ -12,6 +12,8 @@ import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
+import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
+import 'package:learning_pwa/models/content_generation/content_resolution_decision.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
 import 'package:learning_pwa/widgets/lesson/ai_chat_profile_section.dart';
 
@@ -49,6 +51,10 @@ class _ManualGenerationV2ScreenState
   String? _importError;
   ManualSaveOutcome? _saveOutcome;
   SavedManualJob? _offer;
+
+  /// A Reuse Gate result waiting for the learner's choice.
+  ReuseGateResult? _reuse;
+  ManualJobRequest? _reuseRequest;
   CapabilityProfiles _profiles = const CapabilityProfiles();
 
   /// The batch and mode of the last copied prompt. A checked reply counts
@@ -230,18 +236,99 @@ class _ManualGenerationV2ScreenState
     super.dispose();
   }
 
-  void _makePlan() {
+  /// Checks for existing content first (Reuse Gate, §6.3). When something
+  /// already covers the ideas, the plan waits for the learner to open it,
+  /// plan only what is missing, or make their own version anyway.
+  Future<void> _makePlan() async {
+    final ManualJobRequest request;
     try {
-      final job = ManualJob.plan(
-        ManualJobRequest(
-          subject: _subject.text,
-          concepts: _ideas.text.split('\n'),
-          questionsPerConcept: _questions,
-          includeTerms: _terms,
-        ),
+      request = ManualJobRequest(
+        subject: _subject.text,
+        concepts: _ideas.text.split('\n'),
+        questionsPerConcept: _questions,
+        includeTerms: _terms,
       );
+    } on ArgumentError catch (e) {
+      setState(() => _planError = '${e.message}');
+      return;
+    }
+    List<ReuseSource> sources;
+    try {
+      sources = await ref
+          .read(reuseSourcesProvider.future)
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      sources = const [];
+    }
+    if (!mounted) return;
+    final gate = ReuseGate.evaluate(
+      subject: request.subject,
+      ideas: request.concepts,
+      sources: sources,
+    );
+    if (gate.suggestsReuse) {
       setState(() {
-        _session = ManualJobSession(job);
+        _reuse = gate;
+        _reuseRequest = request;
+        _planError = null;
+      });
+      return;
+    }
+    _startPlan(request, gate.decision);
+  }
+
+  /// "Make my own version": the learner's explicit override is recorded.
+  void _overrideReuse() {
+    final request = _reuseRequest;
+    final gate = _reuse;
+    if (request == null || gate == null) return;
+    _startPlan(
+      request,
+      ContentResolutionDecision(
+        kind: ContentResolutionKind.generate,
+        reason:
+            'Learner chose to make their own version. ${gate.decision.reason}',
+        eligibleAssetRef: gate.decision.eligibleAssetRef,
+      ),
+    );
+  }
+
+  /// "Plan only what is missing": keep the ideas nothing covers yet.
+  void _planMissing() {
+    final request = _reuseRequest;
+    final gate = _reuse;
+    if (request == null || gate == null) return;
+    final missing = [
+      for (final (i, c) in request.concepts.indexed)
+        if (!gate.coveredIdeas.contains(i)) c,
+    ];
+    if (missing.isEmpty) return;
+    _ideas.text = missing.join('\n');
+    _startPlan(
+      ManualJobRequest(
+        subject: request.subject,
+        concepts: missing,
+        questionsPerConcept: request.questionsPerConcept,
+        includeTerms: request.includeTerms,
+      ),
+      ContentResolutionDecision(
+        kind: ContentResolutionKind.adapt,
+        reason: 'Planned only uncovered ideas. ${gate.decision.reason}',
+        eligibleAssetRef: gate.decision.eligibleAssetRef,
+      ),
+    );
+  }
+
+  void _startPlan(
+    ManualJobRequest request,
+    ContentResolutionDecision decision,
+  ) {
+    try {
+      final job = ManualJob.plan(request);
+      setState(() {
+        _reuse = null;
+        _reuseRequest = null;
+        _session = ManualJobSession(job, resolution: decision);
         _offer = null;
         _planError = null;
         _importError = null;
@@ -526,9 +613,81 @@ class _ManualGenerationV2ScreenState
               onPressed: _makePlan,
               child: Text(s == null ? 'Make plan' : 'Start a new plan'),
             ),
+            if (_reuse != null) _reuseCard(_reuse!, theme),
             if (_offer != null) _resumeCard(_offer!, theme),
             if (s != null) _saveStatus(s, theme),
             if (s != null) ..._jobSections(s, theme, heading),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _reuseCard(ReuseGateResult gate, ThemeData theme) {
+    final complete = gate.decision.kind == ContentResolutionKind.exactReuse;
+    final ideas = _reuseRequest?.concepts ?? const <String>[];
+    final coveredNames = [
+      for (final (i, c) in ideas.indexed)
+        if (gate.coveredIdeas.contains(i)) c,
+    ];
+    return Card(
+      key: const Key('manual_v2_reuse_card'),
+      margin: const EdgeInsets.only(top: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              complete ? 'We already have this' : 'Some of this already exists',
+              style: theme.textTheme.titleSmall,
+            ),
+            Text(
+              complete
+                  ? 'You can open it now, without using your AI chat.'
+                  : 'Already covered: ${coveredNames.join(', ')}.',
+              key: const Key('manual_v2_reuse_reason'),
+            ),
+            for (final c in gate.candidates)
+              ListTile(
+                key: Key(
+                  'manual_v2_reuse_${c.source.kind.name}_${c.source.id}',
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  c.source.kind == ReuseSourceKind.lesson
+                      ? Icons.menu_book_outlined
+                      : Icons.school_outlined,
+                ),
+                title: Text(c.source.title),
+                subtitle: Text(
+                  '${c.source.kind == ReuseSourceKind.lesson ? 'Lesson' : 'Short help lesson (Learning help)'}'
+                  ' · covers ${c.coveredIdeas.length} of ${ideas.length}',
+                ),
+                trailing: c.source.kind == ReuseSourceKind.lesson
+                    ? const Icon(Icons.open_in_new)
+                    : null,
+                onTap: c.source.kind == ReuseSourceKind.lesson
+                    ? () => context.push('/lesson/${c.source.id}')
+                    : null,
+              ),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (!complete)
+                  FilledButton(
+                    key: const Key('manual_v2_reuse_missing'),
+                    onPressed: _planMissing,
+                    child: const Text('Plan only what is missing'),
+                  ),
+                TextButton(
+                  key: const Key('manual_v2_reuse_override'),
+                  onPressed: _overrideReuse,
+                  child: const Text('Make my own version'),
+                ),
+              ],
+            ),
           ],
         ),
       ),

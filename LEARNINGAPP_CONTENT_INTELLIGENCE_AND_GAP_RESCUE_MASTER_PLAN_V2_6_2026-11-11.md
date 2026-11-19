@@ -29,6 +29,7 @@ This log records progress only; it does not change any decision above. Every new
 | Bridge starter set (3 Bridges) | Merged; Percent change and Excel percent format now 1.1.0 | #232, #320 |
 | PR-B quick rescue (`learning.quick_rescue`) | Pilot plus exact return after refresh; Learning help also on the Flashcards, Questions and Concepts screens opened from a lesson | #233, #256, this PR |
 | PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3), optional handshake probe (A.1); clipboard and refresh fixes found by browser testing | #236, #254, #255, #316, #318, #319 |
+| Reuse Gate (§6.3, P1.1 first slice) | Before a manual-generation plan, readable catalog lessons and Bridges are matched without model calls; a covering match pauses the plan ("We already have this", open it / plan only what is missing / make my own version); the decision and reason are saved with the job | this PR |
 | PR-D gap suggestions (`learning.auto_gap_suggestions`) | Rule-based suggestions; nested prerequisites with depth and cycle limits; misconception labels on answer options (two different questions required); main-lesson practice can prompt a dismissible suggestion | #237, #320, #322 |
 | PR-D disputed checks (`learning.check_disputes`) | Learners send a disputed Bridge check for review; moderators uphold (that check version is hidden and never counts) or dismiss. Deployed 2026-11-19 | #317 |
 | PR-E external companions (`content.external_companion`) | Merged | #238 |
