@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:learning_pwa/models/content_generation/content_resolution_decision.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/services/content_generation/la_gen_parser.dart';
 import 'package:learning_pwa/services/content_generation/la_gen_personal_adapter.dart';
@@ -143,9 +144,12 @@ class PasteOutcome {
 /// In-memory progress for one job: accepted slots accumulate across
 /// pastes, and the next prompt asks only for what is still missing.
 class ManualJobSession {
-  ManualJobSession(this.job);
+  ManualJobSession(this.job, {this.resolution});
 
   final ManualJob job;
+
+  /// How the Reuse Gate resolved this plan (decision provenance, §6.3).
+  final ContentResolutionDecision? resolution;
   final Map<String, LaGenSlot> _accepted = {};
   PasteOutcome? lastOutcome;
 
@@ -213,6 +217,12 @@ class ManualJobSession {
     },
     'job_code': job.plan.jobCode,
     'accepted': acceptedPackage(),
+    if (resolution case final r?)
+      'resolution': {
+        'kind': r.kind.wire,
+        'reason': r.reason,
+        if (r.eligibleAssetRef != null) 'asset': r.eligibleAssetRef,
+      },
   };
 
   /// Restores a saved session. Saved items are re-checked by the same
@@ -231,7 +241,10 @@ class ManualJobSession {
         ),
         jobCode: json['job_code'] as String,
       );
-      final session = ManualJobSession(job);
+      final session = ManualJobSession(
+        job,
+        resolution: _resolutionFrom(json['resolution']),
+      );
       final accepted = json['accepted'];
       if (accepted is String && accepted.isNotEmpty) {
         session.applyPaste(accepted);
@@ -241,6 +254,26 @@ class ManualJobSession {
     } catch (_) {
       return null;
     }
+  }
+
+  /// A saved decision, or `null` when absent or unreadable (it is only an
+  /// audit note and never changes what the session contains).
+  static ContentResolutionDecision? _resolutionFrom(Object? raw) {
+    if (raw is! Map) return null;
+    final kind = ContentResolutionKind.values
+        .where((k) => k.wire == raw['kind'])
+        .firstOrNull;
+    final reason = raw['reason'];
+    final asset = raw['asset'];
+    if (kind == null || reason is! String || reason.length > 300) return null;
+    if (kind == ContentResolutionKind.exactReuse && asset is! String) {
+      return null;
+    }
+    return ContentResolutionDecision(
+      kind: kind,
+      reason: reason,
+      eligibleAssetRef: asset is String ? asset : null,
+    );
   }
 
   /// Personal-lesson JSON (dialect P) from the accepted slots, in plan

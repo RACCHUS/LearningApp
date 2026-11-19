@@ -12,6 +12,7 @@ import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
+import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -34,7 +35,11 @@ void main() {
         });
   });
 
-  Future<void> pump(WidgetTester tester, {required bool enabled}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    required bool enabled,
+    List<ReuseSource> sources = const [],
+  }) async {
     tester.view.physicalSize = const Size(900, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -61,6 +66,7 @@ void main() {
         overrides: [
           manualGenerationV2EnabledProvider.overrideWithValue(enabled),
           manualJobOwnerProvider.overrideWithValue('owner-1'),
+          reuseSourcesProvider.overrideWith((ref) async => sources),
           manualDraftImporterProvider.overrideWithValue((json) async {
             imported.add(json);
             return 'new-lesson';
@@ -452,6 +458,7 @@ void main() {
             (ref) => ref.watch(switchOn),
           ),
           manualJobOwnerProvider.overrideWithValue('owner-1'),
+          reuseSourcesProvider.overrideWith((ref) async => const []),
         ],
       );
       addTearDown(container.dispose);
@@ -511,5 +518,60 @@ void main() {
     )).profileFor(AiChatLabel.copilot);
     expect(saved.probePassed, isTrue);
     expect(saved.replies, 0, reason: 'a probe is not a real reply');
+  });
+
+  group('Reuse Gate', () {
+    const lesson = ReuseSource(
+      kind: ReuseSourceKind.lesson,
+      id: 'lesson-pc',
+      title: 'Percentages: percent change',
+      tags: ['percentages'],
+    );
+
+    Future<void> plan(WidgetTester tester, String ideas) async {
+      await tester.enterText(find.byKey(const Key('manual_v2_ideas')), ideas);
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a covering lesson pauses the plan; override records it', (
+      tester,
+    ) async {
+      await pump(tester, enabled: true, sources: [lesson]);
+      await plan(tester, 'Percent change');
+      expect(find.text('We already have this'), findsOneWidget);
+      expect(
+        find.byKey(const Key('manual_v2_reuse_lesson_lesson-pc')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('manual_v2_reuse_override')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
+      final saved = await ManualJobStore(editorId: 'x').load('owner-1');
+      expect(saved!.session.resolution!.reason, contains('own version'));
+      expect(saved.session.resolution!.eligibleAssetRef, 'lesson:lesson-pc');
+    });
+
+    testWidgets('partly covered: plan only what is missing', (tester) async {
+      await pump(tester, enabled: true, sources: [lesson]);
+      await plan(tester, 'Percent change\nCompound interest');
+      expect(find.text('Some of this already exists'), findsOneWidget);
+      expect(find.textContaining('Already covered: Percent change'), findsOne);
+      await tester.tap(find.byKey(const Key('manual_v2_reuse_missing')));
+      await tester.pumpAndSettle();
+      final saved = await ManualJobStore(editorId: 'x').load('owner-1');
+      expect(saved!.session.job.request.concepts, ['Compound interest']);
+    });
+
+    testWidgets('nothing similar: the plan starts straight away', (
+      tester,
+    ) async {
+      await pump(tester, enabled: true, sources: [lesson]);
+      await plan(tester, 'Compound interest');
+      expect(find.byKey(const Key('manual_v2_reuse_card')), findsNothing);
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
+    });
   });
 }
