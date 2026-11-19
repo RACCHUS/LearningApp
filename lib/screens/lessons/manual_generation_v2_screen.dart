@@ -60,18 +60,31 @@ class _ManualGenerationV2ScreenState
       ref.read(modelCapabilityStoreProvider);
   String get _owner => ref.read(manualJobOwnerProvider);
 
+  /// The owner whose saved job and AI profiles were loaded.
+  String? _loadedOwner;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !ref.read(manualGenerationV2EnabledProvider)) return;
-      final profiles = await _capabilities.load(_owner);
-      if (mounted) setState(() => _applyProfiles(profiles));
-      final saved = await _store.load(_owner);
-      if (mounted && saved != null && _session == null) {
-        setState(() => _offer = saved);
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSaved());
+  }
+
+  /// Loads saved progress and AI profiles once the switch is known to be
+  /// on. After a page refresh the switch settings and the signed-in
+  /// account arrive after the first frame, so this also runs when either
+  /// changes (see [build]); it never replaces a job already in progress.
+  Future<void> _loadSaved() async {
+    if (!mounted || !ref.read(manualGenerationV2EnabledProvider)) return;
+    final owner = _owner;
+    if (owner == _loadedOwner || _session != null) return;
+    _loadedOwner = owner;
+    final profiles = await _capabilities.load(owner);
+    if (!mounted || owner != _owner) return;
+    setState(() => _applyProfiles(profiles));
+    final saved = await _store.load(owner);
+    if (mounted && saved != null && _session == null && owner == _owner) {
+      setState(() => _offer = saved);
+    }
   }
 
   /// Loads [profiles] and starts from the selected chat's suggestion.
@@ -108,15 +121,34 @@ class _ManualGenerationV2ScreenState
     _capabilities.save(_owner, _profiles);
   }
 
-  Future<void> _copyProfiles() async {
-    await Clipboard.setData(
-      ClipboardData(text: ModelCapabilityStore.encode(_owner, _profiles)),
-    );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copied what this device has learned.')),
-    );
+  /// Copies [text] and tells the learner how it went. Browsers may refuse
+  /// clipboard access; that must never throw out of a button handler.
+  Future<bool> _copyText(String text, String done, String failed) async {
+    var ok = true;
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (_) {
+      ok = false;
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(ok ? done : failed)));
+    }
+    return ok;
   }
+
+  Future<void> _copyProfiles() => _copyText(
+    ModelCapabilityStore.encode(_owner, _profiles),
+    'Copied what this device has learned.',
+    "Couldn't copy here. Your browser blocked the clipboard.",
+  );
+
+  /// The next checked reply answers the prompt for the current batch.
+  void _armReply(ManualJobSession s) => _awaitingReply = (
+    batch: s.nextBatch(_tier),
+    mode: _lines ? ManualOutputMode.lines : ManualOutputMode.package,
+  );
 
   /// Counts one checked reply toward the selected chat's profile.
   void _observe(ManualJobSession s, PasteOutcome outcome) {
@@ -167,17 +199,11 @@ class _ManualGenerationV2ScreenState
     if (mounted) setState(() => _offer = null);
   }
 
-  Future<void> _copyProgress(ManualJobSession s) async {
-    await Clipboard.setData(ClipboardData(text: s.acceptedPackage()));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Progress copied as text. Keep it somewhere safe as a backup.',
-        ),
-      ),
-    );
-  }
+  Future<void> _copyProgress(ManualJobSession s) => _copyText(
+    s.acceptedPackage(),
+    'Progress copied as text. Keep it somewhere safe as a backup.',
+    "Couldn't copy here. Your browser blocked the clipboard.",
+  );
 
   @override
   void dispose() {
@@ -219,22 +245,35 @@ class _ManualGenerationV2ScreenState
   );
 
   Future<void> _copyPrompt(ManualJobSession s) async {
-    await Clipboard.setData(ClipboardData(text: _prompt(s)));
-    _awaitingReply = (
-      batch: s.nextBatch(_tier),
-      mode: _lines ? ManualOutputMode.lines : ManualOutputMode.package,
-    );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Prompt copied. Paste it into your AI chat.'),
-      ),
+    // Armed even if the copy fails: the learner can still copy the prompt
+    // by hand from "Show the prompt".
+    _armReply(s);
+    await _copyText(
+      _prompt(s),
+      'Prompt copied. Paste it into your AI chat.',
+      "Couldn't copy automatically. Open \"Show the prompt\" below and "
+          'copy it yourself.',
     );
   }
 
   Future<void> _pasteFromClipboard() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (data?.text != null) setState(() => _paste.text = data!.text!);
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      if (data?.text != null && mounted) {
+        setState(() => _paste.text = data!.text!);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Couldn't read the clipboard here. Paste into the box instead.",
+            ),
+          ),
+        );
+    }
   }
 
   void _check(ManualJobSession s) {
@@ -296,6 +335,10 @@ class _ManualGenerationV2ScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(manualGenerationV2EnabledProvider, (_, on) {
+      if (on) _loadSaved();
+    });
+    ref.listen(manualJobOwnerProvider, (_, __) => _loadSaved());
     final enabled = ref.watch(manualGenerationV2EnabledProvider);
     if (!enabled) {
       return Scaffold(
@@ -584,8 +627,14 @@ class _ManualGenerationV2ScreenState
           label: Text(done == 0 ? 'Copy prompt' : 'Copy prompt for the rest'),
         ),
         ExpansionTile(
+          key: const Key('manual_v2_show_prompt'),
           tilePadding: EdgeInsets.zero,
           title: const Text('Show the prompt'),
+          // Copying by hand from here is the fallback when the clipboard
+          // is blocked, so it counts like "Copy prompt".
+          onExpansionChanged: (open) {
+            if (open) _armReply(s);
+          },
           children: [
             SelectableText(
               _prompt(s),

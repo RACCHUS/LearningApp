@@ -323,4 +323,156 @@ void main() {
       expect((await ModelCapabilityStore().load('owner-1')).profiles, isEmpty);
     });
   });
+
+  group('blocked clipboard (browsers may refuse access)', () {
+    void blockClipboard() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'Clipboard.setData' ||
+                call.method == 'Clipboard.getData') {
+              throw PlatformException(code: 'NotAllowedError');
+            }
+            if (call.method == 'Clipboard.hasStrings') return {'value': false};
+            return null;
+          });
+    }
+
+    String reply(String job) => jsonEncode({
+      'schema': 'la-gen/1.1',
+      'job': job,
+      'items': [
+        {
+          'slot': 'S1',
+          'kind': 'explanation',
+          'concept': 'C1',
+          'title': 'Idea',
+          'text': 'Explained.',
+        },
+      ],
+      'end': 'END-$job',
+    });
+
+    Future<String> planOneSlot(WidgetTester tester) async {
+      await pump(tester, enabled: true);
+      await tester.tap(find.byKey(const Key('manual_v2_ai_claude')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('manual_v2_ideas')), 'Idea');
+      await tester.tap(find.byKey(const Key('manual_v2_questions')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('0 questions per idea').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Key terms'));
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+      final progress = tester
+          .widget<Text>(find.byKey(const Key('manual_v2_progress')))
+          .data!;
+      expect(progress, contains('0 of 1 items ready'));
+      return RegExp(r'Job (J\w{4})').firstMatch(progress)!.group(1)!;
+    }
+
+    Future<void> checkReply(WidgetTester tester, String job) async {
+      await tester.enterText(
+        find.byKey(const Key('manual_v2_paste')),
+        reply(job),
+      );
+      await tester.tap(find.byKey(const Key('manual_v2_check')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Accepted 1 new item(s)'), findsOneWidget);
+    }
+
+    testWidgets('a failed copy explains itself and the reply still counts', (
+      tester,
+    ) async {
+      final job = await planOneSlot(tester);
+      blockClipboard();
+      await tester.tap(find.byKey(const Key('manual_v2_copy_prompt')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining("Couldn't copy automatically"), findsOne);
+
+      await checkReply(tester, job);
+      final p = (await ModelCapabilityStore().load(
+        'owner-1',
+      )).profileFor(AiChatLabel.claude);
+      expect(p.replies, 1);
+      expect(p.clean, 1);
+    });
+
+    testWidgets('copying by hand from "Show the prompt" counts too', (
+      tester,
+    ) async {
+      final job = await planOneSlot(tester);
+      await tester.tap(find.text('Show the prompt'));
+      await tester.pumpAndSettle();
+      await checkReply(tester, job);
+      final p = (await ModelCapabilityStore().load(
+        'owner-1',
+      )).profileFor(AiChatLabel.claude);
+      expect(p.replies, 1);
+    });
+
+    testWidgets('a blocked paste explains itself', (tester) async {
+      await planOneSlot(tester);
+      blockClipboard();
+      await tester.tap(find.text('Paste from clipboard'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining("Couldn't read the clipboard"), findsOne);
+    });
+  });
+
+  testWidgets(
+    'after a refresh, saved work appears once the switch settings arrive',
+    (tester) async {
+      final job = ManualJob.plan(
+        ManualJobRequest(
+          subject: 'Saved topic',
+          concepts: ['Idea'],
+          questionsPerConcept: 0,
+          includeTerms: false,
+        ),
+      );
+      await ManualJobStore(
+        editorId: 'earlier',
+      ).save('owner-1', ManualJobSession(job));
+      await ModelCapabilityStore().save(
+        'owner-1',
+        const CapabilityProfiles(selected: AiChatLabel.gemini),
+      );
+
+      tester.view.physicalSize = const Size(900, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      // Switch settings load after the first frame, as on a page refresh.
+      final switchOn = StateProvider<bool>((ref) => false);
+      final container = ProviderContainer(
+        overrides: [
+          manualGenerationV2EnabledProvider.overrideWith(
+            (ref) => ref.watch(switchOn),
+          ),
+          manualJobOwnerProvider.overrideWithValue('owner-1'),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: ManualGenerationV2Screen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_disabled')), findsOneWidget);
+
+      container.read(switchOn.notifier).state = true;
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_resume_card')), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.byKey(const Key('manual_v2_ai_gemini')))
+            .selected,
+        isTrue,
+      );
+    },
+  );
 }
