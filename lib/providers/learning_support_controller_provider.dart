@@ -11,6 +11,7 @@ import 'package:learning_pwa/services/governance/site_feature_service.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
 import 'package:learning_pwa/services/learning_support/check_dispute_service.dart';
 import 'package:learning_pwa/services/learning_support/external_companion_library.dart';
+import 'package:learning_pwa/services/learning_support/parametric_practice_service.dart';
 import 'package:learning_pwa/services/learning_support/support_session_store.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -103,6 +104,29 @@ void recordLessonPractice(
   if (notifier.state.containsKey(itemId)) return;
   notifier.state = {...notifier.state, itemId: correct};
 }
+
+/// `content.parametric_practice` (master plan v2.6 §6.6). Default OFF and
+/// fails closed; the server re-checks it on every call.
+final parametricPracticeEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.contentParametricPractice,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+final parametricPracticeServiceProvider = Provider<ParametricPracticeService>(
+  (ref) => ParametricPracticeService(),
+);
+
+/// Reviewed families for a concept; empty when switched off or signed out.
+final parametricFamiliesProvider = FutureProvider.autoDispose
+    .family<List<ParametricFamily>, String>((ref, conceptId) async {
+      if (!ref.watch(parametricPracticeEnabledProvider)) return const [];
+      return ref
+          .watch(parametricPracticeServiceProvider)
+          .familiesFor(conceptId);
+    });
 
 /// Bundled companions, validated against the Bridge Library.
 final externalCompanionLibraryProvider =
