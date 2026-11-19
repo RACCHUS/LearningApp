@@ -1,12 +1,24 @@
 import 'package:learning_pwa/models/answer_key.dart';
 
 /// One improvement hint. Hints never block an import or change content.
+/// What a tip is about, so a screen can map it to its own items.
+enum QualityTipKind { lesson, explanation, term, question }
+
 class QualityTip {
-  const QualityTip(this.where, this.message);
+  const QualityTip(
+    this.where,
+    this.message, {
+    this.kind = QualityTipKind.lesson,
+    this.index,
+  });
 
   /// Human-readable location, e.g. "Question 2".
   final String where;
   final String message;
+  final QualityTipKind kind;
+
+  /// Zero-based position among items of [kind] (null for lesson tips).
+  final int? index;
 
   @override
   String toString() => '$where: $message';
@@ -66,6 +78,8 @@ class LessonQualityCheck {
           QualityTip(
             'Explanation ${i + 1}',
             'This is very short. Ask for a few sentences and an example.',
+            kind: QualityTipKind.explanation,
+            index: i,
           ),
         );
       }
@@ -81,12 +95,21 @@ class LessonQualityCheck {
             'Term ${i + 1}',
             'The definition is very short. Ask for a clear one-sentence '
                 'definition.',
+            kind: QualityTipKind.term,
+            index: i,
           ),
         );
       }
       final earlier = seenTerms[name];
       if (name.isNotEmpty && earlier != null) {
-        tips.add(QualityTip('Term ${i + 1}', 'Repeats term ${earlier + 1}.'));
+        tips.add(
+          QualityTip(
+            'Term ${i + 1}',
+            'Repeats term ${earlier + 1}.',
+            kind: QualityTipKind.term,
+            index: i,
+          ),
+        );
       } else {
         seenTerms[name] = i;
       }
@@ -105,7 +128,14 @@ class LessonQualityCheck {
       final norm = AnswerKey.normalize(stem);
       final earlier = seenStems[norm];
       if (norm.isNotEmpty && earlier != null) {
-        tips.add(QualityTip(where, 'Repeats question ${earlier + 1}.'));
+        tips.add(
+          QualityTip(
+            where,
+            'Repeats question ${earlier + 1}.',
+            kind: QualityTipKind.question,
+            index: i,
+          ),
+        );
       } else {
         seenStems[norm] = i;
       }
@@ -117,6 +147,8 @@ class LessonQualityCheck {
             where,
             'Only ${options.length} options. Use 3 to 5 so guessing is '
             'harder.',
+            kind: QualityTipKind.question,
+            index: i,
           ),
         );
       }
@@ -126,6 +158,8 @@ class LessonQualityCheck {
             where,
             'Avoid "all/none of the above": it can often be answered '
             'without knowing the topic.',
+            kind: QualityTipKind.question,
+            index: i,
           ),
         );
       }
@@ -134,6 +168,8 @@ class LessonQualityCheck {
           QualityTip(
             where,
             'Add a short explanation of why the answer is right.',
+            kind: QualityTipKind.question,
+            index: i,
           ),
         );
       }
@@ -154,6 +190,8 @@ class LessonQualityCheck {
             where,
             'The right answer is much longer than the others, which gives '
             'it away. Ask for options of similar length.',
+            kind: QualityTipKind.question,
+            index: i,
           ),
         );
       }
@@ -162,7 +200,12 @@ class LessonQualityCheck {
           norm.contains(normAnswer) &&
           !others.any((o) => norm.contains(AnswerKey.normalize(o)))) {
         tips.add(
-          QualityTip(where, 'The question already contains the answer text.'),
+          QualityTip(
+            where,
+            'The question already contains the answer text.',
+            kind: QualityTipKind.question,
+            index: i,
+          ),
         );
       }
     }

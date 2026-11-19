@@ -283,4 +283,51 @@ void main() {
       );
     });
   });
+
+  group('redo weak items', () {
+    test('discard sets slots aside and the next batch asks for them', () {
+      final s = ManualJobSession(
+        ManualJob.plan(
+          ManualJobRequest(
+            subject: 'X',
+            concepts: ['Y'],
+            questionsPerConcept: 1,
+            includeTerms: false,
+          ),
+          jobCode: 'JABCD',
+        ),
+      );
+      s.applyPaste(
+        '{"schema":"la-gen/1.1","job":"JABCD","items":['
+        '{"slot":"S1","kind":"explanation","concept":"C1","title":"T",'
+        '"text":"Explained here."},'
+        '{"slot":"S2","kind":"mcq","concept":"C1","stem":"Q?",'
+        '"options":["a","b","c"],"answer":"A","why":"Because."}],'
+        '"end":"END-JABCD"}',
+      );
+      expect(s.isComplete, isTrue);
+      expect(s.discard(['S2', 'S9']), ['S2']);
+      expect(s.missing, ['S2']);
+      expect(s.nextBatch(ModelSizeTier.compact), ['S2']);
+    });
+
+    test('fix notes appear only for slots in the batch', () {
+      final j = job();
+      final p = ManualPromptBuilder.build(
+        j,
+        ['S3'],
+        fixNotes: {
+          'S3': ['The right answer is much longer than the others.'],
+          'S4': ['Not in this batch.'],
+        },
+      );
+      expect(p, contains('IMPROVE THESE'));
+      expect(p, contains('- S3: The right answer is much longer'));
+      expect(p, isNot(contains('Not in this batch')));
+      expect(
+        ManualPromptBuilder.build(j, ['S3']),
+        isNot(contains('IMPROVE THESE')),
+      );
+    });
+  });
 }
