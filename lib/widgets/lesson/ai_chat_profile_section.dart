@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
+import 'package:learning_pwa/widgets/lesson/ai_probe_panel.dart';
 
 /// "Which AI chat will you use?" for the slot-based generator (master plan
 /// v2.6 §5.3). Picking one is optional. The app then remembers, on this
@@ -16,6 +17,8 @@ class AiChatProfileSection extends StatelessWidget {
     required this.onUseSuggestion,
     required this.onForget,
     required this.onCopy,
+    required this.onCopyText,
+    required this.onProbeResult,
   });
 
   final AiChatLabel? selected;
@@ -29,6 +32,10 @@ class AiChatProfileSection extends StatelessWidget {
   final VoidCallback onUseSuggestion;
   final VoidCallback onForget;
   final VoidCallback onCopy;
+
+  /// Copies the probe prompt; returns whether the clipboard allowed it.
+  final Future<bool> Function(String text) onCopyText;
+  final ValueChanged<bool> onProbeResult;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +81,7 @@ class AiChatProfileSection extends StatelessWidget {
                   onPressed: onUseSuggestion,
                   child: const Text('Use suggestion'),
                 ),
-              if (p.replies > 0) ...[
+              if (p.replies > 0 || p.probePassed != null) ...[
                 TextButton(
                   key: const Key('manual_v2_ai_copy'),
                   onPressed: onCopy,
@@ -91,6 +98,11 @@ class AiChatProfileSection extends StatelessWidget {
           Text(
             'Only counts are kept (no reply text), on this device only.',
             style: theme.textTheme.bodySmall,
+          ),
+          AiProbePanel(
+            key: ValueKey('probe-${p.label.wire}'),
+            onCopy: onCopyText,
+            onResult: onProbeResult,
           ),
         ],
       ],

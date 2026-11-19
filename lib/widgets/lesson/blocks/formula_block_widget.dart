@@ -18,13 +18,15 @@ class FormulaBlockWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final latex = block.content['latex'] as String? ??
+    final latex =
+        block.content['latex'] as String? ??
         block.content['formula'] as String? ??
         block.content['expression'] as String? ??
         '';
-    final name = block.content['name'] as String? ??
-        block.content['title'] as String?;
-    final explanation = block.content['explanation'] as String? ??
+    final name =
+        block.content['name'] as String? ?? block.content['title'] as String?;
+    final explanation =
+        block.content['explanation'] as String? ??
         block.content['notes'] as String?;
     final variables = block.content['variables'] as Map?;
 
@@ -36,7 +38,9 @@ class FormulaBlockWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 12.0),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1B4B).withValues(alpha: 0.4) : const Color(0xFFEEF2FF),
+        color: isDark
+            ? const Color(0xFF1E1B4B).withValues(alpha: 0.4)
+            : const Color(0xFFEEF2FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? const Color(0xFF4338CA) : const Color(0xFFC7D2FE),
@@ -72,12 +76,17 @@ class FormulaBlockWidget extends StatelessWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8.0,
+                  horizontal: 4.0,
+                ),
                 child: Math.tex(
                   latex,
                   textStyle: TextStyle(
                     fontSize: 18 * fontSizeFactor,
-                    color: isDark ? const Color(0xFFE0E7FF) : const Color(0xFF1E1B4B),
+                    color: isDark
+                        ? const Color(0xFFE0E7FF)
+                        : const Color(0xFF1E1B4B),
                   ),
                   onErrorFallback: (err) {
                     return Text(
@@ -100,7 +109,9 @@ class FormulaBlockWidget extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 13.5 * fontSizeFactor,
                 height: 1.4,
-                color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF3730A3),
+                color: isDark
+                    ? const Color(0xFFC7D2FE)
+                    : const Color(0xFF3730A3),
               ),
             ),
           ],
@@ -127,7 +138,9 @@ class FormulaBlockWidget extends StatelessWidget {
                       '${entry.value}',
                       style: GoogleFonts.inter(
                         fontSize: 12.5 * fontSizeFactor,
-                        color: isDark ? Colors.grey[300] : const Color(0xFF475569),
+                        color: isDark
+                            ? Colors.grey[300]
+                            : const Color(0xFF475569),
                       ),
                     ),
                   ],

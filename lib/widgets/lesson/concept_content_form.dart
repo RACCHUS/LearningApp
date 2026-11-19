@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Form component for creating concept content items
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability.
 /// Handles concept title, description, and optional key points.
 class ConceptContentForm extends StatelessWidget {
@@ -28,7 +28,9 @@ class ConceptContentForm extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -50,9 +52,9 @@ class ConceptContentForm extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Concept title input
           TextFormField(
             controller: titleController,
@@ -69,9 +71,9 @@ class ConceptContentForm extends StatelessWidget {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Concept description input
           TextFormField(
             controller: descriptionController,
@@ -90,9 +92,9 @@ class ConceptContentForm extends StatelessWidget {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Key points input
           TextFormField(
             controller: keyPointsController,
@@ -101,18 +103,21 @@ class ConceptContentForm extends StatelessWidget {
               labelText: 'Key Points (optional)',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.format_list_bulleted),
-              hintText: 'Enter key points, one per line:\n• First important point\n• Second important point\n• Third important point',
+              hintText:
+                  'Enter key points, one per line:\n• First important point\n• Second important point\n• Third important point',
               alignLabelWithHint: true,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Key points helper
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -152,14 +157,14 @@ class ConceptContentForm extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Add button
           ElevatedButton.icon(
             onPressed: () {
               // Validate required fields
-              if (titleController.text.trim().isEmpty || 
+              if (titleController.text.trim().isEmpty ||
                   descriptionController.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -177,15 +182,17 @@ class ConceptContentForm extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Helper text
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
               ),
               borderRadius: BorderRadius.circular(8),
             ),

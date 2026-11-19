@@ -37,11 +37,11 @@ class _GuidedGenerationCompleteViewState
 
   Widget _buildCompleteView(GenerationSession session, ThemeData theme) {
     final assembled = session.assemble();
-    final prettyJson =
-        const JsonEncoder.withIndent('  ').convert(assembled);
+    final prettyJson = const JsonEncoder.withIndent('  ').convert(assembled);
 
     // Check for MCQs needing review
-    final questions = assembled['questions'] as List<Map<String, dynamic>>? ?? [];
+    final questions =
+        assembled['questions'] as List<Map<String, dynamic>>? ?? [];
     final reviewItems = questions
         .where((q) => q['_needs_review'] == true)
         .toList();
@@ -72,8 +72,7 @@ class _GuidedGenerationCompleteViewState
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,10 +81,13 @@ class _GuidedGenerationCompleteViewState
                   children: [
                     Icon(Icons.check_circle, color: Colors.green),
                     SizedBox(width: 8),
-                    Text('Lesson Generation Complete!',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green)),
+                    Text(
+                      'Lesson Generation Complete!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -108,16 +110,18 @@ class _GuidedGenerationCompleteViewState
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.4)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          color: Colors.orange, size: 20),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '${reviewItems.length} MCQ(s) need review',
@@ -132,11 +136,11 @@ class _GuidedGenerationCompleteViewState
                   Text(
                     answerErrorItems.isEmpty
                         ? 'These are quality notes. You can import now and '
-                            'improve them later.'
+                              'improve them later.'
                         : '${answerErrorItems.length} question(s) have no '
-                            'clear correct answer. LearningApp will not guess '
-                            'one. Fix them in the MCQ step (or copy the JSON '
-                            'and correct "correct_answer"), then import.',
+                              'clear correct answer. LearningApp will not guess '
+                              'one. Fix them in the MCQ step (or copy the JSON '
+                              'and correct "correct_answer"), then import.',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 4),
@@ -156,8 +160,7 @@ class _GuidedGenerationCompleteViewState
           ],
 
           // Manifest validation results
-          if (validationResult != null &&
-              !validationResult.isValid) ...[
+          if (validationResult != null && !validationResult.isValid) ...[
             const SizedBox(height: 12),
             _buildValidationCard(validationResult, theme),
           ],
@@ -178,13 +181,19 @@ class _GuidedGenerationCompleteViewState
                   ? null
                   : () => widget.onImport(prettyJson),
               icon: widget.isImporting
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.download),
-              label: Text(widget.isImporting
-                  ? 'Importing…'
-                  : canImport
-                      ? 'Import Lesson'
-                      : 'Fix answers to import'),
+              label: Text(
+                widget.isImporting
+                    ? 'Importing…'
+                    : canImport
+                    ? 'Import Lesson'
+                    : 'Fix answers to import',
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -196,8 +205,8 @@ class _GuidedGenerationCompleteViewState
                     Clipboard.setData(ClipboardData(text: prettyJson));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content:
-                              Text('Lesson JSON copied to clipboard!')),
+                        content: Text('Lesson JSON copied to clipboard!'),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.copy),
@@ -224,8 +233,7 @@ class _GuidedGenerationCompleteViewState
             child: SingleChildScrollView(
               child: SelectableText(
                 prettyJson,
-                style:
-                    const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
               ),
             ),
           ),
@@ -263,7 +271,9 @@ class _GuidedGenerationCompleteViewState
                     children: [
                       const Icon(Icons.info_outline, size: 16),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(issue, style: theme.textTheme.bodySmall)),
+                      Expanded(
+                        child: Text(issue, style: theme.textTheme.bodySmall),
+                      ),
                     ],
                   ),
                 ),
@@ -275,7 +285,9 @@ class _GuidedGenerationCompleteViewState
   }
 
   Widget _buildValidationCard(
-      ManifestValidationResult result, ThemeData theme) {
+    ManifestValidationResult result,
+    ThemeData theme,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -300,25 +312,34 @@ class _GuidedGenerationCompleteViewState
             ),
             if (result.missingItems.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Missing content:',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'Missing content:',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               for (final item in result.missingItems)
                 Text('  • $item', style: theme.textTheme.bodySmall),
             ],
             if (result.terminologyDrifts.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Terminology issues:',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'Terminology issues:',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               for (final drift in result.terminologyDrifts)
                 Text('  • $drift', style: theme.textTheme.bodySmall),
             ],
             if (result.mcqIssues.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('MCQ issues:',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'MCQ issues:',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               for (final issue in result.mcqIssues)
                 Text('  • $issue', style: theme.textTheme.bodySmall),
             ],

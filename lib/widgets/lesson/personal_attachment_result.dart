@@ -12,17 +12,9 @@ const String kPersonalAttachmentSuccessMessage =
 const String kPersonalAttachmentFailureMessage =
     "Lesson created, but we couldn't attach it to this topic";
 
-enum PersonalAttachmentResult {
-  attached,
-  keptInLibrary,
-}
+enum PersonalAttachmentResult { attached, keptInLibrary }
 
-enum AttachmentStatus {
-  idle,
-  attaching,
-  success,
-  failed,
-}
+enum AttachmentStatus { idle, attaching, success, failed }
 
 class PersonalAttachmentController extends ChangeNotifier {
   final UserCurriculumResourceService resourceService;
@@ -121,7 +113,10 @@ Future<PersonalAttachmentResult> handlePersonalStudyAttachment({
       : PersonalAttachmentResult.keptInLibrary;
 }
 
-Future<void> _invalidateTargetAndCatalog(WidgetRef ref, String curriculumNodeId) async {
+Future<void> _invalidateTargetAndCatalog(
+  WidgetRef ref,
+  String curriculumNodeId,
+) async {
   try {
     await ref.read(scopeResolverProvider).invalidateScope();
   } catch (_) {}

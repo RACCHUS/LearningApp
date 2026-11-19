@@ -19,11 +19,13 @@ class ExampleBlockWidget extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final title = block.content['title'] as String? ?? 'Real-World Example';
-    final scenario = block.content['scenario'] as String? ??
+    final scenario =
+        block.content['scenario'] as String? ??
         block.content['body'] as String? ??
         block.content['text'] as String? ??
         '';
-    final explanation = block.content['explanation'] as String? ??
+    final explanation =
+        block.content['explanation'] as String? ??
         block.content['takeaway'] as String?;
 
     return Container(
@@ -43,7 +45,9 @@ class ExampleBlockWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(11),
+              ),
             ),
             child: Row(
               children: [
@@ -54,7 +58,10 @@ class ExampleBlockWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0284C7).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
@@ -97,7 +104,9 @@ class ExampleBlockWidget extends StatelessWidget {
                         p: GoogleFonts.inter(
                           fontSize: 14.5 * fontSizeFactor,
                           height: 1.5,
-                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                          color: isDark
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFF334155),
                         ),
                         strong: const TextStyle(fontWeight: FontWeight.bold),
                         em: const TextStyle(fontStyle: FontStyle.italic),
@@ -114,7 +123,9 @@ class ExampleBlockWidget extends StatelessWidget {
                           : const Color(0xFFF0F9FF),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF0369A1) : const Color(0xFFBAE6FD),
+                        color: isDark
+                            ? const Color(0xFF0369A1)
+                            : const Color(0xFFBAE6FD),
                       ),
                     ),
                     child: Row(
@@ -131,7 +142,9 @@ class ExampleBlockWidget extends StatelessWidget {
                             explanation,
                             style: GoogleFonts.inter(
                               fontSize: 13.5 * fontSizeFactor,
-                              color: isDark ? const Color(0xFFBAE6FD) : const Color(0xFF0369A1),
+                              color: isDark
+                                  ? const Color(0xFFBAE6FD)
+                                  : const Color(0xFF0369A1),
                               height: 1.4,
                             ),
                           ),

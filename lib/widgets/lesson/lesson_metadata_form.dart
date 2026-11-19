@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Form component for lesson metadata (title, description, t                      onFieldSubmitted: (_) => widget.onAddTag(),gs)
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability
 /// and follow single responsibility principle.
 class LessonMetadataForm extends StatefulWidget {
@@ -40,7 +40,7 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             // Title field
             TextFormField(
               controller: widget.titleController,
@@ -60,9 +60,9 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
                 return null;
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Description field
             TextFormField(
               controller: widget.descriptionController,
@@ -80,16 +80,13 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
                 return null;
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Tags section
-            Text(
-              'Tags',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Tags', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            
+
             // Tag input row
             Row(
               children: [
@@ -113,9 +110,9 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Tags display
             if (widget.tags.isNotEmpty) ...[
               Wrap(
@@ -126,7 +123,9 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
                     label: Text(tag),
                     deleteIcon: const Icon(Icons.close, size: 18),
                     onDeleted: () => widget.onRemoveTag(tag),
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
                     labelStyle: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
@@ -138,7 +137,9 @@ class _LessonMetadataFormState extends State<LessonMetadataForm> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.5),
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),

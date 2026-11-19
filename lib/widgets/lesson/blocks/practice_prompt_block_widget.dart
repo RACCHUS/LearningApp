@@ -16,7 +16,8 @@ class PracticePromptBlockWidget extends StatefulWidget {
   });
 
   @override
-  State<PracticePromptBlockWidget> createState() => _PracticePromptBlockWidgetState();
+  State<PracticePromptBlockWidget> createState() =>
+      _PracticePromptBlockWidgetState();
 }
 
 class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
@@ -28,11 +29,13 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final prompt = widget.block.content['prompt'] as String? ??
+    final prompt =
+        widget.block.content['prompt'] as String? ??
         widget.block.content['question'] as String? ??
         '';
     final optionsRaw = widget.block.content['options'] as List?;
-    final answer = widget.block.content['answer'] as String? ??
+    final answer =
+        widget.block.content['answer'] as String? ??
         widget.block.content['correct_answer']?.toString();
     final explanation = widget.block.content['explanation'] as String?;
 
@@ -101,7 +104,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                     'Active Recall Check',
                     style: GoogleFonts.inter(
                       fontSize: 11.5 * widget.fontSizeFactor,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                      color: isDark
+                          ? Colors.grey[400]
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -138,16 +143,25 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                           },
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? theme.colorScheme.primary.withValues(alpha: 0.08)
-                                  : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                                  ? theme.colorScheme.primary.withValues(
+                                      alpha: 0.08,
+                                    )
+                                  : (isDark
+                                        ? const Color(0xFF0F172A)
+                                        : const Color(0xFFF8FAFC)),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: isSelected
                                     ? theme.colorScheme.primary
-                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                    : (isDark
+                                          ? const Color(0xFF334155)
+                                          : const Color(0xFFE2E8F0)),
                               ),
                             ),
                             child: Row(
@@ -164,7 +178,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                                     border: Border.all(
                                       color: isSelected
                                           ? theme.colorScheme.primary
-                                          : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                                          : (isDark
+                                                ? Colors.grey[600]!
+                                                : Colors.grey[400]!),
                                     ),
                                   ),
                                   child: Text(
@@ -182,7 +198,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                                     optionText,
                                     style: GoogleFonts.inter(
                                       fontSize: 14 * widget.fontSizeFactor,
-                                      color: isDark ? Colors.grey[200] : const Color(0xFF1E293B),
+                                      color: isDark
+                                          ? Colors.grey[200]
+                                          : const Color(0xFF1E293B),
                                     ),
                                   ),
                                 ),
@@ -202,11 +220,15 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                           setState(() => _revealed = !_revealed);
                         },
                         icon: Icon(
-                          _revealed ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          _revealed
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
                           size: 16 * widget.fontSizeFactor,
                         ),
                         label: Text(
-                          _revealed ? 'Hide Explanation' : 'Check Recall & Answer',
+                          _revealed
+                              ? 'Hide Explanation'
+                              : 'Check Recall & Answer',
                           style: GoogleFonts.inter(
                             fontSize: 13 * widget.fontSizeFactor,
                             fontWeight: FontWeight.w600,
@@ -214,13 +236,20 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _revealed
-                              ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
+                              ? (isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFE2E8F0))
                               : theme.colorScheme.primary,
                           foregroundColor: _revealed
-                              ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                              ? (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A))
                               : Colors.white,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -239,7 +268,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                             : const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF059669) : const Color(0xFFA7F3D0),
+                          color: isDark
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFA7F3D0),
                         ),
                       ),
                       child: Column(
@@ -248,7 +279,11 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                           if (answer != null && answer.isNotEmpty) ...[
                             Row(
                               children: [
-                                const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF10B981)),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 16,
+                                  color: Color(0xFF10B981),
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Answer: ',
@@ -264,7 +299,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                                     style: GoogleFonts.inter(
                                       fontSize: 13.5 * widget.fontSizeFactor,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.white : const Color(0xFF064E3B),
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF064E3B),
                                     ),
                                   ),
                                 ),
@@ -279,7 +316,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                                 p: GoogleFonts.inter(
                                   fontSize: 13.5 * widget.fontSizeFactor,
                                   height: 1.45,
-                                  color: isDark ? const Color(0xFFD1FAE5) : const Color(0xFF065F46),
+                                  color: isDark
+                                      ? const Color(0xFFD1FAE5)
+                                      : const Color(0xFF065F46),
                                 ),
                               ),
                             ),
@@ -294,7 +333,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: ExcelUploadCard(
-                  exerciseId: widget.block.content['exercise_id'] as String? ?? 'excel-budget-total-v1',
+                  exerciseId:
+                      widget.block.content['exercise_id'] as String? ??
+                      'excel-budget-total-v1',
                 ),
               ),
           ],
