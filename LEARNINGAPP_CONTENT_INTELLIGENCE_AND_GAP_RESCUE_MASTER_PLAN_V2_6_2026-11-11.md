@@ -19,27 +19,27 @@
 
 ### Implementation status (updated 2026-11-19)
 
-This log records progress only; it does not change any decision above. The new switches are seeded **OFF** in production. None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5).
+This log records progress only; it does not change any decision above. Every new switch is seeded **OFF**. None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5). "Deployed" means the migration is applied in production; it never means switched on.
 
 | Plan item | Status | PRs |
 |---|---|---|
 | PR-0a, PR-0b, P0-light audit | Merged | #226, #227, #228 |
-| P0-hosted audit | B.1–B.7 verified or fixed (B.4 partly) | #234, #235, #249, #253 |
+| P0-hosted audit | B.1–B.7 verified or fixed (B.4 partly). 2026-11-19: a further client `?? 0` grading default found and fixed in `assessment_item_renderer` | #234, #235, #249, #253, #321 |
 | PR-A1, PR-A2, PR-A3 | Merged (zero SQL) | #229, #230, #231 |
-| Bridge starter set (3 Bridges) | Merged | #232 |
+| Bridge starter set (3 Bridges) | Merged; Percent change and Excel percent format now 1.1.0 | #232, #320 |
 | PR-B quick rescue (`learning.quick_rescue`) | Pilot plus exact return after refresh | #233, #256 |
-| PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3), optional handshake probe (A.1); clipboard and refresh fixes | #236, #254, #255, #316, #318, #319 |
-| PR-D gap suggestions (`learning.auto_gap_suggestions`) | Rule-based suggestions, nested prerequisites with depth and cycle limits; misconception labels on answer options, suggested only after two different questions show the same one | #237, #320 |
-| PR-D disputed checks (`learning.check_disputes`) | Learners send a disputed Bridge check for review; moderators uphold (the check version is hidden and never counts) or dismiss | this PR |
+| PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3), optional handshake probe (A.1); clipboard and refresh fixes found by browser testing | #236, #254, #255, #316, #318, #319 |
+| PR-D gap suggestions (`learning.auto_gap_suggestions`) | Rule-based suggestions; nested prerequisites with depth and cycle limits; misconception labels on answer options (two different questions required); main-lesson practice can prompt a dismissible suggestion | #237, #320, #322 |
+| PR-D disputed checks (`learning.check_disputes`) | Learners send a disputed Bridge check for review; moderators uphold (that check version is hidden and never counts) or dismiss. Deployed 2026-11-19 | #317 |
 | PR-E external companions (`content.external_companion`) | Merged | #238 |
-| PR-H contributions | Submit, review, publish and takedown; moderator screen; community browse and reporting; refresh proposals | #239, #250, #251, #252 |
+| PR-H contributions (`content.public_contribution`, `content.refresh_proposals`) | Submit, review, publish and takedown; moderator screen; community browse and reporting; refresh proposals | #239, #250, #251, #252 |
+| PR-H Wanted Board (`content.wanted_board`) | Moderated concept-level requests, suppressed vote counts, contributor links, fulfilment only by a published lesson. **Migration not yet deployed** | #323 |
+| Parametric practice pilot (`content.parametric_practice`) | Two server-generated, server-scored families with key isolation and exposure limits. **Migration not yet deployed** | #324 |
 
 **Still open (all retained):**
-- PR-C: opt-in prompt-quality telemetry (§5.7.6).
-- PR-D: main-lesson evidence. Misconception tags are authored but not yet reviewed by a person; that review is needed before switching suggestions on.
-- P3.3: help action in readers beyond the Excel pilot (needs Bridges for those subjects).
-- PR-H: Wanted Board (§6.8).
-- Parametric item pilot (§6.6), server-scored with key isolation.
+- PR-C opt-in prompt-quality telemetry (§5.7.6): **blocked**. The product-analytics client (`ProductAnalyticsService`) is not wired in the app yet; it waits for the analytics plan's outbox, consent model and erasure policy. Prompt telemetry should ride on that, behind its own extra opt-in, after owner privacy review.
+- Misconception tags are authored but not reviewed by a person. Review them before switching suggestions on.
+- P3.3: the help action in readers beyond the Excel pilot needs Bridges (and allowlisted check templates) for those subjects. This is content authoring work.
 - PR-F (local AI) and PR-G (BYOK) wait on owner prerequisites; BYOK stays hard-disabled (FLAG-015).
 - M1 evidence review: needs real learner sessions with the switches on.
 
