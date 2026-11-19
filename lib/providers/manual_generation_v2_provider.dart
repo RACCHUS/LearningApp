@@ -7,6 +7,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
+import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
@@ -37,6 +38,43 @@ final manualDraftImporterProvider = Provider<ManualDraftImporter>((ref) {
     ref.invalidate(remoteCatalogLessonsProvider);
     return lesson.id;
   };
+});
+
+/// What the Reuse Gate searches: lessons this learner may already read (the
+/// catalog is filtered by RLS) and the bundled Bridge Library. Any failure
+/// gives an empty list, so the gate never blocks planning.
+final reuseSourcesProvider = FutureProvider.autoDispose<List<ReuseSource>>((
+  ref,
+) async {
+  final out = <ReuseSource>[];
+  try {
+    final catalog = await ref.watch(availableLessonsCatalogProvider.future);
+    for (final l in catalog.lessons) {
+      out.add(
+        ReuseSource(
+          kind: ReuseSourceKind.lesson,
+          id: l.id,
+          title: l.title,
+          text: l.description ?? '',
+          tags: l.tags,
+        ),
+      );
+    }
+  } catch (_) {}
+  try {
+    final bridges = await ref.watch(bridgeLibraryProvider.future);
+    for (final b in bridges.bridges) {
+      out.add(
+        ReuseSource(
+          kind: ReuseSourceKind.bridge,
+          id: b.bridgeId,
+          title: b.title,
+          text: '${b.objectiveStatement} ${b.conceptId.replaceAll('-', ' ')}',
+        ),
+      );
+    }
+  } catch (_) {}
+  return out;
 });
 
 /// One store per app instance, so each tab has its own editor ID.
