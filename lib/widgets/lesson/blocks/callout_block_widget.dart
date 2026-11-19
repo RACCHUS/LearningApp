@@ -18,12 +18,15 @@ class CalloutBlockWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final type = (block.content['callout_type'] as String? ??
-            block.content['type'] as String? ??
-            'note')
-        .toLowerCase();
-    final title = block.content['title'] as String? ?? _defaultTitleForType(type);
-    final body = block.content['body'] as String? ??
+    final type =
+        (block.content['callout_type'] as String? ??
+                block.content['type'] as String? ??
+                'note')
+            .toLowerCase();
+    final title =
+        block.content['title'] as String? ?? _defaultTitleForType(type);
+    final body =
+        block.content['body'] as String? ??
         block.content['text'] as String? ??
         '';
     final example = block.content['example'] as String?;
@@ -51,10 +54,7 @@ class CalloutBlockWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Accent color side strip
-              Container(
-                width: 5,
-                color: style.accentColor,
-              ),
+              Container(width: 5, color: style.accentColor),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -71,7 +71,10 @@ class CalloutBlockWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: style.accentColor.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
@@ -86,7 +89,8 @@ class CalloutBlockWidget extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (title.isNotEmpty && title.toLowerCase() != type) ...[
+                          if (title.isNotEmpty &&
+                              title.toLowerCase() != type) ...[
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -94,7 +98,9 @@ class CalloutBlockWidget extends StatelessWidget {
                                 style: GoogleFonts.outfit(
                                   fontSize: 15 * fontSizeFactor,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -111,9 +117,13 @@ class CalloutBlockWidget extends StatelessWidget {
                               p: GoogleFonts.inter(
                                 fontSize: 14.5 * fontSizeFactor,
                                 height: 1.5,
-                                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                                color: isDark
+                                    ? const Color(0xFFE2E8F0)
+                                    : const Color(0xFF334155),
                               ),
-                              strong: const TextStyle(fontWeight: FontWeight.bold),
+                              strong: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                               em: const TextStyle(fontStyle: FontStyle.italic),
                               code: GoogleFonts.jetBrainsMono(
                                 fontSize: 13 * fontSizeFactor,
@@ -122,7 +132,7 @@ class CalloutBlockWidget extends StatelessWidget {
                                     : Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
-                            ),
+                          ),
                         ),
                       ],
                       if (example != null && example.isNotEmpty) ...[
@@ -153,7 +163,9 @@ class CalloutBlockWidget extends StatelessWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 13.5 * fontSizeFactor,
                                     fontStyle: FontStyle.italic,
-                                    color: isDark ? Colors.grey[300] : const Color(0xFF475569),
+                                    color: isDark
+                                        ? Colors.grey[300]
+                                        : const Color(0xFF475569),
                                   ),
                                 ),
                               ),
@@ -213,31 +225,47 @@ class CalloutBlockWidget extends StatelessWidget {
       case 'tip':
         return _CalloutVisualTheme(
           accentColor: const Color(0xFF10B981), // Emerald
-          borderColor: isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0),
-          backgroundColor: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFECFDF5),
+          borderColor: isDark
+              ? const Color(0xFF065F46)
+              : const Color(0xFFA7F3D0),
+          backgroundColor: isDark
+              ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+              : const Color(0xFFECFDF5),
           icon: Icons.lightbulb_rounded,
         );
       case 'warning':
       case 'caution':
         return _CalloutVisualTheme(
           accentColor: const Color(0xFFF59E0B), // Amber
-          borderColor: isDark ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
-          backgroundColor: isDark ? const Color(0xFF451A03).withValues(alpha: 0.3) : const Color(0xFFFFFBEB),
+          borderColor: isDark
+              ? const Color(0xFF78350F)
+              : const Color(0xFFFDE68A),
+          backgroundColor: isDark
+              ? const Color(0xFF451A03).withValues(alpha: 0.3)
+              : const Color(0xFFFFFBEB),
           icon: Icons.warning_amber_rounded,
         );
       case 'clinical_pearl':
       case 'key_concept':
         return _CalloutVisualTheme(
           accentColor: const Color(0xFF6366F1), // Indigo
-          borderColor: isDark ? const Color(0xFF3730A3) : const Color(0xFFC7D2FE),
-          backgroundColor: isDark ? const Color(0xFF312E81).withValues(alpha: 0.3) : const Color(0xFFEEF2FF),
+          borderColor: isDark
+              ? const Color(0xFF3730A3)
+              : const Color(0xFFC7D2FE),
+          backgroundColor: isDark
+              ? const Color(0xFF312E81).withValues(alpha: 0.3)
+              : const Color(0xFFEEF2FF),
           icon: Icons.auto_awesome_rounded,
         );
       default:
         return _CalloutVisualTheme(
           accentColor: const Color(0xFF3B82F6), // Blue
-          borderColor: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFBFDBFE),
-          backgroundColor: isDark ? const Color(0xFF172554).withValues(alpha: 0.3) : const Color(0xFFEFF6FF),
+          borderColor: isDark
+              ? const Color(0xFF1E3A8A)
+              : const Color(0xFFBFDBFE),
+          backgroundColor: isDark
+              ? const Color(0xFF172554).withValues(alpha: 0.3)
+              : const Color(0xFFEFF6FF),
           icon: Icons.info_outline_rounded,
         );
     }

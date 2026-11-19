@@ -111,6 +111,22 @@ class _ManualGenerationV2ScreenState
     _capabilities.save(_owner, _profiles);
   }
 
+  /// Stores the optional probe result for the selected chat and starts
+  /// from its (new) suggestion.
+  void _recordProbe(bool passed) {
+    final label = _profiles.selected;
+    if (label == null) return;
+    final updated = _profiles.profileFor(label).withProbe(passed);
+    setState(() {
+      _profiles = CapabilityProfiles(
+        selected: label,
+        profiles: {..._profiles.profiles, label: updated},
+      );
+      _useSuggestion(updated);
+    });
+    _capabilities.save(_owner, _profiles);
+  }
+
   void _forgetAi(AiChatLabel label) {
     setState(() {
       _profiles = CapabilityProfiles(
@@ -463,6 +479,12 @@ class _ManualGenerationV2ScreenState
               ),
               onForget: () => _forgetAi(_profiles.selected!),
               onCopy: _copyProfiles,
+              onCopyText: (text) => _copyText(
+                text,
+                'Test copied. Paste it into your AI chat.',
+                "Couldn't copy here. Select the test text and copy it.",
+              ),
+              onProbeResult: _recordProbe,
             ),
             const SizedBox(height: 12),
             Text(

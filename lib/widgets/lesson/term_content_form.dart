@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Form component for creating term content items
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability.
 /// Handles term, definition, and optional example input.
 class TermContentForm extends StatelessWidget {
@@ -28,7 +28,9 @@ class TermContentForm extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -50,9 +52,9 @@ class TermContentForm extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Term input
           TextFormField(
             controller: termController,
@@ -69,9 +71,9 @@ class TermContentForm extends StatelessWidget {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Definition input
           TextFormField(
             controller: definitionController,
@@ -90,9 +92,9 @@ class TermContentForm extends StatelessWidget {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Example input (optional)
           TextFormField(
             controller: exampleController,
@@ -105,14 +107,14 @@ class TermContentForm extends StatelessWidget {
               alignLabelWithHint: true,
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Add button
           ElevatedButton.icon(
             onPressed: () {
               // Validate required fields
-              if (termController.text.trim().isEmpty || 
+              if (termController.text.trim().isEmpty ||
                   definitionController.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -130,15 +132,17 @@ class TermContentForm extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Helper text
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
               ),
               borderRadius: BorderRadius.circular(8),
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Component for displaying and managing lesson content items
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability.
 /// Shows a reorderable list of content items with delete functionality.
 class ContentPreviewList extends StatelessWidget {
@@ -42,9 +42,10 @@ class ContentPreviewList extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         'Content Items',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                       ),
                       const Spacer(),
                       Container(
@@ -58,21 +59,27 @@ class ContentPreviewList extends StatelessWidget {
                         ),
                         child: Text(
                           '${contentItems.length}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -85,16 +92,19 @@ class ContentPreviewList extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Drag to reorder • Tap delete to remove',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   SizedBox(
                     height: 250,
                     child: ReorderableListView.builder(
@@ -110,32 +120,36 @@ class ContentPreviewList extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
         ],
-        
+
         // Create lesson button
         FilledButton.icon(
           onPressed: canCreateLesson ? onCreateLesson : null,
           icon: const Icon(Icons.create),
-          label: Text(contentItems.isEmpty 
-              ? 'Add content to create lesson' 
-              : 'Create Lesson'),
+          label: Text(
+            contentItems.isEmpty
+                ? 'Add content to create lesson'
+                : 'Create Lesson',
+          ),
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.all(16),
-            backgroundColor: canCreateLesson 
-                ? null 
+            backgroundColor: canCreateLesson
+                ? null
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
         ),
-        
+
         if (contentItems.isEmpty) ...[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -144,7 +158,9 @@ class ContentPreviewList extends StatelessWidget {
                 Icon(
                   Icons.auto_stories_outlined,
                   size: 48,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -169,11 +185,15 @@ class ContentPreviewList extends StatelessWidget {
     );
   }
 
-  Widget _buildContentItemTile(BuildContext context, Map<String, dynamic> item, int index) {
+  Widget _buildContentItemTile(
+    BuildContext context,
+    Map<String, dynamic> item,
+    int index,
+  ) {
     final type = item['type'] as String;
     String title = '';
     String subtitle = '';
-    
+
     switch (type) {
       case 'term':
         title = item['term'] as String;
@@ -182,7 +202,8 @@ class ContentPreviewList extends StatelessWidget {
       case 'mcq':
         title = item['question'] as String;
         final options = item['options'] as List;
-        subtitle = '${options.length} options • Correct: ${String.fromCharCode(65 + (item['correctIndex'] as int))}';
+        subtitle =
+            '${options.length} options • Correct: ${String.fromCharCode(65 + (item['correctIndex'] as int))}';
         break;
       case 'concept':
         title = item['title'] as String;
@@ -212,9 +233,9 @@ class ContentPreviewList extends StatelessWidget {
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           subtitle,

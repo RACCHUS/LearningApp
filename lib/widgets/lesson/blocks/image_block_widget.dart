@@ -17,11 +17,13 @@ class ImageBlockWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final url = block.content['url'] as String? ??
+    final url =
+        block.content['url'] as String? ??
         block.content['src'] as String? ??
         block.content['asset'] as String? ??
         '';
-    final caption = block.content['caption'] as String? ??
+    final caption =
+        block.content['caption'] as String? ??
         block.content['alt'] as String? ??
         block.metadata['caption'] as String?;
 
@@ -41,7 +43,9 @@ class ImageBlockWidget extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -51,12 +55,14 @@ class ImageBlockWidget extends StatelessWidget {
                     ? Image.network(
                         url,
                         fit: BoxFit.contain,
-                        errorBuilder: (ctx, err, stack) => _buildPlaceholder(context, url),
+                        errorBuilder: (ctx, err, stack) =>
+                            _buildPlaceholder(context, url),
                       )
                     : Image.asset(
                         url,
                         fit: BoxFit.contain,
-                        errorBuilder: (ctx, err, stack) => _buildPlaceholder(context, url),
+                        errorBuilder: (ctx, err, stack) =>
+                            _buildPlaceholder(context, url),
                       ),
               ),
             ),
@@ -70,7 +76,9 @@ class ImageBlockWidget extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 12.5 * fontSizeFactor,
                   fontStyle: FontStyle.italic,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -90,7 +98,11 @@ class ImageBlockWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.image_not_supported_rounded, size: 36, color: Colors.grey),
+          const Icon(
+            Icons.image_not_supported_rounded,
+            size: 36,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 8),
           Text(
             'Diagram / Image: $path',
@@ -102,7 +114,12 @@ class ImageBlockWidget extends StatelessWidget {
     );
   }
 
-  void _openZoomDialog(BuildContext context, String url, bool isNetwork, String? caption) {
+  void _openZoomDialog(
+    BuildContext context,
+    String url,
+    bool isNetwork,
+    String? caption,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -131,7 +148,10 @@ class ImageBlockWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(12.0),
                   child: Text(
                     caption,
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
+                    style: GoogleFonts.inter(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),

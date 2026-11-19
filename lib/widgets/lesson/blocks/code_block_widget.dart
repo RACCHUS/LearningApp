@@ -39,13 +39,16 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final language = widget.block.content['language'] as String? ??
+    final language =
+        widget.block.content['language'] as String? ??
         widget.block.content['lang'] as String? ??
         'code';
-    final code = widget.block.content['code'] as String? ??
+    final code =
+        widget.block.content['code'] as String? ??
         widget.block.content['text'] as String? ??
         '';
-    final caption = widget.block.content['caption'] as String? ??
+    final caption =
+        widget.block.content['caption'] as String? ??
         widget.block.metadata['caption'] as String?;
     final output = widget.block.content['output'] as String?;
 
@@ -63,11 +66,7 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF334155), width: 1.0),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 3)),
         ],
       ),
       child: ClipRRect(
@@ -84,17 +83,41 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
                   // Decorative terminal dots
                   Row(
                     children: [
-                      Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle)),
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                       const SizedBox(width: 5),
-                      Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFFF59E0B), shape: BoxShape.circle)),
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                       const SizedBox(width: 5),
-                      Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(width: 12),
                   // Language badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF334155),
                       borderRadius: BorderRadius.circular(4),
@@ -128,21 +151,28 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
                     onTap: () => _copyToClipboard(code),
                     borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             _copied ? Icons.check_rounded : Icons.copy_rounded,
                             size: 14 * widget.fontSizeFactor,
-                            color: _copied ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
+                            color: _copied
+                                ? const Color(0xFF34D399)
+                                : const Color(0xFF94A3B8),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _copied ? 'Copied' : 'Copy',
                             style: GoogleFonts.inter(
                               fontSize: 12 * widget.fontSizeFactor,
-                              color: _copied ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
+                              color: _copied
+                                  ? const Color(0xFF34D399)
+                                  : const Color(0xFF94A3B8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -201,13 +231,20 @@ class _CodeBlockWidgetState extends State<CodeBlockWidget> {
                   ),
                   color: Color(0xFF0B1120),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.terminal_rounded, size: 14, color: Color(0xFF38BDF8)),
+                        const Icon(
+                          Icons.terminal_rounded,
+                          size: 14,
+                          color: Color(0xFF38BDF8),
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'OUTPUT',

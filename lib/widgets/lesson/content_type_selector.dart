@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Content type selector with tabs for different content types
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability.
 /// Handles the tab selection for Terms, Questions, and Concepts.
 class ContentTypeSelector extends StatelessWidget {
@@ -48,9 +48,9 @@ class ContentTypeSelector extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Content type tabs
             Container(
               decoration: BoxDecoration(
@@ -65,18 +65,12 @@ class ContentTypeSelector extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 labelColor: Theme.of(context).colorScheme.onPrimary,
-                unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                unselectedLabelColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant,
                 tabs: const [
-                  Tab(
-                    icon: Icon(Icons.book),
-                    text: 'Terms',
-                    height: 60,
-                  ),
-                  Tab(
-                    icon: Icon(Icons.quiz),
-                    text: 'Questions',
-                    height: 60,
-                  ),
+                  Tab(icon: Icon(Icons.book), text: 'Terms', height: 60),
+                  Tab(icon: Icon(Icons.quiz), text: 'Questions', height: 60),
                   Tab(
                     icon: Icon(Icons.lightbulb),
                     text: 'Concepts',
@@ -85,14 +79,16 @@ class ContentTypeSelector extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             if (contentItemsCount == 0) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.5),
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
