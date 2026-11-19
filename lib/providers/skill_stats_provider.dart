@@ -20,21 +20,28 @@ final skillsProvider = FutureProvider<List<Skill>>((ref) async {
 });
 
 /// Skills by category
-final skillsByCategoryProvider =
-    FutureProvider.family<List<Skill>, String>((ref, category) async {
+final skillsByCategoryProvider = FutureProvider.family<List<Skill>, String>((
+  ref,
+  category,
+) async {
   final service = ref.read(skillAssessmentServiceProvider);
   return service.getSkills(category: category);
 });
 
 /// Single skill by ID
-final skillProvider = FutureProvider.family<Skill, String>((ref, skillId) async {
+final skillProvider = FutureProvider.family<Skill, String>((
+  ref,
+  skillId,
+) async {
   final service = ref.read(skillAssessmentServiceProvider);
   return service.getSkill(skillId);
 });
 
 /// Skill by slug
-final skillBySlugProvider =
-    FutureProvider.family<Skill?, String>((ref, slug) async {
+final skillBySlugProvider = FutureProvider.family<Skill?, String>((
+  ref,
+  slug,
+) async {
   final service = ref.read(skillAssessmentServiceProvider);
   return service.getSkillBySlug(slug);
 });
@@ -45,15 +52,19 @@ final skillBySlugProvider =
 
 /// User's stats for all skills
 final userSkillStatsProvider =
-    StateNotifierProvider<UserSkillStatsNotifier, AsyncValue<List<UserSkillStats>>>(
-        (ref) {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return UserSkillStatsNotifier(service);
-});
+    StateNotifierProvider<
+      UserSkillStatsNotifier,
+      AsyncValue<List<UserSkillStats>>
+    >((ref) {
+      final service = ref.read(skillAssessmentServiceProvider);
+      return UserSkillStatsNotifier(service);
+    });
 
 /// User's stats for a specific skill
-final userSkillStatProvider =
-    FutureProvider.family<UserSkillStats?, String>((ref, skillId) async {
+final userSkillStatProvider = FutureProvider.family<UserSkillStats?, String>((
+  ref,
+  skillId,
+) async {
   final service = ref.read(skillAssessmentServiceProvider);
   return service.getUserSkillStat(skillId);
 });
@@ -109,7 +120,8 @@ class UserSkillStatsNotifier
   List<UserSkillStats> getNeedsPractice({int limit = 5}) {
     return state.maybeWhen(
       data: (stats) {
-        final sorted = [...stats]..sort((a, b) {
+        final sorted = [...stats]
+          ..sort((a, b) {
             // Prioritize unverified, then low level, then old assessments
             if (a.isVerified != b.isVerified) {
               return a.isVerified ? 1 : -1;
@@ -130,32 +142,36 @@ class UserSkillStatsNotifier
 /// Assessments for a skill
 final skillAssessmentsProvider =
     FutureProvider.family<List<SkillAssessment>, String>((ref, skillId) async {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return service.getAssessmentsForSkill(skillId);
-});
+      final service = ref.read(skillAssessmentServiceProvider);
+      return service.getAssessmentsForSkill(skillId);
+    });
 
 /// Single assessment with questions
 final assessmentWithQuestionsProvider =
     FutureProvider.family<SkillAssessment, String>((ref, assessmentId) async {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return service.getAssessmentWithQuestions(assessmentId);
-});
+      final service = ref.read(skillAssessmentServiceProvider);
+      return service.getAssessmentWithQuestions(assessmentId);
+    });
 
 /// Attempt history for an assessment
 final attemptHistoryProvider =
-    FutureProvider.family<List<AssessmentAttempt>, String>(
-        (ref, assessmentId) async {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return service.getAttemptHistory(assessmentId);
-});
+    FutureProvider.family<List<AssessmentAttempt>, String>((
+      ref,
+      assessmentId,
+    ) async {
+      final service = ref.read(skillAssessmentServiceProvider);
+      return service.getAttemptHistory(assessmentId);
+    });
 
 /// All attempts for a skill
 final skillAttemptsProvider =
-    FutureProvider.family<List<AssessmentAttempt>, String>(
-        (ref, skillId) async {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return service.getSkillAttempts(skillId);
-});
+    FutureProvider.family<List<AssessmentAttempt>, String>((
+      ref,
+      skillId,
+    ) async {
+      final service = ref.read(skillAssessmentServiceProvider);
+      return service.getSkillAttempts(skillId);
+    });
 
 // ============================================================================
 // ASSESSMENT SESSION (extracted to assessment_provider.dart)
@@ -167,15 +183,16 @@ final skillAttemptsProvider =
 
 /// Leaderboard for a skill
 final skillLeaderboardProvider =
-    FutureProvider.family<List<LeaderboardEntry>, String>(
-        (ref, skillId) async {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return service.getSkillLeaderboard(skillId);
-});
+    FutureProvider.family<List<LeaderboardEntry>, String>((ref, skillId) async {
+      final service = ref.read(skillAssessmentServiceProvider);
+      return service.getSkillLeaderboard(skillId);
+    });
 
 /// User's rank on a skill leaderboard
-final userSkillRankProvider =
-    FutureProvider.family<int?, String>((ref, skillId) async {
+final userSkillRankProvider = FutureProvider.family<int?, String>((
+  ref,
+  skillId,
+) async {
   final service = ref.read(skillAssessmentServiceProvider);
   return service.getUserRank(skillId);
 });

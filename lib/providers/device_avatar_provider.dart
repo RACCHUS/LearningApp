@@ -23,10 +23,10 @@ final avatarCustomizerEnabledProvider = Provider<bool>((ref) {
 /// use the same browser and a sign-out can never read another account's key.
 final avatarPersistenceProvider = ChangeNotifierProvider.autoDispose
     .family<AvatarPersistenceService, String>((ref, userId) {
-  final service = AvatarPersistenceService(userId: userId);
-  unawaited(service.load());
-  return service;
-});
+      final service = AvatarPersistenceService(userId: userId);
+      unawaited(service.load());
+      return service;
+    });
 
 /// The signed-in learner's avatar service, or null when the customizer is
 /// off, signed out or a guest.

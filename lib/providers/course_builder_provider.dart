@@ -71,8 +71,7 @@ class CourseBuilderState {
 
   bool get isNewCourse => courseId == null;
 
-  bool get isValid =>
-      title.trim().length >= 3 && description.trim().isNotEmpty;
+  bool get isValid => title.trim().length >= 3 && description.trim().isNotEmpty;
 
   int get totalLessons => lessons.length;
 
@@ -120,9 +119,9 @@ class CourseBuilderNotifier extends StateNotifier<CourseBuilderState> {
     required CourseService courseService,
     required LessonService lessonService,
     String? courseId,
-  })  : _courseService = courseService,
-        _lessonService = lessonService,
-        super(const CourseBuilderState()) {
+  }) : _courseService = courseService,
+       _lessonService = lessonService,
+       super(const CourseBuilderState()) {
     if (courseId != null) {
       _loadCourse(courseId);
     }
@@ -139,12 +138,14 @@ class CourseBuilderNotifier extends StateNotifier<CourseBuilderState> {
       for (final assoc in associations) {
         try {
           final lesson = await _lessonService.getLesson(assoc.lessonId);
-          lessonItems.add(CourseLessonItem(
-            lesson: lesson,
-            association: assoc,
-            isRequired: assoc.isRequired,
-            order: assoc.orderInCourse,
-          ));
+          lessonItems.add(
+            CourseLessonItem(
+              lesson: lesson,
+              association: assoc,
+              isRequired: assoc.isRequired,
+              order: assoc.orderInCourse,
+            ),
+          );
         } catch (e) {
           debugPrint('Warning: Could not load lesson ${assoc.lessonId}: $e');
         }
@@ -245,9 +246,10 @@ class CourseBuilderNotifier extends StateNotifier<CourseBuilderState> {
   }
 
   void removeLesson(String lessonId) {
-    final newLessons =
-        state.lessons.where((item) => item.lesson.id != lessonId).toList();
-    
+    final newLessons = state.lessons
+        .where((item) => item.lesson.id != lessonId)
+        .toList();
+
     // Re-order remaining lessons
     for (int i = 0; i < newLessons.length; i++) {
       newLessons[i] = newLessons[i].copyWith(order: i);
@@ -337,8 +339,9 @@ class CourseBuilderNotifier extends StateNotifier<CourseBuilderState> {
 
         // Update lesson associations
         // First remove lessons that are no longer in the course
-        final existingAssociations =
-            await _courseService.getCourseLessons(course.id);
+        final existingAssociations = await _courseService.getCourseLessons(
+          course.id,
+        );
         for (final assoc in existingAssociations) {
           if (!state.lessons.any((item) => item.lesson.id == assoc.lessonId)) {
             await _courseService.removeLessonFromCourse(
@@ -393,49 +396,50 @@ class CourseBuilderNotifier extends StateNotifier<CourseBuilderState> {
 
 /// Provider for course builder
 final courseBuilderProvider = StateNotifierProvider.autoDispose
-    .family<CourseBuilderNotifier, CourseBuilderState, String?>(
-  (ref, courseId) {
-    final courseService = CourseService();
-    final lessonService = LessonService();
+    .family<CourseBuilderNotifier, CourseBuilderState, String?>((
+      ref,
+      courseId,
+    ) {
+      final courseService = CourseService();
+      final lessonService = LessonService();
 
-    return CourseBuilderNotifier(
-      courseService: courseService,
-      lessonService: lessonService,
-      courseId: courseId,
-    );
-  },
-);
+      return CourseBuilderNotifier(
+        courseService: courseService,
+        lessonService: lessonService,
+        courseId: courseId,
+      );
+    });
 
 /// Provider for available lessons (lessons not yet in the course)
-final availableLessonsProvider =
-    FutureProvider.autoDispose.family<List<Lesson>, String?>((ref, courseId) async {
-  final lessonService = LessonService();
-  final courseService = CourseService();
+final availableLessonsProvider = FutureProvider.autoDispose
+    .family<List<Lesson>, String?>((ref, courseId) async {
+      final lessonService = LessonService();
+      final courseService = CourseService();
 
-  try {
-    // Get user ID from Supabase auth
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      debugPrint('No user logged in for available lessons');
-      return [];
-    }
+      try {
+        // Get user ID from Supabase auth
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) {
+          debugPrint('No user logged in for available lessons');
+          return [];
+        }
 
-    final allLessons = await lessonService.getLessonsForUser(userId);
+        final allLessons = await lessonService.getLessonsForUser(userId);
 
-    if (courseId != null) {
-      final associations = await courseService.getCourseLessons(courseId);
-      final lessonIdsInCourse = associations.map((a) => a.lessonId).toSet();
-      return allLessons
-          .where((lesson) => !lessonIdsInCourse.contains(lesson.id))
-          .toList();
-    }
+        if (courseId != null) {
+          final associations = await courseService.getCourseLessons(courseId);
+          final lessonIdsInCourse = associations.map((a) => a.lessonId).toSet();
+          return allLessons
+              .where((lesson) => !lessonIdsInCourse.contains(lesson.id))
+              .toList();
+        }
 
-    return allLessons;
-  } catch (e) {
-    debugPrint('Error loading available lessons: $e');
-    return [];
-  }
-});
+        return allLessons;
+      } catch (e) {
+        debugPrint('Error loading available lessons: $e');
+        return [];
+      }
+    });
 
 /// Difficulty levels for courses
 const courseDifficultyLevels = [

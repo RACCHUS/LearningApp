@@ -4,17 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// Storage backend for settings persistence
-enum SettingsStorage {
-  sharedPreferences,
-  hive,
-}
+enum SettingsStorage { sharedPreferences, hive }
 
 /// Base class for settings notifiers with common persistence logic
-/// 
+///
 /// This provides standardized initialization, saving, and error handling
 /// for all settings providers in the app.
 abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
-  BaseSettingsNotifier(super.initialState, {
+  BaseSettingsNotifier(
+    super.initialState, {
     required this.storageKey,
     this.storage = SettingsStorage.sharedPreferences,
   }) {
@@ -23,7 +21,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
 
   /// Key used to store settings in persistent storage
   final String storageKey;
-  
+
   /// Storage backend to use (SharedPreferences or Hive)
   final SettingsStorage storage;
 
@@ -43,7 +41,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   }
 
   /// Load settings from persistent storage
-  /// 
+  ///
   /// Subclasses should override [deserialize] to convert stored data
   Future<void> loadSettings() async {
     try {
@@ -96,7 +94,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   }
 
   /// Update settings and persist automatically
-  /// 
+  ///
   /// This is the primary method subclasses should use to update state
   Future<void> updateSettings(T newSettings) async {
     if (!mounted) return;
@@ -105,26 +103,26 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   }
 
   /// Serialize settings to string for SharedPreferences storage
-  /// 
+  ///
   /// Override this when using SharedPreferences storage
   String serialize(T settings) {
     throw UnimplementedError(
-      'serialize() must be implemented when using SharedPreferences storage'
+      'serialize() must be implemented when using SharedPreferences storage',
     );
   }
 
   /// Deserialize settings from string for SharedPreferences storage
-  /// 
+  ///
   /// Override this when using SharedPreferences storage
   /// Return null if deserialization fails
   T? deserialize(String data) {
     throw UnimplementedError(
-      'deserialize() must be implemented when using SharedPreferences storage'
+      'deserialize() must be implemented when using SharedPreferences storage',
     );
   }
 
   /// Reset settings to default values
-  /// 
+  ///
   /// Subclasses should override to provide default settings
   Future<void> resetToDefaults() async {
     if (!mounted) return;
@@ -134,7 +132,7 @@ abstract class BaseSettingsNotifier<T> extends StateNotifier<T> {
   }
 
   /// Get default settings
-  /// 
+  ///
   /// Subclasses must override this to provide default values
   T getDefaultSettings();
 

@@ -44,10 +44,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
       if (lesson.terms.isEmpty &&
           lesson.questions.isEmpty &&
           lesson.concepts.isEmpty) {
-        throw LessonLoadException(
-          lessonId,
-          'Lesson has no content to study',
-        );
+        throw LessonLoadException(lessonId, 'Lesson has no content to study');
       }
 
       final content = _getContentForMode(lesson, mode);
@@ -85,10 +82,7 @@ class StudyNotifier extends StateNotifier<StudyState> {
           ? e.getUserMessage()
           : 'Failed to load lesson. Please try again.';
 
-      state = state.copyWith(
-        error: userMessage,
-        isLoading: false,
-      );
+      state = state.copyWith(error: userMessage, isLoading: false);
     }
   }
 
@@ -180,23 +174,22 @@ class StudyNotifier extends StateNotifier<StudyState> {
   void next() {
     if (state.currentContent != null &&
         state.currentIndex < state.currentContent!.length - 1) {
-      state = state.copyWith(
-        currentIndex: state.currentIndex + 1,
-      );
+      state = state.copyWith(currentIndex: state.currentIndex + 1);
     }
   }
 
   void previous() {
     if (state.currentContent != null && state.currentIndex > 0) {
-      state = state.copyWith(
-        currentIndex: state.currentIndex - 1,
-      );
+      state = state.copyWith(currentIndex: state.currentIndex - 1);
     }
   }
 
   /// Mark lesson as completed and save progress
-  Future<void> markLessonAsCompleted(String lessonId,
-      {String? lessonTitle, int? durationMinutes}) async {
+  Future<void> markLessonAsCompleted(
+    String lessonId, {
+    String? lessonTitle,
+    int? durationMinutes,
+  }) async {
     try {
       // CRITICAL: Must cache progress locally BEFORE claiming success
       bool localCacheSuccess = false;
@@ -205,7 +198,11 @@ class StudyNotifier extends StateNotifier<StudyState> {
       // Cache locally first (most important - user's device)
       {
         try {
-          await _cacheProgressLocally(userId ?? 'local', lessonId, durationMinutes);
+          await _cacheProgressLocally(
+            userId ?? 'local',
+            lessonId,
+            durationMinutes,
+          );
           localCacheSuccess = true;
           _logger.info('Progress cached locally');
         } catch (cacheError, stackTrace) {
@@ -235,19 +232,23 @@ class StudyNotifier extends StateNotifier<StudyState> {
         unawaited(_syncProgressAfterLocalCache());
       }
 
-
       // Add missed items to spaced repetition review queue
       try {
         final spacedRep = SpacedRepetitionService();
         if (state.currentLessonId != null) {
-          final added = await spacedRep.addLessonToReviewQueue(state.currentLessonId!);
+          final added = await spacedRep.addLessonToReviewQueue(
+            state.currentLessonId!,
+          );
           if (added > 0) {
             _logger.info('Added $added items to spaced repetition queue');
           }
         }
       } catch (spacedRepError) {
         // Spaced rep failure shouldn't block completion
-        _logger.warn('Failed to add items to review queue', error: spacedRepError);
+        _logger.warn(
+          'Failed to add items to review queue',
+          error: spacedRepError,
+        );
       }
 
       // Update state to mark lesson as completed
@@ -271,7 +272,10 @@ class StudyNotifier extends StateNotifier<StudyState> {
 
   /// Cache progress locally for later sync when offline
   Future<void> _cacheProgressLocally(
-      String userId, String lessonId, int? durationMinutes) async {
+    String userId,
+    String lessonId,
+    int? durationMinutes,
+  ) async {
     try {
       final hiveService = HiveService();
       await hiveService.init();
@@ -360,9 +364,9 @@ class StudyState {
     this.currentMode,
     this.currentIndex = 0,
     this.currentContent,
-  })  : termStatus = termStatus ?? {},
-        questionAnswers = questionAnswers ?? {},
-        completedLessons = completedLessons ?? {};
+  }) : termStatus = termStatus ?? {},
+       questionAnswers = questionAnswers ?? {},
+       completedLessons = completedLessons ?? {};
 
   factory StudyState.initial() => StudyState(lastStudied: DateTime.now());
 

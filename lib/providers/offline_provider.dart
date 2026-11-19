@@ -7,8 +7,9 @@ import 'package:learning_pwa/services/connectivity_service.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:learning_pwa/services/progress_sync_service.dart';
 
-final offlineProvider =
-    StateNotifierProvider<OfflineNotifier, OfflineState>((ref) {
+final offlineProvider = StateNotifierProvider<OfflineNotifier, OfflineState>((
+  ref,
+) {
   final connectivityService = ref.read(connectivityServiceProvider);
   return OfflineNotifier(ref.read(hiveServiceProvider), connectivityService);
 });
@@ -16,18 +17,20 @@ final offlineProvider =
 class OfflineNotifier extends StateNotifier<OfflineState> {
   final HiveService _hiveService;
   final ConnectivityService _connectivityService;
-  
+
   // Subscription for cleanup
   StreamSubscription<bool>? _connectivitySubscription;
 
-  OfflineNotifier(this._hiveService, this._connectivityService) : super(const OfflineState()) {
-    _connectivitySubscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
-      if (isConnected) {
-        syncProgress();
-      }
-    });
+  OfflineNotifier(this._hiveService, this._connectivityService)
+    : super(const OfflineState()) {
+    _connectivitySubscription = _connectivityService.onConnectivityChanged
+        .listen((isConnected) {
+          if (isConnected) {
+            syncProgress();
+          }
+        });
   }
-  
+
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
@@ -68,7 +71,8 @@ class OfflineNotifier extends StateNotifier<OfflineState> {
       await _hiveService.cacheProgress(progress);
       state = state.copyWith(error: null);
     } catch (e, stackTrace) {
-      final errorMsg = 'Failed to cache progress for lesson: ${progress.lessonId}';
+      final errorMsg =
+          'Failed to cache progress for lesson: ${progress.lessonId}';
       debugPrint('$errorMsg - $e');
       debugPrint('Stack trace: $stackTrace');
       state = state.copyWith(error: errorMsg);
@@ -104,11 +108,7 @@ class OfflineState {
   final bool isSyncing;
   final DateTime? lastSyncTime;
 
-  const OfflineState({
-    this.error,
-    this.isSyncing = false,
-    this.lastSyncTime,
-  });
+  const OfflineState({this.error, this.isSyncing = false, this.lastSyncTime});
 
   OfflineState copyWith({
     String? error,

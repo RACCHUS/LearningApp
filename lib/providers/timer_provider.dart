@@ -85,8 +85,7 @@ class TimerState {
       blocksCompleted: blocksCompleted ?? this.blocksCompleted,
       longBreakDurationSeconds:
           longBreakDurationSeconds ?? this.longBreakDurationSeconds,
-      longBreakEveryBlocks:
-          longBreakEveryBlocks ?? this.longBreakEveryBlocks,
+      longBreakEveryBlocks: longBreakEveryBlocks ?? this.longBreakEveryBlocks,
       isLongBreak: isLongBreak ?? this.isLongBreak,
     );
   }
@@ -96,14 +95,16 @@ class TimerNotifier extends StateNotifier<TimerState> {
   final _logger = AppLogger('TimerNotifier');
 
   TimerNotifier()
-      : super(TimerState(
+    : super(
+        TimerState(
           enabled: false,
           running: false,
           durationSeconds: 600,
           timeLeftSeconds: 600,
           elapsedSeconds: 0,
           mode: TimerMode.countdown,
-        ));
+        ),
+      );
 
   Timer? _timer;
 
@@ -123,14 +124,16 @@ class TimerNotifier extends StateNotifier<TimerState> {
     pause();
     if (mode == TimerMode.countdown) {
       state = state.copyWith(
-          mode: mode,
-          timeLeftSeconds: state.durationSeconds,
-          elapsedSeconds: 0);
+        mode: mode,
+        timeLeftSeconds: state.durationSeconds,
+        elapsedSeconds: 0,
+      );
     } else {
       state = state.copyWith(
-          mode: mode,
-          elapsedSeconds: 0,
-          timeLeftSeconds: state.durationSeconds);
+        mode: mode,
+        elapsedSeconds: 0,
+        timeLeftSeconds: state.durationSeconds,
+      );
     }
   }
 
@@ -146,8 +149,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
       breakDurationSeconds: durationSeconds ?? state.breakDurationSeconds,
       longBreakDurationSeconds:
           longDurationSeconds ?? state.longBreakDurationSeconds,
-      longBreakEveryBlocks:
-          longBreakEveryBlocks ?? state.longBreakEveryBlocks,
+      longBreakEveryBlocks: longBreakEveryBlocks ?? state.longBreakEveryBlocks,
     );
   }
 
@@ -181,11 +183,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
         state = state.copyWith(elapsedSeconds: state.elapsedSeconds + 1);
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Timer tick failed',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.error('Timer tick failed', error: e, stackTrace: stackTrace);
       // Timer continues despite error - don't crash the periodic callback
     }
   }
@@ -198,7 +196,8 @@ class TimerNotifier extends StateNotifier<TimerState> {
     // Work block finished.
     final blocks = state.blocksCompleted + 1;
     if (state.breakEnabled) {
-      final isLongBreak = state.longBreakEveryBlocks > 0 &&
+      final isLongBreak =
+          state.longBreakEveryBlocks > 0 &&
           blocks % state.longBreakEveryBlocks == 0;
       final breakSeconds = isLongBreak
           ? state.longBreakDurationSeconds
@@ -224,7 +223,8 @@ class TimerNotifier extends StateNotifier<TimerState> {
   void _tickBreak() {
     if (state.breakTimeLeftSeconds > 1) {
       state = state.copyWith(
-          breakTimeLeftSeconds: state.breakTimeLeftSeconds - 1);
+        breakTimeLeftSeconds: state.breakTimeLeftSeconds - 1,
+      );
       return;
     }
     // Break finished — resume a fresh work block.
@@ -251,19 +251,21 @@ class TimerNotifier extends StateNotifier<TimerState> {
     pause();
     if (state.mode == TimerMode.countdown) {
       state = state.copyWith(
-          timeLeftSeconds: state.durationSeconds,
-          elapsedSeconds: 0,
-          isOnBreak: false,
-          isLongBreak: false,
-          breakTimeLeftSeconds: 0,
-          blocksCompleted: 0);
+        timeLeftSeconds: state.durationSeconds,
+        elapsedSeconds: 0,
+        isOnBreak: false,
+        isLongBreak: false,
+        breakTimeLeftSeconds: 0,
+        blocksCompleted: 0,
+      );
     } else {
       state = state.copyWith(
-          elapsedSeconds: 0,
-          isOnBreak: false,
-          isLongBreak: false,
-          breakTimeLeftSeconds: 0,
-          blocksCompleted: 0);
+        elapsedSeconds: 0,
+        isOnBreak: false,
+        isLongBreak: false,
+        breakTimeLeftSeconds: 0,
+        blocksCompleted: 0,
+      );
     }
   }
 
@@ -274,5 +276,6 @@ class TimerNotifier extends StateNotifier<TimerState> {
   }
 }
 
-final timerProvider =
-    StateNotifierProvider<TimerNotifier, TimerState>((ref) => TimerNotifier());
+final timerProvider = StateNotifierProvider<TimerNotifier, TimerState>(
+  (ref) => TimerNotifier(),
+);

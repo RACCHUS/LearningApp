@@ -56,8 +56,8 @@ class ReviewEmphasisNotifier extends StateNotifier<ReviewEmphasis> {
 
 final reviewEmphasisProvider =
     StateNotifierProvider<ReviewEmphasisNotifier, ReviewEmphasis>((ref) {
-  return ReviewEmphasisNotifier();
-});
+      return ReviewEmphasisNotifier();
+    });
 
 /// Computes the active daily plan for the learner.
 final dailyPlanProvider = FutureProvider<DailyPlan>((ref) async {
@@ -81,7 +81,8 @@ final dailyPlanProvider = FutureProvider<DailyPlan>((ref) async {
 
   // Check for examDate or targetDate in scopeConfig
   DateTime? examDate;
-  final rawExamDate = activeContext.scopeConfig['examDate'] ??
+  final rawExamDate =
+      activeContext.scopeConfig['examDate'] ??
       activeContext.scopeConfig['targetDate'];
   if (rawExamDate is String && rawExamDate.isNotEmpty) {
     examDate = DateTime.tryParse(rawExamDate);
@@ -96,4 +97,3 @@ final dailyPlanProvider = FutureProvider<DailyPlan>((ref) async {
     examDate: examDate,
   );
 });
-

@@ -29,8 +29,10 @@ double? computeMastery(List<int> repetitionLevels) {
 
 /// Granular mastery for a lesson (0.0–1.0), or null if the user has no review
 /// items for it yet. Derived from the spaced-repetition levels of its items.
-final lessonMasteryProvider =
-    FutureProvider.family<double?, String>((ref, lessonId) async {
+final lessonMasteryProvider = FutureProvider.family<double?, String>((
+  ref,
+  lessonId,
+) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return null;
 
@@ -53,8 +55,10 @@ final lessonMasteryProvider =
 
 /// Timestamp of the most recent study session for a lesson, or null if never
 /// studied. Used to gently discourage cramming (re-studying too soon).
-final lessonLastStudiedProvider =
-    FutureProvider.family<DateTime?, String>((ref, lessonId) async {
+final lessonLastStudiedProvider = FutureProvider.family<DateTime?, String>((
+  ref,
+  lessonId,
+) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return null;
   final kind = progress_model.isLegacyProgressLessonId(lessonId)
@@ -74,10 +78,12 @@ final lessonLastStudiedProvider =
 });
 
 /// Provider for individual lesson progress (0.0 to 1.0)
-/// 
+///
 /// Fetches from Supabase user_progress table
-final lessonProgressProvider =
-    FutureProvider.family<double, String>((ref, lessonId) async {
+final lessonProgressProvider = FutureProvider.family<double, String>((
+  ref,
+  lessonId,
+) async {
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return 0.0;
   final kind = progress_model.isLegacyProgressLessonId(lessonId)
@@ -102,49 +108,54 @@ final lessonProgressProvider =
 /// Provider for the most recent incomplete lesson (for "Continue Learning" feature)
 final continueLearningSuggestionProvider =
     FutureProvider<ContinueLearningSuggestion?>((ref) async {
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return null;
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return null;
 
-  // Resume position is stored locally, not in the canonical daily projection.
-  // The old Supabase query referenced a last_position column that never existed.
-  final hive = ref.read(hiveServiceProvider);
-  await hive.init();
-  final local = await hive.getProgress();
-  final candidates = local
-      .where((p) => p.userId == userId &&
-          !p.lessonCompleted && p.lastPosition != null)
-      .toList()
-    ..sort((a, b) => b.date.compareTo(a.date));
-  if (candidates.isEmpty) return null;
-  final lessons = await ref.read(assetLessonsProvider.future);
-  for (final p in candidates) {
-    String? title;
-    if (progress_model.isLegacyProgressLessonId(p.lessonId)) {
-      final lessonRow = await Supabase.instance.client
-          .from('lessons')
-          .select('title')
-          .eq('id', p.lessonId)
-          .maybeSingle();
-      title = lessonRow?['title'] as String?;
-    } else {
-      for (final asset in lessons) {
-        if (asset.id == p.lessonId) {
-          title = asset.title;
-          break;
+      // Resume position is stored locally, not in the canonical daily projection.
+      // The old Supabase query referenced a last_position column that never existed.
+      final hive = ref.read(hiveServiceProvider);
+      await hive.init();
+      final local = await hive.getProgress();
+      final candidates =
+          local
+              .where(
+                (p) =>
+                    p.userId == userId &&
+                    !p.lessonCompleted &&
+                    p.lastPosition != null,
+              )
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date));
+      if (candidates.isEmpty) return null;
+      final lessons = await ref.read(assetLessonsProvider.future);
+      for (final p in candidates) {
+        String? title;
+        if (progress_model.isLegacyProgressLessonId(p.lessonId)) {
+          final lessonRow = await Supabase.instance.client
+              .from('lessons')
+              .select('title')
+              .eq('id', p.lessonId)
+              .maybeSingle();
+          title = lessonRow?['title'] as String?;
+        } else {
+          for (final asset in lessons) {
+            if (asset.id == p.lessonId) {
+              title = asset.title;
+              break;
+            }
+          }
         }
+        if (title == null) continue;
+        return ContinueLearningSuggestion(
+          lessonId: p.lessonId,
+          lessonTitle: title,
+          lastPosition: p.lastPosition,
+          questionsAnswered: p.questionsAnswered,
+          lastStudiedAt: p.date,
+        );
       }
-    }
-    if (title == null) continue;
-    return ContinueLearningSuggestion(
-      lessonId: p.lessonId,
-      lessonTitle: title,
-      lastPosition: p.lastPosition,
-      questionsAnswered: p.questionsAnswered,
-      lastStudiedAt: p.date,
-    );
-  }
-  return null;
-});
+      return null;
+    });
 
 /// Data class for continue learning suggestion
 class ContinueLearningSuggestion {

@@ -14,11 +14,13 @@ final resetServiceProvider = Provider<ResetService>((ref) {
 
 /// Available reverts (snapshots that can still be reverted)
 final availableRevertsProvider =
-    StateNotifierProvider<AvailableRevertsNotifier, AsyncValue<List<UserDataSnapshot>>>(
-        (ref) {
-  final service = ref.read(resetServiceProvider);
-  return AvailableRevertsNotifier(service);
-});
+    StateNotifierProvider<
+      AvailableRevertsNotifier,
+      AsyncValue<List<UserDataSnapshot>>
+    >((ref) {
+      final service = ref.read(resetServiceProvider);
+      return AvailableRevertsNotifier(service);
+    });
 
 class AvailableRevertsNotifier
     extends StateNotifier<AsyncValue<List<UserDataSnapshot>>> {
@@ -44,7 +46,9 @@ class AvailableRevertsNotifier
 }
 
 /// All snapshots (including reverted/expired)
-final allSnapshotsProvider = FutureProvider<List<UserDataSnapshot>>((ref) async {
+final allSnapshotsProvider = FutureProvider<List<UserDataSnapshot>>((
+  ref,
+) async {
   final service = ref.read(resetServiceProvider);
   return service.getAllSnapshots();
 });
@@ -89,8 +93,7 @@ class ResetState {
 }
 
 /// Reset operations notifier
-final resetProvider =
-    StateNotifierProvider<ResetNotifier, ResetState>((ref) {
+final resetProvider = StateNotifierProvider<ResetNotifier, ResetState>((ref) {
   final service = ref.read(resetServiceProvider);
   return ResetNotifier(service, ref);
 });
@@ -103,7 +106,11 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
   /// Reset a skill's stats and history
   Future<String?> resetSkill(String skillId, {String? reason}) async {
-    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isResetting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
       final snapshotId = await _service.resetSkill(skillId, reason: reason);
@@ -111,7 +118,8 @@ class ResetNotifier extends StateNotifier<ResetState> {
       state = state.copyWith(
         isResetting: false,
         lastSnapshotId: snapshotId,
-        successMessage: 'Skill reset successfully. You can revert within 30 days.',
+        successMessage:
+            'Skill reset successfully. You can revert within 30 days.',
       );
 
       // Refresh related providers
@@ -120,17 +128,18 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
       return snapshotId;
     } catch (e) {
-      state = state.copyWith(
-        isResetting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isResetting: false, error: e.toString());
       return null;
     }
   }
 
   /// Reset a career path's progress
   Future<String?> resetCareerPath(String pathId, {String? reason}) async {
-    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isResetting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
       final snapshotId = await _service.resetCareerPath(pathId, reason: reason);
@@ -138,7 +147,8 @@ class ResetNotifier extends StateNotifier<ResetState> {
       state = state.copyWith(
         isResetting: false,
         lastSnapshotId: snapshotId,
-        successMessage: 'Career path reset successfully. You can revert within 30 days.',
+        successMessage:
+            'Career path reset successfully. You can revert within 30 days.',
       );
 
       // Refresh related providers
@@ -147,17 +157,18 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
       return snapshotId;
     } catch (e) {
-      state = state.copyWith(
-        isResetting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isResetting: false, error: e.toString());
       return null;
     }
   }
 
   /// Reset a course's progress
   Future<String?> resetCourse(String courseId, {String? reason}) async {
-    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isResetting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
       final snapshotId = await _service.resetCourse(courseId, reason: reason);
@@ -165,7 +176,8 @@ class ResetNotifier extends StateNotifier<ResetState> {
       state = state.copyWith(
         isResetting: false,
         lastSnapshotId: snapshotId,
-        successMessage: 'Course reset successfully. You can revert within 30 days.',
+        successMessage:
+            'Course reset successfully. You can revert within 30 days.',
       );
 
       // Refresh related providers
@@ -173,21 +185,24 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
       return snapshotId;
     } catch (e) {
-      state = state.copyWith(
-        isResetting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isResetting: false, error: e.toString());
       return null;
     }
   }
 
   /// Reset a learning target/goal's progress
   Future<String?> resetLearningTarget(String targetId, {String? reason}) async {
-    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isResetting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
-      final snapshotId =
-          await _service.resetLearningTarget(targetId, reason: reason);
+      final snapshotId = await _service.resetLearningTarget(
+        targetId,
+        reason: reason,
+      );
 
       state = state.copyWith(
         isResetting: false,
@@ -202,17 +217,18 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
       return snapshotId;
     } catch (e) {
-      state = state.copyWith(
-        isResetting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isResetting: false, error: e.toString());
       return null;
     }
   }
 
   /// Reset ALL progress
   Future<String?> resetAll({String? reason}) async {
-    state = state.copyWith(isResetting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isResetting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
       final snapshotId = await _service.resetAllProgress(reason: reason);
@@ -230,10 +246,7 @@ class ResetNotifier extends StateNotifier<ResetState> {
 
       return snapshotId;
     } catch (e) {
-      state = state.copyWith(
-        isResetting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isResetting: false, error: e.toString());
       return null;
     }
   }
@@ -274,8 +287,9 @@ class RevertState {
 }
 
 /// Revert operations notifier
-final revertProvider =
-    StateNotifierProvider<RevertNotifier, RevertState>((ref) {
+final revertProvider = StateNotifierProvider<RevertNotifier, RevertState>((
+  ref,
+) {
   final service = ref.read(resetServiceProvider);
   return RevertNotifier(service, ref);
 });
@@ -292,7 +306,11 @@ class RevertNotifier extends StateNotifier<RevertState> {
     RevertScope scope = RevertScope.full,
     String? specificAttemptId,
   }) async {
-    state = state.copyWith(isReverting: true, error: null, successMessage: null);
+    state = state.copyWith(
+      isReverting: true,
+      error: null,
+      successMessage: null,
+    );
 
     try {
       await _service.revertFromSnapshot(
@@ -313,10 +331,7 @@ class RevertNotifier extends StateNotifier<RevertState> {
 
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isReverting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isReverting: false, error: e.toString());
       return false;
     }
   }
@@ -364,7 +379,8 @@ class ResetConfirmationData {
       type: SnapshotType.skillReset,
       targetId: skill.id,
       targetName: skill.name,
-      description: 'This will reset your ${skill.name} skill level to 0 and mark all assessment attempts as practice.',
+      description:
+          'This will reset your ${skill.name} skill level to 0 and mark all assessment attempts as practice.',
       warnings: [
         'Your verified score will be removed from leaderboards',
         'All assessment history will be marked as unverified',
@@ -378,7 +394,8 @@ class ResetConfirmationData {
       type: SnapshotType.careerReset,
       targetId: path.id,
       targetName: path.title,
-      description: 'This will reset your progress in "${path.title}" career path.',
+      description:
+          'This will reset your progress in "${path.title}" career path.',
       warnings: [
         'All course progress within this path will be reset',
         'Your enrollment status will be set back to "Active"',
@@ -405,7 +422,8 @@ class ResetConfirmationData {
     return const ResetConfirmationData(
       type: SnapshotType.fullReset,
       targetName: 'All Progress',
-      description: 'This will reset ALL your learning progress across the entire app.',
+      description:
+          'This will reset ALL your learning progress across the entire app.',
       warnings: [
         '⚠️ This is the nuclear option!',
         'All skill levels will be set to 0',

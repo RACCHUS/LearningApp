@@ -86,9 +86,9 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
     required LessonService lessonService,
     String? userId,
     String? lessonId,
-  })  : _lessonService = lessonService,
-        _userId = userId,
-        super(const LessonEditorState()) {
+  }) : _lessonService = lessonService,
+       _userId = userId,
+       super(const LessonEditorState()) {
     if (lessonId != null) {
       _loadLesson(lessonId);
     }
@@ -198,8 +198,9 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
   }
 
   void removeQuestion(String questionId) {
-    final newQuestions =
-        state.questions.where((q) => q.id != questionId).toList();
+    final newQuestions = state.questions
+        .where((q) => q.id != questionId)
+        .toList();
     state = state.copyWith(questions: newQuestions, isDirty: true);
   }
 
@@ -242,8 +243,7 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
   }
 
   void removeConcept(String conceptId) {
-    final newConcepts =
-        state.concepts.where((c) => c.id != conceptId).toList();
+    final newConcepts = state.concepts.where((c) => c.id != conceptId).toList();
     state = state.copyWith(concepts: newConcepts, isDirty: true);
   }
 
@@ -317,10 +317,10 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
           description: state.description,
           tags: state.tags,
         );
-        
+
         // Refresh to get complete lesson with content
         lesson = await _lessonService.getLesson(lesson.id);
-        
+
         // Return updated lesson with current content
         lesson = lesson.copyWith(
           terms: state.terms,
@@ -354,16 +354,14 @@ class LessonEditorNotifier extends StateNotifier<LessonEditorState> {
 
 /// Provider for lesson editor
 final lessonEditorProvider = StateNotifierProvider.autoDispose
-    .family<LessonEditorNotifier, LessonEditorState, String?>(
-  (ref, lessonId) {
-    final lessonService = LessonService();
-    final userId =
-        Supabase.instance.client.auth.currentUser?.id ?? 'anonymous';
-    
-    return LessonEditorNotifier(
-      lessonService: lessonService,
-      userId: userId,
-      lessonId: lessonId,
-    );
-  },
-);
+    .family<LessonEditorNotifier, LessonEditorState, String?>((ref, lessonId) {
+      final lessonService = LessonService();
+      final userId =
+          Supabase.instance.client.auth.currentUser?.id ?? 'anonymous';
+
+      return LessonEditorNotifier(
+        lessonService: lessonService,
+        userId: userId,
+        lessonId: lessonId,
+      );
+    });

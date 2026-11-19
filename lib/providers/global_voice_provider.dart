@@ -14,13 +14,14 @@ final globalVoiceServiceProvider = Provider<GlobalVoiceService>((ref) {
 class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
   final GlobalVoiceService _service;
   final Ref _ref;
-  
+
   // Subscriptions for cleanup
   StreamSubscription<bool>? _listeningSubscription;
   StreamSubscription<GlobalVoiceCommand>? _commandSubscription;
   StreamSubscription<String>? _statusSubscription;
 
-  GlobalVoiceNotifier(this._service, this._ref) : super(const GlobalVoiceState()) {
+  GlobalVoiceNotifier(this._service, this._ref)
+    : super(const GlobalVoiceState()) {
     _initializeService();
     _setupListeners();
   }
@@ -28,15 +29,15 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
   Future<void> _initializeService() async {
     // Get the enhanced voice service from the audio provider
     final audioNotifier = _ref.read(audioPlaybackProvider.notifier);
-    
+
     // Get the router for navigation
     final router = _ref.read(routerProvider);
-    
+
     await _service.initialize(
       voiceService: audioNotifier.voiceService,
       router: router,
     );
-    
+
     // Update state with service availability
     state = state.copyWith(
       isAvailable: _service.isAvailable,
@@ -67,7 +68,7 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
     // Ensure we have permissions first
     final audioNotifier = _ref.read(audioPlaybackProvider.notifier);
     final hasPermissions = await audioNotifier.requestMicrophonePermissions();
-    
+
     if (!hasPermissions) {
       state = state.copyWith(
         isEnabled: false,
@@ -82,7 +83,7 @@ class GlobalVoiceNotifier extends StateNotifier<GlobalVoiceState> {
       hasPermissions: _service.hasPermissions,
       isAvailable: _service.isAvailable,
     );
-    
+
     return success;
   }
 
@@ -188,15 +189,16 @@ class GlobalVoiceState {
   @override
   String toString() {
     return 'GlobalVoiceState(isEnabled: $isEnabled, isListening: $isListening, '
-           'isAvailable: $isAvailable, currentRoute: $currentRoute)';
+        'isAvailable: $isAvailable, currentRoute: $currentRoute)';
   }
 }
 
 /// Provider for global voice state
-final globalVoiceProvider = StateNotifierProvider<GlobalVoiceNotifier, GlobalVoiceState>((ref) {
-  final service = ref.watch(globalVoiceServiceProvider);
-  return GlobalVoiceNotifier(service, ref);
-});
+final globalVoiceProvider =
+    StateNotifierProvider<GlobalVoiceNotifier, GlobalVoiceState>((ref) {
+      final service = ref.watch(globalVoiceServiceProvider);
+      return GlobalVoiceNotifier(service, ref);
+    });
 
 /// Convenience providers
 final isGlobalVoiceEnabledProvider = Provider<bool>((ref) {

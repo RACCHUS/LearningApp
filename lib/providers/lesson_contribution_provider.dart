@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/governance/site_feature_keys.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/community/lesson_contribution_service.dart';
+import 'package:learning_pwa/services/community/wanted_board_service.dart';
 import 'package:learning_pwa/services/governance/moderation_service.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
@@ -25,6 +26,20 @@ final refreshProposalsEnabledProvider = Provider<bool>((ref) {
     runtimeReady: SiteFeatureRuntime.snapshotEnabled,
   );
 });
+
+/// `content.wanted_board` (PR-H slice 5). Default OFF; every Wanted Board
+/// RPC re-checks it on the server.
+final wantedBoardEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.contentWantedBoard,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+final wantedBoardServiceProvider = Provider<WantedBoardService>(
+  (ref) => WantedBoardService(),
+);
 
 final lessonContributionServiceProvider = Provider<LessonContributionService>(
   (ref) => LessonContributionService(),

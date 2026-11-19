@@ -38,13 +38,14 @@ final webPushClientProvider = Provider<WebPushClient>(
   (ref) => const WebPushClient(),
 );
 
-final studyRemindersProvider =
-    FutureProvider.autoDispose<List<StudyReminder>>((ref) {
+final studyRemindersProvider = FutureProvider.autoDispose<List<StudyReminder>>((
+  ref,
+) {
   return ref.watch(studyReminderServiceProvider).list();
 });
 
 /// This browser's push subscription, if it has one.
 final browserPushSubscriptionProvider =
     FutureProvider.autoDispose<WebPushSubscription?>((ref) {
-  return ref.watch(webPushClientProvider).current();
-});
+      return ref.watch(webPushClientProvider).current();
+    });

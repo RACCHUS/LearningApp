@@ -21,8 +21,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// [client] is for tests; the app uses the global Supabase client.
   AuthNotifier({SupabaseClient? client})
-      : _supabase = client ?? Supabase.instance.client,
-        super(AuthInitial()) {
+    : _supabase = client ?? Supabase.instance.client,
+      super(AuthInitial()) {
     final session = _supabase.auth.currentSession;
     if (session != null) {
       _upsertUser(session.user);
@@ -116,9 +116,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthSuccess(guest);
       }
     } catch (e, stackTrace) {
-      _logger.warn('Google identity linking failed',
-        error: e, stackTrace: stackTrace,
-        metadata: {'method': 'linkGuestToGoogle'});
+      _logger.warn(
+        'Google identity linking failed',
+        error: e,
+        stackTrace: stackTrace,
+        metadata: {'method': 'linkGuestToGoogle'},
+      );
       // Never sign out or replace the anonymous identity on a failed link.
       state = AuthSuccess(guest);
       rethrow;
@@ -145,7 +148,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     while (attempts < maxAttempts) {
       try {
-        final existing = await _supabase.from('users')
+        final existing = await _supabase
+            .from('users')
             .select('email')
             .eq('id', user.id)
             .maybeSingle();
@@ -160,13 +164,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         } else if (existing['email'] != cleanEmail) {
           // Anonymous -> Google linking keeps the same UID. Sync the email
           // without erasing existing profile fields or creation time.
-          await _supabase.from('users').update({
-            'email': cleanEmail,
-          }).eq('id', user.id);
+          await _supabase
+              .from('users')
+              .update({'email': cleanEmail})
+              .eq('id', user.id);
         }
 
-        _logger.info('User record synchronized successfully',
-            metadata: {'userId': user.id});
+        _logger.info(
+          'User record synchronized successfully',
+          metadata: {'userId': user.id},
+        );
         return true; // Success
       } catch (e, stackTrace) {
         attempts++;

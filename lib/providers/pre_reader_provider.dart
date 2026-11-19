@@ -16,8 +16,8 @@ class PreReaderNotifier extends StateNotifier<PreReaderProfile> {
   PreReaderNotifier({
     PreReaderAudioService? audioService,
     PreReaderProfile initialProfile = const PreReaderProfile(),
-  })  : _audioService = audioService ?? PreReaderAudioService(),
-        super(initialProfile) {
+  }) : _audioService = audioService ?? PreReaderAudioService(),
+       super(initialProfile) {
     _loadFromPreferences();
   }
 
@@ -42,10 +42,7 @@ class PreReaderNotifier extends StateNotifier<PreReaderProfile> {
   }
 
   Future<void> enable(PreReaderTrack track) async {
-    state = state.copyWith(
-      enabled: true,
-      track: track,
-    );
+    state = state.copyWith(enabled: true, track: track);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyEnabled, true);
     await prefs.setString(_keyTrack, track.name);
@@ -120,6 +117,6 @@ class PreReaderNotifier extends StateNotifier<PreReaderProfile> {
 
 final preReaderProvider =
     StateNotifierProvider<PreReaderNotifier, PreReaderProfile>((ref) {
-  final audioService = ref.watch(preReaderAudioServiceProvider);
-  return PreReaderNotifier(audioService: audioService);
-});
+      final audioService = ref.watch(preReaderAudioServiceProvider);
+      return PreReaderNotifier(audioService: audioService);
+    });

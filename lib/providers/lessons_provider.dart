@@ -4,7 +4,9 @@ import 'package:learning_pwa/models/lesson.dart';
 import 'package:learning_pwa/services/supabase_service.dart';
 
 // Combined provider for lessons with efficient state management
-final lessonsProvider = StateNotifierProvider<LessonsNotifier, LessonsState>((ref) {
+final lessonsProvider = StateNotifierProvider<LessonsNotifier, LessonsState>((
+  ref,
+) {
   return LessonsNotifier();
 });
 
@@ -40,8 +42,8 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
   final SupabaseService _supabase;
 
   LessonsNotifier({SupabaseService? supabaseService})
-      : _supabase = supabaseService ?? SupabaseService(),
-        super(const LessonsState());
+    : _supabase = supabaseService ?? SupabaseService(),
+      super(const LessonsState());
 
   Future<void> loadLessons() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -52,10 +54,10 @@ class LessonsNotifier extends StateNotifier<LessonsState> {
         lesson_questions(questions(*)),
         lesson_concepts(concepts(*))
       ''');
-      
+
       final lessons = response.map((json) => Lesson.fromJson(json)).toList();
       state = state.copyWith(lessons: lessons, isLoading: false, error: null);
-      
+
       debugPrint('✅ Successfully loaded ${lessons.length} lessons');
     } catch (e, stackTrace) {
       const errorMsg = 'Failed to load lessons from database';

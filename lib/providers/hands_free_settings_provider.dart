@@ -4,14 +4,16 @@ import 'package:learning_pwa/models/hands_free_settings.dart';
 import 'package:learning_pwa/services/hands_free_settings_service.dart';
 
 /// Provider for the hands-free settings service
-final handsFreeSettingsServiceProvider = Provider<HandsFreeSettingsService>((ref) {
+final handsFreeSettingsServiceProvider = Provider<HandsFreeSettingsService>((
+  ref,
+) {
   return HandsFreeSettingsService();
 });
 
 /// State notifier for hands-free settings
 class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
   final HandsFreeSettingsService _service;
-  
+
   // Subscription for cleanup
   StreamSubscription<HandsFreeSettings>? _settingsSubscription;
 
@@ -38,17 +40,26 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 
   /// Toggle default hands-free mode
   Future<void> toggleDefaultHandsFreeMode() async {
-    await _service.updateSetting('defaultHandsFreeMode', !state.defaultHandsFreeMode);
+    await _service.updateSetting(
+      'defaultHandsFreeMode',
+      !state.defaultHandsFreeMode,
+    );
   }
 
   /// Toggle global voice commands
   Future<void> toggleGlobalVoiceCommands() async {
-    await _service.updateSetting('globalVoiceCommands', !state.globalVoiceCommands);
+    await _service.updateSetting(
+      'globalVoiceCommands',
+      !state.globalVoiceCommands,
+    );
   }
 
   /// Toggle auto lesson hands-free
   Future<void> toggleAutoLessonHandsFree() async {
-    await _service.updateSetting('autoLessonHandsFree', !state.autoLessonHandsFree);
+    await _service.updateSetting(
+      'autoLessonHandsFree',
+      !state.autoLessonHandsFree,
+    );
   }
 
   /// Set voice timeout
@@ -63,12 +74,18 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 
   /// Toggle auto request permissions
   Future<void> toggleAutoRequestPermissions() async {
-    await _service.updateSetting('autoRequestPermissions', !state.autoRequestPermissions);
+    await _service.updateSetting(
+      'autoRequestPermissions',
+      !state.autoRequestPermissions,
+    );
   }
 
   /// Toggle show voice indicator
   Future<void> toggleShowVoiceIndicator() async {
-    await _service.updateSetting('showVoiceIndicator', !state.showVoiceIndicator);
+    await _service.updateSetting(
+      'showVoiceIndicator',
+      !state.showVoiceIndicator,
+    );
   }
 
   /// Toggle announce commands
@@ -88,7 +105,10 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 
   /// Toggle persist across sessions
   Future<void> togglePersistAcrossSessions() async {
-    await _service.updateSetting('persistAcrossSessions', !state.persistAcrossSessions);
+    await _service.updateSetting(
+      'persistAcrossSessions',
+      !state.persistAcrossSessions,
+    );
   }
 
   /// Reset to default settings
@@ -113,7 +133,7 @@ class HandsFreeSettingsNotifier extends StateNotifier<HandsFreeSettings> {
 /// State notifier for hands-free enabled state
 class HandsFreeStateNotifier extends StateNotifier<bool> {
   final HandsFreeSettingsService _service;
-  
+
   // Subscription for cleanup
   StreamSubscription<bool>? _stateSubscription;
 
@@ -162,16 +182,18 @@ class HandsFreeStateNotifier extends StateNotifier<bool> {
 }
 
 /// Provider for hands-free settings state
-final handsFreeSettingsProvider = StateNotifierProvider<HandsFreeSettingsNotifier, HandsFreeSettings>((ref) {
-  final service = ref.watch(handsFreeSettingsServiceProvider);
-  return HandsFreeSettingsNotifier(service);
-});
+final handsFreeSettingsProvider =
+    StateNotifierProvider<HandsFreeSettingsNotifier, HandsFreeSettings>((ref) {
+      final service = ref.watch(handsFreeSettingsServiceProvider);
+      return HandsFreeSettingsNotifier(service);
+    });
 
 /// Provider for hands-free enabled state
-final handsFreeStateProvider = StateNotifierProvider<HandsFreeStateNotifier, bool>((ref) {
-  final service = ref.watch(handsFreeSettingsServiceProvider);
-  return HandsFreeStateNotifier(service);
-});
+final handsFreeStateProvider =
+    StateNotifierProvider<HandsFreeStateNotifier, bool>((ref) {
+      final service = ref.watch(handsFreeSettingsServiceProvider);
+      return HandsFreeStateNotifier(service);
+    });
 
 /// Convenience providers
 final shouldShowVoiceIndicatorProvider = Provider<bool>((ref) {

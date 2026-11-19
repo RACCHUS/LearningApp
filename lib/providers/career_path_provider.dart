@@ -14,45 +14,55 @@ final careerPathsProvider = FutureProvider<List<CareerPath>>((ref) async {
 });
 
 /// Featured career paths
-final featuredCareerPathsProvider = FutureProvider<List<CareerPath>>((ref) async {
+final featuredCareerPathsProvider = FutureProvider<List<CareerPath>>((
+  ref,
+) async {
   final service = ref.read(careerPathServiceProvider);
   return service.getCareerPaths(featuredOnly: true);
 });
 
 /// Official career paths only
-final officialCareerPathsProvider = FutureProvider<List<CareerPath>>((ref) async {
+final officialCareerPathsProvider = FutureProvider<List<CareerPath>>((
+  ref,
+) async {
   final service = ref.read(careerPathServiceProvider);
   return service.getCareerPaths(officialOnly: true);
 });
 
 /// Single career path by ID
-final careerPathProvider =
-    FutureProvider.family<CareerPath, String>((ref, pathId) async {
+final careerPathProvider = FutureProvider.family<CareerPath, String>((
+  ref,
+  pathId,
+) async {
   final service = ref.read(careerPathServiceProvider);
   return service.getCareerPath(pathId);
 });
 
 /// Career path by slug
-final careerPathBySlugProvider =
-    FutureProvider.family<CareerPath?, String>((ref, slug) async {
+final careerPathBySlugProvider = FutureProvider.family<CareerPath?, String>((
+  ref,
+  slug,
+) async {
   final service = ref.read(careerPathServiceProvider);
   return service.getCareerPathBySlug(slug);
 });
 
 /// User's enrolled career paths
 final userCareerPathsProvider =
-    StateNotifierProvider<UserCareerPathsNotifier, AsyncValue<List<UserCareerPath>>>(
-        (ref) {
-  final service = ref.read(careerPathServiceProvider);
-  return UserCareerPathsNotifier(service);
-});
+    StateNotifierProvider<
+      UserCareerPathsNotifier,
+      AsyncValue<List<UserCareerPath>>
+    >((ref) {
+      final service = ref.read(careerPathServiceProvider);
+      return UserCareerPathsNotifier(service);
+    });
 
 /// Progress for a specific career path
 final careerPathProgressProvider =
     FutureProvider.family<CareerPathProgress, String>((ref, pathId) async {
-  final service = ref.read(careerPathServiceProvider);
-  return service.getCareerPathProgress(pathId);
-});
+      final service = ref.read(careerPathServiceProvider);
+      return service.getCareerPathProgress(pathId);
+    });
 
 /// Notifier for user's career path enrollments
 class UserCareerPathsNotifier
@@ -188,17 +198,18 @@ class CareerPathEditorState {
 
 /// Provider for career path editor
 final careerPathEditorProvider =
-    StateNotifierProvider<CareerPathEditorNotifier, CareerPathEditorState>(
-        (ref) {
-  final service = ref.read(careerPathServiceProvider);
-  return CareerPathEditorNotifier(service);
-});
+    StateNotifierProvider<CareerPathEditorNotifier, CareerPathEditorState>((
+      ref,
+    ) {
+      final service = ref.read(careerPathServiceProvider);
+      return CareerPathEditorNotifier(service);
+    });
 
 class CareerPathEditorNotifier extends StateNotifier<CareerPathEditorState> {
   final CareerPathService _service;
 
   CareerPathEditorNotifier(this._service)
-      : super(const CareerPathEditorState());
+    : super(const CareerPathEditorState());
 
   void reset() {
     state = const CareerPathEditorState();
@@ -312,10 +323,7 @@ class CareerPathEditorNotifier extends StateNotifier<CareerPathEditorState> {
 
       // Update skills
       for (final skillId in state.skillIds) {
-        await _service.addSkillToPath(
-          pathId: path.id,
-          skillId: skillId,
-        );
+        await _service.addSkillToPath(pathId: path.id, skillId: skillId);
       }
 
       state = state.copyWith(isSaving: false);

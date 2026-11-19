@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/license_pathway_readiness.dart';
 import '../services/pathway_readiness_service.dart';
 
-final pathwayReadinessServiceProvider = Provider<PathwayReadinessService>((ref) {
+final pathwayReadinessServiceProvider = Provider<PathwayReadinessService>((
+  ref,
+) {
   return PathwayReadinessService();
 });
 
@@ -14,7 +16,7 @@ class PathwayReadinessNotifier
   final PathwayReadinessKey _key;
 
   PathwayReadinessNotifier(this._service, this._key)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     _load();
   }
 
@@ -82,10 +84,12 @@ class PathwayReadinessNotifier
   }
 }
 
-final pathwayReadinessProvider = StateNotifierProvider.family<
-    PathwayReadinessNotifier,
-    AsyncValue<PathwayReadinessState>,
-    PathwayReadinessKey>((ref, key) {
-  final service = ref.watch(pathwayReadinessServiceProvider);
-  return PathwayReadinessNotifier(service, key);
-});
+final pathwayReadinessProvider =
+    StateNotifierProvider.family<
+      PathwayReadinessNotifier,
+      AsyncValue<PathwayReadinessState>,
+      PathwayReadinessKey
+    >((ref, key) {
+      final service = ref.watch(pathwayReadinessServiceProvider);
+      return PathwayReadinessNotifier(service, key);
+    });

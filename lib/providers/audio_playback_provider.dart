@@ -6,9 +6,10 @@ import 'package:learning_pwa/services/voice_input_service.dart';
 import 'package:learning_pwa/models/voice_command.dart';
 
 // Audio Playback Provider - manages TTS playback and voice recognition state
-final audioPlaybackProvider = StateNotifierProvider<AudioPlaybackNotifier, AudioState>((ref) {
-  return AudioPlaybackNotifier();
-});
+final audioPlaybackProvider =
+    StateNotifierProvider<AudioPlaybackNotifier, AudioState>((ref) {
+      return AudioPlaybackNotifier();
+    });
 
 class AudioPlaybackNotifier extends StateNotifier<AudioState> {
   AudioPlaybackNotifier() : super(const AudioState()) {
@@ -70,7 +71,11 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
     return await _audioService.speakAnswer(answerText);
   }
 
-  Future<bool> speakTerm(String term, String definition, {String? example}) async {
+  Future<bool> speakTerm(
+    String term,
+    String definition, {
+    String? example,
+  }) async {
     return await _audioService.speakTerm(term, definition, example: example);
   }
 
@@ -148,13 +153,14 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
 
   // Provider information and capabilities
   bool get isManualInputMode => _voiceService.isManualInputMode;
-  
+
   Map<String, dynamic> get voiceCapabilities => _voiceService.capabilities;
-  
+
   List<String> getSetupInstructions() => _voiceService.getSetupInstructions();
-  
-  Map<String, String> getCommandMappings() => _voiceService.getCommandMappings();
-  
+
+  Map<String, String> getCommandMappings() =>
+      _voiceService.getCommandMappings();
+
   List<String> get voiceStatusLog => _voiceService.statusLog;
 
   // State getters for UI
@@ -163,7 +169,7 @@ class AudioPlaybackNotifier extends StateNotifier<AudioState> {
   bool get canListen => _voiceService.canListen;
   String? get lastRecognizedText => state.recognizedText;
   double get recognitionConfidence => state.confidence;
-  
+
   // Service access for global voice service
   VoiceInputService get voiceService => _voiceService;
 

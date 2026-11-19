@@ -27,11 +27,13 @@ import 'package:learning_pwa/utils/uuid_validator.dart';
 
 final courseServiceProvider = Provider<CourseService>((ref) => CourseService());
 
-final savedStudySetServiceProvider =
-    Provider<SavedStudySetService>((ref) => SavedStudySetService());
+final savedStudySetServiceProvider = Provider<SavedStudySetService>(
+  (ref) => SavedStudySetService(),
+);
 
-final learningContextMigrationProvider =
-    Provider<LearningContextMigration>((ref) {
+final learningContextMigrationProvider = Provider<LearningContextMigration>((
+  ref,
+) {
   return LearningContextMigration(
     contexts: ref.watch(learningContextServiceProvider),
     courses: ref.watch(courseServiceProvider),
@@ -45,8 +47,9 @@ final learningContextMigrationProvider =
 final learningBootstrapProvider = FutureProvider<void>((ref) async {
   final userId = ref.watch(learnerIdProvider);
   try {
-    final report =
-        await ref.watch(learningContextMigrationProvider).runOnce(userId);
+    final report = await ref
+        .watch(learningContextMigrationProvider)
+        .runOnce(userId);
     if (report != null && report.created > 0) {
       await ref.read(learningContextsProvider.notifier).load();
     }
@@ -75,12 +78,13 @@ class ContextSnapshotResolver {
 
   final Future<Set<String>> Function()? _completedLessonIdsFetcher;
   final Future<List<SnapshotNode>> Function(LearningContext context)?
-      _curriculumNodesFetcher;
+  _curriculumNodesFetcher;
   final Future<Map<String, EvidenceSummary>> Function(
     LearningContext context,
     ResolvedScope scope,
     ScopeCoverageBundle coverage,
-  )? _domainEvidenceFetcher;
+  )?
+  _domainEvidenceFetcher;
 
   const ContextSnapshotResolver({
     required CourseService courses,
@@ -95,25 +99,26 @@ class ContextSnapshotResolver {
     ConceptEvidenceService? conceptEvidence,
     Future<Set<String>> Function()? completedLessonIdsFetcher,
     Future<List<SnapshotNode>> Function(LearningContext context)?
-        curriculumNodesFetcher,
+    curriculumNodesFetcher,
     Future<Map<String, EvidenceSummary>> Function(
       LearningContext context,
       ResolvedScope scope,
       ScopeCoverageBundle coverage,
-    )? domainEvidenceFetcher,
-  })  : _courses = courses,
-        _studySets = studySets,
-        _reviews = reviews,
-        _contexts = contexts,
-        _scopeResolver = scopeResolver,
-        _coverageService = coverageService,
-        _strategyPlanner = strategyPlanner,
-        _telFlags = telFlags,
-        _fastPreferenceLookup = fastPreferenceLookup,
-        _conceptEvidence = conceptEvidence,
-        _completedLessonIdsFetcher = completedLessonIdsFetcher,
-        _curriculumNodesFetcher = curriculumNodesFetcher,
-        _domainEvidenceFetcher = domainEvidenceFetcher;
+    )?
+    domainEvidenceFetcher,
+  }) : _courses = courses,
+       _studySets = studySets,
+       _reviews = reviews,
+       _contexts = contexts,
+       _scopeResolver = scopeResolver,
+       _coverageService = coverageService,
+       _strategyPlanner = strategyPlanner,
+       _telFlags = telFlags,
+       _fastPreferenceLookup = fastPreferenceLookup,
+       _conceptEvidence = conceptEvidence,
+       _completedLessonIdsFetcher = completedLessonIdsFetcher,
+       _curriculumNodesFetcher = curriculumNodesFetcher,
+       _domainEvidenceFetcher = domainEvidenceFetcher;
 
   Future<Set<String>> _getCompletedLessonIds(LearningContext context) async {
     final fetcher = _completedLessonIdsFetcher;
@@ -217,7 +222,9 @@ class ContextSnapshotResolver {
 
     final domainStats = <String, _DomainEvidenceAccumulator>{};
     for (final domain in coverage.officialDomains) {
-      domainStats[domain.domainId] = _DomainEvidenceAccumulator(domain.domainId);
+      domainStats[domain.domainId] = _DomainEvidenceAccumulator(
+        domain.domainId,
+      );
     }
 
     // 1. Incorporate FSRS / spaced-repetition review items by lesson -> domain mapping
@@ -351,8 +358,9 @@ class ContextSnapshotResolver {
       }
 
       // Map via lesson_concepts -> lessonId -> coverage.recordsByActivityId[lessonId]
-      final stillUnmapped =
-          unmapped.where((id) => !map.containsKey(id)).toList();
+      final stillUnmapped = unmapped
+          .where((id) => !map.containsKey(id))
+          .toList();
       if (stillUnmapped.isNotEmpty) {
         final lcRes = await client
             .from('lesson_concepts')
@@ -413,10 +421,7 @@ class ContextSnapshotResolver {
     ResolvedScope? scopeOverride,
   }) async {
     if (context.rootType != ContextRootType.target ||
-        !_telFlags.isFastEnabledForTarget(
-          context.rootId,
-          isExamTarget: true,
-        )) {
+        !_telFlags.isFastEnabledForTarget(context.rootId, isExamTarget: true)) {
       return null;
     }
 
@@ -487,7 +492,8 @@ class ContextSnapshotResolver {
       case ContextRootType.target:
       case ContextRootType.concept:
       case ContextRootType.module:
-        if (resolvedScope != null && resolvedScope.orderedActivities.isNotEmpty) {
+        if (resolvedScope != null &&
+            resolvedScope.orderedActivities.isNotEmpty) {
           final fastPref = _fastPreferenceLookup?.call(context.id);
           final useFastPlanner =
               context.rootType == ContextRootType.target &&
@@ -537,12 +543,13 @@ class ContextSnapshotResolver {
             final candidate = incompleteOfficial.isNotEmpty
                 ? incompleteOfficial.first
                 : resolvedScope.orderedActivities
-                    .where((a) => !completedLessons.contains(a.activityId))
-                    .firstOrNull;
+                      .where((a) => !completedLessons.contains(a.activityId))
+                      .firstOrNull;
 
             if (candidate != null) {
-              final index = resolvedScope.orderedActivities
-                  .indexWhere((a) => a.activityId == candidate.activityId);
+              final index = resolvedScope.orderedActivities.indexWhere(
+                (a) => a.activityId == candidate.activityId,
+              );
               next = LessonActivity(
                 lessonId: candidate.activityId,
                 title: candidate.title,
@@ -561,8 +568,12 @@ class ContextSnapshotResolver {
         } else {
           // If this is a course or path, fall through to course activity lookup;
           // for targets, concepts, or modules without orderedActivities, do not call course lookup.
-          if (context.rootType == ContextRootType.course || context.rootType == ContextRootType.path) {
-            final resolved = await _resolveCourseActivity(context, completedLessons);
+          if (context.rootType == ContextRootType.course ||
+              context.rootType == ContextRootType.path) {
+            final resolved = await _resolveCourseActivity(
+              context,
+              completedLessons,
+            );
             next = resolved.next;
             resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
             resumeItemCount = resolved.resumeItemCount;
@@ -576,7 +587,10 @@ class ContextSnapshotResolver {
 
       case ContextRootType.path:
       case ContextRootType.course:
-        final resolved = await _resolveCourseActivity(context, completedLessons);
+        final resolved = await _resolveCourseActivity(
+          context,
+          completedLessons,
+        );
         next = resolved.next;
         resumeActivity = resolved.resume ?? _lessonFromPointer(resume);
         resumeItemCount = resolved.resumeItemCount;
@@ -597,8 +611,7 @@ class ContextSnapshotResolver {
         resumeActivity = resume?.kind == ResumableKind.studySet
             ? next
             : _lessonFromPointer(resume);
-        resumeItemCount =
-            next is StudySetActivity ? next.itemCount : 0;
+        resumeItemCount = next is StudySetActivity ? next.itemCount : 0;
         break;
     }
 
@@ -608,8 +621,11 @@ class ContextSnapshotResolver {
     final dueIds = scopedDue.map((i) => i.contentId).toList();
 
     final totalActivityCount = resolvedScope?.orderedActivities.length ?? 0;
-    final officialRequired = resolvedScope?.orderedActivities
-            .where((a) => a.source == ScopedActivitySource.official && a.isRequired)
+    final officialRequired =
+        resolvedScope?.orderedActivities
+            .where(
+              (a) => a.source == ScopedActivitySource.official && a.isRequired,
+            )
             .toList() ??
         const [];
     final officialRequiredCount = officialRequired.length;
@@ -633,12 +649,15 @@ class ContextSnapshotResolver {
     );
   }
 
-  Future<({LearningActivity? next, LearningActivity? resume, int resumeItemCount})>
-      _resolveCourseActivity(
+  Future<
+    ({LearningActivity? next, LearningActivity? resume, int resumeItemCount})
+  >
+  _resolveCourseActivity(
     LearningContext context,
     Set<String> completedLessons,
   ) async {
-    if (context.rootId == 'foundational-literacy' || !isValidUuid(context.rootId)) {
+    if (context.rootId == 'foundational-literacy' ||
+        !isValidUuid(context.rootId)) {
       return (
         next: LessonActivity(
           lessonId: 'literacy',
@@ -710,10 +729,7 @@ class ContextSnapshotResolver {
 
   LearningActivity? _lessonFromPointer(ResumePointer? resume) {
     if (resume == null || resume.kind != ResumableKind.lesson) return null;
-    return LessonActivity(
-      lessonId: resume.activityId,
-      title: 'Continue',
-    );
+    return LessonActivity(lessonId: resume.activityId, title: 'Continue');
   }
 
   int _itemCountForLesson(List<ReviewableItem> items, String lessonId) {
@@ -757,7 +773,9 @@ class ContextSnapshotResolver {
   }
 }
 
-final contextSnapshotResolverProvider = Provider<ContextSnapshotResolver>((ref) {
+final contextSnapshotResolverProvider = Provider<ContextSnapshotResolver>((
+  ref,
+) {
   final strategyState = ref.watch(learningStrategyProvider);
   final store = ref.watch(fastPreferenceStoreProvider);
   final userId = ref.watch(learnerIdProvider);
@@ -835,8 +853,9 @@ final nextActionProvider = FutureProvider<NextAction>((ref) async {
   }
 
   try {
-    final snapshot =
-        await ref.watch(contextSnapshotResolverProvider).resolve(active);
+    final snapshot = await ref
+        .watch(contextSnapshotResolverProvider)
+        .resolve(active);
     final emphasis = ref.watch(reviewEmphasisProvider);
     final dailyPlan = await ref.watch(dailyPlanProvider.future);
     return engine.resolve(
@@ -857,8 +876,9 @@ final activeDueCountProvider = FutureProvider<int>((ref) async {
   final active = ref.watch(activeLearningContextProvider);
   if (active == null) return 0;
   try {
-    final snapshot =
-        await ref.watch(contextSnapshotResolverProvider).resolve(active);
+    final snapshot = await ref
+        .watch(contextSnapshotResolverProvider)
+        .resolve(active);
     return snapshot.dueCount;
   } catch (_) {
     return 0;

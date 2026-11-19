@@ -8,13 +8,16 @@ import 'package:learning_pwa/services/analytics/local_study_day.dart';
 /// Provider for the user's configured daily goal in minutes
 final dailyGoalMinutesProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
-  return prefs.getInt('dailyGoalMinutes') ?? StudyConstants.defaultStudyGoalMinutes;
+  return prefs.getInt('dailyGoalMinutes') ??
+      StudyConstants.defaultStudyGoalMinutes;
 });
 
 /// Conservative local-day goal display. This currently measures ONLY this
 /// device's confirmed interaction intervals, not synced cross-device totals.
 /// It never presents empty legacy progress or network failures as 0 minutes.
-final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((ref) async {
+final dailyGoalProgressProvider = FutureProvider<DailyGoalProgress>((
+  ref,
+) async {
   final goalMinutes = await ref.watch(dailyGoalMinutesProvider.future);
   final userId = Supabase.instance.client.auth.currentUser?.id ?? 'local-user';
 
@@ -84,17 +87,20 @@ class DailyGoalProgress {
   }
 
   /// Whether the daily goal has been met
-  bool get goalMet => isStudyTimeAvailable &&
+  bool get goalMet =>
+      isStudyTimeAvailable &&
       (studySecondsToday ?? studyMinutesToday * 60) >= goalMinutes * 60;
 
   /// Remaining minutes to reach goal
-  int get remainingMinutes => (goalMinutes - studyMinutesToday).clamp(0, goalMinutes);
+  int get remainingMinutes =>
+      (goalMinutes - studyMinutesToday).clamp(0, goalMinutes);
 
   /// Formatted time string (e.g., "15m" or "1h 30m")
   String get formattedTime {
     if (!isStudyTimeAvailable) return '—';
     if (studySecondsToday != null &&
-        studySecondsToday! > 0 && studyMinutesToday == 0) {
+        studySecondsToday! > 0 &&
+        studyMinutesToday == 0) {
       return '<1m';
     }
     if (studyMinutesToday < 60) {

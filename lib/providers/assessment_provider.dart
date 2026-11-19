@@ -36,8 +36,8 @@ class AssessmentSessionState {
 
   AssessmentQuestion? get currentQuestion =>
       currentQuestionIndex < questions.length
-          ? questions[currentQuestionIndex]
-          : null;
+      ? questions[currentQuestionIndex]
+      : null;
 
   int? get currentAnswer =>
       currentQuestion != null ? answers[currentQuestion!.id] : null;
@@ -99,25 +99,27 @@ class AssessmentSessionState {
 
 /// Assessment session notifier
 final assessmentSessionProvider =
-    StateNotifierProvider<AssessmentSessionNotifier, AssessmentSessionState>(
-        (ref) {
-  final service = ref.read(skillAssessmentServiceProvider);
-  return AssessmentSessionNotifier(service, ref);
-});
+    StateNotifierProvider<AssessmentSessionNotifier, AssessmentSessionState>((
+      ref,
+    ) {
+      final service = ref.read(skillAssessmentServiceProvider);
+      return AssessmentSessionNotifier(service, ref);
+    });
 
 class AssessmentSessionNotifier extends StateNotifier<AssessmentSessionState> {
   final SkillAssessmentService _service;
   final Ref _ref;
 
   AssessmentSessionNotifier(this._service, this._ref)
-      : super(const AssessmentSessionState());
+    : super(const AssessmentSessionState());
 
   /// Start a new assessment
   Future<void> startAssessment(String assessmentId) async {
     try {
       // Get assessment with questions
-      final assessment =
-          await _service.getAssessmentWithQuestions(assessmentId);
+      final assessment = await _service.getAssessmentWithQuestions(
+        assessmentId,
+      );
       final questions = assessment.questions ?? [];
 
       // Shuffle questions (optional)
@@ -183,11 +185,7 @@ class AssessmentSessionNotifier extends StateNotifier<AssessmentSessionState> {
     try {
       // Submit all answers first
       for (final entry in state.answers.entries) {
-        await _service.submitAnswer(
-          state.attemptId!,
-          entry.key,
-          entry.value,
-        );
+        await _service.submitAnswer(state.attemptId!, entry.key, entry.value);
       }
 
       // Complete the assessment
@@ -196,20 +194,14 @@ class AssessmentSessionNotifier extends StateNotifier<AssessmentSessionState> {
         wasOvertime: state.isOvertime,
       );
 
-      state = state.copyWith(
-        isSubmitting: false,
-        result: result,
-      );
+      state = state.copyWith(isSubmitting: false, result: result);
 
       // Refresh skill stats
       _ref.read(userSkillStatsProvider.notifier).refresh();
 
       return result;
     } catch (e) {
-      state = state.copyWith(
-        isSubmitting: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isSubmitting: false, error: e.toString());
       return null;
     }
   }

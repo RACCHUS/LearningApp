@@ -3,16 +3,21 @@ import '../models/governance/governance.dart';
 import '../services/governance/version_governance_service.dart';
 
 /// Provider for VersionGovernanceService
-final versionGovernanceServiceProvider = Provider<VersionGovernanceService>((ref) {
+final versionGovernanceServiceProvider = Provider<VersionGovernanceService>((
+  ref,
+) {
   return VersionGovernanceService();
 });
 
 /// Checks if an active learning context is bound to an outdated or retired version
 final contextVersionUpdateProvider =
-    FutureProvider.family<TargetVersionUpdateInfo?, String>((ref, contextId) async {
-  final service = ref.watch(versionGovernanceServiceProvider);
-  return service.getContextVersionUpdate(contextId);
-});
+    FutureProvider.family<TargetVersionUpdateInfo?, String>((
+      ref,
+      contextId,
+    ) async {
+      final service = ref.watch(versionGovernanceServiceProvider);
+      return service.getContextVersionUpdate(contextId);
+    });
 
 /// Parameters for evaluating a version migration
 class MigrationEvaluationParams {
@@ -41,27 +46,33 @@ class MigrationEvaluationParams {
 }
 
 /// Evaluates progress transfer and concept retention between versions
-final migrationEvaluationProvider = FutureProvider.family<
-    TargetVersionMigrationEvaluation,
-    MigrationEvaluationParams>((ref, params) async {
-  final service = ref.watch(versionGovernanceServiceProvider);
-  return service.evaluateMigration(
-    userId: params.userId,
-    fromVersionId: params.fromVersionId,
-    toVersionId: params.toVersionId,
-  );
-});
+final migrationEvaluationProvider =
+    FutureProvider.family<
+      TargetVersionMigrationEvaluation,
+      MigrationEvaluationParams
+    >((ref, params) async {
+      final service = ref.watch(versionGovernanceServiceProvider);
+      return service.evaluateMigration(
+        userId: params.userId,
+        fromVersionId: params.fromVersionId,
+        toVersionId: params.toVersionId,
+      );
+    });
 
 /// Runs and caches a QA readiness audit report for a target version
 final targetVersionAuditProvider =
-    FutureProvider.family<TargetVersionAuditReport, String>((ref, versionId) async {
-  final service = ref.watch(versionGovernanceServiceProvider);
-  return service.auditTargetVersionReadiness(versionId);
-});
+    FutureProvider.family<TargetVersionAuditReport, String>((
+      ref,
+      versionId,
+    ) async {
+      final service = ref.watch(versionGovernanceServiceProvider);
+      return service.auditTargetVersionReadiness(versionId);
+    });
 
 /// Fetches all staged target versions (draft or review_ready)
-final stagedTargetVersionsProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final service = ref.watch(versionGovernanceServiceProvider);
-  return service.getStagedTargetVersions();
-});
+final stagedTargetVersionsProvider = FutureProvider<List<Map<String, dynamic>>>(
+  (ref) async {
+    final service = ref.watch(versionGovernanceServiceProvider);
+    return service.getStagedTargetVersions();
+  },
+);

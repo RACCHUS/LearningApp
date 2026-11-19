@@ -18,18 +18,20 @@ final learningContextServiceProvider = Provider<LearningContextService>((ref) {
   );
 });
 
-final learningContextSyncServiceProvider =
-    Provider<LearningContextSyncService>((ref) {
-  final hive = ref.watch(hiveServiceProvider);
-  return LearningContextSyncService(
-    client: Supabase.instance.client,
-    contexts: hive.learningContextBox,
-    pointers: hive.resumePointerBox,
-  );
-});
+final learningContextSyncServiceProvider = Provider<LearningContextSyncService>(
+  (ref) {
+    final hive = ref.watch(hiveServiceProvider);
+    return LearningContextSyncService(
+      client: Supabase.instance.client,
+      contexts: hive.learningContextBox,
+      pointers: hive.resumePointerBox,
+    );
+  },
+);
 
-final nextActionEngineProvider =
-    Provider<NextActionEngine>((ref) => const NextActionEngine());
+final nextActionEngineProvider = Provider<NextActionEngine>(
+  (ref) => const NextActionEngine(),
+);
 
 /// Current learner identity used for local/synced learner-owned state.
 ///
@@ -73,7 +75,8 @@ class LearningContextsState {
   bool get hasAny => contexts.isNotEmpty || archivedContexts.isNotEmpty;
 
   /// A single context with no other archived goals is rendered as plain text (spec §1.2b).
-  bool get showSwitcherControl => (contexts.length + archivedContexts.length) >= 2;
+  bool get showSwitcherControl =>
+      (contexts.length + archivedContexts.length) >= 2;
 
   LearningContextsState copyWith({
     List<LearningContext>? contexts,
@@ -100,11 +103,11 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
   final NextActionEngine _engine;
   final String _userId;
   final void Function(String oldContextId, String newContextId)?
-      _onContextRekeyed;
+  _onContextRekeyed;
   final List<void Function(String oldContextId, String newContextId)>
-      _rekeyListeners = [];
+  _rekeyListeners = [];
   final List<void Function(Map<String, FastPreference> remotePreferences)>
-      _remoteFastPrefListeners = [];
+  _remoteFastPrefListeners = [];
   Map<String, FastPreference> _latestRemoteFastPreferences = const {};
 
   static const _kDefaultContext = 'learning.defaultContextId';
@@ -115,21 +118,21 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     this._userId,
     LearningContextSyncService? sync, {
     void Function(String oldContextId, String newContextId)? onContextRekeyed,
-  })  : _service = service,
-        _sync = sync,
-        _onContextRekeyed = onContextRekeyed,
-        super(const LearningContextsState(isLoading: true)) {
+  }) : _service = service,
+       _sync = sync,
+       _onContextRekeyed = onContextRekeyed,
+       super(const LearningContextsState(isLoading: true)) {
     load();
   }
 
   /// Fixed state with no storage behind it, for widget tests.
   @visibleForTesting
   LearningContextsNotifier.stub(super.initial)
-      : _service = null,
-        _sync = null,
-        _engine = const NextActionEngine(),
-        _userId = 'test-user',
-        _onContextRekeyed = null;
+    : _service = null,
+      _sync = null,
+      _engine = const NextActionEngine(),
+      _userId = 'test-user',
+      _onContextRekeyed = null;
 
   /// Latest remote [FastPreference] snapshot pulled from the server during
   /// context synchronization. Replayed automatically to late subscribers.
@@ -227,8 +230,8 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
       final activeId = savedId == ''
           ? ''
           : (ordered.any((c) => c.id == savedId)
-              ? savedId
-              : (ordered.isNotEmpty ? ordered.first.id : null));
+                ? savedId
+                : (ordered.isNotEmpty ? ordered.first.id : null));
       state = LearningContextsState(
         contexts: ordered,
         archivedContexts: archived,
@@ -417,14 +420,16 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
 }
 
 final learningContextsProvider =
-    StateNotifierProvider<LearningContextsNotifier, LearningContextsState>((ref) {
-  return LearningContextsNotifier(
-    ref.watch(learningContextServiceProvider),
-    ref.watch(nextActionEngineProvider),
-    ref.watch(learnerIdProvider),
-    ref.watch(learningContextSyncServiceProvider),
-  );
-});
+    StateNotifierProvider<LearningContextsNotifier, LearningContextsState>((
+      ref,
+    ) {
+      return LearningContextsNotifier(
+        ref.watch(learningContextServiceProvider),
+        ref.watch(nextActionEngineProvider),
+        ref.watch(learnerIdProvider),
+        ref.watch(learningContextSyncServiceProvider),
+      );
+    });
 
 final activeLearningContextProvider = Provider<LearningContext?>((ref) {
   try {
@@ -434,7 +439,9 @@ final activeLearningContextProvider = Provider<LearningContext?>((ref) {
   }
 });
 
-final resumePointerProvider =
-    Provider.family<ResumePointer?, String>((ref, contextId) {
+final resumePointerProvider = Provider.family<ResumePointer?, String>((
+  ref,
+  contextId,
+) {
   return ref.watch(learningContextServiceProvider).resumeFor(contextId);
 });

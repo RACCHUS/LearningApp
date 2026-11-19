@@ -4,9 +4,12 @@ import 'package:learning_pwa/providers/hands_free_settings_provider.dart';
 import 'package:learning_pwa/providers/global_voice_provider.dart';
 
 /// Provider for managing app initialization tasks like auto-enabling voice
-final appInitializationProvider = StateNotifierProvider<AppInitializationNotifier, AppInitializationState>((ref) {
-  return AppInitializationNotifier(ref);
-});
+final appInitializationProvider =
+    StateNotifierProvider<AppInitializationNotifier, AppInitializationState>((
+      ref,
+    ) {
+      return AppInitializationNotifier(ref);
+    });
 
 class AppInitializationState {
   final bool isInitialized;
@@ -52,10 +55,7 @@ class AppInitializationNotifier extends StateNotifier<AppInitializationState> {
       // Check if we should auto-enable global voice
       await _handleAutoEnableGlobalVoice();
 
-      state = state.copyWith(
-        isInitialized: true,
-        autoEnableCompleted: true,
-      );
+      state = state.copyWith(isInitialized: true, autoEnableCompleted: true);
 
       if (kDebugMode) {
         print('✅ App initialization completed successfully');
@@ -66,7 +66,8 @@ class AppInitializationNotifier extends StateNotifier<AppInitializationState> {
       }
       state = state.copyWith(
         error: e.toString(),
-        isInitialized: true, // Mark as initialized even on error to prevent retry loops
+        isInitialized:
+            true, // Mark as initialized even on error to prevent retry loops
       );
     }
   }
@@ -81,7 +82,7 @@ class AppInitializationNotifier extends StateNotifier<AppInitializationState> {
       // Force initialization of hands-free settings provider
       // The provider will auto-initialize when first accessed
       final settings = _ref.read(handsFreeSettingsProvider);
-      
+
       if (kDebugMode) {
         print('✅ Hands-free settings initialized');
         print('   - Default hands-free mode: ${settings.defaultHandsFreeMode}');
@@ -105,12 +106,16 @@ class AppInitializationNotifier extends StateNotifier<AppInitializationState> {
 
       // Check if we should auto-enable
       final shouldAutoEnable = settingsService.shouldAutoEnable();
-      
+
       if (kDebugMode) {
         print('🎙️ Checking auto-enable global voice...');
         print('   - Default hands-free mode: ${settings.defaultHandsFreeMode}');
-        print('   - Persist across sessions: ${settings.persistAcrossSessions}');
-        print('   - Current hands-free enabled: ${settingsService.isHandsFreeEnabled}');
+        print(
+          '   - Persist across sessions: ${settings.persistAcrossSessions}',
+        );
+        print(
+          '   - Current hands-free enabled: ${settingsService.isHandsFreeEnabled}',
+        );
         print('   - Should auto-enable: $shouldAutoEnable');
       }
 

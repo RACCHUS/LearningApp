@@ -30,11 +30,9 @@ class ActivityXpRecorder {
     String? eventId,
   }) async {
     if (!_ref.read(xpAchievementsEnabledProvider)) return null;
-    final result = await _ref.read(xpServiceProvider).claimActivityXp(
-          kind: kind,
-          sourceId: sourceId,
-          eventId: eventId,
-        );
+    final result = await _ref
+        .read(xpServiceProvider)
+        .claimActivityXp(kind: kind, sourceId: sourceId, eventId: eventId);
     if (result != null &&
         (result.awarded || result.newAchievements.isNotEmpty)) {
       _ref.invalidate(userXpSummaryProvider);

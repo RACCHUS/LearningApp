@@ -13,12 +13,15 @@ final supabaseHealthServiceProvider = Provider<SupabaseHealthService>((ref) {
 /// and skipping probes while the device itself is offline.
 final supabaseHealthProvider =
     StateNotifierProvider<SupabaseHealthNotifier, SupabaseStatus>((ref) {
-  return SupabaseHealthNotifier(ref.watch(supabaseHealthServiceProvider), ref);
-});
+      return SupabaseHealthNotifier(
+        ref.watch(supabaseHealthServiceProvider),
+        ref,
+      );
+    });
 
 class SupabaseHealthNotifier extends StateNotifier<SupabaseStatus> {
   SupabaseHealthNotifier(this._service, this._ref)
-      : super(SupabaseStatus.unknown) {
+    : super(SupabaseStatus.unknown) {
     _start();
   }
 

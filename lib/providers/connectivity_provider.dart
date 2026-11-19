@@ -6,7 +6,9 @@ import 'package:learning_pwa/services/connectivity_service.dart';
 import 'package:learning_pwa/services/supabase_health_service.dart';
 import 'package:learning_pwa/theme/semantic_colors.dart';
 
-final connectivityProvider = StateNotifierProvider<ConnectivityNotifier, bool>((ref) {
+final connectivityProvider = StateNotifierProvider<ConnectivityNotifier, bool>((
+  ref,
+) {
   final connectivityService = ref.watch(connectivityServiceProvider);
   return ConnectivityNotifier(connectivityService);
 });
@@ -14,23 +16,25 @@ final connectivityProvider = StateNotifierProvider<ConnectivityNotifier, bool>((
 class ConnectivityNotifier extends StateNotifier<bool> {
   final ConnectivityService _connectivityService;
   StreamSubscription<bool>? _subscription;
-  
+
   ConnectivityNotifier(this._connectivityService) : super(true) {
     _init();
   }
-  
+
   Future<void> _init() async {
     // Initial state
     state = await _connectivityService.isConnected;
-    
+
     // Listen for changes
-    _subscription = _connectivityService.onConnectivityChanged.listen((isConnected) {
+    _subscription = _connectivityService.onConnectivityChanged.listen((
+      isConnected,
+    ) {
       if (state != isConnected) {
         state = isConnected;
       }
     });
   }
-  
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -40,12 +44,9 @@ class ConnectivityNotifier extends StateNotifier<bool> {
 
 class ConnectivityAware extends ConsumerWidget {
   final Widget child;
-  
-  const ConnectivityAware({
-    super.key,
-    required this.child,
-  });
-  
+
+  const ConnectivityAware({super.key, required this.child});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isConnected = ref.watch(connectivityProvider);

@@ -55,8 +55,9 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
     _titleController = TextEditingController(text: res?.title ?? '');
     _topicController = TextEditingController(text: res?.topic ?? '');
     _descController = TextEditingController(text: res?.description ?? '');
-    _lessonMarkdownController =
-        TextEditingController(text: res?.lessonMarkdown ?? '');
+    _lessonMarkdownController = TextEditingController(
+      text: res?.lessonMarkdown ?? '',
+    );
     _selectedSubjectId = res?.subjectId ?? _canonicalSubjects.first['id']!;
     _isAiAssisted = res?.isAiAssisted ?? false;
 
@@ -96,7 +97,9 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
     final topic = _topicController.text.trim();
     if (topic.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a topic first to generate an AI draft.')),
+        const SnackBar(
+          content: Text('Please enter a topic first to generate an AI draft.'),
+        ),
       );
       return;
     }
@@ -145,7 +148,9 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('AI draft generated! Review and verify citations before submitting.'),
+            content: Text(
+              'AI draft generated! Review and verify citations before submitting.',
+            ),
             backgroundColor: Colors.teal,
           ),
         );
@@ -174,27 +179,32 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
     setState(() => _isSaving = true);
     try {
       final now = DateTime.now();
-      final id = widget.existingResource?.id ??
+      final id =
+          widget.existingResource?.id ??
           'res_${now.millisecondsSinceEpoch}_${widget.authorId.hashCode.abs()}';
 
       final flashcards = _flashcardInputs
           .where((f) => f['front']!.isNotEmpty && f['back']!.isNotEmpty)
-          .map((f) => FlashcardCard(
-                id: '${id}_fc_${f.hashCode.abs()}',
-                front: f['front']!,
-                back: f['back']!,
-                tip: f['tip']!.isNotEmpty ? f['tip'] : null,
-              ))
+          .map(
+            (f) => FlashcardCard(
+              id: '${id}_fc_${f.hashCode.abs()}',
+              front: f['front']!,
+              back: f['back']!,
+              tip: f['tip']!.isNotEmpty ? f['tip'] : null,
+            ),
+          )
           .toList();
 
       final guideSections = _guideSectionInputs
           .where((s) => s['heading']!.isNotEmpty && s['body']!.isNotEmpty)
-          .map((s) => StudyGuideSection(
-                id: '${id}_gs_${s.hashCode.abs()}',
-                heading: s['heading']!,
-                bodyMarkdown: s['body']!,
-                keyTakeaway: s['takeaway']!.isNotEmpty ? s['takeaway'] : null,
-              ))
+          .map(
+            (s) => StudyGuideSection(
+              id: '${id}_gs_${s.hashCode.abs()}',
+              heading: s['heading']!,
+              bodyMarkdown: s['body']!,
+              keyTakeaway: s['takeaway']!.isNotEmpty ? s['takeaway'] : null,
+            ),
+          )
           .toList();
 
       final resource = CommunityResource(
@@ -229,9 +239,11 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(submitForReview
-                ? 'Resource submitted for editorial review!'
-                : 'Draft saved successfully.'),
+            content: Text(
+              submitForReview
+                  ? 'Resource submitted for editorial review!'
+                  : 'Draft saved successfully.',
+            ),
             backgroundColor: submitForReview ? Colors.green : Colors.blue,
           ),
         );
@@ -239,9 +251,9 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving resource: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving resource: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -294,13 +306,15 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
             onPressed: () {
               if (authCodeController.text.trim().isNotEmpty) {
                 setState(() {
-                  _citations.add(ResourceCitation(
-                    id: 'cit_${DateTime.now().millisecondsSinceEpoch}',
-                    authorityCode: authCodeController.text.trim(),
-                    title: titleController.text.trim(),
-                    jurisdiction: jurisController.text.trim(),
-                    verified: true,
-                  ));
+                  _citations.add(
+                    ResourceCitation(
+                      id: 'cit_${DateTime.now().millisecondsSinceEpoch}',
+                      authorityCode: authCodeController.text.trim(),
+                      title: titleController.text.trim(),
+                      jurisdiction: jurisController.text.trim(),
+                      verified: true,
+                    ),
+                  );
                 });
                 Navigator.of(ctx).pop();
               }
@@ -318,9 +332,11 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingResource == null
-            ? 'Author New Resource'
-            : 'Edit Resource'),
+        title: Text(
+          widget.existingResource == null
+              ? 'Author New Resource'
+              : 'Edit Resource',
+        ),
         actions: [
           TextButton.icon(
             key: const Key('ai_draft_button'),
@@ -420,8 +436,10 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Authoritative Citations',
-                          style: theme.textTheme.titleSmall),
+                      Text(
+                        'Authoritative Citations',
+                        style: theme.textTheme.titleSmall,
+                      ),
                       TextButton.icon(
                         key: const Key('add_citation_button'),
                         icon: const Icon(Icons.add, size: 16),
@@ -457,9 +475,12 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
 
                   // Dynamic Content Form
                   if (_contentType == CommunityResourceContentType.lesson ||
-                      _contentType == CommunityResourceContentType.cheatSheet) ...[
-                    Text('Lesson Content (Markdown)',
-                        style: theme.textTheme.titleSmall),
+                      _contentType ==
+                          CommunityResourceContentType.cheatSheet) ...[
+                    Text(
+                      'Lesson Content (Markdown)',
+                      style: theme.textTheme.titleSmall,
+                    ),
                     const SizedBox(height: 8),
                     TextField(
                       key: const Key('lesson_content_field'),
@@ -475,15 +496,20 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Flashcard Cards',
-                            style: theme.textTheme.titleSmall),
+                        Text(
+                          'Flashcard Cards',
+                          style: theme.textTheme.titleSmall,
+                        ),
                         TextButton.icon(
                           icon: const Icon(Icons.add, size: 16),
                           label: const Text('Add Card'),
                           onPressed: () {
                             setState(() {
-                              _flashcardInputs
-                                  .add({'front': '', 'back': '', 'tip': ''});
+                              _flashcardInputs.add({
+                                'front': '',
+                                'back': '',
+                                'tip': '',
+                              });
                             });
                           },
                         ),
@@ -501,9 +527,11 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Text('Card #${i + 1}',
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    'Card #${i + 1}',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
                                   const Spacer(),
                                   if (_flashcardInputs.length > 1)
                                     IconButton(
@@ -518,17 +546,21 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                               ),
                               TextField(
                                 decoration: const InputDecoration(
-                                    labelText: 'Front (Question / Prompt)'),
-                                controller:
-                                    TextEditingController(text: card['front']),
+                                  labelText: 'Front (Question / Prompt)',
+                                ),
+                                controller: TextEditingController(
+                                  text: card['front'],
+                                ),
                                 onChanged: (val) => card['front'] = val,
                               ),
                               const SizedBox(height: 6),
                               TextField(
                                 decoration: const InputDecoration(
-                                    labelText: 'Back (Answer / Explanation)'),
-                                controller:
-                                    TextEditingController(text: card['back']),
+                                  labelText: 'Back (Answer / Explanation)',
+                                ),
+                                controller: TextEditingController(
+                                  text: card['back'],
+                                ),
                                 onChanged: (val) => card['back'] = val,
                               ),
                             ],
@@ -540,15 +572,20 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Guide Sections',
-                            style: theme.textTheme.titleSmall),
+                        Text(
+                          'Guide Sections',
+                          style: theme.textTheme.titleSmall,
+                        ),
                         TextButton.icon(
                           icon: const Icon(Icons.add, size: 16),
                           label: const Text('Add Section'),
                           onPressed: () {
                             setState(() {
-                              _guideSectionInputs.add(
-                                  {'heading': '', 'body': '', 'takeaway': ''});
+                              _guideSectionInputs.add({
+                                'heading': '',
+                                'body': '',
+                                'takeaway': '',
+                              });
                             });
                           },
                         ),
@@ -564,23 +601,30 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Section #${i + 1}',
-                                  style: theme.textTheme.labelMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold)),
+                              Text(
+                                'Section #${i + 1}',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               TextField(
                                 decoration: const InputDecoration(
-                                    labelText: 'Heading'),
+                                  labelText: 'Heading',
+                                ),
                                 controller: TextEditingController(
-                                    text: section['heading']),
+                                  text: section['heading'],
+                                ),
                                 onChanged: (val) => section['heading'] = val,
                               ),
                               const SizedBox(height: 6),
                               TextField(
                                 maxLines: 3,
                                 decoration: const InputDecoration(
-                                    labelText: 'Body Markdown'),
-                                controller:
-                                    TextEditingController(text: section['body']),
+                                  labelText: 'Body Markdown',
+                                ),
+                                controller: TextEditingController(
+                                  text: section['body'],
+                                ),
                                 onChanged: (val) => section['body'] = val,
                               ),
                             ],
@@ -623,4 +667,3 @@ class _ResourceAuthoringScreenState extends State<ResourceAuthoringScreen> {
     );
   }
 }
-
