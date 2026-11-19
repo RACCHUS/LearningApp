@@ -28,14 +28,15 @@ This log records progress only; it does not change any decision above. The new s
 | PR-A1, PR-A2, PR-A3 | Merged (zero SQL) | #229, #230, #231 |
 | Bridge starter set (3 Bridges) | Merged | #232 |
 | PR-B quick rescue (`learning.quick_rescue`) | Pilot plus exact return after refresh | #233, #256 |
-| PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3) | #236, #254, #255, this PR |
+| PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3) | #236, #254, #255, #316 |
 | PR-D gap suggestions (`learning.auto_gap_suggestions`) | Rule-based suggestions, nested prerequisites with depth and cycle limits | #237 |
+| PR-D disputed checks (`learning.check_disputes`) | Learners send a disputed Bridge check for review; moderators uphold (the check version is hidden and never counts) or dismiss | this PR |
 | PR-E external companions (`content.external_companion`) | Merged | #238 |
 | PR-H contributions | Submit, review, publish and takedown; moderator screen; community browse and reporting; refresh proposals | #239, #250, #251, #252 |
 
 **Still open (all retained):**
 - PR-C: optional handshake probe (Appendix A.1); opt-in prompt-quality telemetry (§5.7.6).
-- PR-D: main-lesson evidence, misconception labels, a review queue for disputed checks.
+- PR-D: main-lesson evidence, misconception labels.
 - P3.3: help action in readers beyond the Excel pilot (needs Bridges for those subjects).
 - PR-H: Wanted Board (§6.8).
 - Parametric item pilot (§6.6), server-scored with key isolation.

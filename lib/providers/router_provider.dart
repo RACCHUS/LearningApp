@@ -42,6 +42,7 @@ import 'package:learning_pwa/screens/settings/motivation_settings_screen.dart';
 import 'package:learning_pwa/screens/settings/study_reminders_screen.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/screens/governance/contribution_review_screen.dart';
+import 'package:learning_pwa/screens/governance/check_dispute_review_screen.dart';
 import 'package:learning_pwa/screens/community/community_lessons_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
@@ -538,6 +539,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/moderation/contributions',
         name: 'contribution-review',
         builder: (context, state) => const ContributionReviewScreen(),
+      ),
+      GoRoute(
+        path: '/moderation/check-disputes',
+        name: 'check-dispute-review',
+        builder: (context, state) => const CheckDisputeReviewScreen(),
       ),
       GoRoute(
         path: '/moderation',

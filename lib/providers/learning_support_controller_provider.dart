@@ -5,9 +5,11 @@ import 'package:learning_pwa/models/learning_support/bridge_lesson.dart';
 import 'package:learning_pwa/models/learning_support/return_anchor.dart';
 import 'package:learning_pwa/models/learning_support/return_anchor_stack.dart';
 import 'package:learning_pwa/models/learning_support/support_identifiers.dart';
+import 'package:learning_pwa/providers/auth_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 import 'package:learning_pwa/services/learning_support/bridge_library.dart';
+import 'package:learning_pwa/services/learning_support/check_dispute_service.dart';
 import 'package:learning_pwa/services/learning_support/external_companion_library.dart';
 import 'package:learning_pwa/services/learning_support/support_session_store.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,6 +46,36 @@ final externalCompanionEnabledProvider = Provider<bool>((ref) {
     SiteFeatureKeys.contentExternalCompanion,
     runtimeReady: SiteFeatureRuntime.snapshotEnabled,
   );
+});
+
+/// `learning.check_disputes` (PR-D follow-up). Default OFF and fails
+/// closed. It only decides whether a dispute is *sent* for review; the
+/// learner's local "this question seems wrong" always works, and the
+/// server re-checks the gate.
+final checkDisputesEnabledProvider = Provider<bool>((ref) {
+  return isSiteFeatureEnabled(
+    ref.watch(siteFeatureSnapshotProvider).valueOrNull,
+    SiteFeatureKeys.learningCheckDisputes,
+    runtimeReady: SiteFeatureRuntime.snapshotEnabled,
+  );
+});
+
+final checkDisputeServiceProvider = Provider<CheckDisputeService>(
+  (ref) => CheckDisputeService(),
+);
+
+/// Whether a dispute can be sent for review now: switched on and signed
+/// in with an account (guests keep disputes on this device).
+final canSendCheckDisputesProvider = Provider<bool>((ref) {
+  if (!ref.watch(checkDisputesEnabledProvider)) return false;
+  final auth = ref.watch(authProvider);
+  return auth is AuthSuccess && !auth.user.isAnonymous;
+});
+
+/// Check versions a moderator upheld. Read even while the gate is OFF,
+/// because it is a safety signal; any error means "none known".
+final quarantinedChecksProvider = FutureProvider<Set<CheckRef>>((ref) {
+  return ref.watch(checkDisputeServiceProvider).quarantined();
 });
 
 /// Bundled companions, validated against the Bridge Library.

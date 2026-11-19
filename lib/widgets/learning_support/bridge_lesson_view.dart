@@ -4,8 +4,10 @@ import 'package:learning_pwa/models/learning_strategy.dart';
 import 'package:learning_pwa/models/learning_support/bridge_lesson.dart';
 import 'package:learning_pwa/models/learning_support/return_anchor.dart';
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/services/learning_support/check_dispute_service.dart';
 import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
+import 'package:learning_pwa/widgets/learning_support/check_dispute_dialog.dart';
 import 'package:learning_pwa/widgets/learning_support/external_companion_section.dart';
 import 'package:uuid/uuid.dart';
 
@@ -140,6 +142,39 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
         : a.copyWith(disputed: true);
   });
 
+  CheckRef _refFor(BridgeCheck check) => CheckRef(
+    contentId: _bridge.bridgeId,
+    contentVersion: _bridge.contentVersion,
+    itemId: check.itemId,
+  );
+
+  /// Leaves the check out of suggestions at once, then, when review is
+  /// available, asks what seems wrong and sends it. Cancelling or a
+  /// failure keeps the local dispute.
+  Future<void> _dispute(BridgeCheck check) async {
+    _recordDispute(check.itemId);
+    if (!ref.read(canSendCheckDisputesProvider)) return;
+    final choice = await showCheckDisputeDialog(context);
+    if (choice == null || !mounted) return;
+    final outcome = await ref
+        .read(checkDisputeServiceProvider)
+        .submit(_refFor(check), choice.reason, note: choice.note);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(switch (outcome) {
+          DisputeSubmitOutcome.sent => 'Sent for review. Thank you.',
+          DisputeSubmitOutcome.alreadySent =>
+            'You already sent this question for review.',
+          DisputeSubmitOutcome.rateLimited =>
+            'You have sent a lot today. Please try again tomorrow.',
+          DisputeSubmitOutcome.unavailable || DisputeSubmitOutcome.failed =>
+            "Couldn't send it. It still won't count toward suggestions.",
+        }),
+      ),
+    );
+  }
+
   /// This screen's position in the help trail (1 = opened from the lesson).
   /// Screens underneath keep their own position while covered.
   late final int _depth = ref
@@ -181,6 +216,8 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
       learningSupportControllerProvider(widget.supportKey).notifier,
     );
     final gateOn = ref.watch(quickRescueEnabledProvider);
+    final quarantined =
+        ref.watch(quarantinedChecksProvider).valueOrNull ?? const {};
     final library = ref.watch(bridgeLibraryProvider).valueOrNull;
     final suggestionsOn =
         gateOn && ref.watch(autoGapSuggestionsEnabledProvider);
@@ -188,7 +225,17 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
         ? null
         : GapSignalService.propose(
             bridge: _bridge,
-            attempts: _attempts.values,
+            // Quarantined checks are never evidence, even if answered
+            // before the quarantine list arrived.
+            attempts: _attempts.values.where(
+              (a) => !quarantined.contains(
+                CheckRef(
+                  contentId: _bridge.bridgeId,
+                  contentVersion: _bridge.contentVersion,
+                  itemId: a.itemId,
+                ),
+              ),
+            ),
             library: library,
             dismissed: _dismissed,
             canOpen: controller.canOpen,
@@ -304,12 +351,27 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
               style: theme.textTheme.bodySmall,
             ),
             for (final (i, c) in _bridge.checks.indexed)
-              BridgeCheckCard(
-                check: c,
-                index: i,
-                onFirstAttempt: _recordAttempt,
-                onDispute: _recordDispute,
-              ),
+              if (quarantined.contains(_refFor(c)))
+                // Upheld as wrong: not shown or counted until a fixed
+                // version of this Bridge ships.
+                Card(
+                  key: Key('bridge-check-quarantined-${c.itemId}'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'Question ${i + 1} is being corrected, so it is '
+                      'hidden for now. The other questions still work.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                )
+              else
+                BridgeCheckCard(
+                  check: c,
+                  index: i,
+                  onFirstAttempt: _recordAttempt,
+                  onDispute: (_) => _dispute(c),
+                ),
             if (suggestion != null)
               Card(
                 key: const Key('bridge-gap-suggestion'),
