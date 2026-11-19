@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 79 test files, 1804 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 81 test files, 1872 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -23,11 +23,11 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Assessment, grading & simulation | 20 | 533 | 4 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
 | Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
-| Content, lessons & import | 12 | 233 | 7 | 7 | 60 | 7 | 2 |
+| Content, lessons & import | 13 | 268 | 7 | 8 | 73 | 11 | 2 |
 | Catalog, taxonomy & versioning | 14 | 261 | 5 | 3 | 75 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Other | 6 | 92 | 3 | 3 | 33 | 3 | 1 |
+| Other | 7 | 125 | 3 | 4 | 39 | 7 | 1 |
 
 ## Files with no security signal
 
@@ -96,6 +96,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `content_provenance.sql` | Content, lessons & import | 12 | anon, service_role | 0 | 0 | 0 | 0 |
 | `content_public_contribution_test.sql` | Content, lessons & import | 35 | anon, authenticated | 9 | 15 | 5 | 0 |
 | `content_refresh_proposals_test.sql` | Content, lessons & import | 18 | authenticated | 6 | 11 | 2 | 0 |
+| `content_wanted_board_test.sql` | Content, lessons & import | 35 | authenticated | 11 | 13 | 4 | 0 |
 | `import_ownership_and_staging_test.sql` | Content, lessons & import | 46 | anon, authenticated, service_role | 7 | 18 | 0 | 0 |
 | `lesson_visibility.sql` | Content, lessons & import | 22 | anon, authenticated | 7 | 1 | 0 | 0 |
 | `library_search_performance_test.sql` | Content, lessons & import | 3 | — | 0 | 0 | 0 | 0 |
@@ -123,6 +124,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `device_avatar_customizer_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `learning_check_disputes_test.sql` | Other | 22 | anon, authenticated | 4 | 12 | 3 | 1 |
 | `learning_xp_achievements_test.sql` | Other | 24 | anon, authenticated | 7 | 6 | 0 | 0 |
+| `parametric_practice_test.sql` | Other | 33 | authenticated | 5 | 6 | 4 | 0 |
 | `question_scratchpad_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `reinforcement_suggestions_flag_test.sql` | Other | 3 | — | 0 | 0 | 0 | 0 |
 | `study_reminders_web_push_test.sql` | Other | 37 | anon, authenticated, service_role | 5 | 15 | 0 | 0 |

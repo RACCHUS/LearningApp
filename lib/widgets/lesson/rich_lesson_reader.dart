@@ -28,6 +28,11 @@ class RichLessonReader extends StatefulWidget {
   /// Called after [initialBlockId] was shown (or could not be found).
   final VoidCallback? onInitialBlockHandled;
 
+  /// Reports practice answers (practice prompts and check items) as
+  /// `(itemId, correct)`. Items that cannot be scored are not reported.
+  /// Practice only: callers must not record progress or mastery from it.
+  final void Function(String itemId, bool correct)? onPracticeAnswered;
+
   const RichLessonReader({
     super.key,
     required this.unifiedLesson,
@@ -35,6 +40,7 @@ class RichLessonReader extends StatefulWidget {
     this.onVisibleBlockChanged,
     this.initialBlockId,
     this.onInitialBlockHandled,
+    this.onPracticeAnswered,
   });
 
   @override
@@ -424,6 +430,7 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                   child: LessonBlockRenderer(
                     block: b,
                     fontSizeFactor: _fontSizeFactor,
+                    onPracticeChecked: widget.onPracticeAnswered,
                   ),
                 ),
               ),
@@ -539,6 +546,13 @@ class _RichLessonReaderState extends State<RichLessonReader> {
                                 );
                               },
                               onRetry: () => retryAssessmentItem(item.id),
+                              onAnswerSubmitted:
+                                  widget.onPracticeAnswered == null
+                                  ? null
+                                  : (correct, _) => widget.onPracticeAnswered!(
+                                      'item:${item.id}',
+                                      correct,
+                                    ),
                             ),
                           );
                         }),

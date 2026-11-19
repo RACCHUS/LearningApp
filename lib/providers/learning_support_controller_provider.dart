@@ -79,6 +79,32 @@ final quarantinedChecksProvider = FutureProvider<Set<CheckRef>>((ref) {
   return ref.watch(checkDisputeServiceProvider).quarantined();
 });
 
+/// First practice answers in an open lesson, by item (master plan v2.6
+/// PR-D main-lesson evidence). In memory only: never saved, never progress
+/// or mastery. Only the first answer per item counts.
+final lessonPracticeAttemptsProvider =
+    StateProvider.family<Map<String, bool>, String>(
+      (ref, lessonId) => const {},
+    );
+
+/// Bridges the learner said are "not the issue" for a lesson (this visit).
+final lessonGapDismissedProvider = StateProvider.family<Set<String>, String>(
+  (ref, lessonId) => const {},
+);
+
+/// Records a first practice answer for [lessonId]; later answers to the
+/// same item are ignored.
+void recordLessonPractice(
+  WidgetRef ref,
+  String lessonId,
+  String itemId,
+  bool correct,
+) {
+  final notifier = ref.read(lessonPracticeAttemptsProvider(lessonId).notifier);
+  if (notifier.state.containsKey(itemId)) return;
+  notifier.state = {...notifier.state, itemId: correct};
+}
+
 /// `content.parametric_practice` (master plan v2.6 §6.6). Default OFF and
 /// fails closed; the server re-checks it on every call.
 final parametricPracticeEnabledProvider = Provider<bool>((ref) {

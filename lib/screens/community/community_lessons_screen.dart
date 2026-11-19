@@ -44,7 +44,18 @@ class CommunityLessonsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final enabled = ref.watch(publicContributionEnabledProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Community lessons')),
+      appBar: AppBar(
+        title: const Text('Community lessons'),
+        actions: [
+          if (ref.watch(wantedBoardEnabledProvider))
+            TextButton.icon(
+              key: const Key('community_wanted'),
+              onPressed: () => context.push('/community/wanted'),
+              icon: const Icon(Icons.campaign_outlined),
+              label: const Text('Wanted'),
+            ),
+        ],
+      ),
       body: !enabled
           ? const Center(
               child: Padding(
