@@ -51,13 +51,23 @@ class _Content implements LessonContentService {
   final concepts = <Concept>[];
 
   @override
-  Future<void> addTerms(String lessonId, List<Term> t, {List<int?> orders = const []}) async => terms.addAll(t);
+  Future<void> addTerms(
+    String lessonId,
+    List<Term> t, {
+    List<int?> orders = const [],
+  }) async => terms.addAll(t);
   @override
-  Future<void> addQuestions(String lessonId, List<Question> q, {List<int?> orders = const []}) async =>
-      questions.addAll(q);
+  Future<void> addQuestions(
+    String lessonId,
+    List<Question> q, {
+    List<int?> orders = const [],
+  }) async => questions.addAll(q);
   @override
-  Future<void> addConcepts(String lessonId, List<Concept> c, {List<int?> orders = const []}) async =>
-      concepts.addAll(c);
+  Future<void> addConcepts(
+    String lessonId,
+    List<Concept> c, {
+    List<int?> orders = const [],
+  }) async => concepts.addAll(c);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -101,10 +111,46 @@ void main() {
       '"type": "concept"',
       '"key_points"',
       '"type": "mcq"',
-      '"correct_answer": "string (required, must match one option exactly)"',
+      '"correct_answer": "-20%"',
     ]) {
       expect(prompt, contains(marker), reason: marker);
     }
+  });
+
+  test('the example inside the Quick Generate prompt imports as-is', () {
+    final prompt = AiPromptService.generateLessonCreationPrompt(
+      subject: 'Percent change',
+      targetAudience: 'adults',
+      durationMinutes: 20,
+      difficulty: 'beginner',
+      contentFocus: 'balanced',
+    );
+    final body = prompt.substring(
+      prompt.indexOf('{', prompt.indexOf('REPLY WITH ONLY THE JSON')),
+      prompt.lastIndexOf('}') + 1,
+    );
+    final preview = LessonImportService.preview(
+      jsonDecode(body) as Map<String, dynamic>,
+    );
+    expect(preview.canImport, isTrue, reason: '${preview.issues}');
+    expect(preview.questionCount, 1);
+    expect(
+      ((preview.draft.personal['questions'] as List).single
+          as Map)['correct_answer'],
+      0,
+    );
+    // Counts scale with length and the topic is JSON-escaped.
+    expect(prompt, contains('- 5 multiple-choice questions'));
+    expect(
+      AiPromptService.generateLessonCreationPrompt(
+        subject: 'Say "hi"',
+        targetAudience: 'adults',
+        durationMinutes: 60,
+        difficulty: 'beginner',
+        contentFocus: 'practical',
+      ),
+      allOf(contains(r'TOPIC: "Say \"hi\""'), contains('- 10 multiple-choice')),
+    );
   });
 
   group('dialect detection', () {

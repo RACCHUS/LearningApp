@@ -15,6 +15,7 @@ import 'package:learning_pwa/services/content_generation/model_capability_store.
 import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:learning_pwa/models/content_generation/content_resolution_decision.dart';
 import 'package:learning_pwa/services/lesson/lesson_import_service.dart';
+import 'package:learning_pwa/services/lesson/lesson_quality_check.dart';
 import 'package:learning_pwa/widgets/lesson/ai_chat_profile_section.dart';
 
 /// Additive slot-based manual generator (master plan v2.6 §5, PR-C).
@@ -41,6 +42,7 @@ class _ManualGenerationV2ScreenState
   final _title = TextEditingController();
   int _questions = 2;
   bool _terms = true;
+  String _level = 'beginner';
   ModelSizeTier _tier = ModelSizeTier.compact;
   LessonObjectiveType _objective = LessonObjectiveType.understand;
   bool _lines = false;
@@ -212,6 +214,7 @@ class _ManualGenerationV2ScreenState
       _ideas.text = s.job.request.concepts.join('\n');
       _questions = s.job.request.questionsPerConcept.clamp(0, 3);
       _terms = s.job.request.includeTerms;
+      _level = s.job.request.level;
       _title.text = s.job.request.subject;
     });
   }
@@ -247,6 +250,7 @@ class _ManualGenerationV2ScreenState
         concepts: _ideas.text.split('\n'),
         questionsPerConcept: _questions,
         includeTerms: _terms,
+        level: _level,
       );
     } on ArgumentError catch (e) {
       setState(() => _planError = '${e.message}');
@@ -310,6 +314,7 @@ class _ManualGenerationV2ScreenState
         concepts: missing,
         questionsPerConcept: request.questionsPerConcept,
         includeTerms: request.includeTerms,
+        level: request.level,
       ),
       ContentResolutionDecision(
         kind: ContentResolutionKind.adapt,
@@ -445,7 +450,7 @@ class _ManualGenerationV2ScreenState
     final enabled = ref.watch(manualGenerationV2EnabledProvider);
     if (!enabled) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Slot-based generator')),
+        appBar: AppBar(title: const Text('Create with your AI chat')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -499,7 +504,7 @@ class _ManualGenerationV2ScreenState
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Slot-based generator')),
+        appBar: AppBar(title: const Text('Create with your AI chat')),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -550,6 +555,20 @@ class _ManualGenerationV2ScreenState
                   label: const Text('Key terms'),
                   selected: _terms,
                   onSelected: (v) => setState(() => _terms = v),
+                ),
+                DropdownButton<String>(
+                  key: const Key('manual_v2_level'),
+                  value: _level,
+                  items: [
+                    for (final l in ManualJobRequest.levels)
+                      DropdownMenuItem(
+                        value: l,
+                        child: Text(
+                          '${l[0].toUpperCase()}${l.substring(1)} level',
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _level = v ?? _level),
                 ),
               ],
             ),
@@ -621,6 +640,40 @@ class _ManualGenerationV2ScreenState
         ),
       ),
     );
+  }
+
+  /// Improvement hints for the draft (never blocking). Each says what to
+  /// ask the AI to change.
+  List<Widget> _qualityTips(Map<String, dynamic> lesson, ThemeData theme) {
+    final tips = LessonQualityCheck.check(lesson);
+    if (tips.isEmpty) {
+      return [
+        Text(
+          'Quality check: no problems found.',
+          key: const Key('manual_v2_quality_ok'),
+          style: theme.textTheme.bodySmall,
+        ),
+      ];
+    }
+    return [
+      const SizedBox(height: 8),
+      ExpansionTile(
+        key: const Key('manual_v2_quality_tips'),
+        tilePadding: EdgeInsets.zero,
+        title: Text('Quality tips (${tips.length})'),
+        subtitle: Text(
+          'Optional. You can import as is, or ask your AI to fix these.',
+          style: theme.textTheme.bodySmall,
+        ),
+        children: [
+          for (final t in tips)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('• $t', style: theme.textTheme.bodySmall),
+            ),
+        ],
+      ),
+    ];
   }
 
   Widget _reuseCard(ReuseGateResult gate, ThemeData theme) {
@@ -897,6 +950,7 @@ class _ManualGenerationV2ScreenState
           'term(s), ${preview.questionCount} question(s).',
           key: const Key('manual_v2_preview_counts'),
         ),
+        ..._qualityTips(lesson, theme),
         const SizedBox(height: 8),
         Text('Lesson order', style: theme.textTheme.titleSmall),
         DropdownButton<LessonObjectiveType>(
