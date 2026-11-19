@@ -44,6 +44,7 @@ import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/screens/governance/contribution_review_screen.dart';
 import 'package:learning_pwa/screens/governance/check_dispute_review_screen.dart';
 import 'package:learning_pwa/screens/community/community_lessons_screen.dart';
+import 'package:learning_pwa/screens/community/wanted_board_screen.dart';
 import 'package:learning_pwa/screens/lessons/guided_generation_screen.dart'
     deferred as guided_generation;
 import 'package:learning_pwa/screens/learn/learn_screen.dart';
@@ -529,6 +530,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: () =>
               product_analytics_privacy.ProductAnalyticsPrivacyScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/community/wanted',
+        name: 'wanted-board',
+        builder: (context, state) => const WantedBoardScreen(),
       ),
       GoRoute(
         path: '/community/lessons',

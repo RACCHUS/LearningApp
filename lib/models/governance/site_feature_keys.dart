@@ -39,6 +39,7 @@ abstract final class SiteFeatureKeys {
       'learning.reinforcement_suggestions';
   static const String learningEducatorProfiles = 'learning.educator_profiles';
   static const String learningCheckDisputes = 'learning.check_disputes';
+  static const String contentWantedBoard = 'content.wanted_board';
 
   static const Set<String> all = {
     telFast,
@@ -73,5 +74,6 @@ abstract final class SiteFeatureKeys {
     learningReinforcementSuggestions,
     learningEducatorProfiles,
     learningCheckDisputes,
+    contentWantedBoard,
   };
 }
