@@ -8,6 +8,8 @@ import 'package:learning_pwa/services/learning_support/check_dispute_service.dar
 import 'package:learning_pwa/services/learning_support/gap_signal_service.dart';
 import 'package:learning_pwa/widgets/learning_support/bridge_check_card.dart';
 import 'package:learning_pwa/widgets/learning_support/check_dispute_dialog.dart';
+import 'package:learning_pwa/widgets/learning_support/parametric_practice_card.dart';
+import 'package:learning_pwa/services/learning_support/parametric_practice_service.dart';
 import 'package:learning_pwa/widgets/learning_support/external_companion_section.dart';
 import 'package:uuid/uuid.dart';
 
@@ -372,6 +374,12 @@ class _BridgeLessonViewState extends ConsumerState<BridgeLessonView> {
                   onFirstAttempt: _recordAttempt,
                   onDispute: (_) => _dispute(c),
                 ),
+            for (final family
+                in ref
+                        .watch(parametricFamiliesProvider(_bridge.conceptId))
+                        .valueOrNull ??
+                    const <ParametricFamily>[])
+              ParametricPracticeCard(family: family),
             if (suggestion != null)
               Card(
                 key: const Key('bridge-gap-suggestion'),
