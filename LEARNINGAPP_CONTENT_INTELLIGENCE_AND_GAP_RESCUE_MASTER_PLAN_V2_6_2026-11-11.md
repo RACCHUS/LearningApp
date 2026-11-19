@@ -17,6 +17,31 @@
 
 > **Lineage and scope:** This is the **complete, standalone v2.6 master specification**, not an addendum. It preserves every substantive v1–v2.5 capability; incorporates useful Argon, Qwen, DeepSeek, Grok and Z.ai findings without adopting proposed feature reductions or paid-review budgets; retains prior design and change histories; and adds a verified **PR-0a answer/scoring-integrity repair** plus **PR-0b manual-creation-format compatibility repair**. Historical text is subordinate to the latest binding decisions and executable contracts. No code, migration, deployment, publication, provider integration or spend is authorized by this document alone.
 
+### Implementation status (updated 2026-11-19)
+
+This log records progress only; it does not change any decision above. The new switches are seeded **OFF** in production. None has client effect until a reviewed web build sets `SITE_FEATURE_RPC_READY` (audit B.5).
+
+| Plan item | Status | PRs |
+|---|---|---|
+| PR-0a, PR-0b, P0-light audit | Merged | #226, #227, #228 |
+| P0-hosted audit | B.1–B.7 verified or fixed (B.4 partly) | #234, #235, #249, #253 |
+| PR-A1, PR-A2, PR-A3 | Merged (zero SQL) | #229, #230, #231 |
+| Bridge starter set (3 Bridges) | Merged | #232 |
+| PR-B quick rescue (`learning.quick_rescue`) | Pilot plus exact return after refresh | #233, #256 |
+| PR-C manual generation V2 (`ai.manual_generation_v2`) | Slot wizard, saved progress and resume, Lesson Composer, device-local capability profile (§5.3) | #236, #254, #255, this PR |
+| PR-D gap suggestions (`learning.auto_gap_suggestions`) | Rule-based suggestions, nested prerequisites with depth and cycle limits | #237 |
+| PR-E external companions (`content.external_companion`) | Merged | #238 |
+| PR-H contributions | Submit, review, publish and takedown; moderator screen; community browse and reporting; refresh proposals | #239, #250, #251, #252 |
+
+**Still open (all retained):**
+- PR-C: optional handshake probe (Appendix A.1); opt-in prompt-quality telemetry (§5.7.6).
+- PR-D: main-lesson evidence, misconception labels, a review queue for disputed checks.
+- P3.3: help action in readers beyond the Excel pilot (needs Bridges for those subjects).
+- PR-H: Wanted Board (§6.8).
+- Parametric item pilot (§6.6), server-scored with key isolation.
+- PR-F (local AI) and PR-G (BYOK) wait on owner prerequisites; BYOK stays hard-disabled (FLAG-015).
+- M1 evidence review: needs real learner sessions with the switches on.
+
 ### What changed in v2.6 — Z.ai independent review, creation-path parity and full answer/scorer sweep
 
 | Topic | Binding v2.6 refinement | Location |

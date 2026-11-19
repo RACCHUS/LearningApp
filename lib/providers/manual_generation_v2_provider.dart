@@ -7,6 +7,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
+import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
 
 /// `ai.manual_generation_v2` (master plan v2.6 §15.0). Default OFF and
@@ -41,6 +42,11 @@ final manualDraftImporterProvider = Provider<ManualDraftImporter>((ref) {
 /// One store per app instance, so each tab has its own editor ID.
 final manualJobStoreProvider = Provider<ManualJobStore>(
   (ref) => ManualJobStore(),
+);
+
+/// Device-local AI capability profiles (master plan v2.6 §5.3).
+final modelCapabilityStoreProvider = Provider<ModelCapabilityStore>(
+  (ref) => ModelCapabilityStore(),
 );
 
 /// Owner scope for saved generator progress: the learner ID, or `guest`.

@@ -9,6 +9,9 @@ import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
+import 'package:learning_pwa/services/content_generation/manual_prompt_builder.dart';
+import 'package:learning_pwa/services/content_generation/model_capability_profile.dart';
+import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -212,5 +215,112 @@ void main() {
     );
     final stored = await ManualJobStore(editorId: 'x').load('owner-1');
     expect(stored!.session.job.request.subject, 'Percentages');
+  });
+
+  group('AI chat capability profile', () {
+    ModelSizeTier tier(WidgetTester tester) => tester
+        .widget<SegmentedButton<ModelSizeTier>>(
+          find.byKey(const Key('manual_v2_tier')),
+        )
+        .selected
+        .single;
+
+    testWidgets('picking a chat applies its saved suggestion', (tester) async {
+      var p = const ModelCapabilityProfile(label: AiChatLabel.gemini);
+      for (var i = 0; i < 3; i++) {
+        p = p.record(
+          const ReplyObservation(
+            mode: ManualOutputMode.package,
+            requested: 3,
+            filled: 3,
+            itemProblems: 0,
+            unreadable: false,
+            endMarker: true,
+          ),
+        );
+      }
+      await ModelCapabilityStore().save(
+        'owner-1',
+        CapabilityProfiles(profiles: {AiChatLabel.gemini: p}),
+      );
+      await pump(tester, enabled: true);
+      expect(tier(tester), ModelSizeTier.compact);
+      expect(find.byKey(const Key('manual_v2_ai_suggestion')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('manual_v2_ai_gemini')));
+      await tester.pumpAndSettle();
+      expect(tier(tester), ModelSizeTier.standard);
+      expect(find.textContaining('Based on 3 replies'), findsOneWidget);
+      expect(
+        (await ModelCapabilityStore().load('owner-1')).selected,
+        AiChatLabel.gemini,
+      );
+    });
+
+    testWidgets('a checked reply counts once, and can be forgotten', (
+      tester,
+    ) async {
+      await pump(tester, enabled: true);
+      await tester.tap(find.byKey(const Key('manual_v2_ai_claude')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Not enough replies'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('manual_v2_ideas')), 'Idea');
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('manual_v2_copy_prompt')));
+      await tester.pumpAndSettle();
+      final job = RegExp(
+        r'"job": "(J\w{4})"',
+      ).firstMatch(clipboard!)!.group(1)!;
+      await tester.enterText(
+        find.byKey(const Key('manual_v2_paste')),
+        jsonEncode({
+          'schema': 'la-gen/1.1',
+          'job': job,
+          'items': [
+            {
+              'slot': 'S1',
+              'kind': 'explanation',
+              'concept': 'C1',
+              'title': 'Idea',
+              'text': 'Explained.',
+            },
+          ],
+          'end': 'END-$job',
+        }),
+      );
+      await tester.tap(find.byKey(const Key('manual_v2_check')));
+      await tester.pumpAndSettle();
+      // Checking the same reply again without a new prompt is not counted.
+      await tester.tap(find.byKey(const Key('manual_v2_check')));
+      await tester.pumpAndSettle();
+
+      final saved = await ModelCapabilityStore().load('owner-1');
+      final claude = saved.profileFor(AiChatLabel.claude);
+      expect(claude.replies, 1);
+      expect(claude.clean, 0, reason: 'asked for 3 slots, filled 1');
+      expect(claude.missingEnd, 0);
+      final raw = jsonEncode(claude.toJson());
+      expect(raw, isNot(contains('Explained')));
+
+      await tester.tap(find.byKey(const Key('manual_v2_ai_forget')));
+      await tester.pumpAndSettle();
+      final cleared = await ModelCapabilityStore().load('owner-1');
+      expect(cleared.profiles, isEmpty);
+      expect(cleared.selected, AiChatLabel.claude);
+    });
+
+    testWidgets('no chat picked: nothing is learned', (tester) async {
+      await pump(tester, enabled: true);
+      await tester.enterText(find.byKey(const Key('manual_v2_ideas')), 'Idea');
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('manual_v2_copy_prompt')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('manual_v2_paste')), '{}');
+      await tester.tap(find.byKey(const Key('manual_v2_check')));
+      await tester.pumpAndSettle();
+      expect((await ModelCapabilityStore().load('owner-1')).profiles, isEmpty);
+    });
   });
 }
