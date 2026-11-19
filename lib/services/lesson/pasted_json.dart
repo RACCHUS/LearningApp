@@ -26,8 +26,9 @@ class PastedJson {
   /// last `]`). Returns the decoded value, or `null` with [error] set.
   static ({Object? value, String? error}) readAny(String text) {
     final trimmed = text.trim();
-    if (trimmed.isEmpty)
+    if (trimmed.isEmpty) {
       return (value: null, error: 'Paste the AI reply first.');
+    }
     if (trimmed.length > maxChars) {
       return (value: null, error: 'The paste is too long.');
     }
