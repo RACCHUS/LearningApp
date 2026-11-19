@@ -532,98 +532,71 @@ Return ONLY valid JSON:
     required String difficulty,
     required String contentFocus,
   }) {
-    return '''
-You are an expert educational content creator specializing in creating comprehensive, well-structured lessons for digital learning platforms. Your task is to create a complete lesson in JSON format based on the provided subject and parameters.
+    // Item counts scale with the lesson length so small models are not
+    // asked for more than they can finish in one reply.
+    int clampInt(num v, int lo, int hi) => v.round().clamp(lo, hi);
+    final terms = clampInt(durationMinutes / 6, 2, 6);
+    final concepts = clampInt(durationMinutes / 7, 2, 5);
+    final mcqs = clampInt(durationMinutes / 4, 3, 10);
+    final focusRule = switch (contentFocus) {
+      'theoretical' => 'Favor explanations of why things work.',
+      'practical' => 'Favor worked, real-world tasks and how-to steps.',
+      _ => 'Balance explanation with practical examples.',
+    };
+    return """
+You are writing a short, accurate study lesson for a learning app. The app reads your reply automatically, so the format matters.
 
-IMPORTANT: Always create a complete lesson regardless of topic scope. If the subject is too broad, create the best possible lesson while warning the user and providing suggestions.
+TOPIC: ${jsonEncode(subject)}
+LEARNERS: $targetAudience, $difficulty level
+LENGTH: about $durationMinutes minutes
+FOCUS: $focusRule
 
-LESSON STRUCTURE REQUIREMENTS:
-- Title: Clear, descriptive, engaging
-- Description: 2-3 sentences explaining what learners will gain
-- Content Mix: Balance of terms (30%), concepts (40%), and assessments (30%)
-- Progression: Logical flow from basic definitions to complex applications
-- Assessment: MCQs that test understanding, not just memorization
+WRITE EXACTLY:
+- $terms key terms ("type": "term")
+- $concepts explanations ("type": "concept"), each 3-6 sentences with a concrete example
+- $mcqs multiple-choice questions ("type": "mcq")
+Order the items so each one builds on the ones before it: terms, then explanations, then questions.
 
-CONTENT QUALITY STANDARDS:
-- Terms: Clear definitions with practical examples
-- Concepts: Detailed explanations with key points and real-world applications  
-- MCQs: 4 options, clear correct answer, educational explanations
-- Examples: Relevant, current, and relatable to target audience
+QUALITY RULES:
+- Be accurate. If you are not sure a fact is correct, leave it out.
+- Plain text only: no Markdown, HTML or links inside the text.
+- Each question has exactly 4 different options of similar length. Wrong options must be plausible mistakes a learner might make. Never use "All of the above" or "None of the above".
+- "correct_answer" is the full text of the correct option, copied exactly.
+- "explanation" says why the answer is right and why the most tempting wrong option is wrong.
+- Questions check understanding (apply, explain, choose), not word-for-word recall.
 
-OUTPUT FORMAT:
-If the subject is too broad, first provide a warning, then the JSON:
-
-⚠️ **SCOPE WARNING**: This topic is very broad for a single lesson. Consider creating focused sub-lessons instead:
-
-**Suggested Focused Topics:**
-1. **Topic Name 1** (30 min) - Brief description of what this would cover
-2. **Topic Name 2** (45 min) - Brief description of what this would cover  
-3. **Topic Name 3** (60 min) - Brief description of what this would cover
-
-**However, here's a comprehensive introduction lesson:**
-
----
-
-If the subject is appropriately scoped, provide only the JSON.
-
-Always return valid JSON following this exact schema:
-
+REPLY WITH ONLY THE JSON BELOW, filled in for the topic. No text before or after it, no code fences:
 {
   "lesson": {
-    "title": "string (required, 5-100 characters)",
-    "description": "string (required, 50-500 characters)",
-    "estimated_duration_minutes": number (required, 15-120),
-    "difficulty_level": "string (required: beginner/intermediate/advanced)",
-    "tags": ["array", "of", "strings"] (optional, for categorization)
+    "title": "Percent change basics",
+    "description": "Learn how to work out how much a value grew or shrank, as a percent of where it started.",
+    "estimated_duration_minutes": $durationMinutes,
+    "difficulty_level": "$difficulty",
+    "tags": ["math", "percentages"]
   },
   "content": [
     {
       "type": "term",
-      "title": "string (required)",
-      "content": "string (required, clear definition)",
-      "example": "string (optional, practical example)",
-      "emoji": "string (optional, single Unicode emoji representing this term)",
-      "tags": ["optional", "categorization", "tags"]
+      "title": "Original value",
+      "content": "The starting amount you compare against.",
+      "example": "If a price rises from 80 to 100, the original value is 80."
     },
     {
       "type": "concept",
-      "title": "string (required)",
-      "content": "string (required, detailed explanation)",
-      "key_points": ["bullet", "point", "list"] (optional),
-      "examples": ["practical", "examples"] (optional),
-      "emoji": "string (optional, single Unicode emoji representing this concept)",
-      "tags": ["optional", "categorization", "tags"]
+      "title": "How to calculate percent change",
+      "content": "Subtract the original value from the new value, divide by the original value, then multiply by 100. A positive result is an increase and a negative result is a decrease. For example, 80 to 100 is (100 - 80) / 80 x 100 = 25%.",
+      "key_points": ["Always divide by the original value", "Negative means a decrease"]
     },
     {
       "type": "mcq",
-      "question": "string (required, clear question)",
-      "options": ["option A", "option B", "option C", "option D"] (required, exactly 4),
-      "correct_answer": "string (required, must match one option exactly)",
-      "explanation": "string (required, why this answer is correct)",
-      "tags": ["optional", "categorization", "tags"]
+      "question": "A price falls from 50 to 40. What is the percent change?",
+      "options": ["-20%", "-25%", "+20%", "-10%"],
+      "correct_answer": "-20%",
+      "explanation": "The change is -10, and -10 / 50 = -0.2, which is -20%. Dividing by the new value (40) instead gives the tempting wrong answer, -25%."
     }
   ]
 }
-
-SCOPE ANALYSIS EXAMPLES:
-For broad topics like "Programming": 
-- Provide warning with focused suggestions before the JSON
-- Create comprehensive introduction lesson covering fundamental concepts
-- Keep the JSON clean without embedded warnings
-
-For appropriately scoped topics like "Python Variable Types": 
-- Provide only the clean JSON lesson
-- No warning needed
-
-PARAMETERS:
-Subject: $subject
-Target Audience: $targetAudience
-Duration: $durationMinutes minutes
-Difficulty: $difficulty
-Content Focus: $contentFocus
-
-Remember: Always create a complete, functional lesson. If the topic is broad, warn first, then provide clean JSON. Create engaging, educational content that progresses logically from basic concepts to practical applications. Ensure all MCQs test understanding rather than just memorization.
-''';
+""";
   }
 
   /// Generates a prompt for content improvement suggestions
