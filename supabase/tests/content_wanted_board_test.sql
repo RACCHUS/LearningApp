@@ -33,9 +33,12 @@ select ok(not has_table_privilege('anon', 'public.content_wanted_needs', 'SELECT
   'anonymous users cannot read needs');
 select ok(not has_function_privilege('anon', 'public.wanted_board()', 'EXECUTE'),
   'anonymous users cannot read the board');
-select is((select enabled or release_ready from private.site_feature_controls
-            where feature_key = 'content.wanted_board'), false,
-  'gate seeded OFF and not release-ready');
+select is((select enabled and release_ready from private.site_feature_controls
+            where feature_key = 'content.wanted_board'), true,
+  'gate activated by 20261119050000 (one-person team)');
+-- Keep the OFF-path coverage: switch it off inside this rolled-back test.
+update private.site_feature_controls set enabled = false, release_ready = false
+ where feature_key = 'content.wanted_board';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c0740000-0000-4000-8000-00000000000a', true);
