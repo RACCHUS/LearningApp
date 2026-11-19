@@ -66,7 +66,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
     });
 
     try {
-      final reports = await _service.fetchReports(statusFilter: _selectedStatus);
+      final reports = await _service.fetchReports(
+        statusFilter: _selectedStatus,
+      );
       if (!mounted) return;
       setState(() {
         _reports = reports;
@@ -85,11 +87,15 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Evaluating item psychometrics & checking moderation triggers...'),
+          content: Text(
+            'Evaluating item psychometrics & checking moderation triggers...',
+          ),
           duration: Duration(seconds: 2),
         ),
       );
-      final result = await ItemAnalyticsService().computeAnalytics(minResponses: 5);
+      final result = await ItemAnalyticsService().computeAnalytics(
+        minResponses: 5,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -113,7 +119,8 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
   }
 
   Future<void> _showActionDialog(ModerationReport report) async {
-    ModerationActionType selectedAction = report.reason == ReportReason.minorSafety
+    ModerationActionType selectedAction =
+        report.reason == ReportReason.minorSafety
         ? ModerationActionType.delete
         : ModerationActionType.hide;
 
@@ -446,7 +453,9 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
                             ),
                             padding: EdgeInsets.zero,
                             visualDensity: VisualDensity.compact,
-                            backgroundColor: statusColor.withValues(alpha: 0.12),
+                            backgroundColor: statusColor.withValues(
+                              alpha: 0.12,
+                            ),
                             side: BorderSide(
                               color: statusColor.withValues(alpha: 0.3),
                             ),
@@ -618,6 +627,12 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
               onPressed: () => context.push('/moderation/contributions'),
             ),
             IconButton(
+              key: const Key('open_check_dispute_review'),
+              icon: const Icon(Icons.rule_outlined),
+              tooltip: 'Disputed practice questions',
+              onPressed: () => context.push('/moderation/check-disputes'),
+            ),
+            IconButton(
               icon: const Icon(Icons.analytics_outlined),
               tooltip: 'Evaluate Item Analytics',
               onPressed: _runItemAnalytics,
@@ -692,11 +707,7 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              Icon(
-                Icons.policy_outlined,
-                size: 20,
-                color: colorScheme.primary,
-              ),
+              Icon(Icons.policy_outlined, size: 20, color: colorScheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -714,41 +725,41 @@ class _ModerationQueueScreenState extends State<ModerationQueueScreen> {
           child: _isLoadingReports
               ? const Center(child: CircularProgressIndicator())
               : _reports.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 48,
-                            color: Colors.green.shade400,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Queue is empty',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'No reports matching the selected filter.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 48,
+                        color: Colors.green.shade400,
                       ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadReports,
-                      child: ListView.builder(
-                        itemCount: _reports.length,
-                        itemBuilder: (context, index) {
-                          return _buildReportCard(_reports[index], theme);
-                        },
+                      const SizedBox(height: 12),
+                      Text(
+                        'Queue is empty',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'No reports matching the selected filter.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadReports,
+                  child: ListView.builder(
+                    itemCount: _reports.length,
+                    itemBuilder: (context, index) {
+                      return _buildReportCard(_reports[index], theme);
+                    },
+                  ),
+                ),
         ),
       ],
     );
