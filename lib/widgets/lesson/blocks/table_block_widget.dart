@@ -21,7 +21,8 @@ class TableBlockWidget extends StatelessWidget {
     final title = block.content['title'] as String?;
     final headersRaw = block.content['headers'] as List?;
     final rowsRaw = block.content['rows'] as List?;
-    final markdownTable = block.content['markdown'] as String? ??
+    final markdownTable =
+        block.content['markdown'] as String? ??
         block.content['table'] as String?;
 
     return Container(
@@ -48,8 +49,13 @@ class TableBlockWidget extends StatelessWidget {
           children: [
             if (title != null && title.isNotEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
                 child: Row(
                   children: [
                     Icon(
@@ -113,11 +119,7 @@ class TableBlockWidget extends StatelessWidget {
           fontSize: baseFontSize,
           color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
         ),
-        columns: headers
-            .map((h) => DataColumn(
-                  label: Text(h),
-                ))
-            .toList(),
+        columns: headers.map((h) => DataColumn(label: Text(h))).toList(),
         rows: rows.asMap().entries.map((entry) {
           final idx = entry.key;
           final row = entry.value;
@@ -127,8 +129,8 @@ class TableBlockWidget extends StatelessWidget {
               isEven
                   ? Colors.transparent
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.02)
-                      : const Color(0xFFF8FAFC)),
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : const Color(0xFFF8FAFC)),
             ),
             cells: row.map((cell) => DataCell(Text(cell))).toList(),
           );
@@ -137,7 +139,11 @@ class TableBlockWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildMarkdownTable(BuildContext context, String markdown, bool isDark) {
+  Widget _buildMarkdownTable(
+    BuildContext context,
+    String markdown,
+    bool isDark,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: SingleChildScrollView(

@@ -475,4 +475,41 @@ void main() {
       );
     },
   );
+
+  testWidgets('the optional quick test sets a starting suggestion', (
+    tester,
+  ) async {
+    await pump(tester, enabled: true);
+    expect(find.byKey(const Key('manual_v2_probe')), findsNothing);
+    await tester.tap(find.byKey(const Key('manual_v2_ai_copilot')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quick test of this AI (optional)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manual_v2_probe_copy')));
+    await tester.pumpAndSettle();
+    expect(clipboard, contains('la-probe/1'));
+
+    await tester.enterText(
+      find.byKey(const Key('manual_v2_probe_reply')),
+      '{"schema":"la-probe/1","items":[{"n":1,"v":"ok"},{"n":2,"v":"ok"}],'
+      '"end":"END-PROBE"}',
+    );
+    await tester.tap(find.byKey(const Key('manual_v2_probe_check')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('It worked'), findsOneWidget);
+    expect(
+      tester
+          .widget<SegmentedButton<ModelSizeTier>>(
+            find.byKey(const Key('manual_v2_tier')),
+          )
+          .selected
+          .single,
+      ModelSizeTier.standard,
+    );
+    final saved = (await ModelCapabilityStore().load(
+      'owner-1',
+    )).profileFor(AiChatLabel.copilot);
+    expect(saved.probePassed, isTrue);
+    expect(saved.replies, 0, reason: 'a probe is not a real reply');
+  });
 }

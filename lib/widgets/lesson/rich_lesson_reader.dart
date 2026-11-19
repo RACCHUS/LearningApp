@@ -106,7 +106,10 @@ class _RichLessonReaderState extends State<RichLessonReader> {
         final pos = _scrollController.position;
         if (pos.pixels >= pos.maxScrollExtent) return;
         _scrollController.jumpTo(
-          math.min(pos.pixels + pos.viewportDimension * 0.8, pos.maxScrollExtent),
+          math.min(
+            pos.pixels + pos.viewportDimension * 0.8,
+            pos.maxScrollExtent,
+          ),
         );
         await WidgetsBinding.instance.endOfFrame;
       }

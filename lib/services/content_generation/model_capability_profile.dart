@@ -108,6 +108,7 @@ class ModelCapabilityProfile {
     this.missingEnd = 0,
     this.unreadable = 0,
     this.largestCleanBatch = 0,
+    this.probePassed,
   });
 
   final AiChatLabel label;
@@ -122,6 +123,20 @@ class ModelCapabilityProfile {
 
   /// The most slots one clean reply has filled.
   final int largestCleanBatch;
+
+  /// The optional format probe (Appendix A.1): `null` when not run. Only
+  /// a starting hint; real replies take over once there are enough.
+  final bool? probePassed;
+
+  ModelCapabilityProfile withProbe(bool passed) => ModelCapabilityProfile(
+    label: label,
+    package: package,
+    lines: lines,
+    missingEnd: missingEnd,
+    unreadable: unreadable,
+    largestCleanBatch: largestCleanBatch,
+    probePassed: passed,
+  );
 
   /// Below this many replies, rates are not shown or used (small
   /// denominators are noise).
@@ -159,6 +174,7 @@ class ModelCapabilityProfile {
       largestCleanBatch: isClean && o.filled > largestCleanBatch
           ? o.filled
           : largestCleanBatch,
+      probePassed: probePassed,
     );
   }
 
@@ -168,7 +184,10 @@ class ModelCapabilityProfile {
     final reliability = jsonReliability;
     final truncation = truncationRate;
     if (reliability == null || truncation == null) {
-      return ModelSizeTier.compact;
+      // Too few real replies: a passed probe may start one step up.
+      return probePassed == true
+          ? ModelSizeTier.standard
+          : ModelSizeTier.compact;
     }
     if (truncation > 0.25) return ModelSizeTier.compact;
     if (replies >= _largeMinReplies &&
@@ -189,7 +208,11 @@ class ModelCapabilityProfile {
   /// enough evidence in both modes to compare.
   ManualOutputMode? get suggestedMode {
     if (package.replies < minReplies || lines.replies < minReplies) {
-      return null;
+      // A failed probe hints that one item per line is safer, until real
+      // replies in both modes can be compared.
+      return probePassed == false && replies < minReplies
+          ? ManualOutputMode.lines
+          : null;
     }
     final p = package.clean / package.replies;
     final l = lines.clean / lines.replies;
@@ -201,8 +224,17 @@ class ModelCapabilityProfile {
   String get explanation {
     final reliability = jsonReliability;
     if (reliability == null) {
-      return 'Not enough replies yet, so the app starts small. '
-          'It learns from replies you check here.';
+      return switch (probePassed) {
+        true =>
+          'The quick test worked, so the app starts at medium. '
+              'It still learns from replies you check here.',
+        false =>
+          'The quick test did not work cleanly, so the app starts small. '
+              'It learns from replies you check here.',
+        null =>
+          'Not enough replies yet, so the app starts small. '
+              'It learns from replies you check here.',
+      };
     }
     final pct = (reliability * 100).round();
     return 'Based on $replies replies checked on this device: '
@@ -219,6 +251,7 @@ class ModelCapabilityProfile {
     'missing_end': missingEnd,
     'unreadable': unreadable,
     'largest_clean_batch': largestCleanBatch,
+    if (probePassed != null) 'probe_passed': probePassed!,
   };
 
   /// Reads a saved profile. Anything unexpected gives `null`, so a damaged
@@ -231,6 +264,8 @@ class ModelCapabilityProfile {
     final missingEnd = json['missing_end'];
     final unreadable = json['unreadable'];
     final largest = json['largest_clean_batch'];
+    final probe = json['probe_passed'];
+    if (probe != null && probe is! bool) return null;
     if (label == null ||
         missingEnd is! int ||
         unreadable is! int ||
@@ -253,6 +288,7 @@ class ModelCapabilityProfile {
       missingEnd: missingEnd,
       unreadable: unreadable,
       largestCleanBatch: largest,
+      probePassed: probe as bool?,
     );
   }
 }

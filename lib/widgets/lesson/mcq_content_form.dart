@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 /// Form component for creating MCQ (Multiple Choice Question) content items
-/// 
+///
 /// Extracted from LessonBuilderWidget to improve maintainability.
 /// Handles question, options, correct answer selection, and explanation.
 class McqContentForm extends StatefulWidget {
   final TextEditingController questionController;
   final List<TextEditingController> optionControllers;
   final TextEditingController explanationController;
+
   /// Selected correct option, or null until the author chooses one.
   final int? correctAnswer;
   final Function(int) onCorrectAnswerChanged;
@@ -38,7 +39,9 @@ class _McqContentFormState extends State<McqContentForm> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -60,9 +63,9 @@ class _McqContentFormState extends State<McqContentForm> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Question input
           TextFormField(
             controller: widget.questionController,
@@ -81,9 +84,9 @@ class _McqContentFormState extends State<McqContentForm> {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Options section
           Text(
             'Answer Options',
@@ -91,27 +94,31 @@ class _McqContentFormState extends State<McqContentForm> {
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Option inputs with radio buttons
           ...List.generate(4, (index) {
             final isRequired = index < 2;
             final optionLetter = String.fromCharCode(65 + index); // A, B, C, D
-            
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: widget.correctAnswer == index 
+                    color: widget.correctAnswer == index
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.outline.withValues(alpha: 0.3),
                     width: widget.correctAnswer == index ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  color: widget.correctAnswer == index 
-                      ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1)
+                  color: widget.correctAnswer == index
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer.withValues(alpha: 0.1)
                       : null,
                 ),
                 child: Row(
@@ -126,47 +133,54 @@ class _McqContentFormState extends State<McqContentForm> {
                         }
                       },
                     ),
-                    
+
                     // Option letter
                     Container(
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: widget.correctAnswer == index 
+                        color: widget.correctAnswer == index
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
                         child: Text(
                           optionLetter,
                           style: TextStyle(
-                            color: widget.correctAnswer == index 
+                            color: widget.correctAnswer == index
                                 ? Theme.of(context).colorScheme.onPrimary
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(width: 12),
-                    
+
                     // Option text field
                     Expanded(
                       child: TextFormField(
                         controller: widget.optionControllers[index],
                         decoration: InputDecoration(
-                          labelText: 'Option $optionLetter${isRequired ? ' (required)' : ''}',
+                          labelText:
+                              'Option $optionLetter${isRequired ? ' (required)' : ''}',
                           border: InputBorder.none,
                           hintText: 'Enter answer option',
                         ),
-                        validator: isRequired ? (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Option $optionLetter is required';
-                          }
-                          return null;
-                        } : null,
+                        validator: isRequired
+                            ? (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Option $optionLetter is required';
+                                }
+                                return null;
+                              }
+                            : null,
                       ),
                     ),
                   ],
@@ -174,14 +188,16 @@ class _McqContentFormState extends State<McqContentForm> {
               ),
             );
           }),
-          
+
           const SizedBox(height: 16),
-          
+
           // Correct answer indicator
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -196,7 +212,7 @@ class _McqContentFormState extends State<McqContentForm> {
                   widget.correctAnswer == null
                       ? 'Choose the correct answer'
                       : 'Correct Answer: Option '
-                          '${String.fromCharCode(65 + widget.correctAnswer!)}',
+                            '${String.fromCharCode(65 + widget.correctAnswer!)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -205,9 +221,9 @@ class _McqContentFormState extends State<McqContentForm> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Explanation input
           TextFormField(
             controller: widget.explanationController,
@@ -220,9 +236,9 @@ class _McqContentFormState extends State<McqContentForm> {
               alignLabelWithHint: true,
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Add button
           ElevatedButton.icon(
             onPressed: () {
@@ -236,13 +252,13 @@ class _McqContentFormState extends State<McqContentForm> {
                 );
                 return;
               }
-              
+
               // Check if at least 2 options are provided
               final filledOptions = widget.optionControllers
                   .take(2)
                   .where((controller) => controller.text.trim().isNotEmpty)
                   .length;
-              
+
               if (filledOptions < 2) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -252,7 +268,7 @@ class _McqContentFormState extends State<McqContentForm> {
                 );
                 return;
               }
-              
+
               widget.onAddQuestion();
             },
             icon: const Icon(Icons.add),
@@ -261,15 +277,17 @@ class _McqContentFormState extends State<McqContentForm> {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Helper text
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.3),
               ),
               borderRadius: BorderRadius.circular(8),
             ),

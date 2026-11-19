@@ -17,7 +17,8 @@ class MarkdownBlockWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final bodyText = block.content['body'] as String? ??
+    final bodyText =
+        block.content['body'] as String? ??
         block.content['text'] as String? ??
         block.content['markdown'] as String? ??
         '';
@@ -75,19 +76,18 @@ class MarkdownBlockWidget extends StatelessWidget {
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(6),
               border: Border(
-                left: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 4,
-                ),
+                left: BorderSide(color: theme.colorScheme.primary, width: 4),
               ),
             ),
             code: GoogleFonts.jetBrainsMono(
               fontSize: baseFontSize * 0.9,
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              backgroundColor: isDark
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFFF1F5F9),
               color: theme.colorScheme.primary,
             ),
           ),
-          ),
+        ),
       ),
     );
   }
