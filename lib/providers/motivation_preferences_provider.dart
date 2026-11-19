@@ -67,8 +67,7 @@ class MotivationPreferences {
   }
 }
 
-class MotivationPreferencesNotifier
-    extends StateNotifier<MotivationPreferences> {
+class MotivationPreferencesNotifier extends StateNotifier<MotivationPreferences> {
   MotivationPreferencesNotifier() : super(MotivationPreferences.standard) {
     _load();
   }
@@ -118,5 +117,5 @@ class MotivationPreferencesNotifier
 
 final motivationPreferencesProvider =
     StateNotifierProvider<MotivationPreferencesNotifier, MotivationPreferences>(
-      (ref) => MotivationPreferencesNotifier(),
-    );
+  (ref) => MotivationPreferencesNotifier(),
+);

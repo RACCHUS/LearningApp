@@ -22,24 +22,23 @@ final reinforcementSuggestionsFeatureEnabledProvider = Provider<bool>((ref) {
 
 final reinforcementSuggestionServiceProvider =
     Provider<ReinforcementSuggestionService>((ref) {
-      return ReinforcementSuggestionService(
-        client: Supabase.instance.client,
-        conceptStates: (userId) => ref
-            .read(conceptEvidenceServiceProvider)
-            .getUserConceptStates(userId),
-        dueItems: () => ref.read(spacedRepetitionServiceProvider).getDueItems(),
-      );
-    });
+  return ReinforcementSuggestionService(
+    client: Supabase.instance.client,
+    conceptStates: (userId) =>
+        ref.read(conceptEvidenceServiceProvider).getUserConceptStates(userId),
+    dueItems: () => ref.read(spacedRepetitionServiceProvider).getDueItems(),
+  );
+});
 
 /// Empty while the gate is OFF, without touching the network.
 final reinforcementSuggestionsProvider =
     FutureProvider<List<ReinforcementSuggestion>>((ref) async {
-      if (!ref.watch(reinforcementSuggestionsFeatureEnabledProvider)) {
-        return const [];
-      }
-      final learnerId = ref.watch(learnerIdProvider);
-      return ref.read(reinforcementSuggestionServiceProvider).load(learnerId);
-    });
+  if (!ref.watch(reinforcementSuggestionsFeatureEnabledProvider)) {
+    return const [];
+  }
+  final learnerId = ref.watch(learnerIdProvider);
+  return ref.read(reinforcementSuggestionServiceProvider).load(learnerId);
+});
 
 /// Suggestions the learner hid, on this device, per account. Hiding is
 /// silent (UI spec §8.5). The key includes the concept's latest evidence
@@ -72,13 +71,11 @@ class ReinforcementDismissals extends StateNotifier<Set<String>> {
     // Keep the stored list bounded.
     final list = state.toList();
     await prefs.setStringList(
-      _storageKey,
-      list.length > 200 ? list.sublist(list.length - 200) : list,
-    );
+        _storageKey, list.length > 200 ? list.sublist(list.length - 200) : list);
   }
 }
 
 final reinforcementDismissalsProvider =
     StateNotifierProvider<ReinforcementDismissals, Set<String>>((ref) {
-      return ReinforcementDismissals(ref.watch(learnerIdProvider));
-    });
+  return ReinforcementDismissals(ref.watch(learnerIdProvider));
+});

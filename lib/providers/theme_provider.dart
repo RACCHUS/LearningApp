@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
-final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
-  (ref) => ThemeModeNotifier(),
-);
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) => ThemeModeNotifier());
 
 class ThemeModeNotifier extends BaseSettingsNotifier<ThemeMode> {
-  ThemeModeNotifier()
-    : super(
-        ThemeMode.dark,
-        storageKey: 'themeMode',
-        storage: SettingsStorage.sharedPreferences,
-      );
+  ThemeModeNotifier() : super(
+    ThemeMode.dark,
+    storageKey: 'themeMode',
+    storage: SettingsStorage.sharedPreferences,
+  );
 
   @override
   String serialize(ThemeMode settings) {

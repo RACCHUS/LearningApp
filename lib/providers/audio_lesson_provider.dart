@@ -7,27 +7,23 @@ import 'package:learning_pwa/providers/audio_provider.dart';
 import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
 // Audio Lesson Orchestrator Provider
-final audioLessonOrchestratorProvider = Provider<AudioLessonOrchestrator>((
-  ref,
-) {
+final audioLessonOrchestratorProvider = Provider<AudioLessonOrchestrator>((ref) {
   final orchestrator = AudioLessonOrchestrator();
-
+  
   // Inject the voice service from the audio provider
   final audioNotifier = ref.read(audioStateProvider.notifier);
   orchestrator.setVoiceService(audioNotifier.voiceService);
-
+  
   return orchestrator;
 });
 
 // Audio Lesson Settings Provider
-class AudioLessonSettingsNotifier
-    extends BaseSettingsNotifier<AudioLessonSettings> {
-  AudioLessonSettingsNotifier()
-    : super(
-        const AudioLessonSettings(),
-        storageKey: 'audioLessonSettings',
-        storage: SettingsStorage.hive,
-      );
+class AudioLessonSettingsNotifier extends BaseSettingsNotifier<AudioLessonSettings> {
+  AudioLessonSettingsNotifier() : super(
+    const AudioLessonSettings(),
+    storageKey: 'audioLessonSettings',
+    storage: SettingsStorage.hive,
+  );
 
   @override
   AudioLessonSettings getDefaultSettings() => const AudioLessonSettings();
@@ -35,16 +31,16 @@ class AudioLessonSettingsNotifier
   @override
   Future<void> updateSettings(AudioLessonSettings newSettings) async {
     await super.updateSettings(newSettings);
-
+    
     // Update the orchestrator with new settings
     final orchestrator = AudioLessonOrchestrator();
     orchestrator.updateSettings(newSettings);
   }
 
   void toggleHandsFreeMode() {
-    updateSettings(
-      state.copyWith(handsFreeModeEnabled: !state.handsFreeModeEnabled),
-    );
+    updateSettings(state.copyWith(
+      handsFreeModeEnabled: !state.handsFreeModeEnabled,
+    ));
   }
 
   void setAutoProgressDelay(Duration delay) {
@@ -56,21 +52,21 @@ class AudioLessonSettingsNotifier
   }
 
   void toggleAutoReadAllContent() {
-    updateSettings(
-      state.copyWith(autoReadAllContent: !state.autoReadAllContent),
-    );
+    updateSettings(state.copyWith(
+      autoReadAllContent: !state.autoReadAllContent,
+    ));
   }
 
   void toggleVoiceNavigation() {
-    updateSettings(
-      state.copyWith(voiceNavigationEnabled: !state.voiceNavigationEnabled),
-    );
+    updateSettings(state.copyWith(
+      voiceNavigationEnabled: !state.voiceNavigationEnabled,
+    ));
   }
 
   void toggleConfirmations() {
-    updateSettings(
-      state.copyWith(confirmationsEnabled: !state.confirmationsEnabled),
-    );
+    updateSettings(state.copyWith(
+      confirmationsEnabled: !state.confirmationsEnabled,
+    ));
   }
 
   void setPauseBetweenItems(double seconds) {
@@ -78,17 +74,15 @@ class AudioLessonSettingsNotifier
   }
 
   void toggleAutoProgressAfterReading() {
-    updateSettings(
-      state.copyWith(autoProgressAfterReading: !state.autoProgressAfterReading),
-    );
+    updateSettings(state.copyWith(
+      autoProgressAfterReading: !state.autoProgressAfterReading,
+    ));
   }
 
   void toggleImmediateAnswerProgression() {
-    updateSettings(
-      state.copyWith(
-        immediateAnswerProgression: !state.immediateAnswerProgression,
-      ),
-    );
+    updateSettings(state.copyWith(
+      immediateAnswerProgression: !state.immediateAnswerProgression,
+    ));
   }
 
   void setVoiceRetryAttempts(int attempts) {
@@ -96,26 +90,23 @@ class AudioLessonSettingsNotifier
   }
 
   void toggleInterruptOnNextCommand() {
-    updateSettings(
-      state.copyWith(interruptOnNextCommand: !state.interruptOnNextCommand),
-    );
+    updateSettings(state.copyWith(
+      interruptOnNextCommand: !state.interruptOnNextCommand,
+    ));
   }
 }
 
-final audioLessonSettingsProvider =
-    StateNotifierProvider<AudioLessonSettingsNotifier, AudioLessonSettings>((
-      ref,
-    ) {
-      return AudioLessonSettingsNotifier();
-    });
+final audioLessonSettingsProvider = StateNotifierProvider<AudioLessonSettingsNotifier, AudioLessonSettings>((ref) {
+  return AudioLessonSettingsNotifier();
+});
 
 // Audio Lesson State Provider
 class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
   final AudioLessonOrchestrator _orchestrator;
-
+  
   // Subscription for cleanup
   StreamSubscription<AudioLessonState>? _stateSubscription;
-
+  
   AudioLessonStateNotifier(this._orchestrator) : super(AudioLessonState.idle) {
     // Listen to orchestrator state changes
     _stateSubscription = _orchestrator.stateStream.listen((newState) {
@@ -123,10 +114,7 @@ class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
     });
   }
 
-  Future<void> startLesson(
-    List<LessonContent> contentList, {
-    int startIndex = 0,
-  }) async {
+  Future<void> startLesson(List<LessonContent> contentList, {int startIndex = 0}) async {
     await _orchestrator.startLesson(contentList, startIndex: startIndex);
   }
 
@@ -153,7 +141,7 @@ class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
   Future<void> repeatContent() async {
     await _orchestrator.repeatContent();
   }
-
+  
   @override
   void dispose() {
     _stateSubscription?.cancel();
@@ -161,26 +149,25 @@ class AudioLessonStateNotifier extends StateNotifier<AudioLessonState> {
   }
 }
 
-final audioLessonStateProvider =
-    StateNotifierProvider<AudioLessonStateNotifier, AudioLessonState>((ref) {
-      final orchestrator = ref.watch(audioLessonOrchestratorProvider);
-      return AudioLessonStateNotifier(orchestrator);
-    });
+final audioLessonStateProvider = StateNotifierProvider<AudioLessonStateNotifier, AudioLessonState>((ref) {
+  final orchestrator = ref.watch(audioLessonOrchestratorProvider);
+  return AudioLessonStateNotifier(orchestrator);
+});
 
 // Audio Lesson Progress Provider
 class AudioLessonProgressNotifier extends StateNotifier<int> {
   final AudioLessonOrchestrator _orchestrator;
-
+  
   // Subscription for cleanup
   StreamSubscription<int>? _progressSubscription;
-
+  
   AudioLessonProgressNotifier(this._orchestrator) : super(0) {
     // Listen to orchestrator progress changes
     _progressSubscription = _orchestrator.progressStream.listen((progress) {
       state = progress;
     });
   }
-
+  
   @override
   void dispose() {
     _progressSubscription?.cancel();
@@ -188,19 +175,18 @@ class AudioLessonProgressNotifier extends StateNotifier<int> {
   }
 }
 
-final audioLessonProgressProvider =
-    StateNotifierProvider<AudioLessonProgressNotifier, int>((ref) {
-      final orchestrator = ref.watch(audioLessonOrchestratorProvider);
-      return AudioLessonProgressNotifier(orchestrator);
-    });
+final audioLessonProgressProvider = StateNotifierProvider<AudioLessonProgressNotifier, int>((ref) {
+  final orchestrator = ref.watch(audioLessonOrchestratorProvider);
+  return AudioLessonProgressNotifier(orchestrator);
+});
 
 // Audio Lesson Actions Provider
 class AudioLessonActionsNotifier extends StateNotifier<LessonFlowAction?> {
   final AudioLessonOrchestrator _orchestrator;
-
+  
   // Subscription for cleanup
   StreamSubscription<LessonFlowAction>? _actionSubscription;
-
+  
   AudioLessonActionsNotifier(this._orchestrator) : super(null) {
     // Listen to orchestrator action events
     _actionSubscription = _orchestrator.actionStream.listen((action) {
@@ -211,7 +197,7 @@ class AudioLessonActionsNotifier extends StateNotifier<LessonFlowAction?> {
   void clearAction() {
     state = null;
   }
-
+  
   @override
   void dispose() {
     _actionSubscription?.cancel();
@@ -219,11 +205,10 @@ class AudioLessonActionsNotifier extends StateNotifier<LessonFlowAction?> {
   }
 }
 
-final audioLessonActionsProvider =
-    StateNotifierProvider<AudioLessonActionsNotifier, LessonFlowAction?>((ref) {
-      final orchestrator = ref.watch(audioLessonOrchestratorProvider);
-      return AudioLessonActionsNotifier(orchestrator);
-    });
+final audioLessonActionsProvider = StateNotifierProvider<AudioLessonActionsNotifier, LessonFlowAction?>((ref) {
+  final orchestrator = ref.watch(audioLessonOrchestratorProvider);
+  return AudioLessonActionsNotifier(orchestrator);
+});
 
 // Convenience providers for UI
 final isAudioLessonActiveProvider = Provider<bool>((ref) {
@@ -234,7 +219,7 @@ final isAudioLessonActiveProvider = Provider<bool>((ref) {
 final audioLessonInfoProvider = Provider<Map<String, dynamic>>((ref) {
   final orchestrator = ref.watch(audioLessonOrchestratorProvider);
   final progress = ref.watch(audioLessonProgressProvider);
-
+  
   return {
     'currentIndex': orchestrator.currentIndex,
     'totalContent': orchestrator.totalContent,

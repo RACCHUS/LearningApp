@@ -8,18 +8,16 @@ import 'package:learning_pwa/models/voice_command.dart';
 import 'package:learning_pwa/providers/base_settings_notifier.dart';
 
 // Audio Settings Provider
-final audioSettingsProvider =
-    StateNotifierProvider<AudioSettingsNotifier, AudioSettings>((ref) {
-      return AudioSettingsNotifier();
-    });
+final audioSettingsProvider = StateNotifierProvider<AudioSettingsNotifier, AudioSettings>((ref) {
+  return AudioSettingsNotifier();
+});
 
 class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
-  AudioSettingsNotifier()
-    : super(
-        const AudioSettings(),
-        storageKey: 'audioSettings',
-        storage: SettingsStorage.hive,
-      ) {
+  AudioSettingsNotifier() : super(
+    const AudioSettings(),
+    storageKey: 'audioSettings',
+    storage: SettingsStorage.hive,
+  ) {
     _initializeAudioService();
   }
 
@@ -28,11 +26,8 @@ class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
   Future<void> _initializeAudioService() async {
     await _audioService.initialize();
     if (!mounted) return;
-    if (state.preferredVoice == null &&
-        _audioService.currentSettings.preferredVoice != null) {
-      state = state.copyWith(
-        preferredVoice: _audioService.currentSettings.preferredVoice,
-      );
+    if (state.preferredVoice == null && _audioService.currentSettings.preferredVoice != null) {
+      state = state.copyWith(preferredVoice: _audioService.currentSettings.preferredVoice);
     }
     if (!mounted) return;
     await _audioService.updateSettings(state);
@@ -42,11 +37,8 @@ class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
   Future<void> loadSettings() async {
     await super.loadSettings();
     if (!mounted) return;
-    if (state.preferredVoice == null &&
-        _audioService.currentSettings.preferredVoice != null) {
-      state = state.copyWith(
-        preferredVoice: _audioService.currentSettings.preferredVoice,
-      );
+    if (state.preferredVoice == null && _audioService.currentSettings.preferredVoice != null) {
+      state = state.copyWith(preferredVoice: _audioService.currentSettings.preferredVoice);
     }
     if (!mounted) return;
     await _audioService.updateSettings(state);
@@ -86,15 +78,11 @@ class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
   }
 
   Future<void> toggleAutoReadQuestions() async {
-    await updateSettings(
-      state.copyWith(autoReadQuestions: !state.autoReadQuestions),
-    );
+    await updateSettings(state.copyWith(autoReadQuestions: !state.autoReadQuestions));
   }
 
   Future<void> toggleAutoReadAnswers() async {
-    await updateSettings(
-      state.copyWith(autoReadAnswers: !state.autoReadAnswers),
-    );
+    await updateSettings(state.copyWith(autoReadAnswers: !state.autoReadAnswers));
   }
 
   Future<void> setLanguage(String language) async {
@@ -103,10 +91,9 @@ class AudioSettingsNotifier extends BaseSettingsNotifier<AudioSettings> {
 }
 
 // Audio State Provider
-final audioStateProvider =
-    StateNotifierProvider<AudioStateNotifier, AudioState>((ref) {
-      return AudioStateNotifier(ref.watch(audioSettingsProvider.notifier));
-    });
+final audioStateProvider = StateNotifierProvider<AudioStateNotifier, AudioState>((ref) {
+  return AudioStateNotifier(ref.watch(audioSettingsProvider.notifier));
+});
 
 class AudioStateNotifier extends StateNotifier<AudioState> {
   AudioStateNotifier(this._settingsNotifier) : super(const AudioState()) {
@@ -116,7 +103,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
   final AudioSettingsNotifier _settingsNotifier;
   final AudioService _audioService = AudioService();
   final VoiceInputService _voiceService = VoiceInputService();
-
+  
   // Subscriptions for cleanup
   StreamSubscription<AudioState>? _audioSubscription;
   StreamSubscription<AudioState>? _voiceSubscription;
@@ -147,7 +134,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
       );
     });
   }
-
+  
   @override
   void dispose() {
     _audioSubscription?.cancel();
@@ -168,11 +155,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
     return await _audioService.speakAnswer(answerText);
   }
 
-  Future<bool> speakTerm(
-    String term,
-    String definition, {
-    String? example,
-  }) async {
+  Future<bool> speakTerm(String term, String definition, {String? example}) async {
     return await _audioService.speakTerm(term, definition, example: example);
   }
 
@@ -222,10 +205,7 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
     await _voiceService.cancel();
   }
 
-  Future<VoiceCommand?> listenForCommand({
-    Duration? timeout,
-    String? localeId,
-  }) async {
+  Future<VoiceCommand?> listenForCommand({Duration? timeout, String? localeId}) async {
     return await _voiceService.listenForCommand(
       timeout: timeout,
       localeId: localeId,
@@ -253,12 +233,11 @@ class AudioStateNotifier extends StateNotifier<AudioState> {
 
   // Utility methods
   bool get canSpeak => state.isAvailable && _settingsNotifier.state.isEnabled;
-  bool get canListen =>
-      _voiceService.canListen; // Use the service's combined check
-
+  bool get canListen => _voiceService.canListen; // Use the service's combined check
+  
   // Expose voice service for orchestrator injection
   VoiceInputService get voiceService => _voiceService;
-
+  
   List<String> get availableVoices => state.availableVoices;
   List<String> get availableLocales => _voiceService.getAvailableLocales();
 }
@@ -278,9 +257,7 @@ final readAloudOffProvider = Provider<bool>((ref) {
 });
 
 final canListenProvider = Provider<bool>((ref) {
-  final state = ref.watch(
-    audioStateProvider,
-  ); // Watch the state, not just read notifier
+  final state = ref.watch(audioStateProvider); // Watch the state, not just read notifier
   return state.isAvailable && state.hasPermissions;
 });
 

@@ -43,14 +43,12 @@ class DisplayNameRepository {
   Future<void> save(String userId, String name) async {
     await _db
         .from('users')
-        .update({'display_name': name.trim()})
-        .eq('id', userId);
+        .update({'display_name': name.trim()}).eq('id', userId);
   }
 }
 
-final displayNameRepositoryProvider = Provider<DisplayNameRepository>(
-  (ref) => DisplayNameRepository(),
-);
+final displayNameRepositoryProvider =
+    Provider<DisplayNameRepository>((ref) => DisplayNameRepository());
 
 /// The learner's chosen display name, or null if unset or unavailable.
 final displayNameProvider = FutureProvider<String?>((ref) async {

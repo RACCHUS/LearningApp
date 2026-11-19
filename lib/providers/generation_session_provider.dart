@@ -21,10 +21,10 @@ const String _sessionStorageKey = 'generation_session_v1';
 
 /// Riverpod provider for the guided generation wizard.
 /// NOT autoDispose — session survives navigation. Cleared on import or discard.
-final generationSessionProvider =
-    StateNotifierProvider<GenerationSessionNotifier, GenerationSession?>(
-      (ref) => GenerationSessionNotifier(),
-    );
+final generationSessionProvider = StateNotifierProvider<
+    GenerationSessionNotifier, GenerationSession?>(
+  (ref) => GenerationSessionNotifier(),
+);
 
 /// Why a stored session could not be opened normally.
 enum SessionRecoveryReason {
@@ -46,7 +46,11 @@ enum SessionRecoveryReason {
 /// A stored session that is being protected instead of opened.
 @immutable
 class SessionRecoveryInfo {
-  const SessionRecoveryInfo({required this.reason, this.field, this.detail});
+  const SessionRecoveryInfo({
+    required this.reason,
+    this.field,
+    this.detail,
+  });
 
   final SessionRecoveryReason reason;
 
@@ -303,10 +307,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
         return AiPromptService.generateTermsPrompt(
           lessonPlan: s.lessonPlan!,
           batchStart: s.terms.length,
-          batchSize: _batchSize(
-            s.expectedTermCount - s.terms.length,
-            _maxTermsPerBatch,
-          ),
+          batchSize: _batchSize(s.expectedTermCount - s.terms.length, _maxTermsPerBatch),
           difficulty: s.difficulty,
         );
 
@@ -315,10 +316,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
           lessonPlan: s.lessonPlan!,
           generatedTerms: s.terms,
           batchStart: s.concepts.length,
-          batchSize: _batchSize(
-            s.expectedConceptCount - s.concepts.length,
-            _maxConceptsPerBatch,
-          ),
+          batchSize: _batchSize(s.expectedConceptCount - s.concepts.length, _maxConceptsPerBatch),
           difficulty: s.difficulty,
           compressedContext: PromptContextCompressor.buildContext(
             session: s,
@@ -332,10 +330,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
           generatedTerms: s.terms,
           generatedConcepts: s.concepts,
           batchStart: s.mcqs.length,
-          batchSize: _batchSize(
-            s.expectedMcqCount - s.mcqs.length,
-            _maxMcqsPerBatch,
-          ),
+          batchSize: _batchSize(s.expectedMcqCount - s.mcqs.length, _maxMcqsPerBatch),
           compressedContext: PromptContextCompressor.buildContext(
             session: s,
             forPhase: GenerationPhase.generatingMcqs,
@@ -419,11 +414,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
     return null;
   }
 
-  String? _handleContentBatch(
-    GenerationSession s,
-    dynamic parsed,
-    String type,
-  ) {
+  String? _handleContentBatch(GenerationSession s, dynamic parsed, String type) {
     List<Map<String, dynamic>> items;
 
     if (parsed is List) {
@@ -455,31 +446,19 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
         final nextPhase = updated.length >= s.expectedTermCount
             ? GenerationPhase.generatingConcepts
             : GenerationPhase.generatingTerms;
-        state = s.copyWith(
-          terms: updated,
-          currentPhase: nextPhase,
-          errorMessage: null,
-        );
+        state = s.copyWith(terms: updated, currentPhase: nextPhase, errorMessage: null);
       case 'concepts':
         final updated = [...s.concepts, ...items];
         final nextPhase = updated.length >= s.expectedConceptCount
             ? GenerationPhase.generatingMcqs
             : GenerationPhase.generatingConcepts;
-        state = s.copyWith(
-          concepts: updated,
-          currentPhase: nextPhase,
-          errorMessage: null,
-        );
+        state = s.copyWith(concepts: updated, currentPhase: nextPhase, errorMessage: null);
       case 'mcqs':
         final updated = [...s.mcqs, ...items];
         final nextPhase = updated.length >= s.expectedMcqCount
             ? GenerationPhase.reviewing
             : GenerationPhase.generatingMcqs;
-        state = s.copyWith(
-          mcqs: updated,
-          currentPhase: nextPhase,
-          errorMessage: null,
-        );
+        state = s.copyWith(mcqs: updated, currentPhase: nextPhase, errorMessage: null);
     }
 
     _persist();
@@ -488,9 +467,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
 
   /// Validate that each item in a batch has the required fields for its type.
   List<String> _validateBatchSchema(
-    List<Map<String, dynamic>> items,
-    String type,
-  ) {
+      List<Map<String, dynamic>> items, String type) {
     final errors = <String>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
@@ -516,9 +493,7 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
           }
           if (item['options'] is! List ||
               (item['options'] as List).length < 2) {
-            errors.add(
-              '$label: missing or insufficient "options" (need at least 2)',
-            );
+            errors.add('$label: missing or insufficient "options" (need at least 2)');
           }
           if (_isBlank(item['correct_answer'])) {
             errors.add('$label: missing "correct_answer"');
@@ -549,6 +524,5 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  static int _batchSize(int remaining, int max) =>
-      min(remaining, max).clamp(1, max);
+  static int _batchSize(int remaining, int max) => min(remaining, max).clamp(1, max);
 }

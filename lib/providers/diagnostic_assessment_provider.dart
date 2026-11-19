@@ -6,38 +6,44 @@ import 'learning_context_provider.dart';
 
 final diagnosticAssessmentServiceProvider =
     Provider<DiagnosticAssessmentService>((ref) {
-      return DiagnosticAssessmentService();
-    });
+  return DiagnosticAssessmentService();
+});
 
-typedef DiagnosticTargetKey = ({String targetId, String targetVersionId});
+typedef DiagnosticTargetKey = ({
+  String targetId,
+  String targetVersionId,
+});
 
 final diagnosticAvailabilityProvider = FutureProvider.autoDispose
-    .family<DiagnosticAvailability, DiagnosticTargetKey>((ref, key) async {
-      final service = ref.watch(diagnosticAssessmentServiceProvider);
-      return service.getAvailability(
-        targetId: key.targetId,
-        targetVersionId: key.targetVersionId,
-      );
-    });
+    .family<DiagnosticAvailability, DiagnosticTargetKey>(
+  (ref, key) async {
+    final service = ref.watch(diagnosticAssessmentServiceProvider);
+    return service.getAvailability(
+      targetId: key.targetId,
+      targetVersionId: key.targetVersionId,
+    );
+  },
+);
 
 final diagnosticItemsProvider = FutureProvider.autoDispose
-    .family<List<DiagnosticAssessmentItem>, DiagnosticTargetKey>((
-      ref,
-      key,
-    ) async {
-      final service = ref.watch(diagnosticAssessmentServiceProvider);
-      return service.generatePreAssessment(
-        targetId: key.targetId,
-        targetVersionId: key.targetVersionId,
-      );
-    });
+    .family<List<DiagnosticAssessmentItem>, DiagnosticTargetKey>(
+  (ref, key) async {
+    final service = ref.watch(diagnosticAssessmentServiceProvider);
+    return service.generatePreAssessment(
+      targetId: key.targetId,
+      targetVersionId: key.targetVersionId,
+    );
+  },
+);
 
-typedef DiagnosticSessionKey = ({String targetId, String targetVersionId});
+typedef DiagnosticSessionKey = ({
+  String targetId,
+  String targetVersionId,
+});
 
 class DiagnosticSessionState {
   final String targetId;
   final String targetVersionId;
-
   /// Null is intentionally target-wide. Scoped sessions keep exact identity.
   final String? examPartKey;
   final String? learnerId;
@@ -84,7 +90,8 @@ class DiagnosticSessionState {
   }
 }
 
-class DiagnosticSessionNotifier extends StateNotifier<DiagnosticSessionState> {
+class DiagnosticSessionNotifier
+    extends StateNotifier<DiagnosticSessionState> {
   final DiagnosticAssessmentService _service;
 
   DiagnosticSessionNotifier(
@@ -93,13 +100,13 @@ class DiagnosticSessionNotifier extends StateNotifier<DiagnosticSessionState> {
     String? examPartKey,
     String? learnerId,
   }) : super(
-         DiagnosticSessionState(
-           targetId: key.targetId,
-           targetVersionId: key.targetVersionId,
-           examPartKey: examPartKey,
-           learnerId: learnerId,
-         ),
-       );
+          DiagnosticSessionState(
+            targetId: key.targetId,
+            targetVersionId: key.targetVersionId,
+            examPartKey: examPartKey,
+            learnerId: learnerId,
+          ),
+        );
 
   void initialize(List<DiagnosticAssessmentItem> items) {
     if (state.isSubmitting || state.report != null) return;
@@ -207,11 +214,15 @@ class DiagnosticSessionNotifier extends StateNotifier<DiagnosticSessionState> {
         throw StateError('Diagnostic session is no longer active.');
       }
       if (requestedPart != null &&
-          (report.examPartKey != requestedPart || report.learnerId != userId)) {
+          (report.examPartKey != requestedPart ||
+              report.learnerId != userId)) {
         throw StateError('Diagnostic result has mismatched part or learner.');
       }
 
-      state = state.copyWith(isSubmitting: false, report: report);
+      state = state.copyWith(
+        isSubmitting: false,
+        report: report,
+      );
       return report;
     } catch (_) {
       if (mounted) state = state.copyWith(isSubmitting: false);
@@ -232,9 +243,8 @@ class DiagnosticSessionNotifier extends StateNotifier<DiagnosticSessionState> {
             activeReport.learnerId != state.learnerId)) {
       throw StateError('Remedial report does not match selected learner/part.');
     }
-    final updated = await _service.generateRemedialStudySet(
-      report: activeReport,
-    );
+    final updated =
+        await _service.generateRemedialStudySet(report: activeReport);
     if (!mounted) {
       throw StateError('Diagnostic session is no longer active.');
     }
@@ -243,15 +253,13 @@ class DiagnosticSessionNotifier extends StateNotifier<DiagnosticSessionState> {
   }
 }
 
-final diagnosticSessionProvider = StateNotifierProvider.autoDispose
-    .family<
-      DiagnosticSessionNotifier,
-      DiagnosticSessionState,
-      DiagnosticSessionKey
-    >((ref, key) {
-      final service = ref.watch(diagnosticAssessmentServiceProvider);
-      return DiagnosticSessionNotifier(service, key);
-    });
+final diagnosticSessionProvider = StateNotifierProvider.autoDispose.family<
+    DiagnosticSessionNotifier,
+    DiagnosticSessionState,
+    DiagnosticSessionKey>((ref, key) {
+  final service = ref.watch(diagnosticAssessmentServiceProvider);
+  return DiagnosticSessionNotifier(service, key);
+});
 
 /// Separate scoped providers avoid accidental reuse of whole-target caches.
 /// These are not wired to learner launch until part-specific review gates pass.
@@ -263,28 +271,21 @@ typedef ExamPartDiagnosticKey = ({
 
 final examPartDiagnosticAvailabilityProvider = FutureProvider.autoDispose
     .family<DiagnosticAvailability, ExamPartDiagnosticKey>((ref, key) async {
-      return ref
-          .watch(diagnosticAssessmentServiceProvider)
-          .getAvailability(
-            targetId: key.targetId,
-            targetVersionId: key.targetVersionId,
-            examPartKey: key.examPartKey,
-          );
-    });
+  return ref.watch(diagnosticAssessmentServiceProvider).getAvailability(
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+});
 
 final examPartDiagnosticItemsProvider = FutureProvider.autoDispose
-    .family<List<DiagnosticAssessmentItem>, ExamPartDiagnosticKey>((
-      ref,
-      key,
-    ) async {
-      return ref
-          .watch(diagnosticAssessmentServiceProvider)
-          .generatePreAssessment(
-            targetId: key.targetId,
-            targetVersionId: key.targetVersionId,
-            examPartKey: key.examPartKey,
-          );
-    });
+    .family<List<DiagnosticAssessmentItem>, ExamPartDiagnosticKey>((ref, key) async {
+  return ref.watch(diagnosticAssessmentServiceProvider).generatePreAssessment(
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+});
 
 /// An explicit selected part must also be keyed by learner so that responses,
 /// reports and in-flight submissions do not carry across a shared-device
@@ -296,23 +297,19 @@ typedef ScopedDiagnosticSessionKey = ({
   String learnerId,
 });
 
-final scopedDiagnosticSessionProvider = StateNotifierProvider.autoDispose
-    .family<
-      DiagnosticSessionNotifier,
-      DiagnosticSessionState,
-      ScopedDiagnosticSessionKey
-    >((ref, key) {
-      final currentLearner = ref.watch(learnerIdProvider);
-      // No cross-owner session can be opened with a stale UI key.
-      if (key.learnerId != currentLearner) {
-        throw StateError(
-          'Cannot open a diagnostic session for another learner.',
-        );
-      }
-      return DiagnosticSessionNotifier(
-        ref.watch(diagnosticAssessmentServiceProvider),
-        (targetId: key.targetId, targetVersionId: key.targetVersionId),
-        examPartKey: key.examPartKey,
-        learnerId: key.learnerId,
-      );
-    });
+final scopedDiagnosticSessionProvider = StateNotifierProvider.autoDispose.family<
+    DiagnosticSessionNotifier,
+    DiagnosticSessionState,
+    ScopedDiagnosticSessionKey>((ref, key) {
+  final currentLearner = ref.watch(learnerIdProvider);
+  // No cross-owner session can be opened with a stale UI key.
+  if (key.learnerId != currentLearner) {
+    throw StateError('Cannot open a diagnostic session for another learner.');
+  }
+  return DiagnosticSessionNotifier(
+    ref.watch(diagnosticAssessmentServiceProvider),
+    (targetId: key.targetId, targetVersionId: key.targetVersionId),
+    examPartKey: key.examPartKey,
+    learnerId: key.learnerId,
+  );
+});

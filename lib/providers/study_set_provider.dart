@@ -51,12 +51,11 @@ class StudySetState {
 }
 
 /// Provider for managing saved study sets
-final studySetProvider = StateNotifierProvider<StudySetNotifier, StudySetState>(
-  (ref) {
-    final service = ref.watch(savedStudySetServiceProvider);
-    return StudySetNotifier(service);
-  },
-);
+final studySetProvider =
+    StateNotifierProvider<StudySetNotifier, StudySetState>((ref) {
+  final service = ref.watch(savedStudySetServiceProvider);
+  return StudySetNotifier(service);
+});
 
 /// Notifier for study set operations
 class StudySetNotifier extends StateNotifier<StudySetState> {
@@ -156,11 +155,7 @@ class StudySetNotifier extends StateNotifier<StudySetState> {
 
       return studySet;
     } catch (e, stack) {
-      _logger.error(
-        'Failed to create study set with content',
-        error: e,
-        stackTrace: stack,
-      );
+      _logger.error('Failed to create study set with content', error: e, stackTrace: stack);
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to create study set: $e',
@@ -181,9 +176,8 @@ class StudySetNotifier extends StateNotifier<StudySetState> {
       final content = await _service.fetchStudySetContent(studySet);
       final progress = await _service.getProgress(studySet.id);
 
-      final newProgressMap = Map<String, StudySetProgress>.from(
-        state.progressBySetId,
-      );
+      final newProgressMap =
+          Map<String, StudySetProgress>.from(state.progressBySetId);
       newProgressMap[studySet.id] = progress;
 
       state = state.copyWith(
@@ -192,11 +186,8 @@ class StudySetNotifier extends StateNotifier<StudySetState> {
         isLoading: false,
       );
     } catch (e, stack) {
-      _logger.error(
-        'Failed to load study set content',
-        error: e,
-        stackTrace: stack,
-      );
+      _logger.error('Failed to load study set content',
+          error: e, stackTrace: stack);
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load study set content: $e',
@@ -241,13 +232,15 @@ class StudySetNotifier extends StateNotifier<StudySetState> {
     required bool isCorrect,
   }) async {
     try {
-      await _service.recordAnswer(studySetId: studySetId, isCorrect: isCorrect);
+      await _service.recordAnswer(
+        studySetId: studySetId,
+        isCorrect: isCorrect,
+      );
 
       // Refresh progress
       final progress = await _service.getProgress(studySetId);
-      final newProgressMap = Map<String, StudySetProgress>.from(
-        state.progressBySetId,
-      );
+      final newProgressMap =
+          Map<String, StudySetProgress>.from(state.progressBySetId);
       newProgressMap[studySetId] = progress;
       state = state.copyWith(progressBySetId: newProgressMap);
     } catch (e, stack) {

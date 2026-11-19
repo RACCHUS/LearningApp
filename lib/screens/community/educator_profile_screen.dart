@@ -63,9 +63,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
   void initState() {
     super.initState();
     _service = widget.service ?? EducatorService();
-    _reputationService =
-        widget.reputationService ??
-        EducatorReputationService(educatorService: _service);
+    _reputationService = widget.reputationService ?? EducatorReputationService(educatorService: _service);
     _resourceService = widget.resourceService ?? CommunityResourceService();
     _loadProfileData();
   }
@@ -82,9 +80,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
       final verifications = _isOwner
           ? await _service.fetchVerifications(widget.educatorId)
           : await _service.fetchPublicVerifications(widget.educatorId);
-      final reputation = await _reputationService.fetchReputation(
-        widget.educatorId,
-      );
+      final reputation = await _reputationService.fetchReputation(widget.educatorId);
       final isFollowing = await _service.isFollowing(widget.educatorId);
       final resources = widget.resourcesEnabled
           ? await _resourceService.fetchAuthorResources(widget.educatorId)
@@ -157,10 +153,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
             children: [
               Text(_error ?? 'Educator profile not found'),
               const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _loadProfileData,
-                child: const Text('Retry'),
-              ),
+              FilledButton(onPressed: _loadProfileData, child: const Text('Retry')),
             ],
           ),
         ),
@@ -205,17 +198,13 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                 // Credentials & Verifications Section
                 Text(
                   'Verified Credentials & Experience',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 if (_verifications.isEmpty)
                   Card(
                     elevation: 0,
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.3,
-                    ),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     child: const Padding(
                       padding: EdgeInsets.all(16),
                       child: Text(
@@ -225,52 +214,28 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                     ),
                   )
                 else
-                  ..._verifications.map(
-                    (v) => Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(
-                          color: theme.colorScheme.outlineVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          v.isLicensed
-                              ? Icons.verified_user
-                              : (v.isPlatformVetted
-                                    ? Icons.verified
-                                    : Icons.info_outline),
-                          color: v.isLicensed
-                              ? Colors.teal
-                              : (v.isPlatformVetted
-                                    ? Colors.blue
-                                    : Colors.blueGrey),
-                        ),
-                        title: Text(
-                          v.issuer ??
-                              (v.isLicensed
-                                  ? 'Regulatory Licensure'
-                                  : 'Contributor Claim'),
-                        ),
-                        subtitle: Text(
-                          v.isLicensed
-                              ? 'Verified State/Regulatory License (${v.jurisdiction ?? 'FL'})'
-                              : (v.isPlatformVetted
-                                    ? 'Platform Editorial Review'
-                                    : 'Self-Declared Claim'),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: EducatorCredentialBadge(
-                          verification: v,
-                          isCompact: true,
-                        ),
-                      ),
+                  ..._verifications.map((v) => Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
-                  ),
+                    child: ListTile(
+                      leading: Icon(
+                        v.isLicensed ? Icons.verified_user : (v.isPlatformVetted ? Icons.verified : Icons.info_outline),
+                        color: v.isLicensed ? Colors.teal : (v.isPlatformVetted ? Colors.blue : Colors.blueGrey),
+                      ),
+                      title: Text(v.issuer ?? (v.isLicensed ? 'Regulatory Licensure' : 'Contributor Claim')),
+                      subtitle: Text(
+                        v.isLicensed
+                            ? 'Verified State/Regulatory License (${v.jurisdiction ?? 'FL'})'
+                            : (v.isPlatformVetted ? 'Platform Editorial Review' : 'Self-Declared Claim'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: EducatorCredentialBadge(verification: v, isCompact: true),
+                    ),
+                  )),
 
                 const SizedBox(height: 20),
 
@@ -278,20 +243,14 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                 if (_reputation != null) ...[
                   Text(
                     'Contributor Evidence & Reputation',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
+                      side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -324,13 +283,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Contributor Tier:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                ),
-                              ),
+                              const Text('Contributor Tier:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
                               EducatorReputationBadge(tier: _reputation!.tier),
                             ],
                           ),
@@ -338,20 +291,8 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Acceptance Quality Ratio:',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Text(
-                                '${(_reputation!.qualityRatio * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
+                              const Text('Acceptance Quality Ratio:', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text('${(_reputation!.qualityRatio * 100).toStringAsFixed(0)}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             ],
                           ),
                         ],
@@ -369,9 +310,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                     children: [
                       Text(
                         'Authored Resources & Guides',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       if (_isOwner)
                         TextButton.icon(
@@ -379,18 +318,16 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                           icon: const Icon(Icons.add, size: 16),
                           label: const Text('Author Resource'),
                           onPressed: () async {
-                            final created = await Navigator.of(context)
-                                .push<CommunityResource>(
-                                  MaterialPageRoute(
-                                    builder: (ctx) => ResourceAuthoringScreen(
-                                      resourceService: _resourceService,
-                                      authorId: widget.educatorId,
-                                      authorName:
-                                          _profile?.displayName ?? 'Educator',
-                                      authorHeadline: _profile?.headline,
-                                    ),
-                                  ),
-                                );
+                            final created = await Navigator.of(context).push<CommunityResource>(
+                              MaterialPageRoute(
+                                builder: (ctx) => ResourceAuthoringScreen(
+                                  resourceService: _resourceService,
+                                  authorId: widget.educatorId,
+                                  authorName: _profile?.displayName ?? 'Educator',
+                                  authorHeadline: _profile?.headline,
+                                ),
+                              ),
+                            );
                             if (created != null) {
                               _loadProfileData();
                             }
@@ -402,8 +339,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                   if (_authoredResources.isEmpty)
                     Card(
                       elevation: 0,
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       child: const Padding(
                         padding: EdgeInsets.all(16),
                         child: Text(
@@ -413,9 +349,7 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
                       ),
                     )
                   else
-                    ..._authoredResources.map(
-                      (res) => ResourceCard(resource: res),
-                    ),
+                    ..._authoredResources.map((res) => ResourceCard(resource: res)),
                 ],
               ],
             ),
@@ -435,12 +369,10 @@ class _EducatorProfileScreenState extends State<EducatorProfileScreen> {
       children: [
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }
 }
+

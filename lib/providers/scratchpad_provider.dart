@@ -41,8 +41,8 @@ class ScratchpadPreferenceNotifier extends StateNotifier<bool> {
 
 final scratchpadPreferenceProvider =
     StateNotifierProvider<ScratchpadPreferenceNotifier, bool>(
-      (ref) => ScratchpadPreferenceNotifier(),
-    );
+  (ref) => ScratchpadPreferenceNotifier(),
+);
 
 /// True only when the gate is ON and the learner opted in.
 final showQuestionScratchpadProvider = Provider<bool>((ref) {

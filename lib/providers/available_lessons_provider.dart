@@ -22,7 +22,10 @@ class AvailableLessonsCatalog {
   final List<BaseLesson> lessons;
   final String? remoteError;
 
-  const AvailableLessonsCatalog({required this.lessons, this.remoteError});
+  const AvailableLessonsCatalog({
+    required this.lessons,
+    this.remoteError,
+  });
 
   bool get hasRemoteError => remoteError != null;
 }
@@ -41,9 +44,7 @@ final remoteCatalogLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
 });
 
 /// Device-local lessons are a separate source from the remote catalog.
-final offlineCatalogLessonsProvider = FutureProvider<List<BaseLesson>>((
-  ref,
-) async {
+final offlineCatalogLessonsProvider = FutureProvider<List<BaseLesson>>((ref) async {
   final userId = ref.watch(learnerIdProvider);
   return hiveService.getOfflineLessons(userId);
 });
@@ -53,37 +54,39 @@ final offlineCatalogLessonsProvider = FutureProvider<List<BaseLesson>>((
 /// Precedence for duplicate IDs is assets < remote < offline. That preserves
 /// the user's local working copy when the same lesson exists in multiple
 /// sources while still making every RLS-readable Supabase lesson discoverable.
-final availableLessonsCatalogProvider = FutureProvider<AvailableLessonsCatalog>(
-  (ref) async {
-    final assets = await ref.watch(assetLessonsProvider.future);
+final availableLessonsCatalogProvider =
+    FutureProvider<AvailableLessonsCatalog>((ref) async {
+  final assets = await ref.watch(assetLessonsProvider.future);
 
-    List<Lesson> remote = const [];
-    String? remoteError;
-    try {
-      remote = await ref.watch(remoteCatalogLessonsProvider.future);
-    } catch (e) {
-      remoteError = e.toString();
-      debugPrint('⚠️ Remote lesson catalog unavailable: $e');
-    }
+  List<Lesson> remote = const [];
+  String? remoteError;
+  try {
+    remote = await ref.watch(remoteCatalogLessonsProvider.future);
+  } catch (e) {
+    remoteError = e.toString();
+    debugPrint('⚠️ Remote lesson catalog unavailable: $e');
+  }
 
-    List<BaseLesson> offline = const [];
-    try {
-      offline = await ref.watch(offlineCatalogLessonsProvider.future);
-    } catch (e) {
-      debugPrint('⚠️ Offline lesson catalog unavailable: $e');
-    }
+  List<BaseLesson> offline = const [];
+  try {
+    offline = await ref.watch(offlineCatalogLessonsProvider.future);
+  } catch (e) {
+    debugPrint('⚠️ Offline lesson catalog unavailable: $e');
+  }
 
-    final byId = <String, BaseLesson>{};
-    for (final lesson in <BaseLesson>[...assets, ...remote, ...offline]) {
-      byId[lesson.id] = lesson;
-    }
+  final byId = <String, BaseLesson>{};
+  for (final lesson in <BaseLesson>[...assets, ...remote, ...offline]) {
+    byId[lesson.id] = lesson;
+  }
 
-    final lessons = byId.values.toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  final lessons = byId.values.toList()
+    ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
-    return AvailableLessonsCatalog(lessons: lessons, remoteError: remoteError);
-  },
-);
+  return AvailableLessonsCatalog(
+    lessons: lessons,
+    remoteError: remoteError,
+  );
+});
 
 /// Backward-compatible list-only view for call sites that do not need source
 /// health. Library uses [availableLessonsCatalogProvider] so it can surface a
@@ -97,14 +100,10 @@ final assetLessonsProvider = FutureProvider<List<Lesson>>((ref) async {
   try {
     final manifestRaw = await rootBundle.loadString('AssetManifest.json');
     final manifest = jsonDecode(manifestRaw) as Map<String, dynamic>;
-    final paths =
-        manifest.keys
-            .where(
-              (key) =>
-                  key.startsWith('assets/lessons/') && key.endsWith('.json'),
-            )
-            .toList()
-          ..sort();
+    final paths = manifest.keys
+        .where((key) => key.startsWith('assets/lessons/') && key.endsWith('.json'))
+        .toList()
+      ..sort();
 
     final lessons = <Lesson>[];
     for (final path in paths) {

@@ -23,7 +23,7 @@ typedef ExamPartProgressKey = ({
 class ExamPartProfileService {
   final SupabaseClient _supabase;
   ExamPartProfileService({SupabaseClient? supabase})
-    : _supabase = supabase ?? Supabase.instance.client;
+      : _supabase = supabase ?? Supabase.instance.client;
 
   Future<ExamPreparationProfile?> load(ExamPartProfileKey key) async {
     final version = await _supabase
@@ -35,9 +35,7 @@ class ExamPartProfileService {
         version['id'] != key.targetVersionId ||
         version['target_id'] != key.targetId ||
         version['status'] != 'published') {
-      throw StateError(
-        'Exam part list is unavailable for this target version.',
-      );
+      throw StateError('Exam part list is unavailable for this target version.');
     }
     final raw = version['metadata'];
     if (raw is! Map) return null;
@@ -52,16 +50,15 @@ final examPartProfileServiceProvider = Provider<ExamPartProfileService>((ref) {
   return ExamPartProfileService();
 });
 
-final examPartScopeResolverProvider = Provider<ExamPartCurriculumScopeResolver>(
-  (ref) {
-    return ExamPartCurriculumScopeResolver();
-  },
-);
+final examPartScopeResolverProvider =
+    Provider<ExamPartCurriculumScopeResolver>((ref) {
+  return ExamPartCurriculumScopeResolver();
+});
 
 final examPartProfileProvider = FutureProvider.autoDispose
     .family<ExamPreparationProfile?, ExamPartProfileKey>((ref, key) {
-      return ref.watch(examPartProfileServiceProvider).load(key);
-    });
+  return ref.watch(examPartProfileServiceProvider).load(key);
+});
 
 class ExamPartProgressSnapshot {
   final ExamPartProgressKey key;
@@ -85,61 +82,51 @@ class ExamPartProgressSnapshot {
 
 final examPartProgressProvider = FutureProvider.autoDispose
     .family<ExamPartProgressSnapshot, ExamPartProgressKey>((ref, key) async {
-      final currentLearner = ref.watch(learnerIdProvider);
-      if (key.learnerId != currentLearner) {
-        throw StateError('Cannot access another learner’s scoped progress.');
-      }
-      final profile = await ref.watch(
-        examPartProfileProvider((
-          targetId: key.targetId,
-          targetVersionId: key.targetVersionId,
-        )).future,
-      );
-      final part = profile?.findPart(key.examPartKey);
-      if (part == null || !part.hasScopeRootCandidate) {
-        throw StateError(
-          'Selected exam part is not configured for this version.',
-        );
-      }
+  final currentLearner = ref.watch(learnerIdProvider);
+  if (key.learnerId != currentLearner) {
+    throw StateError('Cannot access another learner’s scoped progress.');
+  }
+  final profile = await ref.watch(examPartProfileProvider((
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+  )).future);
+  final part = profile?.findPart(key.examPartKey);
+  if (part == null || !part.hasScopeRootCandidate) {
+    throw StateError('Selected exam part is not configured for this version.');
+  }
 
-      // Independently resolve the actual descendant tree; metadata alone
-      // cannot authorize an exam-part read or result.
-      final scope = await ref
-          .watch(examPartScopeResolverProvider)
-          .resolve(
-            targetVersionId: key.targetVersionId,
-            examPartKey: key.examPartKey,
-          );
-      if (scope.rootNodeId != part.curriculumRootNodeId) {
-        throw StateError('Exam part curriculum root changed during this read.');
-      }
-      final knowledge = await ref.watch(
-        examPartReadinessProvider((
-          targetVersionId: key.targetVersionId,
-          examPartKey: key.examPartKey,
-        )).future,
-      );
-      final diagnostic = await ref.watch(
-        examPartDiagnosticAvailabilityProvider((
-          targetId: key.targetId,
-          targetVersionId: key.targetVersionId,
-          examPartKey: key.examPartKey,
-        )).future,
-      );
-      if (knowledge.targetVersionId != key.targetVersionId ||
-          diagnostic.targetVersionId != key.targetVersionId ||
-          ref.read(learnerIdProvider) != key.learnerId) {
-        throw StateError('Scoped progress identity changed during loading.');
-      }
+  // Independently resolve the actual descendant tree; metadata alone
+  // cannot authorize an exam-part read or result.
+  final scope = await ref.watch(examPartScopeResolverProvider).resolve(
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  );
+  if (scope.rootNodeId != part.curriculumRootNodeId) {
+    throw StateError('Exam part curriculum root changed during this read.');
+  }
+  final knowledge = await ref.watch(examPartReadinessProvider((
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  )).future);
+  final diagnostic = await ref.watch(examPartDiagnosticAvailabilityProvider((
+    targetId: key.targetId,
+    targetVersionId: key.targetVersionId,
+    examPartKey: key.examPartKey,
+  )).future);
+  if (knowledge.targetVersionId != key.targetVersionId ||
+      diagnostic.targetVersionId != key.targetVersionId ||
+      ref.read(learnerIdProvider) != key.learnerId) {
+    throw StateError('Scoped progress identity changed during loading.');
+  }
 
-      return ExamPartProgressSnapshot(
-        key: key,
-        rootNodeId: scope.rootNodeId,
-        knowledge: knowledge,
-        diagnostic: diagnostic,
-        nextStep: const ExamPartNextActionEngine().recommend(
-          readiness: knowledge,
-          diagnostic: diagnostic,
-        ),
-      );
-    });
+  return ExamPartProgressSnapshot(
+    key: key,
+    rootNodeId: scope.rootNodeId,
+    knowledge: knowledge,
+    diagnostic: diagnostic,
+    nextStep: const ExamPartNextActionEngine().recommend(
+      readiness: knowledge,
+      diagnostic: diagnostic,
+    ),
+  );
+});

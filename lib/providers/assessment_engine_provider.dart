@@ -14,9 +14,7 @@ import '../services/assessment/exam_practice_elapsed_clock.dart';
 import '../services/assessment/mock_exam_generator_service.dart';
 
 /// Provider for MockExamGeneratorService
-final mockExamGeneratorServiceProvider = Provider<MockExamGeneratorService>((
-  ref,
-) {
+final mockExamGeneratorServiceProvider = Provider<MockExamGeneratorService>((ref) {
   return MockExamGeneratorService();
 });
 
@@ -26,9 +24,7 @@ final examEvaluationServiceProvider = Provider<ExamEvaluationService>((ref) {
 });
 
 /// Provider for AdaptivePracticeService
-final adaptivePracticeServiceProvider = Provider<AdaptivePracticeService>((
-  ref,
-) {
+final adaptivePracticeServiceProvider = Provider<AdaptivePracticeService>((ref) {
   return AdaptivePracticeService();
 });
 
@@ -39,13 +35,10 @@ final clepSimulationServiceProvider = Provider<ClepSimulationService>((ref) {
 
 /// Fetches the authoritative blueprint for a given target version
 final mockExamBlueprintProvider =
-    FutureProvider.family<MockExamBlueprint, String>((
-      ref,
-      targetVersionId,
-    ) async {
-      final generator = ref.watch(mockExamGeneratorServiceProvider);
-      return generator.loadBlueprint(targetVersionId);
-    });
+    FutureProvider.family<MockExamBlueprint, String>((ref, targetVersionId) async {
+  final generator = ref.watch(mockExamGeneratorServiceProvider);
+  return generator.loadBlueprint(targetVersionId);
+});
 
 /// State controller for a local, practice-only mock examination.
 /// A Stopwatch measures actual active elapsed time; the periodic timer only
@@ -64,10 +57,10 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
     ExamPracticeElapsedClock? clock,
     AssessmentGradingService? gradingService,
     ClepSimulationService? clepSimulationService,
-  }) : _clock = clock ?? StopwatchExamPracticeElapsedClock(),
-       _gradingService = gradingService ?? AssessmentGradingService(),
-       _clepSimulationService = clepSimulationService,
-       super(null);
+  })  : _clock = clock ?? StopwatchExamPracticeElapsedClock(),
+        _gradingService = gradingService ?? AssessmentGradingService(),
+        _clepSimulationService = clepSimulationService,
+        super(null);
 
   void _cancelTicker() {
     _timer?.cancel();
@@ -228,13 +221,13 @@ class ExamSessionNotifier extends StateNotifier<MockExamSession?> {
 
 final examSessionProvider =
     StateNotifierProvider<ExamSessionNotifier, MockExamSession?>((ref) {
-      final evaluationService = ref.watch(examEvaluationServiceProvider);
-      final clepSimulationService = ref.watch(clepSimulationServiceProvider);
-      return ExamSessionNotifier(
-        evaluationService,
-        clepSimulationService: clepSimulationService,
-      );
-    });
+  final evaluationService = ref.watch(examEvaluationServiceProvider);
+  final clepSimulationService = ref.watch(clepSimulationServiceProvider);
+  return ExamSessionNotifier(
+    evaluationService,
+    clepSimulationService: clepSimulationService,
+  );
+});
 
 /// State controller for an active CAT-style adaptive practice session
 class AdaptivePracticeNotifier extends StateNotifier<AdaptivePracticeState?> {
@@ -282,9 +275,7 @@ class AdaptivePracticeNotifier extends StateNotifier<AdaptivePracticeState?> {
 }
 
 final adaptivePracticeProvider =
-    StateNotifierProvider<AdaptivePracticeNotifier, AdaptivePracticeState?>((
-      ref,
-    ) {
-      final service = ref.watch(adaptivePracticeServiceProvider);
-      return AdaptivePracticeNotifier(service);
-    });
+    StateNotifierProvider<AdaptivePracticeNotifier, AdaptivePracticeState?>((ref) {
+  final service = ref.watch(adaptivePracticeServiceProvider);
+  return AdaptivePracticeNotifier(service);
+});
