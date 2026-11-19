@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:learning_pwa/widgets/learning_support/study_help_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/term.dart';
@@ -25,7 +26,11 @@ class FlashcardScreen extends ConsumerStatefulWidget {
     this.initialIndex = 0,
     this.onComplete,
     this.isEmbeddedInLesson = false,
+    this.helpContext,
   });
+
+  /// When opened from a lesson: shows that lesson's Learning help.
+  final StudyHelpContext? helpContext;
 
   @override
   ConsumerState<FlashcardScreen> createState() => _FlashcardScreenState();
@@ -247,6 +252,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                   backgroundColor: theme.scaffoldBackgroundColor,
                   foregroundColor: theme.colorScheme.onSurface,
                   actions: [
+                    if (widget.helpContext case final h?) h.action(),
                     const AudioPreferencesAction(),
                     IconButton(
                       icon: Icon(_recallBeforeReveal

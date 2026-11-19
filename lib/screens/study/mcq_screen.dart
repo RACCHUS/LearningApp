@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:learning_pwa/widgets/learning_support/study_help_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/question.dart';
@@ -27,7 +28,11 @@ class McqScreen extends ConsumerStatefulWidget {
     this.onComplete,
     this.isEmbeddedInLesson = false,
     this.lessonId,
+    this.helpContext,
   });
+
+  /// When opened from a lesson: shows that lesson's Learning help.
+  final StudyHelpContext? helpContext;
 
   @override
   ConsumerState<McqScreen> createState() => _McqScreenState();
@@ -261,6 +266,7 @@ class _McqScreenState extends ConsumerState<McqScreen> {
                   backgroundColor: theme.scaffoldBackgroundColor,
                   foregroundColor: theme.colorScheme.onSurface,
                   actions: [
+                    if (widget.helpContext case final h?) h.action(),
                     const AudioPreferencesAction(),
                     IconButton(
                       icon: const Icon(Icons.visibility_off_outlined),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/learning_support/study_help_context.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:learning_pwa/utils/web_utils.dart';
@@ -63,7 +64,15 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   
   /// Launch a previously saved study mode without showing the dialog
   void _launchSavedMode(StudyModePreference mode) {
-    final lessonContent = ref.read(lessonProvider(widget.lessonId)).asData?.value.lessonContent ?? [];
+    final lessonData = ref.read(lessonProvider(widget.lessonId)).asData?.value;
+    final lessonContent = lessonData?.lessonContent ?? [];
+    final help = lessonData == null
+        ? null
+        : StudyHelpContext(
+            lessonId: widget.lessonId,
+            lessonTitle: lessonData.lesson.title,
+            tags: lessonData.lesson.tags,
+          );
     
     switch (mode) {
       case StudyModePreference.lesson:
@@ -75,6 +84,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => FlashcardScreen(
+              helpContext: help,
               terms: lessonContent.whereType<TermContent>().map((c) => Term.fromTermContent(c)).toList(),
             ),
           ),
@@ -84,6 +94,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => McqScreen(
+              helpContext: help,
               lessonId: widget.lessonId,
               questions: lessonContent.whereType<QuestionContent>().map((c) => Question(
                 id: c.id,
@@ -102,6 +113,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => ConceptScreen(
+              helpContext: help,
               concepts: lessonContent.whereType<ConceptContent>().toList(),
             ),
           ),

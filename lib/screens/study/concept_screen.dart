@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learning_pwa/widgets/learning_support/study_help_context.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/content_types.dart';
 import 'package:learning_pwa/widgets/audio/audio_concept_widget.dart';
@@ -21,7 +22,11 @@ class ConceptScreen extends ConsumerStatefulWidget {
     this.onComplete,
     this.isLastInLesson = false,
     this.isEmbeddedInLesson = false, // Default to false for standalone mode
+    this.helpContext,
   });
+
+  /// When opened from a lesson: shows that lesson's Learning help.
+  final StudyHelpContext? helpContext;
 
   @override
   ConsumerState<ConceptScreen> createState() => _ConceptScreenState();
@@ -83,6 +88,7 @@ class _ConceptScreenState extends ConsumerState<ConceptScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
+          if (widget.helpContext case final h?) h.action(),
           const AudioPreferencesAction(),
           IconButton(
             key: const Key('concept_in_context_qa_action'),
