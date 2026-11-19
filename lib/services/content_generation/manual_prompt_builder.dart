@@ -20,7 +20,7 @@ enum ManualOutputMode {
 class ManualPromptBuilder {
   const ManualPromptBuilder._();
 
-  static const packId = 'micro_lesson_v1';
+  static const packId = 'micro_lesson_v2';
 
   /// Field length limit stated to the model (the parser allows more).
   static const statedMaxChars = 600;
@@ -40,7 +40,8 @@ class ManualPromptBuilder {
     final b = StringBuffer()
       ..writeln(
         'You are helping me make a short private study lesson about '
-        '${jsonEncode(_clean(job.request.subject))}.',
+        '${jsonEncode(_clean(job.request.subject))} for '
+        '${job.request.level} learners.',
       )
       ..writeln()
       ..writeln('IDEAS (use these codes exactly):');
@@ -67,15 +68,25 @@ class ManualPromptBuilder {
       ..writeln(
         '- mcq: "slot", "kind":"mcq", "concept", "stem", "options" '
         '(3 to 5 different texts), "answer" (ONE capital letter: A for the '
-        'first option, B for the second, ...), optional "why"',
+        'first option, B for the second, ...), "why"',
       )
       ..writeln()
       ..writeln('RULES:')
+      ..writeln(
+        '- Be accurate. If you are unsure of a fact, leave that slot out.',
+      )
       ..writeln('- Plain text only. No HTML, no Markdown, no links.')
       ..writeln('- Each text field at most $statedMaxChars characters.')
       ..writeln('- Use no other fields. Do not add a "support" field.')
+      ..writeln(
+        '- Questions: 4 options of similar length; wrong options are '
+        'plausible mistakes; never "All/None of the above".',
+      )
       ..writeln('- Exactly one option is correct, and "answer" names it.')
-      ..writeln('- If you are unsure of a fact, leave that slot out.')
+      ..writeln(
+        '- "why": why the answer is right and why the most tempting '
+        'wrong option is wrong.',
+      )
       ..writeln();
 
     final example = specs.firstWhere(
@@ -114,9 +125,13 @@ class ManualPromptBuilder {
   }
 
   static String _describe(SlotKind kind) => switch (kind) {
-    SlotKind.explanation => 'explanation of the idea for a beginner',
-    SlotKind.term => 'one key term and its definition',
-    SlotKind.mcq => 'one multiple-choice question',
+    SlotKind.explanation =>
+      'explanation of the idea in 3-5 plain sentences, with one concrete '
+          'example in "example"',
+    SlotKind.term => 'one key term and a clear one-sentence definition',
+    SlotKind.mcq =>
+      'one multiple-choice question that checks understanding (apply or '
+          'explain, not word-for-word recall), with "why"',
   };
 
   /// A shape example. Its placeholder text is obviously not an answer.
