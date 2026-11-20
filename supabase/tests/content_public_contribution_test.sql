@@ -47,9 +47,12 @@ select ok(not has_function_privilege('anon',
 select ok(not has_function_privilege('authenticated',
   'private.contribution_apply(uuid,text,text,text)', 'EXECUTE'),
   'transition helper is not callable by browsers');
-select is((select enabled or release_ready from private.site_feature_controls
-            where feature_key = 'content.public_contribution'), false,
-  'gate is seeded OFF and not release-ready');
+select is((select enabled and release_ready from private.site_feature_controls
+            where feature_key = 'content.public_contribution'), true,
+  'gate activated by 20261119050000 (one-person team)');
+-- Keep the OFF-path coverage: switch it off inside this rolled-back test.
+update private.site_feature_controls set enabled = false, release_ready = false
+ where feature_key = 'content.public_contribution';
 
 -- Gate OFF -------------------------------------------------------------------
 set local role authenticated;

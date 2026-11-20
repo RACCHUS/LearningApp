@@ -3,6 +3,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(9);
+-- Reporting must work with the feature OFF: switch it off for this
+-- rolled-back test (it is ON in production since 20261119050000).
+update private.site_feature_controls set enabled = false
+ where feature_key = 'content.public_contribution';
 
 insert into auth.users (id, email, is_anonymous) values
   ('c0710000-0000-4000-8000-00000000000a', 'rep-owner@example.invalid', false),
@@ -62,7 +66,7 @@ select ok(exists (
      and pg_get_constraintdef(oid) like '%community_answer%'),
   'existing target types are kept');
 
--- Reporting still works when the feature is OFF (the gate is seeded OFF).
+-- Reporting still works when the feature is OFF (switched off above).
 select is((select enabled from private.site_feature_controls
             where feature_key = 'content.public_contribution'), false,
   'report succeeded with the feature OFF');

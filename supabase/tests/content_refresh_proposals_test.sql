@@ -34,9 +34,12 @@ select ok(not has_table_privilege('authenticated', 'public.content_refresh_propo
 select ok(not has_function_privilege('anon',
   'public.propose_contribution_refresh(uuid,text,text,text,text)', 'EXECUTE'),
   'anonymous users cannot propose');
-select is((select enabled or release_ready from private.site_feature_controls
-            where feature_key = 'content.refresh_proposals'), false,
-  'gate seeded OFF and not release-ready');
+select is((select enabled and release_ready from private.site_feature_controls
+            where feature_key = 'content.refresh_proposals'), true,
+  'gate activated by 20261119050000 (one-person team)');
+-- Keep the OFF-path coverage: switch it off inside this rolled-back test.
+update private.site_feature_controls set enabled = false, release_ready = false
+ where feature_key = 'content.refresh_proposals';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c0720000-0000-4000-8000-00000000000b', true);
