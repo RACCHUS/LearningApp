@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'byok_provider.dart';
 import 'byok_release_gate.dart';
+import 'llm_failure.dart';
+
+export 'llm_failure.dart' show LlmFailureKind;
 
 /// Exception thrown during LLM inference or schema validation.
 class LlmException implements Exception {
@@ -9,7 +12,36 @@ class LlmException implements Exception {
   final int? statusCode;
   final dynamic details;
 
-  const LlmException(this.message, {this.statusCode, this.details});
+  /// What went wrong, for choosing the learner message and whether to retry.
+  final LlmFailureKind kind;
+
+  /// How long the provider asked us to wait, when it said.
+  final Duration? retryAfter;
+
+  const LlmException(
+    this.message, {
+    this.statusCode,
+    this.details,
+    this.kind = LlmFailureKind.unknown,
+    this.retryAfter,
+  });
+
+  /// Builds the exception for a non-2xx provider response. The body is
+  /// read for its error code only and is not kept.
+  factory LlmException.fromResponse(AiProvider provider, http.Response r) {
+    final c = classifyProviderError(
+      provider,
+      r.statusCode,
+      r.body,
+      headers: r.headers,
+    );
+    return LlmException(
+      'AI provider request failed (${c.kind.name}).',
+      statusCode: r.statusCode,
+      kind: c.kind,
+      retryAfter: c.retryAfter,
+    );
+  }
 
   @override
   String toString() =>
@@ -46,6 +78,19 @@ abstract class LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   });
+
+  /// Sends [prompt] as a plain chat message and returns the reply text,
+  /// exactly as a learner would copy it from a chat. The app's own paste
+  /// pipeline (fences, sentinels, validation) then reads it, so a reply
+  /// from a key and a pasted reply are checked the same way.
+  Future<String> generateText({
+    required String prompt,
+    int maxOutputTokens = 8192,
+  });
+
+  /// Model IDs this key can use for text generation, so settings can offer
+  /// real choices instead of a hard-coded name that may be retired.
+  Future<List<String>> listModels();
 
   /// Factory to instantiate the appropriate client from a [ByokConfig].
   factory LlmClient.create(ByokConfig config, {http.Client? httpClient}) {
@@ -109,13 +154,15 @@ class GeminiLlmClient implements LlmClient {
         },
     };
 
-    final response = await _client.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': config.apiKey,
-      },
-      body: jsonEncode(payload),
+    final response = await _send(
+      () => _client.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': config.apiKey,
+        },
+        body: jsonEncode(payload),
+      ),
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -133,11 +180,133 @@ class GeminiLlmClient implements LlmClient {
       }
       throw const LlmException('Empty response received from Gemini API');
     } else {
-      throw LlmException(
-        'Gemini provider request failed; check provider credentials and status.',
-        statusCode: response.statusCode,
+      throw LlmException.fromResponse(AiProvider.gemini, response);
+    }
+  }
+
+  void _requireReady() {
+    // Direct construction must not bypass the owner safety latch.
+    ByokReleaseGate.requireEnabled();
+    ByokEndpointPolicy.requireApproved(config);
+    if (config.apiKey.trim().isEmpty) {
+      throw const LlmException(
+        'No BYOK credential supplied.',
+        kind: LlmFailureKind.badCredential,
       );
     }
+  }
+
+  @override
+  Future<String> generateText({
+    required String prompt,
+    int maxOutputTokens = 8192,
+  }) async {
+    _requireReady();
+    final url = Uri.parse(
+      '${config.endpoint}/models/${Uri.encodeComponent(config.model)}:generateContent',
+    );
+    final response = await _send(
+      () => _client.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': config.apiKey,
+        },
+        body: jsonEncode({
+          'contents': [
+            {
+              'role': 'user',
+              'parts': [
+                {'text': prompt},
+              ],
+            },
+          ],
+          'generationConfig': {
+            'temperature': 0.4,
+            'maxOutputTokens': maxOutputTokens,
+          },
+        }),
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LlmException.fromResponse(AiProvider.gemini, response);
+    }
+    final data = jsonDecode(response.body);
+    if (data is! Map) {
+      throw const LlmException('Empty reply', kind: LlmFailureKind.emptyReply);
+    }
+    final feedback = data['promptFeedback'];
+    if (feedback is Map && feedback['blockReason'] != null) {
+      throw const LlmException('Prompt blocked', kind: LlmFailureKind.blocked);
+    }
+    final candidates = data['candidates'];
+    if (candidates is! List || candidates.isEmpty || candidates[0] is! Map) {
+      throw const LlmException('Empty reply', kind: LlmFailureKind.emptyReply);
+    }
+    final first = candidates[0] as Map;
+    final content = first['content'];
+    final parts = content is Map ? content['parts'] : null;
+    final text = parts is List
+        ? [
+            for (final p in parts)
+              if (p is Map && p['text'] is String && p['thought'] != true)
+                p['text'] as String,
+          ].join()
+        : '';
+    final reason = '${first['finishReason'] ?? ''}';
+    if (text.trim().isEmpty) {
+      const refused = {'SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII'};
+      throw LlmException(
+        'No text in reply ($reason)',
+        kind: refused.contains(reason)
+            ? LlmFailureKind.blocked
+            : LlmFailureKind.emptyReply,
+      );
+    }
+    // A reply cut off at MAX_TOKENS is still returned: the paste pipeline
+    // keeps the finished items and asks only for the rest.
+    return text;
+  }
+
+  @override
+  Future<List<String>> listModels() async {
+    _requireReady();
+    final response = await _send(
+      () => _client.get(
+        Uri.parse('${config.endpoint}/models?pageSize=200'),
+        headers: {'x-goog-api-key': config.apiKey},
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LlmException.fromResponse(AiProvider.gemini, response);
+    }
+    final data = jsonDecode(response.body);
+    final models = data is Map ? data['models'] : null;
+    if (models is! List) return const [];
+    return [
+      for (final m in models)
+        if (m is Map &&
+            m['name'] is String &&
+            m['supportedGenerationMethods'] is List &&
+            (m['supportedGenerationMethods'] as List)
+                .contains('generateContent'))
+          (m['name'] as String).replaceFirst('models/', ''),
+    ];
+  }
+}
+
+/// Runs one HTTP call, turning transport failures (offline, CORS, DNS)
+/// into a classified [LlmException].
+Future<http.Response> _send(Future<http.Response> Function() call) async {
+  try {
+    return await call();
+  } on LlmException {
+    rethrow;
+  } catch (_) {
+    throw const LlmException(
+      'Could not reach the AI provider.',
+      kind: LlmFailureKind.network,
+    );
   }
 }
 
@@ -193,10 +362,8 @@ class OpenAiCompatibleLlmClient implements LlmClient {
       'temperature': 0.2,
     };
 
-    var response = await _client.post(
-      url,
-      headers: headers,
-      body: jsonEncode(payload),
+    var response = await _send(
+      () => _client.post(url, headers: headers, body: jsonEncode(payload)),
     );
 
     // If json_schema is unsupported by the specific endpoint/model, fallback to json_object
@@ -207,10 +374,12 @@ class OpenAiCompatibleLlmClient implements LlmClient {
         'response_format': {'type': 'json_object'},
         'temperature': 0.2,
       };
-      response = await _client.post(
-        url,
-        headers: headers,
-        body: jsonEncode(fallbackPayload),
+      response = await _send(
+        () => _client.post(
+          url,
+          headers: headers,
+          body: jsonEncode(fallbackPayload),
+        ),
       );
     }
 
@@ -226,17 +395,113 @@ class OpenAiCompatibleLlmClient implements LlmClient {
       }
       throw const LlmException('Empty choices in OpenAI-compatible response');
     } else {
-      throw LlmException(
-        'AI provider request failed; check provider credentials and status.',
-        statusCode: response.statusCode,
+      throw LlmException.fromResponse(config.provider, response);
+    }
+  }
+
+  Map<String, String> get _headers => {
+        'Authorization': 'Bearer ${config.apiKey}',
+        'Content-Type': 'application/json',
+        if (config.provider == AiProvider.openrouter) ...{
+          'HTTP-Referer': 'https://learningapp.org',
+          'X-Title': 'LearningApp PWA',
+        },
+      };
+
+  void _requireReady() {
+    ByokReleaseGate.requireEnabled();
+    ByokEndpointPolicy.requireApproved(config);
+    if (config.apiKey.trim().isEmpty) {
+      throw const LlmException(
+        'No BYOK credential supplied.',
+        kind: LlmFailureKind.badCredential,
       );
     }
+  }
+
+  @override
+  Future<String> generateText({
+    required String prompt,
+    int maxOutputTokens = 8192,
+  }) async {
+    _requireReady();
+    // No token cap is sent: OpenAI models disagree on the parameter name,
+    // and an unknown one fails the whole request.
+    final response = await _send(
+      () => _client.post(
+        Uri.parse('${config.endpoint}/chat/completions'),
+        headers: _headers,
+        body: jsonEncode({
+          'model': config.model,
+          'messages': [
+            {'role': 'user', 'content': prompt},
+          ],
+        }),
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LlmException.fromResponse(config.provider, response);
+    }
+    final data = jsonDecode(response.body);
+    final choices = data is Map ? data['choices'] : null;
+    final message = choices is List && choices.isNotEmpty && choices[0] is Map
+        ? (choices[0] as Map)['message']
+        : null;
+    final content = message is Map ? message['content'] : null;
+    if (content is! String || content.trim().isEmpty) {
+      final refusal = message is Map ? message['refusal'] : null;
+      throw LlmException(
+        'No text in reply',
+        kind: refusal != null
+            ? LlmFailureKind.blocked
+            : LlmFailureKind.emptyReply,
+      );
+    }
+    return content;
+  }
+
+  @override
+  Future<List<String>> listModels() async {
+    _requireReady();
+    final response = await _send(
+      () => _client.get(
+        Uri.parse('${config.endpoint}/models'),
+        headers: _headers,
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LlmException.fromResponse(config.provider, response);
+    }
+    final data = jsonDecode(response.body);
+    final models = data is Map ? data['data'] : null;
+    if (models is! List) return const [];
+    return [
+      for (final m in models)
+        if (m is Map && m['id'] is String) m['id'] as String,
+    ]..sort();
   }
 }
 
 /// High-fidelity offline Mock LLM client generating valid structured JSON responses.
 class MockLlmClient implements LlmClient {
   final Map<String, String> responses = {};
+
+  @override
+  Future<String> generateText({
+    required String prompt,
+    int maxOutputTokens = 8192,
+  }) async {
+    for (final entry in responses.entries) {
+      if (prompt.contains(entry.key)) return entry.value;
+    }
+    throw const LlmException(
+      'The simulator has no reply for this prompt.',
+      kind: LlmFailureKind.emptyReply,
+    );
+  }
+
+  @override
+  Future<List<String>> listModels() async => const ['mock-v1'];
 
   void setMockResponse(String promptSubstring, String jsonResponse) {
     responses[promptSubstring] = jsonResponse;

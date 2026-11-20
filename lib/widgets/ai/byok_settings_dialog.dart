@@ -3,21 +3,44 @@ import '../../services/ai/byok_provider.dart';
 import '../../services/ai/byok_release_gate.dart';
 import '../../services/ai/llm_client.dart';
 
-/// Modal dialog allowing learners to configure their Bring-Your-Own-Key (BYOK) AI provider (ARCH-4).
+/// Lets an adult learner use their own AI provider key (BYOK, FLAG-015).
+///
+/// The key lives only in [storageService]'s memory: it is never written to
+/// the device or sent to LearningApp, and it is gone after a reload. The
+/// learner must confirm they are 18 or older and that their provider's
+/// terms allow this use before the key is kept (master plan v2.6 §14.7).
 class ByokSettingsDialog extends StatefulWidget {
-  final ByokStorageService storageService;
-
   const ByokSettingsDialog({
     super.key,
     required this.storageService,
+    this.onSaved,
+    this.clientFactory = LlmClient.create,
+    this.releaseApproved = ByokReleaseGate.enabled,
   });
 
-  static Future<void> show(BuildContext context,
-      {ByokStorageService? storageService}) {
+  final ByokStorageService storageService;
+
+  /// Receives the saved settings (with the key) so the session uses them.
+  final ValueChanged<ByokConfig>? onSaved;
+  final LlmClient Function(ByokConfig config) clientFactory;
+
+  /// The build-time latch; a parameter only so tests can show the ON state.
+  final bool releaseApproved;
+
+  static Future<void> show(
+    BuildContext context, {
+    ByokStorageService? storageService,
+    ValueChanged<ByokConfig>? onSaved,
+    LlmClient Function(ByokConfig config)? clientFactory,
+    bool releaseApproved = ByokReleaseGate.enabled,
+  }) {
     return showDialog(
       context: context,
       builder: (ctx) => ByokSettingsDialog(
         storageService: storageService ?? ByokStorageService(),
+        onSaved: onSaved,
+        clientFactory: clientFactory ?? LlmClient.create,
+        releaseApproved: releaseApproved,
       ),
     );
   }
@@ -26,150 +49,139 @@ class ByokSettingsDialog extends StatefulWidget {
   State<ByokSettingsDialog> createState() => _ByokSettingsDialogState();
 }
 
+/// Providers a learner can pick. The simulator is for development only.
+const _choices = [AiProvider.gemini, AiProvider.openai, AiProvider.openrouter];
+
 class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
-  late AiProvider _selectedProvider;
-  late TextEditingController _keyController;
-  late TextEditingController _modelController;
-  late TextEditingController _endpointController;
-  bool _obscureKey = true;
-  bool _isLoading = true;
-  bool _isTesting = false;
-  String? _testStatus;
-  bool _testSuccess = false;
+  AiProvider _provider = AiProvider.gemini;
+  final _key = TextEditingController();
+  String _model = AiProvider.gemini.defaultModel;
+  List<String> _models = const [];
+  bool _obscure = true;
+  bool _loading = true;
+  bool _testing = false;
+  bool _adultConfirmed = false;
+  String? _status;
+  bool _ok = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedProvider = AiProvider.gemini;
-    _keyController = TextEditingController();
-    _modelController = TextEditingController();
-    _endpointController = TextEditingController();
-    // Do not load an existing secret into UI controllers while suspended.
-    if (ByokReleaseGate.enabled) {
-      _loadCurrentConfig();
+    if (widget.releaseApproved) {
+      _load();
     } else {
-      _isLoading = false;
+      _loading = false;
     }
   }
 
-  Future<void> _loadCurrentConfig() async {
+  Future<void> _load() async {
     final config = await widget.storageService.loadConfig();
+    if (!mounted) return;
     setState(() {
-      _selectedProvider = config.provider;
-      _keyController.text = config.apiKey;
-      _modelController.text = config.model;
-      _endpointController.text = config.customEndpoint ?? '';
-      _isLoading = false;
+      if (_choices.contains(config.provider)) {
+        _provider = config.provider;
+        _model = config.model;
+        _key.text = config.apiKey;
+        _adultConfirmed = config.apiKey.isNotEmpty;
+      }
+      _loading = false;
     });
   }
 
   @override
   void dispose() {
-    _keyController.dispose();
-    _modelController.dispose();
-    _endpointController.dispose();
+    _key.dispose();
     super.dispose();
   }
 
-  void _onProviderChanged(AiProvider? provider) {
-    if (provider == null) return;
+  ByokConfig get _config =>
+      ByokConfig(provider: _provider, apiKey: _key.text.trim(), model: _model);
+
+  /// Lists the models this key can use and picks a sensible one, so a
+  /// retired default never leaves the learner with a broken setting.
+  Future<void> _test() async {
     setState(() {
-      _selectedProvider = provider;
-      _modelController.text = provider.defaultModel;
-      _endpointController.text = '';
-      _testStatus = null;
+      _testing = true;
+      _status = 'Checking your key…';
+      _ok = false;
     });
+    try {
+      final client = widget.clientFactory(_config);
+      final models = await client.listModels();
+      if (!mounted) return;
+      final model = models.contains(_model) ? _model : _pickModel(models);
+      if (model == null) {
+        setState(() {
+          _testing = false;
+          _status = 'Your key works, but no text models are available to it.';
+        });
+        return;
+      }
+      setState(() {
+        _models = models;
+        _model = model;
+        _testing = false;
+        _ok = true;
+        _status = 'Your key works.';
+      });
+    } on LlmException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _testing = false;
+        _status = e.kind.message(_provider.shortName);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _testing = false;
+        _status = LlmFailureKind.unknown.message(_provider.shortName);
+      });
+    }
   }
 
-  Future<void> _testConnection() async {
-    ByokReleaseGate.requireEnabled();
-    setState(() {
-      _isTesting = true;
-      _testStatus = 'Testing provider connection...';
-      _testSuccess = false;
-    });
-
-    try {
-      final config = ByokConfig(
-        provider: _selectedProvider,
-        apiKey: _keyController.text.trim(),
-        model: _modelController.text.trim().isNotEmpty
-            ? _modelController.text.trim()
-            : _selectedProvider.defaultModel,
-        customEndpoint: _endpointController.text.trim().isNotEmpty
-            ? _endpointController.text.trim()
-            : null,
-      );
-
-      final client = LlmClient.create(config);
-      await client.generateStructuredJson(
-        prompt: 'Return a JSON object with key "status" equal to "ok".',
-        jsonSchema: {
-          'type': 'object',
-          'properties': {
-            'status': {'type': 'string'}
-          },
-          'required': ['status']
-        },
-      );
-
-      if (mounted) {
-        setState(() {
-          _isTesting = false;
-          _testSuccess = true;
-          _testStatus = 'Connection successful! Provider is ready.';
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isTesting = false;
-          _testSuccess = false;
-          _testStatus = 'Connection failed: ${e.toString()}';
-        });
+  String? _pickModel(List<String> models) {
+    if (models.isEmpty) return null;
+    const skip = ['embed', 'image', 'tts', 'audio', 'vision', 'live', 'aqa'];
+    final usable = models
+        .where((m) => !skip.any((s) => m.toLowerCase().contains(s)))
+        .toList();
+    final pool = usable.isEmpty ? models : usable;
+    for (final hint in const ['flash-latest', 'flash', 'mini', 'auto']) {
+      for (final m in pool) {
+        if (m.contains(hint) && !m.contains('preview')) return m;
       }
     }
+    return pool.first;
   }
 
   Future<void> _save() async {
-    ByokReleaseGate.requireEnabled();
-    final config = ByokConfig(
-      provider: _selectedProvider,
-      apiKey: _keyController.text.trim(),
-      model: _modelController.text.trim().isNotEmpty
-          ? _modelController.text.trim()
-          : _selectedProvider.defaultModel,
-      customEndpoint: _endpointController.text.trim().isNotEmpty
-          ? _endpointController.text.trim()
-          : null,
-    );
-
+    final config = _config;
     await widget.storageService.saveConfig(config);
-    if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('AI settings saved successfully.')),
-      );
-    }
+    widget.onSaved?.call(config);
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text('${_provider.shortName} key ready for this tab.')),
+    );
   }
 
   Future<void> _clear() async {
     await widget.storageService.clearConfig();
+    widget.onSaved?.call(
+      ByokConfig(provider: _provider, apiKey: '', model: _model),
+    );
+    if (!mounted) return;
     setState(() {
-      _keyController.clear();
-      _endpointController.clear();
-      _testStatus = null;
+      _key.clear();
+      _status = null;
+      _ok = false;
+      _adultConfirmed = false;
     });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('API Key cleared.')),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!ByokReleaseGate.enabled) {
+    if (!widget.releaseApproved) {
       return AlertDialog(
         key: const Key('byok-unavailable-dialog'),
         title: const Text('AI key integration unavailable'),
@@ -191,16 +203,13 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
     }
 
     final theme = Theme.of(context);
+    final hasKey = _key.text.trim().isNotEmpty;
+    final canSave = hasKey && _adultConfirmed && !_testing;
 
     return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.smart_toy_outlined, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
-          const Expanded(child: Text('AI Generation & Keys (BYOK)')),
-        ],
-      ),
-      content: _isLoading
+      key: const Key('byok-settings-dialog'),
+      title: const Text('Use your own API key'),
+      content: _loading
           ? const SizedBox(
               height: 120,
               child: Center(child: CircularProgressIndicator()),
@@ -213,7 +222,9 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bring Your Own Key (BYOK) allows you to generate personalized practice questions and study plans directly using your preferred LLM provider.',
+                      'With your own key, the app can send the lesson prompt '
+                      'to your AI and check the reply for you. Your provider '
+                      'bills or limits your account, not LearningApp.',
                       style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 8),
@@ -225,12 +236,22 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.lock_outline,
-                              size: 18, color: theme.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.lock_outline,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'Keys are stored strictly in local browser storage and never uploaded to the server.',
+                              'Your key stays in this browser tab only. It is '
+                              'never saved or sent to LearningApp, and you '
+                              'enter it again after a reload. Prompts go '
+                              'straight from your browser to your provider. '
+                              'On free plans, some providers may have people '
+                              'review prompts and use them to improve their '
+                              "models, so don't put personal details in a "
+                              'topic.',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -241,76 +262,106 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<AiProvider>(
-                      value: _selectedProvider,
+                      value: _provider,
                       decoration: const InputDecoration(
                         labelText: 'Provider',
                         border: OutlineInputBorder(),
                       ),
-                      items: AiProvider.values.map((p) {
-                        return DropdownMenuItem(
-                          value: p,
-                          child: Text(p.displayName),
-                        );
-                      }).toList(),
-                      onChanged: _onProviderChanged,
+                      items: [
+                        for (final p in _choices)
+                          DropdownMenuItem(
+                            value: p,
+                            child: Text(p.displayName),
+                          ),
+                      ],
+                      onChanged: (p) {
+                        if (p == null) return;
+                        setState(() {
+                          _provider = p;
+                          _model = p.defaultModel;
+                          _models = const [];
+                          _status = null;
+                          _ok = false;
+                        });
+                      },
                     ),
                     const SizedBox(height: 14),
-                    if (_selectedProvider != AiProvider.mock) ...[
-                      TextField(
-                        controller: _keyController,
-                        obscureText: _obscureKey,
-                        decoration: InputDecoration(
-                          labelText: 'API Key',
-                          hintText: 'Paste personal API key here',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureKey
-                                ? Icons.visibility
-                                : Icons.visibility_off),
-                            onPressed: () =>
-                                setState(() => _obscureKey = !_obscureKey),
+                    TextField(
+                      key: const Key('byok-key-field'),
+                      controller: _key,
+                      obscureText: _obscure,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      onChanged: (_) => setState(() {
+                        _status = null;
+                        _ok = false;
+                      }),
+                      decoration: InputDecoration(
+                        labelText: 'API key',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          tooltip: _obscure ? 'Show key' : 'Hide key',
+                          icon: Icon(
+                            _obscure ? Icons.visibility : Icons.visibility_off,
                           ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      const SizedBox(height: 14),
-                    ],
-                    TextField(
-                      controller: _modelController,
-                      decoration: const InputDecoration(
-                        labelText: 'Model Name / ID',
-                        border: OutlineInputBorder(),
-                      ),
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      controller: _endpointController,
-                      decoration: InputDecoration(
-                        labelText: 'Custom Endpoint (Optional)',
-                        hintText: _selectedProvider.defaultEndpoint,
-                        border: const OutlineInputBorder(),
+                    if (_models.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        key: const Key('byok-model-field'),
+                        value: _model,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Model',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          for (final m in _models)
+                            DropdownMenuItem(value: m, child: Text(m)),
+                        ],
+                        onChanged: (m) => setState(() => _model = m ?? _model),
+                      )
+                    else
+                      Text(
+                        'Model: $_model (check your key to choose another)',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    const SizedBox(height: 8),
+                    CheckboxListTile(
+                      key: const Key('byok-adult-confirm'),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _adultConfirmed,
+                      onChanged: (v) =>
+                          setState(() => _adultConfirmed = v ?? false),
+                      title: const Text(
+                        "I'm 18 or older, and my provider's terms let me use "
+                        'my key this way.',
                       ),
                     ),
-                    if (_testStatus != null) ...[
-                      const SizedBox(height: 14),
+                    if (_status != null) ...[
+                      const SizedBox(height: 6),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
-                            _testSuccess ? Icons.check_circle : Icons.error,
-                            color: _testSuccess
-                                ? Colors.green
-                                : theme.colorScheme.error,
+                            _ok
+                                ? Icons.check_circle
+                                : (_testing
+                                      ? Icons.hourglass_top
+                                      : Icons.error),
+                            color: _ok ? Colors.green : theme.colorScheme.error,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _testStatus!,
-                              style: TextStyle(
-                                color: _testSuccess
-                                    ? Colors.green
-                                    : theme.colorScheme.error,
-                                fontSize: 13,
-                              ),
+                              _status!,
+                              key: const Key('byok-status'),
+                              style: theme.textTheme.bodySmall,
                             ),
                           ),
                         ],
@@ -321,32 +372,27 @@ class _ByokSettingsDialogState extends State<ByokSettingsDialog> {
               ),
             ),
       actions: [
-        if (_selectedProvider != AiProvider.mock &&
-            _keyController.text.isNotEmpty)
-          TextButton(
-            onPressed: _clear,
-            child: const Text('Clear Key'),
-          ),
+        if (hasKey)
+          TextButton(onPressed: _clear, child: const Text('Forget key')),
         TextButton(
-          onPressed: _isTesting ? null : _testConnection,
-          child: _isTesting
+          onPressed: _testing || !hasKey ? null : _test,
+          child: _testing
               ? const SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Test Connection'),
+              : const Text('Check key'),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _save,
-          child: const Text('Save & Apply'),
+          onPressed: canSave ? _save : null,
+          child: const Text('Use this key'),
         ),
       ],
     );
   }
 }
-
