@@ -70,6 +70,7 @@ flutter:
     - assets/lexicons/en_us_scowl_roots.txt
     - assets/lexicons/NOTICE.txt
     - assets/lessons/
+    - assets/open_content/
     - content/bridges/fraction_decimal.bridge.json
     - content/bridges/percent_change.bridge.json
     - content/bridges/percent_of_number.bridge.json

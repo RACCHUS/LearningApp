@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/providers/byok_session_provider.dart';
+import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/managed_ai_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/services/ai/llm_client.dart';
@@ -948,8 +949,27 @@ class _ManualGenerationV2ScreenState
     ];
   }
 
+  /// Opens an open textbook section in a new tab (never an embedded view).
+  Future<void> _openSection(ReuseSource source) async {
+    final uri = Uri.tryParse(source.url ?? '');
+    if (uri == null || uri.scheme != 'https') return;
+    var opened = false;
+    try {
+      opened = await ref.read(externalLinkLauncherProvider)(uri);
+    } catch (_) {}
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text("Couldn't open the link: ${source.url}")),
+        );
+    }
+  }
+
   Widget _reuseCard(ReuseGateResult gate, ThemeData theme) {
-    final complete = gate.decision.kind == ContentResolutionKind.exactReuse;
+    final open = gate.decision.kind == ContentResolutionKind.externalLink;
+    final complete =
+        gate.decision.kind == ContentResolutionKind.exactReuse || open;
     final ideas = _reuseRequest?.concepts ?? const <String>[];
     final coveredNames = [
       for (final (i, c) in ideas.indexed)
@@ -964,11 +984,18 @@ class _ManualGenerationV2ScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              complete ? 'We already have this' : 'Some of this already exists',
+              open
+                  ? 'Free open content covers this'
+                  : complete
+                  ? 'We already have this'
+                  : 'Some of this already exists',
               style: theme.textTheme.titleSmall,
             ),
             Text(
-              complete
+              open
+                  ? 'An openly licensed textbook section covers it. Read it '
+                        'now for free; no AI needed.'
+                  : complete
                   ? 'You can open it now, without using your AI chat.'
                   : 'Already covered: ${coveredNames.join(', ')}.',
               key: const Key('manual_v2_reuse_reason'),
@@ -980,22 +1007,30 @@ class _ManualGenerationV2ScreenState
                 ),
                 dense: true,
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  c.source.kind == ReuseSourceKind.lesson
-                      ? Icons.menu_book_outlined
-                      : Icons.school_outlined,
-                ),
+                leading: Icon(switch (c.source.kind) {
+                  ReuseSourceKind.lesson => Icons.menu_book_outlined,
+                  ReuseSourceKind.bridge => Icons.school_outlined,
+                  ReuseSourceKind.openSection => Icons.auto_stories_outlined,
+                }),
                 title: Text(c.source.title),
                 subtitle: Text(
-                  '${c.source.kind == ReuseSourceKind.lesson ? 'Lesson' : 'Short help lesson (Learning help)'}'
+                  '${switch (c.source.kind) {
+                    ReuseSourceKind.lesson => 'Lesson',
+                    ReuseSourceKind.bridge => 'Short help lesson (Learning help)',
+                    ReuseSourceKind.openSection => 'Free open textbook · ${c.source.credit}',
+                  }}'
                   ' · covers ${c.coveredIdeas.length} of ${ideas.length}',
                 ),
-                trailing: c.source.kind == ReuseSourceKind.lesson
-                    ? const Icon(Icons.open_in_new)
-                    : null,
-                onTap: c.source.kind == ReuseSourceKind.lesson
-                    ? () => context.push('/lesson/${c.source.id}')
-                    : null,
+                trailing: c.source.kind == ReuseSourceKind.bridge
+                    ? null
+                    : const Icon(Icons.open_in_new),
+                onTap: switch (c.source.kind) {
+                  ReuseSourceKind.lesson => () => context.push(
+                    '/lesson/${c.source.id}',
+                  ),
+                  ReuseSourceKind.bridge => null,
+                  ReuseSourceKind.openSection => () => _openSection(c.source),
+                },
               ),
             Wrap(
               spacing: 8,
