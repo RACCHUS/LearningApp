@@ -225,6 +225,39 @@ void main() {
       expect(notifier.state!.lessonPlan, isNotNull);
     });
 
+    test('handleResponse takes the plan out of a fenced reply', () {
+      notifier.startSession(
+        subject: 'Math',
+        targetAudience: 'Students',
+        durationMinutes: 20,
+        difficulty: 'intermediate',
+        contentFocus: 'mixed',
+      );
+      final error = notifier.handleResponse(
+        'Here is the plan:\n```json\n${jsonEncode(_samplePlan)}\n```\n'
+        'Shall I continue?',
+      );
+      expect(error, isNull);
+      expect(notifier.state!.currentPhase, GenerationPhase.generatingTerms);
+    });
+
+    test('handleResponse accepts a fenced batch array', () {
+      _advanceToPlanCompleted(notifier);
+      final batch = jsonEncode([
+        {'type': 'term', 'title': 'Variable', 'content': 'Def 1'}
+      ]);
+      final error = notifier.handleResponse('Sure!\n```\n$batch\n```');
+      expect(error, isNull);
+      expect(notifier.state!.terms.length, 1);
+    });
+
+    test('handleResponse explains a reply with no JSON', () {
+      _advanceToPlanCompleted(notifier);
+      final error = notifier.handleResponse('Sorry, I cannot help with that.');
+      expect(error, contains('No JSON'));
+      expect(notifier.state!.terms, isEmpty);
+    });
+
     test('handleResponse rejects invalid planning JSON', () {
       notifier.startSession(
         subject: 'Math',
@@ -333,7 +366,8 @@ void main() {
         contentFocus: 'mixed',
       );
       final error = notifier.handleResponse('not { valid json');
-      expect(error, contains('Invalid JSON'));
+      expect(error, contains('JSON'));
+      expect(notifier.state!.currentPhase, GenerationPhase.planning);
     });
 
     test('handleResponse accepts wrapped content batches', () {
