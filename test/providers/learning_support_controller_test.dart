@@ -55,10 +55,11 @@ void main() {
     gate = true;
   });
 
-  test('bundled library loads all three Bridges offline', () {
+  test('bundled library loads every bundled Bridge offline', () {
     expect(library.bridges.map((b) => b.bridgeId).toSet(), {
       'bridge-fraction-decimal',
       'bridge-percent-change',
+      'bridge-percent-of-number',
       'bridge-spreadsheet-percent-format',
     });
     expect(
