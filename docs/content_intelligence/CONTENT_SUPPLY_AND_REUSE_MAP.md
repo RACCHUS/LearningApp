@@ -25,11 +25,11 @@ Counts come from the files as of 2026-11-20.
 - There are no independent check items.
 - **Sources:** Microsoft documentation is proprietary, so we write all text ourselves and link to it.
 
-**Next supply:** more Excel lessons written in-house from Microsoft's documentation, used as references. Percent Bridges can build on OpenStax Prealgebra 1st edition (CC BY) once it is approved for adapting.
+**Next supply:** more Excel lessons written in-house from Microsoft's documentation, used as references. Percent Bridges can build on OpenStax Prealgebra 1st edition (CC BY, approved for adapting).
 
 ## CLEP College Algebra (`clep-college-algebra`, 2026)
 
-The source for every lesson is OpenStax College Algebra 1st edition, **CC BY 4.0**: registered as `proposed`, used for reference today, and adaptable once approved. The College Board CLEP guide is used for objective alignment only.
+The source for every lesson is OpenStax College Algebra 1st edition, **CC BY 4.0**: approved for adapting (owner, 2026-11-20). The College Board CLEP guide is used for objective alignment only.
 
 The per-lesson counts are the same in every row: 3 teach blocks, 2 call-outs, 2 questions + 3 flashcards, and 3 check items. No lesson has a Bridge yet.
 
@@ -57,7 +57,7 @@ The per-lesson counts are the same in every row: 3 teach blocks, 2 call-outs, 2 
 | 4.4 | Combinatorics, Binomial Theorem | 9.5, 9.6 | Factorials and multiplication principle |
 
 **Gaps across all 20 lessons:**
-- **Practice is thin:** 2 questions per lesson. Add worked examples and practice from OpenStax 1st edition exercises once approved for adapting, or use parametric families where the arithmetic is checkable.
+- **Practice is thin:** 2 questions per lesson. Add worked examples and practice adapted from OpenStax 1st edition (approved), or use parametric families where the arithmetic is checkable.
 - **No algebra Bridges:** the most-needed ones, by how many lessons need them, are negative numbers, solving linear equations, fraction operations, exponents and the coordinate plane. Bridges also need subject scoping so help offers only relevant Bridges (help is currently Excel-only); new check templates are also needed: signed arithmetic, absolute value, power, and one-step linear equations.
 - **Access:** no audio scripts or plain-language variants are recorded for these lessons.
 - **Not in production:** the curriculum still has to be ingested (owner).
@@ -78,4 +78,4 @@ The per-lesson counts are the same in every row: 3 teach blocks, 2 call-outs, 2 
 |---|---|---|
 | MIT OpenCourseWare | CC BY-NC-SA 4.0 | Link and reference; adapting waits on the non-commercial decision |
 | Wikibooks | CC BY-SA 4.0 | Link and reference; adapting needs share-alike lessons |
-| OpenStax Prealgebra 1st edition | CC BY 4.0 | Adapt for numeracy and algebra-prerequisite Bridges once approved |
+| OpenStax Prealgebra 1st edition | CC BY 4.0 (approved) | Adapt for numeracy and algebra-prerequisite Bridges |

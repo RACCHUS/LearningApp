@@ -91,11 +91,23 @@ class ScanTests(unittest.TestCase):
         self.assertTrue(any("does not allow 'adapt'" in p for p in problems))
 
     def test_adapting_needs_owner_approval(self):
+        reg = copy.deepcopy(REAL)
+        src = next(s for s in reg["sources"] if s["id"] == "openstax-prealgebra-1e")
+        src["status"] = "proposed"
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "content" / "bridges" / "a.bridge.json"
+            p.parent.mkdir(parents=True)
+            p.write_text(json.dumps(bridge(
+                "https://openstax.org/books/prealgebra/pages/6-1", "CC BY 4.0", "may_adapt")))
+            problems, _ = v.scan(reg, Path(d))
+        self.assertTrue(any("needs the owner's approval" in p for p in problems))
+
+    def test_approved_source_may_be_adapted(self):
         problems, _ = self.run_scan({
             "content/bridges/a.bridge.json": bridge(
                 "https://openstax.org/books/prealgebra/pages/6-1", "CC BY 4.0", "may_adapt"),
         })
-        self.assertTrue(any("needs the owner's approval" in p for p in problems))
+        self.assertEqual(problems, [])
 
     def test_wrong_license_statement_fails(self):
         problems, _ = self.run_scan({

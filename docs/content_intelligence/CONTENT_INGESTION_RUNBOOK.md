@@ -130,7 +130,7 @@ Run whichever apply:
 
 1. **Non-commercial status:** does LearningApp, with its sponsor, affiliate and donation plans, count as non-commercial for CC BY-NC-SA sources?
 2. **Psychology source:** `content/clep_introductory_psychology.yaml` records OpenStax Psychology 2e as CC BY 4.0, but 2e is now CC BY-NC-SA 4.0. Either re-point to Psychology (1st edition, CC BY 4.0) or keep 2e under NC-SA terms. The checker reports this as a warning until decided.
-3. **Approve the CC BY sources for adapting:** OpenStax College Algebra, Prealgebra and Psychology (1st editions) are `proposed` with `adapt` and `ai_transform`, which are unusable until approved.
+3. ~~Approve the CC BY sources for adapting~~: **approved by the owner on 2026-11-20** for OpenStax College Algebra, Prealgebra and Psychology (1st editions), including `adapt` and `ai_transform`.
 4. **Unconfirmed AI claim:** the Bridges say OpenStax prohibits use for training large language models. No such statement was found on OpenStax pages on 2026-11-20. Keep the conservative note, or correct it.
 5. **Production ingestion:** load the curricula (Excel and CLEP Algebra first) into production.
 
