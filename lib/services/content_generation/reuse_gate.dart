@@ -1,10 +1,13 @@
 import 'package:learning_pwa/models/content_generation/content_resolution_decision.dart';
 
-/// Something the learner can already open.
-enum ReuseSourceKind { lesson, bridge }
+/// Something the learner can already open. Order is preference when two
+/// sources cover the same ideas: our lessons, then Bridges, then sections
+/// of approved open textbooks (master plan v2.6 §4.3 steps 1-4).
+enum ReuseSourceKind { lesson, bridge, openSection }
 
 /// A searchable item, built only from content the learner may already read
-/// (the catalog is filtered by RLS; Bridges ship with the app).
+/// (the catalog is filtered by RLS; Bridges and the open content index ship
+/// with the app).
 class ReuseSource {
   const ReuseSource({
     required this.kind,
@@ -12,6 +15,8 @@ class ReuseSource {
     required this.title,
     this.text = '',
     this.tags = const [],
+    this.url,
+    this.credit,
   });
 
   final ReuseSourceKind kind;
@@ -21,6 +26,13 @@ class ReuseSource {
   /// Description or objective; matched together with the title.
   final String text;
   final List<String> tags;
+
+  /// Open sections only: where to read it.
+  final String? url;
+
+  /// Open sections only: book and license, e.g.
+  /// "OpenStax College Algebra · CC BY 4.0".
+  final String? credit;
 }
 
 /// A source that covers one or more of the requested ideas.
@@ -50,6 +62,7 @@ class ReuseGateResult {
 
   bool get suggestsReuse =>
       decision.kind == ContentResolutionKind.exactReuse ||
+      decision.kind == ContentResolutionKind.externalLink ||
       decision.kind == ContentResolutionKind.adapt;
 }
 
@@ -143,7 +156,7 @@ class ReuseGate {
     candidates.sort((a, b) {
       final c = b.coveredIdeas.length.compareTo(a.coveredIdeas.length);
       if (c != 0) return c;
-      // Prefer lessons (complete) over Bridges (short help).
+      // Prefer our lessons, then Bridges, then open textbook sections.
       return a.source.kind.index.compareTo(b.source.kind.index);
     });
     final top = candidates.take(maxCandidates).toList();
@@ -151,7 +164,19 @@ class ReuseGate {
     final all = ideas.length;
 
     final ContentResolutionDecision decision;
-    if (candidates.isNotEmpty && candidates.first.coveredIdeas.length == all) {
+    if (candidates.isNotEmpty &&
+        candidates.first.coveredIdeas.length == all &&
+        candidates.first.source.kind == ReuseSourceKind.openSection) {
+      final best = candidates.first.source;
+      decision = ContentResolutionDecision(
+        kind: ContentResolutionKind.externalLink,
+        reason:
+            'Free open textbook section "${best.title}" (${best.credit}) '
+            'covers every planned idea.',
+        eligibleAssetRef: 'open:${best.url}',
+      );
+    } else if (candidates.isNotEmpty &&
+        candidates.first.coveredIdeas.length == all) {
       final best = candidates.first.source;
       decision = ContentResolutionDecision(
         kind: ContentResolutionKind.exactReuse,

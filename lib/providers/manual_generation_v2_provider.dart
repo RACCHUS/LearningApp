@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_pwa/models/governance/site_feature_keys.dart';
 import 'package:learning_pwa/providers/auth_provider.dart';
@@ -7,6 +8,7 @@ import 'package:learning_pwa/providers/learning_support_controller_provider.dart
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/site_feature_provider.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
+import 'package:learning_pwa/services/content_generation/open_content_index.dart';
 import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:learning_pwa/services/governance/site_feature_service.dart';
@@ -74,8 +76,14 @@ final reuseSourcesProvider = FutureProvider.autoDispose<List<ReuseSource>>((
       );
     }
   } catch (_) {}
+  // Sections of approved open textbooks (bundled; no network).
+  out.addAll(await ref.watch(openContentSourcesProvider.future));
   return out;
 });
+
+final openContentSourcesProvider = FutureProvider<List<ReuseSource>>(
+  (ref) => OpenContentIndex.load(rootBundle),
+);
 
 /// One store per app instance, so each tab has its own editor ID.
 final manualJobStoreProvider = Provider<ManualJobStore>(

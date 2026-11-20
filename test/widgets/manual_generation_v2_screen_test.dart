@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/byok_session_provider.dart';
+import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
 import 'package:learning_pwa/providers/managed_ai_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
@@ -814,6 +815,45 @@ void main() {
       await tester.pumpAndSettle();
       final saved = await ManualJobStore(editorId: 'x').load('owner-1');
       expect(saved!.session.job.request.concepts, ['Compound interest']);
+    });
+
+    testWidgets('a free open textbook section is offered before AI', (
+      tester,
+    ) async {
+      final opened = <Uri>[];
+      const section = ReuseSource(
+        kind: ReuseSourceKind.openSection,
+        id: 'https://openstax.org/books/prealgebra/pages/6-1-understand-percent',
+        title: '6.1 Understand Percent',
+        text: 'Percents prealgebra math',
+        tags: ['percent change'],
+        url: 'https://openstax.org/books/prealgebra/pages/6-1-understand-percent',
+        credit: 'OpenStax Prealgebra · CC BY 4.0',
+      );
+      await pump(
+        tester,
+        enabled: true,
+        sources: [section],
+        extra: [
+          externalLinkLauncherProvider.overrideWithValue((uri) async {
+            opened.add(uri);
+            return true;
+          }),
+        ],
+      );
+      await plan(tester, 'Percent change');
+      expect(find.text('Free open content covers this'), findsOneWidget);
+      expect(find.textContaining('OpenStax Prealgebra · CC BY 4.0'), findsOneWidget);
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsNothing);
+
+      await tester.tap(find.text('6.1 Understand Percent'));
+      await tester.pumpAndSettle();
+      expect(opened.single.toString(), section.url);
+
+      // The learner can still make their own with AI.
+      await tester.tap(find.byKey(const Key('manual_v2_reuse_override')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
     });
 
     testWidgets('nothing similar: the plan starts straight away', (

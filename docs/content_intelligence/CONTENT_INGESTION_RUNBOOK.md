@@ -8,6 +8,22 @@ How to take material from an outside source (a textbook, course, official guide 
 
 > License readings here are the maintainers' reading of published terms, not legal advice. The owner decides what each source may be used for. When unsure, link only.
 
+## Open content comes first in the app
+
+When someone plans a lesson in *Create with your AI chat*, the Reuse Gate searches before any AI is offered. It looks, in this order, at:
+1. our lessons
+2. our Bridges
+3. **sections of approved open textbooks**, from `assets/open_content/index.json`
+
+A match shows "Free open content covers this", with a link to read the section. The learner can still choose *Make my own version* to go on to AI (copy and paste, free AI, or their own key). This is plan §4.3 steps 1–4 before step 6.
+
+**To add a book to the index:**
+1. Register it (step 3 below) with at least `link` allowed.
+2. Add it to `BOOKS` in `tool/build_open_content_index.py`.
+3. Run `python tool/build_open_content_index.py`.
+
+The tool stops if the license the publisher reports differs from the registry. CI validates the committed index offline (`--check`).
+
 ## The six uses
 
 Every use of a source is one of these. The registry lists which ones each source allows.
