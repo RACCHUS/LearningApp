@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 
 class MarkdownBlockWidget extends StatelessWidget {
   final LessonBlock block;
@@ -37,6 +38,8 @@ class MarkdownBlockWidget extends StatelessWidget {
       child: SelectionArea(
         child: MarkdownBody(
           data: bodyText,
+          inlineSyntaxes: lessonMarkdownInlineSyntaxes,
+          builders: lessonMarkdownBuilders,
           styleSheet: MarkdownStyleSheet(
             p: GoogleFonts.inter(
               fontSize: baseFontSize,

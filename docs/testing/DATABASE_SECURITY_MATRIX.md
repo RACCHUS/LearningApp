@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 83 test files, 1912 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 84 test files, 1926 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -20,7 +20,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 |---|---|---|---|---|---|---|---|
 | Analytics, privacy & retention | 4 | 78 | 1 | 3 | 27 | 13 | 0 |
 | Learner progress & events | 10 | 247 | 8 | 7 | 85 | 28 | 0 |
-| Assessment, grading & simulation | 20 | 533 | 4 | 13 | 211 | 71 | 5 |
+| Assessment, grading & simulation | 21 | 547 | 5 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
 | Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
 | Content, lessons & import | 14 | 278 | 7 | 9 | 75 | 11 | 2 |
@@ -33,6 +33,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 
 No denial, privilege or RLS check and fewer than two identity switches. These may be integrity, performance or contract tests rather than security tests. Review whether their area needs a negative-path check.
 
+- `assessment_numeric_entry_grading_test.sql` (Assessment, grading & simulation, 14 assertions)
 - `clep_psychology_simulation_test.sql` (Assessment, grading & simulation, 14 assertions)
 - `content_primitives_v2.sql` (Content, lessons & import, 16 assertions)
 - `content_provenance.sql` (Content, lessons & import, 12 assertions)
@@ -62,6 +63,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `tel_01b_context_fast_preferences_test.sql` | Learner progress & events | 28 | anon, authenticated | 3 | 8 | 6 | 0 |
 | `user_xp_security_test.sql` | Learner progress & events | 30 | anon, authenticated, service_role | 3 | 12 | 0 | 0 |
 | `assessment_item_grading_test.sql` | Assessment, grading & simulation | 22 | anon, authenticated | 1 | 4 | 3 | 0 |
+| `assessment_numeric_entry_grading_test.sql` | Assessment, grading & simulation | 14 | anon | 0 | 0 | 0 | 0 |
 | `clep_psychology_simulation_test.sql` | Assessment, grading & simulation | 14 | authenticated | 1 | 0 | 0 | 0 |
 | `clep_simulation_bank_and_privacy_test.sql` | Assessment, grading & simulation | 44 | anon, authenticated, service_role | 8 | 17 | 0 | 0 |
 | `exam_item_reference_validity_test.sql` | Assessment, grading & simulation | 30 | — | 0 | 15 | 5 | 1 |

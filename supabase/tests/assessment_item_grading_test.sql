@@ -33,7 +33,7 @@ values
    'matching', 'Match them', '{"left":["x","y"],"right":["1","2"]}',
    '{"correct_pairs":{"x":"1","y":"2"}}', null),
   ('c3000000-0000-4000-8000-000000000206', 'c3000000-0000-4000-8000-000000000101',
-   'numeric_entry', 'Type 4', '{}', '{"value":4}', 'Secret.'),
+   'cloze', 'Fill the gap', '{"text_template":"2 + 2 = ___"}', '{"value":4}', 'Secret.'),
   ('c3000000-0000-4000-8000-000000000207', 'c3000000-0000-4000-8000-000000000102',
    'single_choice', 'Private', '{"options":["A","B"]}', '{"correct_index":0}', null);
 
