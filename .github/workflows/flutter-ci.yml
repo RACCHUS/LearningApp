@@ -321,6 +321,11 @@ jobs:
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_check_algebra_manifest_parity.py' -v
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_generate_clep_algebra_ids.py' -v
 
+      - name: Check outside-source licenses and uses (data/content_sources.json)
+        run: |
+          "$CI_TEST_PYTHON" tool/ci/verify_content_sources.py
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_content_sources.py' -v
+
       - name: Verify College Algebra mathematical accuracy (pytest + SymPy)
         run: PYTHONPATH=. "$CI_TEST_PYTHON" -m pytest tool/tests/test_clep_algebra_math_accuracy.py -v
 
