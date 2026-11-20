@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/l10n/app_localizations.dart';
+import 'package:learning_pwa/providers/product_telemetry_provider.dart';
 import 'package:learning_pwa/theme/design_tokens.dart';
 
 /// The three persistent destinations remain Learn, Library, and Progress.
@@ -156,14 +157,25 @@ class _AppShellState extends State<AppShell> {
             // everything painted before it - i.e. this whole rail - from
             // the accessibility tree (screen readers could not reach
             // Learn / Library / Progress on tablet and desktop widths).
-            Expanded(child: Semantics(container: true, child: widget.child)),
+            Expanded(
+              child: Semantics(
+                container: true,
+                child: SurfaceTelemetry(
+                  surface: _routes[index].substring(1),
+                  child: widget.child,
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: widget.child,
+      body: SurfaceTelemetry(
+        surface: _routes[index].substring(1),
+        child: widget.child,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => _onSelect(context, i),
