@@ -170,6 +170,17 @@ class ManualJobSession {
 
   bool get isComplete => missing.isEmpty;
 
+  /// Sets accepted slots aside so the next prompt asks for them again
+  /// (to improve weak items). Returns the codes that were removed.
+  List<String> discard(Iterable<String> codes) {
+    final removed = <String>[
+      for (final c in codes)
+        if (_accepted.remove(c) != null) c,
+    ];
+    if (removed.isNotEmpty) lastOutcome = null;
+    return removed;
+  }
+
   /// The slots the next prompt should request, in plan order.
   List<String> nextBatch(ModelSizeTier tier) =>
       missing.take(tier.slotsPerMessage).toList();

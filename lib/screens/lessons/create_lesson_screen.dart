@@ -278,6 +278,53 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Recommended path first (shown only when its switch is on).
+            if (ref.watch(manualGenerationV2EnabledProvider))
+              Card(
+                key: const Key('manual_v2_recommended_card'),
+                margin: const EdgeInsets.only(bottom: 24),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recommended: create with your AI chat',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '1. Name a topic and up to 5 ideas.\n'
+                        '2. Copy the prompt into ChatGPT, Gemini, Claude or '
+                        'Copilot.\n'
+                        '3. Paste the reply back. Every answer is checked, '
+                        'weak items can be redone, and progress is saved.',
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          key: const Key('manual_v2_entry'),
+                          onPressed: () => context.push(
+                            Uri(
+                              path: '/manual-generation-v2',
+                              queryParameters: {
+                                if (_subjectController.text.trim().isNotEmpty)
+                                  'subject': _subjectController.text.trim(),
+                              },
+                            ).toString(),
+                          ),
+                          icon: const Icon(Icons.view_agenda_outlined),
+                          label: const Text('Create with your AI chat'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -478,38 +525,14 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
 
             const SizedBox(height: 32),
 
-            // Slot-based generator (PR-C): shown only when its flag is on.
-            if (ref.watch(manualGenerationV2EnabledProvider)) ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  key: const Key('manual_v2_entry'),
-                  onPressed: () => context.push(
-                    Uri(
-                      path: '/manual-generation-v2',
-                      queryParameters: {
-                        if (_subjectController.text.trim().isNotEmpty)
-                          'subject': _subjectController.text.trim(),
-                      },
-                    ).toString(),
-                  ),
-                  icon: const Icon(Icons.view_agenda_outlined),
-                  label: const Text('Create with your AI chat (recommended)'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
+            if (ref.watch(manualGenerationV2EnabledProvider))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Other ways',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Small steps with your own AI chat (ChatGPT, Gemini, Claude, '
-                'Copilot...). Every answer is checked, progress is saved, '
-                'and only what is missing is asked for again.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-            ],
-
             // Guided Generation Button (multi-prompt)
             SizedBox(
               width: double.infinity,
