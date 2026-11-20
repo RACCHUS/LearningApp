@@ -79,7 +79,7 @@ SEEDS: tuple[Seed, ...] = (
         id="byok-latch-enabled",
         risk="The hard BYOK release latch is switched on without review.",
         file="lib/services/ai/byok_release_gate.dart",
-        find="  static const bool enabled = false;",
+        find="  static const bool enabled = bool.fromEnvironment('BYOK_RELEASE_APPROVED');",
         replace="  static const bool enabled = true;",
         command=flutter_test("test/services/ai/byok_release_gate_test.dart"),
     ),
