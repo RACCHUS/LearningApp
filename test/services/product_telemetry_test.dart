@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learning_pwa/providers/product_telemetry_provider.dart';
 import 'package:learning_pwa/services/analytics/product_analytics_privacy_service.dart';
 import 'package:learning_pwa/services/analytics/product_analytics_service.dart';
 import 'package:learning_pwa/services/analytics/product_event.dart';
