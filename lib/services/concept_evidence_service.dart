@@ -20,6 +20,12 @@ class ConceptEvidenceService {
 
   SupabaseClient get _supabase => _supabaseClient ?? Supabase.instance.client;
 
+  /// Signed-out learners use the placeholder id `local-user`, which is not a
+  /// real account. Their progress lives only on the device, so the server is
+  /// never asked (it would reject the id with a 400).
+  static bool _hasAccount(String userId) =>
+      userId.isNotEmpty && userId != 'local-user';
+
   /// Records retrieval evidence asynchronously for an item without blocking SM-2 or UI.
   Future<void> recordEvidence({
     required String userId,
@@ -28,7 +34,7 @@ class ConceptEvidenceService {
     required double evidenceValue,
     String? lessonId,
   }) async {
-    if (userId.isEmpty || contentId.isEmpty) return;
+    if (!_hasAccount(userId) || contentId.isEmpty) return;
 
     try {
       final normalizedEvidence = evidenceValue.clamp(0.0, 1.0);
@@ -61,7 +67,7 @@ class ConceptEvidenceService {
     required String assessmentItemId,
     required double evidenceValue,
   }) async {
-    if (userId.isEmpty || assessmentItemId.isEmpty) return false;
+    if (!_hasAccount(userId) || assessmentItemId.isEmpty) return false;
 
     try {
       final res = await _supabase
@@ -229,7 +235,7 @@ class ConceptEvidenceService {
     String userId, {
     List<String>? conceptIds,
   }) async {
-    if (userId.isEmpty) return {};
+    if (!_hasAccount(userId)) return {};
 
     try {
       var query = _supabase.from('user_concept_state').select().eq('user_id', userId);
