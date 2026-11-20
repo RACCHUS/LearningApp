@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/models/content_generation/slot_plan.dart';
 import 'package:learning_pwa/providers/byok_session_provider.dart';
+import 'package:learning_pwa/providers/managed_ai_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/services/ai/llm_client.dart';
+import 'package:learning_pwa/services/ai/managed_ai_service.dart';
 import 'package:learning_pwa/services/content_generation/lesson_composer.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
 import 'package:learning_pwa/services/content_generation/manual_job_store.dart';
@@ -438,6 +440,99 @@ class _ManualGenerationV2ScreenState
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(e.kind.message(name))));
     }
+  }
+
+  /// Free AI on LearningApp's own free Gemini allowance. The reply goes
+  /// through the same checks as a pasted one.
+  Future<void> _askFreeAi(ManualJobSession s) async {
+    final controller = ref.read(managedAiProvider.notifier);
+    if (!ref.read(managedAiProvider).adultConfirmed) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          key: const Key('manual_v2_free_ai_confirm'),
+          title: const Text('Before you use free AI'),
+          content: const Text(
+            "Free AI uses Google's Gemini. Google only allows people 18 or "
+            'older to use it. Google may have people review prompts on its '
+            "free plan, so don't put personal details in your topic or ideas.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('manual_v2_free_ai_confirm_yes'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text("I'm 18 or older"),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      await controller.confirmAdult();
+    }
+    _armReply(s);
+    try {
+      final reply = await controller.ask(_prompt(s));
+      if (!mounted) return;
+      _paste.text = reply;
+      _check(s);
+    } on ManagedAiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.failure.message)));
+    }
+  }
+
+  Widget _freeAiSection(ManualJobSession s, ThemeData theme) {
+    if (!ref.watch(managedAiEnabledProvider)) return const SizedBox.shrink();
+    final m = ref.watch(managedAiProvider);
+    if (!m.status.enabled) return const SizedBox.shrink();
+    if (m.status.paused || m.outOfRequests) {
+      return Card(
+        key: const Key('manual_v2_free_ai_off'),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Semantics(
+            liveRegion: true,
+            child: Text(
+              m.status.paused
+                  ? ManagedAiFailure.paused.message
+                  : ManagedAiFailure.userLimit.message,
+            ),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FilledButton.icon(
+          key: const Key('manual_v2_free_ai'),
+          onPressed: m.busy ? null : () => _askFreeAi(s),
+          icon: m.busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.auto_awesome),
+          label: Text(m.busy ? 'Writing…' : 'Generate with free AI'),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "Uses LearningApp's free Gemini allowance: "
+          '${m.status.remainingToday} left for you today. It turns off when '
+          "the free allowance is used up. Don't include personal details.",
+          key: const Key('manual_v2_free_ai_note'),
+          style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
   }
 
   void _openByokSettings() => ByokSettingsDialog.show(
@@ -1031,6 +1126,7 @@ class _ManualGenerationV2ScreenState
           key: const Key('manual_v2_batch'),
         ),
         const SizedBox(height: 8),
+        _freeAiSection(s, theme),
         FilledButton.icon(
           key: const Key('manual_v2_copy_prompt'),
           onPressed: () => _copyPrompt(s),
