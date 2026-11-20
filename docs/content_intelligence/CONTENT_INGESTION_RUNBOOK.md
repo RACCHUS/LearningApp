@@ -162,7 +162,7 @@ Run whichever apply:
 | Content | How it reaches learners |
 |---|---|
 | Bridges and companions | Bundled with the app: add to `pubspec.yaml` and to `BridgeLibrary.assetPaths` / `ExternalCompanionLibrary.assetPaths`, merge, build and deploy |
-| Curriculum manifests (`content/*.yaml`) | **Owner only, with the service-role key:** `dart run tool/ingest_curriculum.dart --target … --version … --manifest … --apply`, then `--stage-review`, then `--publish` |
+| Curriculum manifests (`content/*.yaml`) | **Owner only:** the *Controlled curriculum ingestion* GitHub workflow (`.github/workflows/controlled-curriculum-ingestion.yml`). Run it from Actions on `main`, give the manifest path, choose how far to go (`dry-run`, `draft`, `review-ready`, `published`) and type the project ref; the run waits for your approval in the `supabase-production-deployment` environment. It reads target and version from the manifest, checks source licenses, dry-runs, then calls `tool/ingest_curriculum.dart` `--apply`, `--stage-review` and `--publish` with the repository secrets. The same commands still work locally with the key in your shell. |
 | Learner or community lessons | The public contribution flow (`content.public_contribution`), labelled unreviewed |
 
 **Production status (2026-11-20):** the seven curriculum manifests pass the dry run, but none has been ingested into production.
