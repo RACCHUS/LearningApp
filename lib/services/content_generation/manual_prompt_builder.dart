@@ -33,6 +33,7 @@ class ManualPromptBuilder {
     ManualJob job,
     List<String> slotCodes, {
     ManualOutputMode mode = ManualOutputMode.package,
+    Map<String, List<String>> fixNotes = const {},
   }) {
     final plan = job.plan;
     final specs = [for (final c in slotCodes) plan[c]!];
@@ -53,6 +54,20 @@ class ManualPromptBuilder {
       ..writeln('FILL EXACTLY THESE ${specs.length} SLOTS, no more, no fewer:');
     for (final s in specs) {
       b.writeln('- ${s.code} (${s.conceptCode}): ${_describe(s.kind)}');
+    }
+    final notes = [
+      for (final s in specs)
+        for (final n in fixNotes[s.code] ?? const <String>[])
+          '- ${s.code}: ${_clean(n)}',
+    ];
+    if (notes.isNotEmpty) {
+      b
+        ..writeln()
+        ..writeln(
+          'IMPROVE THESE (you sent them before; write new versions that '
+          'fix this):',
+        );
+      notes.forEach(b.writeln);
     }
     b
       ..writeln()

@@ -350,7 +350,56 @@ class _ManualGenerationV2ScreenState
     s.job,
     s.nextBatch(_tier),
     mode: _lines ? ManualOutputMode.lines : ManualOutputMode.package,
+    fixNotes: _fixNotes,
   );
+
+  /// What to fix in slots set aside for a redo, by slot code.
+  final Map<String, List<String>> _fixNotes = {};
+
+  /// The slot a quality tip refers to: the n-th accepted slot of its kind,
+  /// in plan order (the order the lesson is built in).
+  String? _slotFor(ManualJobSession s, QualityTip t) {
+    final kind = switch (t.kind) {
+      QualityTipKind.question => SlotKind.mcq,
+      QualityTipKind.term => SlotKind.term,
+      QualityTipKind.explanation => SlotKind.explanation,
+      QualityTipKind.lesson => null,
+    };
+    final i = t.index;
+    if (kind == null || i == null) return null;
+    final codes = [
+      for (final spec in s.job.plan.slots)
+        if (spec.kind == kind && s.accepted.containsKey(spec.code)) spec.code,
+    ];
+    return i < codes.length ? codes[i] : null;
+  }
+
+  String _tipLabel(ManualJobSession s, QualityTip t) {
+    final code = _slotFor(s, t);
+    return code == null ? '$t' : '$code · $t';
+  }
+
+  /// Sets the weak items aside and remembers what to fix, so the next
+  /// prompt asks only for them, with the problems spelled out.
+  void _redo(ManualJobSession s, Map<String, List<String>> bySlot) {
+    setState(() {
+      s.discard(bySlot.keys);
+      for (final e in bySlot.entries) {
+        _fixNotes[e.key] = e.value;
+      }
+    });
+    _persist();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Set aside ${bySlot.keys.join(', ')}. Copy the prompt again: it '
+            'asks only for these, with what to fix.',
+          ),
+        ),
+      );
+  }
 
   Future<void> _copyPrompt(ManualJobSession s) async {
     // Armed even if the copy fails: the learner can still copy the prompt
@@ -386,7 +435,12 @@ class _ManualGenerationV2ScreenState
 
   void _check(ManualJobSession s) {
     if (_paste.text.trim().isEmpty) return;
-    setState(() => _observe(s, s.applyPaste(_paste.text)));
+    setState(() {
+      final outcome = s.applyPaste(_paste.text);
+      _observe(s, outcome);
+      // Redone slots no longer need their notes once accepted again.
+      outcome.newlyAccepted.forEach(_fixNotes.remove);
+    });
     _persist();
   }
 
@@ -644,8 +698,17 @@ class _ManualGenerationV2ScreenState
 
   /// Improvement hints for the draft (never blocking). Each says what to
   /// ask the AI to change.
-  List<Widget> _qualityTips(Map<String, dynamic> lesson, ThemeData theme) {
+  List<Widget> _qualityTips(
+    ManualJobSession s,
+    Map<String, dynamic> lesson,
+    ThemeData theme,
+  ) {
     final tips = LessonQualityCheck.check(lesson);
+    final bySlot = <String, List<String>>{};
+    for (final t in tips) {
+      final code = _slotFor(s, t);
+      if (code != null) bySlot.putIfAbsent(code, () => []).add(t.message);
+    }
     if (tips.isEmpty) {
       return [
         Text(
@@ -669,7 +732,20 @@ class _ManualGenerationV2ScreenState
           for (final t in tips)
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('• $t', style: theme.textTheme.bodySmall),
+              child: Text(
+                '• ${_tipLabel(s, t)}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          if (bySlot.isNotEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('manual_v2_redo'),
+                onPressed: () => _redo(s, bySlot),
+                icon: const Icon(Icons.auto_fix_high),
+                label: Text('Redo ${bySlot.keys.join(', ')} with your AI'),
+              ),
             ),
         ],
       ),
@@ -950,7 +1026,7 @@ class _ManualGenerationV2ScreenState
           'term(s), ${preview.questionCount} question(s).',
           key: const Key('manual_v2_preview_counts'),
         ),
-        ..._qualityTips(lesson, theme),
+        ..._qualityTips(s, lesson, theme),
         const SizedBox(height: 8),
         Text('Lesson order', style: theme.textTheme.titleSmall),
         DropdownButton<LessonObjectiveType>(
