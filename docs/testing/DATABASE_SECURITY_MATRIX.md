@@ -12,7 +12,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 - **RLS checks**: assertions that row-level security is enabled (`relrowsecurity`).
 - A file has a **security signal** if it has any denial, privilege or RLS check, or at least two identity switches (cross-user tests often assert that another learner's rows count as zero).
 
-**Totals:** 84 test files, 1926 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
+**Totals:** 85 test files, 1934 planned assertions, plus 4 files using `no_plan()` (counted only when run; pg_prove reports the full total in the database job).
 
 ## By area
 
@@ -23,7 +23,7 @@ Columns are **static text signals**, not proof. Read a test before relying on it
 | Assessment, grading & simulation | 21 | 547 | 5 | 13 | 211 | 71 | 5 |
 | Excel / software-learning uploads & storage | 4 | 0 + 4 no_plan | 1 | 4 | 20 | 17 | 2 |
 | Community, educators & moderation | 6 | 299 | 3 | 4 | 100 | 4 | 0 |
-| Content, lessons & import | 14 | 278 | 7 | 9 | 75 | 11 | 2 |
+| Content, lessons & import | 15 | 286 | 8 | 9 | 75 | 12 | 2 |
 | Catalog, taxonomy & versioning | 14 | 261 | 5 | 3 | 75 | 41 | 12 |
 | Feature controls & cost | 2 | 54 | 2 | 1 | 18 | 0 | 0 |
 | Schema integrity | 1 | 8 | 0 | 0 | 0 | 0 | 0 |
@@ -101,6 +101,7 @@ No denial, privilege or RLS check and fewer than two identity switches. These ma
 | `content_refresh_proposals_test.sql` | Content, lessons & import | 18 | authenticated | 6 | 11 | 2 | 0 |
 | `content_wanted_board_test.sql` | Content, lessons & import | 35 | authenticated | 11 | 13 | 4 | 0 |
 | `import_ownership_and_staging_test.sql` | Content, lessons & import | 46 | anon, authenticated, service_role | 7 | 18 | 0 | 0 |
+| `lesson_replacement_lookup_test.sql` | Content, lessons & import | 8 | anon | 0 | 0 | 1 | 0 |
 | `lesson_visibility.sql` | Content, lessons & import | 22 | anon, authenticated | 7 | 1 | 0 | 0 |
 | `library_search_performance_test.sql` | Content, lessons & import | 3 | — | 0 | 0 | 0 | 0 |
 | `native_literacy_life_skills_fields_test.sql` | Content, lessons & import | 15 | — | 0 | 1 | 0 | 0 |

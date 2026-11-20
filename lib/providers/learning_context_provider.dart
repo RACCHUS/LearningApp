@@ -360,6 +360,38 @@ class LearningContextsNotifier extends StateNotifier<LearningContextsState> {
     }
   }
 
+  /// Moves a context whose root lesson was retired to [replacementLessonId]
+  /// (same label and settings), or archives it when there is no
+  /// replacement. Archiving is reversible from the archived list.
+  Future<void> replaceRetiredLesson(
+    LearningContext stale,
+    String? replacementLessonId,
+  ) async {
+    final service = _service;
+    if (service == null) return;
+    final wasActive = state.active?.id == stale.id;
+    try {
+      if (replacementLessonId == null) {
+        await archive(stale.id);
+        return;
+      }
+      final moved = await service.createOrGet(
+        userId: stale.userId,
+        label: stale.label,
+        rootType: ContextRootType.lesson,
+        rootId: replacementLessonId,
+        emoji: stale.emoji,
+        scopeMode: stale.scopeMode,
+        scopeConfig: stale.scopeConfig,
+      );
+      await service.setArchived(stale.id, archived: true);
+      await load();
+      if (wasActive) await setActive(moved.id);
+    } catch (e) {
+      debugPrint('⚠️ Could not move a retired lesson context: $e');
+    }
+  }
+
   Future<void> unarchive(String contextId) async {
     try {
       await _service?.setArchived(contextId, archived: false);

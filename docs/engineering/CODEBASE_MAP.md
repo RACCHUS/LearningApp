@@ -45,9 +45,9 @@ Three destinations (Learn, Library, Progress). Routes live in the router; the bu
 ## Learning contexts and scope {#scope}
 
 <!-- map-ref path="lib/services/scope_resolver.dart" role="owner" -->
-- Owner: `lib/services/scope_resolver.dart`; provider `lib/providers/scope_resolver_provider.dart`; contexts in `lib/providers/learning_context_provider.dart`.
+- Owner: `lib/services/scope_resolver.dart`; provider `lib/providers/scope_resolver_provider.dart`; contexts in `lib/providers/learning_context_provider.dart`; retired lessons: `retired_lesson_context_provider.dart`.
 <!-- map-ref path="test/services/scope_resolver_test.dart" role="test" -->
-- Tests: `test/services/scope_resolver_test.dart`, `test/services/scope_resolver_rpc_test.dart`, `test/services/learning_context_sync_service_test.dart`.
+- Tests: `test/services/scope_resolver_test.dart`, `test/services/scope_resolver_rpc_test.dart`, `test/services/learning_context_sync_service_test.dart`, `test/providers/retired_lesson_context_test.dart`.
 
 ## TEL Fast strategy and offline CAS sync {#fast}
 
@@ -87,7 +87,7 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 <!-- map-ref path="tool/software_learning/pilot_pipeline.py" role="contract" -->
 - Its only caller and trust gate: `tool/software_learning/pilot_pipeline.py` `grade_parsed_snapshot` (requires the `xlsx_worker.py` envelope `parsed_unverified`, `can_award_skill` false).
 <!-- map-ref path="lib/services/software_learning/software_learning_workbook_evaluator.dart" role="owner" -->
-- Browser preview rubric: `SoftwareLearningWorkbookEvaluator` in `lib/services/software_learning/software_learning_workbook_evaluator.dart`. It checks a cached total against fixed demo inputs, parsed by the restricted preview reader `demo_workbook_reader.dart`. The UI card's trust guard is `_submitWorkbook` in `lib/widgets/software_learning/excel_upload_card.dart` (145-226).
+- Browser preview rubric: `SoftwareLearningWorkbookEvaluator` in `lib/services/software_learning/software_learning_workbook_evaluator.dart`. It checks a cached total against fixed demo inputs, via `demo_workbook_reader.dart`. The UI card's trust guard is `_submitWorkbook` in `lib/widgets/software_learning/excel_upload_card.dart` (145-226).
 <!-- map-ref path="tool/tests/test_software_learning_excel_checker.py" role="test" -->
 - Tests: `tool/tests/test_software_learning_excel_checker.py` (incl. spec parity), `tool/tests/test_excel_pilot_pipeline.py`, `tool/tests/test_xlsx_worker.py`, `test/services/software_learning/demo_workbook_evaluator_test.dart`, `test/widgets/software_learning/excel_upload_card_test.dart` (trust binding).
 
@@ -117,7 +117,7 @@ Two Budget rubrics that differ **on purpose**: do not make them identical. Neith
 - Policy: `AGENTS.md` FLAG-010/016 (BYOK hard-off latch; TEL Fast stays Experimental).
 <!-- map-ref path="lib/models/governance/site_feature_keys.dart" role="owner" -->
 - Keys: `lib/models/governance/site_feature_keys.dart`; client check `isSiteFeatureEnabled` in `lib/providers/site_feature_provider.dart`.
-- **Server gate is SQL**: each gated RPC calls `if not private.site_feature_enabled('<key>')`. To find a feature's gates, grep `site_feature_enabled('<key>')` in `supabase/migrations/`; the hits are the enforcement points (e.g. `content.refresh_proposals`: `20261113020000_content_refresh_proposals.sql` lines 135 and 192). The helper itself is defined in `20261110220000_marketing_feature_control_foundation.sql`. `lib/services/governance/site_feature_service.dart` only fetches snapshots.
+- **Server gate is SQL**: each gated RPC calls `if not private.site_feature_enabled('<key>')`. Grep `site_feature_enabled('<key>')` in `supabase/migrations/` for a feature's enforcement points (e.g. `20261113020000_content_refresh_proposals.sql` lines 135, 192). The helper itself is defined in `20261110220000_marketing_feature_control_foundation.sql`. `lib/services/governance/site_feature_service.dart` only fetches snapshots.
 <!-- map-ref path="tool/tests/test_verify_feature_registry.py" role="test" -->
 - Tests: `tool/tests/test_verify_feature_registry.py` (`python3 tool/verify_feature_registry.py`); the per-feature refused-while-OFF pgTAP is in `supabase/tests/<feature>_test.sql` (e.g. `content_refresh_proposals_test.sql`).
 
