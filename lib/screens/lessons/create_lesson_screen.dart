@@ -78,24 +78,23 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
 
   Future<void> _createLessonFromJson(String jsonData) async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authState = ref.read(authProvider);
       final userId = authState is AuthSuccess ? authState.user.id : '';
-      
+
       final lessonService = ref.read(lessonServiceProvider);
       final lesson = await lessonService.importLessonFromJson(jsonData, userId);
-      
+
       await _handlePostSaveAttachment(lesson);
     } catch (e) {
       if (mounted) {
-        final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
+        final msg = e is AppException
+            ? e.getUserMessage()
+            : 'Error creating lesson: $e';
         final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: semantic.danger,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: semantic.danger),
         );
       }
     } finally {
@@ -112,13 +111,13 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
     required List<Map<String, dynamic>> content,
   }) async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authState = ref.read(authProvider);
       final userId = authState is AuthSuccess ? authState.user.id : '';
-      
+
       final lessonService = ref.read(lessonServiceProvider);
-      
+
       // Create lesson JSON structure
       final lessonJson = {
         'lesson': {
@@ -129,22 +128,21 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         },
         'content': content,
       };
-      
+
       final lesson = await lessonService.importLessonFromJson(
-        jsonEncode(lessonJson), 
+        jsonEncode(lessonJson),
         userId,
       );
-      
+
       await _handlePostSaveAttachment(lesson);
     } catch (e) {
       if (mounted) {
-        final msg = e is AppException ? e.getUserMessage() : 'Error creating lesson: $e';
+        final msg = e is AppException
+            ? e.getUserMessage()
+            : 'Error creating lesson: $e';
         final semantic = Theme.of(context).extension<SemanticColors>()!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: semantic.danger,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: semantic.danger),
         );
       }
     } finally {
@@ -213,10 +211,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
           isBound: false,
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: semantic.success,
-          ),
+          SnackBar(content: Text(message), backgroundColor: semantic.success),
         );
         Navigator.of(context).pop(lesson);
       }
@@ -242,18 +237,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(
-              icon: Icon(Icons.auto_awesome),
-              text: 'AI Assistant',
-            ),
-            Tab(
-              icon: Icon(Icons.code),
-              text: 'JSON Import',
-            ),
-            Tab(
-              icon: Icon(Icons.build),
-              text: 'Manual Builder',
-            ),
+            Tab(icon: Icon(Icons.auto_awesome), text: 'AI Assistant'),
+            Tab(icon: Icon(Icons.code), text: 'JSON Import'),
+            Tab(icon: Icon(Icons.build), text: 'Manual Builder'),
           ],
         ),
       ),
@@ -272,9 +258,7 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               controller: _tabController,
               children: [
                 _buildAiAssistantTab(),
-                EnhancedJsonImportWidget(
-                  onImport: _createLessonFromJson,
-                ),
+                EnhancedJsonImportWidget(onImport: _createLessonFromJson),
                 LessonBuilderWidget(
                   initialContentTabIndex: widget.initialBuilderTabIndex,
                   onCreateLesson: _createLessonFromBuilder,
@@ -294,6 +278,53 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Recommended path first (shown only when its switch is on).
+            if (ref.watch(manualGenerationV2EnabledProvider))
+              Card(
+                key: const Key('manual_v2_recommended_card'),
+                margin: const EdgeInsets.only(bottom: 24),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recommended: create with your AI chat',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '1. Name a topic and up to 5 ideas.\n'
+                        '2. Copy the prompt into ChatGPT, Gemini, Claude or '
+                        'Copilot.\n'
+                        '3. Paste the reply back. Every answer is checked, '
+                        'weak items can be redone, and progress is saved.',
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          key: const Key('manual_v2_entry'),
+                          onPressed: () => context.push(
+                            Uri(
+                              path: '/manual-generation-v2',
+                              queryParameters: {
+                                if (_subjectController.text.trim().isNotEmpty)
+                                  'subject': _subjectController.text.trim(),
+                              },
+                            ).toString(),
+                          ),
+                          icon: const Icon(Icons.view_agenda_outlined),
+                          label: const Text('Create with your AI chat'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -306,10 +337,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                         const SizedBox(width: 8),
                         Text(
                           'AI-Assisted Lesson Creation',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: semantic.info,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: semantic.info,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ],
                     ),
@@ -324,9 +356,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Subject Input
             Text(
               'Lesson Subject',
@@ -336,15 +368,17 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             TextField(
               controller: _subjectController,
               decoration: const InputDecoration(
-                hintText: 'e.g., Python Variable Types, HTTP Status Codes, CSS Flexbox',
+                hintText:
+                    'e.g., Python Variable Types, HTTP Status Codes, CSS Flexbox',
                 border: OutlineInputBorder(),
-                helperText: 'Be specific - avoid overly broad topics like "Programming" or "Science"',
+                helperText:
+                    'Be specific - avoid overly broad topics like "Programming" or "Science"',
               ),
               maxLines: 2,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Target Audience
             Text(
               'Prior Knowledge Level',
@@ -354,7 +388,10 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(value: 'beginner', label: Text('Beginner')),
-                ButtonSegment(value: 'intermediate', label: Text('Intermediate')),
+                ButtonSegment(
+                  value: 'intermediate',
+                  label: Text('Intermediate'),
+                ),
                 ButtonSegment(value: 'advanced', label: Text('Advanced')),
               ],
               selected: {_targetAudience},
@@ -362,9 +399,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 setState(() => _targetAudience = selection.first);
               },
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Duration Slider
             Text(
               'Estimated Duration: $_durationMinutes minutes',
@@ -381,9 +418,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 setState(() => _durationMinutes = value.round());
               },
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Difficulty Level
             Text(
               'Difficulty Level',
@@ -394,17 +431,26 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               initialValue: _difficulty,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'beginner', child: Text('Beginner - Basic concepts and definitions')),
-                DropdownMenuItem(value: 'intermediate', child: Text('Intermediate - Applied knowledge')),
-                DropdownMenuItem(value: 'advanced', child: Text('Advanced - Complex applications')),
+                DropdownMenuItem(
+                  value: 'beginner',
+                  child: Text('Beginner - Basic concepts and definitions'),
+                ),
+                DropdownMenuItem(
+                  value: 'intermediate',
+                  child: Text('Intermediate - Applied knowledge'),
+                ),
+                DropdownMenuItem(
+                  value: 'advanced',
+                  child: Text('Advanced - Complex applications'),
+                ),
               ],
               onChanged: (value) {
                 if (value != null) setState(() => _difficulty = value);
               },
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Content Focus
             Text(
               'Content Focus',
@@ -415,17 +461,26 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               initialValue: _contentFocus,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'theoretical', child: Text('Theoretical - Theory and understanding')),
-                DropdownMenuItem(value: 'practical', child: Text('Practical - Hands-on applications')),
-                DropdownMenuItem(value: 'balanced', child: Text('Balanced - Mix of theory and practice')),
+                DropdownMenuItem(
+                  value: 'theoretical',
+                  child: Text('Theoretical - Theory and understanding'),
+                ),
+                DropdownMenuItem(
+                  value: 'practical',
+                  child: Text('Practical - Hands-on applications'),
+                ),
+                DropdownMenuItem(
+                  value: 'balanced',
+                  child: Text('Balanced - Mix of theory and practice'),
+                ),
               ],
               onChanged: (value) {
                 if (value != null) setState(() => _contentFocus = value);
               },
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Template Section
             Card(
               child: Padding(
@@ -439,10 +494,11 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                         const SizedBox(width: 8),
                         Text(
                           'Or Start with a Template',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: semantic.warning,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: semantic.warning,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ],
                     ),
@@ -466,9 +522,17 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
+            if (ref.watch(manualGenerationV2EnabledProvider))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Other ways',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
             // Guided Generation Button (multi-prompt)
             SizedBox(
               width: double.infinity,
@@ -482,11 +546,16 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                     'difficulty': _difficulty,
                     'focus': _contentFocus,
                     if (widget.nodeId != null) 'nodeId': widget.nodeId!,
-                    if (widget.targetVersionId != null) 'targetVersionId': widget.targetVersionId!,
-                    if (widget.attachmentIntent != null) 'attachmentIntent': widget.attachmentIntent!,
+                    if (widget.targetVersionId != null)
+                      'targetVersionId': widget.targetVersionId!,
+                    if (widget.attachmentIntent != null)
+                      'attachmentIntent': widget.attachmentIntent!,
                   };
                   final result = await context.push<dynamic>(
-                    Uri(path: '/guided-generation', queryParameters: params).toString(),
+                    Uri(
+                      path: '/guided-generation',
+                      queryParameters: params,
+                    ).toString(),
                   );
                   if (result != null && mounted) {
                     Navigator.of(context).pop(result);
@@ -506,7 +575,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _subjectController.text.trim().isEmpty ? null : _generateAndShowPrompt,
+                onPressed: _subjectController.text.trim().isEmpty
+                    ? null
+                    : _generateAndShowPrompt,
                 icon: const Icon(Icons.bolt),
                 label: const Text('Quick Generate (Single Prompt)'),
                 style: OutlinedButton.styleFrom(
@@ -515,33 +586,8 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
               ),
             ),
 
-            // Slot-based generator (PR-C): shown only when its flag is on.
-            if (ref.watch(manualGenerationV2EnabledProvider)) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('manual_v2_entry'),
-                  onPressed: () => context.push(
-                    Uri(
-                      path: '/manual-generation-v2',
-                      queryParameters: {
-                        if (_subjectController.text.trim().isNotEmpty)
-                          'subject': _subjectController.text.trim(),
-                      },
-                    ).toString(),
-                  ),
-                  icon: const Icon(Icons.view_agenda_outlined),
-                  label: const Text('Slot-based generator (experimental)'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                ),
-              ),
-            ],
-            
             const SizedBox(height: 16),
-            
+
             // Quick Templates
             const PromptTemplatesWidget(),
           ],
@@ -585,7 +631,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   decoration: BoxDecoration(
                     color: semantic.success.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: semantic.success.withValues(alpha: 0.35)),
+                    border: Border.all(
+                      color: semantic.success.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -679,7 +727,9 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: semantic.warning.withValues(alpha: 0.12),
-                  border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+                  border: Border(
+                    bottom: BorderSide(color: colorScheme.outlineVariant),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -699,14 +749,16 @@ class _CreateLessonScreenState extends ConsumerState<CreateLessonScreen>
                   ],
                 ),
               ),
-              
+
               // Template selection widget
               Expanded(
                 child: TemplateSelectionWidget(
                   onTemplateGenerated: (templateJson) {
                     Navigator.of(context).pop();
                     // Convert to JSON string and import
-                    final jsonString = const JsonEncoder.withIndent('  ').convert(templateJson);
+                    final jsonString = const JsonEncoder.withIndent(
+                      '  ',
+                    ).convert(templateJson);
                     _createLessonFromJson(jsonString);
                   },
                 ),

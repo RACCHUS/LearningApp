@@ -28,11 +28,13 @@ class ManualJobRequest {
     required List<String> concepts,
     this.questionsPerConcept = 2,
     this.includeTerms = true,
+    this.level = 'beginner',
   }) : subject = subject.trim(),
        concepts = List.unmodifiable(
          concepts.map((c) => c.trim()).where((c) => c.isNotEmpty),
        ) {
     if (this.subject.isEmpty) throw ArgumentError('Subject is required');
+    if (!levels.contains(level)) throw ArgumentError('Unknown level');
     if (this.subject.length > maxTextLength) {
       throw ArgumentError('Subject is too long');
     }
@@ -48,12 +50,18 @@ class ManualJobRequest {
   }
 
   static const maxConcepts = 5;
+
+  /// Learner levels the prompt can ask for.
+  static const levels = ['beginner', 'intermediate', 'advanced'];
   static const maxTextLength = 120;
 
   final String subject;
   final List<String> concepts;
   final int questionsPerConcept;
   final bool includeTerms;
+
+  /// One of [levels]; shapes the wording the prompt asks for.
+  final String level;
 }
 
 /// One planned job: app-owned codes and slots (master plan v2.6 §5.6 "Why
@@ -162,6 +170,17 @@ class ManualJobSession {
 
   bool get isComplete => missing.isEmpty;
 
+  /// Sets accepted slots aside so the next prompt asks for them again
+  /// (to improve weak items). Returns the codes that were removed.
+  List<String> discard(Iterable<String> codes) {
+    final removed = <String>[
+      for (final c in codes)
+        if (_accepted.remove(c) != null) c,
+    ];
+    if (removed.isNotEmpty) lastOutcome = null;
+    return removed;
+  }
+
   /// The slots the next prompt should request, in plan order.
   List<String> nextBatch(ModelSizeTier tier) =>
       missing.take(tier.slotsPerMessage).toList();
@@ -214,6 +233,7 @@ class ManualJobSession {
       'concepts': job.request.concepts,
       'questions_per_concept': job.request.questionsPerConcept,
       'include_terms': job.request.includeTerms,
+      'level': job.request.level,
     },
     'job_code': job.plan.jobCode,
     'accepted': acceptedPackage(),
@@ -238,6 +258,7 @@ class ManualJobSession {
           concepts: [for (final c in r['concepts'] as List) c as String],
           questionsPerConcept: r['questions_per_concept'] as int,
           includeTerms: r['include_terms'] as bool,
+          level: r['level'] as String? ?? 'beginner',
         ),
         jobCode: json['job_code'] as String,
       );

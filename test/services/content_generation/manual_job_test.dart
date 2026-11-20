@@ -138,6 +138,42 @@ void main() {
       expect(p, contains('ONE capital letter'));
     });
 
+    test('states the level and the question-quality rules', () {
+      final j = ManualJob.plan(
+        ManualJobRequest(
+          subject: 'Excel',
+          concepts: ['VLOOKUP'],
+          level: 'intermediate',
+        ),
+      );
+      final p = ManualPromptBuilder.build(j, ['S1', 'S2', 'S3']);
+      expect(p, contains('"Excel" for intermediate learners'));
+      expect(p, contains('never "All/None of the above"'));
+      expect(p, contains('"why": why the answer is right'));
+      expect(p, contains('"pack": "micro_lesson_v2"'));
+    });
+
+    test('the level is saved and restored; unknown levels are refused', () {
+      final s = ManualJobSession(
+        ManualJob.plan(
+          ManualJobRequest(subject: 'X', concepts: ['Y'], level: 'advanced'),
+        ),
+      );
+      final back = ManualJobSession.fromJson(s.toJson())!;
+      expect(back.job.request.level, 'advanced');
+      final old = s.toJson();
+      (old['request'] as Map).remove('level');
+      expect(
+        ManualJobSession.fromJson(old)!.job.request.level,
+        'beginner',
+        reason: 'saves from before levels still load',
+      );
+      expect(
+        () => ManualJobRequest(subject: 'X', concepts: ['Y'], level: 'expert'),
+        throwsArgumentError,
+      );
+    });
+
     test('Mode S asks for one object per line and an end line', () {
       final j = job();
       final p = ManualPromptBuilder.build(j, [
@@ -244,6 +280,53 @@ void main() {
       expect(
         (s.toPersonalLesson(title: 't')['questions'] as List?) ?? const [],
         isEmpty,
+      );
+    });
+  });
+
+  group('redo weak items', () {
+    test('discard sets slots aside and the next batch asks for them', () {
+      final s = ManualJobSession(
+        ManualJob.plan(
+          ManualJobRequest(
+            subject: 'X',
+            concepts: ['Y'],
+            questionsPerConcept: 1,
+            includeTerms: false,
+          ),
+          jobCode: 'JABCD',
+        ),
+      );
+      s.applyPaste(
+        '{"schema":"la-gen/1.1","job":"JABCD","items":['
+        '{"slot":"S1","kind":"explanation","concept":"C1","title":"T",'
+        '"text":"Explained here."},'
+        '{"slot":"S2","kind":"mcq","concept":"C1","stem":"Q?",'
+        '"options":["a","b","c"],"answer":"A","why":"Because."}],'
+        '"end":"END-JABCD"}',
+      );
+      expect(s.isComplete, isTrue);
+      expect(s.discard(['S2', 'S9']), ['S2']);
+      expect(s.missing, ['S2']);
+      expect(s.nextBatch(ModelSizeTier.compact), ['S2']);
+    });
+
+    test('fix notes appear only for slots in the batch', () {
+      final j = job();
+      final p = ManualPromptBuilder.build(
+        j,
+        ['S3'],
+        fixNotes: {
+          'S3': ['The right answer is much longer than the others.'],
+          'S4': ['Not in this batch.'],
+        },
+      );
+      expect(p, contains('IMPROVE THESE'));
+      expect(p, contains('- S3: The right answer is much longer'));
+      expect(p, isNot(contains('Not in this batch')));
+      expect(
+        ManualPromptBuilder.build(j, ['S3']),
+        isNot(contains('IMPROVE THESE')),
       );
     });
   });
