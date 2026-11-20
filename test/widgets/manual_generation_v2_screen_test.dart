@@ -576,4 +576,87 @@ void main() {
       expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
     });
   });
+
+  testWidgets('a weak question can be redone with the AI', (tester) async {
+    await pump(tester, enabled: true);
+    await tester.enterText(find.byKey(const Key('manual_v2_ideas')), 'Idea');
+    await tester.tap(find.byKey(const Key('manual_v2_questions')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1 questions per idea').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Key terms'));
+    await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manual_v2_copy_prompt')));
+    await tester.pumpAndSettle();
+    final job = RegExp(r'"job": "(J\w{4})"').firstMatch(clipboard!)!.group(1)!;
+
+    Map<String, Object> mcq(List<String> options) => {
+      'slot': 'S2',
+      'kind': 'mcq',
+      'concept': 'C1',
+      'stem': 'Which is right?',
+      'options': options,
+      'answer': 'A',
+      'why': 'Because the first option is the correct one here.',
+    };
+    String reply(List<Map<String, Object>> items) => jsonEncode({
+      'schema': 'la-gen/1.1',
+      'job': job,
+      'items': items,
+      'end': 'END-$job',
+    });
+    const explanation = {
+      'slot': 'S1',
+      'kind': 'explanation',
+      'concept': 'C1',
+      'title': 'Idea',
+      'text':
+          'A full explanation of the idea that is long enough to pass '
+          'the quality check without any trouble at all.',
+    };
+
+    await tester.enterText(
+      find.byKey(const Key('manual_v2_paste')),
+      reply([
+        explanation,
+        mcq([
+          'The long and obviously detailed correct answer here',
+          'No',
+          'Maybe',
+        ]),
+      ]),
+    );
+    await tester.tap(find.byKey(const Key('manual_v2_check')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('manual_v2_quality_tips')));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('S2 · Question 1: The right answer is much'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('manual_v2_redo')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('1 of 2 items ready'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('manual_v2_copy_prompt')));
+    await tester.pumpAndSettle();
+    expect(clipboard, contains('IMPROVE THESE'));
+    expect(clipboard, contains('- S2: The right answer is much longer'));
+
+    await tester.enterText(
+      find.byKey(const Key('manual_v2_paste')),
+      reply([
+        mcq(['Paris', 'Rome', 'Madrid']),
+      ]),
+    );
+    await tester.tap(find.byKey(const Key('manual_v2_check')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('2 of 2 items ready'), findsOneWidget);
+    // Only the lesson-level tip (one question is few) is left; S2 is fixed.
+    await tester.tap(find.byKey(const Key('manual_v2_quality_tips')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('S2 · Question'), findsNothing);
+    expect(find.byKey(const Key('manual_v2_redo')), findsNothing);
+  });
 }
