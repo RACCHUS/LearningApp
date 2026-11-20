@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "about": "Registry of outside learning sources and what LearningApp may do with each. Checked in CI by tool/ci/verify_content_sources.py. Runbook: docs/content_intelligence/CONTENT_INGESTION_RUNBOOK.md. License readings are the maintainers' reading of the published terms, not legal advice; the owner decides each source's allowed_uses.",
+  "uses": {
+    "link": "Link to the source page. No text copied.",
+    "reference": "Name the source, edition and section as alignment or citation metadata. No text copied.",
+    "quote": "Copy a short excerpt verbatim, with attribution.",
+    "adapt": "Rewrite, remix or build on the source's text, images or exercises in our own lesson, with attribution and a note of changes.",
+    "redistribute": "Host a verbatim copy of a whole section or more.",
+    "ai_transform": "Paste the source's text into an AI chat (ours or a learner's) to produce our content. Only where adapting is allowed, and the output keeps the source's license obligations."
+  },
+  "licenses": {
+    "public_domain_us_gov": {
+      "name": "Public domain (U.S. federal government work, 17 U.S.C. 105)",
+      "max_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "commercial_ok": true,
+      "share_alike": false,
+      "attribution_required": false,
+      "notes": "Credit the agency anyway. Check that the page is not marked as third-party material (some government pages include copyrighted images or text)."
+    },
+    "cc_by_4": {
+      "name": "Creative Commons Attribution 4.0 (CC BY 4.0)",
+      "max_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "commercial_ok": true,
+      "share_alike": false,
+      "attribution_required": true,
+      "notes": "Credit title, author, source link and license, and say what was changed."
+    },
+    "cc_by_sa_4": {
+      "name": "Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)",
+      "max_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "commercial_ok": true,
+      "share_alike": true,
+      "attribution_required": true,
+      "notes": "Any lesson adapted from it must itself be published under CC BY-SA 4.0 (or a compatible license)."
+    },
+    "cc_by_nc_sa_4": {
+      "name": "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0)",
+      "max_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "commercial_ok": false,
+      "share_alike": true,
+      "attribution_required": true,
+      "notes": "Adapted lessons must be CC BY-NC-SA 4.0 and not used primarily for commercial advantage. Whether LearningApp (with planned sponsors, affiliate links or donations) counts as non-commercial is an owner decision; until then, link and reference only."
+    },
+    "proprietary": {
+      "name": "All rights reserved (proprietary)",
+      "max_uses": ["link", "reference"],
+      "commercial_ok": false,
+      "share_alike": false,
+      "attribution_required": true,
+      "notes": "Link to it and name sections as alignment metadata. Write our own text; never copy or paraphrase closely."
+    },
+    "unknown": {
+      "name": "License not confirmed",
+      "max_uses": ["link", "reference"],
+      "commercial_ok": false,
+      "share_alike": false,
+      "attribution_required": true,
+      "notes": "Treat as all rights reserved until the license is confirmed and recorded here."
+    }
+  },
+  "sources": [
+    {
+      "id": "openstax-prealgebra-1e",
+      "publisher": "OpenStax, Rice University",
+      "title": "Prealgebra (1st edition)",
+      "url_prefixes": ["https://openstax.org/books/prealgebra/"],
+      "license": "cc_by_4",
+      "license_evidence": {
+        "url": "https://openstax.org/books/prealgebra/pages/preface",
+        "checked_at": "2026-11-20",
+        "statement": "Prealgebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
+      },
+      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
+      "status": "approved",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "notes": "Best adaptable source for prerequisite numeracy Bridges. Do not use OpenStax names or logos (trademarks are outside the CC license)."
+    },
+    {
+      "id": "openstax-prealgebra-2e",
+      "publisher": "OpenStax, Rice University",
+      "title": "Prealgebra 2e",
+      "url_prefixes": ["https://openstax.org/books/prealgebra-2e/", "https://openstax.org/details/books/prealgebra-2e"],
+      "license": "cc_by_nc_sa_4",
+      "license_evidence": {
+        "url": "https://openstax.org/books/prealgebra-2e/pages/preface",
+        "checked_at": "2026-11-20",
+        "statement": "Prealgebra 2e is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA) license"
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
+      "status": "approved",
+      "decided_by": "existing use: link-only in Bridges",
+      "notes": "Bridge files also say OpenStax prohibits use for training large language models. That statement could not be found on OpenStax pages on 2026-11-20; kept as a conservative reason not to paste this text into AI tools."
+    },
+    {
+      "id": "openstax-college-algebra-1e",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra (1st edition)",
+      "url_prefixes": ["https://openstax.org/books/college-algebra/"],
+      "license": "cc_by_4",
+      "license_evidence": {
+        "url": "https://openstax.org/books/college-algebra/pages/preface",
+        "checked_at": "2026-11-20",
+        "statement": "College Algebra is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
+      },
+      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
+      "status": "approved",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "notes": "Cited by content/clep_college_algebra.yaml. Prefer this edition over 2e for adapted content."
+    },
+    {
+      "id": "openstax-college-algebra-2e",
+      "publisher": "OpenStax, Rice University",
+      "title": "College Algebra 2e",
+      "url_prefixes": ["https://openstax.org/books/college-algebra-2e/", "https://openstax.org/details/books/college-algebra-2e"],
+      "license": "cc_by_nc_sa_4",
+      "license_evidence": {
+        "url": "https://openstax.org/details/books/college-algebra-2e",
+        "checked_at": "2026-11-20",
+        "statement": "by OpenStax is licensed under Creative Commons Attribution-NonCommercial-ShareAlike License v4.0"
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
+      "status": "approved",
+      "decided_by": "default for CC BY-NC-SA until the owner decides on non-commercial status",
+      "notes": ""
+    },
+    {
+      "id": "openstax-psychology-1e",
+      "publisher": "OpenStax, Rice University",
+      "title": "Psychology (1st edition)",
+      "url_prefixes": ["https://openstax.org/books/psychology/"],
+      "license": "cc_by_4",
+      "license_evidence": {
+        "url": "https://openstax.org/books/psychology/pages/preface",
+        "checked_at": "2026-11-20",
+        "statement": "Psychology is licensed under a Creative Commons Attribution 4.0 International (CC BY) license"
+      },
+      "allowed_uses": ["link", "reference", "quote", "adapt", "ai_transform"],
+      "attribution": "Adapted from {title}, OpenStax, Rice University, {section_url}, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: {changes}.",
+      "status": "approved",
+      "decided_by": "owner 2026-11-20 (approved adapting the CC BY 1st editions)",
+      "notes": "CC BY alternative for the CLEP Introductory Psychology program."
+    },
+    {
+      "id": "openstax-psychology-2e",
+      "publisher": "OpenStax, Rice University",
+      "title": "Psychology 2e",
+      "url_prefixes": ["https://openstax.org/books/psychology-2e/", "https://openstax.org/details/books/psychology-2e"],
+      "license": "cc_by_nc_sa_4",
+      "license_evidence": {
+        "url": "https://openstax.org/details/books/psychology-2e",
+        "checked_at": "2026-11-20",
+        "statement": "by OpenStax is licensed under Creative Commons Attribution-NonCommercial-ShareAlike License v4.0"
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, OpenStax, Rice University, {section_url}, CC BY-NC-SA 4.0.",
+      "status": "approved",
+      "decided_by": "default for CC BY-NC-SA until the owner decides on non-commercial status",
+      "open_issue": "content/clep_introductory_psychology.yaml records this source as CC BY 4.0. OpenStax moved the library to CC BY-NC-SA for new and updated versions (announced 2026-04-22). Owner decision: re-point the program to Psychology (1st edition, CC BY 4.0), or keep 2e and treat derived lessons as CC BY-NC-SA. Until then, do not adapt more text from 2e."
+    },
+    {
+      "id": "microsoft-support",
+      "publisher": "Microsoft",
+      "title": "Microsoft Support documentation",
+      "url_prefixes": ["https://support.microsoft.com/"],
+      "license": "proprietary",
+      "license_evidence": {
+        "url": "https://www.microsoft.com/en-us/legal/terms-of-use",
+        "checked_at": "2026-11-20",
+        "statement": "All rights not expressly granted to you in this TOU are reserved."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, Microsoft Support, {section_url}.",
+      "status": "approved",
+      "decided_by": "existing use: link-only in Bridges and the Excel pilot",
+      "notes": "Document permission covers informational, non-commercial use without modification only; write our own text."
+    },
+    {
+      "id": "college-board-clep",
+      "publisher": "College Board",
+      "title": "CLEP exam descriptions and guides",
+      "url_prefixes": ["https://clep.collegeboard.org/"],
+      "license": "proprietary",
+      "license_evidence": {
+        "url": "https://clep.collegeboard.org/",
+        "checked_at": "2026-11-08",
+        "statement": "Recorded in the CLEP manifests as College Board proprietary; CLEP and College Board are registered trademarks."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Aligned to the {title}, College Board, {section_url}. CLEP is a registered trademark of the College Board.",
+      "status": "approved",
+      "decided_by": "existing use: objective alignment only",
+      "notes": "Never copy exam questions or guide text."
+    },
+    {
+      "id": "ieee-swebok",
+      "publisher": "IEEE Computer Society",
+      "title": "Guide to the Software Engineering Body of Knowledge (SWEBOK)",
+      "url_prefixes": ["https://www.computer.org/education/bodies-of-knowledge/"],
+      "license": "proprietary",
+      "license_evidence": {
+        "url": "https://www.computer.org/education/bodies-of-knowledge/software-engineering",
+        "checked_at": "2026-11-08",
+        "statement": "Recorded in content/software_engineer_career.yaml as Copyright IEEE."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Aligned to {title}, IEEE Computer Society.",
+      "status": "approved",
+      "decided_by": "existing use: alignment only",
+      "notes": ""
+    },
+    {
+      "id": "bls",
+      "publisher": "U.S. Bureau of Labor Statistics",
+      "title": "BLS publications and classifications",
+      "url_prefixes": ["https://www.bls.gov/"],
+      "license": "public_domain_us_gov",
+      "license_evidence": {
+        "url": "https://www.bls.gov/soc/2018/major_groups.htm",
+        "checked_at": "2026-11-08",
+        "statement": "Recorded in content/software_engineer_career.yaml as Public Domain (U.S. Government Work), 17 U.S.C. 105."
+      },
+      "allowed_uses": ["link", "reference", "quote", "adapt", "redistribute", "ai_transform"],
+      "attribution": "Source: U.S. Bureau of Labor Statistics, {title}, {section_url}.",
+      "status": "approved",
+      "decided_by": "existing use",
+      "notes": ""
+    },
+    {
+      "id": "comptia",
+      "publisher": "CompTIA",
+      "title": "CompTIA certification exam objectives",
+      "url_prefixes": ["https://www.comptia.org/"],
+      "license": "proprietary",
+      "license_evidence": {
+        "url": "https://www.comptia.org/certifications/security",
+        "checked_at": "2026-11-08",
+        "statement": "Recorded in content/security_plus_sy0_701.yaml as CompTIA proprietary."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Aligned to the {title}, CompTIA. CompTIA and Security+ are trademarks of CompTIA.",
+      "status": "approved",
+      "decided_by": "existing use: alignment only",
+      "notes": "Never copy objective text beyond objective numbers and short titles."
+    },
+    {
+      "id": "acm-ieee-cs2023",
+      "publisher": "ACM / IEEE Computer Society / AAAI",
+      "title": "Computer Science Curricula 2023 (CS2023)",
+      "url_prefixes": ["https://csed.acm.org/"],
+      "license": "unknown",
+      "license_evidence": {
+        "url": "https://csed.acm.org/",
+        "checked_at": "2026-11-20",
+        "statement": "No license statement found on the site homepage."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Aligned to {title}.",
+      "status": "approved",
+      "decided_by": "existing use: alignment only",
+      "notes": "Check the published report's copyright page before quoting or adapting."
+    },
+    {
+      "id": "ky-reading-research",
+      "publisher": "Kentucky Reading Research Center",
+      "title": "Effective Adult Reading Interventions",
+      "url_prefixes": ["https://www.kyreadingresearch.org/"],
+      "license": "unknown",
+      "license_evidence": {
+        "url": "https://www.kyreadingresearch.org/",
+        "checked_at": "2026-11-20",
+        "statement": "Not checked; the adult literacy manifest records it as public educational research."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Informed by {title}, {section_url}.",
+      "status": "approved",
+      "decided_by": "existing use: research alignment only",
+      "notes": ""
+    },
+    {
+      "id": "mit-ocw",
+      "publisher": "MIT OpenCourseWare",
+      "title": "MIT OpenCourseWare courses",
+      "url_prefixes": ["https://ocw.mit.edu/"],
+      "license": "cc_by_nc_sa_4",
+      "license_evidence": {
+        "url": "https://ocw.mit.edu/pages/privacy-and-terms-of-use/",
+        "checked_at": "2026-11-20",
+        "statement": "Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0); AI training permitted for non-commercial use with attribution."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "{title}, MIT OpenCourseWare, {section_url}, CC BY-NC-SA 4.0.",
+      "status": "candidate",
+      "decided_by": null,
+      "notes": "MIT names and logos need MIT's written consent."
+    },
+    {
+      "id": "wikibooks",
+      "publisher": "Wikibooks contributors",
+      "title": "Wikibooks",
+      "url_prefixes": ["https://en.wikibooks.org/"],
+      "license": "cc_by_sa_4",
+      "license_evidence": {
+        "url": "https://en.wikibooks.org/wiki/Wikibooks:Copyrights",
+        "checked_at": "2026-11-20",
+        "statement": "Most of Wikibooks' text is dual licensed under CC BY-SA 4.0 and the GFDL; check each page's footer."
+      },
+      "allowed_uses": ["link", "reference"],
+      "attribution": "Adapted from \"{title}\", Wikibooks, {section_url}, CC BY-SA 4.0. Changes: {changes}.",
+      "status": "candidate",
+      "decided_by": null,
+      "notes": "Adapting is possible only if the derived lesson is published under CC BY-SA 4.0. Wikibooks logos are not free to use."
+    }
+  ]
+}

@@ -905,6 +905,8 @@ Retired assets resolve to the nearest valid replacement or a clear "no longer av
 
 ## 8. Path B — Ingestion and zero-paid-review content supply
 
+> **Executable runbook (2026-11-20):** follow [docs/content_intelligence/CONTENT_INGESTION_RUNBOOK.md](docs/content_intelligence/CONTENT_INGESTION_RUNBOOK.md) to take in outside content. Each source's license and allowed uses live in `data/content_sources.json`, checked in CI by `tool/ci/verify_content_sources.py`. The §8.4 map is [docs/content_intelligence/CONTENT_SUPPLY_AND_REUSE_MAP.md](docs/content_intelligence/CONTENT_SUPPLY_AND_REUSE_MAP.md).
+
 **Equal architectural importance to AI generation.** The most reliable way to keep operator inference spend at $0 is to identify, link, reuse and organize existing trustworthy learning materials; generate only the missing learning components. Ingestion is a first-class workstream, not an optional paragraph. **No paid human reviewers, paid moderation staff or staffing budget are assumed or required for the project at this stage.** Review status and authoritativeness must be represented honestly.
 
 ### 8.1 Rights-aware, provenance-preserving pipeline
