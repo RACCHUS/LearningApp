@@ -48,6 +48,8 @@ Three destinations (Learn, Library, Progress). Routes live in the router; the bu
 - Owner: `lib/services/scope_resolver.dart`; provider `lib/providers/scope_resolver_provider.dart`; contexts in `lib/providers/learning_context_provider.dart`.
 <!-- map-ref path="test/services/scope_resolver_test.dart" role="test" -->
 - Tests: `test/services/scope_resolver_test.dart`, `test/services/scope_resolver_rpc_test.dart`, `test/services/learning_context_sync_service_test.dart`.
+<!-- map-ref path="lib/providers/retired_lesson_context_provider.dart" role="owner" -->
+- Retired lessons: `lib/providers/retired_lesson_context_provider.dart` moves a lesson context to its replacement (or archives it) when a corrected curriculum version retires the old one; server lookup `public.lesson_replacement` (migration `20261120030000`). Tests: `test/providers/retired_lesson_context_test.dart`, `supabase/tests/lesson_replacement_lookup_test.sql`.
 
 ## TEL Fast strategy and offline CAS sync {#fast}
 

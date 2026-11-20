@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:learning_pwa/services/hive_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:learning_pwa/config/supabase_config.dart';
+import 'package:learning_pwa/providers/retired_lesson_context_provider.dart';
 import 'package:learning_pwa/providers/router_provider.dart';
 import 'package:learning_pwa/services/push_notification_service.dart';
 import 'package:learning_pwa/providers/theme_provider.dart';
@@ -186,6 +187,9 @@ class _LearningAppState extends ConsumerState<LearningApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    // Moves learning contexts off lessons whose curriculum version was
+    // retired (corrected re-imports). Background only; never blocks.
+    ref.watch(retiredLessonContextRepairProvider);
 
     // Set global scaffoldMessengerKey for push notifications
     PushNotificationService.scaffoldMessengerKey =
