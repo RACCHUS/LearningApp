@@ -1,0 +1,170 @@
+# MANUAL OWNER-APPROVED ONLY: loads one reviewed curriculum manifest from
+# content/ into the hosted Supabase project with the service-role key.
+# It never runs on push, PR or schedule, only from main, and every run waits
+# for a reviewer of the supabase-production-deployment environment.
+# Never include service-role credentials in a mobile/web application.
+name: Controlled curriculum ingestion (owner-approved)
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: 'Manifest path in content/, e.g. content/open_openstax_prealgebra_1e.yaml'
+        required: true
+        type: string
+      stop_after:
+        description: 'How far to go: dry-run (no writes), draft, review-ready, or published (learners see it)'
+        required: true
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - draft
+          - review-ready
+          - published
+      confirm_project_ref:
+        description: 'Type the hosted Supabase project ref xzvkdwebtbxlrxagtzlv'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: learningapp-production-curriculum-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    if: ${{ github.repository == 'RACCHUS/LearningApp' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'RACCHUS' }}
+    name: Ingest one curriculum manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: supabase-production-deployment
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Flutter and Dart
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install locked dependencies
+        run: |
+          set -euo pipefail
+          flutter pub get
+          python3 -m pip install --quiet 'PyYAML==6.0.2'
+
+      - name: Reject wrong destination, missing secrets and unknown manifests
+        id: target
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          STOP_AFTER: ${{ inputs.stop_after }}
+          CONFIRMED_REF: ${{ inputs.confirm_project_ref }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          readonly expected_ref='xzvkdwebtbxlrxagtzlv'
+          readonly expected_url="https://${expected_ref}.supabase.co"
+          if [[ "${CONFIRMED_REF}" != "${expected_ref}" ]]; then
+            echo "::error::The confirmed project ref does not match the LearningApp hosted project."
+            exit 2
+          fi
+          if [[ "${SUPABASE_URL%/}" != "${expected_url}" ]]; then
+            echo "::error::SUPABASE_URL is absent or points at the wrong project."
+            exit 2
+          fi
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY secret is not configured."
+            exit 2
+          fi
+          case "${STOP_AFTER}" in dry-run|draft|review-ready|published) ;; *)
+            echo "::error::Unsupported stop_after value."; exit 2 ;;
+          esac
+          # Only a committed top-level manifest in content/ may be ingested.
+          if [[ ! "${MANIFEST}" =~ ^content/[a-z0-9_]+\.ya?ml$ ]]; then
+            echo "::error::Manifest must be a file directly in content/ (lowercase, .yaml)."
+            exit 2
+          fi
+          if ! git ls-files --error-unmatch -- "${MANIFEST}" >/dev/null 2>&1; then
+            echo "::error::${MANIFEST} is not a committed file on main."
+            exit 2
+          fi
+          # Target and version come from the manifest itself, never from typing.
+          python3 - "${MANIFEST}" >> "$GITHUB_OUTPUT" <<'PY'
+          import re, sys, yaml
+          m = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+          target = m.get("target") or {}
+          releases = m.get("source_releases") or [m.get("source_release") or {}]
+          slug = str(target.get("slug") or "")
+          version = str(target.get("version_code") or releases[0].get("version") or "")
+          ok = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
+          if not ok.match(slug) or not ok.match(version):
+              sys.exit("Manifest has a missing or unsafe target.slug or target.version_code.")
+          print(f"slug={slug}")
+          print(f"version={version}")
+          PY
+
+      - name: Check source licenses and approvals
+        run: python3 tool/ci/verify_content_sources.py
+
+      - name: Dry run (validation only, no writes)
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          SLUG: ${{ steps.target.outputs.slug }}
+          VERSION: ${{ steps.target.outputs.version }}
+        run: |
+          set -euo pipefail
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --manifest "$MANIFEST" --dry-run
+          {
+            echo "### Curriculum ingestion"
+            echo "- Manifest: \`$MANIFEST\`"
+            echo "- Target: \`$SLUG\` version \`$VERSION\`"
+            echo "- Dry run: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ingest into a draft version
+        if: ${{ inputs.stop_after != 'dry-run' }}
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          SLUG: ${{ steps.target.outputs.slug }}
+          VERSION: ${{ steps.target.outputs.version }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --manifest "$MANIFEST" --apply
+          echo "- Draft: ingested" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Promote to review-ready
+        if: ${{ inputs.stop_after == 'review-ready' || inputs.stop_after == 'published' }}
+        env:
+          SLUG: ${{ steps.target.outputs.slug }}
+          VERSION: ${{ steps.target.outputs.version }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --stage-review
+          echo "- Review-ready: promoted" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish to learners
+        if: ${{ inputs.stop_after == 'published' }}
+        env:
+          SLUG: ${{ steps.target.outputs.slug }}
+          VERSION: ${{ steps.target.outputs.version }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --publish
+          echo "- Published: learners can now see it" >> "$GITHUB_STEP_SUMMARY"
