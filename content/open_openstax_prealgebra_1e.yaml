@@ -6,7 +6,7 @@ source_releases:
   title: Prealgebra
   version: eb2e29d (archive 20260604.144757)
   source_url: https://openstax.org/books/prealgebra/pages/preface
-  retrieved_at: '2026-11-20T08:55:01Z'
+  retrieved_at: '2026-11-20T14:29:35Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-prealgebra-1e
   title: Prealgebra (open textbook)
-  version_code: OPENSTAX-EB2E29D
+  version_code: OPENSTAX-EB2E29D-R2
   version_title: Prealgebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
 domains:
@@ -91,7 +91,7 @@ domains:
           text: |
             According to data from the American Association of Community Colleges $(2015)\text{,}$ about $\text{57\%}$ of community college students are female. This means $57$ out of every $100$ community college students are female, as Figure 6.2 shows. Out of the $100$ squares on the grid, $57$ are shaded, which we write as the ratio $\frac{57}{100}.$
 
-            *(Figure in the original section: Among every 100100 community college students, 5757 are female..)*
+            _(Figure in the original section: Among every $100$ community college students, $57$ are female.)_
 
             Similarly, $\text{25\%}$ means a ratio of $\frac{25}{100},\text{3\%}$ means a ratio of $\frac{3}{100}$ and $\text{100\%}$ means a ratio of $\frac{100}{100}.$ In words, "one hundred percent" means the total $\text{100\%}$ is $\frac{100}{100},$ and since $\frac{100}{100}=1,$ we see that $\text{100\%}$ means $1$ whole.
       - sort_order: 6
@@ -401,7 +401,7 @@ domains:
 
             Figure 6.3 uses the percents in Table 6.1 and shows visually how to convert them to decimals by moving the decimal point two places to the left.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
       - sort_order: 30
         block_type: markdown
         content:
@@ -456,7 +456,7 @@ domains:
             - ⓐ a fraction
             - ⓑ a decimal
 
-            *(Figure in the original section: (credit: Riles32807, Wikimedia Commons).)*
+            _(Figure in the original section: (credit: Riles32807, Wikimedia Commons).)_
 
             **Solution**
 
@@ -606,7 +606,7 @@ domains:
 
             Figure 6.5 uses the decimal numbers in Table 6.2 and shows visually to convert them to percents by moving the decimal point two places to the right and then writing the $\%$ sign.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             In Decimals, we learned how to convert fractions to decimals. Now we also know how to change decimals to percents. So to convert a fraction to a percent, we first change it to a decimal and then convert that decimal to a percent.
       - sort_order: 46
@@ -996,7 +996,7 @@ domains:
 
             ⓐ After completing the exercises, use this checklist to evaluate your mastery of the objectives of this section.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             ⓑ If most of your checks were:
 
@@ -1291,7 +1291,7 @@ domains:
 
             To solve this, we want to find what *amount* is $\text{20\%}$ of $\text{\textdollar 80}.$ The $\text{\textdollar 80}$ is called the *base*. The amount of the tip would be $0.20(80),$ or $\text{\textdollar 16}$ See Figure 6.6. To find the amount of the tip, we multiplied the percent by the base.
 
-            *(Figure in the original section: A 20%20% tip for an $80$80 restaurant bill comes out to $16.$16..)*
+            _(Figure in the original section: A $\text{20\%}$ tip for an $\text{\textdollar 80}$ restaurant bill comes out to $\text{\textdollar 16}$.)_
 
             In the next examples, we will find the amount. We must be sure to change the given percent to a decimal when we translate the words into an equation.
       - sort_order: 4
@@ -1814,7 +1814,7 @@ domains:
 
             ⓐ After completing the exercises, use this checklist to evaluate your mastery of the objectives of this section.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             ⓑ After reviewing this checklist, what will you do to become confident for all objectives?
       - sort_order: 48
@@ -2149,7 +2149,7 @@ domains:
 
             To find the sales tax multiply the purchase price by the sales tax rate. Remember to convert the sales tax rate from a percent to a decimal number. Once the sales tax is calculated, it is added to the purchase price. The result is the total cost—this is what the customer pays.
 
-            *(Figure in the original section: The sales tax is calculated as a percent of the purchase price..)*
+            _(Figure in the original section: The sales tax is calculated as a percent of the purchase price.)_
       - sort_order: 6
         block_type: callout
         content:
@@ -2334,7 +2334,7 @@ domains:
 
             Applications of discount are very common in retail settings Figure 6.8. When you buy an item on sale, the **original price** of the item has been reduced by some dollar amount. The **discount rate**, usually given as a percent, is used to determine the amount of the discount. To determine the **amount of discount**, we multiply the discount rate by the original price. We summarize the discount model in the box below.
 
-            *(Figure in the original section: Applications of discounts are common in everyday life. (credit: Charleston's TheDigitel, Flickr).)*
+            _(Figure in the original section: Applications of discounts are common in everyday life. (credit: Charleston's TheDigitel, Flickr).)_
       - sort_order: 23
         block_type: callout
         content:
@@ -2637,7 +2637,7 @@ domains:
 
             ⓐ After completing the exercises, use this checklist to evaluate your mastery of the objectives of this section.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             ⓑ What does this checklist tell you about your mastery of this section? What steps will you take to improve?
       - sort_order: 43
@@ -3204,7 +3204,7 @@ domains:
 
             ⓐ After completing the exercises, use this checklist to evaluate your mastery of the objectives of this section.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             ⓑ On a scale of 1–10, how would you rate your mastery of this section in light of your responses on the checklist? How can you improve this?
       - sort_order: 34
@@ -4172,7 +4172,7 @@ domains:
 
             ⓐ After completing the exercises, use this checklist to evaluate your mastery of the objectives of this section.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             ⓑ Overall, after looking at the checklist, do you think you are well-prepared for the next Chapter? Why or why not?
       - sort_order: 64

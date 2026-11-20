@@ -40,6 +40,10 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 REGISTRY = REPO / "data" / "content_sources.json"
+# Bump when importer output changes for the same book version, so the
+# corrected lessons publish as a new target version (published versions are
+# immutable). Publish it with retire_previous to replace the old one.
+IMPORT_REVISION = 2
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_open_content_index import (  # noqa: E402
     ARCHIVE, ARCHIVE_LICENSE, BOOKS, USER_AGENT, plain, split_number,
@@ -295,10 +299,14 @@ def blocks_markdown(e: ET.Element, warnings: list[str], skip_titles: bool = True
                 m.set("display", "block")
                 parts.append(math_markdown(m, warnings).strip())
         elif n == "figure" or dtype == "figure" or cls.startswith("os-figure"):
-            caption = " ".join(
-                txt(x)
-                for x in c.iter() if ln(x) in ("figcaption",) or x.get("class") == "os-caption")
-            parts.append(f"*(Figure in the original section{': ' + caption if caption else ''}.)*")
+            # One caption only (figcaption wraps os-caption), with math
+            # converted, not raw MathML text (which repeats annotations).
+            caps = ([x for x in c.iter() if ln(x) == "figcaption"]
+                    or [x for x in c.iter() if x.get("class") == "os-caption"])
+            caption = re.sub(r"\s+", " ", inline(caps[0], warnings)).strip() if caps else ""
+            caption = re.sub(r"\.\$$", "$", caption).rstrip(". ")
+            # Underscore emphasis, so italic terms (*N*) inside stay nested.
+            parts.append(f"_(Figure in the original section{': ' + caption if caption else ''}.)_")
         elif n == "table" or cls == "os-table":
             parts.append(table_markdown(c, warnings))
         elif n in ("div", "section", "span", "blockquote"):
@@ -708,7 +716,7 @@ def import_book(source_id: str, chapters: set[int], delay: float) -> tuple[dict,
         "target": {
             "slug": f"open-{source_id}",
             "title": f"{meta.get('title', '')} (open textbook)",
-            "version_code": "OPENSTAX-" + book["book"].split("@")[1].upper(),
+            "version_code": f"OPENSTAX-{book['book'].split('@')[1].upper()}-R{IMPORT_REVISION}",
             "version_title": f"{meta.get('title', '')} by OpenStax, {lic_short}",
             "version_description": "Open textbook sections imported as LearningApp lessons.",
         },

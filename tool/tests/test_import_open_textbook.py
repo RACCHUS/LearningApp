@@ -130,6 +130,16 @@ class SectionTests(unittest.TestCase):
         p = ET.fromstring(f'<p {X}>The product <math {M} display="block"><mn>8</mn></math> equals 8.</p>')
         self.assertEqual(t.inline(p, []), "The product $8$ equals 8.")
 
+    def test_figure_caption_converts_math_once_with_one_period(self):
+        fig = ET.fromstring(
+            f'<div {X}><figure><figcaption><span class="os-caption">Among <math {M}><semantics>'
+            '<mn>100</mn><annotation-xml><mn>100</mn></annotation-xml></semantics></math> '
+            'students, <em>N</em> are here.</span></figcaption></figure></div>')
+        text = t.blocks_markdown(fig, [])
+        self.assertIn("_(Figure in the original section: Among $100$ students, *N* are here.)_", text)
+        self.assertNotIn("100100", text)
+        self.assertNotIn("..", text)
+
     def test_description_joins_objectives_cleanly(self):
         self.assertEqual(self.lesson["description"], "Use percent.")
 

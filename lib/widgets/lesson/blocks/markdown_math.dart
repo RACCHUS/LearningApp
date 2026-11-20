@@ -41,9 +41,19 @@ class MathElementBuilder extends MarkdownElementBuilder {
       textStyle: parentStyle,
       onErrorFallback: (_) => Text(tex, style: parentStyle),
     );
-    return display
-        ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: math)
-        : math;
+    if (display) {
+      return SingleChildScrollView(scrollDirection: Axis.horizontal, child: math);
+    }
+    // Inline math must be a text span, not a widget: the markdown package
+    // merges adjacent text widgets into one paragraph, but a bare widget
+    // splits the paragraph into separately wrapping pieces.
+    return Text.rich(
+      WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: math,
+      ),
+    );
   }
 }
 
@@ -53,10 +63,13 @@ final lessonMarkdownBuilders = <String, MarkdownElementBuilder>{
   'math': MathElementBuilder(),
 };
 
-/// Plain [Text] unless [text] contains `$` math, in which case it renders
-/// as markdown with math. Keeps existing plain prompts unchanged.
+final _markdownHint = RegExp(r'\$|^\s*[-*] |\*\*', multiLine: true);
+
+/// Plain [Text] unless [text] contains `$` math, a `- ` list or `**bold**`,
+/// in which case it renders as markdown with math. Keeps other plain
+/// prompts unchanged.
 Widget mathAwareText(String text, TextStyle? style) {
-  if (!text.contains(r'$')) return Text(text, style: style);
+  if (!_markdownHint.hasMatch(text)) return Text(text, style: style);
   return MarkdownBody(
     data: text,
     inlineSyntaxes: lessonMarkdownInlineSyntaxes,
