@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/services/lesson/pasted_json.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -358,8 +358,17 @@ class GenerationSessionNotifier extends StateNotifier<GenerationSession?> {
     final s = state;
     if (s == null) return 'No active session';
 
+    // AI chats often wrap the JSON in a code fence or add a sentence; take
+    // the JSON out unchanged rather than rejecting the whole reply.
+    final read = PastedJson.readAny(rawJson);
+    if (read.value == null) {
+      final message = read.error ?? 'No JSON was found in the reply.';
+      state = s.copyWith(errorMessage: message);
+      return message;
+    }
+
     try {
-      final dynamic parsed = jsonDecode(rawJson);
+      final dynamic parsed = read.value;
 
       switch (s.currentPhase) {
         case GenerationPhase.planning:

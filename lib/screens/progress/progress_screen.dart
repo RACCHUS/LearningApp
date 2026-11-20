@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_pwa/widgets/analytics/analytics_opt_in_card.dart';
 import 'package:learning_pwa/models/retrieval_state.dart';
 import 'package:learning_pwa/models/spaced_repetition.dart';
 import 'package:learning_pwa/providers/motivation_preferences_provider.dart';
@@ -93,6 +94,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             onSelectionChanged: (set) => setState(() => _selectedTab = set.first),
           ),
           const SizedBox(height: DesignTokens.space4),
+          const AnalyticsOptInCard(),
 
           if (_selectedTab == 0) ...[
             // CURRENT CONTEXT VIEW

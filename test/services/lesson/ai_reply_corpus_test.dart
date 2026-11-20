@@ -100,4 +100,26 @@ void main() {
       contains('too long'),
     );
   });
+
+  group('PastedJson.readAny (AI-Guided batches)', () {
+    test('arrays: plain, fenced, and with commentary', () {
+      expect(PastedJson.readAny('[1, 2]').value, [1, 2]);
+      expect(PastedJson.readAny('```json\n[{"a": 1}]\n```').value, [
+        {'a': 1},
+      ]);
+      expect(PastedJson.readAny('Here you go: [{"a": 1}] Enjoy!').value, [
+        {'a': 1},
+      ]);
+    });
+
+    test('objects still come out exactly; nothing is repaired', () {
+      expect(PastedJson.readAny('Plan:\n{"x": 1}').value, {'x': 1});
+      final broken = PastedJson.readAny('[{"a": 1},]');
+      expect(broken.value, isNull, reason: 'trailing comma is not repaired');
+      expect(PastedJson.readAny('no json here').value, isNull);
+      expect(PastedJson.readAny('Here is the plan [v1]: {"x": 1}').value, {
+        'x': 1,
+      }, reason: 'brackets in commentary do not make it an array');
+    });
+  });
 }

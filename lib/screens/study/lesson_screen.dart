@@ -7,6 +7,8 @@ import 'package:learning_pwa/utils/haptic_utils.dart';
 import 'package:learning_pwa/models/lesson_content.dart';
 // ...existing code...
 import 'package:learning_pwa/providers/learning_support_controller_provider.dart';
+import 'package:learning_pwa/providers/product_telemetry_provider.dart';
+import 'package:learning_pwa/services/analytics/product_event.dart';
 import 'package:learning_pwa/providers/lesson_provider.dart';
 import 'package:learning_pwa/providers/lesson_progress_provider.dart';
 import 'package:learning_pwa/providers/offline_provider.dart';
@@ -257,6 +259,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!_nudgeChecked) {        _nudgeChecked = true;
         _maybeShowAntiCrammingNudge();
+        // Optional product analytics (records only with consent).
+        ref.read(productTelemetryProvider).track(
+          ProductEventKind.lessonEngaged,
+          {'resource_id': widget.lessonId, 'mode': 'open'},
+        );
       }
       if (!_modeDialogShown && ModalRoute.of(context)?.isCurrent == true) {
         _modeDialogShown = true;
