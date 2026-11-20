@@ -22,6 +22,11 @@ on:
           - draft
           - review-ready
           - published
+      retire_previous:
+        description: 'When publishing, retire this target''s previously published versions (use for a corrected re-import)'
+        required: false
+        type: boolean
+        default: false
       confirm_project_ref:
         description: 'Type the hosted Supabase project ref xzvkdwebtbxlrxagtzlv'
         required: true
@@ -162,9 +167,12 @@ jobs:
         env:
           SLUG: ${{ steps.target.outputs.slug }}
           VERSION: ${{ steps.target.outputs.version }}
+          RETIRE_PREVIOUS: ${{ inputs.retire_previous }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
-          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --publish
-          echo "- Published: learners can now see it" >> "$GITHUB_STEP_SUMMARY"
+          retire=()
+          if [[ "${RETIRE_PREVIOUS}" == "true" ]]; then retire=(--retire-previous); fi
+          dart run tool/ingest_curriculum.dart --target "$SLUG" --version "$VERSION" --publish "${retire[@]}"
+          echo "- Published: learners can now see it (retire previous: ${RETIRE_PREVIOUS})" >> "$GITHUB_STEP_SUMMARY"

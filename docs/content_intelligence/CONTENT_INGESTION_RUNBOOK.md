@@ -54,9 +54,12 @@ python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapt
 2. Review a few lessons.
 3. Have the owner ingest them (step 9).
 
+**Correcting lessons already published:** published versions cannot change. Fix the importer, bump `IMPORT_REVISION` in `tool/import_open_textbook.py` (the version code becomes `OPENSTAX-<book>-R<n>`), re-run the import, and run the ingestion workflow with `stop_after: published` and `retire_previous: true`. The new version replaces the old one in one step; progress on the retired version's lessons does not carry over.
+
 **Pilot (2026-11-20):**
 - College Algebra chapter 1: 4 lessons, 27 graded questions. 1.4 Polynomials and 1.5 Factoring were left out because none of their answers is a single number.
 - Prealgebra chapter 6 (Percents): 5 lessons, 49 graded questions.
+- Both published to production 2026-11-20 through the ingestion workflow; revision R2 fixed figure captions (repeated numbers) and replaced R1.
 
 ## The six uses
 

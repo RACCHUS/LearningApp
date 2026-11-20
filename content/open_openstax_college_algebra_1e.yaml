@@ -6,7 +6,7 @@ source_releases:
   title: College Algebra
   version: ebc5beb (archive 20260604.144757)
   source_url: https://openstax.org/books/college-algebra/pages/preface
-  retrieved_at: '2026-11-20T08:54:59Z'
+  retrieved_at: '2026-11-20T14:29:32Z'
   license: Creative Commons Attribution 4.0 International (CC BY 4.0)
   license_name: CC BY 4.0
   rights_note: Adapted under CC BY 4.0 (owner-approved, data/content_sources.json). OpenStax and Rice University names and logos are not covered by the license; no endorsement implied. Imported automatically; not reviewed by a person.
@@ -18,7 +18,7 @@ source_releases:
 target:
   slug: open-openstax-college-algebra-1e
   title: College Algebra (open textbook)
-  version_code: OPENSTAX-EBC5BEB
+  version_code: OPENSTAX-EBC5BEB-R2
   version_title: College Algebra by OpenStax, CC BY 4.0
   version_description: Open textbook sections imported as LearningApp lessons.
 domains:
@@ -224,7 +224,7 @@ domains:
 
             The real numbers can be visualized on a horizontal number line with an arbitrary point chosen as 0, with negative numbers to the left of 0 and positive numbers to the right of 0. A fixed unit distance is then used to mark off each integer (or other basic value) on either side of 0. Any real number corresponds to a unique position on the number line.The converse is also true: Each location on the number line corresponds to exactly one real number. This is known as a one-to-one correspondence. We refer to this as the **real number line** as shown in Figure 1**.**
 
-            *(Figure in the original section: The real number line.)*
+            _(Figure in the original section: The real number line.)_
       - sort_order: 12
         block_type: markdown
         content:
@@ -272,7 +272,7 @@ domains:
 
             Beginning with the natural numbers, we have expanded each set to form a larger set, meaning that there is a subset relationship between the sets of numbers we have encountered so far. These relationships become more obvious when seen as a diagram, such as Figure 2.
 
-            *(Figure in the original section: Sets of numbersN: the set of natural numbersW: the set of whole numbersI: the set of integersQ: the set of rational numbersQ´: the set of irrational numbers.)*
+            _(Figure in the original section: Sets of numbers *N*: the set of natural numbers *W*: the set of whole numbers *I*: the set of integers *Q*: the set of rational numbers *Q*´: the set of irrational numbers.)_
       - sort_order: 15
         block_type: callout
         content:
@@ -713,7 +713,7 @@ domains:
 
             A right circular cylinder with radius $r$ and height $h$ has the surface area $S$ (in square units) given by the formula $S=2\pi r(r+h).$ See Figure 3. Find the surface area of a cylinder with radius 6 in. and height 9 in. Leave the answer in terms of $\pi .$
 
-            *(Figure in the original section: Right circular cylinder.)*
+            _(Figure in the original section: Right circular cylinder.)_
 
             **Solution**
 
@@ -728,7 +728,7 @@ domains:
           prompt: |
             A photograph with length *L* and width *W* is placed in a mat of width 8 centimeters (cm). The area of the mat (in square centimeters, or cm^2) is found to be $A=(L+16)(W+16)-L\cdot W.$ See Figure 4. Find the area of a mat for a photograph with length 32 cm and width 24 cm.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
           answer: 1,152 cm^2
           explanation: Answer from the book's answer key.
       - sort_order: 42
@@ -2217,7 +2217,7 @@ domains:
           text: |
             A hardware store sells 16-ft ladders and 24-ft ladders. A window is located 12 feet above the ground. A ladder needs to be purchased that will reach the window from a point on the ground 5 feet from the building. To find out the length of ladder needed, we can draw a right triangle as shown in Figure 1, and use the Pythagorean Theorem.
 
-            *(Figure in the original section.)*
+            _(Figure in the original section.)_
 
             $$\begin{array}{lll}a^2+b^2 & = & c^2 \\ 5^2+{12}^2 & = & c^2 \\ 169 & = & c^2\end{array}$$
 

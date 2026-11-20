@@ -3,6 +3,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
 import 'package:learning_pwa/widgets/lesson/blocks/markdown_block_widget.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 
 Future<void> pumpMarkdown(WidgetTester tester, String text) => tester.pumpWidget(
   MaterialApp(
@@ -28,6 +29,39 @@ void main() {
     );
     expect(find.byType(Math), findsNWidgets(3));
     expect(find.textContaining(r'$a^0'), findsNothing);
+  });
+
+  testWidgets('inline math flows inside one paragraph of text', (tester) async {
+    await pumpMarkdown(
+      tester,
+      r'There are $100$ cents in a dollar and **$\frac{1}{4}$** of it is a quarter.',
+    );
+    expect(find.byType(Math), findsNWidgets(2));
+    // One merged text run: a bare widget would split the paragraph into
+    // separate Wrap children that each start on their own line.
+    final wrap = tester.widget<Wrap>(find.byType(Wrap).first);
+    expect(wrap.children, hasLength(1));
+    expect(find.textContaining('cents in a dollar'), findsOneWidget);
+  });
+
+  testWidgets('prompt text with a list renders the list, not dashes', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: mathAwareText('Write as a rational number.\n\n- ⓐ 11\n- ⓑ 3', null),
+        ),
+      ),
+    );
+    expect(find.textContaining('- ⓐ'), findsNothing);
+    expect(find.textContaining('ⓐ 11'), findsOneWidget);
+    expect(find.text('•'), findsNWidgets(2));
+  });
+
+  testWidgets('plain prompt text stays a plain Text widget', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: mathAwareText('What is 2 - 1?', null))),
+    );
+    expect(find.text('What is 2 - 1?'), findsOneWidget);
   });
 
   testWidgets('math may start with a digit', (tester) async {
