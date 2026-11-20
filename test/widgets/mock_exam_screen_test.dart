@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_blueprint.dart';
 import 'package:learning_pwa/models/assessment_engine/mock_exam_session.dart';
@@ -267,7 +268,12 @@ void main() {
 
       // 6. Verify returned to active exam view with original question intact
       expect(find.text('Exam Tools · Scientific Calculator'), findsNothing);
-      expect(find.textContaining(r'(8x^6 y^{-3})^{2/3}'), findsOneWidget);
+      // The prompt's $…$ LaTeX now renders as math, not raw text.
+      expect(
+        find.textContaining('Which of the following is equivalent to', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.byType(Math), findsWidgets);
     });
 
     testWidgets('routes to SecureExamPartPracticeScreen when examPartKey is provided', (tester) async {

@@ -165,8 +165,11 @@ def scan(reg: dict, root: Path) -> tuple[list[str], list[str]]:
                 [data["source_release"]] if data.get("source_release") else []
             )
             for s in releases:
+                # A manifest uses its sources as alignment references unless
+                # it declares otherwise (imported open textbooks: "adapt").
+                use = (s.get("metadata") or {}).get("use", "reference")
                 check_use(reg, Path(path).name, s.get("source_url"), s.get("license"),
-                          "reference", problems, warnings)
+                          use, problems, warnings)
     return problems, warnings
 
 

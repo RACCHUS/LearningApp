@@ -327,6 +327,7 @@ jobs:
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_verify_content_sources.py' -v
           "$CI_TEST_PYTHON" tool/build_open_content_index.py --check
           "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_build_open_content_index.py' -v
+          "$CI_TEST_PYTHON" -m unittest discover -s tool/tests -p 'test_import_open_textbook.py' -v
 
       - name: Verify College Algebra mathematical accuracy (pytest + SymPy)
         run: PYTHONPATH=. "$CI_TEST_PYTHON" -m pytest tool/tests/test_clep_algebra_math_accuracy.py -v

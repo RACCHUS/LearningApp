@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:learning_pwa/models/lesson_block.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 import 'package:learning_pwa/models/simulation_activity.dart';
 import 'package:learning_pwa/widgets/software_learning/excel_upload_card.dart';
 
@@ -141,9 +142,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  mathAwareText(
                     prompt,
-                    style: GoogleFonts.outfit(
+                    GoogleFonts.outfit(
                       fontSize: 15.5 * widget.fontSizeFactor,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -318,9 +319,9 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                                   ),
                                 ),
                                 Expanded(
-                                  child: Text(
+                                  child: mathAwareText(
                                     answer,
-                                    style: GoogleFonts.inter(
+                                    GoogleFonts.inter(
                                       fontSize: 13.5 * widget.fontSizeFactor,
                                       fontWeight: FontWeight.w600,
                                       color: isDark
@@ -336,6 +337,8 @@ class _PracticePromptBlockWidgetState extends State<PracticePromptBlockWidget> {
                           if (explanation != null && explanation.isNotEmpty)
                             MarkdownBody(
                               data: explanation,
+                              inlineSyntaxes: lessonMarkdownInlineSyntaxes,
+                              builders: lessonMarkdownBuilders,
                               styleSheet: MarkdownStyleSheet(
                                 p: GoogleFonts.inter(
                                   fontSize: 13.5 * widget.fontSizeFactor,

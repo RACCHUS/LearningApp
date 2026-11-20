@@ -6,6 +6,7 @@ import 'package:learning_pwa/utils/voice_input_handler.dart';
 import 'package:learning_pwa/widgets/assessment/assessment_answer_views.dart';
 import 'package:learning_pwa/widgets/assessment/stimulus_viewer.dart';
 import 'package:learning_pwa/widgets/mcq_options.dart';
+import 'package:learning_pwa/widgets/lesson/blocks/markdown_math.dart';
 import '../whiteboard/question_scratchpad.dart';
 
 class AssessmentItemRenderer extends StatefulWidget {
@@ -53,6 +54,19 @@ abstract final class AssessmentItemRendererKeys {
       _AssessmentItemRendererState.unscorableMessage;
 }
 
+/// Strict number parsing, matching the server grader: a plain decimal or
+/// correctly grouped thousands ("1,200"); "0,6" or words are not numbers.
+double? parseNumericAnswer(String raw) {
+  final s = raw.trim().replaceAll('\u2212', '-');
+  if (RegExp(r'^[+-]?(\d+(\.\d+)?|\.\d+)$').hasMatch(s)) {
+    return double.tryParse(s);
+  }
+  if (RegExp(r'^[+-]?\d{1,3}(,\d{3})+(\.\d+)?$').hasMatch(s)) {
+    return double.tryParse(s.replaceAll(',', ''));
+  }
+  return null;
+}
+
 class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   static int _globalAttemptNonce = 0x5bf03635;
 
@@ -77,6 +91,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   final Map<String, String> _userMatches = {};
   String? _selectedMatchKey;
 
+  // State for numeric entry
+  final TextEditingController _numericController = TextEditingController();
+
   // Submission & evaluation state
   bool _submitted = false;
   bool _isCorrect = false;
@@ -90,6 +107,12 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   AssessmentItem get _item =>
       _revealedItem?.id == widget.item.id ? _revealedItem! : widget.item;
+
+  @override
+  void dispose() {
+    _numericController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -194,6 +217,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
 
   void _initInteractionState({List<int>? previousOrder}) {
     final spec = widget.item.responseSpec;
+    if (widget.item.interactionType == AssessmentInteractionType.numericEntry) {
+      _numericController.text = widget.initialResponse?.toString() ?? '';
+    }
     if (widget.item.interactionType == AssessmentInteractionType.singleChoice ||
         widget.item.interactionType == AssessmentInteractionType.multiSelect) {
       final optionsRaw = spec['options'] as List? ?? [];
@@ -270,6 +296,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         return List<String>.from(_orderedItems);
       case AssessmentInteractionType.matching:
         return Map<String, String>.from(_userMatches);
+      case AssessmentInteractionType.numericEntry:
+        return _numericController.text.trim();
       default:
         return null;
     }
@@ -432,6 +460,23 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
             : 'Partial pairing: review concept relationships';
         break;
 
+      case AssessmentInteractionType.numericEntry:
+        final rawKey = scoring['correct_value'];
+        if (rawKey is! num) return _markUnscorable();
+        final rawTolerance = scoring['tolerance'];
+        final tolerance = rawTolerance is num && rawTolerance > 0
+            ? rawTolerance.toDouble()
+            : 0.0;
+        final given = parseNumericAnswer(_numericController.text);
+        correct = given != null && (given - rawKey).abs() <= tolerance + 1e-12;
+        score = correct ? 1.0 : 0.0;
+        feedback = correct
+            ? 'Practice evidence: Correct value'
+            : given == null
+            ? 'Enter a single number, such as 12 or 0.5'
+            : 'Needs reinforcement on this concept';
+        break;
+
       default:
         // Unsupported types are not graded as wrong.
         return _markUnscorable();
@@ -557,9 +602,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                 ),
                 const SizedBox(height: 14),
                 // Question Prompt
-                Text(
+                mathAwareText(
                   item.prompt,
-                  style: GoogleFonts.outfit(
+                  GoogleFonts.outfit(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
                     height: 1.45,
@@ -643,9 +688,9 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          mathAwareText(
                             item.explanation!,
-                            style: GoogleFonts.inter(
+                            GoogleFonts.inter(
                               fontSize: 14,
                               height: 1.5,
                               color: isDark
@@ -731,6 +776,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         return _selectedMultiIndices.isNotEmpty;
       case AssessmentInteractionType.orderedResponse:
         return true;
+      case AssessmentInteractionType.numericEntry:
+        return _numericController.text.trim().isNotEmpty;
       case AssessmentInteractionType.matching:
         final leftItems =
             widget.item.responseSpec['left_items'] as List? ??
@@ -752,6 +799,8 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
         return _buildOrderedResponse(context, isDark);
       case AssessmentInteractionType.matching:
         return _buildMatching(context, isDark);
+      case AssessmentInteractionType.numericEntry:
+        return _buildNumericEntry(context);
       default:
         return Container(
           padding: const EdgeInsets.all(14),
@@ -830,6 +879,27 @@ class _AssessmentItemRendererState extends State<AssessmentItemRenderer> {
   }
 
   // 4. Matching Renderer
+  Widget _buildNumericEntry(BuildContext context) {
+    return TextField(
+      key: ValueKey('numeric-entry-${widget.item.id}'),
+      controller: _numericController,
+      enabled: !_submitted && !_grading,
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+        signed: true,
+      ),
+      onChanged: (_) => setState(() {}),
+      onSubmitted: (_) {
+        if (_canSubmit()) _submitAnswer();
+      },
+      decoration: const InputDecoration(
+        labelText: 'Your answer',
+        hintText: 'A number, such as 12 or 0.5',
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
   Widget _buildMatching(BuildContext context, bool isDark) {
     return MatchingAnswerView(
       item: widget.item,

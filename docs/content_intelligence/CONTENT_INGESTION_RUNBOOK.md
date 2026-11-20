@@ -24,6 +24,40 @@ A match shows "Free open content covers this", with a link to read the section. 
 
 The tool stops if the license the publisher reports differs from the registry. CI validates the committed index offline (`--check`).
 
+## Bringing open textbook sections in as lessons
+
+For approved CC BY books, `tool/import_open_textbook.py` turns whole chapters into a curriculum manifest (`content/open_<source>.yaml`):
+
+```
+python tool/import_open_textbook.py --source openstax-college-algebra-1e --chapters 1
+```
+
+| From the book | Becomes |
+|---|---|
+| Section text, subsections, lists, tables | Reading blocks, with math converted from MathML to `$…$` LaTeX |
+| Notes ("The Product Rule…") | Call-outs |
+| Worked examples | Reading blocks, with their solutions |
+| Try It exercises | Practice prompts that reveal the answer from the book's answer key |
+| Try It and end-of-section exercises whose answer is a single number | Graded `numeric_entry` questions (server-graded, exact value) |
+| Defined terms | Glossary terms, with the book's definitions |
+| Images | Not copied (they can carry separate rights); a note points to the original section |
+| — | A closing "Source and license" block: book, link, CC BY 4.0, changes, "not reviewed by a person" |
+
+**Built-in safeguards:**
+- The tool imports only sources with `adapt` allowed and status `approved`.
+- It stops if the license the publisher reports differs from the registry.
+- It never turns an expression answer such as `(x-6)(x-1)` into a graded question: those stay as practice with the answer to reveal, so a correct but differently written answer is never marked wrong.
+- A section with no answer that can be graded automatically is left out and reported. It stays reachable as an open textbook link.
+
+**Then:**
+1. Run the step 7 checks; `test/content/open_textbook_math_test.dart` also checks that every formula parses.
+2. Review a few lessons.
+3. Have the owner ingest them (step 9).
+
+**Pilot (2026-11-20):**
+- College Algebra chapter 1: 4 lessons, 27 graded questions. 1.4 Polynomials and 1.5 Factoring were left out because none of their answers is a single number.
+- Prealgebra chapter 6 (Percents): 5 lessons, 49 graded questions.
+
 ## The six uses
 
 Every use of a source is one of these. The registry lists which ones each source allows.
