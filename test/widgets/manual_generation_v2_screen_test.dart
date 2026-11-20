@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_pwa/providers/byok_session_provider.dart';
+import 'package:learning_pwa/providers/managed_ai_provider.dart';
 import 'package:learning_pwa/providers/manual_generation_v2_provider.dart';
 import 'package:learning_pwa/screens/lessons/manual_generation_v2_screen.dart';
 import 'package:learning_pwa/services/content_generation/manual_job.dart';
@@ -15,6 +16,7 @@ import 'package:learning_pwa/services/content_generation/model_capability_profil
 import 'package:learning_pwa/services/content_generation/model_capability_store.dart';
 import 'package:learning_pwa/services/ai/byok_provider.dart';
 import 'package:learning_pwa/services/ai/llm_client.dart';
+import 'package:learning_pwa/services/ai/managed_ai_service.dart';
 import 'package:learning_pwa/services/content_generation/reuse_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -286,6 +288,130 @@ void main() {
       await tester.tap(find.byKey(const Key('manual_v2_byok_resume')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('manual_v2_ask_ai')), findsOneWidget);
+    });
+  });
+
+  group('free AI (ai.managed)', () {
+    Future<void> plan(
+      WidgetTester tester, {
+      required bool enabled,
+      required _FakeManagedApi api,
+    }) async {
+      await pump(
+        tester,
+        enabled: true,
+        extra: [
+          managedAiEnabledProvider.overrideWithValue(enabled),
+          managedAiApiProvider.overrideWithValue(api),
+          byokRetryDelayProvider.overrideWithValue((_) async {}),
+        ],
+      );
+      await tester.enterText(
+        find.byKey(const Key('manual_v2_ideas')),
+        'Percent change',
+      );
+      await tester.tap(find.byKey(const Key('manual_v2_make_plan')));
+      await tester.pumpAndSettle();
+    }
+
+    String replyFor(String prompt) {
+      final job = RegExp(r'"job": "(J\w{4})"').firstMatch(prompt)!.group(1);
+      return jsonEncode({
+        'schema': 'la-gen/1.1',
+        'job': job,
+        'items': [
+          {
+            'slot': 'S1',
+            'kind': 'explanation',
+            'concept': 'C1',
+            'title': 'Percent change',
+            'text': 'Change divided by the original.',
+          },
+        ],
+      });
+    }
+
+    testWidgets('hidden while the switch is off', (tester) async {
+      final api = _FakeManagedApi(
+        const ManagedAiStatus(enabled: true, remainingToday: 5),
+      );
+      await plan(tester, enabled: false, api: api);
+      expect(find.byKey(const Key('manual_v2_free_ai')), findsNothing);
+      expect(api.generated, 0);
+    });
+
+    testWidgets('asks for 18+ once, then the reply is checked like a paste', (
+      tester,
+    ) async {
+      final api = _FakeManagedApi(
+        const ManagedAiStatus(enabled: true, remainingToday: 5, dailyLimit: 10),
+        reply: replyFor,
+      );
+      await plan(tester, enabled: true, api: api);
+      expect(find.textContaining('5 left for you today'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('manual_v2_free_ai')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_free_ai_confirm')), findsOneWidget);
+      expect(api.generated, 0, reason: 'nothing is sent before confirming');
+      await tester.tap(find.byKey(const Key('manual_v2_free_ai_confirm_yes')));
+      await tester.pumpAndSettle();
+
+      expect(api.generated, 1);
+      expect(find.textContaining('Accepted 1 new item(s)'), findsOneWidget);
+      expect(find.textContaining('4 left for you today'), findsOneWidget);
+
+      // No second confirmation.
+      await tester.tap(find.byKey(const Key('manual_v2_free_ai')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_free_ai_confirm')), findsNothing);
+      expect(api.generated, 2);
+    });
+
+    testWidgets('when the free allowance runs out it turns off and says so', (
+      tester,
+    ) async {
+      final api = _FakeManagedApi(
+        const ManagedAiStatus(enabled: true, remainingToday: 5),
+        failure: ManagedAiFailure.paused,
+      );
+      SharedPreferences.setMockInitialValues({
+        'managed_ai_adult_confirmed_v1': true,
+      });
+      await plan(tester, enabled: true, api: api);
+      await tester.tap(find.byKey(const Key('manual_v2_free_ai')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('manual_v2_free_ai')), findsNothing);
+      expect(find.byKey(const Key('manual_v2_free_ai_off')), findsOneWidget);
+      expect(
+        find.textContaining("used up today's shared allowance"),
+        findsWidgets,
+      );
+      expect(find.byKey(const Key('manual_v2_copy_prompt')), findsOneWidget);
+    });
+
+    testWidgets('already paused: the learner is told before asking', (
+      tester,
+    ) async {
+      final api = _FakeManagedApi(
+        const ManagedAiStatus(enabled: true, paused: true, remainingToday: 5),
+      );
+      await plan(tester, enabled: true, api: api);
+      expect(find.byKey(const Key('manual_v2_free_ai_off')), findsOneWidget);
+      expect(find.byKey(const Key('manual_v2_free_ai')), findsNothing);
+    });
+
+    testWidgets('a learner who used today\'s requests is told so', (
+      tester,
+    ) async {
+      final api = _FakeManagedApi(
+        const ManagedAiStatus(enabled: true, remainingToday: 0),
+      );
+      await plan(tester, enabled: true, api: api);
+      expect(
+        find.textContaining("You've used your free AI requests for today"),
+        findsOneWidget,
+      );
     });
   });
 
@@ -804,4 +930,26 @@ class _FakeClient implements LlmClient {
     required Map<String, dynamic> jsonSchema,
     String? systemPrompt,
   }) => throw UnimplementedError();
+}
+
+class _FakeManagedApi implements ManagedAiApi {
+  _FakeManagedApi(this._status, {this.reply, this.failure});
+
+  final ManagedAiStatus _status;
+  final String Function(String prompt)? reply;
+  final ManagedAiFailure? failure;
+  int generated = 0;
+  int _left = -1;
+
+  @override
+  Future<ManagedAiStatus> status() async => _status;
+
+  @override
+  Future<({String text, int? remainingToday})> generate(String prompt) async {
+    generated++;
+    if (failure != null) throw ManagedAiException(failure!);
+    if (_left < 0) _left = _status.remainingToday;
+    _left--;
+    return (text: reply!(prompt), remainingToday: _left);
+  }
 }
