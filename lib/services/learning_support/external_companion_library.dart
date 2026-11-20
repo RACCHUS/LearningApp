@@ -17,6 +17,7 @@ class ExternalCompanionLibrary {
   static const assetPaths = [
     'content/companions/fraction_decimal.companion.json',
     'content/companions/percent_change.companion.json',
+    'content/companions/percent_of_number.companion.json',
     'content/companions/spreadsheet_percent_format.companion.json',
   ];
 

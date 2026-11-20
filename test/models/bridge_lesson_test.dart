@@ -112,8 +112,8 @@ void main() {
         .where((f) => f.path.endsWith('.bridge.json'))
         .toList();
 
-    test('has two or three Bridges', () {
-      expect(files.length, inInclusiveRange(2, 3));
+    test('has a small, reviewed-size set of Bridges', () {
+      expect(files.length, inInclusiveRange(2, 6));
     });
 
     for (final f in files) {

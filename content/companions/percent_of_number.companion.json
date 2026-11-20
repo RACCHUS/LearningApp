@@ -1,0 +1,49 @@
+{
+  "companion_version": 1,
+  "companion_id": "companion-percent-of-number-openstax",
+  "bridge_id": "bridge-percent-of-number",
+  "objective_id": "numeracy.percent-of.compute",
+  "uses_ai": false,
+  "resource": {
+    "publisher": "OpenStax, Rice University",
+    "title": "Prealgebra 2e",
+    "section": "6.1 Understand Percent",
+    "url": "https://openstax.org/books/prealgebra-2e/pages/6-1-understand-percent",
+    "license": "CC BY-NC-SA 4.0; publisher prohibits use for training large language models",
+    "rights_posture": "link_only",
+    "access": "free_no_login",
+    "last_checked_at": "2026-11-19"
+  },
+  "focus_note": "Read how a percent is written as a fraction over 100 and as a decimal. Notice that every percent becomes a decimal by dividing by 100 before you multiply.",
+  "checks": [
+    {
+      "item_id": "pofx-check-1",
+      "kind": "numeric",
+      "prompt": "What is 30% of 90?",
+      "template": "percent_of",
+      "inputs": { "percent": 30, "whole": 90 },
+      "answer": 27,
+      "feedback": "30 ÷ 100 = 0.3, and 0.3 × 90 = 27."
+    },
+    {
+      "item_id": "pofx-check-2",
+      "kind": "choice",
+      "prompt": "You leave an 18% tip on a $50 meal. How many dollars is the tip?",
+      "template": "percent_of",
+      "inputs": { "percent": 18, "whole": 50 },
+      "options": [
+        { "option_id": "a", "text": "$900", "value": 900 },
+        { "option_id": "b", "text": "$9", "value": 9 },
+        { "option_id": "c", "text": "$32", "value": 32 },
+        { "option_id": "d", "text": "$0.36", "value": "0.36" }
+      ],
+      "correct_option_id": "b",
+      "feedback": "18 ÷ 100 = 0.18, and 0.18 × 50 = 9, so the tip is $9. Multiplying 18 × 50 without dividing by 100 gives the far-too-large $900."
+    }
+  ],
+  "evidence": {
+    "human_reviewed": false,
+    "citations_checked_at": "2026-11-19",
+    "notes": "Draft for owner review. Linked only; questions are independently written and recomputed by the shared Bridge evaluator. No person has reviewed this yet."
+  }
+}

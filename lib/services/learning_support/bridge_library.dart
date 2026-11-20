@@ -19,6 +19,7 @@ class BridgeLibrary {
   static const assetPaths = [
     'content/bridges/fraction_decimal.bridge.json',
     'content/bridges/percent_change.bridge.json',
+    'content/bridges/percent_of_number.bridge.json',
     'content/bridges/spreadsheet_percent_format.bridge.json',
   ];
 
