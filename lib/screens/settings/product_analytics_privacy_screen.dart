@@ -155,11 +155,12 @@ class _ProductAnalyticsPrivacyScreenState
       builder: (context) => AlertDialog(
         title: const Text('Optional product analytics'),
         content: const Text(
-          'If you opt in, LearningApp may record limited feature usage '
-          'categories, resource opens and referral clicks. It does not '
-          'record search text, assessment answers, payment data or '
-          'the content of your notes. Data can be withdrawn and deleted. '
-          'This is separate from saving your learning progress.',
+          'If you opt in, LearningApp records which main screens you open, '
+          'when the app starts and which lesson you open, linked to your '
+          'account. It never records your answers, anything you type, AI '
+          'replies, lesson content, search text or payment data. You can '
+          'withdraw at any time, which deletes what was recorded. This is '
+          'separate from saving your learning progress.',
         ),
         actions: [
           TextButton(
@@ -253,10 +254,12 @@ class _ProductAnalyticsPrivacyScreenState
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'If enabled after a privacy review, it covers '
-                      'categorical app surfaces, feature usage, resource '
-                      'opens and external-link clicks. Raw search text, '
-                      'notes, answers and payment information are excluded.',
+                      'If you opt in, it records which main screens you open '
+                      '(Learn, Library, Progress), when the app starts, and '
+                      'which lesson you open, linked to your account. It '
+                      'never records your answers, anything you type, AI '
+                      'replies, lesson content, search text or payment '
+                      'information. Withdrawing deletes what was recorded.',
                     ),
                     const SizedBox(height: 12),
                     if (_error case final error?)
